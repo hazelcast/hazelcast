@@ -28,6 +28,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -53,7 +54,7 @@ public class JobTimeoutClusterTest extends JetTestSupport {
         final long jobId = job.getId();
 
         // start and wait for the job to start running
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         final JobRepository oldJobRepository = new JobRepository(oldMaster);
         assertTrueEventually(() -> {
             final JobExecutionRecord record = oldJobRepository.getJobExecutionRecord(jobId);
@@ -68,7 +69,7 @@ public class JobTimeoutClusterTest extends JetTestSupport {
         // wait for the job to be restarted and cancelled due to timeout
         final Job restartedJob = newMaster.getJet().getJob(jobId);
         assertNotNull(restartedJob);
-        assertJobStatusEventually(restartedJob, JobStatus.FAILED);
+        assertThat(restartedJob).eventuallyHasStatus(JobStatus.FAILED);
         assertFalse(restartedJob.isUserCancelled());
     }
 }

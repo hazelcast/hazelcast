@@ -36,6 +36,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -84,7 +85,7 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
                 .writeTo(Sinks.logger());
         JobConfig jobConfig = new JobConfig().setStoreMetricsAfterJobCompletion(isStoreMetricsEnabled);
         var job = instance.getJet().newJob(p, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         awaitOnlyOneJobIsRunning(job);
 
         assertExecutionMetrics(job);
@@ -101,16 +102,16 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
                 .writeTo(Sinks.logger());
         JobConfig jobConfig = new JobConfig().setStoreMetricsAfterJobCompletion(isStoreMetricsEnabled);
         var job = instance.getJet().newJob(p, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         awaitOnlyOneJobIsRunning(job);
 
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         assertTrueEventually(() -> assertFalse(job.getMetrics().containsTag(MetricTags.EXECUTION)));
 
         job.resume();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         assertExecutionMetrics(job);
 
@@ -127,11 +128,11 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
         JobConfig jobConfig = new JobConfig().setStoreMetricsAfterJobCompletion(isStoreMetricsEnabled);
         var job = instance.getJet().newJob(p, jobConfig);
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         awaitOnlyOneJobIsRunning(job);
         var completionTime = job.getMetrics().get(EXECUTION_COMPLETION_TIME).stream().findFirst().orElseThrow().value();
         job.restart();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         assertTrueEventually(() -> {
             var metrics = job.getMetrics();
@@ -153,10 +154,10 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
 
         JobConfig jobConfig = new JobConfig().setStoreMetricsAfterJobCompletion(isStoreMetricsEnabled);
         var job = instance.getJet().newJob(p, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         job.cancel();
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
 
         var metrics = job.getMetrics();
         if (isStoreMetricsEnabled) {

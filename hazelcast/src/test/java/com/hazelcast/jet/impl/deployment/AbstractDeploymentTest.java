@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollected;
@@ -101,7 +102,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         JobConfig jobConfig = getJobConfigForClass("com.sample.pojo.person.Person$Appereance");
 
         Job job = getJet().newJob(dag, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         cancelAndJoin(job);
         if (LoadClassesIsolated.assertionErrorInClose != null) {
             throw LoadClassesIsolated.assertionErrorInClose;

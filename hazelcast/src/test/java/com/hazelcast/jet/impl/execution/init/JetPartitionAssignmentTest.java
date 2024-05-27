@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -59,7 +60,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() throws Exception {
-        nodeEngine = getNodeEngineImpl(instance());
+        nodeEngine = Accessors.getNodeEngineImpl(instance());
         members = Util.getMembersView(nodeEngine).getMembers();
         partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         thisAddress = nodeEngine.getThisAddress();

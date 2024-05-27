@@ -28,6 +28,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -98,7 +99,7 @@ public class SqlPrunedMemberLeftTest extends JetTestSupport {
             hz[i] = createHazelcastInstance(regularInstanceConfig());
             addrToInstanceMap.put(hz[i].getCluster().getLocalMember().getAddress(), hz[i]);
         }
-        masterNodeEngine = getNodeEngineImpl(hz[0]);
+        masterNodeEngine = Accessors.getNodeEngineImpl(hz[0]);
 
         prepareMap();
         createMapping(hz[0], MAP_NAME, Pojo.class, Integer.class);

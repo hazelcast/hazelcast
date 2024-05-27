@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -125,7 +126,7 @@ public class KafkaConnectSQSIT extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         LOGGER.info("Creating a job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         try {
             job.join();

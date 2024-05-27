@@ -118,7 +118,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlTestSupport {
         clusterAddresses.remove(coordinatorAddress);
         int j = 0;
         for (int i = 1; i < ITERATIONS && !clusterAddresses.isEmpty(); ++i) {
-            int pIdCandidate = getNodeEngineImpl(instance()).getPartitionService().getPartitionId(i);
+            int pIdCandidate = Accessors.getNodeEngineImpl(instance()).getPartitionService().getPartitionId(i);
             Address address = reversedPartitionAssignment.get(pIdCandidate);
             if (clusterAddresses.contains(address)) {
                 perMemberOwnedPKey[j] = i;

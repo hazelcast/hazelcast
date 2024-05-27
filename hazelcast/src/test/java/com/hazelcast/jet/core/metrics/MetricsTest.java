@@ -54,6 +54,7 @@ import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
@@ -439,7 +440,7 @@ public class MetricsTest extends JetTestSupport {
                 new JobConfig()
                         .setProcessingGuarantee(EXACTLY_ONCE)
                         .setSnapshotIntervalMillis(100));
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         JobMetrics metrics = assertJobHasExecutionMetricsEventually(job);
 
         assertSourceSinkTags(metrics, "src", true, true, false);
@@ -450,7 +451,7 @@ public class MetricsTest extends JetTestSupport {
         waitForFirstSnapshot(new JobRepository(instance), job.getId(), 10, true);
         job.restart();
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         metrics = assertJobHasExecutionMetricsEventually(job);
 
         assertSourceSinkTags(metrics, "src", false, true, false);

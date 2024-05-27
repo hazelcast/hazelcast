@@ -69,6 +69,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
@@ -397,7 +398,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(500);
         Job job = instance().getJet().newJob(dag, config);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 10, true);
@@ -457,7 +458,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
 
         long endTime = System.nanoTime() + SECONDS.toNanos(60);
         do {
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
             sleepMillis(100);
             job.restart(graceful);
             try {

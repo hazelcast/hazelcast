@@ -68,6 +68,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.client.console.HazelcastCommandLine.runCommandLine;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -213,7 +214,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("cancel", job.getName());
 
         // Then
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
     }
 
     @Test
@@ -225,7 +226,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("cancel", job.getIdString());
 
         // Then
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
     }
 
     @Test
@@ -241,7 +242,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         // Given
         Job job = newJob();
         job.cancel();
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
 
         // When
         // Then
@@ -258,7 +259,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("suspend", job.getName());
 
         // Then
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
     }
 
     @Test
@@ -270,7 +271,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("suspend", job.getIdString());
 
         // Then
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
     }
 
     @Test
@@ -286,7 +287,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         // Given
         Job job = newJob();
         job.cancel();
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
 
         // When
         // Then
@@ -298,30 +299,30 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     public void test_resumeJob_byJobName() {
         // Given
         Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
 
         // When
         run("resume", job.getName());
 
         // Then
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
     }
 
     @Test
     public void test_resumeJob_byJobId() {
         // Given
         Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
 
         // When
         run("resume", job.getIdString());
 
         // Then
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
     }
 
     @Test
@@ -336,7 +337,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     public void test_resumeJob_jobNotSuspended() {
         // Given
         Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // When
         // Then
@@ -384,9 +385,9 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     public void test_restartJob_jobNotRunning() {
         // Given
         Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
 
         // When
         // Then
@@ -406,9 +407,9 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     public void test_saveSnapshot_jobNotActive() {
         // Given
         Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         job.cancel();
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
 
         // When
         // Then
@@ -468,7 +469,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("submit", testJobJarFile.toString());
         assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
         Job job = hz.getJet().getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertNull(job.getName());
     }
 
@@ -477,7 +478,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("submit", testJobJarFile.toString());
         assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
         Job job = hz.getJet().getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertFalse("Instance should be shut down", client.getLifecycleService().isRunning());
     }
 
@@ -494,7 +495,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("submit", "--class", "com.hazelcast.jet.testjob.TestJob", testJobJarFile.toString());
         assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()), 5);
         Job job = hz.getJet().getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertNull(job.getName());
     }
 
@@ -520,7 +521,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         run("submit", testJarWithJetBootstrap.toString());
         assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
         Job job = hz.getJet().getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertNull(job.getName());
         IOUtil.deleteQuietly(testJarWithJetBootstrap.toFile());
     }
@@ -608,7 +609,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
         run("submit", "--ignore-version-mismatch", testJobJarFile.toString());
         Job job = hz.getJet().getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
     }
 
     @Test
@@ -660,7 +661,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
         run("submit", testJobJarFile.toString());
         Job job = hz.getJet().getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
     }
 
     @Test
@@ -834,7 +835,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
          .withoutTimestamps()
          .writeTo(Sinks.list(SINK_NAME));
         Job job = hz.getJet().newJob(p, new JobConfig().setName(jobName));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         return job;
     }
 

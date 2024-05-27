@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static java.util.Collections.synchronizedList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -105,9 +106,9 @@ public class JetClassLoaderTest extends JetTestSupport {
 
         Job job = instance.getJet().newJob(dag, jobConfig);
 
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
         job.resume();
         job.join();
 

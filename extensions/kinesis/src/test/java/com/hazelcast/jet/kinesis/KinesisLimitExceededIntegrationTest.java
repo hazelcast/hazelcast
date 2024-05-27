@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -141,12 +142,12 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
 
         for (int i = 0; i < 10; i++) {
             // Make sure job is running before we suspend it
-            assertJobStatusEventually(writeJob, JobStatus.RUNNING);
+            assertThat(writeJob).eventuallyHasStatus(JobStatus.RUNNING);
 
             logger.info("Suspend #" + i);
 
             writeJob.suspend();
-            assertJobSuspendedEventually(writeJob);
+            assertThat(writeJob).eventuallySuspended();
             writeJob.resume();
             Thread.sleep(1000);
         }

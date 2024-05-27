@@ -77,6 +77,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
@@ -141,7 +142,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         Job job = instance().getJet().newJob(p);
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 3);
     }
 
@@ -265,10 +266,10 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         // make sure nothing was consumed from the topic due to initialOffset
         assertTrueEventually(() -> assertEquals(0, instance().getList(sinkListName).size()), 5);
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         job.resume();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         // produce another batch of records
         for (int i = recordsCount; i < 2 * recordsCount; i++) {
@@ -346,7 +347,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.list(sinkListName));
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(processingGuarantee));
-        long oldExecutionId = assertJobRunningEventually(instance(), job, null);
+        long oldExecutionId = assertThat(job).eventuallyJobRunning(instance(), null);
         assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList(sinkListName).size()));
 
         job.restart();
@@ -354,7 +355,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         for (int i = messageCount; i < messageCount * 2; i++) {
             kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
-        assertJobRunningEventually(instance(), job, oldExecutionId);
+        assertThat(job).eventuallyJobRunning(instance(), oldExecutionId);
         assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList(sinkListName).size()));
     }
 
@@ -554,7 +555,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig();
         Job job = instances[0].getJet().newJob(p, config);
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         int messageCount = 1000;
         Future<?>[] futures = new Future[messageCount];
@@ -715,7 +716,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
         // Note that the job might not have consumed all the zeroes from the topic at this point
 
         // When
@@ -761,7 +762,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(p);
         assertTrueEventually(() -> assertEquals(singletonList(entry(0, "0")), sinkList));
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
         kafkaTestSupport.produce(topic1Name, 0, "1").get();
         sinkList.clear();
         job.resume();
@@ -785,7 +786,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(p);
         assertTrueEventually(() -> assertEquals(singletonList(entry(0, "0")), sinkList));
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
         kafkaTestSupport.produceSync(topic1Name, 0, "1");
         sinkList.clear();
         job.resume();

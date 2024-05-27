@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.util.ImdgUtil;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -28,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class})
@@ -48,15 +50,15 @@ public class MemberReconnectionTest extends JetTestSupport {
         dag.edge(between(v1, v2).distributed());
 
         Job job = inst1.getJet().newJob(dag);
-        long executionId = assertJobRunningEventually(inst1, job, null);
+        long executionId = assertThat(job).eventuallyJobRunning(inst1, null);
 
         // Close the connection. Nothing is sent through the SenderTasklet, therefore we won't detect
         // it there. We rely on detecting it in ReceiverTasklet, we assert that it was detected there.
         logger.info("closing the connection...");
-        ImdgUtil.getMemberConnection(getNodeEngineImpl(inst1), getNodeEngineImpl(inst2).getThisAddress())
+        ImdgUtil.getMemberConnection(Accessors.getNodeEngineImpl(inst1), Accessors.getNodeEngineImpl(inst2).getThisAddress())
                 .close("mock close", new Exception("mock close"));
 
         // assert that the job was restarted
-        assertJobRunningEventually(inst1, job, executionId);
+        assertThat(job).eventuallyJobRunning(inst1, executionId);
     }
 }

@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -206,7 +207,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
                 // Let's wait for all unprocessed operations (like destroying distributed object) to complete
-                assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
+                assertEquals(0, Accessors.getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }
     }

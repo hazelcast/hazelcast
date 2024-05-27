@@ -46,6 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -78,7 +79,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
 
         //when
         NoOutputSourceP.executionStarted.await();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         //then
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
@@ -86,7 +87,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
         //then
-        assertJobStatusEventually(job, COMPLETED);
+        assertThat(job).eventuallyHasStatus(COMPLETED);
         assertEmptyJobMetrics(job, false);
     }
 
@@ -99,7 +100,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
 
         //when
         NoOutputSourceP.executionStarted.await();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         //then
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
@@ -107,7 +108,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
         //then
-        assertJobStatusEventually(job, COMPLETED);
+        assertThat(job).eventuallyHasStatus(COMPLETED);
         assertHasExecutionMetrics(job, true);
         assertTrue(hz().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
@@ -158,26 +159,26 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         //when
         NoOutputSourceP.executionStarted.await();
         //then
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
         //when
         job.suspend();
         //then
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
         assertTrueEventually(() -> assertEmptyExecutionMetrics(job, false));
 
         //when
         job.resume();
         //then
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
         //when
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
         //then
-        assertJobStatusEventually(job, COMPLETED);
+        assertThat(job).eventuallyHasStatus(COMPLETED);
         assertEmptyJobMetrics(job, false);
     }
 
@@ -197,26 +198,26 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         //when
         NoOutputSourceP.executionStarted.await();
         //then
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
         //when
         job.suspend();
         //then
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
         assertTrueEventually(() -> assertEmptyExecutionMetrics(job, false));
 
         //when
         job.resume();
         //then
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
         //when
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
         //then
-        assertJobStatusEventually(job, COMPLETED);
+        assertThat(job).eventuallyHasStatus(COMPLETED);
         assertTrueEventually(() -> assertHasExecutionMetrics(job, true));
     }
 
@@ -229,15 +230,15 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
 
         Job job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         NoOutputSourceP.executionStarted.await();
-        long executionId = assertJobRunningEventually(member, job, null);
+        long executionId = assertThat(job).eventuallyJobRunning(member, null);
 
         job.restart();
-        assertJobRunningEventually(member, job, executionId);
+        assertThat(job).eventuallyJobRunning(member, executionId);
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
-        assertJobStatusEventually(job, COMPLETED);
+        assertThat(job).eventuallyHasStatus(COMPLETED);
         assertHasExecutionMetrics(job, true);
     }
 
@@ -253,7 +254,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, config);
 
         //when
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         //then
         assertTrueEventually(() -> assertHasExecutionMetrics(job, false));
 
@@ -262,7 +263,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         assertThrows(CancellationException.class, job::join);
 
         //then
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
         assertTrueEventually(() -> assertEmptyExecutionMetrics(job, true));
     }
 
@@ -279,14 +280,14 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
 
         //when
         NoOutputSourceP.executionStarted.await();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         //then
         assertTrueAllTheTime(() -> assertEmptyJobMetrics(job, false), 2);
 
         //when
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
-        assertJobStatusEventually(job, COMPLETED);
+        assertThat(job).eventuallyHasStatus(COMPLETED);
         //then
         assertEmptyJobMetrics(job, true);
     }

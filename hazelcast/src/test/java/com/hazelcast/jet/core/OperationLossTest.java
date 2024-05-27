@@ -33,6 +33,7 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
@@ -40,11 +41,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.time.Duration;
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
@@ -88,9 +91,9 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
 
         Job job = instance().getJet().newLightJob(dag);
         // we assert that the PMS is initialized, but the PS isn't
-        JobExecutionService jobExecutionService = getNodeEngineImpl(instances()[1])
-                .<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME)
-                .getJobExecutionService();
+        JobExecutionService jobExecutionService = Accessors.getNodeEngineImpl(instances()[1])
+                                                           .<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME)
+                                                           .getJobExecutionService();
         // assert that the execution doesn't start on the 2nd member. For light jobs, jobId == executionId
         assertTrueAllTheTime(() -> assertNull(jobExecutionService.getExecutionContext(job.getId())), 1);
 
@@ -119,10 +122,10 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         dag.edge(between(v1, v2).distributed());
 
         Job job = instance().getJet().newJob(dag);
-        assertJobStatusEventually(job, expectedStatus);
+        assertThat(job).eventuallyHasStatus(expectedStatus);
         // NOT_RUNNING will occur briefly, we might miss to observe it. But restart occurs every
         // second (that's the operation heartbeat timeout) so hopefully we'll eventually succeed.
-        assertJobStatusEventually(job, NOT_RUNNING);
+        assertThat(job).eventuallyHasStatus(NOT_RUNNING);
 
         // now allow the job to complete normally
         PacketFiltersUtil.resetPacketFiltersFrom(instance());
@@ -142,7 +145,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(100));
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         JobRepository jobRepository = new JobRepository(instance());
         assertTrueEventually(() -> {
             JobExecutionRecord record = jobRepository.getJobExecutionRecord(job.getId());
@@ -175,7 +178,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         Job job = useLightJob ? instance().getJet().newLightJob(dag) : instance().getJet().newJob(dag);
         assertTrueEventually(() -> assertEquals(2, NoOutputSourceP.initCount.get()));
 
-        Connection connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(instance()), getAddress(instances()[1]));
+        Connection connection = ImdgUtil.getMemberConnection(Accessors.getNodeEngineImpl(instance()), Accessors.getAddress(instances()[1]));
         // When
         connection.close(null, null);
         System.out.println("connection closed");
@@ -202,7 +205,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         dag.edge(between(v1, v2).distributed());
 
         Job job = instance().getJet().newJob(dag);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         job.cancel();
         // sleep so that the TerminateExecutionOperation is sent out, but lost
         sleepSeconds(1);
@@ -241,7 +244,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         dag.edge(between(v1, v2).distributed());
 
         Job job = instance().getJet().newJob(dag, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
-        assertJobStatusEventually(job, RUNNING, 20);
+        assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(20));
         job.restart();
         // sleep so that the SnapshotOperation is sent out, but lost
         sleepSeconds(1);

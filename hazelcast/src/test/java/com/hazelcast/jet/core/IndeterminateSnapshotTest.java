@@ -38,6 +38,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -449,7 +450,7 @@ public class IndeterminateSnapshotTest {
         private <K> InternalPartition getPartitionForKey(K key) {
             // to determine partition we can use any instance (let's pick the first one)
             HazelcastInstance instance = instances[0];
-            InternalPartitionService partitionService = getNode(instance).getPartitionService();
+            InternalPartitionService partitionService = Accessors.getNode(instance).getPartitionService();
             int partitionId = partitionService.getPartitionId(key);
             return partitionService.getPartition(partitionId);
         }
@@ -488,7 +489,7 @@ public class IndeterminateSnapshotTest {
             int liveInstance = masterKeyPartitionInstanceIdx;
 
             // ensure that job started
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             waitForSnapshot();
             sleepMillis(500);
@@ -563,7 +564,7 @@ public class IndeterminateSnapshotTest {
             int liveInstance = backupKeyPartitionInstanceIdx;
 
             // ensure that job started
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             waitForSnapshot();
             sleepMillis(500);
@@ -666,7 +667,7 @@ public class IndeterminateSnapshotTest {
              * @param blockRatio 0 - block none, 1 - block all, 0.5 - block random 50%
              */
             MapBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
-                super(getNode(instance).getSerializationService());
+                super(Accessors.getNode(instance).getSerializationService());
                 this.sourceAddress = instance.getCluster().getLocalMember().getAddress();
                 this.blockRatio = blockRatio;
             }
@@ -779,7 +780,7 @@ public class IndeterminateSnapshotTest {
                     .start();
 
             Job job = createJob(initialSnapshotsCount + 3);
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             if (initialSnapshotsCount > 0) {
                 waitForSnapshot();
@@ -787,7 +788,7 @@ public class IndeterminateSnapshotTest {
 
             // wait for job restart
             logger.info("Waiting for job restart...");
-            assertJobStatusEventually(job, JobStatus.STARTING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.STARTING);
             assertSnapshotNotCommitted();
 
             // terminate coordinator
@@ -831,7 +832,7 @@ public class IndeterminateSnapshotTest {
 
             Job job = createJob(initialSnapshotsCount + 3);
 
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             if (initialSnapshotsCount > 0) {
                 // wait for initial successful snapshots
@@ -881,7 +882,7 @@ public class IndeterminateSnapshotTest {
 
             Job job = createJob(initialSnapshotsCount + 3);
 
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             if (initialSnapshotsCount > 0) {
                 // wait for initial successful snapshots
@@ -891,7 +892,7 @@ public class IndeterminateSnapshotTest {
             job.suspend();
             // suspend will fail (be indeterminate) and job will be restarted,
             // but after restart it will still be indeterminate
-            assertJobStatusEventually(job, JobStatus.STARTING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.STARTING);
             logger.info("Suspend failed and job restarted");
             assertSnapshotNotCommitted();
 
@@ -899,7 +900,7 @@ public class IndeterminateSnapshotTest {
             coordinatorTerminated.complete(null);
 
             job = instances[1].getJet().getJob(job.getId());
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             logger.info("Joining job...");
             job.join();
@@ -931,7 +932,7 @@ public class IndeterminateSnapshotTest {
                     .start();
 
             Job job = createJob(initialSnapshotsCount + 3);
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             if (initialSnapshotsCount > 0) {
                 snapshotDone.await();

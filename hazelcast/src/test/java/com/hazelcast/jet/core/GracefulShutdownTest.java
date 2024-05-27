@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -37,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -51,6 +53,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -104,7 +107,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Job job = client.getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1)));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         logger.info("sleeping 1 sec");
         sleepSeconds(1);
 
@@ -148,8 +151,8 @@ public class GracefulShutdownTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
         Job job = instances[0].getJet().newJob(dag);
-        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
-        Future future = spawn(() -> liteMember.shutdown());
+        assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(10));
+        var future = spawn(liteMember::shutdown);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
     }
@@ -159,13 +162,13 @@ public class GracefulShutdownTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
         Job job = instances[0].getJet().newJob(dag);
-        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
+        assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(10));
         Future future = spawn(() -> {
             HazelcastInstance nonParticipatingMember = createHazelcastInstance();
             sleepSeconds(1);
             nonParticipatingMember.shutdown();
         });
-        assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
+        assertTrueAllTheTime(() -> assertThat(job).eventuallyHasStatus(RUNNING), 5);
         future.get();
     }
 
@@ -191,9 +194,9 @@ public class GracefulShutdownTest extends JetTestSupport {
                 .setSnapshotIntervalMillis(2000));
 
         // wait for the first snapshot
-        JetServiceBackend jetServiceBackend = getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        JetServiceBackend jetServiceBackend = Accessors.getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
         JobRepository jobRepository = jetServiceBackend.getJobCoordinationService().jobRepository();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
 

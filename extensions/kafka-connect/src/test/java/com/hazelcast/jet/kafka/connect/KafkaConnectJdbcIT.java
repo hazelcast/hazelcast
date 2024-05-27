@@ -66,6 +66,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
@@ -348,7 +349,7 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
             jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
 
             Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
 
             var jobRepository = new JobRepository(hazelcastInstance);
             waitForNextSnapshot(jobRepository, job.getId(), 30, false);
@@ -457,7 +458,7 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         insertItems(connectionUrl, "windowing_test");
 
@@ -467,7 +468,7 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
                 .last().isEqualTo((long) ITEM_COUNT));
 
         job.cancel();
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
     }
 
 }

@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -216,12 +217,12 @@ public class JobRepositoryTest extends JetTestSupport {
             instance.getJet().newJob(dag).join();
         }
 
-        jobRepository.cleanup(getNodeEngineImpl(instance));
+        jobRepository.cleanup(Accessors.getNodeEngineImpl(instance));
         assertTrueEventually(() -> assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size()));
     }
 
     private void cleanup() {
-        jobRepository.cleanup(getNodeEngineImpl(instance));
+        jobRepository.cleanup(Accessors.getNodeEngineImpl(instance));
     }
 
     private long uploadResourcesForNewJob() {
@@ -234,7 +235,7 @@ public class JobRepositoryTest extends JetTestSupport {
     private Data createDagData() {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
-        return getNodeEngineImpl(instance).toData(dag);
+        return Accessors.getNodeEngineImpl(instance).toData(dag);
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {

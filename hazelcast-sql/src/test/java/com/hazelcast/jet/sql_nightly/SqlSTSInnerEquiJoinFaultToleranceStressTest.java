@@ -52,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -220,9 +221,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         jobRestarter.finish();
         jobRestarter.join();
         assertNotNull(job);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         job.cancel();
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
 
         if (processingGuarantee.equals(EXACTLY_ONCE) || restartGraceful) {
             List<Entry<String, Integer>> duplicates = resultSet.entrySet()
@@ -278,7 +279,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 while (!finished) {
                     waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, true);
                     job.restart(restartGraceful);
-                    lastExecutionId = assertJobRunningEventually(coordinator, job, lastExecutionId);
+                    lastExecutionId = assertThat(job).eventuallyJobRunning(coordinator, lastExecutionId);
                 }
             } catch (NullPointerException e) {
                 System.err.println(e);

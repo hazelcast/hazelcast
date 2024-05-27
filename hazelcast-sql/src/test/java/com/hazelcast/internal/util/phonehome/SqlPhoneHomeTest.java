@@ -20,6 +20,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public class SqlPhoneHomeTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        node = getNode(instance());
+        node = Accessors.getNode(instance());
         phoneHome = new PhoneHome(node);
     }
 

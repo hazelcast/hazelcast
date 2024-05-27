@@ -27,7 +27,6 @@ import com.hazelcast.jet.cdc.ParsingException;
 import com.hazelcast.jet.cdc.RecordPart;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.impl.JobRepository;
@@ -53,6 +52,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.String.format;
@@ -97,7 +97,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
-            assertJobStatusEventually(job, JobStatus.FAILED);
+            assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
         }
     }
 
@@ -123,7 +123,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
-            assertJobStatusEventually(job, JobStatus.FAILED);
+            assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
         }
     }
 
@@ -173,7 +173,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline, config);
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //make sure the job stores a Postgres WAL offset so that it won't trigger database snapshots after any restart
@@ -192,12 +192,12 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
         for (int i = 0; i < restarts; i++) {
             ((JobProxy) job).restart(graceful);
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
 
             Thread.sleep(ThreadLocalRandom.current().nextInt(snapshotIntervalMs * 2));
         }
 
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         try {
             List<String> expectedPatterns = new ArrayList<>(Arrays.asList(
@@ -218,7 +218,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertTrueEventually(() -> assertNotEquals(lsnFlushedBeforeRestart, getConfirmedFlushLsn()));
         } finally {
             job.cancel();
-            assertJobStatusEventually(job, JobStatus.FAILED);
+            assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
             dbChangesFuture.get();
         }
     }
@@ -231,7 +231,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         // when
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline, new JobConfig());
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //then update a record
@@ -252,7 +252,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         job.restart();
 
         //when
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
         //then update a record
@@ -276,7 +276,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertTrueEventually(() -> assertNotEquals(lsnFlushedBeforeRestart, getConfirmedFlushLsn()));
         } finally {
             job.cancel();
-            assertJobStatusEventually(job, JobStatus.FAILED);
+            assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
         }
     }
 
@@ -310,7 +310,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Job job = hz.getJet().newJob(pipeline);
 
         //then
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         //when
         String[] batch = new String[length];
@@ -331,7 +331,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             });
         } finally {
             job.cancel();
-            assertJobStatusEventually(job, JobStatus.FAILED);
+            assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
         }
     }
 
@@ -373,7 +373,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         Job job = hz.getJet().newJob(pipeline, jobConfig);
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         //then
         assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
@@ -386,7 +386,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
         //when
         job.restart();
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         executeBatch(
                 "UPDATE customers SET first_name='Anne Marie' WHERE id=1004",
                 "INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')"

@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.core.JetTestSupport.assertJobRunningEventually;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.function.Function.identity;
@@ -90,9 +90,9 @@ public final class SinkStressTestUtil {
         // and then assert some output so that the test isn't constantly restarting without any progress
         Long lastExecutionId = null;
         for (;;) {
-            lastExecutionId = assertJobRunningEventually(instance, job, lastExecutionId);
+            lastExecutionId = assertThat(job).eventuallyJobRunning(instance, lastExecutionId);
             job.restart(graceful);
-            lastExecutionId = assertJobRunningEventually(instance, job, lastExecutionId);
+            lastExecutionId = assertThat(job).eventuallyJobRunning(instance, lastExecutionId);
             sleepMillis(ThreadLocalRandom.current().nextInt(400));
             job.restart(graceful);
             try {

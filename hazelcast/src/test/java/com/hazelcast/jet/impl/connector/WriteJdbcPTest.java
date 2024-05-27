@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -45,6 +44,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -56,6 +56,8 @@ import java.util.stream.IntStream;
 import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
 import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.DockerTestUtil.assumeTestDatabaseProviderIsNotInstanceOf;
@@ -272,7 +274,7 @@ public class WriteJdbcPTest extends JdbcDatabaseProviderTestSupport {
                 ));
 
         Job job = instance().getJet().newJob(p);
-        assertJobStatusEventually(job, JobStatus.RUNNING, 5);
+        assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(5));
     }
 
     @Test(expected = CompletionException.class)

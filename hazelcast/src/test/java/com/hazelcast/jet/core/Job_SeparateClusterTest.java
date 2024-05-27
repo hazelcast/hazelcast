@@ -27,6 +27,7 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -44,6 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static java.util.Arrays.asList;
@@ -83,9 +85,9 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
         // When
         Job job1 = instance1.getJet().newJob(dag, config);
-        assertJobStatusEventually(job1, RUNNING);
+        assertThat(job1).eventuallyHasStatus(RUNNING);
         job1.suspend();
-        assertJobStatusEventually(job1, SUSPENDED);
+        assertThat(job1).eventuallyHasStatus(SUSPENDED);
         // gracefully shutdown the master
         instance1.shutdown();
 
@@ -128,7 +130,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
         int timeoutSecs = 1;
-        Address address = getAddress(instance2);
+        Address address = Accessors.getAddress(instance2);
         ClientConfig config = new ClientConfig()
                 .setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), Integer.toString(timeoutSecs))
                 .setNetworkConfig(new ClientNetworkConfig()
@@ -192,12 +194,14 @@ public class Job_SeparateClusterTest extends JetTestSupport {
             instance1.shutdown();
             instance1 = createHazelcastInstance();
             job.set(submitterSupplier.get().getJet().getJob(job.get().getId()));
-            assertJobStatusEventually(job.get(), RUNNING);
+            Job job2 = job.get();
+            assertThat(job2).eventuallyHasStatus(RUNNING);
 
             instance2.shutdown();
             instance2 = createHazelcastInstance();
             job.set(submitterSupplier.get().getJet().getJob(job.get().getId()));
-            assertJobStatusEventually(job.get(), RUNNING);
+            Job job1 = job.get();
+            assertThat(job1).eventuallyHasStatus(RUNNING);
 
             sleepSeconds(1);
             if (checkerFutures.stream().anyMatch(Future::isDone)) {

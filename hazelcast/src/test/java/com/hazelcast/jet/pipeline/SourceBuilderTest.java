@@ -49,6 +49,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;
@@ -370,7 +371,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // wait until more results are added
         int oldSize = result.size();
@@ -405,7 +406,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // wait until more results are added
         int oldSize = result.size();
@@ -413,7 +414,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
         // restart the job for the second time
         job.restart();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // wait until more results are added
         int sizeAfterSecondRestart = result.size();
@@ -450,7 +451,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // wait until more results are added
         int oldSize = result.size();
@@ -498,7 +499,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         waitForFirstSnapshot(jr, job.getId(), 10, true);
 
         job.restart();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         int currentSize = result.size();
         assertTrueEventually(() -> assertTrue(result.size() > currentSize), 5);
     }

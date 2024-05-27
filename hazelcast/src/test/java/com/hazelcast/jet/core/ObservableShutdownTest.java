@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -95,7 +96,8 @@ public class ObservableShutdownTest extends JetTestSupport {
         long jobId = job.getId();
         members[members.length - 1].shutdown();
         //then
-        assertJobStatusEventually(members[0].getJet().getJob(jobId), JobStatus.RUNNING);
+        Job job1 = members[0].getJet().getJob(jobId);
+        assertThat(job1).eventuallyHasStatus(JobStatus.RUNNING);
         assertObserverStopsReceivingValues(memberObserver);
     }
 

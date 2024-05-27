@@ -50,6 +50,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -636,7 +637,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance());
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance());
         Address localAddress = nodeEngineImpl.getThisAddress();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
         MembersView membersView = clusterService.getMembershipManager().getMembersView();
@@ -680,7 +681,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 singletonList(JetInitDataSerializerHook.START_EXECUTION_OP));
 
         Job job = instance().getJet().newJob(dag);
-        assertJobStatusEventually(job, RUNNING); // RUNNING status is set on master before sending the StartOp
+        // RUNNING status is set on master before sending the StartOp
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
         job.cancel();
         assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
@@ -787,7 +789,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         dag.edge(between(noop, faulty));
 
         Job job = newJob(client(), dag, null);
-        assertJobStatusEventually(job, RUNNING);
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
         NoOutputSourceP.proceedLatch.countDown();
         Throwable excBeforeComplete;
         Throwable excAfterComplete;
@@ -882,7 +884,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         dag.newVertex("v", () -> new MockP().streaming());
 
         Job job = inst1.getJet().newLightJob(dag);
-        assertJobRunningEventually(inst1, job, null);
+        JobAssertions.assertThat(job).eventuallyJobRunning(inst1, null);
         inst2.getLifecycleService().terminate();
 
         try {

@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -35,8 +36,8 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
     public void when_createSharedDataConnection_then_success() {
         String dlName = randomName();
         createSqlKafkaDataConnection(dlName, true);
-        DataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");
@@ -48,8 +49,8 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
         String dlName = randomName();
         createSqlKafkaDataConnection(dlName, false);
 
-        DataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");

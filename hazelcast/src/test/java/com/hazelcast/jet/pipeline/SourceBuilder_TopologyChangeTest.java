@@ -39,6 +39,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
@@ -112,9 +113,9 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .writeTo(Sinks.list(result));
 
         Job job = hz.getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
-        assertJobVisible(hz, job, "test job");
+        assertThat(job).isVisible(hz);
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         JobRepository jr = new JobRepository(hz);
         waitForFirstSnapshot(jr, job.getId(), 10, false);
 

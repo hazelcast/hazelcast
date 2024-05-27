@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -229,7 +230,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
                 .iterator();
 
         assertThat(rowIterator.hasNext()).isTrue();
-        assertJobExecuting(instances[0].getJet().getJobs().get(0), instances[0]);
+        assertThat(instances[0].getJet().getJobs().get(0)).isExecutingOn(instances[0]);
 
         mutator.start();
 

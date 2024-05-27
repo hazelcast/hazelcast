@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
@@ -98,13 +99,13 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
         job.suspend();
 
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
         assertFalse(job.getMetrics().containsTag(MetricTags.EXECUTION));
 
         putIntoMap(map, 1, 1);
         job.resume();
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertEquals(4, sink.size()));
         // Then
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 2, 1));
@@ -134,7 +135,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         // When
         job.restart();
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertEquals(6, sink.size()));
         // Then
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 5, 2));
@@ -151,7 +152,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
         Job job = hz().getJet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 0, 0));
 
         putIntoMap(map, 2, 1);
@@ -162,7 +163,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         // When
         job.restart();
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertEquals(4, sink.size()));
         // Then
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 3, 1));

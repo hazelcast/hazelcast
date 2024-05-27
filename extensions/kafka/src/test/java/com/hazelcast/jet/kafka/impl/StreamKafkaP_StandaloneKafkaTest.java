@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertTrue;
@@ -54,7 +55,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
            .localParallelism(1);
 
         Job job = createHazelcastInstance().getJet().newJob(dag);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         sleepSeconds(1);
         kafkaTestSupport.shutdownKafkaCluster();
         sleepSeconds(3);

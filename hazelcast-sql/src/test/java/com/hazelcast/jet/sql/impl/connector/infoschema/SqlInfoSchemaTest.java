@@ -20,6 +20,7 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -103,7 +104,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         // given
         String type = DUMMY_TYPE;
         // create config-originated data connection
-        getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
+        Accessors.getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
                 new DataConnectionConfig()
                         .setName("c_dc")
                         .setType(type)

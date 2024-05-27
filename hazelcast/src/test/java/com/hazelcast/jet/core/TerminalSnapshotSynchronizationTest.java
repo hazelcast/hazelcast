@@ -30,8 +30,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
+
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
+import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.junit.Assert.assertEquals;
@@ -57,7 +61,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
                 .setProcessingGuarantee(snapshotting ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1));
         Job job = instances[0].getJet().newJob(dag, config);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         return job;
     }
 
@@ -76,10 +80,11 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
         job.restart();
 
         // Then
-        assertJobStatusEventually(job, JobStatus.COMPLETING, 5);
-        assertTrueAllTheTime(() -> assertEquals(JobStatus.COMPLETING, job.getStatus()), 5);
+        var timeout = Duration.ofSeconds(5);
+        assertThat(job).eventuallyHasStatus(COMPLETING, timeout);
+        assertTrueAllTheTime(() -> assertEquals(COMPLETING, job.getStatus()), 5);
         SnapshotPhase1Operation.postponeResponses = false;
-        assertJobStatusEventually(job, RUNNING, 5);
+        assertThat(job).eventuallyHasStatus(RUNNING, timeout);
     }
 
     @Test
@@ -93,6 +98,6 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() -> assertEquals(4, NoOutputSourceP.initCount.get()), 5);
-        assertJobStatusEventually(job, RUNNING, 5);
+        assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(5));
     }
 }

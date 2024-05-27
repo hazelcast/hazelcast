@@ -28,9 +28,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
 
@@ -120,13 +122,13 @@ public class ScaleUpTest extends JetTestSupport {
             jobs.add(instances[0].getJet().newJob(dag, jobConfig));
         }
         for (Job job : jobs) {
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
         }
         logger.info(jobs.size() + " jobs are running, adding a member");
         createHazelcastInstance(config);
         sleepSeconds(2);
         for (Job job : jobs) {
-            assertJobStatusEventually(job, RUNNING, 30);
+            assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(30));
         }
     }
 }

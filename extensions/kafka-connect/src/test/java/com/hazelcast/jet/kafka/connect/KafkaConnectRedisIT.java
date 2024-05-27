@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
@@ -104,7 +105,7 @@ public class KafkaConnectRedisIT extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(false);
         LOGGER.info("Creating a job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         try {
             job.join();
