@@ -18,20 +18,16 @@ package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.test.archunit.ArchUnitRules;
 import com.hazelcast.test.archunit.ArchUnitTestSupport;
+import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.Test;
-
-import static com.hazelcast.test.archunit.ModuleImportOptions.onlyCurrentModuleTests;
 
 public class NoMixedJUnitAnnotationsInOurTestSourcesTest extends ArchUnitTestSupport {
 
     @Test
     public void noJUnitMixing() {
         String basePackage = "com.hazelcast";
-        JavaClasses classes = new ClassFileImporter()
-                .withImportOption(onlyCurrentModuleTests())
-                .importPackages(basePackage);
+        JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
 
         ArchUnitRules.NO_JUNIT_MIXING.check(classes);
     }

@@ -16,26 +16,19 @@
 
 package com.hazelcast.jet.cdc.mysql;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.archunit.ArchUnitRules;
 import com.hazelcast.test.archunit.ArchUnitTestSupport;
 import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(ParallelJVMTest.class)
-public class CdcMysqlSerializableTest extends ArchUnitTestSupport {
+public class TestsHaveRunnersTest extends ArchUnitTestSupport {
 
     @Test
-    public void serializable_classes_should_have_valid_serialVersionUID() {
-        String basePackage = MySqlCdcSources.class.getPackage().getName();
-        JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
+    public void testHaveRunners() {
+        String basePackage = "com.hazelcast";
+        JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
 
-        ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);
+        ArchUnitRules.TESTS_HAVE_RUNNNERS.check(classes);
     }
-
 }

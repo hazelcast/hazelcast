@@ -31,7 +31,7 @@ import java.util.Enumeration;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class AbstractJoinTest extends HazelcastTestSupport {
+public abstract class AbstractJoinTest extends HazelcastTestSupport {
 
     protected void testJoin(Config config) {
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");

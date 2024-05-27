@@ -18,6 +18,7 @@ package com.hazelcast.test.archunit;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import org.junit.Before;
 import org.junit.Test;
 
 import static com.tngtech.archunit.core.importer.ImportOption.Predefined.ONLY_INCLUDE_TESTS;
@@ -25,48 +26,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ArchUnitRulesTest extends ArchUnitTestSupport {
+    private JavaClasses brokenClasses;
+    private JavaClasses validClasses;
+
+    @Before
+    public void setUp() {
+        brokenClasses = new ClassFileImporter().withImportOption(ONLY_INCLUDE_TESTS)
+                .importPackages("com.example.broken");
+        assertThat(brokenClasses).isNotEmpty();
+
+        validClasses = new ClassFileImporter().withImportOption(ONLY_INCLUDE_TESTS)
+                .importPackages("com.example.valid");
+        assertThat(validClasses).isNotEmpty();
+    }
 
     @Test
     public void should_fail_with_non_compliant_class() {
-        JavaClasses classes = new ClassFileImporter()
-                .withImportOption(ONLY_INCLUDE_TESTS)
-                .importPackages("com.example.broken");
-        assertThat(classes).isNotEmpty();
-
-        assertThatThrownBy(() -> ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes))
+        assertThatThrownBy(() -> ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(brokenClasses))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("was violated (1 times)");
     }
 
     @Test
     public void should_NOT_fail_with_non_compliant_class() {
-        JavaClasses classes = new ClassFileImporter()
-                .withImportOption(ONLY_INCLUDE_TESTS)
-                .importPackages("com.example.valid");
-        assertThat(classes).isNotEmpty();
-
-        ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);
+        ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(validClasses);
     }
 
     @Test
     public void should_fail_with_mixed_annotation_test_class() {
-        JavaClasses classes = new ClassFileImporter()
-                .withImportOption(ONLY_INCLUDE_TESTS)
-                .importPackages("com.example.broken");
-        assertThat(classes).isNotEmpty();
-
-        assertThatThrownBy(() -> ArchUnitRules.NO_JUNIT_MIXING.check(classes))
-                .isInstanceOf(AssertionError.class)
+        assertThatThrownBy(() -> ArchUnitRules.NO_JUNIT_MIXING.check(brokenClasses)).isInstanceOf(AssertionError.class)
                 .hasMessageContaining("was violated (1 times)");
     }
 
     @Test
     public void should_not_fail_with_normal_test_class() {
-        JavaClasses classes = new ClassFileImporter()
-                .withImportOption(ONLY_INCLUDE_TESTS)
-                .importPackages("com.example.valid");
-        assertThat(classes).isNotEmpty();
-
-        ArchUnitRules.NO_JUNIT_MIXING.check(classes);
+        ArchUnitRules.NO_JUNIT_MIXING.check(validClasses);
     }
 }

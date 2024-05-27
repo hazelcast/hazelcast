@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AbstractSplitBrainProtectionFunctionTest
+public abstract class AbstractSplitBrainProtectionFunctionTest
         extends HazelcastTestSupport {
     SplitBrainProtectionFunction splitBrainProtectionFunction;
     Member[] members;

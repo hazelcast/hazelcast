@@ -20,7 +20,7 @@ package com.example.valid;
 import org.junit.Test;
 
 public class ExampleJunit4Test {
-
+    @SuppressWarnings("squid:S2699")
     @Test
     public void test1() {
     }

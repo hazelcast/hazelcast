@@ -19,7 +19,7 @@ package com.example.valid;
 import org.junit.jupiter.api.Test;
 
 class ExampleJunit5Test {
-
+    @SuppressWarnings("squid:S2699")
     @Test
     void test1() {
     }

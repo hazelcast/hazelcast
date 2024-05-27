@@ -20,13 +20,11 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.archunit.ArchUnitRules;
 import com.hazelcast.test.archunit.ArchUnitTestSupport;
+import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static com.hazelcast.test.archunit.ModuleImportOptions.onlyCurrentModule;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(ParallelJVMTest.class)
@@ -35,9 +33,7 @@ public class PythonSerializableTest extends ArchUnitTestSupport {
     @Test
     public void serializable_classes_should_have_valid_serialVersionUID() {
         String basePackage = PythonServiceConfig.class.getPackage().getName();
-        JavaClasses classes = new ClassFileImporter()
-                .withImportOption(onlyCurrentModule())
-                .importPackages(basePackage);
+        JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
         ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);
     }
