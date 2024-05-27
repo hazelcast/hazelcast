@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
@@ -90,6 +91,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.statsEnabled = true;
         client.name = "aClient";
         client.clusterConnectionTimestamp = connectionTimestamp;
+        client.routingMode = RoutingMode.SMART;
         client.labels = new HashSet<>(Collections.singletonList("label"));
         client.ipAddress = "10.176.167.34";
         client.canonicalHostName = "ip-10-176-167-34.ec2.internal";
@@ -165,6 +167,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertTrue(client.enterprise);
         assertTrue(client.statsEnabled);
         assertEquals("aClient", client.name);
+        assertEquals(RoutingMode.SMART, client.routingMode);
         assertEquals(connectionTimestamp, client.clusterConnectionTimestamp);
         assertContains(client.labels, "label");
         assertEquals("10.176.167.34", client.ipAddress);

@@ -45,6 +45,6 @@ public enum RoutingMode {
     }
 
     public static RoutingMode getById(int id) {
-        return VALUES[id];
+        return (id >= 0 && id < VALUES.length) ? VALUES[id] : null;
     }
 }
