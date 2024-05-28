@@ -83,7 +83,8 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     public void when_serializerIsNotRegistered_then_mapThrowsException() {
         Map<Integer, Object> map = instance().getMap(SOURCE_MAP_NAME);
 
-        assertThatThrownBy(() -> map.put(1, new Object())).isInstanceOf(HazelcastSerializationException.class);
+        Object object = new Object();
+        assertThatThrownBy(() -> map.put(1, object)).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
@@ -118,7 +119,8 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     public void when_serializerIsNotRegistered_then_cacheThrowsException() {
         Cache<Integer, Object> cache = instance().getCacheManager().getCache(SOURCE_CACHE_NAME);
 
-        assertThatThrownBy(() -> cache.put(1, new Object())).isInstanceOf(HazelcastSerializationException.class);
+        Object object = new Object();
+        assertThatThrownBy(() -> cache.put(1, object)).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
@@ -152,9 +154,10 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_serializerIsNotRegistered_then_listThrowsException() {
-        List list = instance().getList(SOURCE_MAP_NAME);
+        List<Object> list = instance().getList(SOURCE_MAP_NAME);
 
-        assertThatThrownBy(() -> list.add(new Object())).isInstanceOf(HazelcastSerializationException.class);
+        Object object = new Object();
+        assertThatThrownBy(() -> list.add(object)).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
