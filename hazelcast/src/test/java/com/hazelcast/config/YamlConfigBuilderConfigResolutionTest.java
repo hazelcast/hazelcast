@@ -44,7 +44,7 @@ public class YamlConfigBuilderConfigResolutionTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
+    private final DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
     @Before
     @After

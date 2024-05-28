@@ -55,7 +55,7 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
     private static final int TEST_TIMEOUT_IN_MILLIS = 30_000;
 
     @Test(timeout = TEST_TIMEOUT_IN_MILLIS)
-    public void testLeakWhenCreatingConnectionManager() throws Exception {
+    public void testLeakWhenCreatingConnectionManager() {
         testFailingHazelcastCreation(new DefaultNodeContext() {
             @Override
             public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
@@ -69,7 +69,7 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = TEST_TIMEOUT_IN_MILLIS)
-    public void testFailingInNodeEngineImplConstructor() throws Exception {
+    public void testFailingInNodeEngineImplConstructor() {
         testFailingHazelcastCreation(new DefaultNodeContext() {
             @Override
             public NodeExtension createNodeExtension(Node node) {
