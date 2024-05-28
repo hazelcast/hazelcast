@@ -16,47 +16,69 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.UnsupportedClusterVersionException;
+import com.hazelcast.client.UnsupportedRoutingModeException;
+import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.client.impl.clientside.SubsetMembersView;
 import com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkMinimumClusterVersionForSubsetRouting;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkRequiredFieldsForSubsetRoutingExist;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.createKeyValuePairs;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.parseJson;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class KeyValuePairGeneratorTest {
+@Category(QuickTest.class)
+public class AuthenticationKeyValuePairConstantsTest {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
+
+    private static Stream<Version> unsupportedClusterVersions() {
+        return Stream.of(
+                Versions.V4_0,
+                Versions.V4_1,
+                Versions.V4_2,
+                Versions.V5_0,
+                Versions.V5_1,
+                Versions.V5_2,
+                Versions.V5_3,
+                Versions.V5_4
+        );
+    }
 
     @Test
     public void createKeyValuePairs_generated_correct_json_state() {
@@ -96,6 +118,61 @@ public class KeyValuePairGeneratorTest {
         assertEquals(memberInfoList.size(), size);
         assertEquals(membersView.getVersion(), subsetMembersView.version());
         assertEquals(members, createdMemberUuids);
+    }
+
+    @Test
+    public void testRequiredFieldsForSubsetRoutingExist_subsetRoutingDisabled() {
+        Map<String, String> map = new HashMap<>();
+        map.put("enabled", "false");
+        map.put("routingStrategy", "PARTITION_GROUPS");
+        assertFalse(checkRequiredFieldsForSubsetRoutingExist(new SubsetRoutingConfig(), map));
+    }
+
+    @Test
+    public void testRequiredFieldsForSubsetRoutingExist_missingMemberGroups() {
+        Map<String, String> map = new HashMap<>();
+        SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig();
+        subsetRoutingConfig.setEnabled(true);
+        assertThrows(UnsupportedRoutingModeException.class,
+                () -> checkRequiredFieldsForSubsetRoutingExist(subsetRoutingConfig, map));
+    }
+
+    @Test
+    public void testRequiredFieldsForSubsetRoutingExist_returnsTrue() {
+        Map<String, String> map = new HashMap<>();
+        map.put("memberGroups", "[]");
+        map.put("enabled", "true");
+        map.put("routingStrategy", "PARTITION_GROUPS");
+        SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig();
+        subsetRoutingConfig.setEnabled(true);
+        assertTrue(checkRequiredFieldsForSubsetRoutingExist(subsetRoutingConfig, map));
+    }
+
+    @ParameterizedTest
+    @MethodSource("unsupportedClusterVersions")
+    void checkClusterVersionThrowsClusterVersionLessThan5_5(Version version) {
+        Map<String, String> map = new HashMap<>();
+        map.put("clusterVersion", version.toString());
+        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForSubsetRouting(map));
+    }
+
+    @Test
+    public void checkClusterVersionThrowsWhenNoClusterVersionPresent() {
+        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForSubsetRouting(emptyMap()));
+    }
+
+    @Test
+    public void checkClusterVersion5_5_supported() {
+        Map<String, String> map = new HashMap<>();
+        map.put("clusterVersion", "5.5");
+        checkMinimumClusterVersionForSubsetRouting(map);
+    }
+
+    @Test
+    public void checkThrowsOnUnknownClusterVersion() {
+        Map<String, String> map = new HashMap<>();
+        map.put("clusterVersion", Version.UNKNOWN.toString());
+        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForSubsetRouting(map));
     }
 
     @Nonnull

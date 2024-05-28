@@ -16,8 +16,21 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.UnsupportedRoutingModeException;
+import com.hazelcast.client.UnsupportedClusterVersionException;
+
 /**
  * Config for routing client connections to subset of cluster members.
+ *
+ * This feature requires the cluster members to be Enterprise nodes. If the cluster is not
+ * licensed appropriately, the client will not be able to connect to the cluster,
+ * failing with an {@link UnsupportedRoutingModeException}
+ *
+ * The minimum cluster version required for this feature is 5.5. If the cluster version is
+ * less than 5.5, the client will not be able to connect to the cluster, failing with an
+ * {@link UnsupportedClusterVersionException}
+ *
+ * @since 5.5
  */
 public class SubsetRoutingConfig {
 

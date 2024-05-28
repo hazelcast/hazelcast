@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkMinimumClusterVersionForSubsetRouting;
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkRequiredFieldsForSubsetRoutingExist;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.parseJson;
 
@@ -72,6 +73,7 @@ public class SubsetMembersImpl implements SubsetMembers {
             logAsFinest("SubsetRouting is not in use");
             return;
         }
+        checkMinimumClusterVersionForSubsetRouting(keyValuePairs);
 
         String memberGroupsJson = keyValuePairs.get(SUBSET_MEMBER_GROUPS_INFO);
         KeyValuePairGenerator.MemberGroupsAndVersionHolder memberGroupsAndVersionHolder = parseJson(memberGroupsJson);

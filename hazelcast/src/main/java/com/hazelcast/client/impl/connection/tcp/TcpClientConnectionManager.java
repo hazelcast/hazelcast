@@ -21,6 +21,7 @@ import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.UnsupportedClusterVersionException;
 import com.hazelcast.client.UnsupportedRoutingModeException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
@@ -112,6 +113,7 @@ import java.util.function.Function;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.ROUTING_MODE_NOT_SUPPORTED_MESSAGE;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
@@ -521,7 +523,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
-        } catch (InvalidConfigurationException | UnsupportedRoutingModeException e) {
+        } catch (InvalidConfigurationException | UnsupportedRoutingModeException
+                 | UnsupportedClusterVersionException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
@@ -586,6 +589,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.warning("Stopped trying on the cluster: " + context.getClusterName()
                     + " reason: " + e.getMessage());
             throw new InvalidConfigurationException(e.getMessage());
+        } catch (UnsupportedClusterVersionException e) {
+            connectionProcessListenerRunner.onClusterConnectionFailed(context.getClusterName());
+            logger.warning("Stopped trying on the cluster: " + context.getClusterName()
+                    + " reason: " + e.getMessage());
+            throw new ClientNotAllowedInClusterException(e.getMessage());
         }
 
         connectionProcessListenerRunner.onClusterConnectionFailed(context.getClusterName());
@@ -1170,6 +1178,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             Map<String, String> keyValuePairs = Collections.unmodifiableMap(response.getKeyValuePairs());
             client.getClientClusterService()
                     .updateOnAuth(connection.getClusterUuid(), connection.getRemoteUuid(), keyValuePairs);
+        } else {
+            // If there are no key-value pairs, we have connected to a member that is older than 5_5
+            // this is unsupported for clients operating with subset routing mode.
+            if (routingMode.equals(RoutingMode.SUBSET)) {
+                throw new UnsupportedClusterVersionException(ROUTING_MODE_NOT_SUPPORTED_MESSAGE);
+            }
         }
     }
 
