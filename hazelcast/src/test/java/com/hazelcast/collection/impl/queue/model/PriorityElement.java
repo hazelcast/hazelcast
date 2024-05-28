@@ -16,10 +16,12 @@
 
 package com.hazelcast.collection.impl.queue.model;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
 public class PriorityElement implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private boolean highPriority;
     private int version;

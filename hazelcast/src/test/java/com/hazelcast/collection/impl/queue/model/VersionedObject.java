@@ -19,10 +19,12 @@ package com.hazelcast.collection.impl.queue.model;
 import com.hazelcast.internal.util.Preconditions;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
 public class VersionedObject<T> implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private T object;
     private int version;
