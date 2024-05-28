@@ -41,7 +41,7 @@ public class Object2LongHashMapTest {
 
     public static final long MISSING_VALUE = -1L;
 
-    private Object2LongHashMap<String> map = new Object2LongHashMap<>(MISSING_VALUE);
+    private final Object2LongHashMap<String> map = new Object2LongHashMap<>(MISSING_VALUE);
 
     @Test
     public void shouldInitiallyBeEmpty() {

@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
@@ -103,12 +102,7 @@ public class BiInt2ObjectMapTest {
 
         final Set<String> actualSet = new HashSet<>();
 
-        map.forEach(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
-                actualSet.add(s);
-            }
-        });
+        map.forEach(actualSet::add);
 
         assertThat(actualSet).isEqualTo(expectedSet);
     }
