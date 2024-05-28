@@ -20,13 +20,17 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.clientside.SubsetMembers;
 import com.hazelcast.client.impl.clientside.SubsetMembersView;
+import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -51,6 +55,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static org.junit.Assert.assertEquals;
@@ -365,6 +370,115 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
                     .getClientClusterService();
             Collection<UUID> subset = getSubset(clientClusterService.getSubsetMembers());
             assertTrue(subset.isEmpty());
+        });
+    }
+
+    @Test
+    public void testDataMemberIsInSubset_givenFirstConnectionIsLiteMember() {
+        Config dataMemberConfig = newConfigWithAttribute("A");
+        Config liteMemberConfig = newConfigWithAttribute("A").setLiteMember(true);
+
+        HazelcastInstance liteMember1 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+        HazelcastInstance liteMember2 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+        HazelcastInstance liteMember3 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+        HazelcastInstance dataMember = hazelcastFactory.newHazelcastInstance(dataMemberConfig);
+
+        assertClusterSizeEventually(4);
+        assertAllInSafeState(List.of(liteMember1, liteMember2, liteMember3, dataMember));
+
+        ClientConfig clientConfig = new ClientConfig();
+        // set lite member addresses to client config first
+        Address address1 = liteMember1.getCluster().getLocalMember().getAddress();
+        Address address2 = liteMember2.getCluster().getLocalMember().getAddress();
+        Address address3 = liteMember3.getCluster().getLocalMember().getAddress();
+        Address address4 = dataMember.getCluster().getLocalMember().getAddress();
+
+        clientConfig.getNetworkConfig()
+                .addAddress(address1.getHost() + ":" + address1.getPort())
+                .addAddress(address2.getHost() + ":" + address2.getPort())
+                .addAddress(address3.getHost() + ":" + address3.getPort())
+                .addAddress(address4.getHost() + ":" + address4.getPort());
+
+        // enable subset routing
+        clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+        assertTrueEventually(() -> {
+            Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+            assertEquals(1, activeConnections.size());
+            // assert that the members are from the same group
+            assertEquals(activeConnections.stream().findFirst().get().getRemoteUuid(),
+                    dataMember.getCluster().getLocalMember().getUuid());
+        });
+    }
+
+    @Test
+    public void testSubsetRoutingGivenOnlyLiteMembers() {
+        Config liteMemberConfig = newConfigWithAttribute("A").setLiteMember(true);
+
+        HazelcastInstance liteMember1 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+        HazelcastInstance liteMember2 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+
+        assertClusterSizeEventually(2);
+        assertAllInSafeState(List.of(liteMember1, liteMember2));
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+        assertTrueEventually(() -> {
+            assertTrue(client.getLifecycleService().isRunning());
+            Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+            assertEquals(1, activeConnections.size());
+        });
+    }
+
+    @Test
+    public void testSubsetsConnected_givenFirstConnectedToOnlyLiteMemberCluster() {
+        Config liteMemberConfig = newConfigWithAttribute("A").setLiteMember(true);
+        HazelcastInstance liteMember1 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+        HazelcastInstance liteMember2 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+
+        assertClusterSizeEventually(2);
+        assertAllInSafeState(List.of(liteMember1, liteMember2));
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+        assertTrueEventually(() -> {
+            Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+            assertEquals(1, activeConnections.size());
+        });
+
+        // create two groups of data members
+        HazelcastInstance dataMember1GroupA = hazelcastFactory.newHazelcastInstance(newConfigWithAttribute("A"));
+        HazelcastInstance dataMember2GroupA = hazelcastFactory.newHazelcastInstance(newConfigWithAttribute("A"));
+        List<UUID> groupA = Stream.of(dataMember1GroupA, dataMember2GroupA)
+                .map(instance -> instance.getCluster().getLocalMember().getUuid())
+                .toList();
+
+        HazelcastInstance dataMember1GroupB = hazelcastFactory.newHazelcastInstance(newConfigWithAttribute("B"));
+        HazelcastInstance dataMember2GroupB = hazelcastFactory.newHazelcastInstance(newConfigWithAttribute("B"));
+        List<UUID> groupB = Stream.of(dataMember1GroupB, dataMember2GroupB)
+                .map(instance -> instance.getCluster().getLocalMember().getUuid())
+                .toList();
+
+        assertClusterSizeEventually(6);
+
+        assertTrueEventually(() -> {
+            Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+            assertEquals(2, activeConnections.size());
+            // assert that the members are from the same group
+            List<UUID> connectedMembers = activeConnections.stream()
+                    .map(Connection::getRemoteUuid)
+                    .toList();
+            assertTrue("Active connections contains mixed member groups, expected one group only",
+                    connectedMembers.containsAll(groupA) || connectedMembers.containsAll(groupB));
         });
     }
 
