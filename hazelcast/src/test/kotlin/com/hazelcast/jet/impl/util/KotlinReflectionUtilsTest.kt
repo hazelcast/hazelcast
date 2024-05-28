@@ -32,7 +32,10 @@ class KotlinReflectionUtilsTest {
         private fun method() {
             object : Any() {}
 
-            val lambda = { }
+            // JvmSerializableLambdaJvmSerializableLambda to force anonymous class creation
+            // Ensures Kotlin 2.0 mimics 1.x behaviour
+            // https://kotlinlang.org/docs/whatsnew20.html#generation-of-lambda-functions-using-invokedynamic
+            val lambda = @JvmSerializableLambda { }
         }
 
         class NestedClass

@@ -116,7 +116,7 @@
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <kafka.version>3.6.1</kafka.version>
-        <kotlin.version>1.9.24</kotlin.version>
+        <kotlin.version>2.0.0</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.6.1.jre11</mssql.version>
         <netty.version>4.1.110.Final</netty.version>
