@@ -16,13 +16,14 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
@@ -35,10 +36,10 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
  */
 public class BoundedRangePredicate extends AbstractIndexAwarePredicate implements RangePredicate {
 
-    private final Comparable from;
-    private final boolean fromInclusive;
-    private final Comparable to;
-    private final boolean toInclusive;
+    private Comparable from;
+    private boolean fromInclusive;
+    private Comparable to;
+    private boolean toInclusive;
 
     /**
      * Creates a new instance of bounded range predicate.
@@ -62,6 +63,9 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
         this.fromInclusive = fromInclusive;
         this.to = to;
         this.toInclusive = toInclusive;
+    }
+
+    public BoundedRangePredicate() {
     }
 
     @Override
@@ -93,7 +97,7 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
 
     @Override
     public int getClassId() {
-        throw new UnsupportedOperationException("can't be serialized");
+        return PredicateDataSerializerHook.BOUNDED_RANGE_PREDICATE;
     }
 
     @Override
@@ -122,12 +126,25 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(from);
+        out.writeBoolean(fromInclusive);
+        out.writeObject(to);
+        out.writeBoolean(toInclusive);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        from = in.readObject();
+        fromInclusive = in.readBoolean();
+        to = in.readObject();
+        toInclusive = in.readBoolean();
+    }
+
+    @Override
     public String toString() {
         return from + (fromInclusive ? " >= " : " > ") + attributeName + (toInclusive ? " <= " : " < ") + to;
     }
-
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        throw new UnsupportedOperationException("can't be serialized");
-    }
-
 }
