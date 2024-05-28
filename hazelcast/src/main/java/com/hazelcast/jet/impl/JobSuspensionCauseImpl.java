@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 
 public class JobSuspensionCauseImpl implements JobSuspensionCause, IdentifiedDataSerializable {
 
@@ -60,11 +61,7 @@ public class JobSuspensionCauseImpl implements JobSuspensionCause, IdentifiedDat
     @Nonnull
     @Override
     public String description() {
-        if (error == null) {
-            return "Requested by user";
-        } else {
-            return error;
-        }
+        return Objects.requireNonNullElse(error, "Requested by user");
     }
 
     @Override
