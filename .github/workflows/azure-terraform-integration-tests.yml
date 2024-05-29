@@ -45,16 +45,13 @@ jobs:
           ref: ${{steps.decide-ref.outputs.ref}}
 
       - name: Read Java Config
-        uses: pietrobolcato/action-read-yaml@9f13718d61111b69f30ab4ac683e67a56d254e1d
-        id: java-config
-        with:
-          config: ${{ github.workspace }}/.github/java-config.yml
+        run: cat ${{ github.workspace }}/.github/java-config.env >> $GITHUB_ENV
 
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ steps.java-config.outputs['java-version'] }}
-          distribution: ${{ steps.java-config.outputs['distribution'] }}
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
           architecture: x64
           cache: "maven"
 
