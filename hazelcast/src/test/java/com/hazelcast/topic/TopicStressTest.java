@@ -126,7 +126,7 @@ public class TopicStressTest extends HazelcastTestSupport {
             }
         }
 
-        // since each message is send to multiple nodes, we need to multiply it
+        // since each message is sent to multiple nodes, we need to multiply it
         return result * NODE_COUNT;
     }
 
@@ -219,7 +219,7 @@ public class TopicStressTest extends HazelcastTestSupport {
         return listeners;
     }
 
-    private class MessageListenerImpl implements MessageListener<Integer> {
+    private static class MessageListenerImpl implements MessageListener<Integer> {
         private final AtomicLong counter = new AtomicLong();
 
         @Override

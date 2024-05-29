@@ -114,7 +114,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     protected static final String NON_DEFAULT_MERGE_POLICY = "AnotherMergePolicy";
     protected static final int NON_DEFAULT_MERGE_BATCH_SIZE = 31415;
 
-    private String name = randomString();
+    private final String name = randomString();
     private HazelcastInstance[] members;
     // add***Config is invoked on driver instance
     private HazelcastInstance driver;
@@ -1120,10 +1120,10 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SampleMessageListener implements MessageListener, Serializable {
+    private static class SampleMessageListener implements MessageListener<Object>, Serializable {
 
         @Override
-        public void onMessage(Message message) {
+        public void onMessage(Message<Object> message) {
         }
 
         @Override
@@ -1132,7 +1132,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SampleExecutor implements Executor, Serializable {
+    private static class SampleExecutor implements Executor, Serializable {
 
         @Override
         public void execute(Runnable command) {

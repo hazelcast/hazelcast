@@ -129,12 +129,12 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
         }
     }
 
-    public class StressMessageListener implements MessageListener<Long> {
+    private class StressMessageListener implements MessageListener<Long> {
         private final int id;
         private long received = 0;
         private long failures = 0;
 
-        public StressMessageListener(int id) {
+        StressMessageListener(int id) {
             this.id = id;
         }
 

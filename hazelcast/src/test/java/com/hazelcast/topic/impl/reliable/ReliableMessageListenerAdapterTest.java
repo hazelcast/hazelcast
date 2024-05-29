@@ -55,7 +55,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         MessageListenerMock listener = new MessageListenerMock();
         UUID id = topic.addMessageListener(listener);
 
-        MessageRunner runner = topic.runnersMap.get(id);
+        MessageRunner<String> runner = topic.runnersMap.get(id);
         assertNotNull(runner);
         ReliableMessageListenerAdapter adapter = assertInstanceOf(ReliableMessageListenerAdapter.class, runner.listener);
         assertSame(listener, adapter.messageListener);
@@ -73,7 +73,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertEquals(singletonList("item"), listener.messages));
     }
 
-    class MessageListenerMock implements MessageListener<String> {
+    private static class MessageListenerMock implements MessageListener<String> {
 
         private final List<String> messages = new CopyOnWriteArrayList<>();
 

@@ -44,7 +44,7 @@ public class TopicAddMessageListenerMessageTask
         implements MessageListener {
 
     private Data partitionKey;
-    private Random rand = new Random();
+    private final Random rand = new Random();
 
     public TopicAddMessageListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -109,12 +109,11 @@ public class TopicAddMessageListenerMessageTask
             return;
         }
 
-        if (!(message instanceof DataAwareMessage)) {
+        if (!(message instanceof DataAwareMessage dataAwareMessage)) {
             throw new IllegalArgumentException("Expecting: DataAwareMessage, Found: "
                     + message.getClass().getSimpleName());
         }
 
-        DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
         Data messageData = dataAwareMessage.getMessageData();
         UUID publisherUuid = message.getPublishingMember().getUuid();
         ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,

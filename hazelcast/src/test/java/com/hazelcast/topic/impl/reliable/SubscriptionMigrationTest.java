@@ -92,9 +92,9 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
         });
     }
 
-    public class PayloadMessageListener<V> implements MessageListener<V> {
+    private static class PayloadMessageListener<V> implements MessageListener<V> {
 
-        private Collection<V> receivedMessages = new HashSet<>();
+        private final Collection<V> receivedMessages = new HashSet<>();
 
         @Override
         public void onMessage(Message<V> message) {
@@ -106,7 +106,7 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    public class CountingMigrationListener implements MigrationListener {
+    private static class CountingMigrationListener implements MigrationListener {
 
         AtomicInteger partitionMigrationCount = new AtomicInteger();
 
