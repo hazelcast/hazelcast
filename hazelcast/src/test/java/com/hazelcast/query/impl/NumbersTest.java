@@ -179,32 +179,32 @@ public class NumbersTest {
         assertFalse(equal(rhs, lhs));
     }
 
-    private static void assertCompare(Comparable lhs, Comparable rhs, int expected) {
+    private static void assertCompare(Comparable<?> lhs, Comparable<?> rhs, int expected) {
         if (expected == 0) {
             assertEquals(0, compare(lhs, rhs));
             assertEquals(0, compare(rhs, lhs));
         } else if (expected < 0) {
-            assertThat(compare(lhs, rhs)).isLessThan(0);
-            assertThat(compare(rhs, lhs)).isGreaterThan(0);
+            assertThat(compare(lhs, rhs)).isNegative();
+            assertThat(compare(rhs, lhs)).isPositive();
         } else {
-            assertThat(compare(lhs, rhs)).isGreaterThan(0);
-            assertThat(compare(rhs, lhs)).isLessThan(0);
+            assertThat(compare(lhs, rhs)).isPositive();
+            assertThat(compare(rhs, lhs)).isNegative();
         }
     }
 
-    private static void assertEqualCanonicalization(Comparable... values) {
-        Comparable expected = canonicalizeForHashLookup(values[0]);
+    private static void assertEqualCanonicalization(Comparable<?>... values) {
+        Comparable<?> expected = canonicalizeForHashLookup(values[0]);
         for (int i = 1; i < values.length; ++i) {
-            Comparable actual = canonicalizeForHashLookup(values[i]);
+            Comparable<?> actual = canonicalizeForHashLookup(values[i]);
             assertEquals(expected, actual);
             assertEquals(expected.hashCode(), actual.hashCode());
         }
     }
 
-    private static void assertNotEqualCanonicalization(Comparable... values) {
-        Comparable unexpected = canonicalizeForHashLookup(values[0]);
+    private static void assertNotEqualCanonicalization(Comparable<?>... values) {
+        Comparable<?> unexpected = canonicalizeForHashLookup(values[0]);
         for (int i = 1; i < values.length; ++i) {
-            Comparable actual = canonicalizeForHashLookup(values[i]);
+            Comparable<?> actual = canonicalizeForHashLookup(values[i]);
             assertNotEquals(unexpected, actual);
             // not checking for hash code values since they may be the same
         }

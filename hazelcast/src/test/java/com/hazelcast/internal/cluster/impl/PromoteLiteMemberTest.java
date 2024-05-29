@@ -314,7 +314,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         dropOperationsFrom(hz1, F_ID, singletonList(HEARTBEAT));
 
         Cluster cluster = hz3.getCluster();
-        Future future = spawn(cluster::promoteLocalLiteMember);
+        Future<?> future = spawn(cluster::promoteLocalLiteMember);
 
         assertPromotionInvocationStarted(hz3);
 
@@ -440,7 +440,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
                 k++;
             }
         }
-        assertThat(k).isGreaterThan(0);
+        assertThat(k).isPositive();
     }
 
     private static void assertNoPartitionsAssigned(HazelcastInstance instance) {

@@ -85,7 +85,7 @@ public class XmlUtilTest {
         } catch (Exception e) {
             // not important if it fails
         }
-        assertThat(server.getHits()).isGreaterThan(0);
+        assertThat(server.getHits()).isPositive();
     }
 
     @Test
@@ -185,8 +185,11 @@ public class XmlUtilTest {
     }
 
     static class DummyServer implements Runnable {
-        private static final String XXE_TEST_STR_TEMPLATE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "  <!DOCTYPE test [\n" + "    <!ENTITY xxe SYSTEM \"%s\">\n" + "  ]>" + "<a><b>&xxe;</b></a>";
+        private static final String XXE_TEST_STR_TEMPLATE = """
+                <?xml version="1.0" encoding="utf-8"?>
+                  <!DOCTYPE test [
+                    <!ENTITY xxe SYSTEM "%s">
+                  ]><a><b>&xxe;</b></a>""";
 
         private final ServerSocket serverSocket;
         private final AtomicInteger counter = new AtomicInteger();

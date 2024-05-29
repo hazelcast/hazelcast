@@ -137,7 +137,7 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
         assertTrueEventually(() -> {
             var metrics = job.getMetrics();
             var completionTimes = metrics.get(EXECUTION_COMPLETION_TIME);
-            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isLessThan(0));
+            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isNegative());
             if (isStoreMetricsEnabled) {
                 assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isGreaterThan(completionTime));
             }
@@ -163,7 +163,7 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
         if (isStoreMetricsEnabled) {
             var completionTimes = metrics.get(EXECUTION_COMPLETION_TIME);
             assertThat(completionTimes).hasSize(1);
-            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isGreaterThan(0));
+            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isPositive());
         } else {
             assertThat(metrics.metrics()).isEmpty();
         }
@@ -172,7 +172,7 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
     private void awaitOnlyOneJobIsRunning(Job job) {
         assertTrueEventually(() -> {
             var completionTimes = job.getMetrics().get(EXECUTION_COMPLETION_TIME);
-            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isLessThan(0));
+            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isNegative());
         });
     }
 
@@ -180,9 +180,9 @@ public class PartialJobMetricsCollectionTest extends JetTestSupport {
         assertTrueEventually(() -> {
             var completionTimes = job.getMetrics().get(EXECUTION_COMPLETION_TIME);
             assertThat(completionTimes).hasSize(isStoreMetricsEnabled ? 2 : 1);
-            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isLessThan(0));
+            assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isNegative());
             if (isStoreMetricsEnabled) {
-                assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isGreaterThan(0));
+                assertThat(completionTimes).satisfiesOnlyOnce(measurement -> assertThat(measurement.value()).isPositive());
             }
         });
     }

@@ -282,7 +282,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapCountWithAtleastOneQueryCache() {
+    public void testMapCountWithAtLeastOneQueryCache() {
         refreshMetrics();
         assertEquals("0", get(MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE));
 
@@ -304,7 +304,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapCountWithAtleastOneIndex() {
+    public void testMapCountWithAtLeastOneIndex() {
         refreshMetrics();
         assertEquals("0", get(MAP_COUNT_WITH_ATLEAST_ONE_INDEX));
 
@@ -632,7 +632,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         instance.getMap("hazelcast").put("hazelcast", "hazelcast");
         refreshMetrics();
         long oneMapMemoryCost = parseLong(get(DATA_MEMORY_COST));
-        assertThat(oneMapMemoryCost).isGreaterThan(0);
+        assertThat(oneMapMemoryCost).isPositive();
 
         instance.getMap("hazelcast2").put("hazelcast", "hazelcast");
         refreshMetrics();
@@ -651,7 +651,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         instance.getReplicatedMap("hazelcast").put("hazelcast", "hazelcast");
         refreshMetrics();
         long oneMapMemoryCost = parseLong(get(DATA_MEMORY_COST));
-        assertThat(oneMapMemoryCost).isGreaterThan(0);
+        assertThat(oneMapMemoryCost).isPositive();
 
         instance.getReplicatedMap("hazelcast2").put("hazelcast", "hazelcast");
         refreshMetrics();
