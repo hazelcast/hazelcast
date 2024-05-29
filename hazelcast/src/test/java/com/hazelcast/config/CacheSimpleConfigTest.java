@@ -22,10 +22,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
@@ -34,8 +32,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSimpleConfigTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testNameInConstructor() {
@@ -50,8 +46,7 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setCacheLoader("foo");
 
-        expectedException.expect(IllegalStateException.class);
-        config.setCacheLoaderFactory("bar");
+        assertThrows(IllegalStateException.class, () -> config.setCacheLoaderFactory("bar"));
     }
 
     @Test
@@ -59,8 +54,7 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setCacheLoaderFactory("bar");
 
-        expectedException.expect(IllegalStateException.class);
-        config.setCacheLoader("foo");
+        assertThrows(IllegalStateException.class, () -> config.setCacheLoader("foo"));
     }
 
     @Test
@@ -68,8 +62,7 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setCacheWriter("foo");
 
-        expectedException.expect(IllegalStateException.class);
-        config.setCacheWriterFactory("bar");
+        assertThrows(IllegalStateException.class, () -> config.setCacheWriterFactory("bar"));
     }
 
     @Test
@@ -77,16 +70,13 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setCacheWriterFactory("bar");
 
-        expectedException.expect(IllegalStateException.class);
-        config.setCacheWriter("foo");
+        assertThrows(IllegalStateException.class, () -> config.setCacheWriter("foo"));
     }
 
     @Test
     public void givenNullMerkleTreeConfig_throws_NPE() {
-        expectedException.expect(NullPointerException.class);
-
-        new CacheSimpleConfig()
-                .setMerkleTreeConfig(null);
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
+        assertThrows(NullPointerException.class, () -> cacheSimpleConfig.setMerkleTreeConfig(null));
     }
 
     @Test
