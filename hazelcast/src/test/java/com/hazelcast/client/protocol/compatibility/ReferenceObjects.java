@@ -100,6 +100,7 @@ import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.vector.SearchOptions;
 import com.hazelcast.vector.SearchOptionsBuilder;
+import com.hazelcast.vector.SearchResult;
 import com.hazelcast.vector.VectorValues;
 import com.hazelcast.vector.impl.DataSearchResult;
 import com.hazelcast.vector.impl.DataVectorDocument;
@@ -1066,7 +1067,7 @@ public class ReferenceObjects {
             .limit(100)
             .hint(aString, aString)
             .build();
-    public static List<DataSearchResult> aList_VectorSearchResult = List.of(new DataSearchResult(aData, aData, aFloat, aVectorValues));
+    public static List<SearchResult<Data, Data>> aList_VectorSearchResult = List.of(new DataSearchResult(aData, aData, aFloat, aVectorValues));
 
     public static Version aVersion = CustomTypeFactory.createVersion(aByte, aByte);
 }

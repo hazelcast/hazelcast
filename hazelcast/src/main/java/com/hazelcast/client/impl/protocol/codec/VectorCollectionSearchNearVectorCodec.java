@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the VectorDocuments closest to the given vector.
  */
 @SuppressWarnings("unused")
-@Generated("668851752ac7f8c5de809a08e7d3bd72")
+@Generated("3a80d403a414738860b232309ccb5551")
 public final class VectorCollectionSearchNearVectorCodec {
     //hex: 0x240800
     public static final int REQUEST_MESSAGE_TYPE = 2361344;
@@ -93,7 +93,7 @@ public final class VectorCollectionSearchNearVectorCodec {
         return request;
     }
 
-    public static ClientMessage encodeResponse(java.lang.Iterable<com.hazelcast.vector.impl.DataSearchResult> result) {
+    public static ClientMessage encodeResponse(java.lang.Iterable<com.hazelcast.vector.SearchResult<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

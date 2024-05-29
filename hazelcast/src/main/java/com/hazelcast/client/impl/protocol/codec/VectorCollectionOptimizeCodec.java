@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Optimize index.
  */
 @SuppressWarnings("unused")
-@Generated("b959c34442b829373c45a70413dc6a0c")
+@Generated("24fc1d90f2e257b643332a31dd674adf")
 public final class VectorCollectionOptimizeCodec {
     //hex: 0x240900
     public static final int REQUEST_MESSAGE_TYPE = 2361600;
@@ -59,7 +59,7 @@ public final class VectorCollectionOptimizeCodec {
 
         /**
          * Name of the Index to optimize.
-         * A null value signifies the optimization of the first and only index within the collection.
+         * A null value triggers the optimization of the only index within the collection.
          */
         public @Nullable java.lang.String indexName;
     }
