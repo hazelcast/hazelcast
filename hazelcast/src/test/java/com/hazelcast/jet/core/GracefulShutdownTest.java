@@ -121,7 +121,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         job.join();
         logger.info("Joined");
 
-        // Then
+        // Then,
         // If the shutdown was graceful, output items must not be duplicated
         Map<Integer, Integer> expected;
         Map<Integer, Integer> actual = new ArrayList<>(instances[liveInstance].<Integer>getList("sink")).stream()
@@ -205,7 +205,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         job.restart();
         assertTrueEventually(() -> assertTrue("blocking did not happen", BlockingMapStore.wasBlocked), 5);
 
-        Future shutdownFuture = spawn(() -> instances[1].shutdown());
+        Future<?> shutdownFuture = spawn(() -> instances[1].shutdown());
         logger.info("savedCounters=" + EmitIntegersP.savedCounters);
         int minCounter = EmitIntegersP.savedCounters.values().stream().mapToInt(Integer::intValue).min().getAsInt();
         BlockingMapStore.shouldBlock = false;
@@ -260,7 +260,7 @@ public class GracefulShutdownTest extends JetTestSupport {
     /**
      * A MapStore that will block map operations until unblocked.
      */
-    private static class BlockingMapStore implements MapStore {
+    private static class BlockingMapStore implements MapStore<Object, Object> {
         private static volatile boolean shouldBlock;
         private static volatile boolean wasBlocked;
 
@@ -270,7 +270,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         }
 
         @Override
-        public void storeAll(Map map) {
+        public void storeAll(Map<Object, Object> map) {
             block();
         }
 
@@ -280,7 +280,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         }
 
         @Override
-        public void deleteAll(Collection keys) {
+        public void deleteAll(Collection<Object> keys) {
             block();
         }
 

@@ -181,7 +181,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
                 () -> job.get().getMetrics(),
                 () -> job.get().getConfig()
         );
-        List<Future> checkerFutures = new ArrayList<>();
+        List<Future<?>> checkerFutures = new ArrayList<>();
         for (Runnable action : actions) {
             checkerFutures.add(spawn(() -> {
                 while (!done.get()) {
@@ -210,7 +210,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         }
 
         done.set(true);
-        for (Future future : checkerFutures) {
+        for (Future<?> future : checkerFutures) {
             future.get();
         }
     }

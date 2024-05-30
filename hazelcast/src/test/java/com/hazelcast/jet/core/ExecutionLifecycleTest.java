@@ -67,6 +67,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.NotSerializableException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -346,7 +347,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertThrows(CompletionException.class, () -> job.join());
+        assertThrows(CompletionException.class, job::join);
     }
 
     @Test
@@ -733,7 +734,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         // we can't assert the exception class. Sometimes the HazelcastSerializationException is wrapped
-        // in JetException and sometimes it's not, depending on whether the job managed to write JobResult or not.
+        // in JetException, and sometimes it's not, depending on whether the job managed to write JobResult or not.
         assertThatThrownBy(() -> executeAndPeel(newJob(instance, dag, null)))
                 .hasMessageContaining("java.lang.ClassNotFoundException: fake.Class");
     }
@@ -847,7 +848,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                         address -> new NotSerializable_DataSerializable_ProcessorSupplier()));
 
         Job job = newJob(dag);
-        Exception e = assertThrows(Exception.class, () -> job.join());
+        Exception e = assertThrows(Exception.class, job::join);
         assertContains(e.getMessage(), "Failed to serialize");
     }
 
@@ -1295,6 +1296,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             throw new UnsupportedOperationException("should not get here");
         }
 
+        @Serial
         private void readObject(java.io.ObjectInputStream stream) throws ClassNotFoundException {
             // simulate deserialization failure
             throw new ClassNotFoundException("fake.Class");
@@ -1308,6 +1310,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             throw new UnsupportedOperationException("should not get here");
         }
 
+        @Serial
         private void readObject(java.io.ObjectInputStream stream) throws ClassNotFoundException {
             // simulate deserialization failure
             throw new ClassNotFoundException("fake.Class");
@@ -1326,6 +1329,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                     throw new UnsupportedOperationException("should not get here");
                 }
 
+                @Serial
                 private void writeObject(java.io.ObjectOutputStream stream) throws Exception {
                     // simulate serialization failure
                     throw new NotSerializableException(getClass().getName());

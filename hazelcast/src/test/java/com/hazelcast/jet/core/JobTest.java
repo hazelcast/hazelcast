@@ -335,7 +335,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void when_jobFailed_then_trackedJobCanQueryResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
-                () -> new MockP().setCompleteError(() -> new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(ExpectedRuntimeException::new), NODE_COUNT)));
 
         // When
         Job submittedJob = instance().getJet().newJob(dag);
@@ -903,9 +903,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // As long as the context is not put in the lightMasterContexts we cannot get the job by id. The tasklets are added
         // to workers in the execution of LightMasterContext.createContext(), so the tasklet may start before the
         // lightMasterContexts is filled.
-        assertTrueEventually(() -> {
-            assertNotNull(instance.getJet().getJob(job.getId()));
-        });
+        assertTrueEventually(() -> assertNotNull(instance.getJet().getJob(job.getId())));
         Job trackedJob = instance.getJet().getJob(job.getId());
 
         // Then
@@ -983,7 +981,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_manyJobs_member() {
-        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        // we use a standalone cluster here - this test looks at all the jobs, and it must not see completed jobs from other tests
         HazelcastInstance inst = createHazelcastInstance();
         createHazelcastInstance();
 
@@ -992,7 +990,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_manyJobs_client() {
-        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        // we use a standalone cluster here - this test looks at all the jobs, and it must not see completed jobs from other tests
         createHazelcastInstance();
         createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();

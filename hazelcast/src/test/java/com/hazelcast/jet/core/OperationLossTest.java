@@ -138,7 +138,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         PacketFiltersUtil.dropOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.SNAPSHOT_PHASE1_OPERATION));
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", () -> new DummyStatefulP()).localParallelism(1);
+        Vertex v1 = dag.newVertex("v1", DummyStatefulP::new).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 

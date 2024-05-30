@@ -46,7 +46,7 @@ public class MemberReconnectionTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex v1 = dag.newVertex("v1", () -> new MockP().streaming());
-        Vertex v2 = dag.newVertex("v2", () -> new MockP());
+        Vertex v2 = dag.newVertex("v2", MockP::new);
         dag.edge(between(v1, v2).distributed());
 
         Job job = inst1.getJet().newJob(dag);

@@ -102,7 +102,7 @@ public class AbstractProcessorTest {
 
     @Test(expected = UnknownHostException.class)
     public void when_customInitThrows_then_initRethrows() throws Exception {
-        new MockP().setInitError(() -> new UnknownHostException())
+        new MockP().setInitError(UnknownHostException::new)
                    .init(mock(Outbox.class), new TestProcessorContext());
     }
 

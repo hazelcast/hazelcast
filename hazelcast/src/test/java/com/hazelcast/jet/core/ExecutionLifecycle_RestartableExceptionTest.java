@@ -130,7 +130,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         dag.edge(between(src, v));
         Job job = newJob(dag);
         if (useLightJob) {
-            assertThatThrownBy(() -> job.join())
+            assertThatThrownBy(job::join)
                     .hasRootCause(RESTARTABLE_EXCEPTION.get());
         } else {
             assertTrueEventually(() ->
@@ -153,7 +153,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     private void when_inProcessorSupplier(DAG dag) {
         Job job = newJob(dag);
         if (useLightJob) {
-            assertThatThrownBy(() -> job.join())
+            assertThatThrownBy(job::join)
                     .hasRootCause(RESTARTABLE_EXCEPTION.get());
         } else {
             assertTrueEventually(() ->
@@ -176,7 +176,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     private void whenInProcessorMetaSupplier(DAG dag) {
         Job job = newJob(dag);
         if (useLightJob) {
-            assertThatThrownBy(() -> job.join())
+            assertThatThrownBy(job::join)
                     .hasRootCause(RESTARTABLE_EXCEPTION.get());
         } else {
             assertTrueEventually(() ->

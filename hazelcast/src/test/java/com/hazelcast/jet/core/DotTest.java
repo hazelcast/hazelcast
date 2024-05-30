@@ -105,7 +105,7 @@ public class DotTest {
     @Test
     public void when_pipelineToDotString() {
         Pipeline p = Pipeline.create();
-        BatchStage<Entry> source = p.readFrom(Sources.map("source1"));
+        BatchStage<Entry<Object, Object>> source = p.readFrom(Sources.map("source1"));
 
         source
             .groupingKey(Entry::getKey)
