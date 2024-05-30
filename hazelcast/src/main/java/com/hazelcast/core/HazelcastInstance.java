@@ -59,7 +59,7 @@ import java.util.concurrent.ConcurrentMap;
  * Multiple Hazelcast instances can be created on a single JVM.
  * <p>
  * Instances should be shut down explicitly. See the {@link #shutdown()} method.
- * If the instance is a client and you don't shut it down explicitly, it will continue to run and
+ * If the instance is a client, and you don't shut it down explicitly, it will continue to run and
  * even connect to another live member if the one it was connected to fails.
  * <p>
  * Each Hazelcast instance has its own socket and threads.
@@ -331,7 +331,7 @@ public interface HazelcastInstance {
     /**
      * Returns the split brain protection service of this Hazelcast instance.
      * <p>
-     * Split brain protection service can be used to retrieve split brain protection callbacks which let you to notify
+     * Split brain protection service can be used to retrieve split brain protection callbacks which let you notify
      * split brain protection results of your own to the cluster split brain protection service.
      *
      * @return the split brain protection service of this Hazelcast instance
@@ -362,7 +362,7 @@ public interface HazelcastInstance {
     /**
      * Returns the lifecycle service for this instance.
      * <p>
-     * LifecycleService allows you to shutdown this HazelcastInstance and listen for the lifecycle events.
+     * LifecycleService allows you to shut down this HazelcastInstance and listen for the lifecycle events.
      *
      * @return the lifecycle service for this instance
      */

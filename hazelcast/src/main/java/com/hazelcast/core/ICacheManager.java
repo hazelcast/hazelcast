@@ -25,7 +25,7 @@ import com.hazelcast.cache.ICache;
  *
  * <p>Note that this interface is not related to JCache {@link javax.cache.CacheManager}. Its purpose is to host
  * {@code ICache} related methods, separately from {@link HazelcastInstance}, in order to allow frameworks that make
- * use of reflection and/or dynamic proxies (e.g. Mockito, Spring etc) to operate on {@link HazelcastInstance} when JCache
+ * use of reflection and/or dynamic proxies (e.g. Mockito, Spring etc.) to operate on {@link HazelcastInstance} when JCache
  * is not on the classpath.
  * See also related issue https://github.com/hazelcast/hazelcast/issues/8352.
  *

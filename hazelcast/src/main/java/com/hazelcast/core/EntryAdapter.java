@@ -64,7 +64,7 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
     }
 
     /**
-     * This method is called when an one of the methods of the {@link com.hazelcast.core.EntryListener} is not
+     * This method is called when one of the methods of the {@link com.hazelcast.core.EntryListener} is not
      * overridden. It can be practical if you want to bundle some/all of the methods to a single method.
      *
      * @param event the EntryEvent.
@@ -73,7 +73,7 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
     }
 
     /**
-     * This method is called when an one of the methods of the {@link com.hazelcast.core.EntryListener} is not
+     * This method is called when one of the methods of the {@link com.hazelcast.core.EntryListener} is not
      * overridden. It can be practical if you want to bundle some/all of the methods to a single method.
      *
      * @param event the MapEvent.

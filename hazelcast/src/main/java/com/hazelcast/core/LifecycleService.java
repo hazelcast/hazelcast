@@ -20,13 +20,13 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
- * LifecycleService allows you to shutdown, terminate, and listen to {@link LifecycleEvent}s
+ * LifecycleService allows you to shut down, terminate, and listen to {@link LifecycleEvent}s
  * on HazelcastInstance.
  */
 public interface LifecycleService {
 
     /**
-     * Checks whether or not the instance is running.
+     * Checks whether the instance is running.
      *
      * @return {@code true}, if instance is active and running, {@code false} otherwise
      */

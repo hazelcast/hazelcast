@@ -107,11 +107,10 @@ public final class LifecycleEvent {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof LifecycleEvent)) {
+        if (!(o instanceof LifecycleEvent that)) {
             return false;
         }
 
-        LifecycleEvent that = (LifecycleEvent) o;
         return state == that.state;
     }
 

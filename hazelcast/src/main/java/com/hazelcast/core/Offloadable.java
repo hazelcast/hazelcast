@@ -56,7 +56,7 @@ public interface Offloadable {
      * The return value equal to {@value NO_OFFLOADING} indicates that the processing should not be off-loaded at all.
      * The processing will be executed as if the processing-unit didn't implement the {@link Offloadable} interface.
      *
-     * Other return values will lookup the executor with the returned value which can be configured in the Hazelcast
+     * Other return values will look up the executor with the returned value which can be configured in the Hazelcast
      * configuration.
      *
      * @return the name of the executor to which the processing should be off-loaded.

@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  *
  * The main purpose of the Pipelining is to control the number of concurrent requests
  * when using asynchronous invocations. This can be done by setting the depth using
- * the constructor. So you could set the depth to e.g 100 and do 1000 calls. That means
+ * the constructor. So you could set the depth to e.g. 100 and do 1000 calls. That means
  * that at any given moment, there will only be 100 concurrent requests.
  *
  * It depends on the situation what the optimal depth (number of invocations in
@@ -54,19 +54,19 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  *
  * Pipelining can be used by both clients or members.
  *
- * The Pipelining isn't threadsafe. So only a single thread should add requests to
+ * The Pipelining isn't thread safe. So only a single thread should add requests to
  * the Pipelining and wait for results.
  *
- * Currently all {@link CompletionStage} and their responses are stored in the
+ * Currently, all {@link CompletionStage} and their responses are stored in the
  * Pipelining. So be careful executing a huge number of request with a single Pipelining
  * because it can lead to a huge memory bubble. In this cases it is better to
  * periodically, after waiting for completion, to replace the Pipelining by a new one.
- * In the future we might provide this as an out of the box experience, but currently
+ * In the future we might provide this as an out-of-the-box experience, but currently
  * we do not.
  *
  * A Pipelining provides its own backpressure on the system. So there will not be more
  * in flight invocations than the depth of the Pipelining. This means that the Pipelining
- * will work fine when backpressure on the client/member is disabled (default). Also
+ * will work fine when backpressure on the client/member is disabled (default). Also,
  * when it is enabled it will work fine, but keep in mind that the number of concurrent
  * invocations in the Pipelining could be lower than the configured number of invocation
  * of the Pipelining because the backpressure on the client/member is leading.
@@ -89,7 +89,7 @@ public class Pipelining<E> {
      *
      * @param depth the maximum number of concurrent calls allowed in this Pipelining.
      * @throws IllegalArgumentException if depth smaller than 1. But if you use depth 1, it means that
-     *                                  every call is sync and you will not benefit from pipelining at all.
+     *                                  every call is sync, and you will not benefit from pipelining at all.
      */
     public Pipelining(int depth) {
         checkPositive(depth, "depth must be positive");

@@ -36,7 +36,7 @@ public final class Hazelcast {
 
     /**
      * Shuts down all member {@link HazelcastInstance}s running on this JVM.
-     * It doesn't shutdown all members of the cluster but just the ones running on this JVM.
+     * It doesn't shut down all members of the cluster but just the ones running on this JVM.
      *
      * @see #newHazelcastInstance(Config)
      */
@@ -49,7 +49,7 @@ public final class Hazelcast {
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
      * <p>
-     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * To shut down all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
      * @param config Configuration for the new HazelcastInstance (member)
@@ -66,7 +66,7 @@ public final class Hazelcast {
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
      * <p>
-     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * To shut down all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
      * Hazelcast will look into two places for the configuration file:
@@ -98,7 +98,7 @@ public final class Hazelcast {
     /**
      * Returns an existing HazelcastInstance with instanceName.
      * <p>
-     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * To shut down all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
      * @param instanceName Name of the HazelcastInstance (member)
@@ -173,7 +173,7 @@ public final class Hazelcast {
     /**
      * Returns all active/running HazelcastInstances on this JVM.
      * <p>
-     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * To shut down all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
      * @return all active/running HazelcastInstances on this JVM
