@@ -33,7 +33,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <maven-artifact.version>3.9.6</maven-artifact.version>
+        <maven-artifact.version>3.9.7</maven-artifact.version>
     </properties>
 
     <dependencies>
