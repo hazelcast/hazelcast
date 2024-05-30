@@ -80,7 +80,7 @@ public class KafkaConnectRedisIT extends JetTestSupport {
     }
 
     @Test
-    public void testReadFromRedisConnector() throws Exception {
+    public void testReadFromRedisConnector() {
         insertData();
 
         Pipeline pipeline = Pipeline.create();

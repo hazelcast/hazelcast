@@ -259,9 +259,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         for (int i = 1; i <= TABLE_COUNT; i++) {
             insertItems(connectionUrl, "parallel_items_" + i);
         }
-        assertTrueEventually(() -> {
-            assertThat(values.values()).hasSize((TABLE_COUNT * 2) * ITEM_COUNT);
-        });
+        assertTrueEventually(() -> assertThat(values.values()).hasSize((TABLE_COUNT * 2) * ITEM_COUNT));
         try {
             job.cancel();
         } catch (Exception ignored) {
@@ -334,9 +332,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
             insertItems(connectionUrl, "parallel_items_" + i);
         }
 
-        assertTrueEventually(() -> {
-            assertThat(values.values()).hasSize(2 * TABLE_COUNT * ITEM_COUNT);
-        });
+        assertTrueEventually(() -> assertThat(values.values()).hasSize(2 * TABLE_COUNT * ITEM_COUNT));
         try {
             job.cancel();
         } catch (Exception ignored) {

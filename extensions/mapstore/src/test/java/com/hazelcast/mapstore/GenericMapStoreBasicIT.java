@@ -104,7 +104,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
     }
 
     @Test
-    public void whenMapStoreInit_thenCreateMappingForMapStoreSingleColAsValueConfig() throws Exception {
+    public void whenMapStoreInit_thenCreateMappingForMapStoreSingleColAsValueConfig() {
         objectProvider.createObject(mapName);
 
         mapStore = createMapStoreSingleColumnAsValue();
@@ -399,7 +399,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
     }
 
     @Test
-    public void givenTableNameProperty_whenCreateMapStoreSingleColAsValue_thenUseTableName() throws Exception {
+    public void givenTableNameProperty_whenCreateMapStoreSingleColAsValue_thenUseTableName() {
         String tableName = randomName();
 
         ObjectSpec spec = objectProvider.createObject(tableName);
