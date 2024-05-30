@@ -118,7 +118,7 @@
         <kafka.version>3.6.1</kafka.version>
         <kotlin.version>2.0.0</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
-        <mssql.version>12.6.1.jre11</mssql.version>
+        <mssql.version>12.6.2.jre11</mssql.version>
         <netty.version>4.1.110.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <oracle.version>23.4.0.24.05</oracle.version>
