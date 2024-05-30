@@ -672,12 +672,18 @@
                 <artifactId>perfmark-api</artifactId>
                 <version>0.27.0</version>
             </dependency>
+
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-bom</artifactId>
                 <version>${kotlin.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-resolver-provider</artifactId>
+                <version>3.9.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
