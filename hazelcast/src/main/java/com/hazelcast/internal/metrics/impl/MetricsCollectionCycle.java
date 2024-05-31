@@ -47,7 +47,7 @@ class MetricsCollectionCycle {
     private static final MetricValueCatcher NOOP_CATCHER = new NoOpMetricValueCatcher();
 
     private final PoolingMetricDescriptorSupplier descriptorSupplier;
-    private final Function<Class, SourceMetadata> lookupMetadataFn;
+    private final Function<Class<?>, SourceMetadata> lookupMetadataFn;
     private final Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn;
     private final MetricsCollector metricsCollector;
     private final ProbeLevel minimumLevel;
@@ -55,7 +55,7 @@ class MetricsCollectionCycle {
     private final long collectionId = System.nanoTime();
     private final ILogger logger = Logger.getLogger(MetricsCollectionCycle.class);
 
-    MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
+    MetricsCollectionCycle(Function<Class<?>, SourceMetadata> lookupMetadataFn,
                            Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn,
                            MetricsCollector metricsCollector,
                            ProbeLevel minimumLevel, MetricDescriptorReusableData metricDescriptorReusableData) {

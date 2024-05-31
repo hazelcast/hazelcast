@@ -44,12 +44,12 @@ final class SourceMetadata {
     private final List<MethodProbe> methods = new ArrayList<>();
     private final Collection<MetricTarget> excludedTargetsClass;
 
-    SourceMetadata(Class clazz) {
+    SourceMetadata(Class<?> clazz) {
         // we scan all the methods/fields of the class/interface hierarchy.
         Collection<Class<?>> classList = new LinkedHashSet<>();
         flatten(clazz, classList);
 
-        for (Class flattenedClass : classList) {
+        for (Class<?> flattenedClass : classList) {
             scanFields(flattenedClass);
             scanMethods(flattenedClass);
         }
@@ -67,9 +67,9 @@ final class SourceMetadata {
         }
     }
 
-    private Collection<MetricTarget> getTypeExcludedTarget(Class clazz) {
+    private Collection<MetricTarget> getTypeExcludedTarget(Class<?> clazz) {
         Collection<MetricTarget> typeExclusions;
-        ExcludedMetricTargets targetsAnnotation = (ExcludedMetricTargets) clazz.getAnnotation(ExcludedMetricTargets.class);
+        ExcludedMetricTargets targetsAnnotation = clazz.getAnnotation(ExcludedMetricTargets.class);
         if (targetsAnnotation != null) {
             typeExclusions = unmodifiableList(asList(targetsAnnotation.value()));
         } else {

@@ -353,7 +353,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         }
 
         // since we already checked that the two descriptors have the same number
-        // of tags, we can safely compare them from only one side but we need
+        // of tags, we can safely compare them from only one side, but we need
         // to compare pairs. The order of tags doesn't matter.
         outer:
         for (int i = 0; i < tagPtr; i += 2) {

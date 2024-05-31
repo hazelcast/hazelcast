@@ -47,8 +47,8 @@ public enum GlobalMemoryAccessorType {
      * as appropriate to the underlying platform's architecture.
      * <p>
      * If the underlying platform supports unaligned memory access, it will match the standard
-     * {@link GlobalMemoryAccessor} because there's no need for aligmnent checks.
-     * Otherwise it will match the alignment-aware {@link GlobalMemoryAccessor}.
+     * {@link GlobalMemoryAccessor} because there's no need for alignment checks.
+     * Otherwise, it will match the alignment-aware {@link GlobalMemoryAccessor}.
      */
     PLATFORM_AWARE,
 }
