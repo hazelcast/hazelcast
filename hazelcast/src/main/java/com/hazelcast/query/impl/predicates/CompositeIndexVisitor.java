@@ -192,7 +192,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
             }
 
             if (bestIndex == null || bestPrefix == 1) {
-                // Nothing matched or we have a single-attribute prefix which
+                // Nothing matched, or we have a single-attribute prefix which
                 // should be handled by AttributeIndexRegistry.
                 break;
             }

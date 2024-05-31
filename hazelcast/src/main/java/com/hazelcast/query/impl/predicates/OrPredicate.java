@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +45,7 @@ import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK
 public final class OrPredicate
         implements IndexAwarePredicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable, CompoundPredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     protected Predicate[] predicates;

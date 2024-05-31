@@ -24,6 +24,7 @@ import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.IndexRegistry;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Map;
 import java.util.Objects;
 
@@ -35,6 +36,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 @BinaryInterface
 public class NotEqualPredicate extends AbstractPredicate implements NegatablePredicate, VisitablePredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     Comparable value;

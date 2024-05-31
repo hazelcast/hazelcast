@@ -20,6 +20,7 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -56,6 +57,7 @@ public class SkipIndexPredicate implements Predicate {
         return "SkipIndex(" + target + ')';
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         throw new UnsupportedOperationException("can't be serialized");
     }

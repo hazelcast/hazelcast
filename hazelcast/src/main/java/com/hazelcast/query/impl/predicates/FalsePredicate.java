@@ -24,6 +24,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +42,7 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, IndexAw
      */
     public static final FalsePredicate INSTANCE = new FalsePredicate();
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

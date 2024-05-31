@@ -23,6 +23,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
@@ -126,6 +127,7 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
         return from + (fromInclusive ? " >= " : " > ") + attributeName + (toInclusive ? " <= " : " < ") + to;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         throw new UnsupportedOperationException("can't be serialized");
     }

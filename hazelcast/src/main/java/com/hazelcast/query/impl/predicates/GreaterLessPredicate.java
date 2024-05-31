@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Set;
 
 /**
@@ -35,6 +36,7 @@ import java.util.Set;
 @BinaryInterface
 public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate, RangePredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     protected Comparable value;

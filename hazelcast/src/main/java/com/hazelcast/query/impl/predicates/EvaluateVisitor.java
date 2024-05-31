@@ -160,12 +160,11 @@ public class EvaluateVisitor extends AbstractVisitor {
 
         List<Predicate> output = new ArrayList<>();
         for (Predicate subPredicate : predicates) {
-            if (!(subPredicate instanceof EvaluatePredicate)) {
+            if (!(subPredicate instanceof EvaluatePredicate evaluatePredicate)) {
                 output.add(subPredicate);
                 continue;
             }
 
-            EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
             String indexName = evaluatePredicate.getIndexName();
             Index index = indexes.matchIndex(indexName, orPredicate.getClass(), IndexMatchHint.EXACT_NAME,
                     SKIP_PARTITIONS_COUNT_CHECK);
@@ -198,11 +197,10 @@ public class EvaluateVisitor extends AbstractVisitor {
     @Override
     public Predicate visit(NotPredicate notPredicate, IndexRegistry indexes) {
         Predicate subPredicate = notPredicate.getPredicate();
-        if (!(subPredicate instanceof EvaluatePredicate)) {
+        if (!(subPredicate instanceof EvaluatePredicate evaluatePredicate)) {
             return notPredicate;
         }
 
-        EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
         String indexName = evaluatePredicate.getIndexName();
         Index index = indexes.matchIndex(indexName, notPredicate.getClass(), IndexMatchHint.EXACT_NAME,
                 SKIP_PARTITIONS_COUNT_CHECK);

@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
@@ -37,6 +38,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 public class InstanceOfPredicate
         implements Predicate, IdentifiedDataSerializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Class klass;

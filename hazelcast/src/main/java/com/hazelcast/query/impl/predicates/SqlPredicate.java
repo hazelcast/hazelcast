@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +58,7 @@ public class SqlPredicate
      */
     private static final boolean SKIP_INDEX_ENABLED = !Boolean.getBoolean("hazelcast.query.disableSkipIndex");
 
+    @Serial
     private static final long serialVersionUID = 1;
 
     private interface ComparisonPredicateFactory {
@@ -320,6 +322,7 @@ public class SqlPredicate
         }
     }
 
+    @Serial
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         predicate = createPredicate(sql);

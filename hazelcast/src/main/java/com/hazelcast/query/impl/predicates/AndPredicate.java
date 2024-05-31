@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,6 +46,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf
 public final class AndPredicate
         implements IndexAwarePredicate, IdentifiedDataSerializable, VisitablePredicate, NegatablePredicate, CompoundPredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     protected Predicate[] predicates;

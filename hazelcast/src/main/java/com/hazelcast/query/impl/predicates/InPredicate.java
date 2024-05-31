@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 @BinaryInterface
 public class InPredicate extends AbstractIndexAwarePredicate implements VisitablePredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     Comparable[] values;
@@ -167,11 +169,10 @@ public class InPredicate extends AbstractIndexAwarePredicate implements Visitabl
         if (!super.equals(o)) {
             return false;
         }
-        if (!(o instanceof InPredicate)) {
+        if (!(o instanceof InPredicate that)) {
             return false;
         }
 
-        InPredicate that = (InPredicate) o;
         if (!that.canEqual(this)) {
             return false;
         }

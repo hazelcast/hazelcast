@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -39,6 +40,7 @@ public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicat
      */
     public static final TruePredicate INSTANCE = new TruePredicate();
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("unchecked")

@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Objects;
 import java.util.Set;
 
@@ -39,6 +40,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 public class EqualPredicate extends AbstractIndexAwarePredicate
         implements NegatablePredicate, RangePredicate, VisitablePredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     Comparable value;
@@ -98,11 +100,10 @@ public class EqualPredicate extends AbstractIndexAwarePredicate
         if (!super.equals(o)) {
             return false;
         }
-        if (!(o instanceof EqualPredicate)) {
+        if (!(o instanceof EqualPredicate that)) {
             return false;
         }
 
-        EqualPredicate that = (EqualPredicate) o;
         if (!that.canEqual(this)) {
             return false;
         }
