@@ -54,7 +54,7 @@ abstract class Getter {
      *
      * @return The type of extracted attribute
      */
-    abstract Class getReturnType();
+    abstract Class<?> getReturnType();
 
     /**
      * A getter instance may be re-used for all predicates that has the same target object

@@ -36,7 +36,7 @@ public final class NullGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         return null;
     }
 

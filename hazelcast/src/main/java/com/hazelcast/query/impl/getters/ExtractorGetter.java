@@ -54,7 +54,7 @@ final class ExtractorGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         throw new UnsupportedOperationException();
     }
 

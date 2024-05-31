@@ -34,9 +34,9 @@ public abstract class AbstractMultiValueGetter extends Getter {
     public static final int REDUCE_EVERYTHING = -2;
 
     private final int modifier;
-    private final Class resultType;
+    private final Class<?> resultType;
 
-    public AbstractMultiValueGetter(Getter parent, String modifierSuffix, Class<?> inputType, Class resultType) {
+    public AbstractMultiValueGetter(Getter parent, String modifierSuffix, Class<?> inputType, Class<?> resultType) {
         super(parent);
         boolean isArray = inputType.isArray();
         boolean isCollection = Collection.class.isAssignableFrom(inputType);
@@ -51,7 +51,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     protected abstract Object extractFrom(Object parentObject) throws IllegalAccessException, InvocationTargetException;
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         return resultType;
     }
 
@@ -81,7 +81,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         return modifier;
     }
 
-    private Class getResultType(Class inputType, Class resultType) {
+    private Class<?> getResultType(Class<?> inputType, Class<?> resultType) {
         if (resultType != null) {
             //result type as been set explicitly via Constructor.
             //This is needed for extraction Collection where type cannot be

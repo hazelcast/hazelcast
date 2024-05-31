@@ -61,7 +61,7 @@ public class CompactGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         throw new IllegalArgumentException("Non applicable for CustomGetter");
     }
 

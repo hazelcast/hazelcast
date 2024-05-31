@@ -45,7 +45,7 @@ public final class NullMultiValueGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         return null;
     }
 
