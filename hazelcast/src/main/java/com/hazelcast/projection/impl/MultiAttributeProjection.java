@@ -55,7 +55,6 @@ public final class MultiAttributeProjection<I> implements Projection<I, Object[]
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Object[] transform(I input) {
         if (input instanceof Extractable extractable) {
             Object[] result = new Object[attributePaths.length];

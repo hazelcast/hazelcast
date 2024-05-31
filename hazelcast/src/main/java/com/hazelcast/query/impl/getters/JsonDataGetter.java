@@ -31,9 +31,9 @@ public final class JsonDataGetter extends AbstractJsonGetter {
 
     private static final int UTF_CHARACTER_COUNT_FIELD_SIZE = 4;
 
-    private JsonFactory factory = new JsonFactory();
+    private final JsonFactory factory = new JsonFactory();
 
-    private InternalSerializationService ss;
+    private final InternalSerializationService ss;
 
     JsonDataGetter(InternalSerializationService ss) {
         super(null);

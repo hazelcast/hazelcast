@@ -60,6 +60,6 @@ public final class Projections {
      * @param <I> input type
      */
     public static <I> Projection<I, Object[]> multiAttribute(String... attributePaths) {
-        return new MultiAttributeProjection<I>(attributePaths);
+        return new MultiAttributeProjection<>(attributePaths);
     }
 }
