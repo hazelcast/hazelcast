@@ -737,6 +737,7 @@
                         <maxmemory>1024</maxmemory>
                         <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
                         <doclint>-missing</doclint>
+                        <quiet>true</quiet>
                     </configuration>
                     <executions>
                         <execution>
