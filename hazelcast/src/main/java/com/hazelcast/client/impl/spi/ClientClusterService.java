@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.impl.clientside.SubsetMembers;
-import com.hazelcast.client.impl.clientside.SubsetMembersImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipListener;
@@ -28,6 +28,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.Map;
 import java.util.UUID;
 
@@ -103,11 +104,6 @@ public interface ClientClusterService {
     UUID getClusterId();
 
     /**
-     * @return config for subset routing.
-     */
-    SubsetRoutingConfig getSubsetRoutingConfig();
-
-    /**
      * Returns the cluster version, which may be {@link Version#UNKNOWN}.
      */
     @Nonnull
@@ -129,4 +125,35 @@ public interface ClientClusterService {
      * Updates the cluster version with the latest one.
      */
     void handleClusterVersionEvent(Version version);
+
+    /**
+     * Starts the configured MembershipListeners.
+     *
+     * @param configuredListeners
+     */
+    void start(Collection<EventListener> configuredListeners);
+
+    /**
+     * Gets the cluster proxy.
+     *
+     * @return the cluster proxy.
+     */
+    Cluster getCluster();
+
+    /**
+     * Resets the cluster snapshot back to the initial state.
+     */
+    void onTryToConnectNextCluster();
+
+    /**
+     * Resets the membership version to zero.
+     */
+    void onClusterConnect();
+
+    /**
+     * Gets the membership version.
+     *
+     * @return the membership version.
+     */
+    int getMemberListVersion();
 }

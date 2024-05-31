@@ -94,7 +94,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
         });
     }
 
-    protected void makeSureConnectedToServers(final HazelcastInstance client,
+    public static void makeSureConnectedToServers(final HazelcastInstance client,
                                                final int expectedConnectedServerCount) {
         assertTrueEventually(() -> {
             assert client != null;

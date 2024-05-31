@@ -28,10 +28,8 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,8 +41,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
-
 /**
  * Tests in this class intentionally use real network.
  */
@@ -53,16 +49,12 @@ import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRI
 @Category({QuickTest.class})
 public class ClientTimeoutTest {
 
-    @Rule
-    // needed for SUBSET routing mode
-    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
-
     @Parameterized.Parameter
     public RoutingMode routingMode;
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
     }
 
     @After

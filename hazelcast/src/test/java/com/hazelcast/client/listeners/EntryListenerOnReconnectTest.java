@@ -28,7 +28,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
+
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -36,6 +40,11 @@ import java.util.UUID;
 public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private IMap<String, String> iMap;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(UNISOCKET, SMART);
+    }
 
     @Override
     String getServiceName() {

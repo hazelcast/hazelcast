@@ -21,9 +21,9 @@ import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -48,7 +48,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
     private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
     private final ClientPartitionServiceImpl partitionService;
-    private final ClientClusterServiceImpl clusterService;
+    private final ClientClusterService clusterService;
     private final ILogger logger;
     private final AtomicReference<Connection> listenerAddedConnection = new AtomicReference<>();
 
@@ -57,7 +57,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         this.connectionManager = client.getConnectionManager();
         this.partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
+        this.clusterService =  client.getClientClusterService();
     }
 
     public void start() {

@@ -34,11 +34,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,9 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SUBSET;
 import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -65,16 +61,12 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TcpClientConnectionTest extends ClientTestSupport {
 
-    @Rule
-    // needed for SUBSET routing mode
-    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
-
     @Parameterized.Parameter
     public RoutingMode routingMode;
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, RoutingMode.SMART, SUBSET);
+        return Arrays.asList(UNISOCKET, RoutingMode.SMART);
     }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

@@ -54,13 +54,11 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -85,9 +83,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SUBSET;
 import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -104,16 +100,12 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapTest extends HazelcastTestSupport {
 
-    @Rule
-    // needed for SUBSET routing mode
-    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
-
     @Parameterized.Parameter
     public RoutingMode routingMode;
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, SMART, SUBSET);
+        return Arrays.asList(UNISOCKET, SMART);
     }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

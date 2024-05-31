@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemEvent;
@@ -28,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -36,6 +38,11 @@ import java.util.UUID;
 public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private ISet<String> iSet;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+    }
 
     @Override
     String getServiceName() {

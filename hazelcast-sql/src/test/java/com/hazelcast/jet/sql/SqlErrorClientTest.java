@@ -37,10 +37,8 @@ import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,9 +53,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SUBSET;
 import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -73,16 +69,12 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
-    @Rule
-    // needed for SUBSET routing mode
-    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
-
     @Parameterized.Parameter
     public RoutingMode routingMode;
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, SMART, SUBSET);
+        return Arrays.asList(UNISOCKET, SMART);
     }
 
     @Override

@@ -23,9 +23,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * @see SubsetMembersImpl
- */
 public interface SubsetMembers {
 
     SubsetMembers NOOP = new NoopSubsetMembers();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.topic.ITopic;
@@ -27,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -35,6 +37,11 @@ import java.util.UUID;
 public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private ITopic<String> topic;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+    }
 
     @Override
     String getServiceName() {

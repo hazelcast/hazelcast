@@ -46,7 +46,6 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.client.impl.spi.ProxyManager;
-import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
@@ -186,7 +185,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     private final ClientConfig config;
     private final LifecycleServiceImpl lifecycleService;
     private final TcpClientConnectionManager connectionManager;
-    private final ClientClusterServiceImpl clusterService;
+    private final ClientClusterService clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientInvocationServiceImpl invocationService;
     private final ClientExecutionServiceImpl executionService;
@@ -260,7 +259,8 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
-        clusterService = createClientClusterService();
+        clusterService = clientExtension.createClientClusterService(loggingService,
+                config.getNetworkConfig().getSubsetRoutingConfig());
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);
@@ -277,11 +277,6 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         cpSubsystem = clientExtension.createCPSubsystem(this);
         proxySessionManager = clientExtension.createProxySessionManager(this);
         sqlService = new SqlClientService(this);
-    }
-
-    private ClientClusterServiceImpl createClientClusterService() {
-        return new ClientClusterServiceImpl(loggingService,
-                config.getNetworkConfig().getSubsetRoutingConfig());
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {

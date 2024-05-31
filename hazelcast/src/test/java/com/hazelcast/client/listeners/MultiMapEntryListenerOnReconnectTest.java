@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.multimap.MultiMap;
@@ -28,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -36,6 +38,11 @@ import java.util.UUID;
 public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private MultiMap<String, String> multiMap;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+    }
 
     @Override
     String getServiceName() {

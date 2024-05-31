@@ -46,7 +46,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -65,7 +64,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 
@@ -74,16 +72,12 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientHeartbeatTest extends ClientTestSupport {
 
-    @Rule
-    // needed for SUBSET routing mode
-    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
-
     @Parameterized.Parameter
     public RoutingMode routingMode;
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
     }
 
     private static final int HEARTBEAT_TIMEOUT_MILLIS = 10000;

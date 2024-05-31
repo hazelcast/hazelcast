@@ -39,13 +39,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.test.OverridePropertyRule;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -61,7 +58,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -69,17 +65,9 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport {
 
-    @Rule
-    // needed for SUBSET routing mode
-    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
 
     @Parameterized.Parameter
     public RoutingMode routingMode;
-
-    @Parameterized.Parameters(name = "{index}: routingMode={0}")
-    public static Iterable<?> parameters() {
-        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
-    }
 
     private static final int EVENT_COUNT = 10;
     private final AtomicInteger eventCount = new AtomicInteger();
@@ -113,7 +101,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     //-------------------------- testListenersTerminateRandomNode --------------------- //
     @Test
     public void testListenersTerminateRandomNode() {
-        factory.newInstances(() -> null, 3);
+        factory.newInstances(() -> smallInstanceConfigWithoutJetAndMetrics(), 3);
         ClientConfig clientConfig = createClientConfig();
         client = factory.newHazelcastClient(clientConfig);
 
@@ -135,7 +123,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         });
 
-        factory.newHazelcastInstance();
+        factory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
 
         assertOpenEventually(memberAddedLatch);
         validateRegistrationsAndListenerFunctionality();

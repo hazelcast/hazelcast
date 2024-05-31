@@ -42,8 +42,8 @@ import static com.hazelcast.internal.util.JsonUtil.getArray;
  */
 public final class KeyValuePairGenerator {
 
-    private static final String GROUPS = "groups";
-    private static final String VERSION = "version";
+    public static final String GROUPS = "groups";
+    public static final String VERSION = "version";
 
     private KeyValuePairGenerator() { }
 
