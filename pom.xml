@@ -409,7 +409,7 @@
                 <artifactId>attribution-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>aggregated-attribution</id>
+                        <id>aggregated-attribution-oss</id>
                         <inherited>false</inherited>
                         <goals>
                             <goal>aggregate</goal>
@@ -784,6 +784,7 @@
                 <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
+                <attribution.skip>false</attribution.skip>
             </properties>
             <build>
                 <plugins>
@@ -835,6 +836,7 @@
                 <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
+                <attribution.skip>false</attribution.skip>
             </properties>
             <build>
                 <plugins>
@@ -852,6 +854,7 @@
                 <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
+                <attribution.skip>false</attribution.skip>
             </properties>
             <build>
                 <plugins>

@@ -185,6 +185,9 @@
         <!-- Controls if sources are included in shaded JAR -->
         <maven.shade.createSourcesJar>false</maven.shade.createSourcesJar>
 
+        <!-- https://github.com/hazelcast/attribution-maven-plugin/blob/main/README.md#configuration-properties -->
+        <attribution.skip>true</attribution.skip>
+
         <main.basedir>..</main.basedir>
     </properties>
 
@@ -862,7 +865,7 @@
                 <plugin>
                     <groupId>com.hazelcast.maven</groupId>
                     <artifactId>attribution-maven-plugin</artifactId>
-                    <version>1.2.1</version>
+                    <version>1.4.0</version>
                     <configuration>
                         <exclusionPatterns>
                             <!--
@@ -969,7 +972,6 @@
                         <goals>
                             <goal>generate</goal>
                         </goals>
-                        <phase>compile</phase>
                         <configuration>
                             <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
                         </configuration>
@@ -1053,6 +1055,7 @@
                 <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
+                <attribution.skip>false</attribution.skip>
             </properties>
             <build>
                 <plugins>
@@ -1070,6 +1073,7 @@
                 <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
+                <attribution.skip>false</attribution.skip>
             </properties>
             <build>
                 <plugins>
