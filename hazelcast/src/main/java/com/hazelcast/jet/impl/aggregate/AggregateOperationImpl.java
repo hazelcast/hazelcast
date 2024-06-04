@@ -97,6 +97,7 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, I
     }
 
     @Nonnull
+    @Override
     public FunctionEx<? super A, ? extends R> finishFn() {
         return finishFn;
     }

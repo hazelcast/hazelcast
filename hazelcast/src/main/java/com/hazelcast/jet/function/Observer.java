@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
  * and then continue receiving any future events.
  * <p>
  * Jet calls this {@code Observer}'s callbacks on an internal thread pool
- * of limited size, shared with many other Hazelcast Jet services. Therefore
+ * of limited size, shared with many other Hazelcast Jet services. Therefore,
  * the callbacks should take care to finish as quickly as possible.
  *
  * @param <T> type of the observed event

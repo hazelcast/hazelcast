@@ -107,7 +107,7 @@ public class FileSourceBuilder<T> {
      * <p>
      * Default value is {@code false}.
      *
-     * @param useHadoop if Hadoop should be use for reading local filesystem
+     * @param useHadoop if Hadoop should be used for reading local filesystem
      */
     @Nonnull
     public FileSourceBuilder<T> useHadoopForLocalFiles(boolean useHadoop) {
