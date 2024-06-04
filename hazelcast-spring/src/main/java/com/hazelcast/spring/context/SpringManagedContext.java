@@ -54,8 +54,8 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     }
 
     private Object initializeIfSpringAwareIsPresent(Object obj) {
-        Class clazz = obj.getClass();
-        SpringAware s = (SpringAware) clazz.getAnnotation(SpringAware.class);
+        Class<?> clazz = obj.getClass();
+        SpringAware s = clazz.getAnnotation(SpringAware.class);
         Object resultObject = obj;
         if (s != null) {
             String name = s.beanName().trim();

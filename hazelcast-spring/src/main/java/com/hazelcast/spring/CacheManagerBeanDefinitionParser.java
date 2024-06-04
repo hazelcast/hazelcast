@@ -52,7 +52,7 @@ public class CacheManagerBeanDefinitionParser extends AbstractHazelcastBeanDefin
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
 
-        SpringXmlBuilder(Class providerClass, ParserContext parserContext) {
+        SpringXmlBuilder(Class<?> providerClass, ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(providerClass);
         }

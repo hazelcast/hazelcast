@@ -129,7 +129,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return DomConfigHelper.getAttribute(node, attName, domLevel3);
         }
 
-        protected BeanDefinitionBuilder createBeanBuilder(Class clazz) {
+        protected BeanDefinitionBuilder createBeanBuilder(Class<?> clazz) {
             BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
             builder.setScope(configBuilder.getBeanDefinition().getScope());
             builder.setLazyInit(configBuilder.getBeanDefinition().isLazyInit());
@@ -143,7 +143,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return builder;
         }
 
-        protected BeanDefinitionBuilder createAndFillBeanBuilder(Node node, Class clazz, String propertyName,
+        protected BeanDefinitionBuilder createAndFillBeanBuilder(Node node, Class<?> clazz, String propertyName,
                                                                  BeanDefinitionBuilder parent, String... exceptPropertyNames) {
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
@@ -153,7 +153,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         @SuppressWarnings("SameParameterValue")
-        protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class clazz, String propertyName,
+        protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class<?> clazz, String propertyName,
                                                                 ManagedMap<String, AbstractBeanDefinition> managedMap,
                                                                 String... excludeNames) {
 
@@ -222,7 +222,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             builder.addPropertyValue(propertyName, discoveryConfigBuilder.getBeanDefinition());
         }
 
-        protected ManagedList<BeanDefinition> parseListeners(Node node, Class listenerConfigClass) {
+        protected ManagedList<BeanDefinition> parseListeners(Node node, Class<?> listenerConfigClass) {
             ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
@@ -237,7 +237,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return listeners;
         }
 
-        protected ManagedList<BeanDefinition> parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
+        protected ManagedList<BeanDefinition> parseProxyFactories(Node node, Class<?> proxyFactoryConfigClass) {
             ManagedList<BeanDefinition> list = new ManagedList<>();
             for (Node instanceNode : childElements(node)) {
                 BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);

@@ -59,7 +59,7 @@ public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionPar
             }
         }
 
-        Class clz = null;
+        Class<?> clz = null;
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
             if ("DISTRIBUTED".equals(mode)) {
