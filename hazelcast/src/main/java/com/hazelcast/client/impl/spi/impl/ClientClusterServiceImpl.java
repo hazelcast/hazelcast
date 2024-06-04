@@ -56,6 +56,7 @@ import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePai
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyList;
 
 /**
@@ -286,13 +287,15 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private String membersString(MemberListSnapshot snapshot) {
         Collection<Member> members = snapshot.members().values();
-        StringBuilder sb = new StringBuilder("\n\nMembers [");
+        StringBuilder sb = new StringBuilder(lineSeparator());
+        sb.append(lineSeparator());
+        sb.append("Members [");
         sb.append(members.size());
         sb.append("] {");
         for (Member member : members) {
-            sb.append("\n\t").append(member);
+            sb.append(lineSeparator()).append("\t").append(member);
         }
-        sb.append("\n}\n");
+        sb.append(lineSeparator()).append("}").append(lineSeparator());
         return sb.toString();
     }
 

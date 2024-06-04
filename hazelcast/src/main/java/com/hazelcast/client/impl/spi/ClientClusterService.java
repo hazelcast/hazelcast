@@ -61,7 +61,7 @@ public interface ClientClusterService {
      * </p>
      * <p>
      * When {@link SubsetRoutingConfig} is enabled, this method
-     * returns list of members seen by {@link SubsetMembersImpl}
+     * returns list of members seen by {@link SubsetMembers}
      * </p>
      * @return The collection of members.
      */

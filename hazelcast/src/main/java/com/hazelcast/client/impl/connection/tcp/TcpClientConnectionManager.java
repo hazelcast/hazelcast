@@ -48,6 +48,7 @@ import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.util.ClientConnectivityLogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
@@ -181,6 +182,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
     private final ClusterDiscoveryService clusterDiscoveryService;
+    private final ClientConnectivityLogger connectivityLogger;
 
     private final boolean asyncStart;
     private final ReconnectMode reconnectMode;
@@ -270,6 +272,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
         this.skipMemberListDuringReconnection = properties.getBoolean(SKIP_MEMBER_LIST_DURING_RECONNECTION);
         this.clientClusterService = client.getClientClusterService();
+        this.connectivityLogger = new ClientConnectivityLogger(loggingService, executor, properties);
     }
 
     private static RoutingMode decideRoutingMode(ClientConfig config) {
@@ -929,6 +932,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
 
                 fireConnectionEvent(connection, false);
+                submitConnectivityLoggingTask();
             } else if (logger.isFinestEnabled()) {
                 logger.finest("Destroying a connection, but there is no mapping " + endpoint + ":" + memberUuid
                         + " -> " + connection + " in the connection map.");
@@ -1149,6 +1153,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     + ", local address: " + connection.getLocalSocketAddress());
 
             fireConnectionEvent(connection, true);
+            submitConnectivityLoggingTask();
         }
 
         // It could happen that this connection is already closed and
@@ -1563,5 +1568,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     new TargetDisconnectedException("The client has closed the connection to this member,"
                             + " after receiving a member left event from the cluster. " + connection));
         }
+    }
+
+    private void submitConnectivityLoggingTask() {
+        connectivityLogger.submitLoggingTask(clientClusterService.getEffectiveMemberList(),
+                clientClusterService.getMemberList());
     }
 }
