@@ -154,7 +154,7 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     }
 
 
-    // supress "@Deprecated" code should not be used
+    // suppress "@Deprecated" code should not be used
     @SuppressWarnings("java:S1874")
     @Nonnull
     @Override
@@ -240,12 +240,16 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
                     jobConfig.setName(jobParameters.getJobName());
                 }
             } else {
-                String message = "The jet job has been started from a thread that is different from the one that called "
-                                 + "the main method. \n"
-                                 + "The job could not be found in the ThreadLocal and the job will not start.\n"
-                                 + "If you still want to start job in a different thread, then you need to set the parameters "
-                                 + "of the JobConfig in that thread\n"
-                                 + "JobConfig\n  .addJar(...)\n  .setInitialSnapshotName(...)\n  .setName(...); ";
+                String message = """
+                        The jet job has been started from a thread that is different from the one that called \
+                        the main method.\s
+                        The job could not be found in the ThreadLocal and the job will not start.
+                        If you still want to start job in a different thread, then you need to set the parameters \
+                        of the JobConfig in that thread
+                        JobConfig
+                          .addJar(...)
+                          .setInitialSnapshotName(...)
+                          .setName(...);\s""";
                 LOGGER.severe(message);
                 throw new JetException(message);
             }

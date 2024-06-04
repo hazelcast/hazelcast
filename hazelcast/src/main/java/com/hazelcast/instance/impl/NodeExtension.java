@@ -244,7 +244,7 @@ public interface NodeExtension {
      * Creates additional extension services, which will be registered by
      * service manager during start-up.
      *
-     * By default returned map will be empty.
+     * By default, returned map will be empty.
      *
      * @return extension services
      */
@@ -331,7 +331,7 @@ public interface NodeExtension {
     void onClusterStateChange(ClusterState newState, boolean isTransient);
 
     /**
-     * Called synchronously when partition state (partition assignments, version etc) changes
+     * Called synchronously when partition state (partition assignments, version etc.) changes
      */
     void onPartitionStateChange();
 

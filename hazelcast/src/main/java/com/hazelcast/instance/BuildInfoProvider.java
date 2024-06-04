@@ -108,9 +108,7 @@ public final class BuildInfoProvider {
         try {
             Field field = clazz.getField(fieldName);
             return (String) field.get(null);
-        } catch (NoSuchFieldException e) {
-            throw new HazelcastException(e);
-        } catch (IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new HazelcastException(e);
         }
     }

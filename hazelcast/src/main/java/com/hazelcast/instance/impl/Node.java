@@ -203,7 +203,7 @@ public class Node {
     /**
      * Codebase version of Hazelcast being executed at this Node, as resolved by {@link BuildInfoProvider}.
      * For example, when running on hazelcast-3.8.jar, this would resolve to {@code Version.of(3,8,0)}.
-     * A node's codebase version may be different than cluster version.
+     * A node's codebase version may be different from cluster version.
      */
     private final MemberVersion version;
 
@@ -698,9 +698,9 @@ public class Node {
     }
 
     /**
-     * Indicates that node is not shutting down or it has not already shut down
+     * Indicates that node is not shutting down, or it has not already shut down
      *
-     * @return true if node is not shutting down or it has not already shut down
+     * @return true if node is not shutting down, or it has not already shut down
      */
     public boolean isRunning() {
         return !shuttingDown.get();

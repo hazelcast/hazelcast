@@ -160,7 +160,7 @@ public class TestNodeContext implements NodeContext {
 
     private static Server mockServer() {
         Server server = mock(Server.class);
-        when(server.getConnectionManager(ArgumentMatchers.<EndpointQualifier>any())).thenReturn(mock(ServerConnectionManager.class));
+        when(server.getConnectionManager(ArgumentMatchers.any())).thenReturn(mock(ServerConnectionManager.class));
         return server;
     }
 }

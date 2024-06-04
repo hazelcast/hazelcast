@@ -115,10 +115,9 @@ public final class LinTrendAccumulator {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof LinTrendAccumulator)) {
+        if (!(obj instanceof LinTrendAccumulator that)) {
             return false;
         }
-        LinTrendAccumulator that = (LinTrendAccumulator) obj;
         return this.n == that.n
                 && Objects.equals(this.sumX, that.sumX)
                 && Objects.equals(this.sumY, that.sumY)

@@ -59,7 +59,7 @@ public class MutableReference<T> {
     /**
      * Sets the value as given.
      */
-    public MutableReference set(T value) {
+    public MutableReference<T> set(T value) {
         this.value = value;
         return this;
     }

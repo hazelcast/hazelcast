@@ -150,10 +150,9 @@ public final class Measurement implements IdentifiedDataSerializable {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Measurement)) {
+        if (!(obj instanceof Measurement that)) {
             return false;
         }
-        final Measurement that = (Measurement) obj;
         return this.timestamp == that.timestamp
                 && this.value == that.value
                 && Objects.equals(this.tags, that.tags);

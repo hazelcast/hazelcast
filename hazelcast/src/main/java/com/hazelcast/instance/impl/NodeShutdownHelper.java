@@ -32,7 +32,7 @@ public final class NodeShutdownHelper {
      * {@link com.hazelcast.core.LifecycleEvent.LifecycleState#SHUTTING_DOWN}
      * or {@link com.hazelcast.core.LifecycleEvent.LifecycleState#SHUTDOWN} events.
      *
-     * @param node      Node to shutdown.
+     * @param node      Node to shut down.
      * @param terminate <code>false</code> for graceful shutdown, <code>true</code> for terminate (un-graceful shutdown)
      */
     public static void shutdownNodeByFiringEvents(Node node, boolean terminate) {

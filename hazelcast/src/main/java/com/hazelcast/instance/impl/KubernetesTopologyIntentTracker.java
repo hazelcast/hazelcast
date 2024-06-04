@@ -43,7 +43,7 @@ import static java.lang.Thread.sleep;
  * according to intent of topology changes detected in kubernetes environment.
  * <br/>
  * Example flow of change in detected intent and associated {@code currentClusterSpecSize} on a cluster's master member:
- * (User action on left, detected intent with cluster spec size in parenthese on the right side).
+ * (User action on left, detected intent with cluster spec size in parentheses on the right side).
  * <pre>
  * {@code
  * +-----------------------------------------------------------------+---------------------------------+
@@ -79,7 +79,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     private final ILogger logger;
     private final Node node;
     /**
-     * The desired number of members, as specified in the runtime environment. eg in kubernetes
+     * The desired number of members, as specified in the runtime environment. e.g. in kubernetes
      * {@code kubectl scale sts hz --replicas 5} means {@code currentClusterSpecSize} is 5.
      */
     private volatile int currentClusterSpecSize = UNKNOWN;
@@ -279,7 +279,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
                 || shutdownIntent == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS) {
             try {
                 // wait for partition table to be healthy before switching to NO_MIGRATION
-                // eg in "rollout restart" case, node is shutdown in NO_MIGRATION state
+                // e.g. in "rollout restart" case, node is shutdown in NO_MIGRATION state
                 waitCallableWithShutdownTimeout(() -> getPartitionService().isPartitionTableSafe());
                 changeClusterState(clusterStateForMissingMembers);
             } catch (Throwable t) {
