@@ -370,7 +370,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             || "license-key".equals(nodeName)) {
                         configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                     } else if ("listeners".equals(nodeName)) {
-                        List listeners = parseListeners(node, ListenerConfig.class);
+                        List<BeanDefinition> listeners = parseListeners(node, ListenerConfig.class);
                         configBuilder.addPropertyValue("listenerConfigs", listeners);
                     } else if ("lite-member".equals(nodeName)) {
                         handleLiteMember(node);
@@ -675,7 +675,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     splitBrainProtectionBuilder.addPropertyValue("minimumClusterSize",
                             getIntegerValue("minimum-cluster-size", value));
                 } else if ("listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(n, SplitBrainProtectionListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(n, SplitBrainProtectionListenerConfig.class);
                     splitBrainProtectionBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("protect-on".equals(nodeName)) {
                     splitBrainProtectionBuilder.addPropertyValue("protectOn", SplitBrainProtectionOn.valueOf(value));
@@ -765,7 +765,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, EntryListenerConfig.class);
                     replicatedMapConfigBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     replicatedMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1227,7 +1227,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, builder);
             for (Node childNode : childElements(node)) {
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ListenerConfig.class);
                     builder.addPropertyValue("messageListenerConfigs", listeners);
                 } else if ("user-code-namespace".equals(cleanNodeName(childNode))) {
                     builder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
@@ -1274,7 +1274,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("item-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ItemListenerConfig.class);
                     queueConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("queue-store".equals(nodeName)) {
                     handleQueueStoreConfig(childNode, queueConfigBuilder);
@@ -1335,7 +1335,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("item-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ItemListenerConfig.class);
                     listConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     listConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1356,7 +1356,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("item-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ItemListenerConfig.class);
                     setConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     setConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1406,17 +1406,17 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     mapConfigBuilder.addPropertyValue("attributeConfigs", attributes);
                 } else if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     mapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, mapConfigBuilder);
                 } else if ("query-caches".equals(nodeName)) {
-                    ManagedList queryCaches = getQueryCaches(childNode);
+                    ManagedList<BeanDefinition> queryCaches = getQueryCaches(childNode);
                     mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 } else if ("partition-lost-listeners".endsWith(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, MapPartitionLostListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, MapPartitionLostListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("merkle-tree".equals(nodeName)) {
                     handleMerkleTreeConfig(mapConfigBuilder, childNode);
@@ -1513,7 +1513,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("eventJournalConfig", eventJournalBuilder.getBeanDefinition());
         }
 
-        private ManagedList getQueryCaches(Node childNode) {
+        private ManagedList<BeanDefinition> getQueryCaches(Node childNode) {
             ManagedList<BeanDefinition> queryCaches = new ManagedList<>();
             for (Node queryCacheNode : childElements(childNode)) {
                 BeanDefinitionBuilder beanDefinitionBuilder = parseQueryCaches(queryCacheNode);
@@ -1608,7 +1608,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("wan-replication-ref".equals(nodeName)) {
                     handleWanReplicationRef(cacheConfigBuilder, childNode);
                 } else if ("partition-lost-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     cacheConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1850,7 +1850,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, EntryListenerConfig.class);
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     multiMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1870,7 +1870,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, topicConfigBuilder);
             for (Node childNode : childElements(node)) {
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ListenerConfig.class);
                     topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
                 } else if ("statistics-enabled".equals(cleanNodeName(childNode))) {
                     String statisticsEnabled = getTextContent(childNode);
@@ -2430,7 +2430,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Node attName = node.getAttributes().getNamedItem("name");
             String name = getTextContent(attName);
             fillAttributeValues(node, vectorCollectionConfigBuilder);
-            ManagedList vectorIndexConfigs = new ManagedList<>();
+            ManagedList<AbstractBeanDefinition> vectorIndexConfigs = new ManagedList<>();
             Node indexesNode = firstChildElement(node);
             if ("indexes".equals(cleanNodeName(indexesNode))) {
                 for (Node childNode : childElements(indexesNode)) {

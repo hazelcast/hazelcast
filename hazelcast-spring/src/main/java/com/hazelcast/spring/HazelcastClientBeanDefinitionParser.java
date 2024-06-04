@@ -164,12 +164,12 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("network".equals(nodeName)) {
                     handleNetwork(node);
                 } else if ("listeners".equals(nodeName)) {
-                    List listeners = parseListeners(node, ListenerConfig.class);
+                    List<BeanDefinition> listeners = parseListeners(node, ListenerConfig.class);
                     configBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("serialization".equals(nodeName)) {
                     handleSerialization(node);
                 } else if ("proxy-factories".equals(nodeName)) {
-                    List list = parseProxyFactories(node, ProxyFactoryConfig.class);
+                    List<BeanDefinition> list = parseProxyFactories(node, ProxyFactoryConfig.class);
                     configBuilder.addPropertyValue("proxyFactoryConfigs", list);
                 } else if ("load-balancer".equals(nodeName)) {
                     handleLoadBalancer(node);
@@ -178,7 +178,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("spring-aware".equals(nodeName)) {
                     handleSpringAware();
                 } else if ("query-caches".equals(nodeName)) {
-                    ManagedMap queryCaches = getQueryCaches(node);
+                    ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches = getQueryCaches(node);
                     configBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 } else if ("connection-strategy".equals(nodeName)) {
                     handleConnectionStrategy(node);
@@ -438,7 +438,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("preloaderConfig", getPreloaderConfig(node));
         }
 
-        private ManagedMap getQueryCaches(Node childNode) {
+        private ManagedMap<String, ManagedMap<String, BeanDefinition>> getQueryCaches(Node childNode) {
             ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches
                     = new ManagedMap<>();
             for (Node queryCacheNode : childElements(childNode)) {
@@ -477,7 +477,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 BeanDefinitionBuilder predicateBuilder = getPredicate(node, textContent);
                 builder.addPropertyValue("predicateConfig", predicateBuilder.getBeanDefinition());
             } else if ("entry-listeners".equals(nodeName)) {
-                ManagedList listeners = getEntryListeners(node);
+                ManagedList<BeanDefinition> listeners = getEntryListeners(node);
                 builder.addPropertyValue("entryListenerConfigs", listeners);
             } else if ("include-value".equals(nodeName)) {
                 builder.addPropertyValue("includeValue", textContent);
@@ -497,7 +497,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             } else if ("serialize-keys".equals(nodeName)) {
                 builder.addPropertyValue("serializeKeys", textContent);
             } else if ("indexes".equals(nodeName)) {
-                ManagedList indexes = getIndexes(node);
+                ManagedList<BeanDefinition> indexes = getIndexes(node);
                 builder.addPropertyValue("indexConfigs", indexes);
             } else if ("eviction".equals(nodeName)) {
                 builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false, false));

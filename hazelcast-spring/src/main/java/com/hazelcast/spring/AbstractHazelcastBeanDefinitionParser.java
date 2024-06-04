@@ -222,7 +222,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             builder.addPropertyValue(propertyName, discoveryConfigBuilder.getBeanDefinition());
         }
 
-        protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
+        protected ManagedList<BeanDefinition> parseListeners(Node node, Class listenerConfigClass) {
             ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
@@ -237,7 +237,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return listeners;
         }
 
-        protected ManagedList parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
+        protected ManagedList<BeanDefinition> parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
             ManagedList<BeanDefinition> list = new ManagedList<>();
             for (Node instanceNode : childElements(node)) {
                 BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);
