@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,14 +58,14 @@ public class InterceptorTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(getConfig());
 
         String mapName = "mapWithInterceptor";
-        IMap map = node.getMap(mapName);
+        IMap<Object, Object> map = node.getMap(mapName);
         String id = map.addInterceptor(new SimpleInterceptor());
 
         assertTrue(map.removeInterceptor(id));
         assertNoRegisteredInterceptorExists(map);
     }
 
-    private static void assertNoRegisteredInterceptorExists(IMap map) {
+    private static void assertNoRegisteredInterceptorExists(IMap<Object, Object> map) {
         String mapName = map.getName();
         MapService mapservice = (MapService) (((MapProxyImpl) map).getService());
         mapservice.getMapServiceContext().getMapContainer(mapName).getInterceptorRegistry().getInterceptors();
@@ -74,7 +75,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void removeInterceptor_returns_false_when_there_is_no_interceptor() {
         HazelcastInstance node = createHazelcastInstance(getConfig());
 
-        IMap map = node.getMap("mapWithNoInterceptor");
+        IMap<Object, Object> map = node.getMap("mapWithNoInterceptor");
 
         assertFalse(map.removeInterceptor(UuidUtil.newUnsecureUuidString()));
         assertNoRegisteredInterceptorExists(map);
@@ -356,6 +357,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     public static class SimpleInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

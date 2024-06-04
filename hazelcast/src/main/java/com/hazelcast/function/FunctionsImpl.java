@@ -21,6 +21,7 @@ import com.hazelcast.security.impl.function.SecuredFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -72,6 +73,7 @@ class FunctionsImpl {
             extends ComposedSecuredFunction<FunctionEx<? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements FunctionEx<V, R> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         ComposedFunctionEx(@Nonnull FunctionEx<? super V, ? extends T> before,
@@ -90,6 +92,7 @@ class FunctionsImpl {
             extends ComposedSecuredFunction<BiFunctionEx<? super U, ? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements BiFunctionEx<U, V, R> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         ComposedBiFunctionEx(@Nonnull BiFunctionEx<? super U, ? super V, ? extends T> before,
@@ -108,6 +111,7 @@ class FunctionsImpl {
             extends ComposedSecuredFunction<ConsumerEx<? super T>, ConsumerEx<? super T>>
             implements ConsumerEx<T> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         ComposedConsumerEx(@Nonnull ConsumerEx<? super T> before,

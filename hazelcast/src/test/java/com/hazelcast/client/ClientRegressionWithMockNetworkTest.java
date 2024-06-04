@@ -59,6 +59,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.UUID;
@@ -316,6 +317,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     private static class MapInterceptorImpl extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -836,7 +838,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //client will get into retry
         server.shutdown();
         // we expect this shutdown not to wait for 4 minutes (240000).
-        // Test will timeout in 20 seconds. Note that global executor shutdown in ClientExecutionServiceImpl timeout is 30 seconds
+        // Test will time out in 20 seconds. Note that global executor shutdown in ClientExecutionServiceImpl timeout is 30 seconds
         client.shutdown();
     }
 }

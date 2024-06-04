@@ -17,17 +17,21 @@
 package example.serialization;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 
 public class TestDeserialized implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static volatile boolean isDeserialized = false;
 
+    @Serial
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
     }
 
+    @Serial
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         isDeserialized = true;
     }

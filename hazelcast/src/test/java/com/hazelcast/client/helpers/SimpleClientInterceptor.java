@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.internal.util.StringUtil;
 
 import java.io.IOException;
+import java.io.Serial;
 
 
 /**
@@ -30,6 +31,7 @@ import java.io.IOException;
  */
 
 public class SimpleClientInterceptor extends MapInterceptorAdaptor implements Portable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final int ID = 345;

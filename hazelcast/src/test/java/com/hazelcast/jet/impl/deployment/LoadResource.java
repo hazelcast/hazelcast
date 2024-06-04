@@ -68,6 +68,7 @@ public class LoadResource extends AbstractProcessor {
 
     static class LoadResourceSupplier implements ProcessorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 9124364422142382663L;
 
         @Nonnull

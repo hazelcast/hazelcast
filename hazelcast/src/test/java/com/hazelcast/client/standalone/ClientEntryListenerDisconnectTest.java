@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.junit.Ignore;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
@@ -125,6 +126,7 @@ public class ClientEntryListenerDisconnectTest {
     @SuppressWarnings("unused")
     private static class GenericEvent implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = -933111044641052844L;
 
         private int userId;

@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -246,6 +247,7 @@ public class IssuesTest extends HazelcastTestSupport {
     }
 
     static class InstanceAwareMapInterceptorImpl extends MapInterceptorAdaptor implements HazelcastInstanceAware {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         transient HazelcastInstance hazelcastInstance;

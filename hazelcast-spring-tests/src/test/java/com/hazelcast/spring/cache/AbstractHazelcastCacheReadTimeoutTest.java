@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
+import java.io.Serial;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -138,6 +139,7 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
     }
 
     public static class DelayIMapGetInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final int delay;

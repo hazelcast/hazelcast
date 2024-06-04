@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import testsubjects.StaticSerializableBiFunction;
 import testsubjects.StaticSerializableBiFunctionEx;
 
+import java.io.Serial;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -1469,6 +1470,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     private static class DelayGetRemoveMapInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

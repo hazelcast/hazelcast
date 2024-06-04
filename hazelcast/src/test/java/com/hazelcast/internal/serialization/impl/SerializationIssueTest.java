@@ -57,6 +57,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -92,7 +93,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         final AtomicInteger readCounter = new AtomicInteger();
         final JavaSerializer javaSerializer = new JavaSerializer(true, false, null);
         SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
-                globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
+                globalSerializerConfig.setImplementation(new StreamSerializer<>() {
                     @Override
                     public void write(ObjectDataOutput out, Object v) throws IOException {
                         writeCounter.incrementAndGet();
@@ -147,7 +148,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         final AtomicInteger writeCounter = new AtomicInteger();
         final AtomicInteger readCounter = new AtomicInteger();
         SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
-                globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
+                globalSerializerConfig.setImplementation(new StreamSerializer<>() {
                     @Override
                     public void write(ObjectDataOutput out, Object v) throws IOException {
                         writeCounter.incrementAndGet();
@@ -283,7 +284,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
     public void testSharedJavaSerialization() {
         SerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(true).build();
         Data data = ss.toData(new Foo());
-        Foo foo = (Foo) ss.toObject(data);
+        Foo foo = ss.toObject(data);
 
         assertTrue("Objects are not identical!", foo == foo.getBar().getFoo());
     }
@@ -507,11 +508,10 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void readData(ObjectDataInput in) throws IOException {
             int size = in.readInt();
             for (int k = 0; k < size; k++) {
-                add((E) in.readObject());
+                add(in.readObject());
             }
         }
     }
@@ -652,6 +652,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
 
     public static final class DummyInvocationHandler implements InvocationHandler, Serializable {
 
+        @Serial
         private static final long serialVersionUID = 3459316091095397098L;
 
         private static final DummyInvocationHandler INSTANCE = new DummyInvocationHandler();

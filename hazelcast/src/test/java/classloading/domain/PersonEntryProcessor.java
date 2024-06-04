@@ -19,10 +19,12 @@ package classloading.domain;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
+import java.io.Serial;
 import java.io.Serializable;
 
 public class PersonEntryProcessor implements EntryProcessor<String, Person, Person>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

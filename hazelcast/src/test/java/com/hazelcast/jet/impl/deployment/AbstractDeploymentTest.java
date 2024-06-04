@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -323,6 +324,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     }
 
     static class MyJobClassLoaderFactory implements JobClassLoaderFactory {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Nonnull

@@ -33,6 +33,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.io.Serial;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -86,6 +87,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
     }
 
     private static class DelayIMapGetInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final int delay;

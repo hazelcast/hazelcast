@@ -18,6 +18,8 @@ package com.hazelcast.function;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
 
+import java.io.Serial;
+
 final class ComparatorsEx {
 
     static final ComparatorEx<Comparable<Object>> NATURAL_ORDER = new NaturalOrderComparator();
@@ -29,6 +31,7 @@ final class ComparatorsEx {
     @BinaryInterface
     private static final class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -41,6 +44,7 @@ final class ComparatorsEx {
             return REVERSE_ORDER;
         }
 
+        @Serial
         private Object readResolve() {
             return NATURAL_ORDER;
         }
@@ -49,6 +53,7 @@ final class ComparatorsEx {
     @BinaryInterface
     private static final class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -61,6 +66,7 @@ final class ComparatorsEx {
             return NATURAL_ORDER;
         }
 
+        @Serial
         private Object readResolve() {
             return REVERSE_ORDER;
         }
@@ -68,6 +74,7 @@ final class ComparatorsEx {
 
     @BinaryInterface
     public static final class NullComparator<T> implements ComparatorEx<T> {
+        @Serial
         private static final long serialVersionUID = 1L;
         private final boolean isNullFirst;
 

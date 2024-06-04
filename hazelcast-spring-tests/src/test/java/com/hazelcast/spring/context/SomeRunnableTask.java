@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertNotNull;
 @SpringAware
 public class SomeRunnableTask implements Runnable, Serializable, ApplicationContextAware {
 
+    @Serial
     private static final long serialVersionUID = 5851289963628278937L;
 
     private transient ApplicationContext context;

@@ -16,8 +16,11 @@
 
 package com.hazelcast.map;
 
+import java.io.Serial;
+
 /** Allows implementations to implement {@link MapInterceptor} with less boilerplate code */
 public class MapInterceptorAdaptor implements MapInterceptor {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

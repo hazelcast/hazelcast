@@ -19,10 +19,12 @@ package classloading.domain;
 import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 
 public class PersonCacheLoaderFactory implements Factory<CacheLoader<String, Person>> {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

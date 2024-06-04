@@ -40,6 +40,7 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -290,6 +291,7 @@ public class CacheSplitBrainProtectionWriteTest extends AbstractSplitBrainProtec
     }
 
     public static class SimpleEntryProcessor implements EntryProcessor<Integer, String, Void>, Serializable {
+        @Serial
         private static final long serialVersionUID = -396575576353368113L;
 
         @Override

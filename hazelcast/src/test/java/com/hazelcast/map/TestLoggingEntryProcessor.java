@@ -16,10 +16,12 @@
 
 package com.hazelcast.map;
 
+import java.io.Serial;
 import java.util.Map;
 
 public class TestLoggingEntryProcessor implements EntryProcessor<String, TestData, Boolean> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override
