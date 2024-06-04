@@ -103,10 +103,9 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Tuple5)) {
+        if (!(obj instanceof Tuple5 that)) {
             return false;
         }
-        final Tuple5 that = (Tuple5) obj;
         return Objects.equals(this.f0, that.f0)
                 && Objects.equals(this.f1, that.f1)
                 && Objects.equals(this.f2, that.f2)
