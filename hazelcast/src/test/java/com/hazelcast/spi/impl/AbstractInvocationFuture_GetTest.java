@@ -44,7 +44,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
     public void whenResultAlreadyAvailable() throws Exception {
         future.complete(value);
 
-        Future getFuture = spawn(() -> future.get());
+        Future<?> getFuture = spawn(() -> future.get());
 
         assertCompletesEventually(getFuture);
         assertSame(value, future.get());
@@ -55,7 +55,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
         future.complete(value);
 
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(() -> {
+        Future<?> getFuture = spawn(() -> {
             // we set the interrupt flag.
             Thread.currentThread().interrupt();
             Object value = future.get();
@@ -73,7 +73,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
     public void whenSomeWaitingNeeded() throws ExecutionException, InterruptedException {
         future.complete(value);
 
-        Future getFuture = spawn(() -> future.get());
+        Future<?> getFuture = spawn(() -> future.get());
 
         assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
 
@@ -88,7 +88,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
     public void whenInterruptedWhileWaiting() throws Exception {
         final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(() -> {
+        Future<?> getFuture = spawn(() -> {
             thread.set(Thread.currentThread());
             try {
                 return future.get();
@@ -114,7 +114,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
 
     @Test
     public void whenMultipleGetters() throws ExecutionException, InterruptedException {
-        List<Future> getFutures = new LinkedList<>();
+        List<Future<?>> getFutures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
             getFutures.add(spawn(() -> future.get()));
         }
@@ -124,7 +124,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
         sleepSeconds(5);
         future.complete(value);
 
-        for (Future getFuture : getFutures) {
+        for (Future<?> getFuture : getFutures) {
             assertCompletesEventually(getFuture);
             assertSame(value, future.get());
         }

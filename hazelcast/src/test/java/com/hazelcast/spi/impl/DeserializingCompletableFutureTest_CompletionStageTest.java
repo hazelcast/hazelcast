@@ -48,7 +48,7 @@ public class DeserializingCompletableFutureTest_CompletionStageTest
     @Parameter
     public boolean deserialize;
 
-    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private Data returnValueAsData;
 
     @Before

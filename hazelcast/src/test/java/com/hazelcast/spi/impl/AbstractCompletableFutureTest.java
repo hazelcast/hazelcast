@@ -439,6 +439,6 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         new Thread(runnable).start();
     }
 
-    private class TestFutureImpl extends InternalCompletableFuture<Object> {
+    private static class TestFutureImpl extends InternalCompletableFuture<Object> {
     }
 }

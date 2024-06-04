@@ -54,14 +54,14 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     @Test
     public void whenZeroTimeout_butResponseAvailable() throws Exception {
         future.complete(value);
-        Future getFuture = spawn(() -> future.get(0, SECONDS));
+        Future<?> getFuture = spawn(() -> future.get(0, SECONDS));
         assertCompletesEventually(getFuture);
         assertSame(value, getFuture.get());
     }
 
     @Test
     public void whenZeroTimeout_andNoResponseAvailable() throws Exception {
-        Future getFuture = spawn(() -> future.get(0, SECONDS));
+        Future<?> getFuture = spawn(() -> future.get(0, SECONDS));
 
         assertCompletesEventually(getFuture);
 
@@ -79,7 +79,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     @Test
     public void whenResponseAvailable() throws Exception {
         future.complete(value);
-        Future getFuture = spawn(() -> future.get(10, SECONDS));
+        Future<?> getFuture = spawn(() -> future.get(10, SECONDS));
         assertCompletesEventually(getFuture);
         assertSame(value, getFuture.get());
     }
@@ -89,7 +89,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         future.complete(value);
 
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(() -> {
+        Future<?> getFuture = spawn(() -> {
             // we set the interrupt flag.
             Thread.currentThread().interrupt();
             Object value = future.get(1, SECONDS);
@@ -105,7 +105,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
     @Test
     public void whenResponseAvailableAfterSomeDelay() throws Exception {
-        Future getFuture = spawn(() -> future.get(60, SECONDS));
+        Future<?> getFuture = spawn(() -> future.get(60, SECONDS));
 
         // wait till the thread is registered.
         assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
@@ -118,7 +118,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
     @Test
     public void whenTimeout() throws InterruptedException {
-        Future getFuture = spawn(() -> future.get(1, SECONDS));
+        Future<?> getFuture = spawn(() -> future.get(1, SECONDS));
 
         assertCompletesEventually(getFuture);
 
@@ -137,7 +137,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     public void whenInterruptedWhileWaiting() throws Exception {
         final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(() -> {
+        Future<?> getFuture = spawn(() -> {
             thread.set(Thread.currentThread());
             try {
                 return future.get(1, HOURS);
@@ -163,7 +163,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
     @Test
     public void whenMultipleGetters() throws Exception {
-        List<Future> getFutures = new LinkedList<>();
+        List<Future<?>> getFutures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
             getFutures.add(spawn(() -> future.get(1, DAYS)));
         }
@@ -173,7 +173,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         sleepSeconds(5);
         future.complete(value);
 
-        for (Future getFuture : getFutures) {
+        for (Future<?> getFuture : getFutures) {
             assertCompletesEventually(getFuture);
             assertSame(value, future.get());
         }

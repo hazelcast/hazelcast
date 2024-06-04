@@ -54,14 +54,14 @@ public class DelegatingCompletableFutureTest {
     @Test
     public void test_get_Object() throws Exception {
         Object value = "value";
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(value));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(value));
         assertEquals(value, future.get());
     }
 
     @Test
     public void test_get_withDefault() throws Exception {
         String defaultValue = "defaultValue";
-        Future<String> future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(null), defaultValue);
+        Future<String> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(null), defaultValue);
         assertSame(defaultValue, future.get());
     }
 
@@ -69,7 +69,7 @@ public class DelegatingCompletableFutureTest {
     public void test_get_Data() throws Exception {
         Object value = "value";
         Data data = serializationService.toData(value);
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(data));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(data));
         assertEquals(value, future.get());
     }
 
@@ -77,7 +77,7 @@ public class DelegatingCompletableFutureTest {
     public void test_get_whenData_andMultipleTimesInvoked_thenSameInstanceReturned() throws Exception {
         Object value = "value";
         Data data = serializationService.toData(value);
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(data));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(data));
 
         Object result1 = future.get();
         Object result2 = future.get();
@@ -87,7 +87,7 @@ public class DelegatingCompletableFutureTest {
     @Test
     public void test_get_Object_withTimeout() throws Exception {
         Object value = "value";
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(value));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(value));
         assertEquals(value, future.get(1, TimeUnit.MILLISECONDS));
     }
 
@@ -95,27 +95,27 @@ public class DelegatingCompletableFutureTest {
     public void test_get_Data_withTimeout() throws Exception {
         Object value = "value";
         Data data = serializationService.toData(value);
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(data));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(data));
         assertEquals(value, future.get(1, TimeUnit.MILLISECONDS));
     }
 
     @Test(expected = ExecutionException.class)
     public void test_get_Exception() throws Exception {
         Throwable error = new Throwable();
-        Future future = new DelegatingCompletableFuture(serializationService, completedExceptionally(error));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, completedExceptionally(error));
         future.get();
     }
 
     @Test
     public void test_cancel() {
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(null));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture(null));
         assertFalse(future.cancel(true));
         assertFalse(future.isCancelled());
     }
 
     @Test
     public void test_isDone() {
-        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture("value"));
+        Future<Object> future = new DelegatingCompletableFuture<>(serializationService, newCompletedFuture("value"));
         assertTrue(future.isDone());
     }
 
@@ -123,7 +123,7 @@ public class DelegatingCompletableFutureTest {
     public void test_actionsTrigger_whenAlreadyCompletedFuture() {
         CountDownLatch latch = new CountDownLatch(1);
         CompletableFuture<String> future =
-                new DelegatingCompletableFuture(serializationService, newCompletedFuture("value"));
+                new DelegatingCompletableFuture<>(serializationService, newCompletedFuture("value"));
         future.thenRun(latch::countDown);
         assertOpenEventually(latch);
     }
@@ -133,8 +133,8 @@ public class DelegatingCompletableFutureTest {
         // given f1 (JDK CompletableFuture), is completed asynchronously after 3 seconds
         //       f2 (DelegatingCompletableFuture wrapping f1) returned from thenCompose
         // then  f2 is completed eventually
-        CompletableFuture f1 = CompletableFuture.runAsync(() -> sleepSeconds(2));
-        CompletableFuture f2 = CompletableFuture.completedFuture(null).thenCompose(v -> new DelegatingCompletableFuture<>(serializationService, f1));
+        CompletableFuture<Void> f1 = CompletableFuture.runAsync(() -> sleepSeconds(2));
+        CompletableFuture<Object> f2 = CompletableFuture.completedFuture(null).thenCompose(v -> new DelegatingCompletableFuture<>(serializationService, f1));
 
         assertTrueEventually(() -> assertTrue(f2.isDone() && !f2.isCompletedExceptionally()));
     }
@@ -144,8 +144,8 @@ public class DelegatingCompletableFutureTest {
         // given f1 (JDK CompletableFuture), is already completed
         //       f2 (DelegatingCompletableFuture wrapping f1) returned from thenCompose
         // then  f2 is completed eventually
-        CompletableFuture f1 = CompletableFuture.completedFuture(null);
-        CompletableFuture f2 = CompletableFuture.completedFuture(null).thenCompose(v ->
+        CompletableFuture<Object> f1 = CompletableFuture.completedFuture(null);
+        CompletableFuture<Object> f2 = CompletableFuture.completedFuture(null).thenCompose(v ->
                 new DelegatingCompletableFuture<>(serializationService, f1)
         );
 
@@ -157,8 +157,8 @@ public class DelegatingCompletableFutureTest {
         // given f1 (DelegatingCompletableFuture wrapping completed future)
         //       f2 (JDK CompletableFuture) returned from thenCompose
         // then  f2 is completed eventually
-        CompletableFuture f1 = new DelegatingCompletableFuture<>(serializationService, completedFuture(null));
-        CompletableFuture f2 = f1.thenCompose(v -> CompletableFuture.runAsync(() -> sleepSeconds(2)));
+        CompletableFuture<Object> f1 = new DelegatingCompletableFuture<>(serializationService, completedFuture(null));
+        CompletableFuture<Void> f2 = f1.thenCompose(v -> CompletableFuture.runAsync(() -> sleepSeconds(2)));
 
         assertTrueEventually(() -> assertTrue(f2.isDone() && !f2.isCompletedExceptionally()));
     }
@@ -171,8 +171,8 @@ public class DelegatingCompletableFutureTest {
         //       f2 is completed eventually
         String value = "test";
         Data valueData = serializationService.toData(value);
-        CompletableFuture f1 = new DelegatingCompletableFuture<>(serializationService, completedFuture(valueData));
-        CompletableFuture f2 = f1.thenCompose(v -> {
+        CompletableFuture<Object> f1 = new DelegatingCompletableFuture<>(serializationService, completedFuture(valueData));
+        CompletableFuture<Void> f2 = f1.thenCompose(v -> {
             assertEquals(value, v);
             return CompletableFuture.runAsync(() -> sleepSeconds(2));
         });
@@ -189,9 +189,9 @@ public class DelegatingCompletableFutureTest {
         //       completion value of f2 is deserialized
         String value = "test";
         Data valueData = serializationService.toData(value);
-        CompletableFuture f1 = completedFuture(null);
+        CompletableFuture<String> f1 = completedFuture(null);
         CompletableFuture<String> f2 = f1.thenCompose(v ->
-            new DelegatingCompletableFuture<String>(serializationService, completedFuture(valueData))
+                new DelegatingCompletableFuture<>(serializationService, completedFuture(valueData))
         );
 
         assertTrueEventually(() -> assertTrue(f2.isDone() && !f2.isCompletedExceptionally()));
@@ -206,12 +206,12 @@ public class DelegatingCompletableFutureTest {
         //       completion value of f2 is deserialized
         String value = "test";
         Data valueData = serializationService.toData(value);
-        CompletableFuture f1 = completedFuture(null);
+        CompletableFuture<Object> f1 = completedFuture(null);
         CompletableFuture<String> f2 = f1.thenCompose(v ->
-            new DelegatingCompletableFuture<String>(serializationService, supplyAsync(() -> {
-                sleepSeconds(2);
-                return valueData;
-            }))
+                new DelegatingCompletableFuture<>(serializationService, supplyAsync(() -> {
+                    sleepSeconds(2);
+                    return valueData;
+                }))
         );
 
         assertTrueEventually(() -> assertTrue(f2.isDone() && !f2.isCompletedExceptionally()));

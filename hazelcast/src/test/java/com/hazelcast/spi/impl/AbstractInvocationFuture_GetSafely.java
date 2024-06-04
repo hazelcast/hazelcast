@@ -39,7 +39,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
     public void whenNormalResponse() throws ExecutionException, InterruptedException {
         future.complete(value);
 
-        Future joinFuture = spawn(() -> future.join());
+        Future<?> joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         assertSame(value, joinFuture.get());
@@ -50,7 +50,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
         ExpectedRuntimeException ex = new ExpectedRuntimeException();
         future.completeExceptionally(ex);
 
-        Future joinFuture = spawn(() -> future.join());
+        Future<?> joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         try {
@@ -67,7 +67,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
         Exception ex = new Exception();
         future.completeExceptionally(ex);
 
-        Future joinFuture = spawn(() -> future.join());
+        Future<?> joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         try {
