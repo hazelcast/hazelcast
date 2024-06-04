@@ -155,6 +155,7 @@
             is PARTITION_GROUPS when not set. And subset-routing
             is disabled by default.
             Note : This feature may only be enabled if smart-routing is disabled.
+            Note : This feature is only available in Hazelcast Enterprise from 5.5.
         * <smart-routing>:
             If true, client will route the key based operations to owner of the key at the best effort. Note that it
             uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that
