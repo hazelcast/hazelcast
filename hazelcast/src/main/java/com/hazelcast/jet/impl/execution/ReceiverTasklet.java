@@ -257,7 +257,7 @@ public class ReceiverTasklet implements Tasklet {
     }
 
     // Only one thread writes to ackedSeq
-    @SuppressWarnings("NonAtomicOperationOnVolatileField")
+    @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
     long ackItem(long itemWeight) {
         return ackedSeq += itemWeight;
     }

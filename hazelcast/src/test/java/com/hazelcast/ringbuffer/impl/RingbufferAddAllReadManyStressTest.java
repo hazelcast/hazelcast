@@ -169,7 +169,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
             ringbuffer.add(Long.MIN_VALUE);
         }
 
-        @SuppressWarnings("NonAtomicOperationOnVolatileField")
+        @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
         private void makeBatch() {
             items.clear();
             int count = max(1, random.nextInt(MAX_BATCH));
@@ -222,7 +222,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        @SuppressWarnings("NonAtomicOperationOnVolatileField")
+        @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
         public void doRun() throws Throwable {
             seq = ringbuffer.headSequence();
 
