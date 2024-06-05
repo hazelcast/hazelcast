@@ -86,9 +86,7 @@ public class TpcEngineTest {
     public void shutdown_whenRunning() throws InterruptedException {
         engine = new TpcEngine();
         engine.start();
-        engine.reactor(0).offer(() -> {
-            sleepMillis(1000);
-        });
+        engine.reactor(0).offer(() -> sleepMillis(1000));
         engine.shutdown();
         assertEquals(SHUTDOWN, engine.state());
         assertTrue(engine.awaitTermination(5, TimeUnit.SECONDS));
@@ -99,9 +97,7 @@ public class TpcEngineTest {
     public void shutdown_whenShutdown() throws InterruptedException {
         engine = new TpcEngine();
         engine.start();
-        engine.reactor(0).offer(() -> {
-            sleepMillis(1000);
-        });
+        engine.reactor(0).offer(() -> sleepMillis(1000));
         engine.shutdown();
 
         engine.shutdown();

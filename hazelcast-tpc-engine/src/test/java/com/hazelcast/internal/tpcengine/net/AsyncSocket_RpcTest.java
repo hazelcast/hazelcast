@@ -62,7 +62,7 @@ public abstract class AsyncSocket_RpcTest {
     private final AtomicLong counter = new AtomicLong();
     private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", counter);
 
-    private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, CompletableFuture<IOBuffer>> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -320,7 +320,7 @@ public abstract class AsyncSocket_RpcTest {
                 IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
 
                 long callId = callIdGenerator.incrementAndGet();
-                CompletableFuture future = new CompletableFuture();
+                CompletableFuture<IOBuffer> future = new CompletableFuture<>();
                 futures.putIfAbsent(callId, future);
 
                 buf.writeInt(payload.length);

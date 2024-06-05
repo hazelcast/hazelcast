@@ -78,7 +78,7 @@ public abstract class ReactorTest {
     @Test(expected = NullPointerException.class)
     public void test_offer_Runnable_whenNull() {
         Reactor reactor = newReactor();
-        reactor.offer((Runnable) null);
+        reactor.offer(null);
     }
 
     @Test
@@ -87,7 +87,7 @@ public abstract class ReactorTest {
         Reactor reactor = newReactor();
         reactor.start();
 
-        boolean result = reactor.offer(() -> completed.countDown());
+        boolean result = reactor.offer(completed::countDown);
 
         assertTrue(result);
         assertOpenEventually(completed);

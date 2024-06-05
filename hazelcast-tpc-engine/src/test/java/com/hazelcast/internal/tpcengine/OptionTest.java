@@ -26,19 +26,19 @@ public class OptionTest {
     @Test
     public void test_name_type() {
         String name = "foo";
-        Class type = Integer.class;
-        Option option = new Option(name, type);
+        Class<Integer> type = Integer.class;
+        Option<Integer> option = new Option<>(name, type);
         assertEquals(name, option.name());
         assertEquals(type, option.type());
     }
 
     @Test
     public void test_equals() {
-        Option self = new Option("foo", String.class);
+        Option<String> self = new Option<>("foo", String.class);
 
         assertEquals(self, self);
         assertNotEquals(self, null);
-        assertEquals(new Option("foo", String.class), new Option("foo", String.class));
+        assertEquals(new Option<>("foo", String.class), new Option<>("foo", String.class));
         assertNotEquals(new Option("bar", String.class), new Option("foo", String.class));
         // option equality is based on name only
         assertEquals(new Option("foo", String.class), new Option("foo", Integer.class));
@@ -47,9 +47,9 @@ public class OptionTest {
 
     @Test
     public void test_hash() {
-        assertEquals(new Option("foo", String.class).hashCode(), new Option("foo", String.class).hashCode());
+        assertEquals(new Option<>("foo", String.class).hashCode(), new Option<>("foo", String.class).hashCode());
 
         //hash is only based on name
-        assertEquals(new Option("foo", String.class).hashCode(), new Option("foo", Integer.class).hashCode());
+        assertEquals(new Option<>("foo", String.class).hashCode(), new Option<>("foo", Integer.class).hashCode());
     }
 }

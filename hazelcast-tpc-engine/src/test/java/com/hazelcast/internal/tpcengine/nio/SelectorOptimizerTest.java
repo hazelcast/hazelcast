@@ -47,7 +47,7 @@ public class SelectorOptimizerTest {
     }
 
     // copied from HazelcastTestSupport
-    private static void assertUtilityConstructor(Class clazz) {
+    private static void assertUtilityConstructor(Class<?> clazz) {
         Constructor[] constructors = clazz.getDeclaredConstructors();
         assertEquals("there are more than 1 constructors", 1, constructors.length);
 

@@ -25,7 +25,7 @@ public class BoundPriorityQueueTest {
     @Test
     public void test() {
         int capacity = 16;
-        BoundPriorityQueue queue = new BoundPriorityQueue(capacity);
+        BoundPriorityQueue<Integer> queue = new BoundPriorityQueue<>(capacity);
         for (int k = 0; k < capacity; k++) {
             queue.add(k);
         }

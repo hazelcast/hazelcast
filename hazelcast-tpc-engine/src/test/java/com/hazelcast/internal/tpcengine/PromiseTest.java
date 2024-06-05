@@ -24,7 +24,6 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
@@ -55,7 +54,7 @@ public class PromiseTest {
 
     @Test
     public void test_pooling() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         promise.allocator = promiseAllocator;
 
@@ -77,16 +76,16 @@ public class PromiseTest {
 
     @Test
     public void test_thenOnCompletedFuture() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         String result = "foobar";
         promise.complete(result);
 
         CountDownLatch executed = new CountDownLatch(1);
-        AtomicReference valueRef = new AtomicReference();
-        AtomicReference throwableRef = new AtomicReference();
+        AtomicReference<Object> valueRef = new AtomicReference<>();
+        AtomicReference<Throwable> throwableRef = new AtomicReference<>();
 
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        promise.then((o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
@@ -99,19 +98,19 @@ public class PromiseTest {
 
     @Test(expected = NullPointerException.class)
     public void test_completeExceptionallyWhenNull() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         promise.completeExceptionally(null);
     }
 
     @Test
     public void test_completeExceptionally() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
-        AtomicReference valueRef = new AtomicReference();
-        AtomicReference throwableRef = new AtomicReference();
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        AtomicReference<Object> valueRef = new AtomicReference<>();
+        AtomicReference<Throwable> throwableRef = new AtomicReference<>();
+        promise.then((o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
@@ -129,7 +128,7 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_completeExceptionally_whenAlreadyCompleted() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         promise.completeExceptionally(new Throwable());
         promise.completeExceptionally(new Throwable());
@@ -137,12 +136,12 @@ public class PromiseTest {
 
     @Test
     public void test_complete() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
-        AtomicReference valueRef = new AtomicReference();
-        AtomicReference throwableRef = new AtomicReference();
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        AtomicReference<Object> valueRef = new AtomicReference<>();
+        AtomicReference<Throwable> throwableRef = new AtomicReference<>();
+        promise.then((o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
@@ -158,7 +157,7 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_complete_whenAlreadyCompleted() {
-        Promise promise = new Promise(reactor.eventloop);
+        Promise<String> promise = new Promise<>(reactor.eventloop);
 
         promise.complete("first");
         promise.complete("second");

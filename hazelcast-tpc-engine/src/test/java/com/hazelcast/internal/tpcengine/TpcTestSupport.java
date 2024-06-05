@@ -51,9 +51,9 @@ public class TpcTestSupport {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }
 
-    public static void assertCompletesEventually(final List<Future> futures, long timeoutSeconds) {
+    public static <T> void assertCompletesEventually(final List<Future<T>> futures, long timeoutSeconds) {
         assertTrueEventually(() -> {
-            for (Future future : futures) {
+            for (Future<?> future : futures) {
                 assertTrue(future.isDone());
             }
         }, timeoutSeconds);
