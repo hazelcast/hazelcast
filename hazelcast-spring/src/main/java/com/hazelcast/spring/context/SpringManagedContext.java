@@ -41,8 +41,7 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     public Object initialize(Object obj) {
         Object resultObject = obj;
         if (obj != null) {
-            if (obj instanceof RunnableAdapter) {
-                RunnableAdapter adapter = (RunnableAdapter) obj;
+            if (obj instanceof RunnableAdapter adapter) {
                 Object runnable = adapter.getRunnable();
                 runnable = initializeIfSpringAwareIsPresent(runnable);
                 adapter.setRunnable((Runnable) runnable);

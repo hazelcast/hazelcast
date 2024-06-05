@@ -59,7 +59,7 @@ public class HazelcastCacheManager implements CacheManager {
     /**
      * Holds cache specific value retrieval timeouts. Override defaultReadTimeout for specified caches.
      */
-    private Map<String, Long> readTimeoutMap = new HashMap<>();
+    private final Map<String, Long> readTimeoutMap = new HashMap<>();
 
     public HazelcastCacheManager() {
     }
@@ -89,8 +89,7 @@ public class HazelcastCacheManager implements CacheManager {
         Set<String> cacheNames = new HashSet<>();
         Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
-            if (distributedObject instanceof IMap) {
-                IMap<?, ?> map = (IMap) distributedObject;
+            if (distributedObject instanceof IMap<?, ?> map) {
                 cacheNames.add(map.getName());
             }
         }
