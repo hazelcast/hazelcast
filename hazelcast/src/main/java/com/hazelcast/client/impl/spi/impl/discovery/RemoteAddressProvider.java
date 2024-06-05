@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
@@ -39,7 +39,7 @@ public class RemoteAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner)
+    public Addresses loadAddresses(ClientConnectionProcessListenerRegistry listenerRunner)
             throws Exception {
         privateToPublic = getAddresses.call();
         Set<Address> addresses = privateToPublic.keySet();

@@ -17,72 +17,34 @@
 package com.hazelcast.client.impl.management;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Runs all the configured listeners on a specific executor, with proper error
- * handling.
+ * Stores all the configured listeners and calls them, with proper error handling.
  */
-public final class ClientConnectionProcessListenerRunner {
+public final class ClientConnectionProcessListenerRegistry {
 
     private final CopyOnWriteArrayList<ClientConnectionProcessListener> listeners;
-    private final HazelcastClientInstanceImpl client;
-    private final AtomicBoolean hasListeners;
-    private volatile ILogger logger;
-    private volatile ExecutorService executor;
+    private final ILogger logger;
 
-    public ClientConnectionProcessListenerRunner(HazelcastClientInstanceImpl client) {
-        this.client = client;
+    public ClientConnectionProcessListenerRegistry(HazelcastClientInstanceImpl client) {
+        logger = client.getLoggingService().getLogger(ClientConnectionProcessListenerRegistry.class);
         listeners = new CopyOnWriteArrayList<>();
-        hasListeners = new AtomicBoolean(false);
     }
 
     /**
      * Adds a new listener to receive the connection diagnostics events.
-     * <p>
-     * The executor to run the events will only be created lazily, the first
-     * time this method is called.
-     * <p>
-     * Adding listeners should be completed first, before any event is offered
-     * to this runner.
      */
     public void addListener(ClientConnectionProcessListener listener) {
-        if (hasListeners.compareAndSet(false, true)) {
-            createLogger();
-            createExecutor();
-        }
-
         listeners.add(listener);
-    }
-
-    /**
-     * Stops the executor, if it has been created.
-     * <p>
-     * It waits for the tasks that has been submitted before the call to stop,
-     * to not miss firing terminal connection events like cluster connection
-     * failed during the client shutdown.
-     */
-    public void stop() {
-        if (!hasListeners.get()) {
-            return;
-        }
-
-        executor.shutdown();
-        ClientExecutionServiceImpl.awaitExecutorTermination("connection-diagnostics", executor, logger);
     }
 
     /**
@@ -92,7 +54,7 @@ public final class ClientConnectionProcessListenerRunner {
      * all listeners after translating the target address.
      */
     public <A> void onAttemptingToConnectToTarget(Function<A, Address> addressTranslator, A target) {
-        if (!hasListeners.get()) {
+        if (listeners.isEmpty()) {
             return;
         }
 
@@ -110,7 +72,7 @@ public final class ClientConnectionProcessListenerRunner {
      * on all listeners after translating the target address.
      */
     public <A> void onConnectionAttemptFailed(Function<A, Address> addressTranslator, A target) {
-        if (!hasListeners.get()) {
+        if (listeners.isEmpty()) {
             return;
         }
 
@@ -127,10 +89,6 @@ public final class ClientConnectionProcessListenerRunner {
      * listeners.
      */
     public void onHostNotFound(String host) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.hostNotFound(host));
     }
 
@@ -140,7 +98,7 @@ public final class ClientConnectionProcessListenerRunner {
      * on all listeners, after converting the given collection to a list.
      */
     public void onPossibleAddressesCollected(Collection<Address> addresses) {
-        if (!hasListeners.get()) {
+        if (listeners.isEmpty()) {
             return;
         }
 
@@ -154,10 +112,6 @@ public final class ClientConnectionProcessListenerRunner {
      * on all listeners.
      */
     public void onPossibleAddressesCollected(List<Address> addresses) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.possibleAddressesCollected(addresses));
     }
 
@@ -167,10 +121,6 @@ public final class ClientConnectionProcessListenerRunner {
      * all listeners.
      */
     public void onAuthenticationSuccess(Address address) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.authenticationSuccess(address));
     }
 
@@ -179,10 +129,6 @@ public final class ClientConnectionProcessListenerRunner {
      * on all listeners.
      */
     public void onCredentialsFailed(Address address) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.credentialsFailed(address));
     }
 
@@ -193,10 +139,6 @@ public final class ClientConnectionProcessListenerRunner {
      * all listeners.
      */
     public void onClientNotAllowedInCluster(Address address) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.clientNotAllowedInCluster(address));
     }
 
@@ -206,10 +148,6 @@ public final class ClientConnectionProcessListenerRunner {
      * on all listeners.
      */
     public void onClusterConnectionFailed(String clusterName) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.clusterConnectionFailed(clusterName));
     }
 
@@ -220,10 +158,6 @@ public final class ClientConnectionProcessListenerRunner {
      * all listeners.
      */
     public void onClusterConnectionSucceeded(String clusterName) {
-        if (!hasListeners.get()) {
-            return;
-        }
-
         callListeners(listener -> listener.clusterConnectionSucceeded(clusterName));
     }
 
@@ -233,7 +167,7 @@ public final class ClientConnectionProcessListenerRunner {
      * on all listeners after translating the target address.
      */
     public <A> void onRemoteClosedConnection(Function<A, Address> addressTranslator, A target) {
-        if (!hasListeners.get()) {
+        if (listeners.isEmpty()) {
             return;
         }
 
@@ -256,28 +190,12 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     private void callListeners(Consumer<ClientConnectionProcessListener> consumer) {
-        try {
-            executor.execute(() -> {
-                for (ClientConnectionProcessListener listener : listeners) {
-                    try {
-                        consumer.accept(listener);
-                    } catch (Throwable t) {
-                        logger.finest("Exception while running the listener " + listener, t);
-                    }
-                }
-            });
-        } catch (RejectedExecutionException ignored) {
-            // Client is shutting down
+        for (ClientConnectionProcessListener listener : listeners) {
+            try {
+                consumer.accept(listener);
+            } catch (Throwable t) {
+                logger.finest("Exception while calling the ClientConnectionProcessListener listener " + listener, t);
+            }
         }
-    }
-
-    private void createLogger() {
-        logger = client.getLoggingService().getLogger(ClientConnectionProcessListenerRunner.class);
-    }
-
-    private void createExecutor() {
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        executor = Executors.newSingleThreadExecutor(
-                new PoolExecutorThreadFactory(client.getName() + ".connection-diagnostics-", classLoader));
     }
 }

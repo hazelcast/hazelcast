@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.connection;
 
 
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
@@ -45,7 +45,7 @@ public interface AddressProvider {
      * @return The possible member addresses to connect to.
      * @throws Exception when a remote service can not provide addressee
      */
-    Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) throws Exception;
+    Addresses loadAddresses(ClientConnectionProcessListenerRegistry listenerRunner) throws Exception;
 
     /**
      * Translates the given address to another address specific to network or

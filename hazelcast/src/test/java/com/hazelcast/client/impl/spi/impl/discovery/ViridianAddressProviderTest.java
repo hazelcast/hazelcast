@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,7 +59,7 @@ public class ViridianAddressProviderTest {
         setUp();
         ViridianAddressProvider provider = new ViridianAddressProvider(createDiscovery());
 
-        ClientConnectionProcessListenerRunner listener = createListenerRunner();
+        ClientConnectionProcessListenerRegistry listener = createListenerRunner();
         Addresses addresses = provider.loadAddresses(listener);
         Collection<Address> primaries = addresses.primary();
         Collection<Address> secondaries = addresses.secondary();
@@ -73,7 +73,7 @@ public class ViridianAddressProviderTest {
     public void testLoadAddresses_withTpc() throws Exception {
         setUpWithTpc();
         ViridianAddressProvider provider = new ViridianAddressProvider(createDiscovery());
-        ClientConnectionProcessListenerRunner listener = createListenerRunner();
+        ClientConnectionProcessListenerRegistry listener = createListenerRunner();
         Addresses addresses = provider.loadAddresses(listener);
         Collection<Address> primaries = addresses.primary();
         Collection<Address> secondaries = addresses.secondary();
@@ -187,7 +187,7 @@ public class ViridianAddressProviderTest {
         return discovery;
     }
 
-    private ClientConnectionProcessListenerRunner createListenerRunner() {
-        return mock(ClientConnectionProcessListenerRunner.class);
+    private ClientConnectionProcessListenerRegistry createListenerRunner() {
+        return mock(ClientConnectionProcessListenerRegistry.class);
     }
 }

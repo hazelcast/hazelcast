@@ -38,7 +38,7 @@ import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -167,7 +167,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
-    private final ClientConnectionProcessListenerRunner connectionProcessListenerRunner;
+    private final ClientConnectionProcessListenerRegistry connectionProcessListenerRunner;
     private final NioNetworking networking;
 
     private final long authenticationTimeout;
@@ -269,7 +269,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.isTpcAwareClient = config.getTpcConfig().isEnabled();
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
-        this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
+        this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRegistry(client);
         this.skipMemberListDuringReconnection = properties.getBoolean(SKIP_MEMBER_LIST_DURING_RECONNECTION);
         this.clientClusterService = client.getClientClusterService();
         this.connectivityLogger = new ClientConnectivityLogger(loggingService, executor, properties);
@@ -421,7 +421,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.close("Hazelcast client is shutting down", null);
         }
 
-        connectionProcessListenerRunner.stop();
         stopNetworking();
         connectionListeners.clear();
         clusterDiscoveryService.current().destroy();

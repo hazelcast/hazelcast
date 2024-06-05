@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
@@ -36,7 +36,7 @@ public class ViridianAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) throws Exception {
+    public Addresses loadAddresses(ClientConnectionProcessListenerRegistry listenerRunner) throws Exception {
         response = discovery.discoverNodes();
         List<Address> addresses = response.getPrivateMemberAddresses();
         listenerRunner.onPossibleAddressesCollected(addresses);
