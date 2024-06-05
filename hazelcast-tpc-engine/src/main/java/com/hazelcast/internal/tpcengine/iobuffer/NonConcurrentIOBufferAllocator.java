@@ -46,7 +46,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
 
         if (index == -1) {
             // the pool is empty.
-            // and lets create a set of bufs so we don't end up
+            // and let's create a set of bufs, so we don't end up
             // continuously asking the queue for ones.
             for (int k = 0; k < bufs.length; k++) {
                 //newAllocations.incrementAndGet();

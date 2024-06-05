@@ -92,7 +92,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * Binds this AsyncServerSocket to the localAddress address. This method is equivalent
      * to calling {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
      * <p/>
-     * This can be made on any thread, but it isn't threadsafe.
+     * This can be made on any thread, but it isn't thread safe.
      *
      * @param localAddress the local address.
      * @throws UncheckedIOException if something failed while binding.
@@ -113,7 +113,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      *     Because every AsyncServerSocket is such a passive socket, there is no point in adding a
      *     listen method to the AsyncServerSocket.</li>
      * </ol>
-     * This can be made on any thread, but it isn't threadsafe.
+     * This can be made on any thread, but it isn't thread safe.
      * <p/>
      * This call needs to be made before {@link #start(Consumer)}.
      * <p/>
@@ -134,7 +134,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * This method can be called from any thread, but the actual processing will happen on the
      * reactor-thread.
      * <p/>
-     * This method should only be called once and isn't threadsafe.
+     * This method should only be called once and isn't thread safe.
      * <p/>
      * Before accept is called, {@link #bind(SocketAddress, int)} needs to be called.
      *

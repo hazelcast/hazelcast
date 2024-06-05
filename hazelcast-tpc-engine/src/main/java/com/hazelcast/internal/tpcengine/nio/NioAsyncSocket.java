@@ -144,7 +144,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             // Signal that we are interested in OP_READ events.
             key.interestOpsOr(OP_READ);
         } else {
-            // Signal that we are not interesting in OP_READ events.
+            // Signal that we are not interested in OP_READ events.
             // So even if data is received or still available on the socket,
             // we will not get further events.
             key.interestOpsAnd(~OP_READ);

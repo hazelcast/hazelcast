@@ -36,7 +36,7 @@ public final class Preconditions {
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
      * @param value     the value tested to see if it is positive.
-     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param paramName the name of the checked parameter that will be in exception message
      * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws IllegalArgumentException if the value is not positive.

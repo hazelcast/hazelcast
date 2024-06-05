@@ -21,17 +21,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class TpcLoggerLocator {
 
-    private static final AtomicReference LOGGER = new AtomicReference();
+    private static final AtomicReference<Object> LOGGER = new AtomicReference<>();
 
     private TpcLoggerLocator() {
     }
 
     @SuppressWarnings("java:S112")
-    public static TpcLogger getLogger(Class clazz) {
+    public static TpcLogger getLogger(Class<?> clazz) {
         Object logger = LOGGER.get();
         if (logger != null) {
-            if (logger instanceof TpcLoggerFactory) {
-                return ((TpcLoggerFactory) logger).getLogger(clazz);
+            if (logger instanceof TpcLoggerFactory tpcLoggerFactory) {
+                return tpcLoggerFactory.getLogger(clazz);
             } else {
                 Method method = (Method) logger;
                 try {
@@ -43,7 +43,7 @@ public final class TpcLoggerLocator {
         }
 
         try {
-            Class loggerClazz = TpcLogger.class.getClassLoader().loadClass("com.hazelcast.logging.Logger");
+            Class<?> loggerClazz = TpcLogger.class.getClassLoader().loadClass("com.hazelcast.logging.Logger");
             Method method = loggerClazz.getMethod("getLogger", Class.class);
             LOGGER.compareAndSet(null, method);
         } catch (Exception e) {

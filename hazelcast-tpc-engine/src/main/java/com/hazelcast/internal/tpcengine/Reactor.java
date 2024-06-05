@@ -62,7 +62,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * <p/>
  * A single Reactor typically will process one or more {@link AsyncServerSocket} instances
  * and many {@link AsyncSocket} instances. A single reactor can even run the
- * {@link AsyncServerSocket} and the {@link AsyncSocket} that initiates the call the the
+ * {@link AsyncServerSocket} and the {@link AsyncSocket} that initiates the call the
  * {@link AsyncSocket} created by the {@link AsyncServerSocket}.
  */
 @SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})

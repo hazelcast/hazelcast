@@ -26,7 +26,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * The {@link AsyncSocketWriter} is called to convert messages from the writeQueue to
- * bytes so they can be send over the socket.
+ * bytes, so they can be sent over the socket.
  * <p/>
  * A writer is specific to a {@link AsyncSocket} and can't be shared between
  * multiple AsyncSocket instances.

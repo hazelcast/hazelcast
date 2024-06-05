@@ -127,7 +127,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * Start the AsyncSocket by scheduling it on the reactor. The Socket should be
      * started only once.
      * <p/>
-     * Typically you do not want to share this AsyncSocket with other threads till this
+     * Typically, you do not want to share this AsyncSocket with other threads till this
      * method is called.
      *
      * @throws RuntimeException if the Socket could not be started.

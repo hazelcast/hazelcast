@@ -97,7 +97,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
             // Lets gets some bufs from the queue.
             //int count = queue.drain(pool.consumer, pool.bufs.length);
 
-            // and lets create a bunch of bufs ourselves so we don't end up
+            // and let's create a bunch of bufs ourselves, so we don't end up
             // continuously asking the queue for requests.
             for (int k = count; k < pool.bufs.length; k++) {
                 //newAllocations.incrementAndGet();
