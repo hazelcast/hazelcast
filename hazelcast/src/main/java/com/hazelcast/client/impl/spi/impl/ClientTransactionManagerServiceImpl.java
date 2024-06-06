@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
@@ -155,10 +156,12 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     private String getExceptionMsgByRoutingMode() {
-        return switch (client.getConnectionManager().getRoutingMode()) {
+        RoutingMode routingMode = client.getConnectionManager().getRoutingMode();
+        return switch (routingMode) {
             case SMART -> toSmartModeExceptionMsg();
             case UNISOCKET -> "No active connection is found";
             case SUBSET -> toSubsetModeExceptionMsg();
+            default -> throw new IllegalStateException("Unsupported RoutingMode: " + routingMode);
         };
     }
 

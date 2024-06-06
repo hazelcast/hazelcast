@@ -54,7 +54,7 @@ public class AuthenticationCustomCredentialsMessageTask
         clientVersion = parameters.clientHazelcastVersion;
         clientName = parameters.clientName;
         labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
-        routingMode = parameters.routingMode;
+        routingMode = parameters.isRoutingModeExists ? parameters.routingMode : -1;
         return parameters;
     }
 

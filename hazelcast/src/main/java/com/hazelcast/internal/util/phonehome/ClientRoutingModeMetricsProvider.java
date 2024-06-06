@@ -36,7 +36,9 @@ public class ClientRoutingModeMetricsProvider implements MetricsProvider {
 
         for (ClientEndpoint client : node.getClientEngine().getEndpointManager().getEndpoints()) {
             RoutingMode mode = client.getRoutingMode();
-            routingModeCounts.put(mode, routingModeCounts.getOrDefault(mode, 0) + 1);
+            if (mode.isKnown()) {
+                routingModeCounts.put(mode, routingModeCounts.getOrDefault(mode, 0) + 1);
+            }
         }
 
         context.collect(PhoneHomeMetrics.SMART_CLIENTS_COUNT, routingModeCounts.getOrDefault(SMART, 0));
