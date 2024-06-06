@@ -81,11 +81,9 @@ public class SerializableXID implements Xid, DataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Xid)) {
+        if (!(o instanceof Xid that)) {
             return false;
         }
-
-        Xid that = (Xid) o;
 
         if (formatId != that.getFormatId()) {
             return false;

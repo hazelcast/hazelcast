@@ -93,8 +93,8 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         int len = records.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionLogRecord record : records) {
-                out.writeObject(record);
+            for (TransactionLogRecord transactionLogRecord : records) {
+                out.writeObject(transactionLogRecord);
             }
         }
     }

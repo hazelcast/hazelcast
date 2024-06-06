@@ -34,14 +34,14 @@ import java.util.function.BiConsumer;
 /**
  * The transaction log contains all {@link
  * TransactionLogRecord} for a given transaction.
- *
+ * <p>
  * If within a transaction 3 map.puts would be done on different
- * keys and 1 queue.take would be done, than the TransactionLog
- * will contains 4 {@link TransactionLogRecord} instances.
- *
+ * keys and 1 queue.take would be done, then the TransactionLog
+ * will contain 4 {@link TransactionLogRecord} instances.
+ * <p>
  * Planned optimization:
  * Most transaction will be small, but an HashMap is created.
- * Instead use an array and do a linear search in that array.
+ * Instead, use an array and do a linear search in that array.
  * When there are too many items added, then enable the hashmap.
  */
 public class TransactionLog {
@@ -52,17 +52,17 @@ public class TransactionLog {
     }
 
     public TransactionLog(Collection<TransactionLogRecord> transactionLog) {
-        for (TransactionLogRecord record : transactionLog) {
-            add(record);
+        for (TransactionLogRecord transactionLogRecord : transactionLog) {
+            add(transactionLogRecord);
         }
     }
 
-    public void add(TransactionLogRecord record) {
-        Object key = record.getKey();
+    public void add(TransactionLogRecord transactionLogRecord) {
+        Object key = transactionLogRecord.getKey();
         if (key == null) {
             key = new Object();
         }
-        recordMap.put(key, record);
+        recordMap.put(key, transactionLogRecord);
     }
 
     public TransactionLogRecord get(Object key) {
@@ -86,48 +86,48 @@ public class TransactionLog {
         return recordMap.size();
     }
 
-    public List<Future> commit(NodeEngine nodeEngine) {
-        List<Future> futures = new ArrayList<>(size());
-        for (TransactionLogRecord record : recordMap.values()) {
-            Future future = invoke(nodeEngine, record, record.newCommitOperation());
+    public List<Future<Object>> commit(NodeEngine nodeEngine) {
+        List<Future<Object>> futures = new ArrayList<>(size());
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            Future<Object> future = invoke(nodeEngine, transactionLogRecord, transactionLogRecord.newCommitOperation());
             futures.add(future);
         }
         return futures;
     }
 
     public void onCommitSuccess() {
-        for (TransactionLogRecord record : recordMap.values()) {
-            record.onCommitSuccess();
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            transactionLogRecord.onCommitSuccess();
         }
     }
 
     public void onCommitFailure() {
-        for (TransactionLogRecord record : recordMap.values()) {
-            record.onCommitFailure();
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            transactionLogRecord.onCommitFailure();
         }
     }
 
-    public List<Future> prepare(NodeEngine nodeEngine) {
-        List<Future> futures = new ArrayList<>(size());
-        for (TransactionLogRecord record : recordMap.values()) {
-            Future future = invoke(nodeEngine, record, record.newPrepareOperation());
+    public List<Future<Object>> prepare(NodeEngine nodeEngine) {
+        List<Future<Object>> futures = new ArrayList<>(size());
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            Future<Object> future = invoke(nodeEngine, transactionLogRecord, transactionLogRecord.newPrepareOperation());
             futures.add(future);
         }
         return futures;
     }
 
-    public List<Future> rollback(NodeEngine nodeEngine) {
-        List<Future> futures = new ArrayList<>(size());
-        for (TransactionLogRecord record : recordMap.values()) {
-            Future future = invoke(nodeEngine, record, record.newRollbackOperation());
+    public List<Future<Object>> rollback(NodeEngine nodeEngine) {
+        List<Future<Object>> futures = new ArrayList<>(size());
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            Future<Object> future = invoke(nodeEngine, transactionLogRecord, transactionLogRecord.newRollbackOperation());
             futures.add(future);
         }
         return futures;
     }
 
-    private Future invoke(NodeEngine nodeEngine, TransactionLogRecord record, Operation op) {
+    private Future<Object> invoke(NodeEngine nodeEngine, TransactionLogRecord transactionLogRecord, Operation op) {
         OperationService operationService = nodeEngine.getOperationService();
-        if (record instanceof TargetAwareTransactionLogRecord logRecord) {
+        if (transactionLogRecord instanceof TargetAwareTransactionLogRecord logRecord) {
             Address target = logRecord.getTarget();
             return operationService.invokeOnTarget(op.getServiceName(), op, target);
         }
@@ -135,23 +135,23 @@ public class TransactionLog {
     }
 
     public void commitAsync(NodeEngine nodeEngine, BiConsumer callback) {
-        for (TransactionLogRecord record : recordMap.values()) {
-            invokeAsync(nodeEngine, callback, record, record.newCommitOperation());
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            invokeAsync(nodeEngine, callback, transactionLogRecord, transactionLogRecord.newCommitOperation());
         }
     }
 
     public void rollbackAsync(NodeEngine nodeEngine, BiConsumer callback) {
-        for (TransactionLogRecord record : recordMap.values()) {
-            invokeAsync(nodeEngine, callback, record, record.newRollbackOperation());
+        for (TransactionLogRecord transactionLogRecord : recordMap.values()) {
+            invokeAsync(nodeEngine, callback, transactionLogRecord, transactionLogRecord.newRollbackOperation());
         }
     }
 
     private void invokeAsync(NodeEngine nodeEngine, BiConsumer callback,
-                             TransactionLogRecord record, Operation op) {
+                             TransactionLogRecord transactionLogRecord, Operation op) {
 
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
-        if (record instanceof TargetAwareTransactionLogRecord logRecord) {
+        if (transactionLogRecord instanceof TargetAwareTransactionLogRecord logRecord) {
             Address target = logRecord.getTarget();
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {

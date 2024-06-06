@@ -96,7 +96,7 @@ public final class TransactionOptions implements DataSerializable {
      * Sets the timeout.
      * <p>
      * The timeout determines the maximum lifespan of a transaction. So if a transaction is configured with a
-     * timeout of 2 minutes, then it will automatically rollback if it hasn't committed yet.
+     * timeout of 2 minutes, then it will automatically roll back if it hasn't committed yet.
      *
      * @param timeout  the timeout.
      * @param timeUnit the TimeUnit of the timeout.
@@ -206,8 +206,8 @@ public final class TransactionOptions implements DataSerializable {
          * The two phase commit is separated in 2 parts. First it tries to execute
          * the prepare; if there are any conflicts, the prepare will fail. Once the
          * prepare has succeeded, the commit (writing the changes) can be executed.
-         *
-         * Hazelcast also provides three phase transaction by
+         * <p>
+         * Hazelcast also provides three-phase transaction by
          * automatically copying the backlog to another member so
          * that in case of failure during a commit, another member
          * can continue the commit from backup. For more information

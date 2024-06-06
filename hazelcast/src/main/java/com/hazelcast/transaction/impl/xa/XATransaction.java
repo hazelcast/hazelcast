@@ -135,7 +135,7 @@ public final class XATransaction implements Transaction {
         checkTimeout();
         try {
             state = PREPARING;
-            List<Future> futures = transactionLog.prepare(nodeEngine);
+            List<Future<Object>> futures = transactionLog.prepare(nodeEngine);
             waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
             putTransactionInfoRemote();
@@ -163,7 +163,7 @@ public final class XATransaction implements Transaction {
         checkTimeout();
         try {
             state = COMMITTING;
-            List<Future> futures = transactionLog.commit(nodeEngine);
+            List<Future<Object>> futures = transactionLog.commit(nodeEngine);
 
             // We should rethrow exception if transaction is not TWO_PHASE
 
@@ -210,7 +210,7 @@ public final class XATransaction implements Transaction {
         }
         state = ROLLING_BACK;
         try {
-            List<Future> futures = transactionLog.rollback(nodeEngine);
+            List<Future<Object>> futures = transactionLog.rollback(nodeEngine);
             waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, MINUTES, rollbackExceptionHandler);
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
@@ -258,12 +258,12 @@ public final class XATransaction implements Transaction {
     }
 
     @Override
-    public void add(TransactionLogRecord record) {
+    public void add(TransactionLogRecord transactionLogRecord) {
         if (state != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
 
-        transactionLog.add(record);
+        transactionLog.add(transactionLogRecord);
     }
 
     @Override

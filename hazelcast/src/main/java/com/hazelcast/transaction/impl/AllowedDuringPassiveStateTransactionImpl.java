@@ -45,19 +45,23 @@ public class AllowedDuringPassiveStateTransactionImpl
         super(transactionManagerService, nodeEngine, txnId, transactionLog, timeoutMillis, startTime, txOwnerUuid);
     }
 
+    @Override
     protected CreateTxBackupLogOperation createCreateTxBackupLogOperation() {
         return new CreateAllowedDuringPassiveStateTxBackupLogOperation(getOwnerUuid(), getTxnId());
     }
 
+    @Override
     protected ReplicateTxBackupLogOperation createReplicateTxBackupLogOperation() {
         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation(
                 getTransactionLog().getRecords(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
     }
 
+    @Override
     protected RollbackTxBackupLogOperation createRollbackTxBackupLogOperation() {
         return new RollbackAllowedDuringPassiveStateTxBackupLogOperation(getTxnId());
     }
 
+    @Override
     protected PurgeTxBackupLogOperation createPurgeTxBackupLogOperation() {
         return new PurgeAllowedDuringPassiveStateTxBackupLogOperation(getTxnId());
     }

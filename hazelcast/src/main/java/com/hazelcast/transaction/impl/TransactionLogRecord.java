@@ -28,11 +28,11 @@ public interface TransactionLogRecord extends IdentifiedDataSerializable {
 
     /**
      * Gets the transaction-log-key that uniquely identifies the {@link TransactionLogRecord} within the {@link TransactionLog}.
-     *
+     * <p>
      * E.g. for a map that would be the map-name and the key. So if a map transactional put is done on some
      * key, and if later on another put on that key is done, by using the same transaction-log-key, the first
      * put is overwritten.
-     *
+     * <p>
      * If null is returned, this TransactionLogRecord can't be identified and can't be overwritten by a later change.
      *
      * @return the transaction-log-key that uniquely identifies this TransactionLogRecord.

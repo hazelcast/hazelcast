@@ -109,8 +109,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 Transaction tx = (Transaction) invocation.callRealMethod();
                 return new DelegatingTransaction(tx) {
                     @Override
-                    public void add(TransactionLogRecord record) {
-                        super.add(record);
+                    public void add(TransactionLogRecord transactionLogRecord) {
+                        super.add(transactionLogRecord);
                         if (!started) {
                             started = true;
                             factory.newHazelcastInstance();
@@ -146,8 +146,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 Transaction tx = (Transaction) invocation.callRealMethod();
                 return new DelegatingTransaction(tx) {
                     @Override
-                    public void add(TransactionLogRecord record) {
-                        super.add(record);
+                    public void add(TransactionLogRecord transactionLogRecord) {
+                        super.add(transactionLogRecord);
                         if (!shutdown) {
                             shutdown = true;
                             terminateInstance(instances[0]);
@@ -514,7 +514,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         ClusterState newState = ClusterState.PASSIVE;
 
-        Future future = spawn(() -> {
+        Future<?> future = spawn(() -> {
             try {
                 changeClusterState(hz2, newState, initialPartitionStateStamp);
             } catch (Exception ignored) {
@@ -759,8 +759,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void add(TransactionLogRecord record) {
-            tx.add(record);
+        public void add(TransactionLogRecord transactionLogRecord) {
+            tx.add(transactionLogRecord);
         }
 
         @Override

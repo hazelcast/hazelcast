@@ -37,7 +37,7 @@ public interface Transaction {
 
     long getTimeoutMillis();
 
-    void add(TransactionLogRecord record);
+    void add(TransactionLogRecord transactionLogRecord);
 
     void remove(Object key);
 

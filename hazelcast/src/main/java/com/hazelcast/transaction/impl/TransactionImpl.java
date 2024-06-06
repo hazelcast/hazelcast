@@ -178,12 +178,12 @@ public class TransactionImpl implements Transaction {
     }
 
     @Override
-    public void add(TransactionLogRecord record) {
+    public void add(TransactionLogRecord transactionLogRecord) {
         if (state != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
         checkThread();
-        transactionLog.add(record);
+        transactionLog.add(transactionLogRecord);
     }
 
     @Override
@@ -239,7 +239,7 @@ public class TransactionImpl implements Transaction {
         try {
             createBackupLogs();
             state = PREPARING;
-            List<Future> futures = transactionLog.prepare(nodeEngine);
+            List<Future<Object>> futures = transactionLog.prepare(nodeEngine);
             waitUntilAllRespondedWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             state = PREPARED;
             replicateTxnLog();
@@ -291,7 +291,7 @@ public class TransactionImpl implements Transaction {
             checkTimeout();
             try {
                 state = COMMITTING;
-                List<Future> futures = transactionLog.commit(nodeEngine);
+                List<Future<Object>> futures = transactionLog.commit(nodeEngine);
                 waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
                 state = COMMITTED;
                 transactionManagerService.commitCount.inc();
@@ -325,7 +325,7 @@ public class TransactionImpl implements Transaction {
             try {
                 //TODO: Do we need both a purge and rollback?
                 rollbackBackupLogs();
-                List<Future> futures = transactionLog.rollback(nodeEngine);
+                List<Future<Object>> futures = transactionLog.rollback(nodeEngine);
                 waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, rollbackExceptionHandler);
                 purgeBackupLogs();
             } catch (Throwable e) {
