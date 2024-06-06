@@ -77,7 +77,7 @@
         <maven.antrun.plugin.version>3.1.0</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>3.2.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.7.1</maven.assembly.plugin.version>
-        <maven.shade.plugin.version>3.5.3</maven.shade.plugin.version>
+        <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.6.1</maven.dependency.plugin.version>
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.4.0</maven.checkstyle.plugin.version>
