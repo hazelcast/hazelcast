@@ -1012,7 +1012,7 @@ public class MembershipManager {
             if (!(node.getThisAddress().equals(memberAddress)
                     || isMemberSuspected(new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid()))
                     || futures.containsKey(member))) {
-                // this is a new member for us. lets ask its members view
+                // this is a new member for us - let's ask its members view
                 if (logger.isFineEnabled()) {
                     logger.fine("Asking MembersView of " + memberAddress);
                 }

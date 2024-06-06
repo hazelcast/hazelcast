@@ -337,7 +337,7 @@ public abstract class AbstractJoiner
             }
 
             // If state is IN_TRANSITION, then skip trying to change state.
-            // Otherwise transaction will print noisy warning logs.
+            // Otherwise, transaction will print noisy warning logs.
             if (clusterState != IN_TRANSITION) {
                 try {
                     clusterService.changeClusterState(FROZEN);

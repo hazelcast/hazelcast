@@ -401,7 +401,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             try {
                 initialClusterState(clusterState, clusterVersion);
             } catch (VersionMismatchException e) {
-                // node should shutdown since it cannot handle the cluster version
+                // node should shut down since it cannot handle the cluster version
                 // it is safe to do so here because no operations have been executed yet
                 logger.severe(format("This member will shutdown because it cannot join the cluster: %s", e.getMessage()));
                 node.shutdown(true);

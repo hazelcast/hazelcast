@@ -153,7 +153,7 @@ class ClusterMergeTask implements Runnable {
     }
 
     private void rejoin() {
-        // start connection-manager to setup and accept new connections
+        // start connection-manager to set up and accept new connections
         node.getServer().start();
         // re-join to the target cluster
         node.join();
