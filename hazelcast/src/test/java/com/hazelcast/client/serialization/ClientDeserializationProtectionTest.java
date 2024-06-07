@@ -116,7 +116,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
 
     /**
      * <pre>
-     * When: Default Whitelist is disabled and classname of the test serialized object is blacklisted. The object is read from client.
+     * When: Default Whitelist is disabled and class name of the test serialized object is blacklisted. The object is read from client.
      * Then: Deserialization fails.
      * </pre>
      */
@@ -162,7 +162,7 @@ public class ClientDeserializationProtectionTest extends HazelcastTestSupport {
 
     /**
      * <pre>
-     * When: Deserialization filtering is enabled and classname of test object is whitelisted.
+     * When: Deserialization filtering is enabled and class name of test object is whitelisted.
      * Then: The deserialization is possible.
      * </pre>
      */

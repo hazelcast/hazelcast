@@ -299,15 +299,8 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 int leftKey = lhs.getKey();
                 int rightKey = rhs.getKey();
 
-                if (leftKey == rightKey) {
-                    return 0;
-                }
+                return Integer.compare(leftKey, rightKey);
 
-                if (leftKey < rightKey) {
-                    return -1;
-                }
-
-                return 1;
             }
 
             if (null == lv) {
@@ -344,15 +337,8 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 return 1;
             }
 
-            if (key1 == key2) {
-                return 0;
-            }
+            return key1.compareTo(key2);
 
-            if (key1 < key2) {
-                return -1;
-            }
-
-            return 1;
         }
     }
 

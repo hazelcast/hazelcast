@@ -141,7 +141,7 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRecoveryRequiresRollbackOfUnknownXid() throws Exception {
+    public void testRecoveryRequiresRollbackOfUnknownXid() {
         performRollbackWithXa(xaResource);
     }
 

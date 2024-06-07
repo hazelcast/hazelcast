@@ -137,12 +137,12 @@ public class ClientTxnQueueTest {
     @Test
     public void testTransactionalPeek() {
         final String item = "offered";
-        final String queunName = randomString();
-        final IQueue queue = client.getQueue(queunName);
+        final String queueName = randomString();
+        final IQueue queue = client.getQueue(queueName);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        TransactionalQueue txnQueue = context.getQueue(queunName);
+        TransactionalQueue txnQueue = context.getQueue(queueName);
 
         txnQueue.offer(item);
         assertEquals(item, txnQueue.peek());

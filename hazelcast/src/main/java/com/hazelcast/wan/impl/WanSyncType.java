@@ -31,7 +31,7 @@ public enum WanSyncType {
      */
     SINGLE_MAP(1);
 
-    private int type;
+    private final int type;
 
     WanSyncType(final int type) {
         this.type = type;

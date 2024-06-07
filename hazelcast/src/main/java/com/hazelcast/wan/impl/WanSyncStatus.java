@@ -38,7 +38,7 @@ public enum WanSyncStatus {
      */
     FAILED(2);
 
-    private int status;
+    private final int status;
 
     WanSyncStatus(final int status) {
         this.status = status;

@@ -31,7 +31,7 @@ public enum WanPublisherState {
      */
     REPLICATING((byte) 0, true, true),
     /**
-     * State where new events are enqueued but they are not dequeued. Some events
+     * State where new events are enqueued, but they are not dequeued. Some events
      * which have been dequeued before the state was switched may still be
      * replicated to the target cluster but further events will not be
      * replicated. WAN sync is enabled.
@@ -46,11 +46,11 @@ public enum WanPublisherState {
      * {@link #PAUSED} state, some events might still be replicated after the
      * publisher has switched to this state. WAN sync is enabled.
      * For instance, this state may be useful if you know that the target cluster
-     * is being shut down, decomissioned and being put out of use and that it
+     * is being shut down, decommissioned and being put out of use and that it
      * will never come back. In such cases, you may additionally clear the WAN
      * queues to release the consumed heap after the publisher has been switched
      * into this state.
-     * An another example would be starting a publisher in STOPPED state. This
+     * Another example would be starting a publisher in STOPPED state. This
      * may be the case where you know that the target cluster is not initially
      * available and will be unavailable for a definite period but at some point
      * it will become available. Once it becomes available, you can then switch
