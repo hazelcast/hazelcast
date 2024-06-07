@@ -698,6 +698,11 @@
                 <artifactId>neo4j-java-driver</artifactId>
                 <version>5.21.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>4.0.5</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
