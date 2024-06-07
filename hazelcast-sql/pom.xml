@@ -808,11 +808,6 @@
             <version>${immutables.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Keep apiguardian-api as provided dependency to remove javac warnings -->
         <dependency>
