@@ -688,6 +688,11 @@
                 <artifactId>maven-resolver-provider</artifactId>
                 <version>3.9.7</version>
             </dependency>
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>5.21.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
