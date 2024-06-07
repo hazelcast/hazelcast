@@ -47,7 +47,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void tearDown() throws Exception {

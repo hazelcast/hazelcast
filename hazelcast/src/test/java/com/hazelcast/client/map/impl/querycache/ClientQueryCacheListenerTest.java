@@ -54,7 +54,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
     private static final Predicate<Integer, Integer> INTEGER_TRUE_PREDICATE = Predicates.alwaysTrue();
 
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void setUp() {

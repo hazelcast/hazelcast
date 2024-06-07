@@ -82,7 +82,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
     private static final int HEARTBEAT_TIMEOUT_MILLIS = 10000;
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -285,7 +285,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         });
 
         clientListenerService.registerListener(createPartitionLostListenerCodec(), new EventHandler() {
-            AtomicInteger count = new AtomicInteger(0);
+            final AtomicInteger count = new AtomicInteger(0);
 
             @Override
             public void handle(Object event) {

@@ -40,7 +40,7 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientReliableTopicOverloadTest extends TopicOverloadAbstractTest {
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Before
     public void setupCluster() {

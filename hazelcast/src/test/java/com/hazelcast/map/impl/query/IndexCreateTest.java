@@ -85,7 +85,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {

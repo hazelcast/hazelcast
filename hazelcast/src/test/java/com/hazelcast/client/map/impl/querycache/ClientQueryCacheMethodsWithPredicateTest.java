@@ -49,7 +49,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
 
     private static final int DEFAULT_TEST_TIMEOUT = 120;
 
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void setUp() {
