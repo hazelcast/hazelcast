@@ -26,10 +26,9 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.ReflectionUtils;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.IdentityHashMap;
@@ -44,9 +43,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test
     public void testDefault() {
@@ -82,8 +78,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
                                         .setClusterName("target-cluster")
                                         .setEndpoint("does-not-exist")));
 
-        expected.expect(InvalidConfigurationException.class);
-        createHazelcastInstance(config);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> createHazelcastInstance(config));
     }
 
     @Test
@@ -93,8 +88,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
                 .setEnabled(true)
                 .getEndpointConfigs().remove(MEMBER);
 
-        expected.expect(InvalidConfigurationException.class);
-        createHazelcastInstance(config);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> createHazelcastInstance(config));
     }
 
     @Test
@@ -157,8 +151,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         offendingEndpointConfigs.put(two, new ServerSocketEndpointConfig());
 
         AdvancedNetworkConfig config = new AdvancedNetworkConfig();
-        expected.expect(InvalidConfigurationException.class);
-        config.setEndpointConfigs(offendingEndpointConfigs);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> config.setEndpointConfigs(offendingEndpointConfigs));
     }
 
     // bypass EndpointQualifier checks
