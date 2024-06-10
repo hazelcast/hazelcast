@@ -461,7 +461,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     }
                 }
             } catch (Throwable e) {
-                logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
+                logger.warning("Could not connect to any cluster, shutting down the client", e);
                 shutdownWithExternalThread();
             }
         });
@@ -748,10 +748,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         if (!isAlive()) {
             return;
         }
-        if (!isAdded) {
-            clientClusterService.getSubsetMembers()
-                    .onConnectionRemoved(connection);
-        }
         try {
             executor.execute(() -> {
                 for (ConnectionListener listener : connectionListeners) {
@@ -920,6 +916,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         synchronized (clientStateMutex) {
             if (activeConnections.remove(memberUuid, connection)) {
+                clientClusterService.getSubsetMembers().onConnectionRemoved(connection);
                 logger.info("Removed connection to endpoint: " + endpoint + ":" + memberUuid + ", connection: " + connection);
                 if (activeConnections.isEmpty()) {
                     if (clientState == ClientState.INITIALIZED_ON_CLUSTER) {
