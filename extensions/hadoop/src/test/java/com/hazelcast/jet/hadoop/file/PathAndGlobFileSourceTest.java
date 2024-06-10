@@ -20,7 +20,11 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
+@Category({NightlyTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
 
     @Test

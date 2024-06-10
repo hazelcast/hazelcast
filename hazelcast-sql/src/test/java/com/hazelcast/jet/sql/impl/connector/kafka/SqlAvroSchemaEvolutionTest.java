@@ -18,12 +18,15 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -44,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
     static final Schema NAME_SSN_SCHEMA = SchemaBuilder.record("jet.sql")
             .fields()

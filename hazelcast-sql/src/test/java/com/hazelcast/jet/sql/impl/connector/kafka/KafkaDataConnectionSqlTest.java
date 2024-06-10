@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.jet.kafka.KafkaDataConnection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,7 +29,7 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
 
     @Test

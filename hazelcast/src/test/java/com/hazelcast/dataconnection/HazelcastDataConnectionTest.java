@@ -16,7 +16,6 @@
 
 package com.hazelcast.dataconnection;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
@@ -54,7 +53,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         clusterName = randomName();
-        instance = Hazelcast.newHazelcastInstance(new Config().setClusterName(clusterName));
+        instance = Hazelcast.newHazelcastInstance(smallInstanceConfig().setClusterName(clusterName));
     }
 
     @After
@@ -100,11 +99,11 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("HazelcastDataConnection with name 'data-connection-name' "
-                            + "could not be created, "
-                            + "provide either a file path with one of "
-                            + "\"client_xml_path\" or \"client_yml_path\" properties "
-                            + "or a string content with one of \"client_xml\" or \"client_yml\" properties "
-                            + "for the client configuration.");
+                        + "could not be created, "
+                        + "provide either a file path with one of "
+                        + "\"client_xml_path\" or \"client_yml_path\" properties "
+                        + "or a string content with one of \"client_xml\" or \"client_yml\" properties "
+                        + "for the client configuration.");
     }
 
     @Test

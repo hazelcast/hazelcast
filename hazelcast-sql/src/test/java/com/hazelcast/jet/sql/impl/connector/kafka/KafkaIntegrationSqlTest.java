@@ -17,10 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -30,6 +33,7 @@ import java.util.Map;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
 
     @Test

@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
@@ -43,6 +44,7 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -506,6 +508,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void test_allConversions() {
         assumeFalse(useSchemaRegistry);
 
