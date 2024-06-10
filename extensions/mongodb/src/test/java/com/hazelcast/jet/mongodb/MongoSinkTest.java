@@ -26,7 +26,7 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -51,10 +51,10 @@ import java.util.Objects;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.jet.mongodb.ResourceChecks.NEVER;
-import static com.hazelcast.jet.mongodb.WriteMode.INSERT_ONLY;
 import static com.hazelcast.jet.mongodb.MongoSinks.builder;
 import static com.hazelcast.jet.mongodb.MongoSinks.mongodb;
+import static com.hazelcast.jet.mongodb.ResourceChecks.NEVER;
+import static com.hazelcast.jet.mongodb.WriteMode.INSERT_ONLY;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.mapJournal;
@@ -66,7 +66,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
+@Category(NightlyTest.class)
 public class MongoSinkTest extends AbstractMongoTest {
 
     private static final long COUNT = 4;

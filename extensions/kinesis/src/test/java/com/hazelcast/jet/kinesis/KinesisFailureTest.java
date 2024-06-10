@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.ToxicDirection;
@@ -59,6 +60,7 @@ import static org.junit.Assert.assertFalse;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 @SuppressWarnings("StaticVariableName")
+@Category(NightlyTest.class)
 public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule

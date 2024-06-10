@@ -71,6 +71,7 @@ import static org.junit.Assert.fail;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 @SuppressWarnings("StaticVariableName")
+@Category(NightlyTest.class)
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;

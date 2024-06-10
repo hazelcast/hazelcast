@@ -34,8 +34,8 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,10 +58,12 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 /**
  * Verifies that the member can extract fields from PortableGenericRecords
  * when it does not have the necessary PortableFactory in its config.
+ * The test is moved to NightlyTest suite because Portable is deprecated,
+ * will be removed in the future, and the test itself lasts for ~40s on lab.
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlClientPortableQueryTest extends SqlTestSupport {
 
     private static final int PORTABLE_FACTORY_ID = 1;
