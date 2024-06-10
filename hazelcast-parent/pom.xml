@@ -1061,6 +1061,8 @@
                 <license.skipAddThirdParty>true</license.skipAddThirdParty>
                 <!-- https://www.mojohaus.org/license-maven-plugin/aggregate-add-third-party-mojo.html -->
                 <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
+                <!-- https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#useIncrementalCompilation -->
+                <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
             </properties>
         </profile>
 
