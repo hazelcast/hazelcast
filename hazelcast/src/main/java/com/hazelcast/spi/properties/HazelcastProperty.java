@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.properties;
 
+import javax.annotation.Nonnull;
+
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -26,7 +28,7 @@ import static java.lang.String.format;
  * Interface for Hazelcast Member and Client properties.
  */
 public final class HazelcastProperty {
-
+    @Nonnull
     private final String name;
     private final String defaultValue;
     private final TimeUnit timeUnit;
@@ -38,9 +40,8 @@ public final class HazelcastProperty {
         this(name, (String) null);
     }
 
-    public HazelcastProperty(String name, Function<HazelcastProperties, ?> function) {
-        checkHasText(name, "The property name cannot be null or empty!");
-        this.name = name;
+    public HazelcastProperty(@Nonnull String name, Function<HazelcastProperties, ?> function) {
+        this.name = checkHasText(name, "The property name cannot be null or empty!");
         this.function = function;
         this.defaultValue = null;
         this.deprecatedName = null;
@@ -96,9 +97,8 @@ public final class HazelcastProperty {
         this(name, defaultValue, timeUnit, null);
     }
 
-    public HazelcastProperty(String name, String defaultValue, TimeUnit timeUnit, HazelcastProperty parent) {
-        checkHasText(name, "The property name cannot be null or empty!");
-        this.name = name;
+    public HazelcastProperty(@Nonnull String name, String defaultValue, TimeUnit timeUnit, HazelcastProperty parent) {
+        this.name = checkHasText(name, "The property name cannot be null or empty!");
         this.defaultValue = defaultValue;
         this.function = null;
         this.timeUnit = timeUnit;
@@ -136,6 +136,7 @@ public final class HazelcastProperty {
      *
      * @return the property name
      */
+    @Nonnull
     public String getName() {
         return name;
     }

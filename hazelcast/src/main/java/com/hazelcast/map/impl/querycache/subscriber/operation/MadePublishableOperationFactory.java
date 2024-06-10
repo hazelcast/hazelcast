@@ -22,6 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
@@ -39,12 +41,9 @@ public class MadePublishableOperationFactory implements OperationFactory {
     public MadePublishableOperationFactory() {
     }
 
-    public MadePublishableOperationFactory(String mapName, String cacheId) {
-        checkHasText(mapName, "mapName");
-        checkHasText(cacheId, "cacheId");
-
-        this.cacheId = cacheId;
-        this.mapName = mapName;
+    public MadePublishableOperationFactory(@Nonnull String mapName, @Nonnull String cacheId) {
+        this.cacheId = checkHasText(cacheId, "cacheId");
+        this.mapName = checkHasText(mapName, "mapName");
     }
 
     @Override
