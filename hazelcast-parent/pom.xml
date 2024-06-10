@@ -104,6 +104,7 @@
         <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.173</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
+        <new.debezium.version>2.6.0.Final</new.debezium.version>
         <grpc.version>1.60.0</grpc.version>
         <hadoop.version>3.3.6</hadoop.version>
         <h2.version>2.2.224</h2.version>
@@ -259,6 +260,11 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>3.7.0</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client</artifactId>
@@ -844,9 +850,12 @@
                             </licenseMerge>
                             <licenseMerge>
                                 CDDL |
+                                CDDL 1.1 |
+                                COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 |
                                 CDDL + GPLv2 with classpath exception |
                                 CDDL License |
-                                CDDL/GPLv2+CE
+                                CDDL/GPLv2+CE |
+                                GPL2 w/ CPE
                             </licenseMerge>
                             <licenseMerge>
                                 Eclipse Distribution License - v 1.0 |
