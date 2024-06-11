@@ -31,7 +31,9 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,6 +54,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("SqlResolve")
+@Category({NightlyTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
     @Test

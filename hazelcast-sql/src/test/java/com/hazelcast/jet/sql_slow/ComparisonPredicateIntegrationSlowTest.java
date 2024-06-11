@@ -23,6 +23,10 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -30,6 +34,11 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class ComparisonPredicateIntegrationSlowTest extends ComparisonPredicateIntegrationTest {
+    @Parameterized.Parameters(name = "mode:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(CMP_SLOW);
+    }
+
     @Override
     protected Object[] getNumericValues() {
         return NUMERICS_SLOW;

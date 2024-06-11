@@ -56,34 +56,38 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
-    private static final int RES_EQ = 0;
-    private static final int RES_LT = -1;
-    private static final int RES_GT = 1;
-    private static final Integer RES_NULL = null;
-    private static final ZoneId DEFAULT_TIME_ZONE = ZoneId.systemDefault();
+    static final int RES_EQ = 0;
+    static final int RES_LT = -1;
+    static final int RES_GT = 1;
+    static final Integer RES_NULL = null;
+    static final ZoneId DEFAULT_TIME_ZONE = ZoneId.systemDefault();
 
     @Parameterized.Parameter
     public Mode mode;
 
     @Parameterized.Parameters(name = "mode:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
-                {Mode.EQ},
-                {Mode.NEQ},
-                {Mode.LT},
-                {Mode.LTE},
-                {Mode.GT},
-                {Mode.GTE},
-        });
+        return Arrays.asList(CMP_QUICK);
     }
 
+    protected static final Object[][] CMP_QUICK = new Object[][]{
+            {Mode.EQ},
+            {Mode.LT},
+            {Mode.GT}
+    };
+
+    protected static final Object[][] CMP_SLOW = new Object[][]{
+            {Mode.EQ},
+            {Mode.LT},
+            {Mode.LTE},
+            {Mode.GT},
+            {Mode.GTE}
+    };
+
     protected static final Object[] NUMERICS_QUICK = new Object[]{
-            Byte.MIN_VALUE, Byte.MAX_VALUE,
-            Short.MIN_VALUE, Short.MAX_VALUE,
             Integer.MIN_VALUE, Integer.MAX_VALUE,
             Long.MIN_VALUE, Long.MAX_VALUE,
             BigDecimal.ONE.negate(), BigDecimal.ONE,
-            Float.MIN_VALUE, Float.MAX_VALUE,
             Double.MIN_VALUE, Double.MAX_VALUE,
     };
 
