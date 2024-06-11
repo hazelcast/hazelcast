@@ -731,7 +731,6 @@
                                 <excludes>
                                     <exclude>module-info.class</exclude>
                                     <exclude>META-INF/versions/9/module-info.class</exclude>
-                                    <exclude>THIRD-PARTY.txt</exclude>
                                     <exclude>LICENSE</exclude>
                                     <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
