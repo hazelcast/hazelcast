@@ -69,7 +69,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * some of the key/value-pairs get written, while others are not.
      * <p>
      * <b>Warning:</b> There is no warning if the input Map collection items are discarded due to uniqueness
-     * eg. passing in List into a Set type MultiMap
+     * e.g. passing in List into a Set type MultiMap
      * <p>
      * <b>Warning:</b> The Map and result of the put cannot be fetched
      * from the Future.
@@ -89,7 +89,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * some of the key/value-pairs get written, while others are not.
      * <p>
      * <b>Warning:</b> There is no warning if the input Collection items are discarded due to uniqueness
-     * eg. passing in List into a Set type MultiMap
+     * e.g. passing in List into a Set type MultiMap
      * <p>
      * <b>Warning:</b> The Map and result of the put cannot be fetched
      * from the Future.
@@ -159,7 +159,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @param key the key of the entries to remove
      * @return the collection of removed values associated with the given key.
-     * The returned collection might be modifiable but it has no effect on the multimap.
+     * The returned collection might be modifiable, but it has no effect on the multimap.
      */
     @Nonnull
     Collection<V> remove(@Nonnull Object key);
@@ -201,7 +201,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * and vice-versa.
      *
      * @return the set of keys in the multimap (the returned set might be
-     * modifiable but it has no effect on the multimap)
+     * modifiable, but it has no effect on the multimap)
      */
     @Nonnull
     Set<K> keySet();
@@ -214,7 +214,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * and vice-versa.
      *
      * @return the collection of values in the multimap (the returned
-     * collection might be modifiable but it has no effect on the multimap)
+     * collection might be modifiable, but it has no effect on the multimap)
      */
     @Nonnull
     Collection<V> values();
@@ -227,7 +227,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * and vice-versa.
      *
      * @return the set of key-value pairs in the multimap (the returned
-     * set might be modifiable but it has no effect on the multimap)
+     * set might be modifiable, but it has no effect on the multimap)
      */
     @Nonnull
     Set<Map.Entry<K, V>> entrySet();
@@ -540,10 +540,10 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * Returns {@code LocalMultiMapStats} for this map.
      * <p>
      * {@code LocalMultiMapStats} is the statistics for the local portion of this
-     * distributed multi map and contains information such as ownedEntryCount
+     * distributed multimap and contains information such as ownedEntryCount
      * backupEntryCount, lastUpdateTime, and lockedEntryCount.
      * <p>
-     * Since this stats are only for the local portion of this multi map, if you
+     * Since these stats are only for the local portion of this multimap, if you
      * need the cluster-wide MultiMapStats, then you need to get the {@link LocalMapStats LocalMapStats}
      * from all members of the cluster and combine them.
      *
