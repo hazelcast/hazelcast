@@ -215,6 +215,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos, clusterUuid);
         memberListSnapshot.set(snapshot);
+        logger.info(membersString(snapshot));
         Set<Member> members = toUnmodifiableHasSet(snapshot.members().values());
         InitialMembershipEvent event = new InitialMembershipEvent(getCluster(), members);
         for (MembershipListener listener : listeners.values()) {

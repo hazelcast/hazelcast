@@ -49,6 +49,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport {
@@ -57,12 +59,13 @@ public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport 
             = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
 
     protected final LoggingService loggingService = mock(LoggingService.class);
+    private final ILogger logger = mock(ILogger.class);
 
     protected abstract ClientClusterService createClientClusterService();
 
     @Before
     public void setUp() {
-        when(loggingService.getLogger(any(Class.class))).thenReturn(mock(ILogger.class));
+        when(loggingService.getLogger(any(Class.class))).thenReturn(logger);
     }
 
     @Test
@@ -527,5 +530,32 @@ public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport 
 
         clusterService.handleClusterVersionEvent(CURRENT_CLUSTER_VERSION);
         assertEquals(CURRENT_CLUSTER_VERSION, clusterService.getClusterVersion());
+    }
+
+    @Test
+    public void memberListLoggedOnHandleMembersViewEvent() {
+        ClientClusterService clusterService = createClientClusterService();
+        MemberInfo member = member("127.0.0.1");
+        List<MemberInfo> members = List.of(member);
+
+        String expectedLogMessage = "\n\n"
+                + "Members [1] {"
+                + "\n"
+                + "\tMember [127.0.0.1]:5701 - " + member.getUuid()
+                + "\n"
+                + "}\n";
+
+        for (int i = 0; i < 3; i++) {
+            clusterService.handleMembersViewEvent(i, members, UUID.randomUUID());
+
+            // Returns the member list after the members view event
+            assertCollection(
+                    members.stream()
+                            .map(MemberInfo::toMember)
+                            .collect(Collectors.toList()),
+                    clusterService.getEffectiveMemberList());
+        }
+        // once on applyInitialState, twice on detectMembershipEvents
+        verify(logger, times(3)).info(expectedLogMessage);
     }
 }
