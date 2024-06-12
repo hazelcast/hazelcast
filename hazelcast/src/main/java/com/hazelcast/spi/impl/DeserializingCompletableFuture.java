@@ -53,7 +53,7 @@ public class DeserializingCompletableFuture<V> extends InternalCompletableFuture
     private final Executor defaultAsyncExecutor;
     /**
      * When {@code true}, a completion value of type {@link Data} will be deserialized
-     * before returned from one of the blocking results getter methods ({@link #get()}, {@link #join()} etc)
+     * before returned from one of the blocking results getter methods ({@link #get()}, {@link #join()} etc.)
      * or before passed as argument to callbacks such as {@link #thenAccept(Consumer)}.
      */
     private final boolean deserialize;

@@ -231,7 +231,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             return currentRegistration;
         }
         // Execute potentially long-lasting operation outside CHM lock in computeIfAbsent.
-        // Some special classloaders (eg. JetClassLoader) may try to access external resources
+        // Some special classloaders (e.g. JetClassLoader) may try to access external resources
         // and require other threads.
         // We might try to load the same class multiple times in parallel but this is not a problem.
         CompactSerializableRegistration newRegistration = getOrCreateRegistration0(typeName);

@@ -43,7 +43,7 @@ import static com.hazelcast.config.CacheDeserializedValues.NEVER;
 public class AddIndexOperation extends MapOperation
         implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation,
                     // AddIndexOperation is used when map proxy for IMap with indexes is initialized during passive state
-                    // (eg. IMap is read for the first time after HotRestart recovery when the cluster is still in PASSIVE state)
+                    // (e.g. IMap is read for the first time after HotRestart recovery when the cluster is still in PASSIVE state)
                     AllowedDuringPassiveState {
     /**
      * Configuration of the index.

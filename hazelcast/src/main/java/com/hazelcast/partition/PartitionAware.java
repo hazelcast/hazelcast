@@ -54,7 +54,7 @@ public interface PartitionAware<T> {
      * {@link com.hazelcast.internal.serialization.SerializationService#toData SerializationService.toData}
      * from an internal SPI).
      * <p>
-     * Assume {@code PartitionAware a, b} are objects (eg. IMap keys) and
+     * Assume {@code PartitionAware a, b} are objects (e.g. IMap keys) and
      * {@code T pk1 = a.getPartitionKey(), pk2 = b.getPartitionKey()} are partition key values.
      * <p>
      * Then {@link #getPartitionKey()} implementation must obey the following contract:

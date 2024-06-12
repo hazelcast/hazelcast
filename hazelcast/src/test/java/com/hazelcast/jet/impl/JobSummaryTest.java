@@ -194,7 +194,7 @@ public class JobSummaryTest extends JetTestSupport {
 
     @Test
     @Ignore("Flaky due to race condition described in JobCoordinationService.getJobAndSqlSummary(LightMasterContext)")
-    // To see it failing add some delay (eg. 100ms) in JobCoordinationService.submitLightJob in mc.getCompletionFuture().whenComplete invocation
+    // To see it failing add some delay (e.g. 100ms) in JobCoordinationService.submitLightJob in mc.getCompletionFuture().whenComplete invocation
     public void when_lightJobIsCancelled_then_itIsNotReportedOnList() throws InterruptedException {
         // given
         Job job = instance.getJet().newLightJob(newStreamPipeline());
