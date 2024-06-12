@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -63,7 +64,7 @@ public class InterfacesTest extends HazelcastTestSupport {
                 .addInterface(interfaceA)
                 .addInterface(interfaceB)
                 .addInterface(interfaceC);
-        assertTrue(interfaces.getInterfaces().size() == 3);
+        assertEquals(3, interfaces.getInterfaces().size());
         interfaces.clear();
         assertTrue(interfaces.getInterfaces().isEmpty());
     }
@@ -89,9 +90,9 @@ public class InterfacesTest extends HazelcastTestSupport {
     @Test
     public void shouldNotContainDuplicateInterfaces() {
         InterfacesConfig interfaces = new InterfacesConfig().addInterface(interfaceA);
-        assertTrue(interfaces.getInterfaces().size() == 1);
+        assertEquals(1, interfaces.getInterfaces().size());
         interfaces.addInterface(interfaceA);
-        assertTrue(interfaces.getInterfaces().size() == 1);
+        assertEquals(1, interfaces.getInterfaces().size());
     }
 
     @Test(expected = UnsupportedOperationException.class)

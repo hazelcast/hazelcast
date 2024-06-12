@@ -51,9 +51,10 @@ public class ManagementCenterConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testXmlConfig() {
-        InMemoryXmlConfig xmlConfig = new InMemoryXmlConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n"
-                + "<management-center />\n"
-                + "</hazelcast>");
+        InMemoryXmlConfig xmlConfig = new InMemoryXmlConfig("""
+                <hazelcast xmlns="http://www.hazelcast.com/schema/config">
+                <management-center />
+                </hazelcast>""");
         HazelcastInstance hz = factory.newHazelcastInstance(xmlConfig);
         checkConfig(hz);
     }

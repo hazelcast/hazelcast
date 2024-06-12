@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NetworkConfigTest extends HazelcastTestSupport {
 
-    private NetworkConfig networkConfig = new NetworkConfig();
+    private final NetworkConfig networkConfig = new NetworkConfig();
 
     @Test
     public void testPort() {
