@@ -50,7 +50,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SplitMergeTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
     public void test_memberUuidChanges_duringMerge() {

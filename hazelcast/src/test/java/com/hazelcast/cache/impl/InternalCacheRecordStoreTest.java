@@ -50,7 +50,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
     @Override
     protected void onSetup() {

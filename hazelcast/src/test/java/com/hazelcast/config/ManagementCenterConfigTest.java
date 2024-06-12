@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ManagementCenterConfigTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
     public void testDefaultConfig() {

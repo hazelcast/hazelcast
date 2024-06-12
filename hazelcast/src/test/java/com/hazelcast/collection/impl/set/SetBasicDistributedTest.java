@@ -32,7 +32,7 @@ public class SetBasicDistributedTest extends SetAbstractTest {
 
     private static final int INSTANCE_COUNT = 2;
 
-    private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
 
 
     @Override

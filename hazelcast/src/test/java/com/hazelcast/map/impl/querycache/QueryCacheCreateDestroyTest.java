@@ -39,7 +39,7 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheCreateDestroyTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @After
     public void tearDown() throws Exception {

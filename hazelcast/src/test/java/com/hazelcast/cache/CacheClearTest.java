@@ -51,7 +51,7 @@ public class CacheClearTest extends CacheTestSupport {
 
     private static final int INSTANCE_COUNT = 2;
 
-    private TestHazelcastInstanceFactory factory = getInstanceFactory(INSTANCE_COUNT);
+    private final TestHazelcastInstanceFactory factory = getInstanceFactory(INSTANCE_COUNT);
     private HazelcastInstance[] hazelcastInstances;
     private HazelcastInstance hazelcastInstance;
 

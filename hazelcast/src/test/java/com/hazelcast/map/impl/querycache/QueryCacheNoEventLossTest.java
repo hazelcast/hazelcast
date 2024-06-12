@@ -54,7 +54,7 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
     private static final String QUERY_CACHE_NAME = "cacheName";
     private static final int TEST_DURATION_SECONDS = 3;
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
     public void no_event_lost_during_migrations__with_one_parallel_node() {

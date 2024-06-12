@@ -59,7 +59,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
     private static final int MAP_SIZE = 10000;
     private static final String MAP_NAME = "MapInvalidationMetaDataMigrationTest";
 
-    private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
     private Config config;
 
     @Before

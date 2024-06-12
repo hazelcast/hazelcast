@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheManagementTest extends CacheTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
     private HazelcastInstance hazelcastInstance;
 
     @Override
