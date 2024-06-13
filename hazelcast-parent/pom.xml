@@ -100,7 +100,7 @@
 
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
-        <aws.sdk.version>1.12.737</aws.sdk.version>
+        <aws.sdk.version>1.12.742</aws.sdk.version>
         <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.173</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
