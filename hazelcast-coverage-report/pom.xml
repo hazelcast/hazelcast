@@ -20,7 +20,7 @@
     <parent>
         <artifactId>hazelcast-root</artifactId>
         <groupId>com.hazelcast</groupId>
-        <version>5.3.7</version>
+        <version>5.3.8-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
