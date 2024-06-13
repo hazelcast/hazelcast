@@ -75,6 +75,12 @@
         -->
         <dependency>
             <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-parent</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-root</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
