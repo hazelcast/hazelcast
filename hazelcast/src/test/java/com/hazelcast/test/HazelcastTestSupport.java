@@ -63,6 +63,7 @@ import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
+import org.junit.jupiter.api.AfterEach;
 
 import java.io.File;
 import java.io.IOException;
@@ -166,6 +167,7 @@ public abstract class HazelcastTestSupport {
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
     }
 
+    @AfterEach
     @After
     public final void shutdownNodeFactory() {
         LOGGER.info("Shutting down node factory as @After action");
