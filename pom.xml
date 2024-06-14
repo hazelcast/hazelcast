@@ -425,7 +425,18 @@
 
     <profiles>
         <profile>
-            <!-- used by the PR builder -->
+            <!--
+            Executes:
+            - `ParallelJVMTest`s in parallel via several surefire forks (note: inside the fork tests still run serially)
+            - Excludes:
+                - `SlowTest`
+                - `NightlyTest`
+            - Typically `QuickTest`s
+
+            Duplicated in OS & EE
+
+            used by the PR builder
+            -->
             <id>parallelTest</id>
             <properties>
                 <skip-singlejvm-tests>false</skip-singlejvm-tests>
@@ -559,6 +570,9 @@
         </profile>
 
         <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
             <id>pr-builder</id>
             <build>
                 <plugins>
@@ -779,6 +793,13 @@
         </profile>
 
         <profile>
+            <!--
+            Configures release-specific options when doing a final, production release
+
+            Ensures Javadoc, sources etc. are generated and that the final JAR is cryptographically signed
+
+            Duplicated in OS & EE
+            -->
             <id>release</id>
             <properties>
                 <javadoc>true</javadoc>
@@ -830,6 +851,16 @@
         </profile>
 
         <profile>
+            <!--
+            Executes:
+            - `SlowTest`s
+            - `NightlyTest`s
+            - Excludes all other tests
+
+            Duplicated in OS & EE
+
+            Used for scheduled, longer running tests
+            -->
             <id>nightly-build</id>
             <build>
                 <plugins>
@@ -903,6 +934,11 @@
         </profile>
 
         <profile>
+            <!--
+            Executes all tests (`QuickTest` and `SlowTest`)
+
+            Duplicated in OS & EE
+            -->
             <id>all-tests</id>
             <build>
                 <plugins>
@@ -1044,6 +1080,13 @@
         </profile>
 
         <profile>
+            <!--
+            In isolation, does nothing as typically enabled by default
+            Works in conjunction with the `-Dquick` argument - which disables this profile - allowing additional modules to be skipped to reduce build time
+            This implementation is preferred as it also supports excluding child modules
+
+            Duplicated in OS & EE
+            -->
             <id>not-quick</id>
             <activation>
                 <property>

@@ -1046,6 +1046,9 @@
 
     <profiles>
         <profile>
+            <!--
+            Enables faster local builds, by skipping ome validation steps (e.g. Checkstyle)
+            -->
             <id>quick</id>
             <activation>
                 <property>
@@ -1074,8 +1077,14 @@
             </properties>
         </profile>
 
-        <!-- unfortunately it isn't possible to chain profiles, so we need to duplicate the javadoc plugin -->
         <profile>
+            <!--
+            Configures release-specific options when doing an intermediate SNAPSHOT release
+
+            Ensures Javadoc, sources etc. are generated and that an appropriate distribution destination is specified
+
+            Unfortunately, it isn't possible to chain profiles, so we need to duplicate the javadoc plugin
+            -->
             <id>release-snapshot</id>
             <properties>
                 <javadoc>true</javadoc>
@@ -1094,6 +1103,13 @@
         </profile>
 
         <profile>
+            <!--
+            Configures release-specific options when doing an intermediate devel release
+
+            Ensures Javadoc, sources etc. are generated and that an appropriate distribution destination is specified
+
+            Unfortunately, it isn't possible to chain profiles, so we need to duplicate the javadoc plugin
+            -->
             <id>release-devel</id>
             <properties>
                 <javadoc>true</javadoc>
