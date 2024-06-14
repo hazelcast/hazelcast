@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.lock.FencedLock;
 
 /**
- * Thrown when the current lock holder could not acquired the lock reentrantly
+ * Thrown when the current lock holder could not acquire the lock reentrantly
  * because the configured lock acquire limit is reached.
  * See {@link FencedLockConfig} and {@link FencedLock} for more information.
  *
