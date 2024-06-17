@@ -271,7 +271,8 @@ public final class RestClient {
      */
     private SSLContext buildSslContext(String caCertificate) {
         try {
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            String keystoreType = System.getProperty("hazelcast.restclient.ca.storetype", "PKCS12");
+            KeyStore keyStore = KeyStore.getInstance(keystoreType);
             keyStore.load(null, null);
 
             int i = 0;
