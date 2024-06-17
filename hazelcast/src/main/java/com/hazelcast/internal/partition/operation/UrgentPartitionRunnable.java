@@ -37,7 +37,7 @@ final class UrgentPartitionRunnable<T>
         };
     }
 
-    UrgentPartitionRunnable(int partitionId, Callable callable) {
+    UrgentPartitionRunnable(int partitionId, Callable<T> callable) {
         this.partitionId = partitionId;
         this.callable = callable;
     }

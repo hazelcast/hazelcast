@@ -402,7 +402,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
             internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
         }
 
-        if (!isAllowedToRetryDuringMigration(op) && internalPartition.isMigrating()) {
+        if (!isAllowedToExecuteDuringMigration(op) && internalPartition.isMigrating()) {
             throw new PartitionMigratingException(thisAddress, partitionId,
                     op.getClass().getName(), op.getServiceName());
         }
@@ -415,7 +415,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         }
     }
 
-    private boolean isAllowedToRetryDuringMigration(Operation op) {
+    private boolean isAllowedToExecuteDuringMigration(Operation op) {
         return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 

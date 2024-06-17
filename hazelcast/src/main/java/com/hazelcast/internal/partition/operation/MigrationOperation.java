@@ -46,7 +46,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 /**
- * Migration operation used by Hazelcast version 3.9.
+ * Migration operation.
  * <p>
  * It runs on the migration destination and applies the received
  * fragments. Sent by the partition owner to the migration

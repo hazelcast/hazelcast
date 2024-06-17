@@ -288,7 +288,9 @@ public class VectorIndexConfig implements NamedConfig, IdentifiedDataSerializabl
     }
 
     private static void validateName(String name) {
-        requireNonNull(name);
+        if (name == null) {
+            return;
+        }
         String allowedSymbols = "[a-zA-Z0-9\\-_]+";
         if (!name.matches(allowedSymbols)) {
             throw new IllegalArgumentException("The name of the vector index "
