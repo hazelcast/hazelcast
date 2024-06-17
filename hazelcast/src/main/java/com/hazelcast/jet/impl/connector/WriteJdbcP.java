@@ -40,6 +40,7 @@ import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
+import java.io.Serial;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -136,6 +137,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         // #connectAndPrepareStatement() instance method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 new ProcessorSupplier() {
+                    @Serial
                     private static final long serialVersionUID = 1L;
 
                     private transient CommonDataSource dataSource;
@@ -351,6 +353,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
     static class WriteJdbcSupplier<T> implements ProcessorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String dataConnectionName;

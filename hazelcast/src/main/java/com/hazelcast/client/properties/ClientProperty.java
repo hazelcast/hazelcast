@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.client.util.ClientConnectivityLogger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -338,6 +339,18 @@ public final class ClientProperty {
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
+
+    /**
+     * Sets the client connectivity logging delay in seconds.
+     * This value dictates the delay between a connectivity
+     * stat of clients to cluster members.
+     * <p>
+     * The delay is intended to reduce noise from frequent connection updates that
+     * may occur in bursts. Note that the latest connectivity view will be
+     * logged when the task is run. For more, see {@link ClientConnectivityLogger}
+     */
+    public static final HazelcastProperty CLIENT_CONNECTIVITY_LOGGING_DELAY_SECONDS
+            = new HazelcastProperty("hazelcast.client.connectivity.logging.delay.seconds", 10);
 
     private ClientProperty() {
     }

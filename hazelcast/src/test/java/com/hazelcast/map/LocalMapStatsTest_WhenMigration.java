@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -53,7 +52,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated_newNode() throws Exception {
+    public void testHitsGenerated_newNode() {
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
@@ -71,7 +70,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated_nodeCrash() throws Exception {
+    public void testHitsGenerated_nodeCrash() {
 
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -83,12 +82,9 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
         waitAllForSafeState(factory.getAllHazelcastInstances());
         factory.terminate(hz2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long hits = map.getLocalMapStats().getHits();
-                assertEquals(100, hits);
-            }
+        assertTrueEventually(() -> {
+            long hits = map.getLocalMapStats().getHits();
+            assertEquals(100, hits);
         });
     }
 }

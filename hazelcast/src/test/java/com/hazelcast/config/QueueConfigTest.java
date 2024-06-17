@@ -37,7 +37,7 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueConfigTest {
 
-    private QueueConfig queueConfig = new QueueConfig();
+    private final QueueConfig queueConfig = new QueueConfig();
 
     /**
      * Test method for {@link com.hazelcast.config.QueueConfig#getName()}.

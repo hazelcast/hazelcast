@@ -34,7 +34,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -87,7 +86,7 @@ public class DiagnosticsStdoutTest extends HazelcastTestSupport {
 
             while (line != null) {
                 sb.append(line);
-                sb.append(LINE_SEPARATOR);
+                sb.append(System.lineSeparator());
                 line = br.readLine();
             }
             return sb.toString();

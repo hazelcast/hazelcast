@@ -19,8 +19,11 @@ package com.hazelcast.jet.retry.impl;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategy;
 
+import java.io.Serial;
+
 public class RetryStrategyImpl implements RetryStrategy {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final int maxAttempts;

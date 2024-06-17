@@ -102,7 +102,7 @@ public class WeightedEvictableListTest {
         list.addOrVote("d");
         assertItemsInOrder(list, "a", "d");
         // weights are reset after max-size is reached and list is re-organized
-        // new item is retained and it gets a vote
+        // new item is retained, and it gets a vote
         assertWeightsInOrder(list, 0, 1);
     }
 

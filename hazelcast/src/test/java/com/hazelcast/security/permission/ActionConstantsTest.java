@@ -25,16 +25,17 @@ import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefServiceUtil;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchServiceUtil;
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreServiceUtil;
-import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.vector.impl.VectorCollectionServiceUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -187,5 +188,13 @@ public class ActionConstantsTest {
 
         assertNotNull(permission);
         assertTrue(permission instanceof UserCodeNamespacePermission);
+    }
+
+    @Test
+    public void getPermission_VectorCollection() {
+        Permission permission = ActionConstants.getPermission("foo", VectorCollectionServiceUtil.SERVICE_NAME);
+
+        assertNotNull(permission);
+        assertTrue(permission instanceof VectorCollectionPermission);
     }
 }

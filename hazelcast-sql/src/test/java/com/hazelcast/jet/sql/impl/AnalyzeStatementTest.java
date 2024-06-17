@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -339,7 +340,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         Job job = awaitSingleRunningJob(instance());
         result.close();
 
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
 
         // When
         List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
@@ -387,7 +388,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         // Then
         assertNotNull(job);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         return job;
     }
 
@@ -414,7 +415,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         });
 
         Job job = findJobForQuery("ANALYZE " + query);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         return job;
     }
 

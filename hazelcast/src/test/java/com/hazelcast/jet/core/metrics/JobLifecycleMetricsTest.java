@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -141,12 +142,12 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     public void jobSuspendedThenResumed() {
         //init
         Job job = hzInstances[0].getJet().newJob(streamingPipeline());
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertJobStatusMetric(job, RUNNING));
 
         //when
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         //then
         assertTrueEventually(() -> assertJobStatusMetric(job, SUSPENDED));
@@ -154,7 +155,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
         //when
         job.resume();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         //then
         assertTrueEventually(() -> assertJobStatusMetric(job, RUNNING));
@@ -165,14 +166,14 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     public void jobRestarted() {
         //init
         Job job = hzInstances[0].getJet().newJob(streamingPipeline());
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         assertTrueEventually(() -> assertJobStats(1, 1, 0, 0, 0));
         assertTrueAllTheTime(() -> assertJobStats(1, 1, 0, 0, 0), 1);
 
         //when
         job.restart();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         //then
         assertTrueEventually(() -> assertJobStats(1, 2, 1, 0, 0));
@@ -182,7 +183,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     public void jobCancelled() {
         //init
         Job job = hzInstances[0].getJet().newJob(streamingPipeline(), JOB_CONFIG_WITH_METRICS);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         assertTrueEventually(() -> assertJobStats(1, 1, 0, 0, 0));
         assertTrueAllTheTime(() -> assertJobStats(1, 1, 0, 0, 0), 1);
@@ -199,11 +200,11 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     public void jobSuspendedThenCancelled() {
         //init
         Job job = hzInstances[0].getJet().newJob(streamingPipeline(), JOB_CONFIG_WITH_METRICS);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         //when
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         //then
         assertTrueEventually(() -> assertJobStatusMetric(job, SUSPENDED));
@@ -211,7 +212,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
         //when
         job.cancel();
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
 
         //then
         assertTrueEventually(() -> assertJobStatusMetric(job, FAILED, true));

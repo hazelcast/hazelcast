@@ -33,9 +33,9 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEve
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static junit.framework.TestCase.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;

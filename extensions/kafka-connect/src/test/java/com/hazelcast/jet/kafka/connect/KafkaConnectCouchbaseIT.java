@@ -57,6 +57,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
@@ -175,7 +176,7 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
         assertClusterSizeEventually(3, hazelcastInstances[0]);
         HazelcastInstance hazelcastInstance = hazelcastInstances[0];
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         insertDocuments("items-2");
 

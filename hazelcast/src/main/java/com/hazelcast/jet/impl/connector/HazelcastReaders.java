@@ -55,6 +55,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -73,6 +74,7 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<>(new LocalCacheReaderFunction(cacheName)) {
+            @Serial
             private static final long serialVersionUID = 1L;
             @Override
             public Permission getRequiredPermission() {
@@ -84,6 +86,7 @@ public final class HazelcastReaders {
     public static class LocalCacheReaderFunction implements BiFunctionEx<HazelcastInstance,
             InternalSerializationService, ReadMapOrCacheP.Reader<InternalCompletableFuture<CacheEntriesWithCursor>,
             CacheEntriesWithCursor, Entry<Data, Data>>>, IdentifiedDataSerializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String cacheName;
@@ -136,6 +139,7 @@ public final class HazelcastReaders {
             ReadMapOrCacheP.Reader<ClientInvocationFuture, CacheIterateEntriesCodec.ResponseParameters,
                     Entry<Data, Data>>>, IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String cacheName;
@@ -177,6 +181,7 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<>(new LocalMapReaderFunction(mapName)) {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -189,6 +194,7 @@ public final class HazelcastReaders {
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
             ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
+        @Serial
         private static final long serialVersionUID = 1L;
         private String mapName;
 
@@ -238,6 +244,7 @@ public final class HazelcastReaders {
         return new LocalProcessorMetaSupplier<>(
                 new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
         ) {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -251,6 +258,7 @@ public final class HazelcastReaders {
             InternalSerializationService, ReadMapOrCacheP.Reader<InternalCompletableFuture<ResultSegment>,
             ResultSegment, QueryResultRow>>, IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String mapName;
@@ -302,6 +310,7 @@ public final class HazelcastReaders {
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String mapName;
@@ -360,6 +369,7 @@ public final class HazelcastReaders {
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Data>>,
             IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String mapName;

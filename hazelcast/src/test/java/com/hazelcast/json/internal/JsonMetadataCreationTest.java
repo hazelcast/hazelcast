@@ -36,7 +36,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -63,6 +62,7 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -327,12 +327,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     }
 
     private void assertMetadataCreatedEventually(final String mapName) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMetadataCreated(mapName);
-            }
-        });
+        assertTrueEventually(() -> assertMetadataCreated(mapName));
     }
 
     private void assertMetadataCreated(String mapName) {
@@ -371,13 +366,13 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         assertNotNull(msg, metadata);
         JsonSchemaNode keyNode = (JsonSchemaNode) metadata.getKeyMetadata();
         assertNotNull(keyNode);
-        assertTrue(!keyNode.isTerminal());
+        assertFalse(keyNode.isTerminal());
         JsonSchemaNode childNode = ((JsonSchemaStructNode) keyNode).getChild(0).getValue();
         assertTrue(childNode.isTerminal());
 
         JsonSchemaNode valueNode = (JsonSchemaNode) metadata.getValueMetadata();
         assertNotNull(valueNode);
-        assertTrue(!valueNode.isTerminal());
+        assertFalse(valueNode.isTerminal());
         JsonSchemaNode valueChildNode = ((JsonSchemaStructNode) valueNode).getChild(0).getValue();
         assertTrue(valueChildNode.isTerminal());
     }

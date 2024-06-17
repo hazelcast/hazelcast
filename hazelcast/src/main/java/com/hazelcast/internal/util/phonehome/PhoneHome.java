@@ -17,11 +17,10 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -29,86 +28,59 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.phonehome.MetricsCollector.TIMEOUT;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.phonehome.MetricsProvider.TIMEOUT;
 import static java.lang.System.getenv;
+import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * Pings phone home server with cluster info daily.
  */
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public class PhoneHome {
-
     private static final String FALSE = "false";
     private static final String DEFAULT_BASE_PHONE_HOME_URL = "https://phonehome.hazelcast.com/ping";
-    private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
+    private static final String FACTORY_ID = MetricsProvider.class.getName();
 
-    protected final Node hazelcastNode;
+    protected final Node node;
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
     private final String basePhoneHomeUrl;
-    private final List<MetricsCollector> metricsCollectorList;
+    private final List<MetricsProvider> metricsProviders = new ArrayList<>();
 
     public PhoneHome(Node node) {
-        this(node, DEFAULT_BASE_PHONE_HOME_URL, CLOUD_INFO_COLLECTOR);
+        this(node, DEFAULT_BASE_PHONE_HOME_URL);
     }
 
-    /**
-     * Visible for testing.
-     */
-    PhoneHome(Node node, String basePhoneHomeUrl, Map<String, String> envVars) {
-        this(node, basePhoneHomeUrl, envVars, CLOUD_INFO_COLLECTOR);
-    }
-
-    /**
-     * Visible for testing.
-     */
-    PhoneHome(Node node, String basePhoneHomeUrl, MetricsCollector... additionalCollectors) {
-        this(node, basePhoneHomeUrl, System.getenv(), additionalCollectors);
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private PhoneHome(Node node, String basePhoneHomeUrl, Map<String, String> envVars, MetricsCollector... additionalCollectors) {
-        hazelcastNode = node;
-        logger = hazelcastNode.getLogger(PhoneHome.class);
+    // visible for testing
+    PhoneHome(Node node, String basePhoneHomeUrl) {
+        this.node = node;
+        logger = node.getLogger(PhoneHome.class);
         this.basePhoneHomeUrl = basePhoneHomeUrl;
-        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 14);
-        Collections.addAll(metricsCollectorList,
-                new RestApiMetricsCollector(),
-                new BuildInfoCollector(new HashMap<>(envVars)), new ClusterInfoCollector(), new ClientInfoCollector(),
-                new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
-                new CacheInfoCollector(), new JetInfoCollector(),
-                new SqlInfoCollector(), new StorageInfoCollector(), new DynamicConfigInfoCollector(),
-                new UserCodeNamespacesInfoCollector(), new VMMetricsCollector());
-        Collections.addAll(metricsCollectorList, additionalCollectors);
+        try {
+            ServiceLoader.iterator(MetricsProvider.class, FACTORY_ID, node.getConfigClassLoader())
+                    .forEachRemaining(metricsProviders::add);
+        } catch (Exception e) {
+            sneakyThrow(e);
+        }
     }
 
     /**
-     * Registers a metric collector. It is useful for modules that are loaded dynamically.
-     *
-     * @param metricsCollector if null do nothing.
+     * Schedules a daily phone home metrics collection cycle, upon which the collected metrics
+     * are sent to the PhoneHome application. The first cycle is initiated immediately.
      */
-    protected void registerMetricsCollector(@Nonnull MetricsCollector metricsCollector) {
-        Preconditions.checkNotNull(metricsCollector, "MetricsCollector cannot be null.");
-        metricsCollectorList.add(metricsCollector);
-    }
-
-    public void check() {
-        if (!isPhoneHomeEnabled(hazelcastNode)) {
+    public void start() {
+        if (!isPhoneHomeEnabled(node)) {
             return;
         }
         try {
-            phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
-                    .scheduleWithRepetition("PhoneHome",
-                            () -> phoneHome(false), 0, 1, TimeUnit.DAYS);
+            phoneHomeFuture = node.nodeEngine.getExecutionService()
+                    .scheduleWithRepetition("PhoneHome", () -> phoneHome(false), 0, 1, DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
@@ -136,14 +108,12 @@ public class PhoneHome {
             writer.flush();
             conn.getContent();
         } catch (Exception ignored) {
-            ignore(ignored);
+            // no-op
         } finally {
             if (writer != null) {
                 try {
                     writer.close();
-                } catch (IOException e) {
-                    ignore(e);
-                }
+                } catch (IOException ignored) { }
             }
             if (conn != null) {
                 conn.disconnect();
@@ -160,23 +130,22 @@ public class PhoneHome {
      * @return the generated request parameters
      */
     public Map<String, String> phoneHome(boolean pretend) {
-        PhoneHomeParameterCreator parameterCreator = createParameters();
+        MetricsCollectionContext context = new MetricsCollectionContext();
+        collectMetrics(context);
         if (!pretend) {
-            postPhoneHomeData(parameterCreator.build());
+            postPhoneHomeData(context.getQueryString());
         }
-        return parameterCreator.getParameters();
+        return context.getParameters();
     }
 
-    public PhoneHomeParameterCreator createParameters() {
-        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
-        for (MetricsCollector metricsCollector : metricsCollectorList) {
+    public void collectMetrics(MetricsCollectionContext context) {
+        for (MetricsProvider metricsProvider : metricsProviders) {
             try {
-                metricsCollector.forEachMetric(hazelcastNode, parameterCreator::addParam);
+                metricsProvider.provideMetrics(node, context);
             } catch (Exception e) {
                 logger.warning("Some metrics were not recorded ", e);
             }
         }
-        return parameterCreator;
     }
 
     public static boolean isPhoneHomeEnabled(Node node) {

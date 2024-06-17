@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast client.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.5.xsd
+  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.5.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -148,10 +148,19 @@
                 <ports>37000,37001,37002,37003</ports>
                 <ports>38000,38500-38600</ports>
             </outbound-ports>
+        * <subset-routing enabled="true" routing-strategy="PARTITION_GROUPS">:
+            If true, this client will only connect to a limited
+            subset of the cluster, as specified with the defined
+            routing-strategy. Default value of routing-strategy
+            is PARTITION_GROUPS when not set. And subset-routing
+            is disabled by default.
+            Note : This feature may only be enabled if smart-routing is disabled.
+            Note : This feature is only available in Hazelcast Enterprise from 5.5.
         * <smart-routing>:
             If true, client will route the key based operations to owner of the key at the best effort. Note that it
             uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that
             the operation will always be executed on the owner. The cached table is updated every second.
+            Note : This feature may only be enabled if subset-routing is disabled.
         * <redo-operation>:
             If true, client will redo the operations that were executing on the server and client lost the connection.
             This can be because of network, or simply because the member died. However it is not clear whether the
@@ -270,6 +279,7 @@
             <ports>34600</ports>
             <ports>34700-34710</ports>
         </outbound-ports>
+        <subset-routing enabled="true" routing-strategy="PARTITION_GROUPS"/>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>

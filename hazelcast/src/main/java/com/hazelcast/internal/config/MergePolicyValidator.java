@@ -161,8 +161,8 @@ public final class MergePolicyValidator {
 
     private static void checkRequiredGenericType(List<Class> requiredMergeTypes, Class providedMergeTypes,
                                                  String mergePolicyClassName, Type requiredMergeType) {
-        if (requiredMergeType instanceof ParameterizedType) {
-            Type[] actualTypeArguments = ((ParameterizedType) requiredMergeType).getActualTypeArguments();
+        if (requiredMergeType instanceof ParameterizedType type) {
+            Type[] actualTypeArguments = type.getActualTypeArguments();
             for (Type requireMergeType : actualTypeArguments) {
                 checkRequiredMergeType(requiredMergeTypes, providedMergeTypes, mergePolicyClassName, requireMergeType);
             }
@@ -171,13 +171,12 @@ public final class MergePolicyValidator {
 
     private static void checkRequiredMergeType(List<Class> requiredMergeTypes, Class providedMergeTypes,
                                                String mergePolicyClassName, Type requireMergeType) {
-        if (requireMergeType instanceof ParameterizedType) {
+        if (requireMergeType instanceof ParameterizedType type) {
             // checks types like Merging...<V> extends MergingValue<V>
-            Class<?> requiredMergeType = (Class<?>) ((ParameterizedType) requireMergeType).getRawType();
+            Class<?> requiredMergeType = (Class<?>) type.getRawType();
             checkRequiredMergeTypeClass(requiredMergeTypes, providedMergeTypes, mergePolicyClassName, requiredMergeType);
-        } else if (requireMergeType instanceof Class) {
+        } else if (requireMergeType instanceof Class requiredMergeType) {
             // checks types like SplitBrainMergeTypes$...MergeTypes
-            Class<?> requiredMergeType = (Class) requireMergeType;
             checkRequiredMergeTypeClass(requiredMergeTypes, providedMergeTypes, mergePolicyClassName, requiredMergeType);
         }
     }

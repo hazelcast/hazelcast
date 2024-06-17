@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
@@ -205,11 +206,9 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof Person)) {
+            if (!(o instanceof Person person)) {
                 return false;
             }
-
-            Person person = (Person) o;
 
             if (age != person.age) {
                 return false;
@@ -229,6 +228,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
     private static final Person RETURNED_FROM_INTERCEPTOR = new Person("THE_PERSON", 100);
 
     public static class FixedReturnInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

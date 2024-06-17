@@ -35,7 +35,6 @@ import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.longregister.LongRegisterService;
@@ -49,7 +48,6 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -125,18 +123,8 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
     @Test
     public void testMap() {
         final IMap<Integer, Integer> map = hz.getMap(MAP_NAME);
-        map.addLocalEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                assertOpenEventually(listenerLatch);
-            }
-        });
-        map.addLocalEntryListener(new EntryRemovedListener() {
-            @Override
-            public void entryRemoved(EntryEvent event) {
-                assertOpenEventually(listenerLatch);
-            }
-        });
+        map.addLocalEntryListener((EntryAddedListener<Integer, Integer>) event -> assertOpenEventually(listenerLatch));
+        map.addLocalEntryListener((EntryRemovedListener<Integer, Integer>) event -> assertOpenEventually(listenerLatch));
 
         spawn((Runnable) () -> {
             Random random = new Random();
@@ -155,7 +143,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
     @Test
     public void testCache() {
         CompleteConfiguration<Integer, Integer> cacheConfig = new MutableConfiguration<Integer, Integer>()
-                .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<Integer, Integer>(
+                .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<>(
                         FactoryBuilder.factoryOf(new TestCacheListener()), null, true, true));
 
         CachingProvider memberProvider = createServerCachingProvider(hz);
@@ -282,16 +270,13 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
 
     private void assertContainsEventually(final String... messages) {
         try {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    plugin.run(logWriter);
+            assertTrueEventually(() -> {
+                plugin.run(logWriter);
 
-                    //System.out.println(getContent());
+                //System.out.println(getContent());
 
-                    for (String message : messages) {
-                        assertContains(message);
-                    }
+                for (String message : messages) {
+                    assertContains(message);
                 }
             });
         } finally {

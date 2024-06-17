@@ -34,7 +34,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -469,12 +468,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         final AMapStore store = getMapStoreInstance(hz, mapNameWithStoreAndSize + "1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, store.store.get(1));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, store.store.get(1)));
     }
 
     private Config buildConfig(String xml) {

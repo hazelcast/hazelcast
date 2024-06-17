@@ -27,22 +27,18 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapRemoveAllTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private static final int MAP_SIZE = 1000;
     private static final int NODE_COUNT = 3;
@@ -65,16 +61,15 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
 
     @Test
     public void throws_exception_whenPredicateNull() {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("predicate cannot be null");
-
-        IMap map = client.getMap("test");
-        map.removeAll(null);
+        IMap<Object, Object> map = client.getMap("test");
+        assertThatThrownBy(() -> map.removeAll(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("predicate cannot be null");
     }
 
     @Test
     public void removes_all_entries_whenPredicateTrue() {
-        IMap map = client.getMap("test");
+        IMap<Integer, Integer> map = client.getMap("test");
 
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);
@@ -87,7 +82,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
 
     @Test
     public void removes_no_entries_whenPredicateFalse() {
-        IMap map = client.getMap("test");
+        IMap<Integer, Integer> map = client.getMap("test");
 
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);

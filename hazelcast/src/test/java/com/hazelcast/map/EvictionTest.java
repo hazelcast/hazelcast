@@ -40,7 +40,6 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -733,8 +732,9 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         final IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
-            public void entryEvicted(EntryEvent event) {
+        map.addEntryListener(new EntryAdapter<>() {
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
                 latch.countDown();
             }
         }, false);
@@ -897,7 +897,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Object, Object> map = createSimpleMap();
 
         final AtomicInteger count = new AtomicInteger(0);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
+        map.addEntryListener(new EntryAdapter<>() {
             @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
                 count.incrementAndGet();
@@ -1067,12 +1067,7 @@ public class EvictionTest extends HazelcastTestSupport {
         assertOpenEventually(evictedEntryLatch);
         // sleep some seconds to be sure that
         // we did not receive more than expected number of events
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(numberOfEntriesToBeAdded, count.get());
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> assertEquals(numberOfEntriesToBeAdded, count.get()), 5);
     }
 
     private IMap<Integer, Integer> createMapWithReadBackupDataEnabled(int maxIdleSeconds) {

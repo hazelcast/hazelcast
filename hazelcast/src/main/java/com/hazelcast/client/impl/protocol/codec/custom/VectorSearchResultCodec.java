@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("c8e786e9d5b65d69baf52037cca61140")
+@Generated("f394d00b607ea288ceef36fa88b5eb7e")
 public final class VectorSearchResultCodec {
     private static final int SCORE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = SCORE_FIELD_OFFSET + FLOAT_SIZE_IN_BYTES;
@@ -33,7 +33,7 @@ public final class VectorSearchResultCodec {
     private VectorSearchResultCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.vector.impl.DataSearchResult vectorSearchResult) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.vector.SearchResult<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> vectorSearchResult) {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
@@ -41,7 +41,7 @@ public final class VectorSearchResultCodec {
         clientMessage.add(initialFrame);
 
         DataCodec.encode(clientMessage, vectorSearchResult.getKey());
-        CodecUtil.encodeNullable(clientMessage, vectorSearchResult.getDocument(), DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, vectorSearchResult.getValue(), DataCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, vectorSearchResult.getVectors(), VectorPairCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -55,11 +55,11 @@ public final class VectorSearchResultCodec {
         float score = decodeFloat(initialFrame.content, SCORE_FIELD_OFFSET);
 
         com.hazelcast.internal.serialization.Data key = DataCodec.decode(iterator);
-        com.hazelcast.internal.serialization.Data document = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         java.util.List<com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder> vectors = ListMultiFrameCodec.decodeNullable(iterator, VectorPairCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createVectorSearchResult(key, document, score, vectors);
+        return CustomTypeFactory.createVectorSearchResult(key, value, score, vectors);
     }
 }

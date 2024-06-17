@@ -108,6 +108,7 @@
     <xs:complexType name="network">
         <xs:all>
             <xs:element ref="cluster-members" minOccurs="0"/>
+            <xs:element ref="subset-routing" minOccurs="0"/>
             <xs:element ref="smart-routing" minOccurs="0"/>
             <xs:element ref="redo-operation" minOccurs="0"/>
             <xs:element ref="connection-timeout" minOccurs="0"/>
@@ -173,16 +174,50 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
+    <xs:simpleType name="routing-strategy-mode">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="PARTITION_GROUPS">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines member subsets based on existing Partition Groups.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="subset-routing">
+        <xs:complexType>
+            <xs:attribute name="enabled" default="false" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        If true, this client will only connect to a
+                        limited subset of the cluster, as specified
+                        with the defined routing-strategy. Its default
+                        value is false. Note: This feature may only
+                        be enabled if smart-routing is disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="routing-strategy" default="PARTITION_GROUPS" type="routing-strategy-mode">
+                <xs:annotation>
+                    <xs:documentation>
+                        Determines the routing strategy to use with subset routing.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="smart-routing" default="true">
         <xs:annotation>
             <xs:documentation>
-                If true, client will route the key based operations to owner of the key at
-                the best effort.
-                Note that it uses a cached version of
-                com.hazelcast.core.PartitionService#getPartitions() and doesn't
-                guarantee that the operation will always be executed on the
-                owner. The cached table is updated every
-                second.
+                If true, client will route the key based
+                operations to owner of the key at the best
+                effort. Note that it uses a cached version of
+                com.hazelcast.core.PartitionService#getPartitions()
+                and doesn't guarantee that the operation will
+                always be executed on the owner. The cached table
+                is updated every second. Also note that this feature
+                may only be enabled if subset-routing is disabled.
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>

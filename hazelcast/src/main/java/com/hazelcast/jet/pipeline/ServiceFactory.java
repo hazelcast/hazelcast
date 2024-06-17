@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Collections;
@@ -96,6 +97,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      */
     public static final boolean COOPERATIVE_DEFAULT = true;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private boolean isCooperative = COOPERATIVE_DEFAULT;

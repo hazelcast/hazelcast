@@ -244,7 +244,7 @@ public interface NodeExtension {
      * Creates additional extension services, which will be registered by
      * service manager during start-up.
      *
-     * By default returned map will be empty.
+     * By default, returned map will be empty.
      *
      * @return extension services
      */
@@ -331,7 +331,7 @@ public interface NodeExtension {
     void onClusterStateChange(ClusterState newState, boolean isTransient);
 
     /**
-     * Called synchronously when partition state (partition assignments, version etc) changes
+     * Called synchronously when partition state (partition assignments, version etc.) changes
      */
     void onPartitionStateChange();
 
@@ -389,11 +389,6 @@ public interface NodeExtension {
     void registerPlugins(Diagnostics diagnostics);
 
     /**
-     * Send PhoneHome ping from OS or EE instance to PhoneHome application
-     */
-    void sendPhoneHome();
-
-    /**
      * @return not-{@code null} {@link AuditlogService} instance
      */
     AuditlogService getAuditlogService();
@@ -431,4 +426,12 @@ public interface NodeExtension {
     UserCodeNamespaceService getNamespaceService();
 
     TpcServerBootstrap createTpcServerBootstrap();
+
+    /**
+     * @return the license object, if a Hazelcast Enterprise license is configured, otherwise {@code null}
+     */
+    @Nullable
+    default Object getLicense() {
+        return null;
+    }
 }

@@ -107,7 +107,7 @@ public class RegexConfigPatternMatcherTest {
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher(Pattern.CASE_INSENSITIVE));
         config.addMapConfig(mapConfig);
 
-        // case insensitive matching
+        // case-insensitive matching
         assertEquals(mapConfig, config.getMapConfig("SomeMap"));
 
         // non-matching name (starts with)

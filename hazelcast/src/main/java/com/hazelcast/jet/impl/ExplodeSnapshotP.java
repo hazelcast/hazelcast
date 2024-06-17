@@ -68,7 +68,7 @@ public class ExplodeSnapshotP extends AbstractProcessor {
             }
             Object value = serializationService.readObject(in, true);
             return key instanceof BroadcastKey
-                    ? new BroadcastEntry(key, value)
+                    ? new BroadcastEntry<>(key, value)
                     : entry(key, value);
         });
     }

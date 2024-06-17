@@ -19,14 +19,25 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.SerializationService;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
+import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.GROUPS;
+import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.VERSION;
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -86,5 +97,30 @@ public final class ClientTestUtil {
             }
         }
         return clientMessage;
+    }
+
+    /**
+     * Utility method to create key-value pairs containing
+     * member group information
+     * @param version the version of the pair
+     * @param groups the groups.
+     * @return the map of key-values.
+     */
+    public static Map<String, String> createKeyValuePairs(int version, Set<UUID>... groups) {
+        Map<String, String> keyValuePairs = new HashMap<>();
+        JSONArray groupsArray = new JSONArray();
+        for (Set<UUID> group : groups) {
+            JSONArray groupArray = new JSONArray();
+            for (UUID member : group) {
+                groupArray.put(member.toString());
+            }
+            groupsArray.put(groupArray);
+        }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put(GROUPS, groupsArray);
+        jsonObject.put(VERSION, version);
+        keyValuePairs.put(SUBSET_MEMBER_GROUPS_INFO, jsonObject.toString());
+        keyValuePairs.put(CLUSTER_VERSION, Versions.V5_5.toString());
+        return keyValuePairs;
     }
 }

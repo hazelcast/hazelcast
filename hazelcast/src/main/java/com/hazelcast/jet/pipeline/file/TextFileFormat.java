@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
@@ -36,6 +37,7 @@ public class TextFileFormat implements FileFormat<String> {
      */
     public static final String FORMAT_TXT = "txt";
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String charset;

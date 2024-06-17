@@ -62,12 +62,7 @@ public abstract class TestThread extends Thread {
      * Asserts that the thread eventually completes, no matter if there is an error or not.
      */
     public void assertTerminates() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(format("Thread %s is still alive", getName()), isAlive());
-            }
-        });
+        assertTrueEventually(() -> assertFalse(format("Thread %s is still alive", getName()), isAlive()));
     }
 
     /**

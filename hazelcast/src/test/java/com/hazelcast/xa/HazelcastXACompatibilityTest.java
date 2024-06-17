@@ -220,17 +220,14 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         map.put("key", "value");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    xaResource.end(xid, XAResource.TMFAIL);
-                    latch.countDown();
-                } catch (XAException e) {
-                    e.printStackTrace();
-                }
+        new Thread(() -> {
+            try {
+                xaResource.end(xid, XAResource.TMFAIL);
+                latch.countDown();
+            } catch (XAException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
 
         assertOpenEventually(latch, 10);
     }

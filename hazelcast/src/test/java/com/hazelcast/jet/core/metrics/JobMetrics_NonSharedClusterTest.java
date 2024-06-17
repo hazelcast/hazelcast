@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static org.junit.Assert.assertFalse;
@@ -85,7 +86,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
         // Let's do a second job for which we know there will be no metrics collection. It should
         // return empty metrics because the next collection will be in 10_000 seconds.
         Job job2 = inst.getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
-        assertJobStatusEventually(job2, RUNNING);
+        assertThat(job2).eventuallyHasStatus(RUNNING);
         assertFalse(job2.getMetrics().containsTag(MetricTags.EXECUTION));
     }
 

@@ -28,6 +28,7 @@ import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.stream.Stream;
 
@@ -43,7 +44,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
     private transient HazelcastInstance instance;
     private transient SerializationService serializationService;
 
-    AbstractHazelcastConnectorSupplier(
+    protected AbstractHazelcastConnectorSupplier(
             @Nullable String dataConnectionName,
             @Nullable String clientXml
     ) {
@@ -56,6 +57,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
             @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
     ) {
         return new AbstractHazelcastConnectorSupplier(null, clientXml) {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override

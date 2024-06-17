@@ -25,6 +25,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -36,6 +37,7 @@ import java.io.Serializable;
  */
 public class ElasticSourceConfiguration<T> implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final SupplierEx<RestHighLevelClient> clientFn;

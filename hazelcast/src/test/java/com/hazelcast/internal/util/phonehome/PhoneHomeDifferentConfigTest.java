@@ -34,6 +34,14 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.DATA_MEMORY_COST;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.HD_MEMORY_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_FREE_HEAP_SIZE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_ENABLED;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.System.getenv;
@@ -48,6 +56,11 @@ import static org.junit.Assume.assumeFalse;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
+    private Map<String, String> parameters;
+
+    private String get(Metric metric) {
+        return parameters.get(metric.getQueryParameter());
+    }
 
     @Test
     public void testScheduling_whenPhoneHomeIsDisabled() {
@@ -59,7 +72,7 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
 
         PhoneHome phoneHome = new PhoneHome(node);
 
-        phoneHome.check();
+        phoneHome.start();
         assertNull(phoneHome.phoneHomeFuture);
     }
 
@@ -74,7 +87,7 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
         Node node = getNode(hz);
 
         PhoneHome phoneHome = new PhoneHome(node);
-        phoneHome.check();
+        phoneHome.start();
         assertNotNull(phoneHome.phoneHomeFuture);
         assertFalse(phoneHome.phoneHomeFuture.isDone());
         assertFalse(phoneHome.phoneHomeFuture.isCancelled());
@@ -92,9 +105,9 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
 
         PhoneHome phoneHome = new PhoneHome(node);
 
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals("false", parameters.get(PhoneHomeMetrics.JET_ENABLED.getRequestParameterName()));
-        assertEquals("false", parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()));
+        parameters = phoneHome.phoneHome(true);
+        assertEquals("false", get(JET_ENABLED));
+        assertEquals("false", get(JET_RESOURCE_UPLOAD_ENABLED));
     }
 
     @Test
@@ -109,13 +122,13 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
 
         PhoneHome phoneHome = new PhoneHome(node);
 
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertThat(parameters.get(PhoneHomeMetrics.HD_MEMORY_ENABLED.getRequestParameterName())).isEqualTo("true");
-        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE.getRequestParameterName())).isGreaterThan("0");
-        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_FREE_HEAP_SIZE.getRequestParameterName())).isGreaterThan("0");
-        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE.getRequestParameterName())).isEqualTo("0");
-        assertThat(parameters.get(PhoneHomeMetrics.TIERED_STORAGE_ENABLED.getRequestParameterName())).isEqualTo("false");
-        assertThat(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName())).isEqualTo("0");
+        parameters = phoneHome.phoneHome(true);
+        assertThat(get(HD_MEMORY_ENABLED)).isEqualTo("true");
+        assertThat(get(MEMORY_USED_HEAP_SIZE)).isGreaterThan("0");
+        assertThat(get(MEMORY_FREE_HEAP_SIZE)).isGreaterThan("0");
+        assertThat(get(MEMORY_USED_NATIVE_SIZE)).isEqualTo("0");
+        assertThat(get(TIERED_STORAGE_ENABLED)).isEqualTo("false");
+        assertThat(get(DATA_MEMORY_COST)).isEqualTo("0");
     }
 
     @Test
@@ -130,8 +143,8 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
 
         PhoneHome phoneHome = new PhoneHome(node);
 
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertThat(parameters.get(PhoneHomeMetrics.TIERED_STORAGE_ENABLED.getRequestParameterName())).isEqualTo("true");
-        assertThat(parameters.get(PhoneHomeMetrics.HD_MEMORY_ENABLED.getRequestParameterName())).isEqualTo("false");
+        parameters = phoneHome.phoneHome(true);
+        assertThat(get(TIERED_STORAGE_ENABLED)).isEqualTo("true");
+        assertThat(get(HD_MEMORY_ENABLED)).isEqualTo("false");
     }
 }

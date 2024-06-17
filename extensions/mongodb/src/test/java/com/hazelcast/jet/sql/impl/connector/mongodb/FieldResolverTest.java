@@ -79,21 +79,23 @@ public class FieldResolverTest {
             CreateCollectionOptions options = new CreateCollectionOptions();
             ValidationOptions validationOptions = new ValidationOptions();
             validationOptions.validator(BsonDocument.parse(
-                    "{\n" +
-                    "    $jsonSchema: {\n" +
-                            "      bsonType: \"object\",\n" +
-                            "      title: \"Person Object Validation\",\n" +
-                            "      required: [ \"firstName\", \"lastName\", \"birthYear\" ],\n" +
-                            "      properties: {" +
-                            "        \"firstName\": { \"bsonType\": \"string\" }\n" +
-                            "        \"lastName\": { \"bsonType\": \"string\" }\n" +
-                            "        \"birthYear\": { \"bsonType\": \"int\" }\n" +
-                            "        \"title\": { \"enum\": [ \"Bsc\", \"Msc\", \"PhD\" ] }\n" +
-                            "        \"intOrString\": { \"enum\": [ \"String\", 1 ] }\n" +
-                            "        \"unionType\": { \"bsonType\": [ 'int', 'string' ] }\n" +
-                            "      }\n" +
-                            "    }\n" +
-                            "  }\n"
+                    """
+                            {
+                                $jsonSchema: {
+                                  bsonType: "object",
+                                  title: "Person Object Validation",
+                                  required: [ "firstName", "lastName", "birthYear" ],
+                                  properties: {\
+                                    "firstName": { "bsonType": "string" }
+                                    "lastName": { "bsonType": "string" }
+                                    "birthYear": { "bsonType": "int" }
+                                    "title": { "enum": [ "Bsc", "Msc", "PhD" ] }
+                                    "intOrString": { "enum": [ "String", 1 ] }
+                                    "unionType": { "bsonType": [ 'int', 'string' ] }
+                                  }
+                                }
+                              }
+                            """
             ));
             options.validationOptions(validationOptions);
             testDatabase.createCollection(collectionName, options);

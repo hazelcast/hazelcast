@@ -91,7 +91,7 @@ public final class IntHashSet implements Set<Integer> {
 
     @Override
     public boolean remove(final Object value) {
-        return value instanceof Integer && remove(((Integer) value).intValue());
+        return value instanceof Integer i && remove(i.intValue());
     }
 
     /**
@@ -142,7 +142,7 @@ public final class IntHashSet implements Set<Integer> {
 
     @Override
     public boolean contains(final Object value) {
-        return value instanceof Integer && contains(((Integer) value).intValue());
+        return value instanceof Integer i && contains(i.intValue());
     }
 
     public boolean contains(final int value) {
@@ -349,8 +349,7 @@ public final class IntHashSet implements Set<Integer> {
             return true;
         }
 
-        if (other instanceof IntHashSet) {
-            final IntHashSet otherSet = (IntHashSet) other;
+        if (other instanceof IntHashSet otherSet) {
             return otherSet.missingValue == missingValue && otherSet.size() == size() && containsAll(otherSet);
         }
 

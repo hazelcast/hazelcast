@@ -78,11 +78,7 @@ public class JsonParser_Test {
 
   @Test
   public void parse_reader_rejectsEmpty() {
-    ParseException exception = assertException(ParseException.class, new RunnableEx() {
-      public void run() throws IOException {
-        parser.parse(new StringReader(""));
-      }
-    });
+    ParseException exception = assertException(ParseException.class, (RunnableEx) () -> parser.parse(new StringReader("")));
 
     assertEquals(0, exception.getLocation().offset);
     assertThat(exception.getMessage()).startsWith("Unexpected end of input at");
@@ -286,11 +282,7 @@ public class JsonParser_Test {
   public void parse_handlesPositionsCorrectlyWhenInputExceedsBufferSize() {
     final String input = "{\n  \"a\": 23,\n  \"b\": 42,\n}";
 
-    ParseException exception = assertException(ParseException.class, new RunnableEx() {
-      public void run() throws IOException {
-        parser.parse(new StringReader(input), 3);
-      }
-    });
+    ParseException exception = assertException(ParseException.class, (RunnableEx) () -> parser.parse(new StringReader(input), 3));
 
     assertEquals(new Location(24, 4, 1), exception.getLocation());
   }
@@ -303,11 +295,7 @@ public class JsonParser_Test {
     }
     final String input = array.toString();
 
-    ParseException exception = assertException(ParseException.class, new RunnableEx() {
-      public void run() throws IOException {
-        parser.parse(input);
-      }
-    });
+    ParseException exception = assertException(ParseException.class, (RunnableEx) () -> parser.parse(input));
 
     assertEquals("Nesting too deep at 1:1002", exception.getMessage());
   }
@@ -320,11 +308,7 @@ public class JsonParser_Test {
     }
     final String input = object.toString();
 
-    ParseException exception = assertException(ParseException.class, new RunnableEx() {
-      public void run() throws IOException {
-        parser.parse(input);
-      }
-    });
+    ParseException exception = assertException(ParseException.class, (RunnableEx) () -> parser.parse(input));
 
     assertEquals("Nesting too deep at 1:7002", exception.getMessage());
   }
@@ -337,11 +321,7 @@ public class JsonParser_Test {
     }
     final String input = value.toString();
 
-    ParseException exception = assertException(ParseException.class, new RunnableEx() {
-      public void run() throws IOException {
-        parser.parse(input);
-      }
-    });
+    ParseException exception = assertException(ParseException.class, (RunnableEx) () -> parser.parse(input));
 
     assertEquals("Nesting too deep at 1:4002", exception.getMessage());
   }
@@ -634,7 +614,7 @@ public class JsonParser_Test {
     JsonValue value = parse("-0");
 
     assertEquals(0, value.asInt());
-    assertEquals(0l, value.asLong());
+    assertEquals(0L, value.asLong());
     assertEquals(0f, value.asFloat(), 0);
     assertEquals(0d, value.asDouble(), 0);
   }
@@ -777,7 +757,7 @@ public class JsonParser_Test {
 
     @Override
     public void endBoolean(boolean value) {
-      record("endBoolean", Boolean.valueOf(value));
+      record("endBoolean", value);
     }
 
     @Override

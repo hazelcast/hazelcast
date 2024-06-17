@@ -60,5 +60,6 @@ public class TestClientConfigAndSpringDefaults {
 
         assertEquals(defaults.getNetworkConfig().isSmartRouting(), clientConfig.getNetworkConfig().isSmartRouting());
         assertEquals(defaults.getNetworkConfig().getConnectionTimeout(), clientConfig.getNetworkConfig().getConnectionTimeout());
+        assertEquals(defaults.getNetworkConfig().getSubsetRoutingConfig().isEnabled(), clientConfig.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
     }
 }

@@ -38,7 +38,6 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 
 /**
@@ -191,19 +190,19 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
         } catch (Exception e) {
             if (configurationFile != null) {
                 String msg = "Failed to parse " + configurationFile
-                        + LINE_SEPARATOR + "Exception: " + e.getMessage()
-                        + LINE_SEPARATOR + "Hazelcast startup interrupted.";
+                        + System.lineSeparator() + "Exception: " + e.getMessage()
+                        + System.lineSeparator() + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             } else if (configurationUrl != null) {
                 String msg = "Failed to parse " + configurationUrl
-                        + LINE_SEPARATOR + "Exception: " + e.getMessage()
-                        + LINE_SEPARATOR + "Hazelcast startup interrupted.";
+                        + System.lineSeparator() + "Exception: " + e.getMessage()
+                        + System.lineSeparator() + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             } else {
                 String msg = "Failed to parse the inputstream"
-                        + LINE_SEPARATOR + "Exception: " + e.getMessage()
-                        + LINE_SEPARATOR + "Hazelcast startup interrupted.";
+                        + System.lineSeparator() + "Exception: " + e.getMessage()
+                        + System.lineSeparator() + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             }
             throw new InvalidConfigurationException(e.getMessage(), e);

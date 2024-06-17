@@ -26,12 +26,11 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Iterator;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -100,9 +99,7 @@ public class GcpDiscoveryStrategyFactoryTest {
             throws IOException {
         File temp = File.createTempFile("test", ".tmp");
         temp.deleteOnExit();
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(temp, StandardCharsets.UTF_8))) {
-            bufferedWriter.write(expectedContents);
-        }
+        Files.writeString(temp.toPath(), expectedContents, StandardCharsets.UTF_8);
         return temp.getAbsolutePath();
     }
 }

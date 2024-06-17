@@ -29,7 +29,7 @@ public final class JsonGetter extends AbstractJsonGetter {
 
     public static final JsonGetter INSTANCE = new JsonGetter();
 
-    private JsonFactory factory = new JsonFactory();
+    private final JsonFactory factory = new JsonFactory();
 
     protected JsonGetter() {
         super(null);

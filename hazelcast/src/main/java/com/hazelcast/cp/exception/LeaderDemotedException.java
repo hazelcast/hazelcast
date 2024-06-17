@@ -18,6 +18,7 @@ package com.hazelcast.cp.exception;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
+import java.io.Serial;
 import java.util.UUID;
 
 /**
@@ -26,6 +27,7 @@ import java.util.UUID;
  */
 public class LeaderDemotedException extends CPSubsystemException {
 
+    @Serial
     private static final long serialVersionUID = 4284556927980596355L;
 
     public LeaderDemotedException(RaftEndpoint local, RaftEndpoint leader) {

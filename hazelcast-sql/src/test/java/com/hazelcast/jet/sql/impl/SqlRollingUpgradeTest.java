@@ -20,10 +20,12 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.junit.Assert.assertEquals;
 
@@ -39,8 +41,8 @@ public class SqlRollingUpgradeTest extends SqlTestSupport {
 
         // manually set the version for the 2nd member to minor+1
         MemberVersion m1Version = new MemberVersion(m0Version.getMajor(), m0Version.getMinor() + 1, m0Version.getPatch());
-        getNodeEngineImpl(instances()[1]).getLocalMember().setVersion(m1Version);
-        getNodeEngineImpl(instances()[0]).getClusterService().getMember(m1Address).setVersion(m1Version);
+        Accessors.getNodeEngineImpl(instances()[1]).getLocalMember().setVersion(m1Version);
+        Accessors.getNodeEngineImpl(instances()[0]).getClusterService().getMember(m1Address).setVersion(m1Version);
 
         // create the client after setting the version so that the client knows the correct member versions
         client = factory().newHazelcastClient();
@@ -51,12 +53,12 @@ public class SqlRollingUpgradeTest extends SqlTestSupport {
         // A light job must be submitted to the local member. Since members have different version, the
         // job will run on the submitting member, but must not run on the other member.
         Job job1 = instances()[0].getJet().newLightJob(streamingDag());
-        assertTrueEventually(() -> assertJobExecuting(job1, instances()[0]));
-        assertJobNotExecuting(job1, instances()[1]);
+        assertTrueEventually(() -> assertThat(job1).isExecutingOn(instances()[0]));
+        assertThat(job1).isNotExecutingOn(instances()[1]);
 
         Job job2 = instances()[1].getJet().newLightJob(streamingDag());
-        assertTrueEventually(() -> assertJobExecuting(job2, instances()[1]));
-        assertJobNotExecuting(job2, instances()[0]);
+        assertTrueEventually(() -> assertThat(job2).isExecutingOn(instances()[1]));
+        assertThat(job2).isNotExecutingOn(instances()[0]);
     }
 
     @Test

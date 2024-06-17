@@ -73,7 +73,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         return asList(new Object[][]{{InMemoryFormat.OBJECT}, {InMemoryFormat.BINARY}});
     }
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private Config finalConfig;
     private HazelcastInstance member1;

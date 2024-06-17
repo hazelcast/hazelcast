@@ -30,11 +30,6 @@ import java.util.Map;
 public interface SearchOptions {
 
     /**
-     * @return one or more search vectors, mapped to the associated index name.
-     */
-    VectorValues getVectors();
-
-    /**
      * @return  {@code true} if search results should include the user-supplied value or
      *          {@code false} if only keys should be returned.
      */
@@ -63,11 +58,7 @@ public interface SearchOptions {
         return new SearchOptionsBuilder();
     }
 
-    static SearchOptions of(float[] vector, int limit, boolean includeValue, boolean includeVectors) {
-        return new SearchOptionsImpl(includeValue, includeVectors, limit, VectorValues.of(vector), Map.of());
-    }
-
-    static SearchOptions of(Map<String, float[]> vectors, int limit, boolean includeValue, boolean includeVectors) {
-        return new SearchOptionsImpl(includeValue, includeVectors, limit, VectorValues.of(vectors), Map.of());
+    static SearchOptions of(int limit, boolean includeValue, boolean includeVectors) {
+        return new SearchOptionsImpl(includeValue, includeVectors, limit, Map.of());
     }
 }

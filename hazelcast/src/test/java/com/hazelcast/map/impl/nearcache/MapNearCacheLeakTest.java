@@ -135,7 +135,7 @@ public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
                 .setNearCacheInstance(nearCacheInstance)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
+                .setNearCacheAdapter(new IMapDataStructureAdapter<>(nearCacheMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setHasLocalData(true)

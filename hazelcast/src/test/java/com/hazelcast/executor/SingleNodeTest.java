@@ -184,7 +184,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     @Test
     public void issue292() throws Exception {
         final BlockingQueue<Member> qResponse = new ArrayBlockingQueue<>(1);
-        executor.submit(new MemberCheck(), new ExecutionCallback<Member>() {
+        executor.submit(new MemberCheck(), new ExecutionCallback<>() {
             public void onResponse(Member response) {
                 qResponse.offer(response);
             }

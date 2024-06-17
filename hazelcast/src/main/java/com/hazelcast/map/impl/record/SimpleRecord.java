@@ -29,14 +29,14 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
  * Used when {@link MapConfig#isPerEntryStatsEnabled()} is {@code false}
  */
 @SuppressWarnings({"checkstyle:methodcount", "VolatileLongOrDoubleField"})
-class SimpleRecord<V> implements Record<V> {
+public class SimpleRecord<V> implements Record<V> {
     protected volatile V value;
     private int version;
 
     SimpleRecord() {
     }
 
-    SimpleRecord(V value) {
+    public SimpleRecord(V value) {
         setValue(value);
     }
 

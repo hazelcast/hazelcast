@@ -28,10 +28,8 @@ import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
@@ -52,10 +50,7 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
 
     static final int CLUSTER_MEMBERS_COUNT = 3;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(10);
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(10);
     private HazelcastInstance[] clusterMembers;
     private ClusterService clusterService;
 
@@ -71,27 +66,23 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
 
     @Test
     public void test_upgradeMinorVersion_notAllowed() {
-        expectedException.expect(IllegalStateException.class);
-        upgradeCluster(VERSION_2_2_0);
+        assertThrows(IllegalStateException.class, () -> upgradeCluster(VERSION_2_2_0));
     }
 
     @Test
     public void test_upgradeMajorVersion_notAllowed() {
-        expectedException.expect(IllegalStateException.class);
-        upgradeCluster(VERSION_3_0_0);
+        assertThrows(IllegalStateException.class, () -> upgradeCluster(VERSION_3_0_0));
     }
 
     @Test
     public void test_addNodeOfLesserThanClusterVersion_notAllowed() {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, VERSION_2_0_5.toString());
-        expectedException.expect(IllegalStateException.class);
-        factory.newHazelcastInstance(getConfig());
+        assertThrows(IllegalStateException.class, () -> factory.newHazelcastInstance(getConfig()));
     }
 
     @Test
     public void test_changeClusterVersion_disallowedForMinorVersions() {
-        expectedException.expect(VersionMismatchException.class);
-        clusterService.changeClusterVersion(VERSION_2_0_5.asVersion());
+        assertThrows(VersionMismatchException.class, () -> clusterService.changeClusterVersion(VERSION_2_0_5.asVersion()));
     }
 
     void upgradeCluster(MemberVersion version) {

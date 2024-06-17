@@ -34,7 +34,6 @@ import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -73,7 +72,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
     public static class EventCollectingCachePartitionLostListener implements CachePartitionLostListener {
 
         private final List<CachePartitionLostEvent> events
-                = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
+                = Collections.synchronizedList(new LinkedList<>());
 
         private final int backupCount;
 
@@ -115,20 +114,16 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
         CacheService cacheService = getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
         cacheService.onPartitionLost(internalEvent);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                List<CachePartitionLostEvent> events = listener.getEvents();
+        assertTrueEventually(() -> {
+            List<CachePartitionLostEvent> events = listener.getEvents();
 
-                assertEquals(1, events.size());
-                CachePartitionLostEvent event = events.get(0);
-                assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
-                assertEquals(getIthCacheName(0), event.getSource());
-                assertEquals(getIthCacheName(0), event.getName());
-                assertEquals(instance.getCluster().getLocalMember(), event.getMember());
-                assertEquals(CacheEventType.PARTITION_LOST, event.getEventType());
-            }
+            assertEquals(1, events.size());
+            CachePartitionLostEvent event = events.get(0);
+            assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
+            assertEquals(getIthCacheName(0), event.getSource());
+            assertEquals(getIthCacheName(0), event.getName());
+            assertEquals(instance.getCluster().getLocalMember(), event.getMember());
+            assertEquals(CacheEventType.PARTITION_LOST, event.getEventType());
         });
 
         cacheManager.destroyCache(getIthCacheName(0));
@@ -165,15 +160,11 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
         terminatingInstance.getLifecycleService().terminate();
         waitAllForSafeState(survivingInstance);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final List<CachePartitionLostEvent> events = listener.getEvents();
-                assertFalse(events.isEmpty());
-                for (CachePartitionLostEvent event : events) {
-                    assertFalse(survivingPartitionIds.contains(event.getPartitionId()));
-                }
+        assertTrueEventually(() -> {
+            final List<CachePartitionLostEvent> events = listener.getEvents();
+            assertFalse(events.isEmpty());
+            for (CachePartitionLostEvent event : events) {
+                assertFalse(survivingPartitionIds.contains(event.getPartitionId()));
             }
         });
 

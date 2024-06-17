@@ -19,7 +19,7 @@ package com.hazelcast.internal.util.phonehome;
 /**
  * Enumeration of phone home metric types
  */
-public enum PhoneHomeMetrics {
+public enum PhoneHomeMetrics implements Metric {
     //BUILD INFO METRICS
     HAZELCAST_DOWNLOAD_ID("p"),
     CLIENT_ENDPOINT_COUNT("cssz"),
@@ -63,6 +63,9 @@ public enum PhoneHomeMetrics {
     PYTHON_CLIENT_VERSIONS("cpycv"),
     GO_CLIENT_VERSIONS("cgocv"),
     CL_CLIENT_VERSIONS("cclcv"),
+    SMART_CLIENTS_COUNT("smartclients"),
+    UNISOCKET_CLIENTS_COUNT("unisocketclients"),
+    SUBSET_CLIENTS_COUNT("subsetclients"),
 
     //CLUSTER INFO METRICS
     UUID_OF_CLUSTER("m"),
@@ -167,16 +170,6 @@ public enum PhoneHomeMetrics {
     TIERED_STORAGE_ENABLED("tse"),
     DATA_MEMORY_COST("dmc"),
 
-    //CP SUBSYSTEM METRICS
-    CP_SUBSYSTEM_ENABLED("cp"),
-    CP_MEMBERS_COUNT("cpmc"),
-    CP_GROUPS_COUNT("cpgct"),
-    CP_SEMAPHORES_COUNT("cpsect"),
-    CP_COUNTDOWN_LATCHES_COUNT("cpclct"),
-    CP_FENCED_LOCKS_COUNT("cpflct"),
-    CP_ATOMIC_LONGS_COUNT("cpalct"),
-    CP_ATOMIC_REFS_COUNT("cparct"),
-
     // REST API metrics
     REST_ENABLED("restenabled"),
     REST_MAP_GET_SUCCESS("restmapgetsucc"),
@@ -205,21 +198,6 @@ public enum PhoneHomeMetrics {
     REST_REQUEST_COUNT("restrequestct"),
     REST_UNIQUE_REQUEST_COUNT("restuniqrequestct"),
 
-    //New REST module
-    //Note: Hazelcast has two types of REST support. The new REST Service (hazelcast-enterprise-rest) uses "rests" prefix
-    //while old one uses "rest".
-    RESTS_ENABLED("restsenabled"),
-    RESTS_GET_MEMBERS_COUNT("restsgtmsct"),
-    RESTS_GET_MEMBER_SELF_COUNT("restsgtmselfct"),
-    RESTS_GET_MEMBER_WITH_UUID_COUNT("restsgtmuuidct"),
-    RESTS_GET_CLUSTER_COUNT("restsgtcct"),
-    RESTS_GET_CLUSTER_STATE_COUNT("restsgtcstct"),
-    RESTS_POST_CLUSTER_STATE_COUNT("restsptcstct"),
-    RESTS_GET_CLUSTER_VERSION_COUNT("restsgtcvect"),
-    RESTS_POST_CLUSTER_VERSION_COUNT("restsptcvect"),
-    RESTS_GET_MEMBER_READY_COUNT("restsgtmrdct"),
-    RESTS_GET_MEMBER_HEALTH_COUNT("restsgtmhtlct"),
-    RESTS_POST_CONFIG_RELOAD_COUNT("restscfgrld"),
     UCN_ENABLED("ucnenabled"),
     UCN_NAMESPACE_COUNT("ucncount"),
     V_CPU_COUNT("vcpuct");
@@ -230,13 +208,8 @@ public enum PhoneHomeMetrics {
         this.query = query;
     }
 
-    //Visible for testing.
-    public String getRequestParameterName() {
-        return query;
-    }
-
     @Override
-    public String toString() {
+    public String getQueryParameter() {
         return query;
     }
 }

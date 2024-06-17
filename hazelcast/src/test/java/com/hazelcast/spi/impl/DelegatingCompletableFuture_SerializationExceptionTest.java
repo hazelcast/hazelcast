@@ -54,9 +54,9 @@ public class DelegatingCompletableFuture_SerializationExceptionTest {
 
     protected final Data invalidData = new HeapData(new byte[] {0, 0, 0, 0, 5, 0, 0, 0, 0});
 
-    private InternalSerializationService serializationService
+    private final InternalSerializationService serializationService
             = new DefaultSerializationServiceBuilder().build();
-    private AtomicBoolean executed = new AtomicBoolean();
+    private final AtomicBoolean executed = new AtomicBoolean();
 
     @Test
     public void ensureInvalidData() {

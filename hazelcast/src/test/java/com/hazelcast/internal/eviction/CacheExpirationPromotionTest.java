@@ -21,7 +21,6 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -88,22 +87,12 @@ public class CacheExpirationPromotionTest extends HazelcastTestSupport {
 
         final BackupAccessor<String, String> backupAccessor = TestBackupUtils.newCacheAccessor(instances, cacheName, 1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(backupAccessor.get(keyOwnedByLastInstance));
-            }
-        });
+        assertTrueEventually(() -> assertNotNull(backupAccessor.get(keyOwnedByLastInstance)));
 
         instances[nodeCount - 1].shutdown();
 
         // the backup replica became the primary, now the backup is the other node.
         // we check if the newly appointed replica sent expiration to backups
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, backupAccessor.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, backupAccessor.size()));
     }
 }

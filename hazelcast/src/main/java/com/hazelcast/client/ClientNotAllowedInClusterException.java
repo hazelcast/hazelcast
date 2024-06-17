@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastException;
  * <ul>
  * <li>Cluster blacklisted the client</li>
  * <li>Cluster partition counts are different between alternative clusters</li>
+ * <li>Cluster version is not supported with configured client</li>
  * </ul>
  */
 public class ClientNotAllowedInClusterException extends HazelcastException {

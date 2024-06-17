@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
@@ -35,6 +36,7 @@ import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,7 +99,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
     private final boolean isBackupAckToClientEnabled;
     private final ClientConnectionManager connectionManager;
     private final ClientPartitionService partitionService;
-    private final boolean isUnisocketClient;
+    private final RoutingMode routingMode;
 
     public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -116,8 +118,9 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
         client.getMetricsRegistry().registerStaticMetrics(this, CLIENT_PREFIX_INVOCATIONS);
         this.connectionManager = client.getConnectionManager();
         this.partitionService = client.getClientPartitionService();
-        this.isUnisocketClient = connectionManager.isUnisocketClient();
-        this.isBackupAckToClientEnabled = !isUnisocketClient && client.getClientConfig().isBackupAckToClientEnabled();
+        this.routingMode = connectionManager.getRoutingMode();
+        this.isBackupAckToClientEnabled = routingMode == RoutingMode.SMART
+                && client.getClientConfig().isBackupAckToClientEnabled();
     }
 
     @Override
@@ -176,7 +179,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
     }
 
     @Override
-    public boolean invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) {
+    public boolean invokeOnPartitionOwner(ClientInvocation invocation,
+                                          int partitionId) {
         UUID partitionOwner = partitionService.getPartitionOwner(partitionId);
         if (partitionOwner == null) {
             if (invocationLogger.isFinestEnabled()) {
@@ -184,6 +188,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
             }
             return false;
         }
+
         return invokeOnTarget(invocation, partitionOwner);
     }
 
@@ -200,9 +205,11 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
     }
 
     @Override
-    public boolean invokeOnTarget(ClientInvocation invocation, UUID uuid) {
+    public boolean invokeOnTarget(ClientInvocation invocation,
+                                  UUID uuid) {
         assert (uuid != null);
-        ClientConnection connection = connectionManager.getConnection(uuid);
+
+        ClientConnection connection = connectionManager.getActiveConnection(uuid);
         if (connection == null) {
             if (invocationLogger.isFinestEnabled()) {
                 invocationLogger.finest("Client is not connected to target : " + uuid);
@@ -233,8 +240,32 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
     }
 
     @Override
+    public boolean isConnectionInUse(@Nonnull ClientConnection connection) {
+        for (ClientInvocation invocation : invocations.values()) {
+            ClientConnection sentConnection = invocation.getSentConnection();
+            if (sentConnection == null) {
+                // not expecting this case and deemed as indeterminate
+                // state, best to return true as if the connection is
+                // in use and leave the decision to the next checks
+                return true;
+            }
+
+            if (sentConnection.equals(connection)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public boolean isRedoOperation() {
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
+    }
+
+    @Override
+    public boolean isBackupAckToClientEnabled() {
+        return isBackupAckToClientEnabled;
     }
 
     private boolean send(ClientInvocation invocation, ClientConnection connection) {
@@ -342,8 +373,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
     }
 
     @Override
-    public boolean isUnisocketClient() {
-        return isUnisocketClient;
+    public RoutingMode getRoutingMode() {
+        return routingMode;
     }
 
     private class BackupTimeoutTask implements Runnable {

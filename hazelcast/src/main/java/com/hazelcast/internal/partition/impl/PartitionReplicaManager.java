@@ -293,8 +293,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     @Override
     public ServiceNamespace getServiceNamespace(Operation operation) {
-        if (operation instanceof ServiceNamespaceAware) {
-            return ((ServiceNamespaceAware) operation).getServiceNamespace();
+        if (operation instanceof ServiceNamespaceAware aware) {
+            return aware.getServiceNamespace();
         }
         return NonFragmentedServiceNamespace.INSTANCE;
     }

@@ -92,11 +92,7 @@ public class NodeStateTest extends HazelcastTestSupport {
 
         Thread[] shutdownThreads = new Thread[3];
         for (int i = 0; i < shutdownThreads.length; i++) {
-            Thread thread = new Thread() {
-                public void run() {
-                    node.shutdown(false);
-                }
-            };
+            Thread thread = new Thread(() -> node.shutdown(false));
             thread.start();
             shutdownThreads[i] = thread;
         }

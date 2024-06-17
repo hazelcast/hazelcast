@@ -62,6 +62,7 @@ import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.cdc.postgres.AbstractPostgresCdcIntegrationTest.getConnection;
 import static com.hazelcast.jet.cdc.postgres.PostgresCdcSources.PostgresSnapshotMode.INITIAL;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -130,7 +131,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             assertTrue(hz.getMap("results").isEmpty());
         } else {
             // and can't connect to DB
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
             assertTrue(hz.getMap("results").isEmpty());
 
             // and DB starts
@@ -161,7 +162,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             // when job starts
             HazelcastInstance hz = createHazelcastInstances(2)[0];
             Job job = hz.getJet().newJob(pipeline);
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
 
             // and snapshotting is ongoing (we have no exact way of identifying
             // the moment, but random sleep will catch it at least some of the time)
@@ -195,7 +196,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         // when job starts
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         // and snapshotting is ongoing (we have no exact way of identifying
         // the moment, but random sleep will catch it at least some of the time)

@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.deployment;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
@@ -48,6 +49,7 @@ import uk.org.webcompere.systemstubs.rules.SystemPropertiesRule;
 
 import java.io.File;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -74,8 +76,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
     @AfterClass
     public static void afterClass() throws Exception {
         if (jarFile != null) {
-            jarFile.delete();
-            jarFile = null;
+            IOUtil.deleteQuietly(jarFile);
         }
     }
 
@@ -97,7 +98,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addCustomClasspath(source.name(), jarFile.getName());
         Job job = jet.newJob(p, jobConfig);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         JetServiceBackend jetServiceBackend =
                 ((HazelcastInstanceProxy) member).getOriginal().node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
@@ -106,7 +107,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
         ChildFirstClassLoader classLoader = (ChildFirstClassLoader) jobClassLoaderService.getProcessorClassLoader(job.getId(), source.name());
 
         job.suspend();
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertThat(job).eventuallyHasStatus(JobStatus.SUSPENDED);
 
         assertThat(classLoader.isClosed())
                 .describedAs("classloader hasn't been closed")

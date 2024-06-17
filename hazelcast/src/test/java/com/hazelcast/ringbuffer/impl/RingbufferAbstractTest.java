@@ -27,9 +27,7 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -66,8 +64,6 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     private String name;
     private Ringbuffer<String> ringbuffer;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {

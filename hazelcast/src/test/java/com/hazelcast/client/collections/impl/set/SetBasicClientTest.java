@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SetBasicClientTest extends SetAbstractTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void teardown() {

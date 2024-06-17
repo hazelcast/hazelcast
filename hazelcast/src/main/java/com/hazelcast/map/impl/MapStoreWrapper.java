@@ -62,12 +62,12 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         this.impl = impl;
         MapLoader loader = null;
         MapStore store = null;
-        if (impl instanceof MapStore) {
-            store = (MapStore) impl;
+        if (impl instanceof MapStore mapStore) {
+            store = mapStore;
 
         }
-        if (impl instanceof MapLoader) {
-            loader = (MapLoader) impl;
+        if (impl instanceof MapLoader mapLoader) {
+            loader = mapLoader;
         }
         if (impl instanceof EntryLoader) {
             withExpirationTime = true;
@@ -85,8 +85,8 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     @Override
     public void destroy() {
         NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> {
-            if (impl instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport) impl).destroy();
+            if (impl instanceof MapLoaderLifecycleSupport support) {
+                support.destroy();
             }
         });
     }
@@ -94,8 +94,8 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     @Override
     public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
         NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> {
-            if (impl instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
+            if (impl instanceof MapLoaderLifecycleSupport support) {
+                support.init(hazelcastInstance, properties, mapName);
             }
         });
     }

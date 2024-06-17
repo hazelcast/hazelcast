@@ -989,7 +989,7 @@ public final class AggregateOperations {
      * }</pre>
      *
      * This aggregate operation has a similar effect to the dedicated {@link
-     * GeneralStage#groupingKey(FunctionEx) groupingKey()} pipeline transform
+     * GeneralStage#groupingKey(FunctionEx) groupingKey()} pipeline transform,
      * so you may wonder why not use it in all cases, not just cascaded
      * grouping. To see the difference, check out these two snippets:
      * <pre>{@code
@@ -1475,7 +1475,7 @@ public final class AggregateOperations {
     /**
      * Returns a builder object that helps you create a composite of multiple
      * aggregate operations. The resulting aggregate operation will perform all
-     * of the constituent operations at the same time and you can retrieve
+     * of the constituent operations at the same time, and you can retrieve
      * individual results from the {@link ItemsByTag} object you'll get in the
      * output.
      * <p>

@@ -55,6 +55,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -508,7 +509,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
         // Assert job status
         Job job = jetService.getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // Assert job jar does is deleted
         jarDoesNotExistInTempDirectory();

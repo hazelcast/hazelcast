@@ -60,7 +60,7 @@ public class RetryElasticSinkTest extends BaseElasticTest {
             .withNetwork(ElasticSupport.network)
             .withNetworkAliases("toxiproxy");
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {

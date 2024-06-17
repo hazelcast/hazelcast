@@ -76,7 +76,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void size_matchingPredicate_notInResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
-        otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
+        otherIndexedResults.add(Collections.emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         int size = resultSet.size();
@@ -138,7 +138,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void contains_matchingPredicate_notInResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
         List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
-        otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
+        otherIndexedResults.add(Collections.emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         assertNotContains(resultSet, entries.iterator().next());

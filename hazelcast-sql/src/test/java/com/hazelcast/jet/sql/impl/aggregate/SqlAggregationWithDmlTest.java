@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertNotNull;
 
@@ -93,6 +94,6 @@ public class SqlAggregationWithDmlTest extends SqlTestSupport {
 
         Job job = instance().getJet().getJob("jobAVG");
         assertNotNull(job);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
     }
 }

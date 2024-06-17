@@ -172,7 +172,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
                 .setDataInstance(dataMember)
-                .setDataAdapter(new IMapDataStructureAdapter<K, V>(dataMap))
+                .setDataAdapter(new IMapDataStructureAdapter<>(dataMap))
                 .setHasLocalData(true)
                 .build();
     }
@@ -215,7 +215,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheMember))
                 .setNearCacheInstance(nearCacheMember)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
+                .setNearCacheAdapter(new IMapDataStructureAdapter<>(nearCacheMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager);
     }

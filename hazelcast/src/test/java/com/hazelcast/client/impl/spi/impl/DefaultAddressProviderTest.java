@@ -19,8 +19,9 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,6 +36,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -115,7 +117,9 @@ public class DefaultAddressProviderTest {
         assertEquals(Arrays.asList(expected), addresses.secondary());
     }
 
-    private ClientConnectionProcessListenerRunner createConnectionProcessListenerRunner() {
-        return new ClientConnectionProcessListenerRunner(mock(HazelcastClientInstanceImpl.class));
+    private ClientConnectionProcessListenerRegistry createConnectionProcessListenerRunner() {
+        HazelcastClientInstanceImpl clientMock = mock(HazelcastClientInstanceImpl.class);
+        when(clientMock.getLoggingService()).thenReturn(mock(LoggingService.class));
+        return new ClientConnectionProcessListenerRegistry(clientMock);
     }
 }

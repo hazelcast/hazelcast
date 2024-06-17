@@ -38,7 +38,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  * further details.
  * <p>
  * <strong>Note:</strong> this is not a builder of {@code
- * AggregateOperation}. If that' s what you are looking for, go {@link
+ * AggregateOperation}. If that's what you are looking for, go {@link
  * AggregateOperation#withCreate here}.
  *
  * @param <R0> type of the aggregated result for stream-0

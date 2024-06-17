@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
@@ -70,6 +71,7 @@ public final class EventTimePolicy<T> implements Serializable {
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final ObjLongBiFunction<?, ?> NO_WRAPPING = (event, timestamp) -> event;
@@ -207,7 +209,7 @@ public final class EventTimePolicy<T> implements Serializable {
     /**
      * Returns an event time policy that results in no timestamping. Only
      * useful in jobs with streaming sources that don't do any aggregation.
-     * If there is an aggregation step in the job and you use these parameters,
+     * If there is an aggregation step in the job, and you use these parameters,
      * your job will keep accumulating the data without producing any output.
      */
     public static <T> EventTimePolicy<T> noEventTime() {

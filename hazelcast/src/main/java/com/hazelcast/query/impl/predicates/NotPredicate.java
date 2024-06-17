@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexRegistry;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
@@ -35,6 +36,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 public final class NotPredicate
         implements Predicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     protected Predicate predicate;
@@ -73,8 +75,8 @@ public final class NotPredicate
     @Override
     public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate target = predicate;
-        if (predicate instanceof VisitablePredicate) {
-            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+        if (predicate instanceof VisitablePredicate visitablePredicate) {
+            target = visitablePredicate.accept(visitor, indexes);
         }
         if (target == predicate) {
             // visitor didn't change the inner predicate

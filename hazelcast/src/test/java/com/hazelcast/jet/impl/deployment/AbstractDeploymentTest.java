@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollected;
@@ -101,7 +103,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         JobConfig jobConfig = getJobConfigForClass("com.sample.pojo.person.Person$Appereance");
 
         Job job = getJet().newJob(dag, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         cancelAndJoin(job);
         if (LoadClassesIsolated.assertionErrorInClose != null) {
             throw LoadClassesIsolated.assertionErrorInClose;
@@ -322,6 +324,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     }
 
     static class MyJobClassLoaderFactory implements JobClassLoaderFactory {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Nonnull

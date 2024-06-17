@@ -37,7 +37,7 @@ public class BatchIMapEventTest {
 
     @Before
     public void setUp() throws Exception {
-        batchEventData = new BatchEventData(Collections.<QueryCacheEventData>emptyList(), "source", 1);
+        batchEventData = new BatchEventData(Collections.emptyList(), "source", 1);
 
         batchIMapEvent = new BatchIMapEvent(batchEventData);
     }

@@ -22,7 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -145,12 +144,7 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
     }
 
     private void assertInstanceSet(final AtomicBoolean instanceSet) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(instanceSet.get());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(instanceSet.get()));
     }
 
     private EventService getEventService() {

@@ -182,6 +182,9 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    cluster-members:\n"
                 + "      - 192.168.100.100\n"
                 + "      - 127.0.0.10\n"
+                + "    subset-routing:\n"
+                + "      enabled: true\n"
+                + "      routing-strategy: PARTITION_GROUPS\n"
                 + "    smart-routing: false\n"
                 + "    redo-operation: true\n"
                 + "    socket-interceptor:\n"
@@ -197,6 +200,9 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    - ${config.location}";
 
         ClientConfig config = buildConfig(yaml, "config.location", networkConfigPath);
+        assertTrue(config.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
+        assertEquals(RoutingStrategy.PARTITION_GROUPS, config.getNetworkConfig()
+                .getSubsetRoutingConfig().getRoutingStrategy());
         assertFalse(config.getNetworkConfig().isSmartRouting());
         assertTrue(config.getNetworkConfig().isRedoOperation());
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.100.100");

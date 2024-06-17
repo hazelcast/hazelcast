@@ -204,7 +204,6 @@ public abstract class AbstractMapQueryIterableTest extends HazelcastTestSupport 
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void test_NoExceptions_When_IndexesAreAccessed_During_PredicateOptimization() {
         int count = instanceProxy.getPartitionService().getPartitions().size() * 10;

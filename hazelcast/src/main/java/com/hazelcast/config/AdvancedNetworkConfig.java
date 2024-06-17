@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.spi.annotation.Beta;
@@ -170,7 +171,11 @@ public class AdvancedNetworkConfig {
      *
      * @param restServerEndpointConfig the server socket endpoint configuration
      * @return this object for fluent chaining
+     *
+     * @deprecated since 5.5, use RestConfig instead. Will be removed at 6.0.
+     * @see RestConfig
      */
+    @Deprecated(since = "5.5", forRemoval = true)
     public AdvancedNetworkConfig setRestEndpointConfig(RestServerEndpointConfig restServerEndpointConfig) {
         restServerEndpointConfig.setProtocolType(ProtocolType.REST);
         endpointConfigs.put(REST, restServerEndpointConfig);

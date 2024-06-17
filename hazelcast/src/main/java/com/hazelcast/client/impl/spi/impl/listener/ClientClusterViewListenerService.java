@@ -21,9 +21,9 @@ import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -31,6 +31,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +48,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
     private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
     private final ClientPartitionServiceImpl partitionService;
-    private final ClientClusterServiceImpl clusterService;
+    private final ClientClusterService clusterService;
     private final ILogger logger;
     private final AtomicReference<Connection> listenerAddedConnection = new AtomicReference<>();
 
@@ -55,8 +56,8 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         this.connectionManager = client.getConnectionManager();
-        partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
+        this.partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        this.clusterService =  client.getClientClusterService();
     }
 
     public void start() {
@@ -97,6 +98,17 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         public void handlePartitionsViewEvent(int version, Collection<Map.Entry<UUID, List<Integer>>> partitions) {
             partitionService.handlePartitionsViewEvent(connection, partitions, version);
         }
+
+        @Override
+        public void handleMemberGroupsViewEvent(int version, Collection<Collection<UUID>> memberGroups) {
+            clusterService.getSubsetMembers()
+                    .updateOnClusterViewEvent(connection.getClusterUuid(), memberGroups, version);
+        }
+
+        @Override
+        public void handleClusterVersionEvent(Version version) {
+            clusterService.handleClusterVersionEvent(version);
+        }
     }
 
     @Override
@@ -111,7 +123,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
 
     private void tryReregisterToRandomConnection(Connection oldConnection) {
         if (!listenerAddedConnection.compareAndSet(oldConnection, null)) {
-            //somebody else already trying to rereigster
+            //somebody else already trying to re-register
             return;
         }
         ClientConnection newConnection = connectionManager.getRandomConnection();

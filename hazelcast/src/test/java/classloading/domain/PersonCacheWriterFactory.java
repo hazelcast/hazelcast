@@ -20,9 +20,11 @@ import javax.cache.Cache;
 import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
+import java.io.Serial;
 import java.util.Collection;
 
 public class PersonCacheWriterFactory implements Factory<CacheWriter<String, Person>> {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

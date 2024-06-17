@@ -29,8 +29,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -45,7 +45,7 @@ public class CoreSerializerHooksTest {
 
     @Parameters
     public static Collection<Object> data() {
-        return Arrays.asList(
+        return List.of(
                 new Watermark(13L)
         );
     }

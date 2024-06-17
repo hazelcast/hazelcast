@@ -268,8 +268,8 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     public void setTarget(Address address) {
         if (operations != null) {
             for (Operation op : operations) {
-                if (op instanceof TargetAware) {
-                    ((TargetAware) op).setTarget(address);
+                if (op instanceof TargetAware aware) {
+                    aware.setTarget(address);
                 }
             }
         }

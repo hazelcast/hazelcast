@@ -57,7 +57,7 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
     private static final String CACHE_NAME = "fullCacheName";
     private static final String SIMPLE_CACHE_NAME = "cacheName";
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastClientInstanceImpl client;
     private HazelcastClientInstanceImpl exceptionThrowingClient;

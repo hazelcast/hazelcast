@@ -18,5 +18,6 @@ package com.example.broken;
 
 import java.io.Serializable;
 
+@SuppressWarnings("serial")
 public class BrokenSerializable implements Serializable {
 }

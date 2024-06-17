@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MergePolicyConfigTest {
 
-    private MergePolicyConfig config = new MergePolicyConfig();
+    private final MergePolicyConfig config = new MergePolicyConfig();
 
     @Test
     public void testConstructor_withParameters() {

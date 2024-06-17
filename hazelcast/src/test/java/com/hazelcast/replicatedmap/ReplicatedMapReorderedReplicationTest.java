@@ -32,7 +32,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -114,15 +113,12 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
             stores[i] = service.getReplicatedRecordStore(mapName, false, partitionId);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long version = stores[0].getVersion();
+        assertTrueEventually(() -> {
+            long version = stores[0].getVersion();
 
-                for (ReplicatedRecordStore store : stores) {
-                    assertEquals(version, store.getVersion());
-                    assertFalse(store.isStale(version));
-                }
+            for (ReplicatedRecordStore store : stores) {
+                assertEquals(version, store.getVersion());
+                assertFalse(store.isStale(version));
             }
         });
 

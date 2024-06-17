@@ -19,6 +19,8 @@ package com.hazelcast.jet.retry.impl;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.retry.IntervalFunction;
 
+import java.io.Serial;
+
 public final class IntervalFunctions {
 
     private IntervalFunctions() {
@@ -67,6 +69,7 @@ public final class IntervalFunctions {
 
     private static class IntervalFunctionImpl implements IntervalFunction {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final FunctionEx<Integer, Long> fn;

@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.test.Accessors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ public class SqlServiceImplInstantiationTest extends SqlTestSupport {
 
     @Test
     public void testCreate() {
-        InternalSqlService sqlService = getNodeEngineImpl(instance()).getSqlService();
+        InternalSqlService sqlService = Accessors.getNodeEngineImpl(instance()).getSqlService();
 
         assertNotNull(sqlService);
         assertEquals(SqlServiceImpl.class, sqlService.getClass());

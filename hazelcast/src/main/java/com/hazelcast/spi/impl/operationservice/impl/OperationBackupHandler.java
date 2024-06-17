@@ -258,8 +258,8 @@ public final class OperationBackupHandler {
             // So in this case (there is only one backup), we don't convert backup operation to `Data` as temporary
             // before `Backup` is serialized but backup operation is already serialized directly into output
             // without any unnecessary memory allocation and copy when it is used as object inside `Backup`.
-            if (backupOp instanceof TargetAware) {
-                ((TargetAware) backupOp).setTarget(target.address());
+            if (backupOp instanceof TargetAware aware) {
+                aware.setTarget(target.address());
             }
 
             boolean isSyncBackup = syncBackups == 1;
@@ -325,10 +325,10 @@ public final class OperationBackupHandler {
                                     int replicaIndex, boolean respondBack) {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
-        if (backupOp instanceof Operation) {
-            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
-        } else if (backupOp instanceof Data) {
-            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
+        if (backupOp instanceof Operation operation) {
+            backup = new Backup(operation, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
+        } else if (backupOp instanceof Data data) {
+            backup = new Backup(data, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
         } else {
             throw new IllegalArgumentException("Only 'Data' or 'Operation' typed backup operation is supported!");
         }

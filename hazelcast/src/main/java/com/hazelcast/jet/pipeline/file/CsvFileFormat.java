@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,6 +36,7 @@ public class CsvFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_CSV = "csv";
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final Class<T> clazz;

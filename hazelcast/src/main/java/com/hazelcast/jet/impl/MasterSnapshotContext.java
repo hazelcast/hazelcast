@@ -486,11 +486,11 @@ class MasterSnapshotContext {
             }
 
             for (Entry<MemberInfo, Object> response : responses) {
-                if (response.getValue() instanceof Throwable) {
+                if (response.getValue() instanceof Throwable throwable) {
                     logger.log(
                             response.getValue() instanceof ExecutionNotFoundException ? Level.FINE : Level.WARNING,
                             SnapshotPhase2Operation.class.getSimpleName() + " for snapshot " + snapshotId + " in "
-                            + mc.jobIdString() + " failed on member: " + response, (Throwable) response.getValue());
+                            + mc.jobIdString() + " failed on member: " + response, throwable);
                 }
             }
 

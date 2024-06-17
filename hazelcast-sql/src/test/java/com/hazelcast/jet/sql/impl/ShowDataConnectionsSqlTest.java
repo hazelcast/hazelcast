@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,7 +56,7 @@ public class ShowDataConnectionsSqlTest extends SqlJsonTestSupport {
 
         // given
         // create data connections via CONFIG
-        getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
+        Accessors.getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
                 new DataConnectionConfig("dl")
                         .setType("dummy")
         );

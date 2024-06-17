@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import static java.util.stream.Collectors.toList;
 
 class ElasticSourcePSupplier<T> implements ProcessorSupplier {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final ElasticSourceConfiguration<T> configuration;

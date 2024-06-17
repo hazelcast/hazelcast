@@ -38,12 +38,12 @@ public interface SearchResult<K, V> {
     K getKey();
 
     /**
-     * @return  the complete document payload, if it was requested to be included, otherwise
+     * @return  the complete document value, if it was requested to be included, otherwise
      *          {@code null}
      * @see     SearchOptions#isIncludeValue()
      */
     @Nullable
-    V getDocument();
+    V getValue();
 
     /**
      * @return  the document's vectors, if requested to be included, otherwise {@code null}

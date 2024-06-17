@@ -28,7 +28,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -98,12 +97,9 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         final SplitBrainProtection splitBrainProtection1 = hazelcastInstance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionName1);
         final SplitBrainProtection splitBrainProtection2 = hazelcastInstance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionName2);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(splitBrainProtection1.hasMinimumSize());
-                assertFalse(splitBrainProtection2.hasMinimumSize());
-            }
+        assertTrueEventually(() -> {
+            assertTrue(splitBrainProtection1.hasMinimumSize());
+            assertFalse(splitBrainProtection2.hasMinimumSize());
         });
     }
 
@@ -124,12 +120,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
 
         final SplitBrainProtection splitBrainProtection = instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionName);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(splitBrainProtection.hasMinimumSize());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(splitBrainProtection.hasMinimumSize()));
     }
 
     @Test
@@ -149,12 +140,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
 
         final SplitBrainProtection splitBrainProtection = instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionName);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(splitBrainProtection.hasMinimumSize());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(splitBrainProtection.hasMinimumSize()));
     }
 
     @Test(expected = SplitBrainProtectionException.class)

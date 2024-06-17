@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -54,19 +53,13 @@ public class ReplicatedMapLiteMemberTest extends HazelcastTestSupport {
 
         replicatedMap.put("key", "value");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(instance1.getReplicatedMap("default").containsKey("key"));
-                assertTrue(instance2.getReplicatedMap("default").containsKey("key"));
-            }
+        assertTrueEventually(() -> {
+            assertTrue(instance1.getReplicatedMap("default").containsKey("key"));
+            assertTrue(instance2.getReplicatedMap("default").containsKey("key"));
         });
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                ReplicatedMapService service = getReplicatedMapService(lite);
-                assertEquals(0, service.getAllReplicatedRecordStores("default").size());
-            }
+        assertTrueAllTheTime(() -> {
+            ReplicatedMapService service = getReplicatedMapService(lite);
+            assertEquals(0, service.getAllReplicatedRecordStores("default").size());
         }, 3);
     }
 
@@ -83,13 +76,8 @@ public class ReplicatedMapLiteMemberTest extends HazelcastTestSupport {
         instance2.getCluster().promoteLocalLiteMember();
 
         final ReplicatedMap<String, String> promotedMap = instance2.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expected the promoted lite member to retrieve a value from a ReplicatedMap",
-                        "value", promotedMap.get("key"));
-            }
-        });
+        assertTrueEventually(() -> assertEquals("Expected the promoted lite member to retrieve a value from a ReplicatedMap",
+                "value", promotedMap.get("key")));
     }
 
     @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)

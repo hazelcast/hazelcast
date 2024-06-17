@@ -123,9 +123,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-
     // submit to members
-
     @Override
     public <T> Future<T> submitToMember(@Nonnull Callable<T> task,
                                         @Nonnull Member member) {

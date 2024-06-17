@@ -25,7 +25,6 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -225,12 +224,10 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(instances.length);
         for (final HazelcastInstance instance : instances) {
-            new Thread() {
-                public void run() {
-                    instance.shutdown();
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                instance.shutdown();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -267,12 +264,10 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         int startIndex = includeMaster ? 0 : 1;
         for (int i = startIndex; i < instances.length; i += 2) {
             final int index = i;
-            new Thread() {
-                public void run() {
-                    instances[index].shutdown();
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                instances[index].shutdown();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -300,13 +295,11 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             final int index = i;
-            new Thread() {
-                public void run() {
-                    HazelcastInstance instance = instances.get(index);
-                    instance.shutdown();
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                HazelcastInstance instance = instances.get(index);
+                instance.shutdown();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -348,12 +341,10 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         final HazelcastInstance shuttingDownInstance = instances[shutdownIndex];
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                shuttingDownInstance.shutdown();
-                latch.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            shuttingDownInstance.shutdown();
+            latch.countDown();
+        }).start();
 
         // spin until node starts to shut down
         Node shuttingDownNode = getNode(shuttingDownInstance);
@@ -475,19 +466,11 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             warmUpPartitions(master);
         }
 
-        Future f1 = spawn(new Runnable() {
-            @Override
-            public void run() {
-                master.shutdown();
-            }
-        });
+        Future f1 = spawn((Runnable) () -> master.shutdown());
 
-        Future f2 = spawn(new Runnable() {
-            @Override
-            public void run() {
-                changeClusterStateEventually(slaves[0], ClusterState.PASSIVE);
-                slaves[0].getCluster().shutdown();
-            }
+        Future f2 = spawn((Runnable) () -> {
+            changeClusterStateEventually(slaves[0], ClusterState.PASSIVE);
+            slaves[0].getCluster().shutdown();
         });
 
         f1.get();
@@ -522,33 +505,20 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         instances[0].getLifecycleService().terminate();
 
         // instance-1 starts mastership claim
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getNode(instances[1]).isMaster());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(getNode(instances[1]).isMaster()));
 
-        Future future = spawn(new Runnable() {
-            @Override
-            public void run() {
-                instances[1].shutdown();
-            }
-        });
+        Future future = spawn((Runnable) () -> instances[1].shutdown());
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                // other members have not received/accepted mastership claim yet
-                assertNotEquals(getAddress(instances[1]), getNode(instances[2]).getMasterAddress());
-                assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
+        assertTrueAllTheTime(() -> {
+            // other members have not received/accepted mastership claim yet
+            assertNotEquals(getAddress(instances[1]), getNode(instances[2]).getMasterAddress());
+            assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
 
-                // no partition state version change
-                assertEquals(partitionStateStamp, partitionService.getPartitionStateStamp());
+            // no partition state version change
+            assertEquals(partitionStateStamp, partitionService.getPartitionStateStamp());
 
-                // no migrations has been submitted yet
-                assertNull(startedMigration.get());
-            }
+            // no migrations has been submitted yet
+            assertNull(startedMigration.get());
         }, 5);
         assertFalse(future.isDone());
 

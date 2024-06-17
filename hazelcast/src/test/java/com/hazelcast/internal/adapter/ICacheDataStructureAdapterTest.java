@@ -338,7 +338,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test(expected = MethodNotAvailableException.class)
     public void testLoadAllWithKeys() {
-        adapterWithLoader.loadAll(Collections.<Integer>emptySet(), true);
+        adapterWithLoader.loadAll(Collections.emptySet(), true);
     }
 
     @Test

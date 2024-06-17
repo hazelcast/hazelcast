@@ -155,11 +155,11 @@ public final class ExceptionUtil {
     }
 
     public static void rethrowIfError(final Throwable t) {
-        if (t instanceof Error) {
-            if (t instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+        if (t instanceof Error error) {
+            if (t instanceof OutOfMemoryError outOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(outOfMemoryError);
             }
-            throw (Error) t;
+            throw error;
         }
     }
 
@@ -377,13 +377,13 @@ public final class ExceptionUtil {
     public static void rethrowFromCollection(Collection<?> values, Class<? extends Throwable> ... ignored) throws Throwable {
         outerLoop:
         for (Object value : values) {
-            if (value instanceof Throwable) {
+            if (value instanceof Throwable throwable) {
                 for (Class<? extends Throwable> ignoredClass : ignored) {
                     if (ignoredClass.isAssignableFrom(value.getClass())) {
                         continue outerLoop;
                     }
                 }
-                throw (Throwable) value;
+                throw throwable;
             }
         }
     }

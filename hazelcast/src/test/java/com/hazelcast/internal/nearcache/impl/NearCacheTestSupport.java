@@ -31,7 +31,6 @@ import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 
 import java.util.HashMap;
@@ -219,12 +218,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         sleepSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS + 1);
 
         // expiration will be called eventually
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(managedNearCacheRecordStore.doExpirationCalled);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(managedNearCacheRecordStore.doExpirationCalled));
     }
 
     protected void doPutToNearCacheStatsAndSeeEvictionCheckIsDone() {

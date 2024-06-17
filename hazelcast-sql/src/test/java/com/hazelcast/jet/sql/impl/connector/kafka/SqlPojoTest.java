@@ -24,12 +24,15 @@ import com.hazelcast.jet.sql.impl.connector.kafka.model.JavaSerializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.Person;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -48,6 +51,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlPojoTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
 

@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
 
@@ -77,11 +76,6 @@ public abstract class AbstractPartitionAssignmentsCorrectnessTest extends Partit
     }
 
     static void assertPartitionAssignmentsEventually(final TestHazelcastInstanceFactory factory) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertPartitionAssignments(factory);
-            }
-        });
+        assertTrueEventually(() -> assertPartitionAssignments(factory));
     }
 }

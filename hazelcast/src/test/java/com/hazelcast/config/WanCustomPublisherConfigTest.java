@@ -36,7 +36,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WanCustomPublisherConfigTest {
 
-    private WanCustomPublisherConfig config = new WanCustomPublisherConfig();
     private static final WanCustomPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER
             = new WanCustomPublisherConfigChecker();
 

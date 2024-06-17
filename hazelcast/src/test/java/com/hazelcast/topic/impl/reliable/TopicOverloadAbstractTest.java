@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -134,13 +133,10 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
         // add the item
         final Future f = spawn((Runnable) () -> topic.publish("new"));
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(f.isDone());
-                assertEquals(tail, ringbuffer.tailSequence());
-                assertEquals(head, ringbuffer.headSequence());
-            }
+        assertTrueAllTheTime(() -> {
+            assertFalse(f.isDone());
+            assertEquals(tail, ringbuffer.tailSequence());
+            assertEquals(head, ringbuffer.headSequence());
         }, 5);
     }
 
@@ -229,13 +225,10 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
             }
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(f.isDone());
-                assertEquals(tail, ringbuffer.tailSequence());
-                assertEquals(head, ringbuffer.headSequence());
-            }
+        assertTrueAllTheTime(() -> {
+            assertFalse(f.isDone());
+            assertEquals(tail, ringbuffer.tailSequence());
+            assertEquals(head, ringbuffer.headSequence());
         }, 5);
     }
 

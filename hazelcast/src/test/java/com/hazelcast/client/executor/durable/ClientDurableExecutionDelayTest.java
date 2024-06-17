@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -76,12 +75,9 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
             Task task = new Task();
             runClient(task, taskCount);
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    final int taskExecutions = COUNTER.get();
-                    assertTrue(taskExecutions >= taskCount);
-                }
+            assertTrueEventually(() -> {
+                final int taskExecutions = COUNTER.get();
+                assertTrue(taskExecutions >= taskCount);
             });
         } finally {
             ex.shutdown();
@@ -98,12 +94,9 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
             Task task = new Task();
             runClient(task, taskCount);
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    final int taskExecutions = COUNTER.get();
-                    assertTrue(taskExecutions >= taskCount);
-                }
+            assertTrueEventually(() -> {
+                final int taskExecutions = COUNTER.get();
+                assertTrue(taskExecutions >= taskCount);
             });
         } finally {
             ex.shutdown();
@@ -116,19 +109,17 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         DurableExecutorService executor = client.getDurableExecutorService("executor");
         for (int i = 0; i < executions; i++) {
-            Future future = executor.submitToKeyOwner(task, i);
+            Future<Object> future = executor.submitToKeyOwner(task, i);
             future.get();
             Thread.sleep(100);
         }
     }
 
-    public static class Task implements Callable, Serializable {
+    private static class Task implements Callable<Object>, Serializable {
 
-        public Task() {
-        }
 
         @Override
-        public Object call() throws Exception {
+        public Object call() {
             COUNTER.incrementAndGet();
             return null;
         }

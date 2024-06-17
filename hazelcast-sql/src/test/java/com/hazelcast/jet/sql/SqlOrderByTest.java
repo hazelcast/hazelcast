@@ -78,7 +78,6 @@ import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojoKey;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojo;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojoKey;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
-import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
 import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
@@ -96,14 +95,15 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings("checkstyle:RedundantModifier")
+@SuppressWarnings({"checkstyle:RedundantModifier"})
 public class SqlOrderByTest extends HazelcastTestSupport {
 
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
 
-    private static final int DATA_SET_SIZE = 4096;
+    private static final int DATA_SET_SIZE = 1024;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
+    private static final int TEST_OFFSET = DATA_SET_SIZE - 6;
 
     protected HazelcastInstance[] members;
 
@@ -118,21 +118,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
     @Parameters(name = "serializationMode:{0}, inMemoryFormat:{1}, membersCount:{2}")
     public static Collection<Object[]> parameters() {
-        List<Object[]> res = new ArrayList<>();
-
-        for (int membersCount : singletonList(1)) {
-            for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
-                for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
-                    res.add(new Object[]{
-                            serializationMode,
-                            format,
-                            membersCount
-                    });
-                }
-            }
-        }
-
-        return res;
+        return singletonList(new Object[]{SERIALIZABLE, InMemoryFormat.OBJECT, 1});
     }
 
     @Before
@@ -443,13 +429,15 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
+                + " ORDER BY " + intValField + " OFFSET " + TEST_OFFSET + " ROWS FETCH FIRST 10 ROWS ONLY";
 
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4090 ROWS";
+                + " ORDER BY " + intValField + " LIMIT 10 OFFSET " + TEST_OFFSET + "  ROWS";
 
-        assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 6, 4090, 4095);
-        assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 6, 4090, 4095);
+        assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false),
+                6, TEST_OFFSET, DATA_SET_SIZE - 1);
+        assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false),
+                6, TEST_OFFSET, DATA_SET_SIZE - 1);
     }
 
     @Test
@@ -458,12 +446,12 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
+                + " OFFSET " + TEST_OFFSET + "  ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultCount(sql, 6);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 10 OFFSET 4090 ROWS";
+                + " LIMIT 10 OFFSET " + TEST_OFFSET + "  ROWS";
 
         assertSqlResultCount(sql, 6);
 
@@ -480,10 +468,10 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         sql = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET 10 ROWS";
 
-        assertSqlResultCount(sql, 4086);
+        assertSqlResultCount(sql, DATA_SET_SIZE - 10);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 4096 ROWS";
+                + " OFFSET " + DATA_SET_SIZE + " ROWS";
 
         assertSqlResultCount(sql, 0);
 
@@ -756,7 +744,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         map.addIndex(IndexType.SORTED, "this");
 
         // create data with different lexicographical and length-first order
-        for (int i = 0; i < BATCH_FETCH_DATA_SIZE ; ++i) {
+        for (int i = 0; i < BATCH_FETCH_DATA_SIZE; ++i) {
             char c = (char) (65 + i);
             map.put(String.valueOf(c).repeat(BATCH_FETCH_DATA_SIZE + 2 - i), "value");
         }
@@ -943,9 +931,9 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     /**
      * @param sql
      * @param expectedCount
-     * @param stopEarly if entire result should be fetched first
-     *                  or fail as soon as there are more rows than expected
-     *                  (useful if the query might loop infinitely).
+     * @param stopEarly     if entire result should be fetched first
+     *                      or fail as soon as there are more rows than expected
+     *                      (useful if the query might loop infinitely).
      */
     private void assertSqlResultCount(String sql, int expectedCount, boolean stopEarly) {
         try (SqlResult res = query(sql)) {

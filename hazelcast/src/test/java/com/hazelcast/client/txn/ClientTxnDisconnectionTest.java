@@ -21,7 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,47 +69,38 @@ public class ClientTxnDisconnectionTest {
 
     @Test
     public void testQueueTake() {
-        testQueue(new Callable() {
-            @Override
-            public Object call() throws InterruptedException {
-                TransactionContext context = client.newTransactionContext();
-                context.beginTransaction();
-                TransactionalQueue<Object> queue = context.getQueue(randomString());
-                return queue.take();
-            }
+        testQueue(() -> {
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+            TransactionalQueue<Object> queue = context.getQueue(randomString());
+            return queue.take();
         });
     }
 
     @Test
     public void testQueuePoll() {
-        testQueue(new Callable() {
-            @Override
-            public Object call() throws InterruptedException {
-                TransactionContext context = client.newTransactionContext();
-                context.beginTransaction();
-                TransactionalQueue<Object> queue = context.getQueue(randomString());
-                return queue.poll(20, SECONDS);
-            }
+        testQueue(() -> {
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+            TransactionalQueue<Object> queue = context.getQueue(randomString());
+            return queue.poll(20, SECONDS);
         });
     }
 
     @Test
     public void testQueueOffer() {
-        testQueue(new Callable() {
-            @Override
-            public Object call() throws InterruptedException {
-                String name = BOUNDED_QUEUE_PREFIX + randomString();
-                client.getQueue(name).offer(randomString());
+        testQueue(() -> {
+            String name = BOUNDED_QUEUE_PREFIX + randomString();
+            client.getQueue(name).offer(randomString());
 
-                TransactionContext context = client.newTransactionContext();
-                context.beginTransaction();
-                TransactionalQueue<Object> queue = context.getQueue(name);
-                return queue.offer(randomString(), 20, SECONDS);
-            }
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+            TransactionalQueue<Object> queue = context.getQueue(name);
+            return queue.offer(randomString(), 20, SECONDS);
         });
     }
 
-    private void testQueue(Callable task) {
+    private void testQueue(Callable<Object> task) {
         spawn(task);
         assertValidWaitingOperationCount(1);
         client.shutdown();
@@ -120,11 +110,6 @@ public class ClientTxnDisconnectionTest {
     private void assertValidWaitingOperationCount(final int count) {
 
         // Note: The wait duration here should be more than endpoint remove delay time
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Assert.assertEquals(count, waitNotifyService.getTotalValidWaitingOperationCount());
-            }
-        });
+        assertTrueEventually(() -> Assert.assertEquals(count, waitNotifyService.getTotalValidWaitingOperationCount()));
     }
 }

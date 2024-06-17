@@ -48,7 +48,7 @@ public final class NodeExtensionFactory {
      * Enterprise's JAR to be swapped in for the core Hazelcast JAR with no
      * changes to user's code or configuration. Hazelcast core code can call
      * this method with a priority list naming both the default and the
-     * enterprise node extension and it will automatically prefer the
+     * enterprise node extension, and it will automatically prefer the
      * Enterprise one when present.
      * <p>
      * The explicit priority list is necessary because a Hazelcast Jet JAR

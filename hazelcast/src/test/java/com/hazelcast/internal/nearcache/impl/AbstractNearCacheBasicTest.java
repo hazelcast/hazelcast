@@ -29,7 +29,6 @@ import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
@@ -1351,15 +1350,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         adapter.remove(0);
         adapter.remove(2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(context.nearCacheAdapter.containsKey(0));
-                assertTrue(context.nearCacheAdapter.containsKey(1));
-                assertFalse(context.nearCacheAdapter.containsKey(2));
-                assertFalse(context.nearCacheAdapter.containsKey(3));
-                assertFalse(context.nearCacheAdapter.containsKey(4));
-            }
+        assertTrueEventually(() -> {
+            assertFalse(context.nearCacheAdapter.containsKey(0));
+            assertTrue(context.nearCacheAdapter.containsKey(1));
+            assertFalse(context.nearCacheAdapter.containsKey(2));
+            assertFalse(context.nearCacheAdapter.containsKey(3));
+            assertFalse(context.nearCacheAdapter.containsKey(4));
         });
     }
 
@@ -1413,7 +1409,6 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         testNearCacheExpiration();
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     private void testNearCacheExpiration() {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 

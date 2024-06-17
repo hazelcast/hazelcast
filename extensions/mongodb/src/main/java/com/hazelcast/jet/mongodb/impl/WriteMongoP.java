@@ -54,6 +54,7 @@ import org.bson.BsonValue;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -370,6 +371,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
     private static class MongoTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final int processorIndex;

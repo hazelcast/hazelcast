@@ -57,6 +57,7 @@ import java.io.InvalidClassException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -880,6 +881,7 @@ public final class Util {
 
         public static final Identity INSTANCE = new Identity<>();
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

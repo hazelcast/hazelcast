@@ -68,8 +68,8 @@ public class CacheRemoveAllMessageTask
             }
             final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
             final Object response = cacheClearResponse.getResponse();
-            if (response instanceof CacheException) {
-                throw (CacheException) response;
+            if (response instanceof CacheException exception) {
+                throw exception;
             }
         }
         return null;

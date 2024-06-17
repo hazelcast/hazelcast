@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.core.Processor;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map.Entry;
 
@@ -57,6 +58,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkS
 @SerializableByConvention
 public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final FunctionEx<? super T0, ? extends K> leftKeyFn;

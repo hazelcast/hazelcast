@@ -717,10 +717,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
                 + '}';
     }
 
-    protected void writeTenant(ObjectDataOutput out) throws IOException {
+    protected void writeTenant(ObjectDataOutput out) {
     }
 
-    protected void readTenant(ObjectDataInput in) throws IOException {
+    protected void readTenant(ObjectDataInput in) {
     }
 
     protected void writeKeyValueTypes(ObjectDataOutput out) throws IOException {

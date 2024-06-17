@@ -1025,8 +1025,8 @@ public class ClusterJoinManager {
         Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
         Address joinMessageAddress = joinMessage.getAddress();
         if (targetMemberAddresses.contains(node.getThisAddress())) {
-            // Join request is coming from master of the split and it thinks that I am its member.
-            // This is partial split case and we want to convert it to a full split.
+            // Join request is coming from master of the split, and it thinks that I am its member.
+            // This is partial split case, and we want to convert it to a full split.
             // So it should remove me from its cluster.
             MembersViewMetadata membersViewMetadata = new MembersViewMetadata(joinMessageAddress, joinMessage.getUuid(),
                     joinMessageAddress, joinMessage.getMemberListVersion());

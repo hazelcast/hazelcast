@@ -50,7 +50,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastOverloadException.class)
-    public void next_whenNoCapacity_thenThrowException() throws InterruptedException {
+    public void next_whenNoCapacity_thenThrowException() {
         CallIdSequence sequence = new FailFastCallIdSequence(1, ConcurrencyDetection.createDisabled());
 
         // take the only slot available

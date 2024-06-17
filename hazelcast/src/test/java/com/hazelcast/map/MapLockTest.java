@@ -24,7 +24,6 @@ import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -251,11 +250,9 @@ public class MapLockTest extends HazelcastTestSupport {
         boolean putResult = map2.tryPut(key, val, 2, TimeUnit.SECONDS);
 
         assertFalse("the result of try put should be false as the absent key is locked", putResult);
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals("the key should be absent ", null, map1.get(key));
-                assertEquals("the key should be absent ", null, map2.get(key));
-            }
+        assertTrueEventually(() -> {
+            assertEquals("the key should be absent ", null, map1.get(key));
+            assertEquals("the key should be absent ", null, map2.get(key));
         });
     }
 
@@ -315,12 +312,10 @@ public class MapLockTest extends HazelcastTestSupport {
         map.lock(key);
 
         final CountDownLatch cleared = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                map.clear();
-                cleared.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            map.clear();
+            cleared.countDown();
+        }).start();
 
         assertOpenEventually(cleared);
 
@@ -342,11 +337,7 @@ public class MapLockTest extends HazelcastTestSupport {
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
         final IMap<String, String> map = getMap();
         final String key = randomString();
-        Thread thread = new Thread() {
-            public void run() {
-                map.lock(key);
-            }
-        };
+        Thread thread = new Thread(() -> map.lock(key));
         thread.start();
         thread.join();
 
@@ -359,12 +350,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final IMap<String, String> map = getMap();
         final String key = randomString();
         map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(map.isLocked(key));
-            }
-        }, 30);
+        assertTrueEventually(() -> assertFalse(map.isLocked(key)), 30);
     }
 
     /**

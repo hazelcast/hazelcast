@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
 
     private static final int PARTITION_COUNT = 1;

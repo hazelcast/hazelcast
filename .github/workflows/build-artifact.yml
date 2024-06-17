@@ -19,9 +19,6 @@ jobs:
       GAR_REGION: us-east1
       GAR_REPO: auto-discovery-test-suite
       AWS_REGION: us-east-1
-    defaults:
-      run:
-        working-directory: aws-discovery-suite/terraform/test
     outputs:
       HZ_IMG: ${{ steps.get-hz-image-tag.outputs.HZ_IMG }}
       CL_IMG: ${{ steps.get-cl-image-tag.outputs.CL_IMG }}
@@ -40,13 +37,6 @@ jobs:
             DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
             GCP_SA_KEY,CN/GKE_SA_KEY
 
-      - name: Checkout Auto Discovery Test Suite
-        uses: actions/checkout@v4
-        with:
-          repository: hazelcast/auto-discovery-test-suite
-          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
-          path: aws-discovery-suite
-
       - name: Decide Which 'ref' To Checkout
         id: decide-ref
         run: |
@@ -60,19 +50,23 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{steps.decide-ref.outputs.ref}}
-          path: ${{steps.decide-ref.outputs.ref}}
+          path: "hazelcast"
+
+      - name: Checkout Auto Discovery Repo
+        uses: actions/checkout@v4
+        with:
+          repository: hazelcast/auto-discovery-test-suite
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
+          path: auto-discovery-test-suite
 
       - name: Read Java Config
-        uses: pietrobolcato/action-read-yaml@9f13718d61111b69f30ab4ac683e67a56d254e1d
-        id: java-config
-        with:
-          config: ${{steps.decide-ref.outputs.ref}}/.github/java-config.yml
-
+        run: cat hazelcast/.github/java-config.env >> $GITHUB_ENV
+  
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ steps.java-config.outputs['java-version'] }}
-          distribution: ${{ steps.java-config.outputs['distribution'] }}
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
           architecture: x64
           cache: "maven"
 
@@ -85,15 +79,15 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
-        working-directory: ${{steps.decide-ref.outputs.ref}}
+        working-directory: hazelcast
         run: |
           HAZELCAST_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "HAZELCAST_VERSION=${HAZELCAST_VERSION}" >> $GITHUB_ENV
-           ./mvnw -T 4 -B -V -e clean install --activate-profiles quick \
-            cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ${GITHUB_WORKSPACE}/aws-discovery-suite/terraform/tools/hazelcast.jar
+          ./mvnw -T 4 -B -V -e clean install --activate-profiles quick
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ${GITHUB_WORKSPACE}/auto-discovery-test-suite/terraform/tools/hazelcast.jar
 
       - name: Build client jar
-        working-directory: aws-discovery-suite/terraform/tools/client
+        working-directory: auto-discovery-test-suite/terraform/tools/client
         run: |
           mvn versions:set-property -Dproperty=hazelcast.version -DnewVersion=$HAZELCAST_VERSION
           mvn clean package
@@ -103,13 +97,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hazelcast.jar
-          path: aws-discovery-suite/terraform/tools/hazelcast.jar
+          path: auto-discovery-test-suite/terraform/tools/hazelcast.jar
 
       - name: Upload aws-discovery-client.jar
         uses: actions/upload-artifact@v4
         with:
           name: aws-discovery-client.jar
-          path: aws-discovery-suite/terraform/tools/client/aws-discovery-client.jar
+          path: auto-discovery-test-suite/terraform/tools/client/aws-discovery-client.jar
 
       - name: Authenticate to GAR
         uses: docker/login-action@v3
@@ -120,7 +114,7 @@ jobs:
 
       - name: Build Hazelcast Image
         id: get-hz-image-tag
-        working-directory: aws-discovery-suite/terraform/tools
+        working-directory: auto-discovery-test-suite/terraform/tools
         run: |
           HZ_IMG="${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPO }}/$(uuidgen):3d"
           echo "HZ_IMG=${HZ_IMG}" >> $GITHUB_OUTPUT
@@ -129,7 +123,7 @@ jobs:
 
       - name: Build Client Image
         id: get-cl-image-tag
-        working-directory: aws-discovery-suite/terraform/tools/client
+        working-directory: auto-discovery-test-suite/terraform/tools/client
         run: |
           CL_IMG="${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPO }}/$(uuidgen):3d"
           echo "CL_IMG=${CL_IMG}" >> $GITHUB_OUTPUT

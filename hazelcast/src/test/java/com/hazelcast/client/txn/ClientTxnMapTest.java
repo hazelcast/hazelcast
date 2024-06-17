@@ -24,15 +24,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -96,13 +93,11 @@ public class ClientTxnMapTest {
         final String mapName = randomString();
         final String key = "key";
         final AtomicBoolean running = new AtomicBoolean(true);
-        Thread t = new Thread() {
-            public void run() {
-                while (running.get()) {
-                    client.getMap(mapName).get(key);
-                }
+        Thread t = new Thread(() -> {
+            while (running.get()) {
+                client.getMap(mapName).get(key);
             }
-        };
+        });
         t.start();
 
         CBAuthorisation cb = new CBAuthorisation();
@@ -224,12 +219,7 @@ public class ClientTxnMapTest {
         // hence following assertion can fail
         assertEquals(value, map.get(key));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get(key));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map.get(key)));
     }
 
     @Test
@@ -259,17 +249,15 @@ public class ClientTxnMapTest {
         };
         new Thread(incrementor).start();
 
-        client.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                try {
-                    final TransactionalMap<String, Integer> txMap = context.getMap(mapName);
-                    txMap.getForUpdate(key);
-                    getKeyForUpdateLatch.countDown();
-                    afterTryPutResult.await(30, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                }
-                return true;
+        client.executeTransaction(context -> {
+            try {
+                final TransactionalMap<String, Integer> txMap = context.getMap(mapName);
+                txMap.getForUpdate(key);
+                getKeyForUpdateLatch.countDown();
+                afterTryPutResult.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
             }
+            return true;
         });
 
         assertFalse(tryPutResult.get());

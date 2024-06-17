@@ -39,6 +39,7 @@ import javax.annotation.Nonnull;
 import java.util.IntSummaryStatistics;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.stream.Collectors.summarizingInt;
@@ -59,9 +60,9 @@ public class SnapshotLargeChunk_IntegrationTest extends JetTestSupport {
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1)));
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         job.restart();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         // assert that the snapshot exists and that the chunk was large enough
         IMap<Object, Object> map = instance.getMap(JobRepository.snapshotDataMapName(job.getId(), 0));

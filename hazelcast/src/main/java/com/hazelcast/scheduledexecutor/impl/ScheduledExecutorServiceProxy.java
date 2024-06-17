@@ -458,8 +458,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     private int getTaskOrKeyPartitionId(Callable task, Object key) {
-        if (task instanceof PartitionAware) {
-            Object newKey = ((PartitionAware) task).getPartitionKey();
+        if (task instanceof PartitionAware aware) {
+            Object newKey = aware.getPartitionKey();
             if (newKey != null) {
                 key = newKey;
             }
@@ -469,8 +469,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     private int getTaskOrKeyPartitionId(Runnable task, Object key) {
-        if (task instanceof PartitionAware) {
-            Object newKey = ((PartitionAware) task).getPartitionKey();
+        if (task instanceof PartitionAware aware) {
+            Object newKey = aware.getPartitionKey();
             if (newKey != null) {
                 key = newKey;
             }
@@ -491,8 +491,8 @@ public class ScheduledExecutorServiceProxy
                 return namedTask.getName();
             }
         }
-        if (command instanceof NamedTask) {
-            return ((NamedTask) command).getName();
+        if (command instanceof NamedTask task) {
+            return task.getName();
         }
         return null;
     }
@@ -514,8 +514,8 @@ public class ScheduledExecutorServiceProxy
 
     private <T> T initializeManagedContext(Object object) {
         ManagedContext context = getNodeEngine().getSerializationService().getManagedContext();
-        if (object instanceof AbstractTaskDecorator) {
-            ((AbstractTaskDecorator) object).initializeContext(context);
+        if (object instanceof AbstractTaskDecorator decorator) {
+            decorator.initializeContext(context);
         } else {
             object = context.initialize(object);
         }
@@ -538,8 +538,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     private boolean isAutoDisposable(Object command) {
-        if (command instanceof AbstractTaskDecorator) {
-            return ((AbstractTaskDecorator) command).isDecoratedWith(AutoDisposableTask.class);
+        if (command instanceof AbstractTaskDecorator decorator) {
+            return decorator.isDecoratedWith(AutoDisposableTask.class);
         }
         return command instanceof AutoDisposableTask;
     }

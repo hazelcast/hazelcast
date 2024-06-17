@@ -23,6 +23,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.test.Accessors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -218,7 +219,7 @@ public class SqlMappingTest extends SqlTestSupport {
                     "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json-flat')");
         }
 
-        RelationsStorage relationsStorage = new RelationsStorage(getNodeEngineImpl(instance()));
+        RelationsStorage relationsStorage = new RelationsStorage(Accessors.getNodeEngineImpl(instance()));
         assertEquals(aliases.length, relationsStorage.allObjects().size());
         Iterator<Object> iterator = relationsStorage.allObjects().iterator();
 

@@ -31,7 +31,7 @@ interface DomVariableReplacer {
      *
      * @param node     The node in which the variables to be replaced
      * @param replacer The replacer to be used for replacing the variables
-     * @param failFast Indicating whether or not a {@link
+     * @param failFast Indicating whether a {@link
      *                 InvalidConfigurationException} should be thrown if no
      *                 replacement found for the variables in the node
      * @throws InvalidConfigurationException if no replacement is found for a

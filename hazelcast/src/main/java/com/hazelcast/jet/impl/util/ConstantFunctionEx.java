@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.function.FunctionEx;
 
+import java.io.Serial;
+
 /**
  * A function returning a constant.
  * <p>
@@ -26,6 +28,7 @@ import com.hazelcast.function.FunctionEx;
  */
 public class ConstantFunctionEx<T, R> implements FunctionEx<T, R> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final R key;

@@ -109,7 +109,7 @@ public class ThreadLocalLeakTest {
     private ClassLoader getClassLoader(String packageName) {
         switch (classLoaderType) {
             case FILTERING:
-                return new FilteringClassLoader(Collections.<String>emptyList(), packageName);
+                return new FilteringClassLoader(Collections.emptyList(), packageName);
             case OWN:
                 return getClass().getClassLoader();
             default:

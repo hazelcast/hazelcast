@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -112,16 +111,13 @@ public class ExecutorServiceLiteMemberTest {
         final IExecutorService executor = client.getExecutorService(name);
         executor.execute(new ResultSettingRunnable(name), LITE_MEMBER_SELECTOR);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final IMap<Object, Object> results = lite1.getMap(name);
-                assertEquals(1, results.size());
-                final boolean executedOnLite1 = results.containsKey(lite1.getCluster().getLocalMember());
-                final boolean executedOnLite2 = results.containsKey(lite2.getCluster().getLocalMember());
+        assertTrueEventually(() -> {
+            final IMap<Object, Object> results = lite1.getMap(name);
+            assertEquals(1, results.size());
+            final boolean executedOnLite1 = results.containsKey(lite1.getCluster().getLocalMember());
+            final boolean executedOnLite2 = results.containsKey(lite2.getCluster().getLocalMember());
 
-                assertTrue(executedOnLite1 || executedOnLite2);
-            }
+            assertTrue(executedOnLite1 || executedOnLite2);
         });
     }
 
@@ -136,14 +132,11 @@ public class ExecutorServiceLiteMemberTest {
         final IExecutorService executor = client.getExecutorService(name);
         executor.executeOnMembers(new ResultSettingRunnable(name), LITE_MEMBER_SELECTOR);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final IMap<Object, Object> results = lite1.getMap(name);
-                assertEquals(2, results.size());
-                assertTrue(results.containsKey(lite1.getCluster().getLocalMember()));
-                assertTrue(results.containsKey(lite2.getCluster().getLocalMember()));
-            }
+        assertTrueEventually(() -> {
+            final IMap<Object, Object> results = lite1.getMap(name);
+            assertEquals(2, results.size());
+            assertTrue(results.containsKey(lite1.getCluster().getLocalMember()));
+            assertTrue(results.containsKey(lite2.getCluster().getLocalMember()));
         });
     }
 
@@ -223,17 +216,14 @@ public class ExecutorServiceLiteMemberTest {
         final IExecutorService executor = client.getExecutorService(randomString());
         executor.submitToMembers(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR, callback);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final Map<Member, Object> results = callback.getResults();
+        assertTrueEventually(() -> {
+            final Map<Member, Object> results = callback.getResults();
 
-                assertNotNull(results);
-                final Member liteMember1 = lite1.getCluster().getLocalMember();
-                final Member liteMember2 = lite2.getCluster().getLocalMember();
-                assertEquals(liteMember1, results.get(liteMember1));
-                assertEquals(liteMember2, results.get(liteMember2));
-            }
+            assertNotNull(results);
+            final Member liteMember1 = lite1.getCluster().getLocalMember();
+            final Member liteMember2 = lite2.getCluster().getLocalMember();
+            assertEquals(liteMember1, results.get(liteMember1));
+            assertEquals(liteMember2, results.get(liteMember2));
         });
     }
 

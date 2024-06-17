@@ -21,6 +21,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.jet.test.SerialTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -29,6 +32,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Collections;
 
@@ -38,9 +42,10 @@ import static org.mockito.Mockito.when;
 /**
  * Test running single Jet member locally and Elastic in docker
  */
+@Category({NightlyTest.class, SerialTest.class, IgnoreInJenkinsOnWindows.class})
 public class LocalElasticSinkTest extends CommonElasticSinksTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {

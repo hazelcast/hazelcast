@@ -180,7 +180,7 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         throw new IllegalArgumentException("Non applicable for Json getters");
     }
 

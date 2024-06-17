@@ -18,10 +18,12 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.map.EntryProcessor;
 
+import java.io.Serial;
 import java.util.Map;
 
 public class IMapReplaceEntryProcessor implements EntryProcessor<Integer, String, String> {
 
+    @Serial
     private static final long serialVersionUID = -4826323876651981295L;
 
     private final String oldString;

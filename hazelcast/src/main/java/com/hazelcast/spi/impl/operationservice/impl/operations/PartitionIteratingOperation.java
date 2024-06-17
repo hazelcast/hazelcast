@@ -211,8 +211,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
         private UUID extractCallerUuid() {
             // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
-            if (operationFactory instanceof OperationFactoryWrapper) {
-                return ((OperationFactoryWrapper) operationFactory).getUuid();
+            if (operationFactory instanceof OperationFactoryWrapper wrapper) {
+                return wrapper.getUuid();
             }
 
             // Members UUID
@@ -238,8 +238,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
         @Override
         public void sendResponse(Operation op, Object response) {
-            if (response instanceof NormalResponse) {
-                response = ((NormalResponse) response).getValue();
+            if (response instanceof NormalResponse normalResponse) {
+                response = normalResponse.getValue();
             } else if (response == null) {
                 response = NULL;
             }

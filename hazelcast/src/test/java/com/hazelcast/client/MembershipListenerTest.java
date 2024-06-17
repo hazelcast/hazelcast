@@ -26,7 +26,6 @@ import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -58,7 +57,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    private class MemberShipEventLogger implements MembershipListener {
+    private static class MemberShipEventLogger implements MembershipListener {
 
         public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
@@ -72,7 +71,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     }
 
-    private class InitialMemberShipEventLogger implements InitialMembershipListener {
+    private static class InitialMemberShipEventLogger implements InitialMembershipListener {
 
         public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
@@ -101,15 +100,12 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         final HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
         //verify that the listener receives member added event.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotEquals("Expecting one or more events", 0, listener.events.size());
-                MembershipEvent event = (MembershipEvent) listener.events.getLast();
-                assertEquals("Last event should be member added", MembershipEvent.MEMBER_ADDED, event.getEventType());
-                assertEquals(server2.getCluster().getLocalMember(), event.getMember());
-                assertEquals(getMembers(server1, server2), event.getMembers());
-            }
+        assertTrueEventually(() -> {
+            assertNotEquals("Expecting one or more events", 0, listener.events.size());
+            MembershipEvent event = (MembershipEvent) listener.events.getLast();
+            assertEquals("Last event should be member added", MembershipEvent.MEMBER_ADDED, event.getEventType());
+            assertEquals(server2.getCluster().getLocalMember(), event.getMember());
+            assertEquals(getMembers(server1, server2), event.getMembers());
         });
     }
 
@@ -133,13 +129,10 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         //connect to a grid
         hazelcastFactory.newHazelcastClient(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expecting one event", 1, initialListener.events.size());
-                InitialMembershipEvent event = (InitialMembershipEvent) initialListener.events.getLast();
-                assertEquals(1, event.getMembers().size());
-            }
+        assertTrueEventually(() -> {
+            assertEquals("Expecting one event", 1, initialListener.events.size());
+            InitialMembershipEvent event = (InitialMembershipEvent) initialListener.events.getLast();
+            assertEquals(1, event.getMembers().size());
         });
     }
 
@@ -158,15 +151,12 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         server2.shutdown();
 
         //verify that the correct member removed event was received.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotEquals("Expecting one or more events", 0, listener.events.size());
-                MembershipEvent event = (MembershipEvent) listener.events.getLast();
-                assertEquals("Last event should be member removed", MembershipEvent.MEMBER_REMOVED, event.getEventType());
-                assertEquals(server2Member, event.getMember());
-                assertEquals(getMembers(server1), event.getMembers());
-            }
+        assertTrueEventually(() -> {
+            assertNotEquals("Expecting one or more events", 0, listener.events.size());
+            MembershipEvent event = (MembershipEvent) listener.events.getLast();
+            assertEquals("Last event should be member removed", MembershipEvent.MEMBER_REMOVED, event.getEventType());
+            assertEquals(server2Member, event.getMember());
+            assertEquals(getMembers(server1), event.getMembers());
         });
     }
 

@@ -57,6 +57,7 @@ import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_TIMESTAM
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.LATEST;
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZON;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
@@ -70,6 +71,7 @@ import static org.junit.Assert.fail;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 @SuppressWarnings("StaticVariableName")
+@Category(NightlyTest.class)
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;
@@ -469,7 +471,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .withInitialShardIteratorRule(".*", AT_TIMESTAMP.name(), Long.toString(timestamp))
                 .build();
         Job job = hz().getJet().newJob(getPipeline(source));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         //check job has read only records from after the marked time
         assertMessages(expectedMessages(100, 200), true, false);
@@ -491,7 +493,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .withInitialShardIteratorRule(".*", LATEST.name(), null)
                 .build();
         Job job = hz().getJet().newJob(getPipeline(source));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // need to be sure that reading the shard has commenced ...
         SECONDS.sleep(3);
@@ -517,7 +519,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .withInitialShardIteratorRule(".*", TRIM_HORIZON.name(), null)
                 .build();
         Job job = hz().getJet().newJob(getPipeline(source));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         //send some more messages and check that the job reads both old and new records
         HELPER.putRecords(messages(100, 200));
@@ -538,7 +540,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         //start a new job which reads records in its default way
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource().build();
         Job job = hz().getJet().newJob(getPipeline(source));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         //send some more messages and check that the job reads both old and new records
         HELPER.putRecords(messages(100, 200));
@@ -607,7 +609,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withExecutorServiceSupplier(sourceExecutorSupplier).build();
         Job job = hz().getJet().newJob(getPipeline(source));
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // send some more messages and check that the job reads both old and new records
         HELPER.putRecords(messages(100, 200));

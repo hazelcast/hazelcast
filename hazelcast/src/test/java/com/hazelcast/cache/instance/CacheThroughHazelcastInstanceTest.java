@@ -36,10 +36,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
@@ -64,9 +62,6 @@ import static org.mockito.Mockito.when;
 public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
 
     private static final String CACHE_NAME = "MyCache";
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     protected Config createConfig() {
         return new Config();
@@ -106,14 +101,12 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
 
     @Test
     public void getCache_whenThereIsNoCacheConfig_thenFail() {
-        thrown.expect(CacheNotExistsException.class);
-        whenThereIsNoCacheConfig_thenFail(true);
+        assertThrows(CacheNotExistsException.class, () -> whenThereIsNoCacheConfig_thenFail(true));
     }
 
     @Test
     public void getDistributedObject_whenThereIsNoCacheConfig_thenFail() {
-        thrown.expect(CacheNotExistsException.class);
-        whenThereIsNoCacheConfig_thenFail(false);
+        assertThrows(CacheNotExistsException.class, () -> whenThereIsNoCacheConfig_thenFail(false));
     }
 
     private void whenThereIsNoCacheConfig_thenFail(boolean getCache) {
@@ -131,8 +124,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
             Thread.currentThread().setContextClassLoader(classLoader);
             HazelcastInstance instance = createInstance(config);
 
-            thrown.expect(IllegalStateException.class);
-            retrieveCache(instance, true);
+            assertThrows(IllegalStateException.class, () -> retrieveCache(instance, true));
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
         }
@@ -231,17 +223,15 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getCache_whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail()
-            throws Exception {
-        thrown.expect(CacheNotExistsException.class);
-        whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail(true);
+    public void getCache_whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail() {
+        assertThrows(CacheNotExistsException.class,
+                () -> whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail(true));
     }
 
     @Test
-    public void getDistributedObject_whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail()
-            throws Exception {
-        thrown.expect(CacheNotExistsException.class);
-        whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail(false);
+    public void getDistributedObject_whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail() {
+        assertThrows(CacheNotExistsException.class,
+                () -> whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail(false));
     }
 
     private void whenThereIsCacheConfigWithSameNameButDifferentFullNameAndCreatedByCacheManager_thenFail(boolean getCache)
@@ -389,8 +379,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
 
         // then the thrown HazelcastException is rethrown by getCache
         ICacheManager hzCacheManager = new HazelcastInstanceCacheManager(hzInstanceImpl);
-        thrown.expect(HazelcastException.class);
-        hzCacheManager.getCache("any-cache");
+        assertThrows(HazelcastException.class, () -> hzCacheManager.getCache("any-cache"));
     }
 
     @Test

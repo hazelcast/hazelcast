@@ -49,6 +49,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -525,6 +526,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
 
     private static class TestServiceLoaderServlet extends HttpServlet {
 
+        @Serial
         private static final long serialVersionUID = 1L;
         private volatile ClassLoader webappClassLoader;
         private AtomicBoolean initDone = new AtomicBoolean();

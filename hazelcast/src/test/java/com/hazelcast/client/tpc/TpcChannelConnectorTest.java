@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstance;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TpcChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.connection.tcp.TpcChannelConnector;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -94,7 +95,8 @@ public class TpcChannelConnectorTest {
     @Test
     public void testConnector() throws IOException {
         connector.initiate();
-        assertThat(mockConnection.getTpcChannels()).hasSize(CHANNEL_COUNT);
+        Channel[] tpcChannels = mockConnection.getTpcChannels();
+        assertThat(tpcChannels).hasSize(CHANNEL_COUNT);
 
         // We should write authentication bytes to every channel
         // and do not close them.
@@ -295,6 +297,8 @@ public class TpcChannelConnectorTest {
         }).when(invocationService).invokeOnConnection(any(), any());
         when(client.getInvocationService()).thenReturn(invocationService);
         when(client.getLoggingService()).thenReturn(mock());
+        when(client.getClientClusterService()).thenReturn(mock());
+        when(client.getConnectionManager()).thenReturn(mock(TcpClientConnectionManager.class));
         return client;
     }
 

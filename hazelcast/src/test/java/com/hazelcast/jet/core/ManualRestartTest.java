@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
@@ -118,7 +120,7 @@ public class ManualRestartTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         Job job = client.getJet().newJob(dag);
 
-        assertJobStatusEventually(job, STARTING);
+        assertThat(job).eventuallyHasStatus(STARTING);
 
         // Then, the job cannot restart
         assertThatThrownBy(job::restart)
@@ -165,9 +167,9 @@ public class ManualRestartTest extends JetTestSupport {
                 .setSnapshotIntervalMillis(2000));
 
         // wait for the first snapshot
-        JetServiceBackend jetServiceBackend = getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        JetServiceBackend jetServiceBackend = Accessors.getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
         JobRepository jobRepository = jetServiceBackend.getJobCoordinationService().jobRepository();
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
 

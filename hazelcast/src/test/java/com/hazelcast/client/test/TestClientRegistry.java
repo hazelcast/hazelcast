@@ -29,7 +29,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -140,12 +139,7 @@ class TestClientRegistry {
         }
 
         private LockPair getLockPair(Address address) {
-            return getOrPutIfAbsent(addressBlockMap, address, new ConstructorFunction<Address, LockPair>() {
-                @Override
-                public LockPair createNew(Address arg) {
-                    return new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
-                }
-            });
+            return getOrPutIfAbsent(addressBlockMap, address, arg -> new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock()));
         }
 
         /**

@@ -20,7 +20,7 @@ public interface TpcLoggerFactory {
 
     TpcLogger getLogger(String name);
 
-    default TpcLogger getLogger(Class clazz) {
+    default TpcLogger getLogger(Class<?> clazz) {
         return getLogger(clazz.getName());
     }
 }

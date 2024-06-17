@@ -167,7 +167,7 @@ public class AwsDiscoveryStrategy
      */
     private Optional<String> getPlacementGroup() {
         Optional<String> placementGroup = awsClient.getPlacementGroup();
-        if (!placementGroup.isPresent()) {
+        if (placementGroup.isEmpty()) {
             LOGGER.fine("No placement group is found.");
             return Optional.empty();
         }

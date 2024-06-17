@@ -58,8 +58,8 @@ final class ClientCacheProxySupportUtil {
     static void handleFailureOnCompletionListener(CompletionListener completionListener, Throwable t) {
         if (t instanceof Exception) {
             Throwable cause = t.getCause();
-            if (t instanceof ExecutionException && cause instanceof CacheException) {
-                completionListener.onException((CacheException) cause);
+            if (t instanceof ExecutionException && cause instanceof CacheException exception) {
+                completionListener.onException(exception);
             } else {
                 completionListener.onException((Exception) t);
             }

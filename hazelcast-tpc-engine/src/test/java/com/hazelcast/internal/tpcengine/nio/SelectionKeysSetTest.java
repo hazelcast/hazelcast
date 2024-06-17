@@ -61,14 +61,14 @@ public class SelectionKeysSetTest {
 
     @Test
     public void iteratorRecycled() {
-        Iterator it1 = selectionKeysSet.iterator();
-        Iterator it2 = selectionKeysSet.iterator();
+        Iterator<SelectionKey> it1 = selectionKeysSet.iterator();
+        Iterator<SelectionKey> it2 = selectionKeysSet.iterator();
         assertSame(it1, it2);
     }
 
     @Test
     public void add_whenCapacityNotSufficient() {
-        List<SelectionKey> expectedKeys = new LinkedList<SelectionKey>();
+        List<SelectionKey> expectedKeys = new LinkedList<>();
         for (int k = 0; k < SelectionKeys.INITIAL_CAPACITY * 4; k++) {
             SelectionKey key = mock(SelectionKey.class);
             expectedKeys.add(key);
@@ -100,9 +100,7 @@ public class SelectionKeysSetTest {
     public void testLoop() {
         List<SelectionKey> addedKeys = Arrays.asList(key1, key2, key3);
 
-        for (SelectionKey selectionKey : addedKeys) {
-            selectionKeysSet.add(selectionKey);
-        }
+        selectionKeysSet.addAll(addedKeys);
 
         IteratorImpl it = (IteratorImpl) selectionKeysSet.iterator();
         int k = 0;

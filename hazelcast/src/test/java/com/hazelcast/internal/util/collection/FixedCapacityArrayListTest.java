@@ -62,9 +62,7 @@ public class FixedCapacityArrayListTest extends TestCase {
                 list.add(j);
             }
             list.asArray();
-            Assert.assertThrows(NullPointerException.class, () -> {
-                list.add(1);
-            });
+            Assert.assertThrows(NullPointerException.class, () -> list.add(1));
         }
     }
 }

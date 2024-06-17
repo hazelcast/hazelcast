@@ -16,23 +16,32 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private ITopic<String> topic;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+    }
 
     @Override
     String getServiceName() {
@@ -43,12 +52,7 @@ public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
     protected UUID addListener() {
         topic = client.getTopic(randomString());
 
-        MessageListener<String> listener = new MessageListener<>() {
-            @Override
-            public void onMessage(Message<String> message) {
-                onEvent(message.getMessageObject());
-            }
-        };
+        MessageListener<String> listener = message -> onEvent(message.getMessageObject());
         return topic.addMessageListener(listener);
     }
 

@@ -47,6 +47,7 @@ import java.io.Serializable;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
@@ -135,7 +136,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
                 .setProcessingGuarantee(guarantee)
                 .setSnapshotIntervalMillis(100));
 
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         if (expectFailure) {
             // the job should be repeatedly restarted due to the snapshot failure. It goes through NOT_RUNNING and STARTING
             // states, we should observe one of those eventually

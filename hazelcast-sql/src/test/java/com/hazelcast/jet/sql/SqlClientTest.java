@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -159,7 +160,7 @@ public class SqlClientTest extends SqlTestSupport {
         Job job = awaitSingleRunningJob(instance());
 
         client.shutdown();
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
         assertThatThrownBy(job::join)
                 .hasMessageContaining("QueryException: Client cannot be reached");
     }
@@ -197,7 +198,7 @@ public class SqlClientTest extends SqlTestSupport {
 
         result.close();
         logger.info("after res.close() returned");
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
     }
 
     // test for https://github.com/hazelcast/hazelcast/issues/19897

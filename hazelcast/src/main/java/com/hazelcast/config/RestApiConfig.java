@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.rest.RestConfig;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +34,11 @@ import static com.hazelcast.config.RestEndpointGroup.getAllEndpointGroups;
  * <li>overall REST access (enabled by default);</li>
  * <li>access to REST endpoint groups (see {@link RestEndpointGroup}).</li>
  * </ul>
+ *
+ * @deprecated since 5.5, use RestConfig instead. Will be removed at 6.0.
+ * @see RestConfig
  */
+@Deprecated(since = "5.5", forRemoval = true)
 public class RestApiConfig {
 
     private boolean enabled;

@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -55,12 +54,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
             sleepSeconds(4);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(store.toString(), 1, store.getStoreAllMethodCallCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(store.toString(), 1, store.getStoreAllMethodCallCount()));
     }
 
     private Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
@@ -137,17 +131,14 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
 
     private void assertMinMaxStoreOperationsCount(final int minimumExpectedStoreOperationCount,
                                                   final MapStoreWithCounter mapStore) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final Object value = mapStore.store.get(1);
-                final int countStore = mapStore.countStore.get();
+        assertTrueEventually(() -> {
+            final Object value = mapStore.store.get(1);
+            final int countStore = mapStore.countStore.get();
 
-                assertEquals(60, value);
-                assertTrue("Minimum store operation count should be bigger than "
-                                + minimumExpectedStoreOperationCount + " but found = " + countStore,
-                        countStore >= minimumExpectedStoreOperationCount);
-            }
+            assertEquals(60, value);
+            assertTrue("Minimum store operation count should be bigger than "
+                            + minimumExpectedStoreOperationCount + " but found = " + countStore,
+                    countStore >= minimumExpectedStoreOperationCount);
         });
     }
 }

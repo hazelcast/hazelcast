@@ -23,8 +23,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -39,7 +43,7 @@ public class JobRestartStressTest extends JobRestartStressTestBase {
             // Sleep a little in order to not observe the RUNNING status from the execution
             // before the restart.
             LockSupport.parkNanos(MILLISECONDS.toNanos(500));
-            assertJobStatusEventually(tuple.f2(), JobStatus.RUNNING);
+            assertThat(tuple.f2()).eventuallyHasStatus(JobStatus.RUNNING);
             return tuple.f2();
         });
     }
@@ -50,7 +54,7 @@ public class JobRestartStressTest extends JobRestartStressTestBase {
             logger.info("Suspending the job...");
             tuple.f2().suspend();
             logger.info("suspend() returned");
-            assertJobStatusEventually(tuple.f2(), JobStatus.SUSPENDED, 15);
+            assertThat(tuple.f2()).eventuallyHasStatus(SUSPENDED, Duration.ofSeconds(15));
             // The Job.resume() call might overtake the suspension.
             // resume() does nothing when job is not suspended. Without
             // the sleep, the job might remain suspended.
@@ -58,7 +62,7 @@ public class JobRestartStressTest extends JobRestartStressTestBase {
             logger.info("Resuming the job...");
             tuple.f2().resume();
             logger.info("resume() returned");
-            assertJobStatusEventually(tuple.f2(), JobStatus.RUNNING, 15);
+            assertThat(tuple.f2()).eventuallyHasStatus(RUNNING, Duration.ofSeconds(15));
             return tuple.f2();
         });
     }

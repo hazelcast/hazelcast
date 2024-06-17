@@ -25,7 +25,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
 import com.hazelcast.map.impl.mapstore.writebehind.TemporaryBlockerMapStore;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,7 +47,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void tearDown() throws Exception {
@@ -117,12 +116,9 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     protected void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : nodes) {
-                    assertEquals(0, writeBehindQueueSize(instance, mapName));
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : nodes) {
+                assertEquals(0, writeBehindQueueSize(instance, mapName));
             }
         });
     }

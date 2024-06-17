@@ -25,11 +25,13 @@ import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
@@ -359,9 +361,10 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
         int len = floats != null ? floats.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            for (float f : floats) {
-                writeFloat(f);
-            }
+            int sizeInBytes = len * FLOAT_SIZE_IN_BYTES;
+            ensureAvailable(sizeInBytes);
+            ByteBuffer.wrap(this.buffer, pos, sizeInBytes).order(getByteOrder()).asFloatBuffer().put(floats);
+            pos += sizeInBytes;
         }
     }
 

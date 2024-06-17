@@ -28,7 +28,7 @@ final class BitmapUtils {
      * Regulates the growth/shrink rate of the arrays. We are growing/shrinking
      * by 1/4 of the current array size. The rate may seem as too low, but we
      * are paying almost nothing for more frequent resizing while arrays are
-     * small and we don't waste as much memory for large arrays as with doubling.
+     * small, and we don't waste as much memory for large arrays as with doubling.
      */
     private static final int CAPACITY_SHIFT = 2;
 

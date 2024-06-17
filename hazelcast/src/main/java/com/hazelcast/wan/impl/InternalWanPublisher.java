@@ -66,7 +66,7 @@ public interface InternalWanPublisher<T> extends WanPublisher<T> {
      * Calls to this method will pause WAN event container polling. Effectively,
      * pauses WAN replication for its {@link WanPublisher} instance.
      * <p>
-     * WAN events will still be offered to WAN event containers but they won't
+     * WAN events will still be offered to WAN event containers, but they won't
      * be polled. This means that the containers might eventually fill up and start
      * dropping events.
      * <p>
@@ -74,7 +74,7 @@ public interface InternalWanPublisher<T> extends WanPublisher<T> {
      * instances will have no effect.
      * <p></p>
      * There is no synchronization with the thread polling the WAN event
-     * containers and trasmitting the events to the target cluster. This means
+     * containers and transmitting the events to the target cluster. This means
      * that the containers may be polled even after this method returns.
      * NOTE: used only in Hazelcast Enterprise.
      *

@@ -421,7 +421,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public ClusterViewListenerService getClusterListenerService() {
+    public ClusterViewListenerService getClusterViewListenerService() {
         return clusterListenerService;
     }
 

@@ -183,8 +183,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
      * @see #run()
      */
     public CallStatus call() throws Exception {
-        if (this instanceof BlockingOperation) {
-            BlockingOperation blockingOperation = (BlockingOperation) this;
+        if (this instanceof BlockingOperation blockingOperation) {
             if (blockingOperation.shouldWait()) {
                 return WAIT;
             }
@@ -483,9 +482,9 @@ public abstract class Operation implements DataSerializable, Tenantable {
     public final void sendResponse(Object value) {
         OperationResponseHandler responseHandler = getOperationResponseHandler();
         if (responseHandler == null) {
-            if (value instanceof Throwable) {
+            if (value instanceof Throwable throwable) {
                 // in case of a throwable, we want the stacktrace.
-                getLogger().warning("Missing responseHandler for " + toString(), (Throwable) value);
+                getLogger().warning("Missing responseHandler for " + toString(), throwable);
             } else {
                 getLogger().warning("Missing responseHandler for " + toString() + " value[" + value + "]");
             }

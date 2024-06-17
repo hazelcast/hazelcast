@@ -21,7 +21,6 @@ import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -85,20 +84,17 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
         topic0.publish("itemB");
         topic1.publish("item2");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(listener0.isReceived("itemA"));
-                assertTrue(listener0.isReceived("itemB"));
-                assertTrue(listener1.isReceived("item1"));
-                assertTrue(listener1.isReceived("item2"));
-            }
+        assertTrueEventually(() -> {
+            assertTrue(listener0.isReceived("itemA"));
+            assertTrue(listener0.isReceived("itemB"));
+            assertTrue(listener1.isReceived("item1"));
+            assertTrue(listener1.isReceived("item2"));
         });
     }
 
-    public class PayloadMessageListener<V> implements MessageListener<V> {
+    private static class PayloadMessageListener<V> implements MessageListener<V> {
 
-        private Collection<V> receivedMessages = new HashSet<>();
+        private final Collection<V> receivedMessages = new HashSet<>();
 
         @Override
         public void onMessage(Message<V> message) {
@@ -110,7 +106,7 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    public class CountingMigrationListener implements MigrationListener {
+    private static class CountingMigrationListener implements MigrationListener {
 
         AtomicInteger partitionMigrationCount = new AtomicInteger();
 

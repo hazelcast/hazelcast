@@ -42,7 +42,7 @@ import static org.junit.Assert.assertSame;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapConfigTest {
 
-    private MultiMapConfig multiMapConfig = new MultiMapConfig();
+    private final MultiMapConfig multiMapConfig = new MultiMapConfig();
 
     @Test
     public void testValueCollectionTypeSelection() {

@@ -19,7 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -64,15 +63,12 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
     public void testRun() {
         spawn((Runnable) () -> hz.getMap("foo").put("key", "value"));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
 
-                assertContains("Networking");
-                assertContains("InputThreads");
-                assertContains("OutputThreads");
-            }
+            assertContains("Networking");
+            assertContains("InputThreads");
+            assertContains("OutputThreads");
         });
     }
 
@@ -80,13 +76,10 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
     public void noNaNPercentagesForZeroAmounts() {
         spawn((Runnable) () -> hz.getMap("foo").put("key", "value"));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
 
-                assertNotContains("NaN");
-            }
+            assertNotContains("NaN");
         });
     }
 }

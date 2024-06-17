@@ -31,7 +31,7 @@ import java.util.Set;
  * <p>
  * This is a less type-safe, but more flexible alternative to a tuple. The
  * tuple has a fixed number of integer-indexed, statically-typed fields,
- * and {@code ItemsByTag} has a variable number of tag-indexed fields whose
+ * and {@code ItemsByTag} has a variable number of tag-indexed fields
  * whose static type is encoded in the tags.
  *
  * @since Jet 3.0

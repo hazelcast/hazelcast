@@ -87,22 +87,21 @@ public class ClientTestSupport extends HazelcastTestSupport {
         return clientProxy.client;
     }
 
-    public static void forceDisconnectFromServer(final HazelcastInstance client, UUID memberUUID) {
-        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-        connectionManager.getConnection(memberUUID).close("close", null);
-    }
-
     public static void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {
         assertTrueEventually(() -> {
             ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-            assertNull(connectionManager.getConnection(memberUUID));
+            assertNull(connectionManager.getActiveConnection(memberUUID));
         });
     }
 
-    protected void makeSureConnectedToServers(final HazelcastInstance client, final int numberOfServers) {
+    public static void makeSureConnectedToServers(final HazelcastInstance client,
+                                               final int expectedConnectedServerCount) {
         assertTrueEventually(() -> {
-            ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-            assertEquals(numberOfServers, connectionManager.getActiveConnections().size());
+            assert client != null;
+            HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+            ClientConnectionManager connectionManager = clientInstanceImpl.getConnectionManager();
+            Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+            assertEquals(activeConnections.toString(), expectedConnectedServerCount, activeConnections.size());
         });
     }
 

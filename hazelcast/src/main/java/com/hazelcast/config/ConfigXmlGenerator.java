@@ -44,8 +44,6 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.ResourceType;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -103,8 +101,6 @@ public class ConfigXmlGenerator {
 
     private static final int INDENT = 5;
 
-    private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
-
     private final boolean formatted;
     private final boolean maskSensitiveFields;
 
@@ -157,7 +153,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
-                .append(Versions.CURRENT_CLUSTER_VERSION.toString())
+                .append(Versions.CURRENT_CLUSTER_VERSION)
                 .append(".xsd\">");
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
@@ -660,8 +656,7 @@ public class ConfigXmlGenerator {
         socketInterceptorConfigXmlGenerator(gen, endpointConfig.getSocketInterceptorConfig());
         symmetricEncInterceptorConfigXmlGenerator(gen, endpointConfig.getSymmetricEncryptionConfig());
 
-        if (endpointConfig instanceof RestServerEndpointConfig) {
-            RestServerEndpointConfig rsec = (RestServerEndpointConfig) endpointConfig;
+        if (endpointConfig instanceof RestServerEndpointConfig rsec) {
             gen.open("endpoint-groups");
             for (RestEndpointGroup group : RestEndpointGroup.values()) {
                 gen.node("endpoint-group", null, "name", group.name(),
@@ -684,8 +679,7 @@ public class ConfigXmlGenerator {
         gen.node("keep-count", endpointConfig.getSocketKeepCount());
         gen.close();
 
-        if (endpointConfig instanceof ServerSocketEndpointConfig) {
-            ServerSocketEndpointConfig serverSocketEndpointConfig = (ServerSocketEndpointConfig) endpointConfig;
+        if (endpointConfig instanceof ServerSocketEndpointConfig serverSocketEndpointConfig) {
             gen.node("port", serverSocketEndpointConfig.getPort(),
                     "port-count", serverSocketEndpointConfig.getPortCount(),
                     "auto-increment", serverSocketEndpointConfig.isPortAutoIncrement())
@@ -807,8 +801,7 @@ public class ConfigXmlGenerator {
 
     protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
                                                      AbstractBaseFactoryWithPropertiesConfig<?> factoryWithProps) {
-        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig) {
-            AbstractFactoryWithPropertiesConfig cfgWithEnabled = (AbstractFactoryWithPropertiesConfig) factoryWithProps;
+        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig cfgWithEnabled) {
             gen.open(elementName, "enabled", cfgWithEnabled.isEnabled());
         } else {
             gen.open(elementName);
@@ -934,10 +927,10 @@ public class ConfigXmlGenerator {
     private void secureStoreXmlGenerator(XmlGenerator gen, SecureStoreConfig secureStoreConfig) {
         if (secureStoreConfig != null) {
             gen.open("secure-store");
-            if (secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig) {
-                javaKeyStoreSecureStoreXmlGenerator(gen, (JavaKeyStoreSecureStoreConfig) secureStoreConfig);
-            } else if (secureStoreConfig instanceof VaultSecureStoreConfig) {
-                vaultSecureStoreXmlGenerator(gen, (VaultSecureStoreConfig) secureStoreConfig);
+            if (secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig config) {
+                javaKeyStoreSecureStoreXmlGenerator(gen, config);
+            } else if (secureStoreConfig instanceof VaultSecureStoreConfig config) {
+                vaultSecureStoreXmlGenerator(gen, config);
             }
             gen.close();
         }
@@ -1117,10 +1110,7 @@ public class ConfigXmlGenerator {
     private static void handleSplitBrainProtectionFunction(XmlGenerator gen,
                                                            SplitBrainProtectionConfig splitBrainProtectionConfig) {
         if (splitBrainProtectionConfig.
-                getFunctionImplementation() instanceof ProbabilisticSplitBrainProtectionFunction) {
-            ProbabilisticSplitBrainProtectionFunction qf =
-                    (ProbabilisticSplitBrainProtectionFunction)
-                            splitBrainProtectionConfig.getFunctionImplementation();
+                getFunctionImplementation() instanceof ProbabilisticSplitBrainProtectionFunction qf) {
             long acceptableHeartbeatPause = qf.getAcceptableHeartbeatPauseMillis();
             double threshold = qf.getSuspicionThreshold();
             int maxSampleSize = qf.getMaxSampleSize();
@@ -1133,10 +1123,7 @@ public class ConfigXmlGenerator {
                     "heartbeat-interval-millis", firstHeartbeatEstimate);
             gen.close();
         } else if (splitBrainProtectionConfig.
-                getFunctionImplementation() instanceof RecentlyActiveSplitBrainProtectionFunction) {
-            RecentlyActiveSplitBrainProtectionFunction qf =
-                    (RecentlyActiveSplitBrainProtectionFunction)
-                            splitBrainProtectionConfig.getFunctionImplementation();
+                getFunctionImplementation() instanceof RecentlyActiveSplitBrainProtectionFunction qf) {
             gen.open("recently-active-split-brain-protection", "heartbeat-tolerance-millis",
                     qf.getHeartbeatToleranceMillis());
             gen.close();
@@ -1222,7 +1209,7 @@ public class ConfigXmlGenerator {
         }
         for (Map.Entry factory : factoryMap.entrySet()) {
             Object value = factory.getValue();
-            String className = value instanceof String ? (String) value : value.getClass().getName();
+            String className = value instanceof String s ? s : value.getClass().getName();
             gen.node(elementName, className, "factory-id", factory.getKey().toString());
         }
     }

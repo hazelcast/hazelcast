@@ -29,7 +29,6 @@ import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -229,36 +228,21 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
     private void assertEventJournalSizeEventually(final EventJournalTestContext<String, String, EJ_TYPE> context,
                                                   final int count) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEventJournalSize(context.dataAdapter, count);
-            }
-        });
+        assertTrueEventually(() -> assertEventJournalSize(context.dataAdapter, count));
     }
 
     @Test
     public void receiveExpirationEventsWhenPutWithTtl() {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
         final EventJournalDataStructureAdapter<String, Integer, EJ_TYPE> adapter = context.dataAdapter;
-        testExpiration(context, adapter, new BiConsumer<>() {
-            @Override
-            public void accept(String k, Integer v) {
-                adapter.put(k, v, 1, TimeUnit.SECONDS);
-            }
-        });
+        testExpiration(context, adapter, (k, v) -> adapter.put(k, v, 1, TimeUnit.SECONDS));
     }
 
     @Test
     public void receiveExpirationEventsWhenPutOnExpiringStructure() {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
         final EventJournalDataStructureAdapter<String, Integer, EJ_TYPE> adapter = context.dataAdapterWithExpiration;
-        testExpiration(context, adapter, new BiConsumer<>() {
-            @Override
-            public void accept(String k, Integer i) {
-                adapter.put(k, i);
-            }
-        });
+        testExpiration(context, adapter, (k, i) -> adapter.put(k, i));
     }
 
     @Test

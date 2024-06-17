@@ -405,6 +405,7 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
         return iterator.next();
       }
 
+      @Override
       public void remove() {
         throw new UnsupportedOperationException();
       }

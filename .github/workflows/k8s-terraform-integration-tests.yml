@@ -55,7 +55,7 @@ jobs:
             GCLOUD_KEYFILE_JSON,CN/GKE_SA_KEY
 
       - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2.1.2
+        uses: google-github-actions/auth@v2.1.3
         with:
           credentials_json: ${{ env.GCLOUD_KEYFILE_JSON }}
 
@@ -78,7 +78,7 @@ jobs:
           path: auto-discovery-suite
 
       - name: Set-up Terraform
-        uses: hashicorp/setup-terraform@v3.1.0
+        uses: hashicorp/setup-terraform@v3.1.1
         with:
           terraform_version: 1.5.4
           terraform_wrapper: false

@@ -24,12 +24,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -46,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {
@@ -77,25 +75,14 @@ public class ClientQueryCacheRecoveryUponEventLossTest extends HazelcastTestSupp
         setTestSequencer(map, 9);
 
         final QueryCache queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
-        queryCache.addEntryListener(new EventLostListener() {
-            @Override
-            public void eventLost(EventLostEvent event) {
-                queryCache.tryRecover();
-
-            }
-        }, false);
+        queryCache.addEntryListener((EventLostListener) event -> queryCache.tryRecover(), false);
 
 
         for (int i = 0; i < count; i++) {
             map.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(9, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(9, queryCache.size()));
     }
 
     private void setTestSequencer(IMap map, int eventCount) {

@@ -137,7 +137,7 @@ public final class AggregatingMap<K, V> implements Map<K, V> {
         for (Entry<K, V> entry : source) {
             K key = entry.getKey();
             V value = entry.getValue();
-            destination.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+            destination.add(new AbstractMap.SimpleEntry<>(key, value));
         }
     }
 }

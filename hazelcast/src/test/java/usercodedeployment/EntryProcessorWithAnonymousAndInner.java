@@ -18,10 +18,12 @@ package usercodedeployment;
 
 import com.hazelcast.map.EntryProcessor;
 
+import java.io.Serial;
 import java.util.Map;
 
 public class EntryProcessorWithAnonymousAndInner implements EntryProcessor<Integer, Integer, Integer> {
 
+    @Serial
     private static final long serialVersionUID = 8936595533044945435L;
 
     @Override

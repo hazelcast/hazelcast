@@ -57,6 +57,7 @@ import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getF
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -141,7 +142,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID uuid = UUID.randomUUID();
         ClientMessage message = ClientAuthenticationCodec.encodeRequest("cluster", "user", "pass",
                 uuid, "JAVA", (byte) 1,
-                "1.0", "name", labels);
+                "1.0", "name", labels, (byte) 1);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -180,6 +181,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals((byte) 1, parameters.serializationVersion);
         assertEquals("1.0", parameters.clientHazelcastVersion);
         assertEquals("name", parameters.clientName);
+        assertEquals(1, parameters.routingMode);
         assertArrayEquals(labels.toArray(), parameters.labels.toArray());
     }
 
@@ -203,10 +205,11 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         int partitionsVersion = 2;
         List<Map.Entry<UUID, List<Integer>>> partitions = new ArrayList<>();
         partitions.add(new AbstractMap.SimpleEntry<>(UUID.randomUUID(), Arrays.asList(1, 2, 3)));
+        Map<String, String> keyValuePairs = Map.of("key1", "value1", "key2", "value2");
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "5.4", 271, clusterId, true, tpcPorts, tpcToken,
-                memberListVersion, members, partitionsVersion, partitions);
+                uuid, (byte) 1, "5.5", 271, clusterId, true, tpcPorts, tpcToken,
+                memberListVersion, members, partitionsVersion, partitions, keyValuePairs);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
         ClientMessageEncoder encoder = new ClientMessageEncoder();
@@ -240,16 +243,17 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
         assertEquals(uuid, parameters.memberUuid);
         assertEquals(1, parameters.serializationVersion);
-        assertEquals("5.4", parameters.serverHazelcastVersion);
+        assertEquals("5.5", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
-        assertEquals(true, parameters.failoverSupported);
+        assertTrue(parameters.failoverSupported);
         assertEquals(tpcPorts, parameters.tpcPorts);
         assertArrayEquals(tpcToken, parameters.tpcToken);
         assertEquals(memberListVersion, parameters.memberListVersion);
         assertEquals(members, parameters.memberInfos);
         assertEquals(partitionsVersion, parameters.partitionListVersion);
         assertEquals(partitions, parameters.partitions);
+        assertEquals(keyValuePairs, parameters.keyValuePairs);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {

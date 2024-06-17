@@ -16,14 +16,20 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.impl.clientside.SubsetMembers;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.EventListener;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -49,9 +55,14 @@ public interface ClientClusterService {
     Collection<Member> getMemberList();
 
     /**
+     * <p>
      * Gets the collection of members, or an empty list if the client
      * changed the cluster and the new member list is not received yet.
-     *
+     * </p>
+     * <p>
+     * When {@link SubsetRoutingConfig} is enabled, this method
+     * returns list of members seen by {@link SubsetMembers}
+     * </p>
      * @return The collection of members.
      */
     @Nonnull
@@ -85,6 +96,23 @@ public interface ClientClusterService {
      */
     boolean removeMembershipListener(@Nonnull UUID registrationId);
 
+    SubsetMembers getSubsetMembers();
+
+    /**
+     * @return cluster's uuid
+     */
+    UUID getClusterId();
+
+    /**
+     * Returns the cluster version, which may be {@link Version#UNKNOWN}.
+     */
+    @Nonnull
+    Version getClusterVersion();
+
+    void onClusterConnect(UUID newClusterId);
+
+    void updateOnAuth(UUID clusterUuid, UUID authMemberUuid, Map<String, String> keyValuePairs);
+
     /**
      * Updates the members of the cluster with the latest list.
      * @param memberListVersion The version of the member list
@@ -92,4 +120,40 @@ public interface ClientClusterService {
      * @param clusterUuid The UUID of the cluster
      */
     void handleMembersViewEvent(int memberListVersion, Collection<MemberInfo> memberInfos, UUID clusterUuid);
+
+    /**
+     * Updates the cluster version with the latest one.
+     */
+    void handleClusterVersionEvent(Version version);
+
+    /**
+     * Starts the configured MembershipListeners.
+     *
+     * @param configuredListeners
+     */
+    void start(Collection<EventListener> configuredListeners);
+
+    /**
+     * Gets the cluster proxy.
+     *
+     * @return the cluster proxy.
+     */
+    Cluster getCluster();
+
+    /**
+     * Resets the cluster snapshot back to the initial state.
+     */
+    void onTryToConnectNextCluster();
+
+    /**
+     * Resets the membership version to zero.
+     */
+    void onClusterConnect();
+
+    /**
+     * Gets the membership version.
+     *
+     * @return the membership version.
+     */
+    int getMemberListVersion();
 }

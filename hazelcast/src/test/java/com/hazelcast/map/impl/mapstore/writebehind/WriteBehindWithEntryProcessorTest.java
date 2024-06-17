@@ -106,7 +106,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
                 .build();
 
         final TestObject testObject = new TestObject();
-        map.executeOnKey(1, new EntryProcessor<Integer, TestObject, Object>() {
+        map.executeOnKey(1, new EntryProcessor<>() {
             @Override
             public Object process(Map.Entry<Integer, TestObject> entry) {
                 entry.setValue(testObject);

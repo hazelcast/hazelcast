@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -133,6 +134,7 @@ public class NoIndexLossAfterSplitBrainHealTest extends SplitBrainTestSupport {
     }
 
     private record TestObject(Long id, String value) implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
     }
 }

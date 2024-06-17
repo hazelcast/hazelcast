@@ -77,6 +77,6 @@ public class ObservableRingbufferContainerLeakTest extends JetTestSupport {
                 .iterator()
                 .next(); // We set partition count to 1 so there will be only 1 item
 
-        assertThat(containers).hasSize(0);
+        assertThat(containers).isEmpty();
     }
 }

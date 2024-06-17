@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstance;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -67,7 +68,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final long startTimeMillis;
     private final long retryPauseMillis;
     private final Object objectName;
-    private final boolean isUnisocketClient;
+    private final RoutingMode routingMode;
     /**
      * We achieve synchronization of different threads via this field
      * sentConnection starts as null.
@@ -107,7 +108,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        this.isUnisocketClient = invocationService.isUnisocketClient();
+        this.routingMode = invocationService.getRoutingMode();
     }
 
     /**
@@ -188,7 +189,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             }
 
             boolean invoked;
-            if (!isUnisocketClient) {
+            if (routingMode != RoutingMode.UNISOCKET) {
                 if (partitionId != -1) {
                     invoked = invocationService.invokeOnPartitionOwner(this, partitionId);
                 } else if (uuid != null) {
@@ -202,6 +203,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             } else {
                 invoked = invocationService.invoke(this);
             }
+
             if (!invoked) {
                 notifyExceptionWithOwnedPermission(new IOException("No connection found to invoke"));
             }
@@ -210,7 +212,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             notifyExceptionWithOwnedPermission(e);
         }
     }
-
 
     @Override
     public void run() {
@@ -277,6 +278,10 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
 
     boolean getPermissionToNotifyForDeadConnection(ClientConnection deadConnection) {
         return SENT_CONNECTION.compareAndSet(this, deadConnection, null);
+    }
+
+    public ClientConnection getSentConnection() {
+        return SENT_CONNECTION.get(this);
     }
 
     @Override

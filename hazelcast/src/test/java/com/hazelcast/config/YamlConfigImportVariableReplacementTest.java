@@ -75,12 +75,13 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void readVariables() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    ${name}:\n"
-                + "      backup-count: ${backup.count}\n"
-                + "      async-backup-count: ${async.backup.count}\n";
+        String yaml = """
+                hazelcast:
+                  map:
+                    ${name}:
+                      backup-count: ${backup.count}
+                      async-backup-count: ${async.backup.count}
+                """;
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
@@ -104,11 +105,12 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String configLocation = helper.givenConfigFileInWorkDir("config-replacer.yaml", configReplacer).getAbsolutePath();
 
-        String clusterName = ""
-            + "hazelcast:\n"
-            + "  import:\n"
-            + "    - " + "${config.location}\n"
-            + "  cluster-name: ${java.version} $ID{dev}\n";
+        String clusterName = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  cluster-name: ${java.version} $ID{dev}
+                """;
 
         Properties properties = new Properties(System.getProperties());
         properties.put("config.location", configLocation);
@@ -135,10 +137,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.yaml", clusterName).getAbsolutePath();
 
-        String yaml = ""
-            + "hazelcast:\n"
-            + "  import:\n"
-            + "    - " + "${config.location}\n";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                """;
 
         Properties properties = new Properties(System.getProperties());
         properties.put("config.location", clusterNameLocation);
@@ -171,10 +174,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.yaml", clusterName).getAbsolutePath();
 
-        String yaml = ""
-            + "hazelcast:\n"
-            + "  import:\n"
-            + "    - " + "${config.location}\n";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                """;
 
         Properties properties = new Properties(System.getProperties());
         properties.put("config.location", clusterNameLocation);
@@ -186,21 +190,23 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportConfigFromResourceVariables() throws Exception {
-        String networkConfig = ""
-                + "hazelcast:\n"
-                + "  network:\n"
-                + "    join:\n"
-                + "      multicast:\n"
-                + "        enabled: false\n"
-                + "      tcp-ip:\n"
-                + "        enabled: true\n";
+        String networkConfig = """
+                hazelcast:
+                  network:
+                    join:
+                      multicast:
+                        enabled: false
+                      tcp-ip:
+                        enabled: true
+                """;
 
         String configLocation = helper.givenConfigFileInWorkDir("foo.bar", networkConfig).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                """;
         Config config = buildConfig(yaml, "config.location", configLocation);
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
@@ -210,21 +216,22 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportedConfigVariableReplacement() throws Exception {
-        String networkConfig = ""
-                + "hazelcast:\n"
-                + "  network:\n"
-                + "    join:\n"
-                + "      multicast:\n"
-                + "        enabled: false\n"
-                + "      tcp-ip:\n"
-                + "        enabled: ${tcp.ip.enabled}\n";
+        String networkConfig = """
+                hazelcast:
+                  network:
+                    join:
+                      multicast:
+                        enabled: false
+                      tcp-ip:
+                        enabled: ${tcp.ip.enabled}
+                """;
 
         String configLocation = helper.givenConfigFileInWorkDir("foo.bar", networkConfig).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}""";
 
         Properties properties = new Properties();
         properties.setProperty("config.location", configLocation);
@@ -274,44 +281,46 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - \"\"";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ""
+                """;
         buildConfig(yaml, null);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - notexisting.yaml";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - notexisting.yaml""";
         buildConfig(yaml, null);
     }
 
     @Override
     @Test(expected = HazelcastException.class)
     public void testImportNotExistingUrlResourceThrowsException() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - file:///notexisting.yaml";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - file:///notexisting.yaml""";
         buildConfig(yaml, null);
     }
 
     @Override
     @Test
     public void testImportNetworkConfigFromFile() throws Exception {
-        String networkConfig = ""
-                + "hazelcast:\n"
-                + "  network:\n"
-                + "    join:\n"
-                + "      multicast:\n"
-                + "        enabled: false\n"
-                + "      tcp-ip:\n"
-                + "        enabled: true\n";
+        String networkConfig = """
+                hazelcast:
+                  network:
+                    join:
+                      multicast:
+                        enabled: false
+                      tcp-ip:
+                        enabled: true
+                """;
         String path = helper.givenConfigFileInWorkDir("foo.bar", networkConfig).getAbsolutePath();
 
         String yaml = ""
@@ -328,18 +337,19 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportMapConfigFromFile() throws Exception {
-        String mapConfig = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap:\n"
-                + "      backup-count: 6\n"
-                + "      time-to-live-seconds: 10\n"
-                + "      map-store:\n"
-                + "        enabled: true\n"
-                + "        initial-mode: LAZY\n"
-                + "        class-name: com.hazelcast.examples.MyMapStore\n"
-                + "        write-delay-seconds: 10\n"
-                + "        write-batch-size: 100\n";
+        String mapConfig = """
+                hazelcast:
+                  map:
+                    mymap:
+                      backup-count: 6
+                      time-to-live-seconds: 10
+                      map-store:
+                        enabled: true
+                        initial-mode: LAZY
+                        class-name: com.hazelcast.examples.MyMapStore
+                        write-delay-seconds: 10
+                        write-batch-size: 100
+                """;
 
         String path = helper.givenConfigFileInWorkDir("mymap.config", mapConfig).getAbsolutePath();
 
@@ -362,17 +372,18 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportOverlappingMapConfigFromFile() throws Exception {
-        String mapConfig = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap:\n"
-                + "      backup-count: 6\n"
-                + "      map-store:\n"
-                + "        enabled: true\n"
-                + "        initial-mode: LAZY\n"
-                + "        class-name: com.hazelcast.examples.MyMapStore\n"
-                + "        write-delay-seconds: 10\n"
-                + "        write-batch-size: 100\n";
+        String mapConfig = """
+                hazelcast:
+                  map:
+                    mymap:
+                      backup-count: 6
+                      map-store:
+                        enabled: true
+                        initial-mode: LAZY
+                        class-name: com.hazelcast.examples.MyMapStore
+                        write-delay-seconds: 10
+                        write-batch-size: 100
+                """;
 
         String path = helper.givenConfigFileInWorkDir("mymap.config", mapConfig).getAbsolutePath();
 
@@ -397,18 +408,19 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
     @Override
     public void testMapConfigFromMainAndImportedFile() throws Exception {
-        String mapConfig = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    importedMap:\n"
-                + "      backup-count: 6\n"
-                + "      time-to-live-seconds: 10\n"
-                + "      map-store:\n"
-                + "        enabled: true\n"
-                + "        initial-mode: LAZY\n"
-                + "        class-name: com.hazelcast.examples.MyMapStore\n"
-                + "        write-delay-seconds: 10\n"
-                + "        write-batch-size: 100\n";
+        String mapConfig = """
+                hazelcast:
+                  map:
+                    importedMap:
+                      backup-count: 6
+                      time-to-live-seconds: 10
+                      map-store:
+                        enabled: true
+                        initial-mode: LAZY
+                        class-name: com.hazelcast.examples.MyMapStore
+                        write-delay-seconds: 10
+                        write-batch-size: 100
+                """;
 
         String path = helper.givenConfigFileInWorkDir("importmap.config", mapConfig).getAbsolutePath();
 
@@ -441,10 +453,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportConfigFromClassPath() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - classpath:test-hazelcast.yaml";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - classpath:test-hazelcast.yaml""";
         Config config = buildConfig(yaml, null);
         assertEquals("foobar-yaml", config.getClusterName());
     }
@@ -536,11 +548,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testVariableReplacementAsSubstring() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  properties:\n"
-                + "    ${env}-with-suffix: local-with-suffix\n"
-                + "    with-prefix-${env}: with-prefix-local";
+        String yaml = """
+                hazelcast:
+                  properties:
+                    ${env}-with-suffix: local-with-suffix
+                    with-prefix-${env}: with-prefix-local""";
 
         Config config = buildConfig(yaml, "env", "local");
         assertEquals("local-with-suffix", config.getProperty("local-with-suffix"));
@@ -550,18 +562,19 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportWithVariableReplacementAsSubstring() throws Exception {
-        String networkConfig = ""
-                + "hazelcast:\n"
-                + "  properties:\n"
-                + "    prop1: value1\n"
-                + "    prop2: value2\n";
+        String networkConfig = """
+                hazelcast:
+                  properties:
+                    prop1: value1
+                    prop2: value2
+                """;
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", networkConfig).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - " + "${file}";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${file}""";
         Config config = buildConfig(yaml, "file", path);
         assertEquals("value1", config.getProperty("prop1"));
         assertEquals("value2", config.getProperty("prop2"));
@@ -569,17 +582,19 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
     @Test
     public void testImportNoHazelcastRootNode() throws Exception {
-        String importedYaml = ""
-                + "properties:\n"
-                + "  prop1: value1\n"
-                + "  prop2: value2\n";
+        String importedYaml = """
+                properties:
+                  prop1: value1
+                  prop2: value2
+                """;
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = "hazelcast:\n"
-                + "  import:\n"
-                + "    - " + "${file}\n"
-                + "  instance-name: my-instance";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${file}
+                  instance-name: my-instance""";
         Config config = buildConfig(yaml, "file", path);
         assertEquals("my-instance", config.getInstanceName());
         assertEquals("value1", config.getProperty("prop1"));
@@ -589,10 +604,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testReplaceVariablesWithFileSystemConfig() throws Exception {
-        String configYaml = ""
-                + "hazelcast:\n"
-                + "  properties:\n"
-                + "    prop: ${variable}";
+        String configYaml = """
+                hazelcast:
+                  properties:
+                    prop: ${variable}""";
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", configYaml).getAbsolutePath();
 
@@ -606,10 +621,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testReplaceVariablesWithInMemoryConfig() {
-        String configYaml = ""
-                + "hazelcast:\n"
-                + "  properties:\n"
-                + "    prop: ${variable}";
+        String configYaml = """
+                hazelcast:
+                  properties:
+                    prop: ${variable}""";
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");
@@ -631,10 +646,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testReplaceVariablesWithUrlConfig() throws Exception {
-        String configYaml = ""
-                + "hazelcast:\n"
-                + "  properties:\n"
-                + "    prop: ${variable}";
+        String configYaml = """
+                hazelcast:
+                  properties:
+                    prop: ${variable}""";
 
         Path path = helper.givenConfigFileInWorkDir("foo.bar", configYaml).toPath().toAbsolutePath();
 
@@ -648,10 +663,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testReplaceVariablesUseSystemProperties() {
-        String configYaml = ""
-                + "hazelcast:\n"
-                + "  properties:\n"
-                + "    prop: ${variable}";
+        String configYaml = """
+                hazelcast:
+                  properties:
+                    prop: ${variable}""";
 
         System.setProperty("variable", "foobar");
         Config config = buildConfig(configYaml);
@@ -667,11 +682,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n"
-                + "  cluster-name: name2";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  cluster-name: name2""";
 
         assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
@@ -685,11 +700,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n"
-                + "  cluster-name: name";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  cluster-name: name""";
 
         Config config = buildConfig(yaml, "config.location", path);
         assertEquals("name", config.getClusterName());
@@ -702,12 +717,12 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  cluster-name: name1";
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n"
-                + "  cluster-name:\n"
-                + "    - seqName: {}";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  cluster-name:
+                    - seqName: {}""";
         assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
     }
@@ -719,11 +734,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  cluster-name: name1";
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n"
-                + "  cluster-name: {}";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  cluster-name: {}""";
 
         assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
@@ -731,17 +746,17 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
     @Test
     public void testImportNodeSequenceVsMappingThrows() throws Exception {
-        String importedYaml = ""
-                + "hazelcast:\n"
-                + "  cluster-name:\n"
-                + "    - seqname";
+        String importedYaml = """
+                hazelcast:
+                  cluster-name:
+                    - seqname""";
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n"
-                + "  cluster-name: {}";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  cluster-name: {}""";
 
         assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
@@ -749,18 +764,20 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
     @Test
     public void testImportNodeSequenceVsSequenceMerges() throws Exception {
-        String importedYaml = ""
-                + "hazelcast:\n"
-                + "  listeners:\n"
-                + "    - com.hazelcast.examples.MembershipListener\n";
+        String importedYaml = """
+                hazelcast:
+                  listeners:
+                    - com.hazelcast.examples.MembershipListener
+                """;
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - ${config.location}\n"
-                + "  listeners:\n"
-                + "    - com.hazelcast.examples.MigrationListener\n";
+        String yaml = """
+                hazelcast:
+                  import:
+                    - ${config.location}
+                  listeners:
+                    - com.hazelcast.examples.MigrationListener
+                """;
 
         Config config = buildConfig(yaml, "config.location", path);
         List<ListenerConfig> listenerConfigs = config.getListenerConfigs();

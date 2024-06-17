@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.test.Accessors.getAddress;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

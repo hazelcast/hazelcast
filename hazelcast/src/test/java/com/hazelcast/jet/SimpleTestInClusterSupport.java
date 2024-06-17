@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -206,7 +207,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
                 // Let's wait for all unprocessed operations (like destroying distributed object) to complete
-                assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
+                assertEquals(0, Accessors.getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }
     }
@@ -221,19 +222,19 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         TestClass testClass = new TestClass(this.getClass());
         return Arrays.stream(testClass.getAnnotations()).anyMatch(
                 annotation ->
-                        annotation instanceof RunWith
-                                && HazelcastParallelClassRunner.class.isAssignableFrom(((RunWith) annotation).value())
+                        annotation instanceof RunWith rw
+                                && HazelcastParallelClassRunner.class.isAssignableFrom(rw.value())
                         ||
-                        annotation instanceof Parameterized.UseParametersRunnerFactory
+                        annotation instanceof Parameterized.UseParametersRunnerFactory uprf
                                 && HazelcastParallelParametersRunnerFactory.class.isAssignableFrom(
-                                        ((Parameterized.UseParametersRunnerFactory) annotation).value())
+                                        uprf.value())
         );
     }
 
     private static boolean testIfInstanceIsStillActive(HazelcastInstance instance) {
-        if (instance instanceof HazelcastInstanceImpl) {
+        if (instance instanceof HazelcastInstanceImpl impl) {
             try {
-                return ((HazelcastInstanceImpl) instance).isRunning();
+                return impl.isRunning();
             } catch (HazelcastInstanceNotActiveException ignored) {
                 return false;
             }

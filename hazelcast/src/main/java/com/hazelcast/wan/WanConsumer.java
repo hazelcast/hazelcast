@@ -38,7 +38,7 @@ public interface WanConsumer {
      * Initialize the WAN consumer. The method is invoked once the node has
      * started.
      * The WAN consumer is responsible for registering itself for WAN event
-     * consumption. Typically this means that you would either use the
+     * consumption. Typically, this means that you would either use the
      * {@link com.hazelcast.spi.impl.executionservice.ExecutionService}
      * to schedule the consumer to run periodically or continually by having an
      * implementation which uses blocking or spinning locks to check for new
@@ -50,7 +50,7 @@ public interface WanConsumer {
     void init(String wanReplicationName, WanConsumerConfig config);
 
     /**
-     * Callback method to shutdown the WAN replication consumer. This is called
+     * Callback method to shut down the WAN replication consumer. This is called
      * on node shutdown.
      */
     void shutdown();

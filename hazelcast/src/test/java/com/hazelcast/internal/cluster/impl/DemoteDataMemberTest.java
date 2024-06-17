@@ -358,7 +358,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         dropOperationsFrom(hz1, F_ID, singletonList(HEARTBEAT));
 
         Cluster cluster = hz3.getCluster();
-        Future future = spawn(cluster::demoteLocalDataMember);
+        Future<?> future = spawn(cluster::demoteLocalDataMember);
 
         assertDemotionInvocationStarted(hz3);
 
@@ -469,7 +469,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
                 k++;
             }
         }
-        assertThat(k).isGreaterThan(0);
+        assertThat(k).isPositive();
     }
 
     private static void assertNoPartitionsAssigned(HazelcastInstance instance) {

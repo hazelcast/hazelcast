@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
@@ -242,7 +242,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         CountDownLatch testFinished = new CountDownLatch(1);
         AddressProvider addressProvider = new AddressProvider() {
             @Override
-            public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
+            public Addresses loadAddresses(ClientConnectionProcessListenerRegistry listenerRunner) {
                 if (waitFlag.get()) {
                     try {
                         testFinished.await();

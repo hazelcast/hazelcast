@@ -300,8 +300,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     private void registerResourceIfItIsClosable(Object resource) {
-        if (resource instanceof Closeable) {
-            cacheService.addCacheResource(name, (Closeable) resource);
+        if (resource instanceof Closeable closeable) {
+            cacheService.addCacheResource(name, closeable);
         }
     }
 
@@ -428,8 +428,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected Data toData(Object obj) {
-        if (obj instanceof Data) {
-            return (Data) obj;
+        if (obj instanceof Data data) {
+            return data;
         } else if (obj instanceof CacheRecord) {
             return recordToData((R) obj);
         } else {
@@ -438,8 +438,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected Object toValue(Object obj) {
-        if (obj instanceof Data) {
-            return dataToValue((Data) obj);
+        if (obj instanceof Data data) {
+            return dataToValue(data);
         } else if (obj instanceof CacheRecord) {
             return recordToValue((R) obj);
         } else {
@@ -448,9 +448,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected Object toStorageValue(Object obj) {
-        if (obj instanceof Data) {
+        if (obj instanceof Data data) {
             if (cacheConfig.getInMemoryFormat() == InMemoryFormat.OBJECT) {
-                return dataToValue((Data) obj);
+                return dataToValue(data);
             } else {
                 return obj;
             }
@@ -820,9 +820,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                         dataOldValue = toData(record);
                         break;
                     case OBJECT:
-                        if (value instanceof Data) {
-                            recordValue = dataToValue((Data) value);
-                            dataValue = (Data) value;
+                        if (value instanceof Data data) {
+                            recordValue = dataToValue(data);
+                            dataValue = data;
                         } else {
                             dataValue = valueToData(value);
                         }

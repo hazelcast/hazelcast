@@ -20,10 +20,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -40,18 +38,15 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.rules.ExpectedException.none;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConcurrentConveyorTest {
 
     static final int QUEUE_CAPACITY = 2;
-
-    @Rule
-    public ExpectedException excRule = none();
 
     final Item doneItem = new Item();
     final Item item1 = new Item();
@@ -185,8 +180,7 @@ public class ConcurrentConveyorTest {
         conveyor.drainerDone();
 
         // then
-        excRule.expect(ConcurrentConveyorException.class);
-        conveyor.offer(1, item1);
+        assertThrows(ConcurrentConveyorException.class, () -> conveyor.offer(1, item1));
     }
 
     @Test
@@ -199,8 +193,7 @@ public class ConcurrentConveyorTest {
         conveyor.drainerDone();
 
         // then
-        excRule.expect(ConcurrentConveyorException.class);
-        conveyor.submit(defaultQ, item1);
+        assertThrows(ConcurrentConveyorException.class, () -> conveyor.submit(defaultQ, item1));
     }
 
     @Test
@@ -214,8 +207,7 @@ public class ConcurrentConveyorTest {
         currentThread().interrupt();
 
         // then
-        excRule.expect(ConcurrentConveyorException.class);
-        conveyor.submit(defaultQ, item1);
+        assertThrows(ConcurrentConveyorException.class, () -> conveyor.submit(defaultQ, item1));
     }
 
     @Test
@@ -280,18 +272,16 @@ public class ConcurrentConveyorTest {
         final AtomicBoolean flag = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        new Thread() {
-            public void run() {
-                // when
-                conveyor.backpressureOn();
-                latch.countDown();
-                parkNanos(MILLISECONDS.toNanos(10));
+        new Thread(() -> {
+            // when
+            conveyor.backpressureOn();
+            latch.countDown();
+            parkNanos(MILLISECONDS.toNanos(10));
 
-                // then
-                assertFalse(flag.get());
-                conveyor.backpressureOff();
-            }
-        }.start();
+            // then
+            assertFalse(flag.get());
+            conveyor.backpressureOff();
+        }).start();
 
         latch.await();
         conveyor.submit(defaultQ, item1);
@@ -304,18 +294,16 @@ public class ConcurrentConveyorTest {
         final AtomicBoolean flag = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        new Thread() {
-            public void run() {
-                // when
-                conveyor.drainerArrived();
-                latch.countDown();
-                parkNanos(MILLISECONDS.toNanos(10));
+        new Thread(() -> {
+            // when
+            conveyor.drainerArrived();
+            latch.countDown();
+            parkNanos(MILLISECONDS.toNanos(10));
 
-                // then
-                assertFalse(flag.get());
-                conveyor.drainerDone();
-            }
-        }.start();
+            // then
+            assertFalse(flag.get());
+            conveyor.drainerDone();
+        }).start();
 
         latch.await();
         conveyor.awaitDrainerGone();

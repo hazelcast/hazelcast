@@ -326,6 +326,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull
+    @Override
     <S, K, R> TriFunction<? super S, ? super K, ? super Long, ? extends JetEvent<R>> adaptOnEvictFn(
             @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
@@ -341,6 +342,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull
+    @Override
     <S, K, R> TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<JetEvent<R>>> adaptOnEvictFlatMapFn(
             @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
@@ -434,12 +436,12 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     <A, R> AggregateOperation<A, ? extends R> adaptAggregateOperation(
             @Nonnull AggregateOperation<A, ? extends R> aggrOp
     ) {
-        if (aggrOp instanceof AggregateOperation1) {
-            return adaptAggregateOperation1((AggregateOperation1) aggrOp);
-        } else if (aggrOp instanceof AggregateOperation2) {
-            return adaptAggregateOperation2((AggregateOperation2) aggrOp);
-        } else if (aggrOp instanceof AggregateOperation3) {
-            return adaptAggregateOperation3((AggregateOperation3) aggrOp);
+        if (aggrOp instanceof AggregateOperation1 operation) {
+            return adaptAggregateOperation1(operation);
+        } else if (aggrOp instanceof AggregateOperation2 operation) {
+            return adaptAggregateOperation2(operation);
+        } else if (aggrOp instanceof AggregateOperation3 operation) {
+            return adaptAggregateOperation3(operation);
         } else {
             BiConsumerEx[] adaptedAccFns = new BiConsumerEx[aggrOp.arity()];
             Arrays.setAll(adaptedAccFns, i -> adaptAccumulateFn((BiConsumerEx) aggrOp.accumulateFn(i)));

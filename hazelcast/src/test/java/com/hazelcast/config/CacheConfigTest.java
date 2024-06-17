@@ -29,7 +29,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.JarUtil;
@@ -609,12 +608,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = instanceFactory.newHazelcastInstance(config);
         final ICacheService cacheService2 = getCacheService(instance2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotNull(cacheService2.getCacheConfig(fullCacheName));
-            }
-        });
+        assertTrueEventually(() -> assertNotNull(cacheService2.getCacheConfig(fullCacheName)));
     }
 
     public static class EntryListenerFactory implements Factory<EntryListener> {

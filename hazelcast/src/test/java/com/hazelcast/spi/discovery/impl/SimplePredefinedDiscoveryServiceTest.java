@@ -96,7 +96,7 @@ public class SimplePredefinedDiscoveryServiceTest {
     private abstract static class ExtendableDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
         ExtendableDiscoveryStrategy() {
-            super(null, Collections.<String, Comparable>emptyMap());
+            super(null, Collections.emptyMap());
         }
 
         @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
@@ -406,7 +405,7 @@ public final class ReflectionUtils {
     public static String getStackTrace(Thread thread, int skip) {
         return Arrays.stream(thread.getStackTrace()).skip(skip)
                 .map(Object::toString)
-                .collect(Collectors.joining(StringUtil.LINE_SEPARATOR + "\t"));
+                .collect(Collectors.joining(System.lineSeparator() + "\t"));
     }
 
     public static final class Resources {

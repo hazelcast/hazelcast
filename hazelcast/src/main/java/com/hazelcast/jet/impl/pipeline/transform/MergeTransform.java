@@ -23,6 +23,8 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
 import javax.annotation.Nonnull;
 
+import java.io.Serial;
+
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
@@ -30,6 +32,7 @@ import static java.util.Arrays.asList;
 
 public class MergeTransform<T> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public MergeTransform(@Nonnull Transform upstream1, @Nonnull Transform upstream2) {

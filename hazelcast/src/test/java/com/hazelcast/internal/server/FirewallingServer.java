@@ -62,7 +62,6 @@ public class FirewallingServer
     private final Consumer<Packet> packetConsumer;
     private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);
 
-    @SuppressWarnings("unchecked")
     public FirewallingServer(Server delegate, Set<Address> initiallyBlockedAddresses) {
         this.delegate = delegate;
         this.blockedAddresses.addAll(initiallyBlockedAddresses);

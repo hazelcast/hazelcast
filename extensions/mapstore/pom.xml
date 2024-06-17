@@ -166,7 +166,6 @@
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc11</artifactId>
-            <version>${oracle.version}</version>
             <scope>test</scope>
         </dependency>
         <!--MariaDB-->
@@ -178,7 +177,7 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.3.3</version>
+            <version>3.4.0</version>
             <scope>test</scope>
         </dependency>
 

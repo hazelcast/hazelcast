@@ -37,11 +37,6 @@ import java.util.stream.Collectors;
 public final class StringUtil {
 
     /**
-     * Points to the System property 'line.separator'.
-     */
-    public static final String LINE_SEPARATOR = System.lineSeparator();
-
-    /**
      * LOCALE_INTERNAL is the default locale for string operations and number formatting. Initialized to
      * {@code java.util.Locale.ROOT} (language neutral).
      */
@@ -395,7 +390,7 @@ public final class StringUtil {
     public static <T> String toString(Collection<T> collection) {
         return collection.stream()
                 .map(Objects::toString)
-                .collect(Collectors.joining(LINE_SEPARATOR));
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 
     /**
@@ -406,7 +401,7 @@ public final class StringUtil {
     public static <T> String toString(T[] arr) {
         return Arrays.stream(arr)
                 .map(Objects::toString)
-                .collect(Collectors.joining(LINE_SEPARATOR));
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 
     /**

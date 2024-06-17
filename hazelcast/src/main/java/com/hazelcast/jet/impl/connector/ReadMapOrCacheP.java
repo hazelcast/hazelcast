@@ -315,6 +315,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,
             IdentifiedDataSerializable, Versioned {
 
+        @Serial
         private static final long serialVersionUID = 2L;
 
         private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
@@ -399,6 +400,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
      * Create a processor that uses a remote cluster as source
      */
     static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
+        @Serial
         private static final long serialVersionUID = 2L;
 
         private final String dataConnectionName;

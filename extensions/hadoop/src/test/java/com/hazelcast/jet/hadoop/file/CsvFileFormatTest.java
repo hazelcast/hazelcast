@@ -21,7 +21,11 @@ import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.CharConversionException;
 
@@ -30,6 +34,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
+@Category({NightlyTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class CsvFileFormatTest extends BaseFileFormatTest {
 
     @Test
@@ -156,7 +161,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadLargeCsvFile() throws Exception {
+    public void shouldReadLargeCsvFile() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file-200-entries-with-header.csv")
                                                     .sharedFileSystem(true)
@@ -168,7 +173,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadLargeCsvFileCompressed() throws Exception {
+    public void shouldReadLargeCsvFileCompressed() {
         assumeThat(useHadoop).isTrue();
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
@@ -182,7 +187,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadLargeCsvFileCompressedSplittable() throws Exception {
+    public void shouldReadLargeCsvFileCompressedSplittable() {
         assumeThat(useHadoop).isTrue();
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")

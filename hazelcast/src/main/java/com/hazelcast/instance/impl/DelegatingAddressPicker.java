@@ -68,7 +68,7 @@ final class DelegatingAddressPicker
     }
 
     @Override
-    public void pickAddress() throws Exception {
+    public void pickAddress() {
         try {
             if (usesAdvancedNetworkConfig) {
                 pickAddressFromEndpointConfig();
@@ -132,10 +132,9 @@ final class DelegatingAddressPicker
         ServerSocketChannel serverSocketChannel;
 
         for (EndpointConfig config : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
-            if (!(config instanceof ServerSocketEndpointConfig)) {
+            if (!(config instanceof ServerSocketEndpointConfig endpointConfig)) {
                 continue;
             }
-            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) config;
             EndpointQualifier qualifier = endpointConfig.getQualifier();
 
             bindAddress = memberAddressProvider.getBindAddress(qualifier);

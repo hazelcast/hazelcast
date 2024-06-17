@@ -50,10 +50,9 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -130,25 +129,10 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, queryCache.size()));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Count of add events wrong!", 9, countAddEvent.get());
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals("Count of add events wrong!", 9, countAddEvent.get()));
+        assertTrueEventually(() -> assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get()));
     }
 
     @Test
@@ -161,12 +145,9 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        IFunction evictAll = new IFunction() {
-            @Override
-            public Object apply(Object ignored) {
-                map.evictAll();
-                return null;
-            }
+        IFunction<Object, Object> evictAll = ignored -> {
+            map.evictAll();
+            return null;
         };
 
         assertQueryCacheSizeEventually(0, evictAll, queryCache);
@@ -182,13 +163,9 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        IFunction clear = new IFunction() {
-
-            @Override
-            public Object apply(Object ignored) {
-                map.clear();
-                return null;
-            }
+        IFunction<Object, Object> clear = ignored -> {
+            map.clear();
+            return null;
         };
 
         assertQueryCacheSizeEventually(0, clear, queryCache);
@@ -200,12 +177,7 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
         final CountDownLatch numberOfAddEvents = new CountDownLatch(entryCount);
         String cacheName = randomString();
         IMap<Integer, Integer> map = getMap();
-        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                numberOfAddEvents.countDown();
-            }
-        }, TRUE_PREDICATE, false);
+        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, (EntryAddedListener<Integer, Integer>) event -> numberOfAddEvents.countDown(), TRUE_PREDICATE, false);
 
         for (int i = 0; i < entryCount; i++) {
             map.put(i, i);
@@ -283,23 +255,15 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
     }
 
     private void assertQueryCacheSize(final int expected, final QueryCache cache) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, cache.size());
-            }
-        }, 20);
+        assertTrueEventually(() -> assertEquals(expected, cache.size()), 20);
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final IFunction<?, ?> function, final QueryCache queryCache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                if (function != null) {
-                    function.apply(null);
-                }
-                assertEquals(expected, queryCache.size());
+        AssertTask task = () -> {
+            if (function != null) {
+                function.apply(null);
             }
+            assertEquals(expected, queryCache.size());
         };
 
         assertTrueEventually(task);

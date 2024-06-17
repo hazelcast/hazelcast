@@ -94,7 +94,7 @@ public abstract class AbstractExpirationBouncingMemberTest extends HazelcastTest
     private static final class RemainingCacheSize implements MultiExecutionCallback {
         private final CountDownLatch latch;
         private final AtomicInteger totalUnexpired = new AtomicInteger();
-        private final AtomicReference<String> msgUnexpired = new AtomicReference();
+        private final AtomicReference<String> msgUnexpired = new AtomicReference<>();
 
         RemainingCacheSize(CountDownLatch latch) {
             this.latch = latch;

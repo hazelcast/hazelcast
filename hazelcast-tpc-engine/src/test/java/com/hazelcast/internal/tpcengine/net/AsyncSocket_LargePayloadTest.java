@@ -59,7 +59,7 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     private final AtomicLong iteration = new AtomicLong();
     private final PrintAtomicLongThread monitorThread = new PrintAtomicLongThread("at:", iteration);
-    private final List<Future> futures = new ArrayList<>();
+    private final List<Future<Object>> futures = new ArrayList<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -363,7 +363,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, boolean useWriter) {
-        CompletableFuture future = new CompletableFuture();
+        CompletableFuture<Object> future = new CompletableFuture<>();
         futures.add(future);
 
         AsyncSocketBuilder asyncSocketBuilder = clientReactor.newAsyncSocketBuilder()
@@ -485,7 +485,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private class ClientReader extends AsyncSocketReader {
-        private final CompletableFuture future;
+        private final CompletableFuture<Object> future;
         private long round;
         private int payloadSize;
         private final IOBufferAllocator bufferAllocator
@@ -493,7 +493,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         private IOBuffer message;
         private int hash;
 
-        ClientReader(CompletableFuture future) {
+        ClientReader(CompletableFuture<Object> future) {
             this.future = future;
         }
 

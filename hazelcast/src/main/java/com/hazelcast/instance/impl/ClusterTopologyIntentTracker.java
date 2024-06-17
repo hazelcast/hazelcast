@@ -84,7 +84,7 @@ public interface ClusterTopologyIntentTracker {
      *     (5, 5, 5, 5)
      *     }</pre>
      * </p>
-     * Notice that actual updates may differ (eg duplicate notifications of intermediate states may be received).
+     * Notice that actual updates may differ (e.g. duplicate notifications of intermediate states may be received).
      *
      * @param previousSpecifiedReplicas   previous specified replicas count
      * @param updatedSpecifiedReplicas    updated specified replicas count

@@ -47,15 +47,13 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_WRITE_THROUGH_ENABLED;
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
 
 public class DefaultNodeContext implements NodeContext {
 
-    public static final List<String> EXTENSION_PRIORITY_LIST = unmodifiableList(asList(
+    public static final List<String> EXTENSION_PRIORITY_LIST = List.of(
             "com.hazelcast.instance.impl.EnterpriseNodeExtension",
             "com.hazelcast.instance.impl.DefaultNodeExtension"
-    ));
+    );
 
     @Override
     public NodeExtension createNodeExtension(Node node) {

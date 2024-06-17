@@ -22,6 +22,7 @@ import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DummyDataConnection;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -52,7 +53,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void setUp() throws Exception {
         dataConnectionServices = new InternalDataConnectionService[instances().length];
         for (int i = 0; i < instances().length; i++) {
-            dataConnectionServices[i] = getNodeEngineImpl(instances()[i]).getDataConnectionService();
+            dataConnectionServices[i] = Accessors.getNodeEngineImpl(instances()[i]).getDataConnectionService();
         }
     }
 

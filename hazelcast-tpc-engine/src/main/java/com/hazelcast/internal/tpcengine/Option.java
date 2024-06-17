@@ -30,7 +30,7 @@ public final class Option<T> {
     private final Class<T> type;
 
     /**
-     * Creates a Option with the provided name and type.
+     * Creates an Option with the provided name and type.
      *
      * @param name the name of the Option
      * @param type the type of the Option

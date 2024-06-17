@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Tracks the load of of NioThread(s) and creates a mapping between NioThread -> NioPipeline.
@@ -63,7 +62,7 @@ class LoadTracker {
 
         this.ownerToPipelines = createHashMap(ioThreads.length);
         for (NioThread selector : ioThreads) {
-            ownerToPipelines.put(selector, new HashSet<MigratablePipeline>());
+            ownerToPipelines.put(selector, new HashSet<>());
         }
         this.imbalance = new LoadImbalance(ownerToPipelines, pipelineLoadCount);
     }
@@ -173,9 +172,9 @@ class LoadTracker {
         if (minThread == null || maxThread == null) {
             return;
         }
-        StringBuilder sb = new StringBuilder(LINE_SEPARATOR)
+        StringBuilder sb = new StringBuilder(System.lineSeparator())
                 .append("------------")
-                .append(LINE_SEPARATOR);
+                .append(System.lineSeparator());
         Long loadPerOwner = ownerLoad.get(minThread);
 
         sb.append("Min NioThread ")
@@ -184,7 +183,7 @@ class LoadTracker {
                 .append(loadPerOwner)
                 .append(" load. ");
         sb.append("It contains following pipelines: ").
-                append(LINE_SEPARATOR);
+                append(System.lineSeparator());
         appendSelectorInfo(minThread, ownerToPipelines, sb);
 
         loadPerOwner = ownerLoad.get(maxThread);
@@ -193,11 +192,11 @@ class LoadTracker {
                 .append(" receive-load ")
                 .append(loadPerOwner);
         sb.append("It contains following pipelines: ")
-                .append(LINE_SEPARATOR);
+                .append(System.lineSeparator());
         appendSelectorInfo(maxThread, ownerToPipelines, sb);
 
         sb.append("Other NioThread: ")
-                .append(LINE_SEPARATOR);
+                .append(System.lineSeparator());
 
         for (NioThread thread : ioThreads) {
             if (!thread.equals(minThread) && !thread.equals(maxThread)) {
@@ -207,12 +206,12 @@ class LoadTracker {
                         .append(" contains ")
                         .append(loadPerOwner)
                         .append(" and has these pipelines: ")
-                        .append(LINE_SEPARATOR);
+                        .append(System.lineSeparator());
                 appendSelectorInfo(thread, ownerToPipelines, sb);
             }
         }
         sb.append("------------")
-                .append(LINE_SEPARATOR);
+                .append(System.lineSeparator());
         logger.finest(sb.toString());
     }
 
@@ -226,8 +225,8 @@ class LoadTracker {
             sb.append(pipeline)
                     .append(":  ")
                     .append(loadPerPipeline)
-                    .append(LINE_SEPARATOR);
+                    .append(System.lineSeparator());
         }
-        sb.append(LINE_SEPARATOR);
+        sb.append(System.lineSeparator());
     }
 }

@@ -22,9 +22,9 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.kafka.KafkaProcessors;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.Test;
@@ -35,12 +35,13 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
 
     @Test
@@ -54,7 +55,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
            .localParallelism(1);
 
         Job job = createHazelcastInstance().getJet().newJob(dag);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         sleepSeconds(1);
         kafkaTestSupport.shutdownKafkaCluster();
         sleepSeconds(3);

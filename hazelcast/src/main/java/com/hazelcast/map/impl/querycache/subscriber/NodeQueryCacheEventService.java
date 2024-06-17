@@ -168,8 +168,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
             int orderKey = -1;
             if (eventDataToPublish instanceof LocalCacheWideEventData) {
                 orderKey = cacheId.hashCode();
-            } else if (eventDataToPublish instanceof LocalEntryEventData) {
-                LocalEntryEventData localEntryEventData = (LocalEntryEventData) eventDataToPublish;
+            } else if (eventDataToPublish instanceof LocalEntryEventData localEntryEventData) {
                 if (localEntryEventData.getEventType() != EventLostEvent.EVENT_TYPE) {
                     EventFilter filter = registration.getFilter();
                     if (!canPassFilter(localEntryEventData, filter, extractors)) {
@@ -205,8 +204,8 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     private boolean isIncludeValue(EventFilter filter) {
-        if (filter instanceof EntryEventFilter) {
-            return ((EntryEventFilter) filter).isIncludeValue();
+        if (filter instanceof EntryEventFilter eventFilter) {
+            return eventFilter.isIncludeValue();
         }
         return true;
     }

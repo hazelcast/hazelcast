@@ -41,7 +41,6 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 
 /**
@@ -127,8 +126,8 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
             return builder.parse(inputStream);
         } catch (Exception e) {
             String msg = "Failed to parse Failover Config Stream"
-                    + LINE_SEPARATOR + "Exception: " + e.getMessage()
-                    + LINE_SEPARATOR + "HazelcastClient startup interrupted.";
+                    + System.lineSeparator() + "Exception: " + e.getMessage()
+                    + System.lineSeparator() + "HazelcastClient startup interrupted.";
             LOGGER.severe(msg);
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {

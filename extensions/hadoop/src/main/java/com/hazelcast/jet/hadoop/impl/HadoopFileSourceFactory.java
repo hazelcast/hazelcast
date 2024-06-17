@@ -57,6 +57,7 @@ import org.apache.parquet.avro.AvroParquetInputFormat;
 import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.List;
@@ -127,10 +128,11 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             FileSourceConfiguration<T> fsc, JobConfigurer configurer, FileFormat<T> fileFormat) {
         return new ConsumerEx<>() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
-            public void acceptEx(Configuration configuration) throws Exception {
+            public void acceptEx(Configuration configuration) {
                 try {
                     configuration.setBoolean(FileInputFormat.INPUT_DIR_NONRECURSIVE_IGNORE_SUBDIRS, true);
                     configuration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, false);
@@ -197,6 +199,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class AvroFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -217,7 +220,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         public BiFunctionEx<AvroKey<?>, NullWritable, ?> projectionFn() {
             return (k, v) -> {
                 Object record = k.datum();
-                return record instanceof GenericContainer ? copy((GenericContainer) record) : record;
+                return record instanceof GenericContainer genericContainer ? copy(genericContainer) : record;
             };
         }
 
@@ -230,6 +233,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class RawBytesFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -251,6 +255,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class CsvFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -281,6 +286,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class JsonFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -311,6 +317,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class LineTextJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -332,6 +339,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class ParquetFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -345,8 +353,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             return (k, record) -> {
                 if (record == null) {
                     return null;
-                } else if (record instanceof GenericContainer) {
-                    return copy((GenericContainer) record);
+                } else if (record instanceof GenericContainer genericContainer) {
+                    return copy(genericContainer);
                 } else {
                     throw new IllegalArgumentException("Unexpected record type: " + record.getClass());
                 }
@@ -362,6 +370,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class TextJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -386,11 +395,9 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
      */
     @SuppressWarnings("unchecked")
     private static <T extends GenericContainer> T copy(T record) {
-        if (record instanceof SpecificRecord) {
-            SpecificRecord specificRecord = (SpecificRecord) record;
+        if (record instanceof SpecificRecord specificRecord) {
             return (T) SpecificData.get().deepCopy(specificRecord.getSchema(), specificRecord);
-        } else if (record instanceof GenericRecord) {
-            GenericRecord genericRecord = (GenericRecord) record;
+        } else if (record instanceof GenericRecord genericRecord) {
             return (T) GenericData.get().deepCopy(genericRecord.getSchema(), genericRecord);
         } else {
             throw new IllegalArgumentException("Unexpected record type: " + record.getClass());

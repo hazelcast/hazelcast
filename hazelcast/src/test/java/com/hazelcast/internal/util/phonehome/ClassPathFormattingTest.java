@@ -40,7 +40,7 @@ public class ClassPathFormattingTest {
                 path("hibernate-validator.jar"),
                 path("var", "lib", "jackson-databind.jar")
         );
-        String actual = BuildInfoCollector.formatClassPath(classpath);
+        String actual = BuildInfoProvider.formatClassPath(classpath);
         assertEquals("log4j.jar,hibernate-validator.jar,jackson-databind.jar", actual);
     }
 
@@ -49,7 +49,7 @@ public class ClassPathFormattingTest {
         String longClassPath = IntStream.range(0, 30_000)
                 .mapToObj(i -> ".jar") // longClassPath.length() will be 120_000
                 .collect(Collectors.joining());
-        String actual = BuildInfoCollector.formatClassPath(longClassPath);
+        String actual = BuildInfoProvider.formatClassPath(longClassPath);
         assertEquals(100_000, actual.length());
     }
 

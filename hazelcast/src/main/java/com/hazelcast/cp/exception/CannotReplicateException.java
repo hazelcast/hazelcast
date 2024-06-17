@@ -20,6 +20,7 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.spi.exception.RetryableException;
 
+import java.io.Serial;
 import java.util.UUID;
 
 /**
@@ -36,6 +37,7 @@ import java.util.UUID;
  */
 public class CannotReplicateException extends CPSubsystemException implements RetryableException {
 
+    @Serial
     private static final long serialVersionUID = 4407025930140337716L;
 
     public CannotReplicateException(RaftEndpoint leader) {

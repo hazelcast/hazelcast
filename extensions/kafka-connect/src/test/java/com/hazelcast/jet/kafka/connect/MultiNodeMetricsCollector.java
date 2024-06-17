@@ -17,12 +17,12 @@ package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.test.Accessors;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.jet.core.JetTestSupport.getNode;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 class MultiNodeMetricsCollector<T extends MetricsCollector> implements AutoCloseable {
@@ -35,7 +35,7 @@ class MultiNodeMetricsCollector<T extends MetricsCollector> implements AutoClose
         this.collector = collector;
 
         for (var inst : instances) {
-            var registry = getNode(inst).nodeEngine.getMetricsRegistry();
+            var registry = Accessors.getNode(inst).nodeEngine.getMetricsRegistry();
             // Schedule immediately
             scheduler.scheduleAtFixedRate(() -> registry.collect(collector), 0, 3, MILLISECONDS);
         }

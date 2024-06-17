@@ -22,9 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -170,7 +168,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
     @Test
     public void testIterator() {
         set.add("item");
-        Iterator iterator = set.iterator();
+        Iterator<String> iterator = set.iterator();
         assertEquals("item", iterator.next());
         assertFalse(iterator.hasNext());
     }
@@ -179,7 +177,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
     public void testIteratorRemoveThrowsUnsupportedOperationException() {
         set.add("item");
 
-        Iterator iterator = set.iterator();
+        Iterator<String> iterator = set.iterator();
         iterator.next();
         iterator.remove();
     }
@@ -295,13 +293,10 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
         }
 
         for (final ISet set : localSets) {
-            TransactionalTask task = new TransactionalTask() {
-                @Override
-                public Object execute(TransactionalTaskContext context) throws TransactionException {
-                    TransactionalSet<String> txSet = context.getSet(set.getName());
-                    txSet.add("Hello");
-                    return null;
-                }
+            TransactionalTask task = context -> {
+                TransactionalSet<String> txSet = context.getSet(set.getName());
+                txSet.add("Hello");
+                return null;
             };
             local.executeTransaction(task);
         }

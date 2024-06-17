@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalMapStatsUnderOnGoingClientUpdateTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance member = factory.newHazelcastInstance();
     private HazelcastInstance client;
     private String mapName = "test";
@@ -62,7 +62,7 @@ public class LocalMapStatsUnderOnGoingClientUpdateTest extends HazelcastTestSupp
     }
 
     @Test
-    public void stats_generated_when_member_restarted_under_ongoing_client_update() throws Exception {
+    public void stats_generated_when_member_restarted_under_ongoing_client_update() {
         IMap map = client.getMap(mapName);
 
         member.shutdown();

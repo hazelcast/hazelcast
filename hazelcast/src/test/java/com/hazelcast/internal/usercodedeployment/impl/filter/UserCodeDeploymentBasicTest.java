@@ -60,7 +60,7 @@ public class UserCodeDeploymentBasicTest extends HazelcastTestSupport {
     @ClassRule
     public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-no-stacktrace.xml");
 
-    private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
     @Parameterized.Parameter
     public volatile UserCodeDeploymentConfig.ClassCacheMode classCacheMode;
 

@@ -35,6 +35,7 @@
     <url>http://www.hazelcast.com/</url>
 
     <modules>
+        <module>hazelcast-parent</module>
         <module>hazelcast-tpc-engine</module>
         <module>hazelcast</module>
         <module>hazelcast-archunit-rules</module>
@@ -89,15 +90,16 @@
         TimedMemberStateFactoryHelper:
            open java.management/sun.management
 
-        NOTE: There is a slightly different setting for IBM OpenJ9, see the specific profile
+        NOTE: There are additional arguments for IBM OpenJ9, see the specific profile
         -->
-        <javaModuleArgs>
+        <javaStandardModuleArgs>
             --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
             --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
-        </javaModuleArgs>
+        </javaStandardModuleArgs>
+        <javaModuleArgs>${javaStandardModuleArgs}</javaModuleArgs>
     </properties>
     <licenses>
         <license>
@@ -330,54 +332,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>${maven.enforcer.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>enforce-version</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <dependencyConvergence>
-                                    <excludedScopes>
-                                        <scope>compile</scope>
-                                        <scope>runtime</scope>
-                                    </excludedScopes>
-                                    <includes>
-                                        <include>junit</include>
-                                    </includes>
-                                </dependencyConvergence>
-                            </rules>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>enforce-tools</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>[${jdk.version},)</version>
-                                </requireJavaVersion>
-                                <enforceBytecodeVersion>
-                                    <maxJdkVersion>${jdk.version}</maxJdkVersion>
-                                </enforceBytecodeVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>extra-enforcer-rules</artifactId>
-                        <version>1.8.0</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
@@ -407,121 +361,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-third-party</id>
-                        <goals>
-                            <goal>add-third-party</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
-                            <failOnBlacklist>true</failOnBlacklist>
-                            <failOnMissing>true</failOnMissing>
-                            <fileTemplate>
-                                ${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
-                            </fileTemplate>
-                            <includedLicenses>
-                                <!-- 
-                                  Always use SPDX license identifiers listed in https://spdx.org/licenses (when available)
-                                  note: GPL licenses are excluded in https://github.com/hazelcast/hazelcast/blob/master/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
-                                -->
-                                <includedLicense>Apache-2.0</includedLicense>
-                                <includedLicense>MIT</includedLicense>
-                                <includedLicense>MIT-0</includedLicense>
-                                <includedLicense>BSD-2-Clause</includedLicense>
-                                <includedLicense>BSD-3-Clause</includedLicense>
-                                <includedLicense>CC0-1.0</includedLicense>
-                                <includedLicense>CDDL</includedLicense>
-                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
-                                <includedLicense>EPL-1.0</includedLicense>
-                                <includedLicense>EPL-2.0</includedLicense>
-                                <includedLicense>Public Domain</includedLicense>
-                            </includedLicenses>
-                            <licenseMerges>
-                                <!-- 
-                                  Only merge new 3rd Party dependency license if you get a license build failure
-                                -->
-                                <licenseMerge>
-                                    Apache-2.0 |
-                                    Apache License v2.0 |
-                                    Apache Software License 2.0 |
-                                    The Apache Software License, Version 2.0 |
-                                    The Apache Software License, version 2.0 |
-                                    Apache License, Version 2.0 |
-                                    Apache 2 |
-                                    Apache 2.0 |
-                                    The Apache License, Version 2.0 |
-                                    Apache Software License - Version 2.0 |
-                                    Apache License Version 2.0 |
-                                    Apache License 2.0
-                                </licenseMerge>
-                                <licenseMerge>
-                                    MIT |
-                                    The MIT License |
-                                    MIT License |
-                                    MIT license |
-                                    The MIT License (MIT)
-                                </licenseMerge>
-                                <licenseMerge>
-                                    BSD-2-Clause |
-                                    BSD 2-Clause License |
-                                    BSD 2-Clause license |
-                                    The BSD 2-Clause License
-                                </licenseMerge>
-                                <licenseMerge>
-                                    BSD-3-Clause |
-                                    BSD 3-Clause License |
-                                    BSD |
-                                    BSD licence |
-                                    The BSD License |
-                                    3-Clause BSD License |
-                                    New BSD license |
-                                    New BSD License |
-                                    Modified BSD License |
-                                    The New BSD License |
-                                    Revised BSD |
-                                    BSD New license |
-                                    BSD 3-clause
-                                </licenseMerge>
-                                <licenseMerge>
-                                    CC0-1.0 |
-                                    CC0 |
-                                    Public Domain, per Creative Commons CC0
-                                </licenseMerge>
-                                <licenseMerge>
-                                    CDDL |
-                                    CDDL + GPLv2 with classpath exception |
-                                    CDDL License |
-                                    CDDL/GPLv2+CE
-                                </licenseMerge>
-                                <licenseMerge>
-                                    Eclipse Distribution License - v 1.0 |
-                                    EDL 1.0
-                                </licenseMerge>
-                                <licenseMerge>
-                                    EPL-1.0 |
-                                    EPL 1.0 |
-                                    Eclipse Public License - Version 1.0
-                                </licenseMerge>
-                                <licenseMerge>
-                                    EPL-2.0 |
-                                    EPL 2.0 |
-                                    Eclipse Public License - Version 2.0 |
-                                    Eclipse Public License, Version 2.0
-                                </licenseMerge>
-                            </licenseMerges>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <excludedGroups>com.hazelcast</excludedGroups>
-                    <excludedScopes>test,provided</excludedScopes>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.owasp</groupId>
@@ -570,23 +409,13 @@
                 <artifactId>attribution-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>aggregated-attribution</id>
+                        <id>aggregated-attribution-oss</id>
                         <inherited>false</inherited>
                         <goals>
                             <goal>aggregate</goal>
                         </goals>
                         <configuration>
                             <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>per-jar-attribution</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
                         </configuration>
                     </execution>
                 </executions>
@@ -596,7 +425,18 @@
 
     <profiles>
         <profile>
-            <!-- used by the PR builder -->
+            <!--
+            Executes:
+            - `ParallelJVMTest`s in parallel via several surefire forks (note: inside the fork tests still run serially)
+            - Excludes:
+                - `SlowTest`
+                - `NightlyTest`
+            - Typically `QuickTest`s
+
+            Duplicated in OS & EE
+
+            used by the PR builder
+            -->
             <id>parallelTest</id>
             <properties>
                 <skip-singlejvm-tests>false</skip-singlejvm-tests>
@@ -730,6 +570,9 @@
         </profile>
 
         <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
             <id>pr-builder</id>
             <build>
                 <plugins>
@@ -950,9 +793,19 @@
         </profile>
 
         <profile>
+            <!--
+            Configures release-specific options when doing a final, production release
+
+            Ensures Javadoc, sources etc. are generated and that the final JAR is cryptographically signed
+
+            Duplicated in OS & EE
+            -->
             <id>release</id>
             <properties>
                 <javadoc>true</javadoc>
+                <maven.source.skip>false</maven.source.skip>
+                <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
+                <attribution.skip>false</attribution.skip>
             </properties>
             <build>
                 <plugins>
@@ -985,7 +838,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <version>1.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
@@ -997,44 +850,17 @@
             </build>
         </profile>
 
-        <!-- unfortunately it isn't possible to chain profiles, so we need to duplicate the javadoc plugin -->
         <profile>
-            <id>release-snapshot</id>
-            <properties>
-                <javadoc>true</javadoc>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+            <!--
+            Executes:
+            - `SlowTest`s
+            - `NightlyTest`s
+            - Excludes all other tests
 
-        <profile>
-            <id>release-devel</id>
-            <properties>
-                <javadoc>true</javadoc>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-            <distributionManagement>
-                <repository>
-                    <id>devel-repository</id>
-                    <url>https://hazelcast.jfrog.io/artifactory/devel</url>
-                </repository>
-            </distributionManagement>
-        </profile>
+            Duplicated in OS & EE
 
-        <profile>
+            Used for scheduled, longer running tests
+            -->
             <id>nightly-build</id>
             <build>
                 <plugins>
@@ -1108,6 +934,11 @@
         </profile>
 
         <profile>
+            <!--
+            Executes all tests (`QuickTest` and `SlowTest`)
+
+            Duplicated in OS & EE
+            -->
             <id>all-tests</id>
             <build>
                 <plugins>
@@ -1133,6 +964,8 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
                             </excludes>
+                            <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                            <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                             <!-- Fixes missing parameters in test name for tests run via mvn -->
                             <statelessTestsetReporter
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
@@ -1247,6 +1080,13 @@
         </profile>
 
         <profile>
+            <!--
+            In isolation, does nothing as typically enabled by default
+            Works in conjunction with the `-Dquick` argument - which disables this profile - allowing additional modules to be skipped to reduce build time
+            This implementation is preferred as it also supports excluding child modules
+
+            Duplicated in OS & EE
+            -->
             <id>not-quick</id>
             <activation>
                 <property>
@@ -1269,11 +1109,7 @@
             </activation>
             <properties>
                 <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
-                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
-                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
-                    --add-opens java.base/java.lang=${hazelcast.module.name}
-                    --add-opens java.management/sun.management=${hazelcast.module.name}
+                    ${javaStandardModuleArgs}
                     --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
                 </javaModuleArgs>
             </properties>
@@ -1434,8 +1270,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>annotations</artifactId>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

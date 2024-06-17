@@ -209,7 +209,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobIfAbsent((Object) pipeline, config, null);
+        return newJobIfAbsent(pipeline, config, null);
     }
 
     @Nonnull @Override
@@ -443,8 +443,8 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
         @Override
         public JobBuilderImpl withMemberSelector(@Nonnull JetMemberSelector memberSelector) {
-            if (jobDefinition instanceof DAG) {
-                ((DAG) jobDefinition).setMemberSelector(memberSelector);
+            if (jobDefinition instanceof DAG dag) {
+                dag.setMemberSelector(memberSelector);
             } else {
                 ((PipelineImpl) jobDefinition).setMemberSelector(memberSelector);
             }

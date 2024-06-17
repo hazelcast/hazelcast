@@ -94,7 +94,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnRollback() throws Exception {
+    public void testTxnRollback() {
         final String queueName = randomString();
         final TransactionContext context = client.newTransactionContext();
         CountDownLatch txnRollbackLatch = new CountDownLatch(1);
@@ -131,7 +131,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnRollbackOnServerCrash() throws Exception {
+    public void testTxnRollbackOnServerCrash() {
         final String queueName = randomString();
         final TransactionContext context = client.newTransactionContext();
         CountDownLatch txnRollbackLatch = new CountDownLatch(1);

@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 /**
  * A {@link Callable} which just throws an {@link ExpectedRuntimeException} on execution.
  */
-public class ExceptionThrowingCallable implements Callable, Serializable {
+public class ExceptionThrowingCallable implements Callable<Object>, Serializable {
 
     @Override
     public Object call() throws Exception {

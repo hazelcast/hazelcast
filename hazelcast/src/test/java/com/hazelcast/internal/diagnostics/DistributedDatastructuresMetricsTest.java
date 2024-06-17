@@ -185,7 +185,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(EVENT_COUNTER);
         for (int i = 0; i < EVENT_COUNTER; i++) {
-            executor.submit(new EmptyRunnable(), new ExecutionCallback<Object>() {
+            executor.submit(new EmptyRunnable(), new ExecutionCallback<>() {
                 @Override
                 public void onResponse(Object response) {
                     latch.countDown();
@@ -199,7 +199,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         final CountDownLatch latchNoStat = new CountDownLatch(EVENT_COUNTER);
         for (int i = 0; i < EVENT_COUNTER; i++) {
-            executorNoStat.submit(new EmptyRunnable(), new ExecutionCallback<Object>() {
+            executorNoStat.submit(new EmptyRunnable(), new ExecutionCallback<>() {
                 @Override
                 public void onResponse(Object response) {
                     latchNoStat.countDown();

@@ -31,7 +31,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
@@ -131,15 +130,12 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
         stopTest.set(true);
         assertJoinable(distortUuid, distortSequence, populateNearCache, put);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < CACHE_SIZE; i++) {
-                    Integer valueSeenFromMember = memberCache.get(i);
-                    Integer valueSeenFromClient = clientCache.get(i);
+        assertTrueEventually(() -> {
+            for (int i = 0; i < CACHE_SIZE; i++) {
+                Integer valueSeenFromMember = memberCache.get(i);
+                Integer valueSeenFromClient = clientCache.get(i);
 
-                    assertEquals(valueSeenFromMember, valueSeenFromClient);
-                }
+                assertEquals(valueSeenFromMember, valueSeenFromClient);
             }
         });
     }

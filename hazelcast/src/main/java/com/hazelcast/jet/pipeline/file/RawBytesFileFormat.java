@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 
 /**
  * {@code FileFormat} for binary files where the whole file is one {@code
@@ -31,6 +32,7 @@ public class RawBytesFileFormat implements FileFormat<byte[]> {
      */
     public static final String FORMAT_BIN = "bin";
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

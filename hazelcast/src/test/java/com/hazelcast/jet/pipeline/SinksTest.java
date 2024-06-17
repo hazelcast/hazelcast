@@ -67,6 +67,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.json.JsonUtil.hazelcastJsonValue;
 import static java.util.stream.Collectors.toList;
@@ -655,7 +656,7 @@ public class SinksTest extends PipelineTestSupport {
         // Then
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         Job job = hz().getJet().newJob(p);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         assertEquals(1, srcMap.size());
         assertEquals(1, srcMap.get("key").intValue());
         srcMap.unlock("key");

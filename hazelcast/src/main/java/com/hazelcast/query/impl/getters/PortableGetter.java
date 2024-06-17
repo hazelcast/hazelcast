@@ -61,7 +61,7 @@ public final class PortableGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         throw new IllegalArgumentException("Non applicable for PortableGetter");
     }
 

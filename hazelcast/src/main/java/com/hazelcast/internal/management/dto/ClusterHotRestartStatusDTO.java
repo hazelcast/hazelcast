@@ -50,7 +50,7 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
 
     public ClusterHotRestartStatusDTO() {
         this(FULL_RECOVERY_ONLY, ClusterHotRestartStatus.UNKNOWN, -1, -1,
-                Collections.<String, MemberHotRestartStatus>emptyMap());
+                Collections.emptyMap());
     }
 
     public ClusterHotRestartStatusDTO(HotRestartClusterDataRecoveryPolicy dataRecoveryPolicy,

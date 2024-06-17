@@ -25,8 +25,8 @@ import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
@@ -53,7 +53,7 @@ import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CL
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 4;

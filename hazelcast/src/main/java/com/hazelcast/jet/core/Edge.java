@@ -38,6 +38,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -632,8 +633,8 @@ public class Edge implements IdentifiedDataSerializable {
     public boolean equals(Object obj) {
         final Edge that;
         return this == obj
-                || obj instanceof Edge
-                    && this.sourceName.equals((that = (Edge) obj).sourceName)
+                || obj instanceof Edge edge
+                    && this.sourceName.equals((that = edge).sourceName)
                     && this.destName.equals(that.destName)
                     && this.sourceOrdinal == that.sourceOrdinal
                     && this.destOrdinal == that.destOrdinal;
@@ -754,7 +755,7 @@ public class Edge implements IdentifiedDataSerializable {
          * behavior is equal to {@link #UNICAST}.
          * <p>
          * To work as expected, the edge must be also {@link #distributed()}.
-         * Otherwise it will work just like {@link #UNICAST}.
+         * Otherwise, it will work just like {@link #UNICAST}.
          *
          * @since Jet 4.4
          */
@@ -763,6 +764,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private Object key;
@@ -817,6 +819,7 @@ public class Edge implements IdentifiedDataSerializable {
     static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
             IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private FunctionEx<T, K> keyExtractor;
@@ -837,8 +840,8 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public void init(@Nonnull DefaultPartitionStrategy strategy) {
             partitioner.init(strategy);
-            if (keyExtractor instanceof SerializationServiceAware) {
-                ((SerializationServiceAware) keyExtractor).setSerializationService(serializationService);
+            if (keyExtractor instanceof SerializationServiceAware aware) {
+                aware.setSerializationService(serializationService);
             }
         }
 

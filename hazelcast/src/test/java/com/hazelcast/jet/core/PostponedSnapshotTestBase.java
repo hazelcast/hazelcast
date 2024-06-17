@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static org.junit.Assert.assertNotNull;
@@ -77,7 +78,7 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
                         record.snapshotId() < 0);
             }, 2);
         } else {
-            assertJobStatusEventually(job, RUNNING);
+            assertThat(job).eventuallyHasStatus(RUNNING);
         }
         return job;
     }

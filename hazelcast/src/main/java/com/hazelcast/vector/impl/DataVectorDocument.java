@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.vector.VectorDocument;
 import com.hazelcast.vector.VectorValues;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -35,17 +36,19 @@ public class DataVectorDocument implements VectorDocument<Data>, IdentifiedDataS
     public DataVectorDocument() {
     }
 
-    public DataVectorDocument(Data userValue, VectorValues vectorValues) {
-        this.userValue = userValue;
-        this.vectorValues = vectorValues;
+    public DataVectorDocument(@Nonnull Data userValue, @Nonnull VectorValues vectorValues) {
+        this.userValue = Objects.requireNonNull(userValue, "userValue cannot be null");
+        this.vectorValues = Objects.requireNonNull(vectorValues, "vectorValues cannot be null");
     }
 
     @Override
+    @Nonnull
     public Data getValue() {
         return userValue;
     }
 
     @Override
+    @Nonnull
     public VectorValues getVectors() {
         return vectorValues;
     }

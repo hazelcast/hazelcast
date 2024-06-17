@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -252,12 +251,9 @@ public abstract class AbstractConcurrentArrayQueueTest extends HazelcastTestSupp
             queue.offer(i);
         }
 
-        queue.drain(new Predicate<Integer>() {
-            @Override
-            public boolean test(Integer integer) {
-                assertNotNull(integer);
-                return true;
-            }
+        queue.drain(integer -> {
+            assertNotNull(integer);
+            return true;
         });
     }
 

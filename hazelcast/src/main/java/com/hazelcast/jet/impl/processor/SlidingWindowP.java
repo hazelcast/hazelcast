@@ -288,8 +288,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        if (key instanceof BroadcastKey) {
-            BroadcastKey bcastKey = (BroadcastKey) key;
+        if (key instanceof BroadcastKey bcastKey) {
             if (!Keys.NEXT_WIN_TO_EMIT.equals(bcastKey.key())) {
                 throw new JetException("Unexpected broadcast key: " + bcastKey.key());
             }
@@ -542,8 +541,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         public boolean equals(Object o) {
             SnapshotKey that;
             return this == o
-                    || o instanceof SnapshotKey
-                    && this.timestamp == (that = (SnapshotKey) o).timestamp
+                    || o instanceof SnapshotKey snapshotKey
+                    && this.timestamp == (that = snapshotKey).timestamp
                     && Objects.equals(this.key, that.key);
         }
 

@@ -414,7 +414,7 @@ public class ClusterStateManager {
         } catch (Throwable e) {
             if (e instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException) {
                 // Member left while tx is being committed after prepare successful.
-                // We cannot rollback tx after this point. Cluster state change is done
+                // We cannot roll back tx after this point. Cluster state change is done
                 // on other members.
                 // Left members will be added to the members-removed-in-not-active-state-list
                 // if new state is passive or frozen. They will be able to rejoin later.

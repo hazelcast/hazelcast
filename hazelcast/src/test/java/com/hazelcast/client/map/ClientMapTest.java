@@ -17,9 +17,11 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.map.helpers.GenericEvent;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.util.ConfigRoutingUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -28,6 +30,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
+import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
@@ -40,16 +44,15 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,11 +62,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +82,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,9 +95,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public RoutingMode routingMode;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(UNISOCKET, SMART);
+    }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -1078,7 +1094,14 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+        return newClientConfig();
+    }
+
+    private ClientConfig newClientConfig() {
+        ClientConfig clientConfig = ConfigRoutingUtil.newClientConfig(routingMode);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        return clientConfig;
     }
 
     private <K, V> IMap<K, V> createMap() {

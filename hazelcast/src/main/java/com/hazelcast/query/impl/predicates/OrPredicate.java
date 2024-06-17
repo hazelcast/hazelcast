@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +45,7 @@ import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK
 public final class OrPredicate
         implements IndexAwarePredicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable, CompoundPredicate {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     protected Predicate[] predicates;
@@ -59,8 +61,7 @@ public final class OrPredicate
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         List<Set<QueryableEntry>> indexedResults = new LinkedList<>();
         for (Predicate predicate : predicates) {
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+            if (predicate instanceof IndexAwarePredicate iap) {
                 if (iap.isIndexed(queryContext)) {
                     // Avoid checking indexed partitions count twice to prevent
                     // scenario when the owner partitions count changes concurrently and null
@@ -84,8 +85,7 @@ public final class OrPredicate
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         for (Predicate predicate : predicates) {
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+            if (predicate instanceof IndexAwarePredicate iap) {
                 if (!iap.isIndexed(queryContext)) {
                     return false;
                 }
@@ -155,8 +155,8 @@ public final class OrPredicate
         for (int i = 0; i < size; i++) {
             Predicate original = predicates[i];
             Predicate negated;
-            if (original instanceof NegatablePredicate) {
-                negated = ((NegatablePredicate) original).negate();
+            if (original instanceof NegatablePredicate predicate) {
+                negated = predicate.negate();
             } else {
                 negated = new NotPredicate(original);
             }

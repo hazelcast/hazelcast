@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AbstractSplitBrainProtectionFunctionTest
+public abstract class AbstractSplitBrainProtectionFunctionTest
         extends HazelcastTestSupport {
     SplitBrainProtectionFunction splitBrainProtectionFunction;
     Member[] members;
@@ -140,7 +140,7 @@ public class AbstractSplitBrainProtectionFunctionTest
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, String.valueOf(offsetMillis));
         Thread thread = currentThread();
         tccl = thread.getContextClassLoader();
-        filteringClassloader = new FilteringClassLoader(Collections.<String>emptyList(), "com.hazelcast");
+        filteringClassloader = new FilteringClassLoader(Collections.emptyList(), "com.hazelcast");
         thread.setContextClassLoader(filteringClassloader);
     }
 

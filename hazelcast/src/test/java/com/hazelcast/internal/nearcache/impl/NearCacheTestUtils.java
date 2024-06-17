@@ -42,7 +42,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.assertj.core.api.Assumptions;
 
@@ -81,7 +80,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     public static Config getBaseConfig() {
-        return smallInstanceConfig()
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        return config
                 .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
                 .setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0")
@@ -371,14 +372,11 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheInvalidationsBetween(final NearCacheTestContext<?, ?, ?, ?> context,
                                                            final int minInvalidations, final int maxInvalidations) {
         if (context.nearCacheConfig.isInvalidateOnChange() && minInvalidations > 0) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    long invalidationCount = context.stats.getInvalidations();
-                    assertTrue(format("Expected between %d and %d Near Cache invalidations, but found %d (%s)",
-                                    minInvalidations, maxInvalidations, invalidationCount, context.stats),
-                            minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
-                }
+            assertTrueEventually(() -> {
+                long invalidationCount = context.stats.getInvalidations();
+                assertTrue(format("Expected between %d and %d Near Cache invalidations, but found %d (%s)",
+                                minInvalidations, maxInvalidations, invalidationCount, context.stats),
+                        minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
             });
             context.stats.resetInvalidationEvents();
         }
@@ -392,13 +390,8 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final long invalidations) {
         if (context.nearCacheConfig.isInvalidateOnChange() && invalidations > 0) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
-                            invalidations, context.stats.getInvalidations(), context.stats);
-                }
-            });
+            assertTrueEventually(() -> assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
+                    invalidations, context.stats.getInvalidations(), context.stats));
         }
     }
 
@@ -411,13 +404,8 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheInvalidationRequests(final NearCacheTestContext<?, ?, ?, ?> context,
                                                            final long invalidationRequests) {
         if (context.nearCacheConfig.isInvalidateOnChange() && invalidationRequests > 0 && context.stats != null) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEqualsFormat("Expected %d received Near Cache invalidations, but found %d (%s)",
-                            invalidationRequests, context.stats.getInvalidationRequests(), context.stats);
-                }
-            });
+            assertTrueEventually(() -> assertEqualsFormat("Expected %d received Near Cache invalidations, but found %d (%s)",
+                    invalidationRequests, context.stats.getInvalidationRequests(), context.stats));
             context.stats.resetInvalidationEvents();
         }
     }
@@ -443,12 +431,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assertNearCacheEvictionsEventually(final NearCacheTestContext<?, ?, ?, ?> context,
                                                           final int evictionCount) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNearCacheEvictions(context, evictionCount);
-            }
-        });
+        assertTrueEventually(() -> assertNearCacheEvictions(context, evictionCount));
     }
 
     /**

@@ -52,7 +52,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>relocate</id>
@@ -62,8 +61,8 @@
                         </goals>
                         <configuration>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <createSourcesJar>${maven.shade.createSourcesJar}</createSourcesJar>
+                            <shadeSourcesContent>${maven.shade.createSourcesJar}</shadeSourcesContent>
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.calcite</pattern>
@@ -109,7 +108,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.1</version>
                 <goals>
                     <goal>analyze</goal>
                 </goals>
@@ -169,7 +167,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
         </dependency>
 
         <dependency>

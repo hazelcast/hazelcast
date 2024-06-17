@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -73,12 +72,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertSame(task.getResult(), executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertSame(task.getResult(), executingThread.get()));
     }
 
     @Test
@@ -98,12 +92,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertSame(task.getResult(), executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertSame(task.getResult(), executingThread.get()));
     }
 
     @Test
@@ -116,12 +105,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         DummyOperationHostileThread thread = new DummyOperationHostileThread(() -> executor.runOrExecute(operation));
         thread.start();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(GenericOperationThread.class, executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertInstanceOf(GenericOperationThread.class, executingThread.get()));
     }
 
     // ===================== partition specific operations ========================
@@ -135,12 +119,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         executor.runOrExecute(operation);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(PartitionOperationThread.class, executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertInstanceOf(PartitionOperationThread.class, executingThread.get()));
     }
 
     @Test
@@ -162,12 +141,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(PartitionOperationThread.class, executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertInstanceOf(PartitionOperationThread.class, executingThread.get()));
     }
 
     @Test
@@ -186,12 +160,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertSame(task.getResult(), executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertSame(task.getResult(), executingThread.get()));
     }
 
     @Test
@@ -210,12 +179,9 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(PartitionOperationThread.class, executingThread.get());
-                assertNotSame(task.getResult(), executingThread.get());
-            }
+        assertTrueEventually(() -> {
+            assertInstanceOf(PartitionOperationThread.class, executingThread.get());
+            assertNotSame(task.getResult(), executingThread.get());
         });
     }
 
@@ -229,12 +195,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         DummyOperationHostileThread thread = new DummyOperationHostileThread(() -> executor.runOrExecute(operation));
         thread.start();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(PartitionOperationThread.class, executingThread.get());
-            }
-        });
+        assertTrueEventually(() -> assertInstanceOf(PartitionOperationThread.class, executingThread.get()));
     }
 
     private static class ThreadCapturingOperation extends Operation {
@@ -246,7 +207,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             executingThread.set(Thread.currentThread());
         }
     }

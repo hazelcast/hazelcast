@@ -282,8 +282,7 @@ public class ClusterWideConfigurationService implements
         Data data = serializationService.toData(config);
         // Certain configs can contain definitions for UDFs (such as ItemListenerConfig), so
         //     we should wrap the deserialization in Namespace awareness where applicable
-        if (config instanceof UserCodeNamespaceAwareConfig) {
-            UserCodeNamespaceAwareConfig nsAware = (UserCodeNamespaceAwareConfig) config;
+        if (config instanceof UserCodeNamespaceAwareConfig nsAware) {
             return NamespaceUtil.callWithNamespace(nodeEngine, nsAware.getUserCodeNamespace(),
                     () -> serializationService.toObject(data));
         }
@@ -301,79 +300,60 @@ public class ClusterWideConfigurationService implements
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig, ConfigCheckMode configCheckMode) {
         IdentifiedDataSerializable currentConfig;
-        if (newConfig instanceof MultiMapConfig) {
-            MultiMapConfig multiMapConfig = (MultiMapConfig) newConfig;
+        if (newConfig instanceof MultiMapConfig multiMapConfig) {
             currentConfig = multiMapConfigs.putIfAbsent(multiMapConfig.getName(), multiMapConfig);
-        } else if (newConfig instanceof MapConfig) {
-            MapConfig newMapConfig = (MapConfig) newConfig;
+        } else if (newConfig instanceof MapConfig newMapConfig) {
             currentConfig = mapConfigs.putIfAbsent(newMapConfig.getName(), newMapConfig);
             if (currentConfig == null) {
                 UserCodeNamespaceConfig namespace = findPersistableNamespaceConfig(newMapConfig.getUserCodeNamespace());
                 listener.onConfigRegistered(newMapConfig, namespace);
             }
-        } else if (newConfig instanceof CardinalityEstimatorConfig) {
-            CardinalityEstimatorConfig cardinalityEstimatorConfig = (CardinalityEstimatorConfig) newConfig;
+        } else if (newConfig instanceof CardinalityEstimatorConfig cardinalityEstimatorConfig) {
             currentConfig = cardinalityEstimatorConfigs.putIfAbsent(
                     cardinalityEstimatorConfig.getName(),
                     cardinalityEstimatorConfig
             );
-        } else if (newConfig instanceof RingbufferConfig) {
-            RingbufferConfig ringbufferConfig = (RingbufferConfig) newConfig;
+        } else if (newConfig instanceof RingbufferConfig ringbufferConfig) {
             currentConfig = ringbufferConfigs.putIfAbsent(ringbufferConfig.getName(), ringbufferConfig);
-        } else if (newConfig instanceof ListConfig) {
-            ListConfig listConfig = (ListConfig) newConfig;
+        } else if (newConfig instanceof ListConfig listConfig) {
             currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
-        } else if (newConfig instanceof SetConfig) {
-            SetConfig setConfig = (SetConfig) newConfig;
+        } else if (newConfig instanceof SetConfig setConfig) {
             currentConfig = setConfigs.putIfAbsent(setConfig.getName(), setConfig);
-        } else if (newConfig instanceof ReplicatedMapConfig) {
-            ReplicatedMapConfig replicatedMapConfig = (ReplicatedMapConfig) newConfig;
+        } else if (newConfig instanceof ReplicatedMapConfig replicatedMapConfig) {
             currentConfig = replicatedMapConfigs.putIfAbsent(replicatedMapConfig.getName(), replicatedMapConfig);
-        } else if (newConfig instanceof TopicConfig) {
-            TopicConfig topicConfig = (TopicConfig) newConfig;
+        } else if (newConfig instanceof TopicConfig topicConfig) {
             currentConfig = topicConfigs.putIfAbsent(topicConfig.getName(), topicConfig);
-        } else if (newConfig instanceof ExecutorConfig) {
-            ExecutorConfig executorConfig = (ExecutorConfig) newConfig;
+        } else if (newConfig instanceof ExecutorConfig executorConfig) {
             currentConfig = executorConfigs.putIfAbsent(executorConfig.getName(), executorConfig);
-        } else if (newConfig instanceof DurableExecutorConfig) {
-            DurableExecutorConfig durableExecutorConfig = (DurableExecutorConfig) newConfig;
+        } else if (newConfig instanceof DurableExecutorConfig durableExecutorConfig) {
             currentConfig = durableExecutorConfigs.putIfAbsent(durableExecutorConfig.getName(), durableExecutorConfig);
-        } else if (newConfig instanceof ScheduledExecutorConfig) {
-            ScheduledExecutorConfig scheduledExecutorConfig = (ScheduledExecutorConfig) newConfig;
+        } else if (newConfig instanceof ScheduledExecutorConfig scheduledExecutorConfig) {
             currentConfig = scheduledExecutorConfigs.putIfAbsent(scheduledExecutorConfig.getName(), scheduledExecutorConfig);
-        } else if (newConfig instanceof QueueConfig) {
-            QueueConfig queueConfig = (QueueConfig) newConfig;
+        } else if (newConfig instanceof QueueConfig queueConfig) {
             currentConfig = queueConfigs.putIfAbsent(queueConfig.getName(), queueConfig);
-        } else if (newConfig instanceof ReliableTopicConfig) {
-            ReliableTopicConfig reliableTopicConfig = (ReliableTopicConfig) newConfig;
+        } else if (newConfig instanceof ReliableTopicConfig reliableTopicConfig) {
             currentConfig = reliableTopicConfigs.putIfAbsent(reliableTopicConfig.getName(), reliableTopicConfig);
-        } else if (newConfig instanceof CacheSimpleConfig) {
-            CacheSimpleConfig cacheSimpleConfig = (CacheSimpleConfig) newConfig;
+        } else if (newConfig instanceof CacheSimpleConfig cacheSimpleConfig) {
             currentConfig = cacheSimpleConfigs.putIfAbsent(cacheSimpleConfig.getName(), cacheSimpleConfig);
             if (currentConfig == null) {
                 UserCodeNamespaceConfig namespace = findPersistableNamespaceConfig(cacheSimpleConfig.getUserCodeNamespace());
                 listener.onConfigRegistered(cacheSimpleConfig, namespace);
             }
-        } else if (newConfig instanceof FlakeIdGeneratorConfig) {
-            FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
+        } else if (newConfig instanceof FlakeIdGeneratorConfig config) {
             currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof PNCounterConfig) {
-            PNCounterConfig config = (PNCounterConfig) newConfig;
+        } else if (newConfig instanceof PNCounterConfig config) {
             currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof DataConnectionConfig) {
-            DataConnectionConfig config = (DataConnectionConfig) newConfig;
+        } else if (newConfig instanceof DataConnectionConfig config) {
             currentConfig = dataConnectionConfigs.putIfAbsent(config.getName(), config);
             if (currentConfig == null) {
                 nodeEngine.getDataConnectionService().createConfigDataConnection(config);
             }
-        } else if (newConfig instanceof WanReplicationConfig) {
-            WanReplicationConfig config = (WanReplicationConfig) newConfig;
+        } else if (newConfig instanceof WanReplicationConfig config) {
             currentConfig = wanReplicationConfigs.putIfAbsent(config.getName(), config);
             if (currentConfig == null) {
                 nodeEngine.getWanReplicationService().addWanReplicationConfig(config);
             }
-        } else if (newConfig instanceof UserCodeNamespaceConfig) {
-            UserCodeNamespaceConfig config = (UserCodeNamespaceConfig) newConfig;
+        } else if (newConfig instanceof UserCodeNamespaceConfig config) {
             // Deliberately overwrite existing
             currentConfig = namespaceConfigs.put(config.getName(), config);
             // ensure that the namespace is registered and added to the config.

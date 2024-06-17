@@ -35,7 +35,6 @@ import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -57,6 +56,7 @@ import testsubjects.StaticSerializableBiFunction;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -72,7 +72,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -163,7 +162,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings({"UnnecessaryBoxing", "CachedNumberConstructorCall"})
+    @SuppressWarnings({"UnnecessaryBoxing"})
     public void testBoxedPrimitives() {
         IMap<String, Object> map = getInstance().getMap("testPrimitives");
 
@@ -251,8 +250,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
-        assertEquals(null, map.putIfAbsent("key1", "value1"));
-        assertEquals(null, map.putIfAbsent("key2", "value2"));
+        assertNull(map.putIfAbsent("key1", "value1"));
+        assertNull(map.putIfAbsent("key2", "value2"));
         assertEquals("value1", map.putIfAbsent("key1", "valueX"));
         assertEquals("value1", map.get("key1"));
         assertEquals(2, map.size());
@@ -419,7 +418,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         assertEquals("value1", map.remove("key1"));
         assertEquals(2, map.size());
-        assertEquals(null, map.remove("key1"));
+        assertNull(map.remove("key1"));
         assertEquals(2, map.size());
         assertEquals("value3", map.remove("key3"));
         assertEquals(1, map.size());
@@ -454,7 +453,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
 
         for (int i = 0; i < entryCount; i++) {
-            assertEquals(null, map.get("key" + i));
+            assertNull(map.get("key" + i));
         }
     }
 
@@ -473,7 +472,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
 
         for (int i = 0; i < entryCount; i++) {
-            assertEquals(null, map.get("key" + i));
+            assertNull(map.get("key" + i));
         }
     }
 
@@ -518,7 +517,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         assertEquals("value1", map.remove("key1"));
         assertEquals(2, map.size());
-        assertEquals(null, map.remove("key1"));
+        assertNull(map.remove("key1"));
         assertEquals(2, map.size());
         assertEquals("value3", map.remove("key3"));
         assertEquals(1, map.size());
@@ -606,12 +605,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        assertEquals(true, map.containsKey("key1"));
-        assertEquals(false, map.containsKey("key5"));
+        assertTrue(map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(false, map.containsKey("key1"));
-        assertEquals(true, map.containsKey("key2"));
-        assertEquals(false, map.containsKey("key5"));
+        assertFalse(map.containsKey("key1"));
+        assertTrue(map.containsKey("key2"));
+        assertFalse(map.containsKey("key5"));
     }
 
     @Test
@@ -771,14 +770,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.lock(key);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Future<Object> f = spawn(new Callable<Object>() {
-            public Object call() throws Exception {
-                assertFalse("Should NOT be able to acquire lock!", map.tryLock(key));
-                latch.countDown();
+        Future<Object> f = spawn(() -> {
+            assertFalse("Should NOT be able to acquire lock!", map.tryLock(key));
+            latch.countDown();
 
-                assertTrue("Should be able to acquire lock!", map.tryLock(key, 60, SECONDS));
-                return null;
-            }
+            assertTrue("Should be able to acquire lock!", map.tryLock(key, 60, SECONDS));
+            return null;
         });
 
         assertOpenEventually(latch);
@@ -794,9 +791,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         final String value = "value";
         map.lock(key);
 
-        Future f1 = spawn((Runnable) () -> assertFalse(map.tryPut(key, invalidValue, 1, SECONDS)));
+        Future<?> f1 = spawn((Runnable) () -> assertFalse(map.tryPut(key, invalidValue, 1, SECONDS)));
 
-        Future f2 = spawn((Runnable) () -> map.put(key, value));
+        Future<?> f2 = spawn((Runnable) () -> map.put(key, value));
 
         f1.get();
         try {
@@ -972,12 +969,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         final String value = "value";
 
         // lock the key
-        spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                map.lock(key);
-                return null;
-            }
+        spawn(() -> {
+            map.lock(key);
+            return null;
         }).get(30, SECONDS);
 
         assertFalse(map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
@@ -993,20 +987,17 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         final CountDownLatch tryPutFailureLatch = new CountDownLatch(1);
 
-        Future<Object> future = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                try {
-                    assertFalse("tryPut() on a locked key should fail!",
-                            map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
-                } finally {
-                    tryPutFailureLatch.countDown();
-                }
-
-                assertTrue("tryPut() should have been succeeded, key is already unlocked!",
-                        map.tryPut(key, value, 30, SECONDS));
-                return null;
+        Future<Object> future = spawn(() -> {
+            try {
+                assertFalse("tryPut() on a locked key should fail!",
+                        map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
+            } finally {
+                tryPutFailureLatch.countDown();
             }
+
+            assertTrue("tryPut() should have been succeeded, key is already unlocked!",
+                    map.tryPut(key, value, 30, SECONDS));
+            return null;
         });
 
         tryPutFailureLatch.await(30, SECONDS);
@@ -1299,17 +1290,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value2");
         map.remove("key");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("key", addedKey[0]);
-                assertEquals("value", addedValue[0]);
-                assertEquals("key", updatedKey[0]);
-                assertEquals("value", oldValue[0]);
-                assertEquals("value2", newValue[0]);
-                assertEquals("key", removedKey[0]);
-                assertEquals("value2", removedValue[0]);
-            }
+        assertTrueEventually(() -> {
+            assertEquals("key", addedKey[0]);
+            assertEquals("value", addedValue[0]);
+            assertEquals("key", updatedKey[0]);
+            assertEquals("value", oldValue[0]);
+            assertEquals("value2", newValue[0]);
+            assertEquals("key", removedKey[0]);
+            assertEquals("value2", removedValue[0]);
         });
     }
 
@@ -1377,6 +1365,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     private static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
 
+        @Serial
         private static final long serialVersionUID = 4193947125511602220L;
 
         String pref;
@@ -1516,12 +1505,12 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             assertEquals("key", addedKey[0]);
-            assertEquals(null, addedValue[0]);
+            assertNull(addedValue[0]);
             assertEquals("key", updatedKey[0]);
-            assertEquals(null, oldValue[0]);
-            assertEquals(null, newValue[0]);
+            assertNull(oldValue[0]);
+            assertNull(newValue[0]);
             assertEquals("key", removedKey[0]);
-            assertEquals(null, removedValue[0]);
+            assertNull(removedValue[0]);
         });
     }
 
@@ -1696,7 +1685,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = () -> map.executeOnKeys(keys, new EntryProcessor<>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<String, String> entry) {
                 return null;
             }
 
@@ -1863,7 +1852,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = () -> map.executeOnKeys(null, new EntryProcessor<>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<String, String> entry) {
                 return null;
             }
 
@@ -1888,6 +1877,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     private static class SampleEntryProcessor<K> implements EntryProcessor<K, Integer, Boolean>, Serializable {
 
+        @Serial
         private static final long serialVersionUID = -5735493325953375570L;
 
         @Override

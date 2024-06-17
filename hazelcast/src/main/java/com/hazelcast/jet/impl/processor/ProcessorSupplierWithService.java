@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -36,7 +37,8 @@ import static java.util.stream.Collectors.toList;
  */
 public final class ProcessorSupplierWithService<C, S> implements ProcessorSupplier {
 
-    static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final ServiceFactory<C, S> serviceFactory;
     private final BiFunction<? super ServiceFactory<C, S>, ? super C, ? extends Processor> createProcessorFn;

@@ -270,8 +270,8 @@ class ClusterDiscoveryServiceBuilder {
     }
 
     private boolean isEmptyDiscoveryStrategies(DiscoveryService discoveryService) {
-        return discoveryService instanceof DefaultDiscoveryService
-                && !((DefaultDiscoveryService) discoveryService).getDiscoveryStrategies().iterator().hasNext();
+        return discoveryService instanceof DefaultDiscoveryService dds
+                && !dds.getDiscoveryStrategies().iterator().hasNext();
     }
 
     private ICredentialsFactory initCredentialsFactory(ClientConfig config) {

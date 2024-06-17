@@ -140,7 +140,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         assertMigrationProcessCompleted(firstEventsPack);
         MigrationState migrationResult = firstEventsPack.migrationProcessCompleted;
         assertThat(migrationResult.getCompletedMigrations()).isLessThan(migrationResult.getPlannedMigrations());
-        assertThat(migrationResult.getRemainingMigrations()).isGreaterThan(0);
+        assertThat(migrationResult.getRemainingMigrations()).isPositive();
         assertMigrationEventsConsistentWithResult(firstEventsPack);
 
         // 2nd migration process finishes by consuming all migration tasks
@@ -150,7 +150,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
                 && !secondEventsPack.migrationsCompleted.get(0).isSuccess()) {
             // There is a failed migration process
             // because migrations restarted before 3rd member is ready.
-            // This migration process is failed immediately
+            // This migration process is failed immediately,
             // and we expect a third migration process.
             secondEventsPack = listener.ensureAndGetEventPacks(3).get(2);
         }
@@ -188,12 +188,12 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     public static void assertMigrationProcessEventsConsistent(MigrationEventsPack eventsPack) {
         MigrationState migrationPlan = eventsPack.migrationProcessStarted;
-        assertThat(migrationPlan.getStartTime()).isGreaterThan(0L);
-        assertThat(migrationPlan.getPlannedMigrations()).isGreaterThan(0);
+        assertThat(migrationPlan.getStartTime()).isPositive();
+        assertThat(migrationPlan.getPlannedMigrations()).isPositive();
 
         MigrationState migrationResult = eventsPack.migrationProcessCompleted;
         assertEquals(migrationPlan.getStartTime(), migrationResult.getStartTime());
-        assertThat(migrationResult.getTotalElapsedTime()).isGreaterThanOrEqualTo(0L);
+        assertThat(migrationResult.getTotalElapsedTime()).isNotNegative();
         assertEquals(migrationPlan.getPlannedMigrations(), migrationResult.getCompletedMigrations());
         assertEquals(0, migrationResult.getRemainingMigrations());
     }
@@ -211,7 +211,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             assertEquals(migrationResult.getStartTime(), progress.getStartTime());
             assertEquals(migrationResult.getPlannedMigrations(), progress.getPlannedMigrations());
 
-            assertThat(progress.getCompletedMigrations()).isGreaterThan(0);
+            assertThat(progress.getCompletedMigrations()).isPositive();
             assertThat(progress.getCompletedMigrations()).isLessThanOrEqualTo(migrationResult.getPlannedMigrations());
             assertThat(progress.getCompletedMigrations()).isLessThanOrEqualTo(migrationResult.getCompletedMigrations());
             assertThat(progress.getRemainingMigrations()).isLessThan(migrationResult.getPlannedMigrations());
@@ -291,7 +291,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         UUID id1 = partitionService.addMigrationListener(listener);
         UUID id2 = partitionService.addMigrationListener(listener);
 
-        // first we check if the registration id's are different
+        // first we check if the registration ids are different
         assertNotEquals(id1, id2);
     }
 
@@ -596,7 +596,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         void awaitEventPacksComplete(int count) {
             assertTrueEventually(() -> {
-                assertThat(allEventPacks.size()).isGreaterThanOrEqualTo(count);
+                assertThat(allEventPacks).hasSizeGreaterThanOrEqualTo(count);
                 assertNull(currentEvents);
             });
         }

@@ -18,7 +18,6 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -70,20 +69,17 @@ public class ReliableTopicMBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAttributesAndOperations() throws Exception {
+    public void testAttributesAndOperations() {
         reliableTopic.publish("test");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                LocalTopicStats topicStats = reliableTopic.getLocalTopicStats();
-                long localCreationTime = getLongAttribute("localCreationTime");
-                long localPublishOperationCount = getLongAttribute("localPublishOperationCount");
-                long localReceiveOperationCount = getLongAttribute("localReceiveOperationCount");
+        assertTrueEventually(() -> {
+            LocalTopicStats topicStats = reliableTopic.getLocalTopicStats();
+            long localCreationTime = getLongAttribute("localCreationTime");
+            long localPublishOperationCount = getLongAttribute("localPublishOperationCount");
+            long localReceiveOperationCount = getLongAttribute("localReceiveOperationCount");
 
-                assertEquals(topicStats.getCreationTime(), localCreationTime);
-                assertEquals(topicStats.getPublishOperationCount(), localPublishOperationCount);
-                assertEquals(topicStats.getReceiveOperationCount(), localReceiveOperationCount);
-            }
+            assertEquals(topicStats.getCreationTime(), localCreationTime);
+            assertEquals(topicStats.getPublishOperationCount(), localPublishOperationCount);
+            assertEquals(topicStats.getReceiveOperationCount(), localReceiveOperationCount);
         });
     }
 

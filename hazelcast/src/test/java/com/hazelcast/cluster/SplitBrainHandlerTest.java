@@ -34,7 +34,6 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -310,13 +309,11 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        c3.addListenerConfig(new ListenerConfig(new LifecycleListener() {
-            public void stateChanged(final LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGING) {
-                    h1.shutdown();
-                } else if (event.getState() == LifecycleState.MERGED) {
-                    latch.countDown();
-                }
+        c3.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
+            if (event.getState() == LifecycleState.MERGING) {
+                h1.shutdown();
+            } else if (event.getState() == LifecycleState.MERGED) {
+                latch.countDown();
             }
         }));
 
@@ -550,12 +547,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         unblockCommunicationBetween(hz1, hz3);
         unblockCommunicationBetween(hz2, hz3);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertClusterSize(2, hz1, hz2);
-                assertClusterSize(1, hz3);
-            }
+        assertTrueAllTheTime(() -> {
+            assertClusterSize(2, hz1, hz2);
+            assertClusterSize(1, hz3);
         }, 10);
     }
 
@@ -589,12 +583,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         unblockCommunicationBetween(hz1, hz3);
         unblockCommunicationBetween(hz2, hz3);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertClusterSize(2, hz1, hz2);
-                assertClusterSize(1, hz3);
-            }
+        assertTrueAllTheTime(() -> {
+            assertClusterSize(2, hz1, hz2);
+            assertClusterSize(1, hz3);
         }, 10);
     }
 
@@ -717,15 +708,12 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         final CountDownLatch mergingLatch = new CountDownLatch(1);
         final CountDownLatch mergeLatch = new CountDownLatch(1);
-        LifecycleListener lifecycleListener = new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGING) {
-                    mergingLatch.countDown();
-                }
-                if (event.getState() == LifecycleState.MERGED) {
-                    mergeLatch.countDown();
-                }
+        LifecycleListener lifecycleListener = event -> {
+            if (event.getState() == LifecycleState.MERGING) {
+                mergingLatch.countDown();
+            }
+            if (event.getState() == LifecycleState.MERGED) {
+                mergeLatch.countDown();
             }
         };
         hz1.getLifecycleService().addLifecycleListener(lifecycleListener);

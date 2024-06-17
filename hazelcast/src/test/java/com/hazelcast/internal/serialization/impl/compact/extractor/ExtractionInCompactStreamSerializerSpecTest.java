@@ -64,7 +64,7 @@ public class ExtractionInCompactStreamSerializerSpecTest extends AbstractExtract
     );
 
     private static final Person HUNT_WITH_NULLS = person(null,
-            limb(null, new ArrayList<String>(), new Finger[]{})
+            limb(null, new ArrayList<>(), new Finger[]{})
     );
 
     @Parameterized.Parameters(name = "{index}: {0}")

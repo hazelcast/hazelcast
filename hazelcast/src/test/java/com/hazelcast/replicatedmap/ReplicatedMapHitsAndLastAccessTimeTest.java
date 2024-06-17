@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,16 +42,16 @@ import static org.junit.Assert.assertTrue;
 public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstractTest {
 
     @Test
-    public void test_hitsAndLastAccessTimeSetToAnyValueAfterStartTime_object() throws Exception {
+    public void test_hitsAndLastAccessTimeSetToAnyValueAfterStartTime_object() {
         testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void test_hitsAndLastAccessTimeSetToAnyValueAfterStartTime_Binary() throws Exception {
+    public void test_hitsAndLastAccessTimeSetToAnyValueAfterStartTime_Binary() {
         testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(Config config) throws Exception {
+    private void testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(Config config) {
         final long startTime = Clock.currentTimeMillis();
 
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -72,21 +71,15 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (Map.Entry<String, String> entry : map1.entrySet()) {
-                    assertRecord(getReplicatedRecord(map1, entry.getKey()), startTime);
-                }
+        assertTrueEventually(() -> {
+            for (Map.Entry<String, String> entry : map1.entrySet()) {
+                assertRecord(getReplicatedRecord(map1, entry.getKey()), startTime);
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (Map.Entry<String, String> entry : map2.entrySet()) {
-                    assertRecord(getReplicatedRecord(map2, entry.getKey()), startTime);
-                }
+        assertTrueEventually(() -> {
+            for (Map.Entry<String, String> entry : map2.entrySet()) {
+                assertRecord(getReplicatedRecord(map2, entry.getKey()), startTime);
             }
         });
     }
@@ -201,15 +194,12 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
             assertTrue("Last access time should be set for " + key, replicatedRecord.getLastAccessTime() > 0);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (String key : keys) {
-                    final ReplicatedRecord<String, String> replicatedRecord = getReplicatedRecord(map2, key);
-                    assertNotNull(replicatedRecord);
-                    assertEquals(0, replicatedRecord.getHits());
-                    assertTrue("Last access time should be set for " + key, replicatedRecord.getLastAccessTime() > 0);
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                final ReplicatedRecord<String, String> replicatedRecord = getReplicatedRecord(map2, key);
+                assertNotNull(replicatedRecord);
+                assertEquals(0, replicatedRecord.getHits());
+                assertTrue("Last access time should be set for " + key, replicatedRecord.getLastAccessTime() > 0);
             }
         });
     }
@@ -278,17 +268,14 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (String key : keys) {
-                    final ReplicatedRecord<String, String> record1 = getReplicatedRecord(map1, key);
-                    assertNotNull(record1);
-                    assertEquals(1, record1.getHits());
-                    final ReplicatedRecord<String, String> record2 = getReplicatedRecord(map2, key);
-                    assertNotNull(record2);
-                    assertEquals(0, record2.getHits());
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                final ReplicatedRecord<String, String> record1 = getReplicatedRecord(map1, key);
+                assertNotNull(record1);
+                assertEquals(1, record1.getHits());
+                final ReplicatedRecord<String, String> record2 = getReplicatedRecord(map2, key);
+                assertNotNull(record2);
+                assertEquals(0, record2.getHits());
             }
         });
     }

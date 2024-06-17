@@ -970,7 +970,7 @@ public class MembershipManager {
                         latestMembersView = membersView;
 
                         // If we discover a new member via a fetched member list, we should also ask for its members view.
-                        // there are some new members added to the futures map. lets wait for their results.
+                        // there are some new members added to the futures map. let's wait for their results.
                         done &= !fetchMembersViewFromNewMembers(membersView, futures);
                     }
                 } catch (InterruptedException ignored) {
@@ -1012,7 +1012,7 @@ public class MembershipManager {
             if (!(node.getThisAddress().equals(memberAddress)
                     || isMemberSuspected(new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid()))
                     || futures.containsKey(member))) {
-                // this is a new member for us. lets ask its members view
+                // this is a new member for us - let's ask its members view
                 if (logger.isFineEnabled()) {
                     logger.fine("Asking MembersView of " + memberAddress);
                 }

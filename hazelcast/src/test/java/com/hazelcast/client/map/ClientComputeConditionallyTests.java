@@ -26,10 +26,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import testsubjects.NonStaticFunctionFactory;
 import testsubjects.StaticNonSerializableBiFunction;
@@ -43,14 +41,13 @@ import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientComputeConditionallyTests extends ClientTestSupport {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance server;
@@ -218,8 +215,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         final IMap<String, String> map = client.getMap("testCompute");
         map.put("present_key", "present_value");
         String newValue = map.compute("present_key", (k, v) -> null);
-        assertEquals(null, newValue);
-        assertEquals(null, map.get("present_key"));
+        assertNull(newValue);
+        assertNull(map.get("present_key"));
     }
 
     @Test
@@ -234,8 +231,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
     public void testComputeShouldNotDoAnythingWhenBothOldAndNewValuesAreNotPresent() {
         final IMap<String, String> map = client.getMap("testCompute");
         String result = map.compute("absent_key", (k, v) -> null);
-        assertEquals(null, result);
-        assertEquals(null, map.get("absent_key"));
+        assertNull(result);
+        assertNull(map.get("absent_key"));
     }
 
     @Test
@@ -252,8 +249,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         final IMap<String, String> map = client.getMap("testMerge");
         map.put("present_key", "present_value");
         String newValue = map.merge("present_key", "some_value", (ov, nv) -> null);
-        assertEquals(null, newValue);
-        assertEquals(null, map.get("present_key"));
+        assertNull(newValue);
+        assertNull(map.get("present_key"));
     }
 
     @Test

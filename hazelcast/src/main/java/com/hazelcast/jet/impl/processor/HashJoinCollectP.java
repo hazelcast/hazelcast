@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -94,6 +95,7 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
     // ArrayList and then the logic that relies on instanceof would break
     static final class HashJoinArrayList extends ArrayList<Object> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         HashJoinArrayList() {

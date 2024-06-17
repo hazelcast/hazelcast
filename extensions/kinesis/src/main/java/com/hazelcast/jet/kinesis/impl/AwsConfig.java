@@ -26,11 +26,13 @@ import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
 import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 
 public class AwsConfig implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Nullable

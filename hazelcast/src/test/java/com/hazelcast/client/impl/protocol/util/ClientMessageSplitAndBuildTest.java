@@ -66,7 +66,7 @@ public class ClientMessageSplitAndBuildTest {
         }
 
         return ClientAuthenticationCodec.encodeRequest(clusterName, username, password, uuid, clientType,
-                (byte) 1, clientSerializationVersion, clientName, labels);
+                (byte) 1, clientSerializationVersion, clientName, labels, (byte) 1);
     }
 
     @Before

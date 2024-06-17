@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.internal.tpcengine.util.OS;
@@ -391,6 +392,13 @@ public class NetworkConfig {
         return icmpFailureDetectorConfig;
     }
 
+    /**
+     *
+     * @return The REST API configuration for the legacy REST server.
+     * @deprecated since 5.5, use Config.getRestConfig() instead. Will be removed at 6.0.
+     * @see RestConfig
+     */
+    @Deprecated(since = "5.5", forRemoval = true)
     public RestApiConfig getRestApiConfig() {
         return restApiConfig;
     }

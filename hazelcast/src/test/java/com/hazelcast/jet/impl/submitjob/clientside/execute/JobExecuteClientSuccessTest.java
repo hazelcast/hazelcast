@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
 import static java.util.Collections.emptyList;
@@ -230,7 +231,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
 
         // Assert job status
         Job job = jetService.getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // Assert job jar is not deleted
         assertTrue(Files.exists(jarPath));

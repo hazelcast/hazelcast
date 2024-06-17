@@ -66,7 +66,7 @@ public class BatchEventDataTest extends HazelcastTestSupport {
         batchEventDataOtherSource = new BatchEventData(events, "otherSource", 1);
         batchEventDataOtherPartitionId = new BatchEventData(events, "source", 2);
         batchEventDataOtherEvent = new BatchEventData(singleton(otherEventData), "source", 1);
-        batchEventDataNoEvent = new BatchEventData(Collections.<QueryCacheEventData>emptyList(), "source", 1);
+        batchEventDataNoEvent = new BatchEventData(Collections.emptyList(), "source", 1);
     }
 
     private DefaultQueryCacheEventData prepareDefaultQueryCacheEventDataWithMapName() {

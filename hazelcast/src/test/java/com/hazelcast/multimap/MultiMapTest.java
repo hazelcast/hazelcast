@@ -512,15 +512,12 @@ public class MultiMapTest extends HazelcastTestSupport {
         multiMap.put(key, 2);
 
         final AtomicBoolean isRunning = new AtomicBoolean(true);
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                int count = 3;
-                while (isRunning.get()) {
-                    multiMap.put(key, count++);
-                }
+        Thread thread = new Thread(() -> {
+            int count = 3;
+            while (isRunning.get()) {
+                multiMap.put(key, count++);
             }
-        };
+        });
         thread.start();
 
         for (int i = 0; i < 10; i++) {

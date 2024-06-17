@@ -16,11 +16,13 @@
 
 package com.hazelcast.map;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @SuppressWarnings("unused")
 class TestData implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private String attr1;

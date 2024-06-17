@@ -24,17 +24,14 @@ import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedule
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedulerTask;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -46,9 +43,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheContextTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private TestHazelcastFactory factory;
 
@@ -101,12 +95,9 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
         final QuerySchedulerRepetitionTask repetitionTask = new QuerySchedulerRepetitionTask();
         scheduler.scheduleWithRepetition(repetitionTask, 1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(task.executed);
-                assertTrue(repetitionTask.counter.get() > 1);
-            }
+        assertTrueEventually(() -> {
+            assertTrue(task.executed);
+            assertTrue(repetitionTask.counter.get() > 1);
         });
 
         scheduler.shutdown();

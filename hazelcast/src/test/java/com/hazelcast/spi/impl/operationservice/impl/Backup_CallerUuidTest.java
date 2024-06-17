@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class Backup_CallerUuidTest extends HazelcastTestSupport {
 
-    private static final AtomicReference CALLER_UUID = new AtomicReference();
+    private static final AtomicReference<UUID> CALLER_UUID = new AtomicReference<>();
 
     private HazelcastInstance hz;
 

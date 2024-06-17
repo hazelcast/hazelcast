@@ -32,6 +32,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 
 import static com.hazelcast.jet.elastic.impl.RetryUtils.withRetry;
@@ -63,6 +64,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ElasticSinkBuilder<T> implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final String DEFAULT_NAME = "elasticSink";

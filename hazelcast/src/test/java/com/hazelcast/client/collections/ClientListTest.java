@@ -236,14 +236,12 @@ public class ClientListTest extends HazelcastTestSupport {
         };
         UUID registrationId = list.addItemListener(listener, true);
 
-        new Thread() {
-            public void run() {
-                for (int i = 0; i < 5; i++) {
-                    list.add("item" + i);
-                }
-                list.add("done");
+        new Thread(() -> {
+            for (int i = 0; i < 5; i++) {
+                list.add("item" + i);
             }
-        }.start();
+            list.add("done");
+        }).start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         list.removeItemListener(registrationId);
     }

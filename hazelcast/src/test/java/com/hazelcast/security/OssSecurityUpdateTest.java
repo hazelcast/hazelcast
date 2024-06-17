@@ -16,7 +16,6 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -24,10 +23,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
@@ -36,8 +33,6 @@ import java.util.Collections;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OssSecurityUpdateTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void testEnable_atRuntime() {
@@ -46,8 +41,7 @@ public class OssSecurityUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance();
         SecurityConfig securityConfig = hz.getConfig().getSecurityConfig();
 
-        exception.expect(UnsupportedOperationException.class);
-        securityConfig.setEnabled(true);
+        assertThrows(UnsupportedOperationException.class, () -> securityConfig.setEnabled(true));
     }
 
     @Test
@@ -57,7 +51,6 @@ public class OssSecurityUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance();
         SecurityConfig securityConfig = hz.getConfig().getSecurityConfig();
 
-        exception.expect(UnsupportedOperationException.class);
-        securityConfig.setClientPermissionConfigs(Collections.<PermissionConfig>emptySet());
+        assertThrows(UnsupportedOperationException.class, () -> securityConfig.setClientPermissionConfigs(Collections.emptySet()));
     }
 }

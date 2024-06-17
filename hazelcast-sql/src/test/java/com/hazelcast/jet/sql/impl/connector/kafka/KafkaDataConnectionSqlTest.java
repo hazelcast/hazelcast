@@ -19,24 +19,25 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.jet.kafka.KafkaDataConnection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
 
     @Test
     public void when_createSharedDataConnection_then_success() {
         String dlName = randomName();
         createSqlKafkaDataConnection(dlName, true);
-        DataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");
@@ -48,8 +49,8 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
         String dlName = randomName();
         createSqlKafkaDataConnection(dlName, false);
 
-        DataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");

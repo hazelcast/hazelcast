@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -106,21 +105,11 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
     }
 
     private void waitForBackupRunning(final String backupId) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(backupRunning.contains(backupId));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(backupRunning.contains(backupId)));
     }
 
     private void waitForPrimaryResponse(final InvocationFuture f) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotEquals(VOID, f.invocation.pendingResponse);
-            }
-        });
+        assertTrueEventually(() -> assertNotEquals(VOID, f.invocation.pendingResponse));
     }
 
     static class PrimaryOperation extends Operation implements BackupAwareOperation {

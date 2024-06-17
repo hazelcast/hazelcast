@@ -212,13 +212,13 @@ public class Int2ObjectHashMapTest {
         for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
-            initialSet.add(valueOf(i));
+            initialSet.add(i);
         }
 
         final Collection<Integer> copyToSet = new HashSet<>();
 
         for (final Int2ObjectHashMap.KeyIterator iter = intToObjectMap.keySet().iterator(); iter.hasNext(); ) {
-            copyToSet.add(valueOf(iter.nextInt()));
+            copyToSet.add(iter.nextInt());
         }
 
         assertThat(copyToSet).isEqualTo(initialSet);
@@ -252,7 +252,7 @@ public class Int2ObjectHashMapTest {
         for (int i = 0; i < count; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
-            initialSet.add(valueOf(i));
+            initialSet.add(i);
         }
 
         final Collection<Integer> copyOfSet = new HashSet<>();

@@ -397,7 +397,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             assertSizeAndData(allowDirty);
         }
     }

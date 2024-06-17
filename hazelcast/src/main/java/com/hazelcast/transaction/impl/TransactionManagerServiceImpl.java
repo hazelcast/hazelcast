@@ -124,8 +124,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             if (e instanceof TransactionException exception) {
                 throw exception;
             }
-            if (e.getCause() instanceof TransactionException) {
-                throw (TransactionException) e.getCause();
+            if (e.getCause() instanceof TransactionException transactionException) {
+                throw transactionException;
             }
             if (e instanceof RuntimeException exception) {
                 throw exception;
@@ -221,10 +221,10 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 logger.finest("Rolling-back transaction[id:" + txnId + ", state:ACTIVE] of endpoint " + uuid);
             }
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
-            Collection<Future> futures = new ArrayList<>(memberList.size());
+            Collection<Future<Object>> futures = new ArrayList<>(memberList.size());
             for (Member member : memberList) {
                 Operation op = new BroadcastTxRollbackOperation(txnId);
-                Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
+                Future<Object> f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
                 futures.add(f);
             }
 

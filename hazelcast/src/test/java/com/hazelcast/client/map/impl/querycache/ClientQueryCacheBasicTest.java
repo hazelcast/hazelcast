@@ -43,7 +43,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.Callable;
 
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -121,12 +120,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
     @Test
     public void entryAdded_whenValueMatchesPredicate() {
         map.put(1, new Person("a", 75));
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 1);
+        assertEqualsEventually(() -> queryCache.size(), 1);
     }
 
     @Test
@@ -134,12 +128,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         // when a value not matching predicate is put
         map.put(1, new Person("a", 25));
         // then querycache does not contain any elements
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 0);
+        assertEqualsEventually(() -> queryCache.size(), 0);
     }
 
     @Test
@@ -149,12 +138,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         map.put(2, new Person("a", 95));
         map.remove(1);
         // then size of querycache is 1
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 1);
+        assertEqualsEventually(() -> queryCache.size(), 1);
     }
 
     @Test
@@ -164,12 +148,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         map.put(2, new Person("a", 25));
         map.remove(1);
         // then size of querycache is 0
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 0);
+        assertEqualsEventually(() -> queryCache.size(), 0);
     }
 
     @Test
@@ -178,12 +157,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 15));
         map.replace(1, new Person("a", 85));
         // then size of querycache is 1
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 1);
+        assertEqualsEventually(() -> queryCache.size(), 1);
     }
 
     @Test
@@ -192,12 +166,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 15));
         map.replace(1, new Person("a", 25));
         // then size of querycache is 0
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 0);
+        assertEqualsEventually(() -> queryCache.size(), 0);
     }
 
     @Test
@@ -206,12 +175,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 55));
         map.replace(1, new Person("a", 56));
         // then size of querycache is 1
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 1);
+        assertEqualsEventually(() -> queryCache.size(), 1);
     }
 
     @Test
@@ -220,11 +184,6 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 55));
         map.replace(1, new Person("a", 15));
         // then size of querycache is 0
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return queryCache.size();
-            }
-        }, 0);
+        assertEqualsEventually(() -> queryCache.size(), 0);
     }
 }

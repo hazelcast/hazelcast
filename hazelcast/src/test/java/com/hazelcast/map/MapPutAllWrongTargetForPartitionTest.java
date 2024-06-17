@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -122,19 +121,16 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         }
 
         // assert that each member owns entriesPerPartition entries of the map and that all backups have been written
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                long totalBackups = 0;
-                for (int i = 0; i < INSTANCE_COUNT; i++) {
-                    IMap<?, ?> map = instances[i].getMap(mapName);
-                    assertEquals(format("Each member should own %d entries of the map", entriesPerPartition),
-                            entriesPerPartition, map.getLocalMapStats().getOwnedEntryCount());
-                    totalBackups += map.getLocalMapStats().getBackupEntryCount();
-                }
-                assertEquals(format("Expected to find %d backups in the cluster", expectedEntryCount),
-                        expectedEntryCount, totalBackups);
+        assertTrueEventually(() -> {
+            long totalBackups = 0;
+            for (int i = 0; i < INSTANCE_COUNT; i++) {
+                IMap<?, ?> map1 = instances[i].getMap(mapName);
+                assertEquals(format("Each member should own %d entries of the map", entriesPerPartition),
+                        entriesPerPartition, map1.getLocalMapStats().getOwnedEntryCount());
+                totalBackups += map1.getLocalMapStats().getBackupEntryCount();
             }
+            assertEquals(format("Expected to find %d backups in the cluster", expectedEntryCount),
+                    expectedEntryCount, totalBackups);
         });
     }
 

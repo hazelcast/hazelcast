@@ -54,6 +54,7 @@ import static com.hazelcast.jet.cdc.MySQLTestUtils.getMySqlConnection;
 import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
 import static com.hazelcast.jet.cdc.MySQLTestUtils.runQuery;
 import static com.hazelcast.jet.cdc.PostgresTestUtils.getPostgreSqlConnection;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
@@ -126,7 +127,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 assertEqualsEventually(() -> String.join("\n", hz.getList("results")), expected);
             } finally {
                 job.cancel();
-                assertJobStatusEventually(job, JobStatus.FAILED);
+                assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
             }
         }
     }
@@ -219,7 +220,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap("results"))));
             } finally {
                 job.cancel();
-                assertJobStatusEventually(job, JobStatus.FAILED);
+                assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
             }
         }
     }
@@ -301,7 +302,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 assertEqualsEventually(() -> String.join("\n", hz.getList("results")), expected);
             } finally {
                 job.cancel();
-                assertJobStatusEventually(job, JobStatus.FAILED);
+                assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
             }
         }
     }
@@ -372,7 +373,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap("results"))));
             } finally {
                 job.cancel();
-                assertJobStatusEventually(job, JobStatus.FAILED);
+                assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
             }
         }
     }
@@ -490,7 +491,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
             Job job = hz.getJet().newJob(p);
 
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             assertTrueEventually(() -> {
                 logger.info(String.format("List size: %s", changeRecordList.size()));
@@ -518,7 +519,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.list(changeRecordList));
 
             Job job = hz.getJet().newJob(p);
-            assertJobStatusEventually(job, JobStatus.RUNNING);
+            assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
             String query = "CREATE TABLE `inventory`.`tableForSchemaChangesArePassed` (id INT)";
             runQuery(container, query);
@@ -574,7 +575,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
                 Job job = hz.getJet().newJob(p);
 
-                assertJobStatusEventually(job, JobStatus.RUNNING);
+                assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
                 mc.getDatabase("test").getCollection("test").insertOne(new Document("test", "test"));
 
                 assertTrueEventually(() ->

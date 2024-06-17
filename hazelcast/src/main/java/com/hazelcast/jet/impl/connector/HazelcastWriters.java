@@ -335,6 +335,7 @@ public final class HazelcastWriters {
 
     private static class WriteCachePSupplier<K, V> extends AbstractHazelcastConnectorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String name;
@@ -374,6 +375,7 @@ public final class HazelcastWriters {
 
     private static class WriteListPSupplier<T> extends AbstractHazelcastConnectorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String name;
@@ -407,7 +409,7 @@ public final class HazelcastWriters {
         }
     }
 
-    static final class ArrayMap<K, V> extends AbstractMap<K, V> {
+    public static final class ArrayMap<K, V> extends AbstractMap<K, V> {
 
         private final List<Entry<K, V>> entries;
         private final ArraySet set = new ArraySet();
@@ -416,7 +418,7 @@ public final class HazelcastWriters {
             entries = new ArrayList<>();
         }
 
-        ArrayMap(int size) {
+        public ArrayMap(int size) {
             entries = new ArrayList<>(size);
         }
 

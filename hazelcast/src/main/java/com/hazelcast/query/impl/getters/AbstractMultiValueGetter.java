@@ -34,9 +34,9 @@ public abstract class AbstractMultiValueGetter extends Getter {
     public static final int REDUCE_EVERYTHING = -2;
 
     private final int modifier;
-    private final Class resultType;
+    private final Class<?> resultType;
 
-    public AbstractMultiValueGetter(Getter parent, String modifierSuffix, Class<?> inputType, Class resultType) {
+    public AbstractMultiValueGetter(Getter parent, String modifierSuffix, Class<?> inputType, Class<?> resultType) {
         super(parent);
         boolean isArray = inputType.isArray();
         boolean isCollection = Collection.class.isAssignableFrom(inputType);
@@ -51,7 +51,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     protected abstract Object extractFrom(Object parentObject) throws IllegalAccessException, InvocationTargetException;
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         return resultType;
     }
 
@@ -61,8 +61,8 @@ public abstract class AbstractMultiValueGetter extends Getter {
         if (parentObject == null) {
             return null;
         }
-        if (parentObject instanceof MultiResult) {
-            return extractFromMultiResult((MultiResult) parentObject);
+        if (parentObject instanceof MultiResult result) {
+            return extractFromMultiResult(result);
         }
 
         Object o = unwrapIfOptional(extractFrom(parentObject));
@@ -81,7 +81,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         return modifier;
     }
 
-    private Class getResultType(Class inputType, Class resultType) {
+    private Class<?> getResultType(Class<?> inputType, Class<?> resultType) {
         if (resultType != null) {
             //result type as been set explicitly via Constructor.
             //This is needed for extraction Collection where type cannot be
@@ -144,10 +144,10 @@ public abstract class AbstractMultiValueGetter extends Getter {
     private Object getItemAtPositionOrNull(Object object, int position) {
         if (object == null) {
             return null;
-        } else if (object instanceof Collection) {
-            return CollectionUtil.getItemAtPositionOrNull((Collection<?>) object, position);
-        } else if (object instanceof Object[]) {
-            return ArrayUtils.getItemAtPositionOrNull((Object[]) object, position);
+        } else if (object instanceof Collection collection) {
+            return CollectionUtil.getItemAtPositionOrNull(collection, position);
+        } else if (object instanceof Object[] objects) {
+            return ArrayUtils.getItemAtPositionOrNull(objects, position);
         } else if (object.getClass().isArray()) {
             return Array.get(object, position);
         }
@@ -188,10 +188,10 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
         if (currentObject == null) {
             collector.addNullOrEmptyTarget();
-        } else if (currentObject instanceof Collection) {
-            reduceCollectionInto(collector, (Collection) currentObject);
-        } else if (currentObject instanceof Object[]) {
-            reduceArrayInto(collector, (Object[]) currentObject);
+        } else if (currentObject instanceof Collection collection) {
+            reduceCollectionInto(collector, collection);
+        } else if (currentObject instanceof Object[] objects) {
+            reduceArrayInto(collector, objects);
         } else if (currentObject.getClass().isArray()) {
             if (!ExtractorHelper.reducePrimitiveArrayInto(collector::add, currentObject)) {
                 collector.addNullOrEmptyTarget();

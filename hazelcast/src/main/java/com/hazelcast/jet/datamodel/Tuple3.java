@@ -81,10 +81,9 @@ public final class Tuple3<E0, E1, E2> {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Tuple3)) {
+        if (!(obj instanceof Tuple3 that)) {
             return false;
         }
-        final Tuple3 that = (Tuple3) obj;
         return Objects.equals(this.f0, that.f0)
                 && Objects.equals(this.f1, that.f1)
                 && Objects.equals(this.f2, that.f2);

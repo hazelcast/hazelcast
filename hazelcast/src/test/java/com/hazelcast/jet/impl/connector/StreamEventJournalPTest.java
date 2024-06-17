@@ -41,6 +41,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -51,6 +52,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
@@ -164,7 +166,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, output, true);
-            assertTrue("consumed different number of items than expected", output.size() == 0);
+            assertTrue("consumed different number of items than expected", output.isEmpty());
         }, 3);
 
         assertTrueEventually(() -> {
@@ -204,7 +206,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueFiveSeconds(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertTrue("consumed different number of items than expected", actual.size() == 0);
+            assertTrue("consumed different number of items than expected", actual.isEmpty());
         });
 
         // add one item to each partition
@@ -230,14 +232,14 @@ public class StreamEventJournalPTest extends JetTestSupport {
         Job job = instance.getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(200_000));
-        assertJobStatusEventually(job, JobStatus.RUNNING, 25);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING, Duration.ofSeconds(25));
         job.restart();
 
         // Then
         // The job should be running: this test checks that state restored to NoopP, which is
         // created by the meta supplier for processor with no partitions, is ignored.
         sleepMillis(3000);
-        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING, Duration.ofSeconds(10));
     }
 
     private void fillJournal(int countPerPartition) {

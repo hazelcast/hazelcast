@@ -30,7 +30,7 @@ final class ThisGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         return this.object.getClass();
     }
 

@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
-
 public class TextFileFormatTest extends BaseFileFormatTest {
 
     @Test

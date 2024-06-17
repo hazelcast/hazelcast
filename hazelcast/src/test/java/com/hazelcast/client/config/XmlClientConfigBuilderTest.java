@@ -389,8 +389,8 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test
     public void testLoadBalancerCustom() {
         String xml = HAZELCAST_CLIENT_START_TAG
-                     + "<load-balancer type=\"custom\">com.hazelcast.client.test.CustomLoadBalancer</load-balancer>"
-                     + HAZELCAST_CLIENT_END_TAG;
+                + "<load-balancer type=\"custom\">com.hazelcast.client.test.CustomLoadBalancer</load-balancer>"
+                + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml);
 
@@ -525,8 +525,8 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         ClientConfig xmlConfig = buildConfig(xml);
 
         List<PersistentMemoryDirectoryConfig> directoryConfigs = xmlConfig.getNativeMemoryConfig()
-                                                                          .getPersistentMemoryConfig()
-                                                                          .getDirectoryConfigs();
+                .getPersistentMemoryConfig()
+                .getDirectoryConfigs();
         assertEquals(2, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
@@ -862,6 +862,21 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessageContaining("Cannot load");
+    }
+
+    @Override
+    public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToSubsetRoutingConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "     <network>\n"
+                + "         <subset-routing enabled=\"true\" />\n"
+                + "     </network>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig clientConfig = buildConfig(xml);
+
+        assertTrue(clientConfig.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
+        assertEquals(SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY,
+                clientConfig.getNetworkConfig().getSubsetRoutingConfig().getRoutingStrategy());
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {

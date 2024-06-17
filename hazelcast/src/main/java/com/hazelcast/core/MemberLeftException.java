@@ -26,6 +26,7 @@ import com.hazelcast.version.MemberVersion;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -61,6 +62,7 @@ public class MemberLeftException extends ExecutionException implements Retryable
         return member;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
 
@@ -75,6 +77,7 @@ public class MemberLeftException extends ExecutionException implements Retryable
         out.writeObject(member.getVersion());
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 

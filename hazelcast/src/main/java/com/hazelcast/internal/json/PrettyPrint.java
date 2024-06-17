@@ -26,7 +26,7 @@ import java.io.Writer;
 import java.util.Arrays;
 
 /**
- * Enables human readable JSON output by inserting whitespace between values.after commas and
+ * Enables human-readable JSON output by inserting whitespace between values after commas and
  * colons. Example:
  *
  * <pre>

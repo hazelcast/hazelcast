@@ -171,6 +171,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "      <address>192.168.100.100</address>"
                 + "      <address>127.0.0.10</address>"
                 + "    </cluster-members>"
+                + "    <subset-routing enabled=\"true\" routing-strategy=\"PARTITION_GROUPS\"/>"
                 + "    <smart-routing>false</smart-routing>"
                 + "    <redo-operation>true</redo-operation>"
                 + "    <socket-interceptor enabled=\"true\">"
@@ -188,6 +189,9 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml, "config.location", configLocationPath);
+        assertTrue(config.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
+        assertEquals(RoutingStrategy.PARTITION_GROUPS,
+                config.getNetworkConfig().getSubsetRoutingConfig().getRoutingStrategy());
         assertFalse(config.getNetworkConfig().isSmartRouting());
         assertTrue(config.getNetworkConfig().isRedoOperation());
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.100.100");

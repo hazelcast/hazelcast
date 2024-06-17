@@ -355,7 +355,7 @@ public class InsertWatermarksPTest {
 
         @Override
         public boolean equals(Object o) {
-            return this == o || o instanceof Item && this.timestamp == ((Item) o).timestamp;
+            return this == o || o instanceof Item item && this.timestamp == item.timestamp;
         }
 
         @Override

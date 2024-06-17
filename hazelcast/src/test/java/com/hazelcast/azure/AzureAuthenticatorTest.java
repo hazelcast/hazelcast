@@ -61,10 +61,11 @@ public class AzureAuthenticatorTest {
     }
 
     private static String responseBody(String accessToken) {
-        return String.format("{\n"
-                + "  \"access_token\" : \"%s\",\n"
-                + "  \"token_type\" : \"Bearer\",\n"
-                + "  \"expires_in\" : 3600\n"
-                + "}", accessToken);
+        return String.format("""
+                {
+                  "access_token" : "%s",
+                  "token_type" : "Bearer",
+                  "expires_in" : 3600
+                }""", accessToken);
     }
 }

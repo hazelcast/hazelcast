@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -145,6 +146,7 @@ public class LikeFunction extends TriExpression<Boolean> {
         patternCache = new ConcurrentInitialSetCache<>(PATTERN_CACHE_SIZE);
     }
 
+    @Serial
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
         // The transient fields are not initialized during Java deserialization, so we need to do it manually.

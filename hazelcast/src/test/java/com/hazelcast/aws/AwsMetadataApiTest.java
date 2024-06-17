@@ -78,10 +78,11 @@ public class AwsMetadataApiTest {
     public void availabilityZoneEcs() {
         // given
         //language=JSON
-        String response = "{\n"
-                + "  \"Cluster\" : \"hz-cluster\",\n"
-                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
-                + "}";
+        String response = """
+                {
+                  "Cluster" : "hz-cluster",
+                  "AvailabilityZone": "ca-central-1a"
+                }""";
 
         stubFor(get(urlEqualTo("/task"))
                 .willReturn(aResponse().withStatus(200).withBody(response)));
@@ -161,10 +162,11 @@ public class AwsMetadataApiTest {
     public void clusterEcs() {
         // given
         //language=JSON
-        String response = "{\n"
-                + "  \"Cluster\" : \"hz-cluster\",\n"
-                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
-                + "}";
+        String response = """
+                {
+                  "Cluster" : "hz-cluster",
+                  "AvailabilityZone": "ca-central-1a"
+                }""";
 
         stubFor(get(urlEqualTo("/task"))
                 .willReturn(aResponse().withStatus(200).withBody(response)));
@@ -194,13 +196,14 @@ public class AwsMetadataApiTest {
     public void credentialsEc2() {
         // given
         String iamRole = "some-iam-role";
-        String response = "{\n"
-            + "  \"Code\": \"Success\",\n"
-            + "  \"AccessKeyId\": \"Access1234\",\n"
-            + "  \"SecretAccessKey\": \"Secret1234\",\n"
-            + "  \"Token\": \"Token1234\",\n"
-            + "  \"Expiration\": \"2020-03-27T21:01:33Z\"\n"
-            + "}";
+        String response = """
+                {
+                  "Code": "Success",
+                  "AccessKeyId": "Access1234",
+                  "SecretAccessKey": "Secret1234",
+                  "Token": "Token1234",
+                  "Expiration": "2020-03-27T21:01:33Z"
+                }""";
         stubFor(get(urlEqualTo(String.format("/iam/security-credentials/%s", iamRole)))
             .willReturn(aResponse().withStatus(200).withBody(response)));
 
@@ -216,13 +219,14 @@ public class AwsMetadataApiTest {
     @Test
     public void credentialsEcs() {
         // given
-        String response = "{\n"
-            + "  \"Code\": \"Success\",\n"
-            + "  \"AccessKeyId\": \"Access1234\",\n"
-            + "  \"SecretAccessKey\": \"Secret1234\",\n"
-            + "  \"Token\": \"Token1234\",\n"
-            + "  \"Expiration\": \"2020-03-27T21:01:33Z\"\n"
-            + "}";
+        String response = """
+                {
+                  "Code": "Success",
+                  "AccessKeyId": "Access1234",
+                  "SecretAccessKey": "Secret1234",
+                  "Token": "Token1234",
+                  "Expiration": "2020-03-27T21:01:33Z"
+                }""";
         stubFor(get(urlEqualTo("/"))
             .willReturn(aResponse().withStatus(200).withBody(response)));
 

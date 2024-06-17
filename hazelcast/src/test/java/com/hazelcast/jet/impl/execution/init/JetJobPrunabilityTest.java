@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,8 +75,8 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     @Before
     public void setUp() throws Exception {
         consumerPms = new CollectPerProcessorSink();
-        NodeEngineImpl localNodeEngineImpl = getNodeEngineImpl(instance());
-        NodeEngineImpl remoteNodeEngineImpl = getNodeEngineImpl(instances()[1]);
+        NodeEngineImpl localNodeEngineImpl = Accessors.getNodeEngineImpl(instance());
+        NodeEngineImpl remoteNodeEngineImpl = Accessors.getNodeEngineImpl(instances()[1]);
         Map<Address, int[]> ptAssignment = getPartitionAssignment(instance());
         localPartitionId = ptAssignment.get(localNodeEngineImpl.getThisAddress())[0];
         remotePartitionId = ptAssignment.get(remoteNodeEngineImpl.getThisAddress())[0];
@@ -98,7 +99,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Vertex printer = dag.newVertex("Consumer", consumerPms);
         dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne());
 
-        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
+        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(Accessors.getNodeEngineImpl(instance()), dag);
         assertThat(analysisResult.allPartitionsRequired).isFalse();
         assertThat(analysisResult.constantPartitionIds).containsExactly(allToOnePartitionId());
         assertThat(analysisResult.requiredAddresses).containsExactly(localMemberAddress());
@@ -110,7 +111,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         job.join();
 
         // should print 0 and 1.
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertThat(job).eventuallyHasStatus(JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
         List<List<Object>> nonEmptyRes = lists.stream().filter(l -> !l.isEmpty()).collect(Collectors.toList());
 
@@ -144,7 +145,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
 
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertThat(job).eventuallyHasStatus(JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
         List<List<Object>> nonEmptyRes = lists.stream().filter(l -> !l.isEmpty()).collect(Collectors.toList());
 
@@ -184,7 +185,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         // aggregator -> printer
         dag.edge(between(aggregator, printer).isolated());
 
-        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
+        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(Accessors.getNodeEngineImpl(instance()), dag);
         assertThat(analysisResult.allPartitionsRequired).isTrue();
         assertThat(analysisResult.constantPartitionIds).isEmpty();
         assertThat(analysisResult.requiredAddresses).containsExactly(addr);
@@ -196,7 +197,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         job.join();
 
         // should print 2.
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertThat(job).eventuallyHasStatus(JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
         assertContainsAll(lists.get(0), List.of(2L));
     }
@@ -222,7 +223,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(Edge.from(generatorLeft).to(consumer, 0).isolated());
         dag.edge(Edge.from(generatorRight).to(consumer, 1).distributed().broadcast());
 
-        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
+        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(Accessors.getNodeEngineImpl(instance()), dag);
         assertThat(analysisResult.allPartitionsRequired).isFalse();
         assertThat(analysisResult.constantPartitionIds).isEmpty();
         assertThat(analysisResult.requiredAddresses).isEmpty();
@@ -233,7 +234,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
 
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertThat(job).eventuallyHasStatus(JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
         Set<Object> containerList = new TreeSet<>();
         containerList.addAll(lists.get(0));
@@ -286,6 +287,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
             return wrappingPms.initIsCooperative();
         }
 
+        @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@NotNull List<Address> addresses) {
             return wrappingPms.get(addresses);

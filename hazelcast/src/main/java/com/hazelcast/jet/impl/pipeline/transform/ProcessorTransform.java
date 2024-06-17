@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -43,6 +44,7 @@ import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 public class ProcessorTransform extends AbstractTransform {
     public static final int NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM = 2;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     final ProcessorMetaSupplier processorSupplier;

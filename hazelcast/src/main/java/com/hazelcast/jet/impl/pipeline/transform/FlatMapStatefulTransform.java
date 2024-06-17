@@ -26,6 +26,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
@@ -33,6 +34,7 @@ import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
 
 public class FlatMapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase<T, K, S> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> statefulFlatMapFn;

@@ -22,9 +22,11 @@ import com.hazelcast.jet.pipeline.Sink;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 
 public class SinkImpl<T> implements Sink<T> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String name;

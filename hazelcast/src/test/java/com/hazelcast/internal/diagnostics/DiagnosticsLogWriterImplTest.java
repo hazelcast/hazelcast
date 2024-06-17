@@ -28,7 +28,6 @@ import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 import java.util.Locale;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -57,8 +56,8 @@ public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
         actual = actual.substring(actual.indexOf("SomeSection"));
 
         assertEquals(""
-                + "SomeSection[" + LINE_SEPARATOR
-                + "                          s=null]" + LINE_SEPARATOR,
+                + "SomeSection[" + System.lineSeparator()
+                + "                          s=null]" + System.lineSeparator(),
                 actual);
     }
 
@@ -81,14 +80,14 @@ public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
         actual = actual.substring(actual.indexOf("SomeSection"));
 
         assertEquals(""
-                + "SomeSection[" + LINE_SEPARATOR
-                + "                          boolean=true" + LINE_SEPARATOR
-                + "                          long=10" + LINE_SEPARATOR
-                + "                          SubSection[" + LINE_SEPARATOR
-                + "                                  integer=10]" + LINE_SEPARATOR
-                + "                          string=foo" + LINE_SEPARATOR
-                + "                          double=11.0" + LINE_SEPARATOR
-                + "                          foobar]" + LINE_SEPARATOR,
+                + "SomeSection[" + System.lineSeparator()
+                + "                          boolean=true" + System.lineSeparator()
+                + "                          long=10" + System.lineSeparator()
+                + "                          SubSection[" + System.lineSeparator()
+                + "                                  integer=10]" + System.lineSeparator()
+                + "                          string=foo" + System.lineSeparator()
+                + "                          double=11.0" + System.lineSeparator()
+                + "                          foobar]" + System.lineSeparator(),
                 actual);
     }
 

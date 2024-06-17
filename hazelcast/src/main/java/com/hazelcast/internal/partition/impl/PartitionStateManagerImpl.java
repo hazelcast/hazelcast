@@ -36,8 +36,10 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,7 +92,9 @@ public class PartitionStateManagerImpl implements PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
-    /** For test usage only */
+    /**
+     * For test usage only
+     */
     private ReplicaUpdateInterceptor replicaUpdateInterceptor;
 
     public PartitionStateManagerImpl(Node node, InternalPartitionServiceImpl partitionService) {
@@ -112,7 +116,7 @@ public class PartitionStateManagerImpl implements PartitionStateManager {
                 node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
         snapshotOnRemove = new ConcurrentHashMap<>();
-        this.replicaUpdateInterceptor = NoOpBatchReplicatUpdateInterceptor.INSTANCE;
+        this.replicaUpdateInterceptor = NoOpBatchReplicaUpdateInterceptor.INSTANCE;
     }
 
     @Override
@@ -149,8 +153,18 @@ public class PartitionStateManagerImpl implements PartitionStateManager {
     }
 
     private Collection<MemberGroup> createMemberGroups() {
-        final Collection<Member> members = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        Collection<Member> members = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         return memberGroupFactory.createMemberGroups(members);
+    }
+
+    public Collection<MemberGroup> createMemberGroups(Collection<Member> members) {
+        List<Member> dataMembers = new ArrayList<>();
+        for (Member member : members) {
+            if (DATA_MEMBER_SELECTOR.select(member)) {
+                dataMembers.add(member);
+            }
+        }
+        return memberGroupFactory.createMemberGroups(dataMembers);
     }
 
     @Override
@@ -209,7 +223,7 @@ public class PartitionStateManagerImpl implements PartitionStateManager {
     /**
      * Returns {@code true} if the node has started and
      * the cluster state allows migrations (see {@link ClusterState#isMigrationAllowed()}).
-     * */
+     */
     private boolean isPartitionAssignmentAllowed() {
         if (!node.getNodeExtension().isStartCompleted()) {
             logger.warning("Partitions can't be assigned since startup is not completed yet.");
@@ -492,8 +506,9 @@ public class PartitionStateManagerImpl implements PartitionStateManager {
         this.replicaUpdateInterceptor = interceptor;
     }
 
-    static final class NoOpBatchReplicatUpdateInterceptor implements ReplicaUpdateInterceptor {
-        static final NoOpBatchReplicatUpdateInterceptor INSTANCE = new NoOpBatchReplicatUpdateInterceptor();
+    static final class NoOpBatchReplicaUpdateInterceptor implements ReplicaUpdateInterceptor {
+
+        static final NoOpBatchReplicaUpdateInterceptor INSTANCE = new NoOpBatchReplicaUpdateInterceptor();
 
         @Override
         public void onPartitionOwnersChanged() {

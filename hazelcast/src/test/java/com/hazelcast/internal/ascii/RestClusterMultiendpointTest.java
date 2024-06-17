@@ -41,7 +41,6 @@ public class RestClusterMultiendpointTest
 
     @Override
     @Ignore("There is no port set for multi-endpoint when REST is disabled")
-    public void testDisabledRest()
-            throws Exception {
+    public void testDisabledRest() {
     }
 }

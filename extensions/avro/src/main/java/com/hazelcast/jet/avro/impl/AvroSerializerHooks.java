@@ -204,8 +204,8 @@ public final class AvroSerializerHooks {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof GenericContainer
-                    && ((GenericContainer) obj).getSchema().getType() == schema.getType())) {
+            if (!(obj instanceof GenericContainer genericContainer
+                    && genericContainer.getSchema().getType() == schema.getType())) {
                 return false;
             }
             return deserialized().equals(obj);

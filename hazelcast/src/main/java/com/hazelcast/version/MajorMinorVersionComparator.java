@@ -18,6 +18,7 @@ package com.hazelcast.version;
 
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -28,6 +29,7 @@ import java.util.Comparator;
 @SuppressWarnings("checkstyle:magicnumber")
 class MajorMinorVersionComparator implements Comparator<MemberVersion>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 364570099633468810L;
 
     @Override

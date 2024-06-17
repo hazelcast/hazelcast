@@ -51,7 +51,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystem expirySystem,
+    public StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystem expirySystem,
                 SerializationService serializationService) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;

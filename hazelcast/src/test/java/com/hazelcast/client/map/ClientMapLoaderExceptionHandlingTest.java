@@ -23,7 +23,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -73,18 +72,15 @@ public class ClientMapLoaderExceptionHandlingTest extends AbstractMapStoreTest {
     public void test_initial_map_load_propagates_exception_to_client() {
         final IMap<Integer, Integer> map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Exception exception = null;
-                try {
-                    map.get(1);
-                } catch (Exception e) {
-                    exception = e;
-                }
-                assertNotNull("Exception not propagated to client", exception);
-                assertEquals(ClassCastException.class, exception.getClass());
+        assertTrueEventually(() -> {
+            Exception exception = null;
+            try {
+                map.get(1);
+            } catch (Exception e) {
+                exception = e;
             }
+            assertNotNull("Exception not propagated to client", exception);
+            assertEquals(ClassCastException.class, exception.getClass());
         });
     }
 

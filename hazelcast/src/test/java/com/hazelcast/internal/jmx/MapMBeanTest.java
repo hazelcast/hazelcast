@@ -38,7 +38,6 @@ import static org.junit.Assert.assertTrue;
 public class MapMBeanTest extends HazelcastTestSupport {
 
     private static final String TYPE_NAME = "IMap";
-    private static final Object[] EMPTY_STRING_PARAMETER = {""};
 
     private TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
     private MBeanDataHolder holder = new MBeanDataHolder(hazelcastInstanceFactory);

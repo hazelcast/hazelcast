@@ -288,10 +288,6 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void sendPhoneHome() {
-    }
-
-    @Override
     public void scheduleClusterVersionAutoUpgrade() {
         nodeExtension.scheduleClusterVersionAutoUpgrade();
     }

@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
@@ -83,8 +84,8 @@ public class StoreWorkerConcurrentUpdateTest extends HazelcastTestSupport {
 
     private static final class Entry implements Serializable {
 
-        private int id;
-        private int version;
+        private final int id;
+        private final int version;
 
         Entry(int id, int version) {
             this.id = id;
@@ -111,6 +112,7 @@ public class StoreWorkerConcurrentUpdateTest extends HazelcastTestSupport {
     }
 
     private static final class DummyMapInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -128,8 +130,8 @@ public class StoreWorkerConcurrentUpdateTest extends HazelcastTestSupport {
     private static final class NewVersionConcurrentInsertMapStore implements MapStore<Integer, Entry> {
 
         private IMap<Integer, Entry> map;
-        private Set<Entry> versionOne = new HashSet<>();
-        private Set<Entry> versionTwo = new HashSet<>();
+        private final Set<Entry> versionOne = new HashSet<>();
+        private final Set<Entry> versionTwo = new HashSet<>();
 
         private void setMap(IMap<Integer, Entry> map) {
             this.map = map;

@@ -294,7 +294,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         /*
-         * child parent jar contains two classes as follows. This classes are not put into code base on purpose, in order not to
+         * child parent jar contains two classes as follows. These classes are not put into code base on purpose, in order not to
          * effect the test. Child class is loaded first when reading via JarInputStream.getNextJarEntry, which is the case we
          * wanted to test.
          *

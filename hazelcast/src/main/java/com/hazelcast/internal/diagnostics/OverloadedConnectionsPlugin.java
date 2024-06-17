@@ -212,8 +212,8 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
                 Object result = serializationService.toObject(packet);
                 if (result == null) {
                     return "null";
-                } else if (result instanceof Operation) {
-                    return OperationDescriptors.toOperationDesc((Operation) result);
+                } else if (result instanceof Operation operation) {
+                    return OperationDescriptors.toOperationDesc(operation);
                 } else {
                     return result.getClass().getName();
                 }

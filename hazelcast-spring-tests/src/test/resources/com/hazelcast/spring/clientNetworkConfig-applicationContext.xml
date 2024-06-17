@@ -66,6 +66,7 @@
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
+            <hz:subset-routing enabled="false" routing-strategy="PARTITION_GROUPS"/>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:member>127.0.0.1:5702</hz:member>

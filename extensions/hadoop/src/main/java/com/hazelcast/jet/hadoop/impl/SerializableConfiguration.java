@@ -24,6 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -31,6 +32,7 @@ import java.io.Serializable;
  */
 public final class SerializableConfiguration extends Configuration implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("unused") // for deserialization
@@ -41,10 +43,12 @@ public final class SerializableConfiguration extends Configuration implements Se
         super(jobConf);
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         super.write(new DataOutputStream(out));
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException {
         super.readFields(new DataInputStream(in));
     }
@@ -54,8 +58,8 @@ public final class SerializableConfiguration extends Configuration implements Se
         if (conf instanceof Serializable) {
             return conf;
         }
-        if (conf instanceof JobConf) {
-            return new SerializableJobConf((JobConf) conf);
+        if (conf instanceof JobConf jobConf) {
+            return new SerializableJobConf(jobConf);
         } else {
             return new SerializableConfiguration(conf);
         }

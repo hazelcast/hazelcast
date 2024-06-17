@@ -23,8 +23,6 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -38,7 +36,6 @@ import org.junit.runner.RunWith;
 
 import javax.transaction.Transaction;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -69,12 +66,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         final TransactionContext context = client.newTransactionContext();
 
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                clientDisconnected.countDown();
-            }
-        });
+        client.getLifecycleService().addLifecycleListener(event -> clientDisconnected.countDown());
 
         Hazelcast.shutdownAll();
 
@@ -94,12 +86,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance();
 
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                clientDisconnected.countDown();
-            }
-        });
+        client.getLifecycleService().addLifecycleListener(event -> clientDisconnected.countDown());
 
         Hazelcast.shutdownAll();
 
@@ -127,12 +114,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         Transaction transaction = tm.getTransaction();
 
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                clientDisconnected.countDown();
-            }
-        });
+        client.getLifecycleService().addLifecycleListener(event -> clientDisconnected.countDown());
 
         Hazelcast.shutdownAll();
 
@@ -150,14 +132,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
     public void cleanAtomikosLogs() {
         try {
             File currentDir = new File(".");
-            final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    if (name.endsWith(".epoch") || name.startsWith("tmlog")) {
-                        return true;
-                    }
-                    return false;
-                }
-            });
+            final File[] tmLogs = currentDir.listFiles((dir, name) -> name.endsWith(".epoch") || name.startsWith("tmlog"));
             for (File tmLog : tmLogs) {
                 tmLog.delete();
             }

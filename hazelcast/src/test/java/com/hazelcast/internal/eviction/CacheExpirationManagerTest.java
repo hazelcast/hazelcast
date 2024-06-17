@@ -27,7 +27,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -84,12 +83,9 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(MERGING);
         ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(MERGED);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int expirationCount = simpleEntryListener.expiredCount.get();
-                assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
-            }
+        assertTrueEventually(() -> {
+            int expirationCount = simpleEntryListener.expiredCount.get();
+            assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
         });
     }
 
@@ -142,13 +138,8 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         Cache<Integer, Integer> cache = cacheManager.createCache("test", cacheConfig);
         cache.put(1, 1);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("There should be zero CacheClearExpiredRecordsTask",
-                        hasClearExpiredRecordsTaskStarted(liteMember));
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertFalse("There should be zero CacheClearExpiredRecordsTask",
+                hasClearExpiredRecordsTaskStarted(liteMember)), 3);
     }
 
     @Test
@@ -175,13 +166,8 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         final HazelcastInstance node2 = factory.newHazelcastInstance(config);
         node1.shutdown();
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("There should be zero CacheClearExpiredRecordsTask",
-                        hasClearExpiredRecordsTaskStarted(node2));
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertFalse("There should be zero CacheClearExpiredRecordsTask",
+                hasClearExpiredRecordsTaskStarted(node2)), 3);
     }
 
     @Test
@@ -198,13 +184,8 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         final HazelcastInstance node2 = factory.newHazelcastInstance(config);
         node1.shutdown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("There should be one ClearExpiredRecordsTask started",
-                        hasClearExpiredRecordsTaskStarted(node2));
-            }
-        });
+        assertTrueEventually(() -> assertTrue("There should be one ClearExpiredRecordsTask started",
+                hasClearExpiredRecordsTaskStarted(node2)));
     }
 
     private void backgroundClearTaskStops_whenLifecycleState(LifecycleEvent.LifecycleState lifecycleState) {
@@ -221,12 +202,9 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
         ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(lifecycleState);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                int expirationCount = simpleEntryListener.expiredCount.get();
-                assertEquals(format("Expecting no expiration but found:%d", expirationCount), 0, expirationCount);
-            }
+        assertTrueAllTheTime(() -> {
+            int expirationCount = simpleEntryListener.expiredCount.get();
+            assertEquals(format("Expecting no expiration but found:%d", expirationCount), 0, expirationCount);
         }, 5);
     }
 

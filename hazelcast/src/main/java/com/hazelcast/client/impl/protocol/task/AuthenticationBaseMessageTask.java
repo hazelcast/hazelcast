@@ -18,6 +18,8 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.client.impl.ClusterViewListenerService;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.impl.ClusterViewListenerService.PartitionsView;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
@@ -31,10 +33,12 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.version.Version;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +49,8 @@ import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICA
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.CREDENTIALS_FAILED;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH;
+import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.createKeyValuePairs;
+import static java.util.Collections.emptyMap;
 
 /**
  * Base authentication task
@@ -59,6 +65,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     protected transient Credentials credentials;
     transient byte clientSerializationVersion;
     transient String clientVersion;
+    transient byte routingMode;
 
     AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -134,7 +141,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
         String nodeClusterName = nodeEngine.getConfig().getClusterName();
-        if (! nodeClusterName.equals(clusterName)) {
+        if (!nodeClusterName.equals(clusterName)) {
             return CREDENTIALS_FAILED;
         }
 
@@ -151,12 +158,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             return CREDENTIALS_FAILED;
         } finally {
             nodeEngine.getNode().getNodeExtension().getAuditlogService()
-                .eventBuilder(AuditlogTypeIds.AUTHENTICATION_CLIENT)
-                .message("Client connection authentication.")
-                .addParameter("connection", connection)
-                .addParameter("credentials", credentials)
-                .addParameter("passed", passed)
-                .log();
+                    .eventBuilder(AuditlogTypeIds.AUTHENTICATION_CLIENT)
+                    .message("Client connection authentication.")
+                    .addParameter("connection", connection)
+                    .addParameter("credentials", credentials)
+                    .addParameter("passed", passed)
+                    .log();
         }
     }
 
@@ -186,7 +193,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private ClientMessage encodeUnauthenticated(byte status, boolean failoverSupported) {
         return encodeAuthenticationResponse(status, null, null, (byte) -1, "", -1, null,
-                failoverSupported, null, null, null, null);
+                failoverSupported, null, null, null, null, emptyMap());
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
@@ -204,9 +211,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         ServerConnection connection = endpoint.getConnection();
         setConnectionType();
         setTpcTokenToEndpoint();
-        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels);
+        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels,
+                RoutingMode.getById(routingMode));
         validateNodeStart();
-        final UUID clusterId = clientEngine.getClusterService().getClusterId();
+        final UUID clusterId = nodeEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;
         // see AbstractMessageTask#acceptOnIncompleteStart
         if (clusterId == null) {
@@ -219,48 +227,54 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         logger.info("Received auth from " + connection + ", successfully authenticated, clientUuid: " + clientUuid
                 + ", client name: " + clientName + ", client version: " + clientVersion);
         final Address thisAddress = clientEngine.getThisAddress();
-        UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
+        UUID uuid = nodeEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         String serverVersion = getMemberBuildInfo().getVersion();
         byte[] tpcToken = endpoint.getTpcToken() != null ? endpoint.getTpcToken().getContent() : null;
 
-        ClusterViewListenerService clusterListenerService = clientEngine.getClusterListenerService();
-        MembersView membersView = clusterListenerService.getMembersView();
-        ClusterViewListenerService.PartitionsView partitionsView = clusterListenerService.getPartitionsViewOrNull();
+        ClusterViewListenerService clusterViewListenerService = clientEngine.getClusterViewListenerService();
+        MembersView membersView = clusterViewListenerService.getMembersView();
+        PartitionsView partitionsView = clusterViewListenerService.getPartitionsView();
+        Collection<Collection<UUID>> memberGroups = clusterViewListenerService.toMemberGroups(membersView);
+        boolean enterprise = nodeEngine.getNode().getBuildInfo().isEnterprise();
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        Map<String, String> keyValuePairs = createKeyValuePairs(
+                memberGroups, membersView.getVersion(), enterprise, clusterVersion);
 
         return encodeAuthenticationResponse(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
-                clientEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,
-                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken, membersView, partitionsView);
+                nodeEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,
+                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken, membersView, partitionsView, keyValuePairs);
     }
 
     private void setConnectionType() {
         connection.setConnectionType(getClientType());
     }
 
+
     protected void setTpcTokenToEndpoint() {
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
+    @SuppressWarnings("ParameterNumber")
     protected ClientMessage encodeAuthenticationResponse(byte status, Address thisAddress, UUID uuid,
                                                          byte serializationVersion, String serverVersion,
                                                          int partitionCount, UUID clusterId, boolean failoverSupported,
                                                          List<Integer> tpcPorts, byte[] tpcToken,
-                                                         MembersView membersView,
-                                                         ClusterViewListenerService.PartitionsView partitionsView) {
+                                                         MembersView membersView, PartitionsView partitionsView,
+                                                         Map<String, String> keyValuePairs) {
         if (membersView == null) {
             membersView = new MembersView(-1, Collections.emptyList());
         }
 
         if (partitionsView == null) {
-            partitionsView = new ClusterViewListenerService.PartitionsView(Collections.EMPTY_MAP, -1);
+            partitionsView = new PartitionsView(emptyMap(), -1);
         }
 
         List<Map.Entry<UUID, List<Integer>>> partitions = partitionsView.partitions().entrySet().stream().toList();
 
         return encodeAuthenticationResponse(status, thisAddress, uuid, serializationVersion, serverVersion, partitionCount,
                 clusterId, failoverSupported, tpcPorts, tpcToken, membersView.getVersion(), membersView.getMembers(),
-                partitionsView.version(), partitions);
+                partitionsView.version(), partitions, keyValuePairs);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -270,9 +284,11 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                                                                   List<Integer> tpcPorts, byte[] tpcToken, int memberListVersion,
                                                                   List<MemberInfo> members,
                                                                   int partitionsVersion,
-                                                                  List<Map.Entry<UUID, List<Integer>>> partitions);
+                                                                  List<Map.Entry<UUID, List<Integer>>> partitions,
+                                                                  Map<String, String> keyValuePairs);
 
     protected abstract String getClientType();
+
 
     @Override
     protected ClientMessage encodeResponse(Object response) {

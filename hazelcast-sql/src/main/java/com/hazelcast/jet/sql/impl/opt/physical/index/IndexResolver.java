@@ -710,7 +710,7 @@ public final class IndexResolver {
                     singletonList(NULL),
                     singletonList(true)
             ));
-            if (ranges.size() == 0) {
+            if (ranges.isEmpty()) {
                 indexFilter = isNullFilter;
             } else {
                 List<IndexFilter> indexFilters = new ArrayList<>(ranges.size() + 1);
@@ -1051,7 +1051,7 @@ public final class IndexResolver {
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet());
 
         RelCollation relCollation = buildCollationTrait(scan, index, ascs);
-        if (nonEmptyCollation && relCollation.getFieldCollations().size() == 0) {
+        if (nonEmptyCollation && relCollation.getFieldCollations().isEmpty()) {
             // Don't make a full scan with empty collation
             return null;
         }

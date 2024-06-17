@@ -82,7 +82,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      * Following fields for FORCE_OFFLOAD_ALL_OPERATIONS
      * are introduced only for testing purposes.
      *
-     * @see {@link MapServiceContext#isForceOffloadEnabled}
+     * @see MapServiceContext#isForceOffloadEnabled
      */
     boolean DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS = false;
     String PROP_FORCE_OFFLOAD_ALL_OPERATIONS
@@ -272,10 +272,26 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     Semaphore getNodeWideLoadedKeyLimiter();
 
     /**
+     * @param mapConfig the mapConfig to be checked
+     * @return {@code true} when Merkle tree maintenance should be
+     * enabled for given {@code mapConfig}, otherwise {@code false}.
+     */
+    default boolean shouldEnableMerkleTree(MapConfig mapConfig) {
+        return false;
+    }
+
+    /**
+     * Same as {@link #shouldEnableMerkleTree(MapConfig)}
+     * but in this case we also have an option to print a
+     * log statement when merkle tree is implicitly enabled.
+     *
+     * @param mapContainer mapContainer to be checked against
+     * @param log          {@code true} to print a log statement to
+     *                     state merkle tree is enabled implicitly otherwise {@code false}
      * @return {@code true} when Merkle tree maintenance should be enabled for given {@code mapConfig},
      * otherwise {@code false}.
      */
-    default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
+    default boolean shouldEnableMerkleTree(MapContainer mapContainer, boolean log) {
         return false;
     }
 

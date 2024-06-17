@@ -54,7 +54,7 @@ public interface InternalHotRestartService {
      * If recovery is in progress and no other deferred cluster state was already set
      * (with a previous call to {@code trySetDeferredClusterState}),
      * stores the given {@code newClusterState} and applies it after recovery is complete,
-     * returning {@code true}. Otherwise does nothing and returns {@code false}.
+     * returning {@code true}. Otherwise, does nothing and returns {@code false}.
      *
      * @param newClusterState
      * @return {@code true} if recovery is in progress, indicating that the new cluster
@@ -132,7 +132,7 @@ public interface InternalHotRestartService {
     /**
      * Executes force-start process, resets local hot restart data and member gets a new UUID.
      * <p>
-     * If the local node has already completed the start process or it isn't excluded in cluster start,
+     * If the local node has already completed the start process, or it isn't excluded in cluster start,
      * this method fails with an exception.
      */
     void forceStartBeforeJoin();

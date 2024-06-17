@@ -20,6 +20,7 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.KafkaException;
@@ -31,6 +32,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
 
-
+@Category(NightlyTest.class)
 public class KafkaDataConnectionTest {
 
     private static final KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();

@@ -89,7 +89,8 @@ public class FailoverConfigTest {
                 "setEurekaConfig", "getEurekaConfig", "setAutoDetectionConfig", "getAutoDetectionConfig", "isAutoDetectionEnabled",
                 "getCloudConfig", "setCloudConfig", "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions",
                 "setOutboundPorts", "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig",
-                "setClientIcmpPingConfig", "equals", "hashCode", "toString");
+                "setClientIcmpPingConfig", "equals", "hashCode", "toString", "setSubsetRoutingConfig",
+                "getSubsetRoutingConfig");
         Method[] declaredMethods = ClientNetworkConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (!method.getName().startsWith("$") && !allClientNetworkConfigMethods.contains(method.getName())) {

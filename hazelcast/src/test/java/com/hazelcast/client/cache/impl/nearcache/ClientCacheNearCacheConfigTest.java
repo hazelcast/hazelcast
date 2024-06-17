@@ -41,7 +41,7 @@ import static java.lang.Integer.MAX_VALUE;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheNearCacheConfigTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
     public void setUp() throws Exception {
@@ -54,7 +54,7 @@ public class ClientCacheNearCacheConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void native_backed_nearCache_throws_illegalArgumentException_whenNoNativeConfigAvailable() throws Exception {
+    public void native_backed_nearCache_throws_illegalArgumentException_whenNoNativeConfigAvailable() {
         String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">"
                 + "<near-cache name=\"test\">"
                 + "<in-memory-format>NATIVE</in-memory-format>"

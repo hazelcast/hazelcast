@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.metrics.MetricConsumer;
@@ -76,6 +77,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private Set<String> labels;
     private volatile boolean destroyed;
     private volatile TpcToken tpcToken;
+    private RoutingMode routingMode;
 
     public ClientEndpointImpl(ClientEngine clientEngine, NodeEngine nodeEngine, ServerConnection connection) {
         this.clientEngine = clientEngine;
@@ -120,11 +122,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
-                              long authCorrelationId, String clientName, Set<String> labels) {
+                              long authCorrelationId, String clientName, Set<String> labels, RoutingMode routingMode) {
         this.clientUuid = clientUuid;
         this.credentials = credentials;
         this.authenticated = true;
         this.setClientVersion(clientVersion);
+        this.routingMode = routingMode;
         this.clientName = clientName;
         this.labels = labels;
         clientEngine.onEndpointAuthenticated(this);
@@ -196,6 +199,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public Set<String> getLabels() {
         return labels;
+    }
+
+
+    @Override
+    public RoutingMode getRoutingMode() {
+        return routingMode;
     }
 
     @Override

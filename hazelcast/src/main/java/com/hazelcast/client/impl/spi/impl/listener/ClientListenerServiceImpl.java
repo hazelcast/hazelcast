@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
@@ -35,6 +36,7 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.StripedExecutor;
@@ -67,13 +69,17 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class ClientListenerServiceImpl
         implements ClientListenerService, StaticMetricsProvider, ConnectionListener<ClientConnection> {
 
+    private static final String ACTIVE_SUBSET_CONNECTIONS = "activeSubsetConnection";
     private final HazelcastClientInstanceImpl client;
     private final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
+    private final Map<String, ClientConnection> subsetListenersConnection = new ConcurrentHashMap<>();
+
     private final ClientConnectionManager clientConnectionManager;
     private final ILogger logger;
     private final ExecutorService registrationExecutor;
     private final StripedExecutor eventExecutor;
-    private final boolean isUnisocket;
+    private final RoutingMode routingMode;
+
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -87,7 +93,7 @@ public class ClientListenerServiceImpl
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
         this.registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
         this.clientConnectionManager = client.getConnectionManager();
-        this.isUnisocket = clientConnectionManager.isUnisocketClient();
+        this.routingMode = clientConnectionManager.getRoutingMode();
     }
 
     @Nonnull
@@ -96,30 +102,49 @@ public class ClientListenerServiceImpl
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-
         Future<UUID> future = registrationExecutor.submit(() -> {
             UUID userRegistrationId = UuidUtil.newUnsecureUUID();
 
             ClientListenerRegistration registration = new ClientListenerRegistration(handler, codec);
             registrations.put(userRegistrationId, registration);
             Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
-            for (ClientConnection connection : connections) {
-                try {
-                    invoke(registration, connection);
-                } catch (Exception e) {
-                    if (connection.isAlive()) {
-                        deregisterListenerInternal(userRegistrationId);
-                        throw new HazelcastException("Listener can not be added ", e);
-                    }
 
+            switch (routingMode) {
+                case SUBSET -> {
+                    ClientConnection activeConnection = getOrUpdateSubsetModeListenerRegistrationConnection();
+                    doRemoteRegistrationSync(registration, activeConnection, userRegistrationId);
                 }
+                case UNISOCKET -> {
+                    ClientConnection firstConnection = IterableUtil.getFirst(connections, null);
+                    if (firstConnection != null) {
+                        doRemoteRegistrationSync(registration, firstConnection, userRegistrationId);
+                    }
+                }
+                case SMART -> connections.forEach(connection ->
+                        doRemoteRegistrationSync(registration, connection, userRegistrationId));
+                default ->
+                        throw new IllegalArgumentException("Unsupported routing mode: " + routingMode);
             }
+
             return userRegistrationId;
         });
         try {
             return future.get();
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private void doRemoteRegistrationSync(ClientListenerRegistration registration, ClientConnection connection,
+                                          UUID userRegistrationId) {
+        try {
+            invoke(registration, connection);
+        } catch (Exception e) {
+            if (connection.isAlive()) {
+                deregisterListenerInternal(userRegistrationId);
+                throw new HazelcastException("Listener can not be added ", e);
+            }
         }
     }
 
@@ -235,8 +260,12 @@ public class ClientListenerServiceImpl
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
         registrationExecutor.submit(() -> {
-            for (ClientListenerRegistration listenerRegistration : registrations.values()) {
-                invokeFromInternalThread(listenerRegistration, connection);
+            if (routingMode == RoutingMode.SUBSET) {
+                getOrUpdateSubsetModeListenerRegistrationConnection();
+            } else {
+                for (ClientListenerRegistration listenerRegistration : registrations.values()) {
+                    invokeFromInternalThread(listenerRegistration, connection);
+                }
             }
         });
     }
@@ -257,9 +286,31 @@ public class ClientListenerServiceImpl
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
         registrationExecutor.submit(() -> {
-            for (ClientListenerRegistration registry : registrations.values()) {
-                registry.getConnectionRegistrations().remove(connection);
+            if (routingMode == RoutingMode.SUBSET) {
+                boolean removed = subsetListenersConnection.remove(ACTIVE_SUBSET_CONNECTIONS, connection);
+                if (removed) {
+                    // if we removed the responsible connection
+                    // for listener registration in subset mode,
+                    // we need to assign a new connection with
+                    // `getOrUpdateSubsetModeListenerRegistrationConnection`
+                    // method
+                    getOrUpdateSubsetModeListenerRegistrationConnection();
+                }
             }
+            registrations.values().forEach(registry -> registry.getConnectionRegistrations().remove(connection));
+        });
+    }
+
+    private ClientConnection getOrUpdateSubsetModeListenerRegistrationConnection() {
+        return subsetListenersConnection.computeIfAbsent(ACTIVE_SUBSET_CONNECTIONS, k -> {
+            ClientConnection randomConnection = IterableUtil.getFirst(clientConnectionManager.getActiveConnections(),
+                    null);
+            if (randomConnection != null) {
+                for (ClientListenerRegistration listenerRegistration : registrations.values()) {
+                    invokeFromInternalThread(listenerRegistration, randomConnection);
+                }
+            }
+            return randomConnection;
         });
     }
 
@@ -305,7 +356,7 @@ public class ClientListenerServiceImpl
     }
 
     private boolean registersLocalOnly() {
-        return !isUnisocket;
+        return routingMode == RoutingMode.SMART;
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {

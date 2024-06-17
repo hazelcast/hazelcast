@@ -59,7 +59,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * <p/>
      * Can only be configured once.
      * <p/>
-     * This call is threadsafe.
+     * This call is thread safe.
      * <p/>
      * If the method is called when the socket already is closed, the {@link CloseListener}
      * is notified.

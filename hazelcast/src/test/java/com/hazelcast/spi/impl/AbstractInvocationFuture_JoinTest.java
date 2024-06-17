@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -49,12 +48,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
     public void whenNormalResponse() throws ExecutionException, InterruptedException {
         future.complete(value);
 
-        Future joinFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.join();
-            }
-        });
+        Future joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         assertSame(value, joinFuture.get());
@@ -65,12 +59,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
         ExpectedRuntimeException ex = new ExpectedRuntimeException();
         future.completeExceptionally(ex);
 
-        Future joinFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.join();
-            }
-        });
+        Future joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         try {
@@ -87,12 +76,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
         Exception ex = new Exception();
         future.completeExceptionally(ex);
 
-        Future joinFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.join();
-            }
-        });
+        Future joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         try {
@@ -108,15 +92,12 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
     public void whenInterrupted() {
         final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() {
-                thread.set(Thread.currentThread());
-                try {
-                    return future.join();
-                } finally {
-                    interrupted.set(Thread.currentThread().isInterrupted());
-                }
+        Future getFuture = spawn(() -> {
+            thread.set(Thread.currentThread());
+            try {
+                return future.join();
+            } finally {
+                interrupted.set(Thread.currentThread().isInterrupted());
             }
         });
 

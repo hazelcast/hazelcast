@@ -21,6 +21,8 @@ import com.hazelcast.map.AbstractIMapEvent;
 import com.hazelcast.map.IMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serial;
+
 /**
  * Map Entry event.
  *
@@ -33,6 +35,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings("SE_BAD_FIELD")
 public class EntryEvent<K, V> extends AbstractIMapEvent {
 
+    @Serial
     private static final long serialVersionUID = -2296203982913729851L;
 
     protected K key;

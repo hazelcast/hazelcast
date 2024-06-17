@@ -21,10 +21,8 @@ import com.google.common.collect.Lists;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -39,18 +37,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LongHashSetTest {
-    @Rule
-    public final ExpectedException rule = ExpectedException.none();
 
     private final LongHashSet set = new LongHashSet(1000, -1);
 
     @Test
-    public void initiallyContainsNoElements() throws Exception {
+    public void initiallyContainsNoElements() {
         for (int i = 0; i < 10000; i++) {
             assertFalse(set.contains(i));
         }
@@ -275,8 +272,7 @@ public class LongHashSetTest {
     public void failsWhenOverCapacity() {
         final LongHashSet set = new LongHashSet(1, 0);
         set.add(1);
-        rule.expect(IllegalStateException.class);
-        set.add(2);
+        assertThrows(IllegalStateException.class, () -> set.add(2));
     }
 
     @Test

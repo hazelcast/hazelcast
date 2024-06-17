@@ -375,8 +375,8 @@ public class StreamFilesP<R> extends AbstractProcessor {
         // It's JVM-specific and hence it's just a best-effort.
         // I believe this is useful on platforms without native watch service (or where Java does not use it) e.g. MacOSX
         Object modifier = ReflectionUtils.readStaticFieldOrNull(SENSITIVITY_MODIFIER_CLASS_NAME, "HIGH");
-        if (modifier instanceof WatchEvent.Modifier) {
-            return new WatchEvent.Modifier[]{(WatchEvent.Modifier) modifier};
+        if (modifier instanceof WatchEvent.Modifier eventModifier) {
+            return new WatchEvent.Modifier[]{eventModifier};
         }
         //bad luck, we did not find the modifier
         return new WatchEvent.Modifier[0];

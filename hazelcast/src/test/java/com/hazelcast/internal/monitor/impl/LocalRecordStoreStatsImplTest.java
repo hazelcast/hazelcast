@@ -175,6 +175,24 @@ public class LocalRecordStoreStatsImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void delete_updates_last_update_time() {
+        for (int i = 0; i < 10; i++) {
+            map.set("key:" + i, "value:" + i);
+        }
+
+        assertLastUpdateTimeUpdated(() -> map.delete("key:0"));
+    }
+
+    @Test
+    public void delete_does_not_update_last_update_time_when_no_matching_key() {
+        for (int i = 0; i < 10; i++) {
+            map.set("key:" + i, "value:" + i);
+        }
+
+        assertLastUpdateTimeIsNotUpdated(() -> map.delete("key:100"));
+    }
+
+    @Test
     public void clear_updates_last_update_time() {
         for (int i = 0; i < 10; i++) {
             map.set("key:" + i, "value:" + i);

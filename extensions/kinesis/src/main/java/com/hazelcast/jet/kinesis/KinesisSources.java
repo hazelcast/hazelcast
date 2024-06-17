@@ -31,6 +31,7 @@ import com.hazelcast.jet.retry.RetryStrategy;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
@@ -340,6 +341,7 @@ public final class KinesisSources {
 
     private static class DefaultProjection<T> implements BiFunctionEx<Record, Shard, T> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

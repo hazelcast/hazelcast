@@ -21,6 +21,8 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
+import java.io.Serial;
+
 /**
  * Exception to throw from job-executing methods to indicate a failure that can
  * be resolved by restarting the job.
@@ -42,6 +44,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
  */
 public class RestartableException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public RestartableException() {

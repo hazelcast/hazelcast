@@ -22,7 +22,7 @@ import com.hazelcast.cluster.Address;
 import java.util.concurrent.BlockingDeque;
 
 /**
- * Listens for {@code SplitBrainJoinMessage}s and adds them for processing by split brain handler. Each messages is added
+ * Listens for {@code SplitBrainJoinMessage}s and adds them for processing by split brain handler. Each message is added
  * to the head of a {@code BlockingDeque}, so that polling the {@code BlockingDeque} will return the message received last
  * (thus operating as a stack).
  */

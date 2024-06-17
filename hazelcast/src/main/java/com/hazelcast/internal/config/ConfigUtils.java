@@ -140,7 +140,7 @@ public final class ConfigUtils {
 
     /**
      * If {@code configs} contains an exact match for {@code name}, returns
-     * the matching config. Otherwise creates a new config with the given
+     * the matching config. Otherwise, creates a new config with the given
      * name, adds it to {@code configs} and returns it.
      */
     public static <T extends NamedConfig, S extends T> T getByNameOrNew(Map<String, T> configs, String name,

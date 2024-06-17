@@ -48,6 +48,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -136,7 +137,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
 
         Job job = instance().getJet().newJob(pipeline, new JobConfig().setSuspendOnFailure(true));
         if (expectOOME) {
-            assertJobSuspendedEventually(job);
+            assertThat(job).eventuallySuspended();
             assertThat(job.getSuspensionCause().errorCause())
                     .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
             job.updateConfig(new DeltaJobConfig().setMaxProcessorAccumulatedRecords(itemCount));

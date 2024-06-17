@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
@@ -48,7 +49,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout() {
-        checkTimeout(false);
+        checkTimeout(null);
     }
 
     @Test
@@ -120,7 +121,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testDataTypeMismatch() {
-        checkDataTypeMismatch(false);
+        checkDataTypeMismatch(null);
     }
 
     @Test
@@ -140,11 +141,18 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testParsingError() {
-        checkParsingError(false);
+        checkParsingError(null);
     }
 
     @Test
     public void testUserCancel() {
-        checkUserCancel(false);
+        checkUserCancel(null);
+    }
+
+    /**
+     * Returns the count of {@link ExecutionContext} that are running on given {@code instance}.
+     */
+    private static int getExecutionContextCount(HazelcastInstance instance) {
+        return getJetServiceBackend(instance).getJobExecutionService().getExecutionContexts().size();
     }
 }

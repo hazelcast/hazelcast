@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.Objects;
 
 /**
@@ -34,6 +35,7 @@ public class JsonFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_JSON = "json";
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Class<T> clazz;

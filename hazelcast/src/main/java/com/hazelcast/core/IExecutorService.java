@@ -222,7 +222,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
                             @Nullable ExecutionCallback<T> callback);
 
     /**
-     * Submits a task to the specified members. Caller will be notified for the result of the each task by
+     * Submits a task to the specified members. Caller will be notified for the result of each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
@@ -235,7 +235,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
                          @Nonnull MultiExecutionCallback callback);
 
     /**
-     * Submits task to the selected members. Caller will be notified for the result of the each task by
+     * Submits task to the selected members. Caller will be notified for the result of each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
@@ -340,7 +340,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
                              @Nonnull MultiExecutionCallback callback);
 
     /**
-     * Submits task to all the cluster members. Caller will be notified for the result of the each task by
+     * Submits task to all the cluster members. Caller will be notified for the result of each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *

@@ -32,9 +32,9 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 
@@ -99,7 +99,7 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         }
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        Map<ServiceNamespace, Long> versionMap = new HashMap<>();
+        ConcurrentMap<ServiceNamespace, Long> versionMap = new ConcurrentHashMap<>();
         for (ServiceNamespace ns : namespaces) {
             long[] versions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
             long currentReplicaVersion = versions[replicaIndex - 1];

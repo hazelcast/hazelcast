@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
@@ -55,24 +54,14 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     @Test
     public void whenZeroTimeout_butResponseAvailable() throws Exception {
         future.complete(value);
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.get(0, SECONDS);
-            }
-        });
+        Future<?> getFuture = spawn(() -> future.get(0, SECONDS));
         assertCompletesEventually(getFuture);
         assertSame(value, getFuture.get());
     }
 
     @Test
     public void whenZeroTimeout_andNoResponseAvailable() throws Exception {
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.get(0, SECONDS);
-            }
-        });
+        Future<?> getFuture = spawn(() -> future.get(0, SECONDS));
 
         assertCompletesEventually(getFuture);
 
@@ -90,12 +79,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     @Test
     public void whenResponseAvailable() throws Exception {
         future.complete(value);
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.get(10, SECONDS);
-            }
-        });
+        Future<?> getFuture = spawn(() -> future.get(10, SECONDS));
         assertCompletesEventually(getFuture);
         assertSame(value, getFuture.get());
     }
@@ -105,16 +89,13 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         future.complete(value);
 
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                // we set the interrupt flag.
-                Thread.currentThread().interrupt();
-                Object value = future.get(1, SECONDS);
-                // and then we check if the interrupt flag is still set
-                interrupted.set(Thread.currentThread().isInterrupted());
-                return value;
-            }
+        Future<?> getFuture = spawn(() -> {
+            // we set the interrupt flag.
+            Thread.currentThread().interrupt();
+            Object value = future.get(1, SECONDS);
+            // and then we check if the interrupt flag is still set
+            interrupted.set(Thread.currentThread().isInterrupted());
+            return value;
         });
 
         assertCompletesEventually(getFuture);
@@ -124,12 +105,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
     @Test
     public void whenResponseAvailableAfterSomeDelay() throws Exception {
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.get(60, SECONDS);
-            }
-        });
+        Future<?> getFuture = spawn(() -> future.get(60, SECONDS));
 
         // wait till the thread is registered.
         assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
@@ -142,12 +118,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
     @Test
     public void whenTimeout() throws InterruptedException {
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.get(1, SECONDS);
-            }
-        });
+        Future<?> getFuture = spawn(() -> future.get(1, SECONDS));
 
         assertCompletesEventually(getFuture);
 
@@ -166,15 +137,12 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     public void whenInterruptedWhileWaiting() throws Exception {
         final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
-        Future getFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                thread.set(Thread.currentThread());
-                try {
-                    return future.get(1, HOURS);
-                } finally {
-                    interrupted.set(Thread.currentThread().isInterrupted());
-                }
+        Future<?> getFuture = spawn(() -> {
+            thread.set(Thread.currentThread());
+            try {
+                return future.get(1, HOURS);
+            } finally {
+                interrupted.set(Thread.currentThread().isInterrupted());
             }
         });
 
@@ -195,14 +163,9 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
     @Test
     public void whenMultipleGetters() throws Exception {
-        List<Future> getFutures = new LinkedList<>();
+        List<Future<?>> getFutures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
-            getFutures.add(spawn(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    return future.get(1, DAYS);
-                }
-            }));
+            getFutures.add(spawn(() -> future.get(1, DAYS)));
         }
 
         assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
@@ -210,7 +173,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         sleepSeconds(5);
         future.complete(value);
 
-        for (Future getFuture : getFutures) {
+        for (Future<?> getFuture : getFutures) {
             assertCompletesEventually(getFuture);
             assertSame(value, future.get());
         }

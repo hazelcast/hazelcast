@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -73,7 +74,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
-        nodeEngineImpl = getNodeEngineImpl(instance());
+        nodeEngineImpl = Accessors.getNodeEngineImpl(instance());
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
         membersView = clusterService.getMembershipManager().getMembersView().getMembers();
     }

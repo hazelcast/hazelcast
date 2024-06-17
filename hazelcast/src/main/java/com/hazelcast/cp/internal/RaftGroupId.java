@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -31,6 +32,7 @@ import java.io.Serializable;
  */
 public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -2381010126931378167L;
 
     private String name;
@@ -75,6 +77,7 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
         groupId = in.readLong();
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         out.writeUTF(name);
@@ -82,6 +85,7 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
         out.writeLong(groupId);
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         name = in.readUTF();

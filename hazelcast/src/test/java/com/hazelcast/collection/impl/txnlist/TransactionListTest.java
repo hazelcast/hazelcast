@@ -21,7 +21,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionalList;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,7 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -53,14 +51,11 @@ public class TransactionListTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         final String name = randomString();
 
-        Future<Integer> f = spawn(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                IList<Object> set = instance.getList(name);
-                while (!set.remove("item-1")) {
-                }
-                return set.size();
+        Future<Integer> f = spawn(() -> {
+            IList<Object> set = instance.getList(name);
+            while (!set.remove("item-1")) {
             }
+            return set.size();
         });
 
         TransactionContext context = instance.newTransactionContext();
@@ -90,20 +85,17 @@ public class TransactionListTest extends HazelcastTestSupport {
         firstContext.getList(name).remove(1);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                TransactionContext secondContext = instance.newTransactionContext();
-                secondContext.beginTransaction();
-                secondContext.getList(name).remove(2);
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                secondContext.rollbackTransaction();
+        Thread thread = new Thread(() -> {
+            TransactionContext secondContext = instance.newTransactionContext();
+            secondContext.beginTransaction();
+            secondContext.getList(name).remove(2);
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
+            secondContext.rollbackTransaction();
+        });
         thread.start();
         firstContext.rollbackTransaction();
         latch.countDown();
@@ -177,7 +169,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMigrationSerializationNotFails_whenTransactionsAreUsed() throws Exception {
+    public void testMigrationSerializationNotFails_whenTransactionsAreUsed() {
         Config config = new Config();
         config.setProperty("hazelcast.partition.count", "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -232,19 +224,9 @@ public class TransactionListTest extends HazelcastTestSupport {
 
         final IList<Integer> list2 = instance.getList(name);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, list2.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, list2.size()));
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, list2.size());
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals(1, list2.size()), 3);
     }
 
 }

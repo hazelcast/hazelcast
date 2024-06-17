@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,12 +49,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
         UUID id = topic.addMessageListener(listener);
         topic.publish("item1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(listener.objects, "item1");
-            }
-        });
+        assertTrueEventually(() -> assertContains(listener.objects, "item1"));
 
         topic.removeMessageListener(id);
 
@@ -65,12 +59,9 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
 
         topic.addMessageListener(listener);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(asList("item1", "item2", "item3"), listener.objects);
-                assertEquals(asList(0L, 1L, 2L), listener.sequences);
-            }
+        assertTrueEventually(() -> {
+            assertEquals(asList("item1", "item2", "item3"), listener.objects);
+            assertEquals(asList(0L, 1L, 2L), listener.sequences);
         });
     }
 

@@ -20,10 +20,8 @@ import com.google.common.io.CharStreams;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -37,15 +35,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class YamlTest {
     private static final int NOT_EXISTING = 42;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testYamlFromInputStream() throws IOException {
@@ -125,16 +121,14 @@ public class YamlTest {
     @Test
     public void testLoadingInvalidYamlFromInputStream() throws IOException {
         try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
-            expectedException.expect(YamlException.class);
-            YamlLoader.load(inputStream);
+            assertThrows(YamlException.class, () -> YamlLoader.load(inputStream));
         }
     }
 
     @Test
     public void testLoadingInvalidYamlFromInputStreamWithRootName() throws IOException {
         try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
-            expectedException.expect(YamlException.class);
-            YamlLoader.load(inputStream, "root-map");
+            assertThrows(YamlException.class, () -> YamlLoader.load(inputStream, "root-map"));
         }
     }
 
@@ -143,8 +137,7 @@ public class YamlTest {
         try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
             assert inputStream != null;
             try (InputStreamReader reader = new InputStreamReader(inputStream)) {
-                expectedException.expect(YamlException.class);
-                YamlLoader.load(reader);
+                assertThrows(YamlException.class, () -> YamlLoader.load(reader));
             }
         }
     }
@@ -154,8 +147,7 @@ public class YamlTest {
         try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
             assert inputStream != null;
             try (InputStreamReader reader = new InputStreamReader(inputStream)) {
-                expectedException.expect(YamlException.class);
-                YamlLoader.load(reader, "root-map");
+                assertThrows(YamlException.class, () -> YamlLoader.load(reader, "root-map"));
             }
         }
     }
@@ -166,8 +158,7 @@ public class YamlTest {
             assert inputStream != null;
             try (InputStreamReader reader = new InputStreamReader(inputStream)) {
                 String yamlString = CharStreams.toString(reader);
-                expectedException.expect(YamlException.class);
-                YamlLoader.load(yamlString);
+                assertThrows(YamlException.class, () -> YamlLoader.load(yamlString));
             }
         }
     }
@@ -178,8 +169,7 @@ public class YamlTest {
             assert inputStream != null;
             try (InputStreamReader reader = new InputStreamReader(inputStream)) {
                 String yamlString = CharStreams.toString(reader);
-                expectedException.expect(YamlException.class);
-                YamlLoader.load(yamlString, "root-map");
+                assertThrows(YamlException.class, () -> YamlLoader.load(yamlString, "root-map"));
             }
         }
     }
@@ -189,8 +179,10 @@ public class YamlTest {
         YamlMapping rootMap = getYamlRoot();
         YamlMapping embeddedMap = rootMap.childAsMapping("embedded-map");
 
-        expectedException.expect(ClassCastException.class);
-        int notAnInt = embeddedMap.childAsScalarValue("scalar-str");
+        assertThrows(ClassCastException.class, () -> {
+            int notAnInt = embeddedMap.childAsScalarValue("scalar-str");
+        });
+
     }
 
     @Test
@@ -200,8 +192,9 @@ public class YamlTest {
                 .childAsMapping("embedded-map")
                 .childAsSequence("embedded-list");
 
-        expectedException.expect(ClassCastException.class);
-        int notAnInt = embeddedList.childAsScalarValue(0);
+        assertThrows(ClassCastException.class, () -> {
+            int notAnInt = embeddedList.childAsScalarValue(0);
+        });
     }
 
     @Test
@@ -211,8 +204,7 @@ public class YamlTest {
 
         embeddedMap.childAsScalarValue("scalar-str", String.class);
 
-        expectedException.expect(YamlException.class);
-        embeddedMap.childAsScalarValue("scalar-str", Integer.class);
+        assertThrows(YamlException.class, () -> embeddedMap.childAsScalarValue("scalar-str", Integer.class));
     }
 
     @Test
@@ -224,8 +216,7 @@ public class YamlTest {
 
         embeddedList.childAsScalarValue(0, String.class);
 
-        expectedException.expect(YamlException.class);
-        embeddedList.childAsScalarValue(0, Integer.class);
+        assertThrows(YamlException.class, () -> embeddedList.childAsScalarValue(0, Integer.class));
     }
 
     @Test
@@ -275,8 +266,7 @@ public class YamlTest {
             YamlMapping embeddedMap = ((YamlMapping) root)
                     .childAsMapping("embedded-map");
 
-            expectedException.expect(YamlException.class);
-            embeddedMap.childAsMapping("embedded-list");
+            assertThrows(YamlException.class, () -> embeddedMap.childAsMapping("embedded-list"));
         }
     }
 
@@ -284,16 +274,14 @@ public class YamlTest {
     public void testInvalidNodeTypeNotASeq() throws IOException {
         YamlMapping rootMap = getYamlRoot();
 
-        expectedException.expect(YamlException.class);
-        rootMap.childAsSequence("embedded-map");
+        assertThrows(YamlException.class, () -> rootMap.childAsSequence("embedded-map"));
     }
 
     @Test
     public void testInvalidNodeTypeNotAScalar() throws IOException {
         YamlMapping rootMap = getYamlRoot();
 
-        expectedException.expect(YamlException.class);
-        rootMap.childAsScalar("embedded-map");
+        assertThrows(YamlException.class, () -> rootMap.childAsScalar("embedded-map"));
     }
 
     @Test
@@ -449,9 +437,11 @@ public class YamlTest {
         assertEquals("value", keysValue);
 
         String multilineStr = ((YamlMapping) root).childAsScalarValue("multiline-str");
-        assertEquals("Hazelcast IMDG\n"
-                        + "The Leading Open Source In-Memory Data Grid:\n"
-                        + "Distributed Computing, Simplified.\n",
+        assertEquals("""
+                        Hazelcast IMDG
+                        The Leading Open Source In-Memory Data Grid:
+                        Distributed Computing, Simplified.
+                        """,
                 multilineStr);
     }
 

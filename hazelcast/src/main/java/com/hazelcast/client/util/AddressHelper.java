@@ -17,7 +17,7 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRegistry;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.AddressUtil;
@@ -50,7 +50,7 @@ public final class AddressHelper {
                 : addressHolder.getAddress();
     }
 
-    public static Addresses getSocketAddresses(String address, ClientConnectionProcessListenerRunner listenerRunner) {
+    public static Addresses getSocketAddresses(String address, ClientConnectionProcessListenerRegistry listenerRunner) {
         AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         String scopedAddress = getScopedHostName(addressHolder);
 
@@ -63,7 +63,7 @@ public final class AddressHelper {
     }
 
     public static Addresses getPossibleSocketAddresses(int port, String scopedAddress, int portTryCount,
-                                                       ClientConnectionProcessListenerRunner listenerRunner) {
+                                                       ClientConnectionProcessListenerRegistry listenerRunner) {
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(scopedAddress);

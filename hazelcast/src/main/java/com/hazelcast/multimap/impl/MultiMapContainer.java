@@ -297,7 +297,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         }
     }
 
-    @SuppressWarnings("NonAtomicOperationOnVolatileField")
+    @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
     private void setMergedStatistics(MultiMapMergeTypes<Object, Object> mergingEntry, MultiMapValue multiMapValue) {
         multiMapValue.setHits(mergingEntry.getHits());
         lastAccessTime = Math.max(lastAccessTime, mergingEntry.getLastAccessTime());

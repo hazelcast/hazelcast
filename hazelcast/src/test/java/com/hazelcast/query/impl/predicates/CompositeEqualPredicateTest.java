@@ -37,7 +37,6 @@ import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
@@ -86,13 +85,8 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
             final Integer age = randomQueryAge();
             final Long height = randomQueryHeight();
 
-            assertPredicate(new Predicate<Integer, Person>() {
-                @Override
-                public boolean apply(Map.Entry<Integer, Person> mapEntry) {
-                    return Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
-                            mapEntry.getValue().height, height);
-                }
-            }, predicate(indexConfig.getName(), value(age, height), "age", "height"));
+            assertPredicate((Predicate<Integer, Person>) mapEntry -> Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
+                    mapEntry.getValue().height, height), predicate(indexConfig.getName(), value(age, height), "age", "height"));
         }
 
         assertEquals(100, map.getLocalMapStats().getIndexedQueryCount());
@@ -109,13 +103,8 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
             final Integer age = randomQueryAge();
             final Long height = randomQueryHeight();
 
-            assertPredicate(new Predicate<Integer, Person>() {
-                @Override
-                public boolean apply(Map.Entry<Integer, Person> mapEntry) {
-                    return Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
-                            mapEntry.getValue().height, height);
-                }
-            }, predicate(indexConfig.getName(), value(age, height), "age", "height"));
+            assertPredicate((Predicate<Integer, Person>) mapEntry -> Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
+                    mapEntry.getValue().height, height), predicate(indexConfig.getName(), value(age, height), "age", "height"));
         }
 
         assertEquals(100, map.getLocalMapStats().getIndexedQueryCount());

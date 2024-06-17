@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -243,7 +244,8 @@ public class SqlJobManagementTest extends SqlTestSupport {
         createMapping("dest", Integer.class, String.class);
 
         sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 2");
-        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+        Job job = instance().getJet().getJob("testJob");
+        assertThat(job).eventuallyHasStatus(COMPLETED);
 
         assertMapEventually(
                 "dest",
@@ -257,7 +259,8 @@ public class SqlJobManagementTest extends SqlTestSupport {
         createMapping("dest", Integer.class, String.class);
 
         sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT * FROM (VALUES (1, '1'))");
-        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+        Job job = instance().getJet().getJob("testJob");
+        assertThat(job).eventuallyHasStatus(COMPLETED);
 
         assertMapEventually(
                 "dest",
@@ -272,7 +275,8 @@ public class SqlJobManagementTest extends SqlTestSupport {
         createMapping("dest", Integer.class, String.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v > 0");
-        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+        Job job = instance().getJet().getJob("testJob");
+        assertThat(job).eventuallyHasStatus(COMPLETED);
 
         assertMapEventually(
                 "dest",
@@ -286,7 +290,8 @@ public class SqlJobManagementTest extends SqlTestSupport {
         createMapping("dest", Integer.class, String.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT * FROM (VALUES (1, '1'), (2, '2'))");
-        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+        Job job = instance().getJet().getJob("testJob");
+        assertThat(job).eventuallyHasStatus(COMPLETED);
 
         assertMapEventually(
                 "dest",
@@ -322,7 +327,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         Job job = instance().getJet().getJob("testJob");
         assertNotNull(job);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         // When
         client.shutdown();
@@ -339,16 +344,16 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         Job job = instance().getJet().getJob("testJob");
-        long executionId = assertJobRunningEventually(instance(), job, null);
+        long executionId = assertThat(job).eventuallyJobRunning(instance(), null);
 
         sqlService.execute("ALTER JOB testJob SUSPEND");
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         sqlService.execute("ALTER JOB testJob RESUME");
-        executionId = assertJobRunningEventually(instance(), job, executionId);
+        executionId = assertThat(job).eventuallyJobRunning(instance(), executionId);
 
         sqlService.execute("ALTER JOB testJob RESTART");
-        assertJobRunningEventually(instance(), job, executionId);
+        assertThat(job).eventuallyJobRunning(instance(), executionId);
     }
 
     @Test

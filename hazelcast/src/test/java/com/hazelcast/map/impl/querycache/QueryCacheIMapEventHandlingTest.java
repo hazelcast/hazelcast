@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.Data;
@@ -35,7 +34,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -123,12 +121,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         int value = 1;
 
         final CountDownLatch latch = new CountDownLatch(1);
-        queryCache.addEntryListener(new EntryAddedListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-        }, true);
+        queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         map.put(key, value, 1, SECONDS);
 
@@ -138,26 +131,15 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         // map#get creates EXPIRED event
         map.get(key);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, queryCache.size()));
     }
 
     @Test
     public void testListenerRegistration() {
-        UUID addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-            }
+        UUID addEntryListener = queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
         }, true);
 
-        UUID removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
-            @Override
-            public void entryRemoved(EntryEvent<Integer, Integer> event) {
-            }
+        UUID removeEntryListener = queryCache.addEntryListener((EntryRemovedListener<Integer, Integer>) event -> {
         }, true);
 
         assertFalse(queryCache.removeEntryListener(UUID.randomUUID()));

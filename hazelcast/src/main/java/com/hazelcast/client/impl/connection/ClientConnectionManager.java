@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
@@ -42,7 +43,7 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * @param uuid UUID of the member to get connection of
      * @return connection if available, null otherwise
      */
-    ClientConnection getConnection(@Nonnull UUID uuid);
+    ClientConnection getActiveConnection(@Nonnull UUID uuid);
 
     /**
      * Check the connected state and user connection strategy configuration to see if an invocation is allowed at the moment
@@ -75,11 +76,11 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
 
     /**
      * Return:<ol>
-     *     <li>a random connection to a data member from the larger same-version
-     *         group
-     *     <li>if there's no such connection, return connection to a random data
-     *         member
-     *     <li>if there's no such connection, return any random connection
+     * <li>a random connection to a data member from the larger same-version
+     * group
+     * <li>if there's no such connection, return connection to a random data
+     * member
+     * <li>if there's no such connection, return any random connection
      * </ol>
      */
     ClientConnection getConnectionForSql();
@@ -89,10 +90,11 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
     void addClientConnectionProcessListener(ClientConnectionProcessListener listener);
 
     /**
-     * Returns {@code true} if the client is unisocket, {@code false} otherwise.
-     * <p>
-     * The client operates on the unisocket mode only if the smart routing and
-     * the TPC config is disabled.
+     * <lu>
+     * <li>UNISOCKET: if the smart routing and the TPC config is disabled.</li>
+     * <li>SMART: routing can be done to all members by knowing where data is</li>
+     * <li>SUBSET: routing can be done based on rules by default rule is to stick one of partition groups</li>
+     * </lu>
      */
-    boolean isUnisocketClient();
+    RoutingMode getRoutingMode();
 }

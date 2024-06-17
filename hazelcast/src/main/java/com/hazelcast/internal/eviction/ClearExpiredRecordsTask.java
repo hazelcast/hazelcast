@@ -206,7 +206,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
      *
      * Here, the counter in this method, is used to detect the lost
      * invalidations case. If it is detected, we send expiry operations to
-     * remove leftover backup entries. Otherwise leftover entries can remain on
+     * remove leftover backup entries. Otherwise, leftover entries can remain on
      * backups forever.
      */
     public final void partitionLost(PartitionLostEvent ignored) {
@@ -275,7 +275,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         }
         List<T> partitionIds = partitionContainers.subList(start, end);
         for (T container : partitionIds) {
-            // mark partition container as has on going expiration operation.
+            // mark partition container as has ongoing expiration operation.
             setHasRunningCleanup(container);
             Operation operation = newPrimaryExpiryOp(cleanupPercentage, container);
             operationService.execute(operation);

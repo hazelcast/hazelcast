@@ -66,7 +66,7 @@ public class QueueConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetItemListenerConfigs() {
-        getReadOnlyConfig().setItemListenerConfigs(Collections.<ItemListenerConfig>emptyList());
+        getReadOnlyConfig().setItemListenerConfigs(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -63,6 +63,7 @@ import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
+import org.junit.jupiter.api.AfterEach;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,6 +74,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -98,6 +100,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -129,6 +132,7 @@ public abstract class HazelcastTestSupport {
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public static final Duration ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
     public static final String PERSISTENT_MEMORY_DIRECTORIES;
 
@@ -153,6 +157,7 @@ public abstract class HazelcastTestSupport {
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
+        ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION = Duration.ofSeconds(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
@@ -162,6 +167,7 @@ public abstract class HazelcastTestSupport {
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
     }
 
+    @AfterEach
     @After
     public final void shutdownNodeFactory() {
         LOGGER.info("Shutting down node factory as @After action");
@@ -1457,15 +1463,23 @@ public abstract class HazelcastTestSupport {
     // ########## reflection utils #######
     // ###################################
 
-    public static Object getFromField(Object target, String fieldName) {
+    public static <T> T getFieldValue(Object object, String fieldName) {
+        return getFieldValue(object.getClass(), object, fieldName);
+    }
+
+    public static <T> T getFieldValue(Class<?> clazz, String fieldName) {
+        return getFieldValue(clazz, null, fieldName);
+    }
+
+    private static <T> T getFieldValue(Class<?> clazz, Object object, String fieldName) {
         try {
-            Field field = target.getClass().getDeclaredField(fieldName);
-            if (!Modifier.isPublic(field.getModifiers())) {
+            Field field = clazz.getDeclaredField(fieldName);
+            if (!field.canAccess(object)) {
                 field.setAccessible(true);
             }
-            return field.get(target);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new AssertionError(e);
+            return (T) field.get(object);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
         }
     }
 

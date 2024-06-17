@@ -105,7 +105,7 @@ public class SpringSchemasValidityTest {
             }
         }
 
-        String latestBySpringSchemas = prop.getProperty("https://www.hazelcast.com/schema/spring/hazelcast-spring.xsd");
+        String latestBySpringSchemas = prop.getProperty("http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd");
         assertEquals(latestVersionXsdFile, latestBySpringSchemas);
     }
 

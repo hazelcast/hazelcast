@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.topic.Message;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -60,23 +59,15 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         topic.publish("item1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.objects.size());
-                assertTrue(topic.runnersMap.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(1, listener.objects.size());
+            assertTrue(topic.runnersMap.isEmpty());
         });
 
         topic.publish("item2");
 
         // we need to make sure we don't receive item 2 since the listener is terminated
-        assertTrueFiveSeconds(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.objects.size());
-            }
-        });
+        assertTrueFiveSeconds(() -> assertEquals(1, listener.objects.size()));
     }
 
     @Test
@@ -87,23 +78,15 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         topic.publish("item1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.objects.size());
-                assertTrue(topic.runnersMap.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(1, listener.objects.size());
+            assertTrue(topic.runnersMap.isEmpty());
         });
 
         topic.publish("item2");
 
         // we need to make sure we don't receive item 2 since the listener is terminated
-        assertTrueFiveSeconds(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.objects.size());
-            }
-        });
+        assertTrueFiveSeconds(() -> assertEquals(1, listener.objects.size()));
     }
 
     @Test
@@ -114,22 +97,16 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         topic.publish("item1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.objects.size());
-                assertFalse(topic.runnersMap.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(1, listener.objects.size());
+            assertFalse(topic.runnersMap.isEmpty());
         });
 
         topic.publish("item2");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(2, listener.objects.size());
-                assertFalse(topic.runnersMap.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(2, listener.objects.size());
+            assertFalse(topic.runnersMap.isEmpty());
         });
     }
 

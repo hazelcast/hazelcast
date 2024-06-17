@@ -26,6 +26,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -416,7 +417,6 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testExecuteOnKeys() {
         IMap<String, String> map = hz.getMap(getMapName());
         // loop over several keys to make sure we have keys on both instances
@@ -445,6 +445,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
      */
     public static class WritingEntryProcessor implements EntryProcessor<String, String, String> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

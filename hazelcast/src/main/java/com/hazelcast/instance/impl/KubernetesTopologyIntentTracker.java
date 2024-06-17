@@ -26,6 +26,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import javax.annotation.Nullable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,7 +43,7 @@ import static java.lang.Thread.sleep;
  * according to intent of topology changes detected in kubernetes environment.
  * <br/>
  * Example flow of change in detected intent and associated {@code currentClusterSpecSize} on a cluster's master member:
- * (User action on left, detected intent with cluster spec size in parenthese on the right side).
+ * (User action on left, detected intent with cluster spec size in parentheses on the right side).
  * <pre>
  * {@code
  * +-----------------------------------------------------------------+---------------------------------+
@@ -77,7 +79,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     private final ILogger logger;
     private final Node node;
     /**
-     * The desired number of members, as specified in the runtime environment. eg in kubernetes
+     * The desired number of members, as specified in the runtime environment. e.g. in kubernetes
      * {@code kubectl scale sts hz --replicas 5} means {@code currentClusterSpecSize} is 5.
      */
     private volatile int currentClusterSpecSize = UNKNOWN;
@@ -277,7 +279,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
                 || shutdownIntent == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS) {
             try {
                 // wait for partition table to be healthy before switching to NO_MIGRATION
-                // eg in "rollout restart" case, node is shutdown in NO_MIGRATION state
+                // e.g. in "rollout restart" case, node is shutdown in NO_MIGRATION state
                 waitCallableWithShutdownTimeout(() -> getPartitionService().isPartitionTableSafe());
                 changeClusterState(clusterStateForMissingMembers);
             } catch (Throwable t) {
@@ -331,21 +333,30 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     }
 
     private void clusterWideShutdown() {
+        Instant start = Instant.now();
+        logger.info("cluster-wide-shutdown, Starting");
         try {
             changeClusterState(ClusterState.PASSIVE);
         } catch (Throwable t) {
             // let shutdown proceed even though we failed to switch to PASSIVE state
-            logger.warning("Could not switch to transient PASSIVE state while cluster "
+            logger.warning("cluster-wide-shutdown, Could not switch to transient PASSIVE state while cluster "
                     + "shutdown intent was CLUSTER_SHUTDOWN.", t);
         }
         long timeoutNanos = node.getProperties().getNanos(CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        logger.info("cluster-wide-shutdown, Starting partition replica sync, Timeout(s): "
+                            + node.getProperties().getSeconds(CLUSTER_SHUTDOWN_TIMEOUT_SECONDS));
+        Instant partitionSyncStart = Instant.now();
         try {
             // wait for replica sync
             getNodeExtension().getInternalHotRestartService()
                     .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+            logger.info("cluster-wide-shutdown, Completed partition replica sync, Took(ms): "
+                                + Duration.between(partitionSyncStart, Instant.now()).toMillis());
         } catch (IllegalStateException e) {
-            logger.severe("Failure while waiting for partition replica sync before shutdown.", e);
+            logger.severe("cluster-wide-shutdown, Failure while waiting for partition replica sync before shutdown, "
+                    + "Took(ms): " + Duration.between(partitionSyncStart, Instant.now()).toMillis(), e);
         }
+        logger.info("cluster-wide-shutdown, Completed, Took(ms): " + Duration.between(start, Instant.now()).toMillis());
     }
 
     /**

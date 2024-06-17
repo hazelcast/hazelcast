@@ -35,7 +35,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.HazelcastStarter;
@@ -61,7 +60,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 public class ProcessorClassLoaderTest extends JetTestSupport {
 
     @ClassRule

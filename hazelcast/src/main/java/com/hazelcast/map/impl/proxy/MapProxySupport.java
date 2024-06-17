@@ -386,7 +386,7 @@ abstract class MapProxySupport<K, V>
      * <p>
      * This setting applies only to sync and async operations on single key
      * (e.g. {@link IMap#put(Object, Object)}. It does not affect multi-entry
-     * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
+     * operations (e.g. {@link IMap#clear()}, {@link IMap#putAll}).
      * <p>
      * Caveats:
      * <ol>

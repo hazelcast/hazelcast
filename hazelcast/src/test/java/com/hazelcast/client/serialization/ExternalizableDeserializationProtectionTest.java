@@ -25,10 +25,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.client.config.ClientConfig;
@@ -54,13 +52,11 @@ import example.serialization.TestExternalizableDeserialized;
 @Category(QuickTest.class)
 public class ExternalizableDeserializationProtectionTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     protected static TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @AfterClass
-    public static final void stopHazelcastInstances() {
+    public static void stopHazelcastInstances() {
         hazelcastFactory.terminateAll();
     }
 
@@ -84,8 +80,8 @@ public class ExternalizableDeserializationProtectionTest extends HazelcastTestSu
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        expected.expect(HazelcastSerializationException.class);
-        client.getMap("test").put("key", new TestExternalizableDeserialized());
+        assertThrows(HazelcastSerializationException.class,
+                () -> client.getMap("test").put("key", new TestExternalizableDeserialized()));
     }
 
     @Test
@@ -110,8 +106,8 @@ public class ExternalizableDeserializationProtectionTest extends HazelcastTestSu
         ClientConfig clientConfig2 = new ClientConfig();
         clientConfig2.getSerializationConfig().setJavaSerializationFilterConfig(javaSerializationFilterConfig);
         HazelcastInstance client2 = hazelcastFactory.newHazelcastClient(clientConfig2);
-        expected.expect(HazelcastSerializationException.class);
-        client2.getMap("test").get("key");
+
+        assertThrows(HazelcastSerializationException.class, () -> client2.getMap("test").get("key"));
     }
 
     @Test

@@ -256,6 +256,8 @@ public class MapKeyLoader {
      * @see #sendKeysInBatches(MapStoreContext, boolean)
      */
     private Future<?> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
+        logStateMessage("sendKeys");
+
         if (keyLoadFinished.isDone()) {
             keyLoadFinished = new LoadFinishedFuture();
 

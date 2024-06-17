@@ -67,7 +67,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
     public void voidCacher() {
         AtomicInteger counter = new AtomicInteger(200000);
         AtomicInteger errors = new AtomicInteger();
-        List<String> errorList = synchronizedList(new LinkedList<String>());
+        List<String> errorList = synchronizedList(new LinkedList<>());
 
         Thread[] threads = new Thread[8];
         for (int i = 0; i < threads.length; i++) {

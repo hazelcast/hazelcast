@@ -48,7 +48,7 @@ final class TestSamples {
     }
 
     static List<Integer> sampleIntegers() {
-        return sampleValues(new RandomNumberSupplier<Integer>() {
+        return sampleValues(new RandomNumberSupplier<>() {
             @Override
             protected Integer mapFrom(Number value) {
                 return value.intValue();
@@ -57,7 +57,7 @@ final class TestSamples {
     }
 
     static List<Long> sampleLongs() {
-        return sampleValues(new RandomNumberSupplier<Long>() {
+        return sampleValues(new RandomNumberSupplier<>() {
             @Override
             protected Long mapFrom(Number value) {
                 return value.longValue();
@@ -66,7 +66,7 @@ final class TestSamples {
     }
 
     static Collection<Float> sampleFloats() {
-        return sampleValues(new RandomNumberSupplier<Float>() {
+        return sampleValues(new RandomNumberSupplier<>() {
             @Override
             protected Float mapFrom(Number value) {
                 return value.floatValue();
@@ -75,7 +75,7 @@ final class TestSamples {
     }
 
     static List<Double> sampleDoubles() {
-        return sampleValues(new RandomNumberSupplier<Double>() {
+        return sampleValues(new RandomNumberSupplier<>() {
             @Override
             protected Double mapFrom(Number value) {
                 return value.doubleValue();
@@ -84,7 +84,7 @@ final class TestSamples {
     }
 
     static List<BigDecimal> sampleBigDecimals() {
-        return sampleValues(new RandomNumberSupplier<BigDecimal>() {
+        return sampleValues(new RandomNumberSupplier<>() {
             @Override
             protected BigDecimal mapFrom(Number value) {
                 return BigDecimal.valueOf(value.doubleValue());
@@ -93,7 +93,7 @@ final class TestSamples {
     }
 
     static List<BigInteger> sampleBigIntegers() {
-        return sampleValues(new RandomNumberSupplier<BigInteger>() {
+        return sampleValues(new RandomNumberSupplier<>() {
             @Override
             protected BigInteger mapFrom(Number value) {
                 return BigInteger.valueOf(value.longValue());
@@ -102,7 +102,7 @@ final class TestSamples {
     }
 
     static List<String> sampleStrings() {
-        return new ArrayList(asList(LOREM_IPSUM.split(" ")));
+        return new ArrayList<>(asList(LOREM_IPSUM.split(" ")));
     }
 
     static List<Person> samplePersons() {

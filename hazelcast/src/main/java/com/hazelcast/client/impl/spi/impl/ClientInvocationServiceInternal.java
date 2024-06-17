@@ -15,6 +15,7 @@
  */
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -81,7 +82,8 @@ public interface ClientInvocationServiceInternal extends ClientInvocationService
     boolean shouldFailOnIndeterminateOperationState();
 
     /**
-     * Returns {@code true} if the client is unisocket, {@code false} otherwise.
+     * @return returns the configured routing mode(by default it is {@link RoutingMode#SMART})
+     * @see RoutingMode
      */
-    boolean isUnisocketClient();
+    RoutingMode getRoutingMode();
 }

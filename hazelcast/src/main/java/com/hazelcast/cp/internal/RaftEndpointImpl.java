@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -36,6 +37,7 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
  */
 public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -5184348267183410904L;
 
     private UUID uuid;
@@ -91,11 +93,13 @@ public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializabl
         uuid = readUUID(in);
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         writeUUID(out, uuid);
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         uuid = readUUID(in);

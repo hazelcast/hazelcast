@@ -32,9 +32,10 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
 import static com.hazelcast.internal.partition.impl.PartitionReplicaManager.REQUIRES_SYNC;
@@ -44,14 +45,17 @@ public final class PartitionBackupReplicaAntiEntropyOperation
         extends AbstractPartitionOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState {
 
-    private Map<ServiceNamespace, Long> versions;
+    // Only reason of CHM usage is not to get
+    // ConcurrentModificationException from
+    // PartitionBackupReplicaAntiEntropyOperation#toString method
+    private ConcurrentMap<ServiceNamespace, Long> versions;
     private boolean returnResponse;
     private boolean response = true;
 
     public PartitionBackupReplicaAntiEntropyOperation() {
     }
 
-    public PartitionBackupReplicaAntiEntropyOperation(Map<ServiceNamespace, Long> versions,
+    public PartitionBackupReplicaAntiEntropyOperation(ConcurrentMap<ServiceNamespace, Long> versions,
                                                       boolean returnResponse) {
         this.versions = versions;
         this.returnResponse = returnResponse;
@@ -180,12 +184,14 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int len = in.readInt();
-        versions = new HashMap<>(len);
+        ConcurrentMap<ServiceNamespace, Long> versionsByNamespace = new ConcurrentHashMap<>(len);
         for (int i = 0; i < len; i++) {
             ServiceNamespace ns = in.readObject();
             long v = in.readLong();
-            versions.put(ns, v);
+            versionsByNamespace.put(ns, v);
         }
+
+        versions = versionsByNamespace;
         returnResponse = in.readBoolean();
     }
 

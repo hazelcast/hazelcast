@@ -54,6 +54,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
@@ -119,12 +120,12 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted = new CountDownLatch(3);
         new TestCase(streamSource())
                 .when(job -> {
-                    assertJobStatusEventually(job, RUNNING);
+                    assertThat(job).eventuallyHasStatus(RUNNING);
                     job.suspend();
-                    assertJobStatusEventually(job, SUSPENDED);
+                    assertThat(job).eventuallyHasStatus(SUSPENDED);
                     job.resume();
                     MockPS.unblock();
-                    assertJobStatusEventually(job, RUNNING);
+                    assertThat(job).eventuallyHasStatus(RUNNING);
                     job.restart();
                     MockPS.unblock();
                     NoOutputSourceP.executionStarted.await();
@@ -186,7 +187,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         new TestCase(batchSource(new JetException("mock error")))
                 .config(new JobConfig().setSuspendOnFailure(true))
                 .when((job, listener) -> {
-                    assertJobSuspendedEventually(job);
+                    assertThat(job).eventuallySuspended();
                     String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
@@ -402,7 +403,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         public void runLightJob() {
             run((jet, p) -> {
                 Job job = jet.newLightJob(p);
-                assertJobVisible(instance.get(), job, job.getIdString());
+                assertThat(job).isVisible(instance.get());
                 return job;
             }, JobStatusListenerTest::assertEqualsEventually);
         }

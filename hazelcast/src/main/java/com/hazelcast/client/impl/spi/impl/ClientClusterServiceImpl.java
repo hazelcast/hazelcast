@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.impl.clientside.SubsetMembers;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Address;
@@ -32,6 +33,8 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -49,11 +52,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * Responsible for
@@ -66,29 +70,31 @@ public class ClientClusterServiceImpl implements ClientClusterService {
      * In both cases, we need to fire InitialMembershipEvent.
      */
     public static final int INITIAL_MEMBER_LIST_VERSION = -1;
-    private final AtomicReference<MemberListSnapshot> memberListSnapshot =
+
+    protected final AtomicReference<Version> clusterVersion = new AtomicReference<>(Version.UNKNOWN);
+    protected final AtomicReference<MemberListSnapshot> memberListSnapshot =
             new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
+
+    protected volatile UUID clusterId;
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
     private final Object clusterViewLock = new Object();
-    //read and written under clusterViewLock
 
-    private static final class MemberListSnapshot {
-        private final int version;
-        private final LinkedHashMap<UUID, Member> members;
-        private final UUID clusterUuid;
-
-        private MemberListSnapshot(int version, LinkedHashMap<UUID, Member> members, UUID clusterUuid) {
-            this.version = version;
-            this.members = members;
-            this.clusterUuid = clusterUuid;
-        }
+    public ClientClusterServiceImpl(LoggingService loggingService) {
+        this.logger = loggingService.getLogger(ClientClusterService.class);
     }
 
-    public ClientClusterServiceImpl(ILogger logger) {
-        this.logger = logger;
+    @Override
+    public UUID getClusterId() {
+        return clusterId;
     }
 
+    @Override
+    public void onClusterConnect(UUID newClusterId) {
+        clusterId = newClusterId;
+    }
+
+    @Override
     public Cluster getCluster() {
         return new ClientClusterProxy(this);
     }
@@ -96,23 +102,23 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Member getMember(@Nonnull UUID uuid) {
         checkNotNull(uuid, "UUID must not be null");
-        return memberListSnapshot.get().members.get(uuid);
+        return memberListSnapshot.get().members().get(uuid);
     }
 
     @Override
     public Collection<Member> getMemberList() {
-        return memberListSnapshot.get().members.values();
+        return memberListSnapshot.get().members().values();
     }
 
     @Nonnull
     @Override
     public Collection<Member> getEffectiveMemberList() {
         MemberListSnapshot snapshot = memberListSnapshot.get();
-        if (snapshot.version == INITIAL_MEMBER_LIST_VERSION) {
+        if (snapshot.version() == INITIAL_MEMBER_LIST_VERSION) {
             return Collections.emptyList();
         }
 
-        return snapshot.members.values();
+        return snapshot.members().values();
     }
 
     @Override
@@ -140,7 +146,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             UUID id = addMembershipListenerWithoutInit(listener);
             if (listener instanceof InitialMembershipListener membershipListener) {
                 Cluster cluster = getCluster();
-                Collection<Member> members = memberListSnapshot.get().members.values();
+                Collection<Member> members = memberListSnapshot.get().members().values();
                 //if members are empty,it means initial event did not arrive yet
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
                 if (!members.isEmpty()) {
@@ -164,11 +170,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return listeners.remove(registrationId) != null;
     }
 
+    @Override
     public void start(Collection<EventListener> configuredListeners) {
         configuredListeners.stream().filter(listener -> listener instanceof MembershipListener)
                 .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
+    @Override
     public void onClusterConnect() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
@@ -178,14 +186,15 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             // This check is necessary so in order not to override changing cluster information when:
             // - registering cluster view listener back to the new cluster.
             // - on authentication response when cluster uuid change is detected.
-            if (clusterViewSnapshot.version != INITIAL_MEMBER_LIST_VERSION) {
+            if (clusterViewSnapshot.version() != INITIAL_MEMBER_LIST_VERSION) {
                 memberListSnapshot.set(new MemberListSnapshot(0,
-                        clusterViewSnapshot.members,
-                        clusterViewSnapshot.clusterUuid));
+                        clusterViewSnapshot.members(),
+                        clusterViewSnapshot.clusterUuid()));
             }
         }
     }
 
+    @Override
     public void onTryToConnectNextCluster() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
@@ -193,21 +202,21 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             }
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
             memberListSnapshot.set(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION,
-                    clusterViewSnapshot.members,
-                    clusterViewSnapshot.clusterUuid));
+                    clusterViewSnapshot.members(),
+                    clusterViewSnapshot.clusterUuid()));
         }
     }
 
     //public for tests on enterprise
     public int getMemberListVersion() {
-        return memberListSnapshot.get().version;
+        return memberListSnapshot.get().version();
     }
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos, clusterUuid);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
-        Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
+        Set<Member> members = toUnmodifiableHasSet(snapshot.members().values());
         InitialMembershipEvent event = new InitialMembershipEvent(getCluster(), members);
         for (MembershipListener listener : listeners.values()) {
             if (listener instanceof InitialMembershipListener membershipListener) {
@@ -238,7 +247,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Set<Member> toUnmodifiableHasSet(Collection<Member> members) {
-        return unmodifiableSet(new HashSet<>(members));
+        return Set.copyOf(members);
     }
 
     private List<MembershipEvent> detectMembershipEvents(Collection<Member> prevMembers,
@@ -247,7 +256,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         List<Member> newMembers = new LinkedList<>();
         Set<Member> deadMembers = new HashSet<>(prevMembers);
 
-        if (clusterUuid.equals(memberListSnapshot.get().clusterUuid)) {
+        if (clusterUuid.equals(memberListSnapshot.get().clusterUuid())) {
             for (Member member : currentMembers) {
                 if (!deadMembers.remove(member)) {
                     newMembers.add(member);
@@ -270,7 +279,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
         if (!events.isEmpty()) {
             MemberListSnapshot snapshot = memberListSnapshot.get();
-            if (!snapshot.members.values().isEmpty()) {
+            if (!snapshot.members().values().isEmpty()) {
                 logger.info(membersString(snapshot));
             }
         }
@@ -278,15 +287,38 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private String membersString(MemberListSnapshot snapshot) {
-        Collection<Member> members = snapshot.members.values();
-        StringBuilder sb = new StringBuilder("\n\nMembers [");
+        Collection<Member> members = snapshot.members().values();
+        StringBuilder sb = new StringBuilder(lineSeparator());
+        sb.append(lineSeparator());
+        sb.append("Members [");
         sb.append(members.size());
         sb.append("] {");
         for (Member member : members) {
-            sb.append("\n\t").append(member);
+            sb.append(lineSeparator()).append("\t").append(member);
         }
-        sb.append("\n}\n");
+        sb.append(lineSeparator()).append("}").append(lineSeparator());
         return sb.toString();
+    }
+
+    @Override
+    public SubsetMembers getSubsetMembers() {
+        return SubsetMembers.NOOP;
+    }
+
+    @Nonnull
+    @Override
+    public Version getClusterVersion() {
+        return clusterVersion.get();
+    }
+
+    @Override
+    public void updateOnAuth(UUID clusterUuid, UUID authMemberUuid, Map<String, String> keyValuePairs) {
+        String clusterVersionStr = keyValuePairs.get(CLUSTER_VERSION);
+        if (clusterVersionStr != null) {
+            clusterVersion.set(Version.of(clusterVersionStr));
+        } else if (logger.isFinestEnabled()) {
+            logger.finest("Cluster version is not received during authentication");
+        }
     }
 
     @Override
@@ -297,10 +329,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                     + membersString(snapshot));
         }
         MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-        if (clusterViewSnapshot.version == INITIAL_MEMBER_LIST_VERSION) {
+        if (clusterViewSnapshot.version() == INITIAL_MEMBER_LIST_VERSION) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
-                if (clusterViewSnapshot.version == INITIAL_MEMBER_LIST_VERSION) {
+                if (clusterViewSnapshot.version() == INITIAL_MEMBER_LIST_VERSION) {
                     //this means this is the first time client connected to cluster/cluster has changed(blue/green)
                     applyInitialState(memberListVersion, memberInfos, clusterUuid);
                     return;
@@ -309,20 +341,25 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
 
         List<MembershipEvent> events = emptyList();
-        if (memberListVersion > clusterViewSnapshot.version) {
+        if (memberListVersion > clusterViewSnapshot.version()) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
-                if (memberListVersion > clusterViewSnapshot.version) {
-                    Collection<Member> prevMembers = clusterViewSnapshot.members.values();
-                    UUID previousClusterUuid = clusterViewSnapshot.clusterUuid;
+                if (memberListVersion > clusterViewSnapshot.version()) {
+                    Collection<Member> prevMembers = clusterViewSnapshot.members().values();
+                    UUID previousClusterUuid = clusterViewSnapshot.clusterUuid();
                     MemberListSnapshot snapshot = createSnapshot(memberListVersion, memberInfos, clusterUuid);
                     memberListSnapshot.set(snapshot);
-                    Set<Member> currentMembers = toUnmodifiableHasSet(snapshot.members.values());
+                    Set<Member> currentMembers = toUnmodifiableHasSet(snapshot.members().values());
                     events = detectMembershipEvents(prevMembers, currentMembers, previousClusterUuid);
                 }
             }
         }
         fireEvents(events);
+    }
+
+    @Override
+    public void handleClusterVersionEvent(Version version) {
+        clusterVersion.set(version);
     }
 
     private void fireEvents(List<MembershipEvent> events) {

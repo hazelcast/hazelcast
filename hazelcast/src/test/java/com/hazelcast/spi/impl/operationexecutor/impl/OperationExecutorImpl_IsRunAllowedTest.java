@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import static java.lang.Boolean.FALSE;
@@ -97,12 +96,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return executor.isRunAllowed(genericOperation);
-            }
-        });
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> executor.isRunAllowed(genericOperation));
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
@@ -184,12 +178,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
         final DummyPartitionOperation operation = new DummyPartitionOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return executor.isRunAllowed(operation);
-            }
-        });
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> executor.isRunAllowed(operation));
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();

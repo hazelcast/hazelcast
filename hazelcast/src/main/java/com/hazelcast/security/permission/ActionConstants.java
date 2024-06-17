@@ -43,6 +43,7 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
+import com.hazelcast.vector.impl.VectorCollectionServiceUtil;
 
 import java.security.Permission;
 import java.util.HashMap;
@@ -70,6 +71,7 @@ public final class ActionConstants {
     public static final String ACTION_PROJECTION = "projection";
     public static final String ACTION_USER_CODE_DEPLOY = "deploy";
     public static final String ACTION_USE = "use";
+    public static final String ACTION_OPTIMIZE = "optimize";
 
     public static final String ACTION_SUBMIT = "submit";
     public static final String ACTION_CANCEL = "cancel";
@@ -123,6 +125,7 @@ public final class ActionConstants {
         PERMISSION_FACTORY_MAP.put(DistributedScheduledExecutorService.SERVICE_NAME, ScheduledExecutorPermission::new);
         PERMISSION_FACTORY_MAP.put(CPMapServiceUtil.SERVICE_NAME, CPMapPermission::new);
         PERMISSION_FACTORY_MAP.put(UserCodeNamespaceService.SERVICE_NAME, UserCodeNamespacePermission::new);
+        PERMISSION_FACTORY_MAP.put(VectorCollectionServiceUtil.SERVICE_NAME, VectorCollectionPermission::new);
     }
 
     private ActionConstants() {

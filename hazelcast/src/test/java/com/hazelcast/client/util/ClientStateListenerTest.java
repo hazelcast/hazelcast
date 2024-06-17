@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -138,7 +137,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
     }
 
     @Test(timeout = MINUTE * 10)
-    public void testClientReconnectModeAsyncConnectedMultipleThreads() throws InterruptedException {
+    public void testClientReconnectModeAsyncConnectedMultipleThreads() {
         int numThreads = 10;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
@@ -218,13 +217,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         assertFalse(listener.isConnected());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(SHUTDOWN, listener.getCurrentState());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(SHUTDOWN, listener.getCurrentState()));
 
         assertFalse(listener.isStarted());
     }

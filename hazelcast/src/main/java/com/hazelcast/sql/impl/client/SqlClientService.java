@@ -20,6 +20,8 @@ import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
@@ -94,7 +96,7 @@ public class SqlClientService implements SqlService {
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
 
-        this.isSmartRouting = !client.getConnectionManager().isUnisocketClient();
+        this.isSmartRouting = client.getConnectionManager().getRoutingMode() == RoutingMode.SMART;
         final int partitionArgCacheSize = client.getProperties().getInteger(PARTITION_ARGUMENT_CACHE_SIZE);
         final int partitionArgCacheThreshold = partitionArgCacheSize + Math.min(partitionArgCacheSize / 10, 50);
         this.partitionArgumentIndexCache = new ReadOptimizedLruCache<>(partitionArgCacheSize, partitionArgCacheThreshold);
@@ -242,7 +244,7 @@ public class SqlClientService implements SqlService {
     }
 
     private boolean shouldResubmit(Exception error) {
-        return (error instanceof HazelcastSqlException) && (shouldResubmit(((HazelcastSqlException) error).getCode()));
+        return (error instanceof HazelcastSqlException exception) && (shouldResubmit(exception.getCode()));
     }
 
     private boolean shouldResubmit(SqlError error) {
@@ -398,8 +400,8 @@ public class SqlClientService implements SqlService {
                 return getQueryConnection();
             }
 
-            ClientConnection connection = client.getConnectionManager().getConnection(nodeId);
-
+            ClientConnectionManager connectionManager = client.getConnectionManager();
+            ClientConnection connection = connectionManager.getActiveConnection(nodeId);
             if (connection == null) {
                 return getQueryConnection();
             }

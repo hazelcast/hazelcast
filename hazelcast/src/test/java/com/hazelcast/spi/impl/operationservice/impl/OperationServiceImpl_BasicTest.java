@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -190,12 +189,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
 
         // we need to do this with an assertTrueEventually because it can happen that system calls are being send
         // and this leads to the maps not being empty. But eventually they will be empty at some moment in time.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("invocations should be empty", 0, operationService.invocationRegistry.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals("invocations should be empty", 0, operationService.invocationRegistry.size()));
     }
 
     @Test(expected = HazelcastSerializationException.class)

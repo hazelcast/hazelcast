@@ -20,10 +20,8 @@ import com.hazelcast.internal.metrics.impl.MetricsDictionary.Word;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
@@ -31,15 +29,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsDictionaryTest {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
-    private MetricsDictionary dictionary = new MetricsDictionary();
+    private final MetricsDictionary dictionary = new MetricsDictionary();
 
     @Test
     public void testGrowing() {
@@ -75,7 +71,6 @@ public class MetricsDictionaryTest {
         String longWord = Stream.generate(() -> "a")
                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
                                 .collect(Collectors.joining());
-        exception.expect(LongWordException.class);
-        dictionary.getDictionaryId(longWord);
+        assertThrows(LongWordException.class, () -> dictionary.getDictionaryId(longWord));
     }
 }

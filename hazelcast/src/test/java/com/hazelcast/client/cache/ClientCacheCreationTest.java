@@ -29,7 +29,6 @@ import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
@@ -132,7 +131,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         //keep the slot for one invocation to test if client can reconnect even if all slots are kept
         CountDownLatch testFinished = new CountDownLatch(1);
         executorService.submit(new ExecutorServiceTestSupport.SleepingTask(0),
-                new ExecutionCallback<Boolean>() {
+                new ExecutionCallback<>() {
                     @Override
                     public void onResponse(Boolean response) {
                         try {
@@ -155,14 +154,11 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         hazelcastInstance.shutdown();
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                try {
-                    instance.getCacheManager().getCache("xmlCache");
-                } catch (Exception e) {
-                    fail();
-                }
+        assertTrueEventually(() -> {
+            try {
+                instance.getCacheManager().getCache("xmlCache");
+            } catch (Exception e) {
+                fail();
             }
         });
         testFinished.countDown();

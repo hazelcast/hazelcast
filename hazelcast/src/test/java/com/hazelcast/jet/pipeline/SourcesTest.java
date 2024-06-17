@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
@@ -405,7 +406,7 @@ public class SourcesTest extends PipelineTestSupport {
         p.readFrom(source).withoutTimestamps().writeTo(sink);
         Job job = hz().getJet().newJob(p);
         // wait for the processor to initialize
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         // pre-existing file should not be picked up
         assertEquals(0, sinkList.size());
         appendToFile(file, "third line");

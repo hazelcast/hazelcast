@@ -260,7 +260,6 @@ public final class HazelcastInstanceFactory {
         while (node.getClusterService().getSize() < initialMinClusterSize) {
             try {
                 hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);
-                // noinspection BusyWait
                 SECONDS.sleep(1);
             } catch (InterruptedException ignored) {
                 currentThread().interrupt();
@@ -316,7 +315,7 @@ public final class HazelcastInstanceFactory {
         if (future != null && future.isSet()) {
             future.get().original = null;
         }
-        if (INSTANCE_MAP.size() == 0) {
+        if (INSTANCE_MAP.isEmpty()) {
             ManagementService.shutdown(instance.getName());
         }
     }

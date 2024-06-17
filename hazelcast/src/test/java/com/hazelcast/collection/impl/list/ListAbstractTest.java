@@ -485,7 +485,7 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
     @Test
     public void testSublist() {
         addItems(10);
-        List listTest = list.subList(3, 7);
+        List<String> listTest = list.subList(3, 7);
         assertEquals(4, listTest.size());
         assertIterableEquals(listTest, "item3", "item4", "item5", "item6");
     }
@@ -506,7 +506,7 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
     @Test
     public void testIterator() {
         addItems(10);
-        ListIterator iterator = list.listIterator();
+        ListIterator<String> iterator = list.listIterator();
         int i = 0;
         while (iterator.hasNext()) {
             Object o = iterator.next();
@@ -517,7 +517,7 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testIterator_throwsException_whenRemove() {
         addItems(10);
-        ListIterator iterator = list.listIterator();
+        ListIterator<String> iterator = list.listIterator();
         iterator.next();
         iterator.remove();
     }
@@ -526,7 +526,7 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
     public void testIteratorWithIndex() {
         addItems(10);
         int i = 4;
-        ListIterator iterator = list.listIterator(i);
+        ListIterator<String> iterator = list.listIterator(i);
         while (iterator.hasNext()) {
             Object o = iterator.next();
             assertEquals(o, "item" + i++);

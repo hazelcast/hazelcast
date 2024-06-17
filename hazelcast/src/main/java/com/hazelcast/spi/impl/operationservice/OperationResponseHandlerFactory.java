@@ -50,9 +50,8 @@ public final class OperationResponseHandlerFactory {
 
         @Override
         public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                logger.severe(t);
+            if (obj instanceof Throwable throwable) {
+                logger.severe(throwable);
             }
         }
     }

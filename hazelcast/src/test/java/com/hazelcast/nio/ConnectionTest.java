@@ -203,15 +203,13 @@ public class ConnectionTest extends HazelcastTestSupport {
         final CountDownLatch ll = new CountDownLatch(1);
         final AtomicInteger cc = new AtomicInteger();
 
-        new Thread() {
-            public void run() {
-                try {
-                    ll.await(1, TimeUnit.MINUTES);
-                    hz.getLifecycleService().terminate();
-                } catch (InterruptedException ignored) {
-                }
+        new Thread(() -> {
+            try {
+                ll.await(1, TimeUnit.MINUTES);
+                hz.getLifecycleService().terminate();
+            } catch (InterruptedException ignored) {
             }
-        }.start();
+        }).start();
 
         final Collection<Socket> sockets = Collections.newSetFromMap(new ConcurrentHashMap<>());
         final AtomicInteger k0 = new AtomicInteger();

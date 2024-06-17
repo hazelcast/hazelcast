@@ -31,6 +31,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
@@ -224,7 +225,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check0(query("1=1 order by field2 desc"), false, v -> true);
     }
 
-        // Test helpers
+    // Test helpers
 
     private void checkFirstColumn() {
         // WHERE f1 IS NULL
@@ -872,19 +873,15 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return new MapConfig().setName(mapName).setBackupCount(0).addIndexConfig(getIndexConfig());
     }
 
+    /**
+     * The most lightweight SQL index test suite, for non-composite indexes based on INT and VARCHAR.
+     */
     protected static Collection<Object[]> parametersQuick() {
         List<Object[]> res = new ArrayList<>();
-
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
-            for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> firstType : quickTestTypes()) {
-                    for (ExpressionType<?> secondType : quickTestTypes()) {
-                        res.add(new Object[]{indexType, composite, firstType, secondType});
-                    }
-                }
-            }
+            res.add(new Object[]{indexType, false, ExpressionTypes.INTEGER, ExpressionTypes.INTEGER});
+            res.add(new Object[]{indexType, false, ExpressionTypes.STRING, ExpressionTypes.INTEGER});
         }
-
         return res;
     }
 

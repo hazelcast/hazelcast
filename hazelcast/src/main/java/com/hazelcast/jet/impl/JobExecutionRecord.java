@@ -151,7 +151,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         executed = true;
     }
 
-    @SuppressWarnings("NonAtomicOperationOnVolatileField")
+    @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "all updates to ongoingSnapshotId are synchronized")
     public void startNewSnapshot(String exportedSnapshotName) {

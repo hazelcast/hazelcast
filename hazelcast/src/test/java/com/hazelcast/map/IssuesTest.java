@@ -35,12 +35,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -141,18 +140,8 @@ public class IssuesTest extends HazelcastTestSupport {
         Thread.sleep(50L);
         imap.addEntryListener(listener, false);
         imap.put(1, 1);
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return eventsWithValues.size();
-            }
-        }, 1);
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return eventsWithoutValues.size();
-            }
-        }, 1);
+        assertEqualsEventually(eventsWithValues::size, 1);
+        assertEqualsEventually(eventsWithoutValues::size, 1);
     }
 
     @Test
@@ -198,10 +187,10 @@ public class IssuesTest extends HazelcastTestSupport {
         globalSerializerConfig.setOverrideJavaSerialization(false);
         config.getSerializationConfig().setGlobalSerializerConfig(globalSerializerConfig
                 .setImplementation(new StreamSerializer() {
-                    public void write(ObjectDataOutput out, Object object) throws IOException {
+                    public void write(ObjectDataOutput out, Object object) {
                     }
 
-                    public Object read(ObjectDataInput in) throws IOException {
+                    public Object read(ObjectDataInput in) {
                         return new DummyValue();
                     }
 
@@ -258,6 +247,7 @@ public class IssuesTest extends HazelcastTestSupport {
     }
 
     static class InstanceAwareMapInterceptorImpl extends MapInterceptorAdaptor implements HazelcastInstanceAware {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         transient HazelcastInstance hazelcastInstance;

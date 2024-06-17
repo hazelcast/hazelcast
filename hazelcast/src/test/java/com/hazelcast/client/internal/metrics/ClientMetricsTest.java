@@ -52,7 +52,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMetricsTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {

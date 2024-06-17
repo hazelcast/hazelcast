@@ -25,7 +25,7 @@ import static java.lang.Math.max;
 
 /**
  * This object tracks and determines the current {@link Watermark} given the
- * event timestamps as they occur for a single input stream. Typically the
+ * event timestamps as they occur for a single input stream. Typically, the
  * watermark will be advanced with a {@link #limitingLag(long) fixed lag}
  * behind the top observed timestamp so far.
  * <p>

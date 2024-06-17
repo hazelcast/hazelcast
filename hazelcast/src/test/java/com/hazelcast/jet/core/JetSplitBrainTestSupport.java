@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -33,12 +32,9 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -150,38 +146,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         return instances;
     }
 
-    /**
-     * Starts a new {@code HazelcastInstance} which is only able to communicate
-     * with members on one of the two brains.
-     * @param firstSubCluster jet instances in the first sub cluster
-     * @param secondSubCluster jet instances in the first sub cluster
-     * @param createOnFirstSubCluster if true, new instance is created on the first sub cluster.
-     * @return a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's
-     *         members and its connection manager blocks connections to other brain's members
-     * @see TestHazelcastInstanceFactory#newHazelcastInstance(Address, com.hazelcast.config.Config, Address[])
-     */
-    protected final HazelcastInstance createHazelcastInstanceInBrain(HazelcastInstance[] firstSubCluster,
-                                                                     HazelcastInstance[] secondSubCluster,
-                                                               boolean createOnFirstSubCluster) {
-        Address newMemberAddress = nextAddress();
-        HazelcastInstance[] instancesToBlock = createOnFirstSubCluster ? secondSubCluster : firstSubCluster;
-
-        List<Address> addressesToBlock = new ArrayList<>(instancesToBlock.length);
-        for (HazelcastInstance anInstancesToBlock : instancesToBlock) {
-            if (isInstanceActive(anInstancesToBlock)) {
-                addressesToBlock.add(getAddress(anInstancesToBlock));
-                // block communication from these instances to the new address
-                FirewallingServerConnectionManager connectionManager = getFireWalledEndpointManager(anInstancesToBlock);
-                connectionManager.blockNewConnection(newMemberAddress);
-                connectionManager.closeActiveConnection(newMemberAddress);
-            }
-        }
-        // indicate we need to unblacklist addresses from joiner when split-brain will be healed
-        unblacklistHint = true;
-        // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
-        return createHazelcastInstance(createConfig(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
-    }
-
     private void createSplitBrain(HazelcastInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
         applyOnBrains(instances, firstSubClusterSize, SplitBrainTestSupport::blockCommunicationBetween);
         applyOnBrains(instances, firstSubClusterSize, HazelcastTestSupport::closeConnectionBetween);
@@ -211,7 +175,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     private static FirewallingServerConnectionManager getFireWalledEndpointManager(HazelcastInstance hz) {
-        ServerConnectionManager cm = getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        ServerConnectionManager cm = Accessors.getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
         return (FirewallingServerConnectionManager) cm;
     }
 
@@ -255,7 +219,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
                 return false;
             }
         } else if (instance instanceof HazelcastInstanceImpl) {
-            return getNode(instance).getState() == NodeState.ACTIVE;
+            return Accessors.getNode(instance).getState() == NodeState.ACTIVE;
         } else {
             throw new AssertionError("Unsupported HazelcastInstance type");
         }

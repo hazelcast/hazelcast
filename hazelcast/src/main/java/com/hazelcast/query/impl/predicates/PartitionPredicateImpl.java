@@ -24,6 +24,7 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -37,6 +38,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 @BinaryInterface
 public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Object partitionKey;

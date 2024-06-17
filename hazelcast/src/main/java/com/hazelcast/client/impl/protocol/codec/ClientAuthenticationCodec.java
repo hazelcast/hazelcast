@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("3beea2466a4f9fc9c86378f984ee6d6c")
+@Generated("e3d2929debdb5387c4cf144f031cfd66")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -45,7 +45,8 @@ public final class ClientAuthenticationCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 257;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_ROUTING_MODE_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ROUTING_MODE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_STATUS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_MEMBER_UUID_FIELD_OFFSET = RESPONSE_STATUS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET = RESPONSE_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -108,9 +109,20 @@ public final class ClientAuthenticationCodec {
          * User defined labels of the client instance
          */
         public java.util.List<java.lang.String> labels;
+
+        /**
+         * Identifies the routing mode of the client. It can be UNISCOKET(0), SMART(1) or SUBSET(2).
+         */
+        public byte routingMode;
+
+        /**
+         * True if the routingMode is received from the client, false otherwise.
+         * If this is false, routingMode has the default value for its type.
+         */
+        public boolean isRoutingModeExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String clusterName, @Nullable java.lang.String username, @Nullable java.lang.String password, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels) {
+    public static ClientMessage encodeRequest(java.lang.String clusterName, @Nullable java.lang.String username, @Nullable java.lang.String password, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, byte routingMode) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Client.Authentication");
@@ -119,6 +131,7 @@ public final class ClientAuthenticationCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
+        encodeByte(initialFrame.content, REQUEST_ROUTING_MODE_FIELD_OFFSET, routingMode);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, clusterName);
         CodecUtil.encodeNullable(clientMessage, username, StringCodec::encode);
@@ -136,6 +149,12 @@ public final class ClientAuthenticationCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_ROUTING_MODE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES) {
+            request.routingMode = decodeByte(initialFrame.content, REQUEST_ROUTING_MODE_FIELD_OFFSET);
+            request.isRoutingModeExists = true;
+        } else {
+            request.isRoutingModeExists = false;
+        }
         request.clusterName = StringCodec.decode(iterator);
         request.username = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.password = CodecUtil.decodeNullable(iterator, StringCodec::decode);
@@ -202,7 +221,7 @@ public final class ClientAuthenticationCodec {
         public @Nullable byte[] tpcToken;
 
         /**
-         * Incremental member list version
+         * Incremental member list version. -1 if no member list is available.
          */
         public int memberListVersion;
 
@@ -212,7 +231,7 @@ public final class ClientAuthenticationCodec {
         public java.util.List<com.hazelcast.internal.cluster.MemberInfo> memberInfos;
 
         /**
-         * Incremental state version of the partition table
+         * Incremental state version of the partition table. -1 if no partition table is available.
          */
         public int partitionListVersion;
 
@@ -220,6 +239,11 @@ public final class ClientAuthenticationCodec {
          * The partition table. In each entry, it has uuid of the member and list of partitions belonging to that member
          */
         public java.util.List<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions;
+
+        /**
+         * Server/Member metadata represented as in key value pairs
+         */
+        public java.util.Map<java.lang.String, java.lang.String> keyValuePairs;
 
         /**
          * True if the tpcPorts is received from the member, false otherwise.
@@ -256,9 +280,15 @@ public final class ClientAuthenticationCodec {
          * If this is false, partitions has the default value for its type.
          */
         public boolean isPartitionsExists;
+
+        /**
+         * True if the keyValuePairs is received from the member, false otherwise.
+         * If this is false, keyValuePairs has the default value for its type.
+         */
+        public boolean isKeyValuePairsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts, @Nullable byte[] tpcToken, int memberListVersion, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos, int partitionListVersion, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts, @Nullable byte[] tpcToken, int memberListVersion, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos, int partitionListVersion, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions, java.util.Map<java.lang.String, java.lang.String> keyValuePairs) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -278,6 +308,7 @@ public final class ClientAuthenticationCodec {
         CodecUtil.encodeNullable(clientMessage, tpcToken, ByteArrayCodec::encode);
         ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
         EntryListUUIDListIntegerCodec.encode(clientMessage, partitions);
+        MapCodec.encode(clientMessage, keyValuePairs, StringCodec::encode, StringCodec::encode);
         return clientMessage;
     }
 
@@ -328,6 +359,12 @@ public final class ClientAuthenticationCodec {
             response.isPartitionsExists = true;
         } else {
             response.isPartitionsExists = false;
+        }
+        if (iterator.hasNext()) {
+            response.keyValuePairs = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
+            response.isKeyValuePairsExists = true;
+        } else {
+            response.isKeyValuePairsExists = false;
         }
         return response;
     }

@@ -745,8 +745,8 @@ public class MasterJobContext {
 
         setFinalExecutionMetrics(responses);
 
-        if (error instanceof JobTerminateRequestedException
-                && ((JobTerminateRequestedException) error).mode().isWithTerminalSnapshot()) {
+        if (error instanceof JobTerminateRequestedException exception
+                && exception.mode().isWithTerminalSnapshot()) {
             Throwable finalError = error;
             // The terminal snapshot on members is always completed before replying to StartExecutionOp.
             // However, the response to snapshot operations can be processed after the response to
@@ -808,8 +808,8 @@ public class MasterJobContext {
                 mc.lock();
                 mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
 
-                ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
-                        ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
+                ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException jtre
+                        ? jtre.mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
 
                 // TODO: workaround for cancelling non-suspendable jobs,
@@ -1248,8 +1248,7 @@ public class MasterJobContext {
             logger.fine("%s received response to StartExecutionOperation from %s: %s",
                     mc.jobIdString(), address, response);
             CompletableFuture<Object> future = operationResponses.get(address);
-            if (response instanceof Throwable) {
-                Throwable throwable = (Throwable) response;
+            if (response instanceof Throwable throwable) {
                 future.completeExceptionally(throwable);
 
                 if (!(peel(throwable) instanceof TerminatedWithSnapshotException)) {

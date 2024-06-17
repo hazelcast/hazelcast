@@ -18,8 +18,11 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecute_reservedCodec;
+import com.hazelcast.client.util.ConfigRoutingUtil;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,23 +42,23 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
 import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.runners.Parameterized.Parameter;
-import static org.junit.runners.Parameterized.Parameters;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
@@ -66,35 +69,41 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
-    private static final ClientConfig CONFIG_UNISOCKET = createClientConfig(false);
-    private static final ClientConfig CONFIG_SMART = createClientConfig(true);
+    @Parameterized.Parameter
+    public RoutingMode routingMode;
 
-    @Parameter
-    public boolean smartRouting;
-
-    @Override
-    protected ClientConfig clientConfig() {
-        return smartRouting ? CONFIG_SMART : CONFIG_UNISOCKET;
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(UNISOCKET, SMART);
     }
 
-    @Parameters(name = "smartRouting:{0}")
-    public static Collection<Object[]> parameters() {
-        List<Object[]> res = new ArrayList<>();
+    @Override
+    public void after() {
+        client = null;
+        super.after();
+    }
 
-        res.add(new Object[]{false});
-        res.add(new Object[]{true});
+    protected HazelcastInstance client;
 
-        return res;
+    protected Supplier<HazelcastInstance> newClientSupplier() {
+        return () -> factory.newHazelcastClient(newClientConfig());
+    }
+
+    protected ClientConfig newClientConfig() {
+        ClientConfig clientConfig = ConfigRoutingUtil.newClientConfig(routingMode);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        return clientConfig;
     }
 
     @Test
     public void testTimeout_execute() {
-        checkTimeout(true);
+        checkTimeout(newClientSupplier());
     }
 
     @Test
     public void testDataTypeMismatch() {
-        checkDataTypeMismatch(true);
+        checkDataTypeMismatch(newClientSupplier());
     }
 
     @Test
@@ -109,12 +118,12 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testParsingError() {
-        checkParsingError(true);
+        checkParsingError(newClientSupplier());
     }
 
     @Test
     public void testUserCancel() {
-        checkUserCancel(true);
+        checkUserCancel(newClientSupplier());
     }
 
     /**
@@ -123,7 +132,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testMemberDisconnect_execute() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(5000))");
 
@@ -134,7 +143,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testMemberDisconnect_fetch() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         createMapping(instance1, MAP_NAME, long.class, long.class);
         populate(instance1, DEFAULT_CURSOR_BUFFER_SIZE + 1);
@@ -161,7 +170,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testMemberDisconnect_close() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         createMapping(instance1, MAP_NAME, long.class, long.class);
         populate(instance1, DEFAULT_CURSOR_BUFFER_SIZE + 1);
@@ -189,7 +198,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testCursorCleanupOnClientLeave() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         Map<Integer, Integer> localMap = new HashMap<>();
         Map<Integer, Integer> map = instance1.getMap(MAP_NAME);
@@ -216,7 +225,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testParameterError_serialization() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(true, false));
 
@@ -228,7 +237,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testParameterError_deserialization() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(false, true));
 
@@ -241,7 +250,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     public void testRowError_deserialization() {
         try {
             instance1 = newHazelcastInstance(true);
-            client = newClient();
+            client = newClientSupplier().get();
 
             Map<Integer, BadValue> localMap = new HashMap<>();
             IMap<Integer, BadValue> map = instance1.getMap(MAP_NAME);
@@ -275,7 +284,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testMissingHandler() {
         instance1 = newHazelcastInstance(true);
-        client = newClient();
+        client = newClientSupplier().get();
 
         try {
             ClientMessage message = SqlExecute_reservedCodec.encodeRequest(
@@ -294,14 +303,6 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Unrecognized client message received"));
         }
-    }
-
-    private static ClientConfig createClientConfig(boolean smartRouting) {
-        ClientConfig config = new ClientConfig();
-
-        config.getNetworkConfig().setSmartRouting(smartRouting);
-
-        return config;
     }
 
     private static class BadValue implements DataSerializable {

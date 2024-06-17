@@ -27,7 +27,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -120,12 +119,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
         map.put(1, 2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, mapStore.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, mapStore.size()));
     }
 
     @Test
@@ -144,12 +138,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         map.put(1, 3);
         map.put(1, 4);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, mapStore.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, mapStore.size()));
     }
 
     static class SelfHealingMapStore<K, V> extends MapStoreAdapter<K, V> {
@@ -255,12 +244,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         for (int i = 0; i < numEntriesToStore; i++) {
             map.put(i, i);
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(numEntriesToStore, mapStore.storeCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(numEntriesToStore, mapStore.storeCount()));
     }
 
     /**

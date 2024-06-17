@@ -216,8 +216,8 @@ public class Long2ObjectHashMapTest {
 
         final Collection<Long> copyToSet = new HashSet<>();
 
-        for (final var iter = longToObjectMap.keySet().iterator(); iter.hasNext(); ) {
-            copyToSet.add(iter.nextLong());
+        for (final var iterator = longToObjectMap.keySet().iterator(); iterator.hasNext(); ) {
+            copyToSet.add(iterator.nextLong());
         }
         assertThat(copyToSet).isEqualTo(initialSet);
     }
@@ -251,10 +251,10 @@ public class Long2ObjectHashMapTest {
         final Collection<Long> copyOfSet = new HashSet<>();
 
         int i = 0;
-        for (final Iterator<Long> iter = longToObjectMap.keySet().iterator(); iter.hasNext(); ) {
-            final Long item = iter.next();
+        for (final Iterator<Long> iterator = longToObjectMap.keySet().iterator(); iterator.hasNext(); ) {
+            final Long item = iterator.next();
             if (i++ == 7) {
-                iter.remove();
+                iterator.remove();
             } else {
                 copyOfSet.add(item);
             }

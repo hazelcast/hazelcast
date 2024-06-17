@@ -58,21 +58,18 @@ public class NodeQueryCacheEventServiceTest extends HazelcastTestSupport {
         final AtomicBoolean stop = new AtomicBoolean(false);
         ArrayList<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            Thread thread = new Thread() {
-                @Override
-                public void run() {
-                    while (!stop.get()) {
-                        nodeQueryCacheEventService.addListener(mapName, "a", new EntryAddedListener() {
-                            @Override
-                            public void entryAdded(EntryEvent event) {
+            Thread thread = new Thread(() -> {
+                while (!stop.get()) {
+                    nodeQueryCacheEventService.addListener(mapName, "a", new EntryAddedListener() {
+                        @Override
+                        public void entryAdded(EntryEvent event) {
 
-                            }
-                        });
+                        }
+                    });
 
-                        nodeQueryCacheEventService.removeAllListeners(mapName, "a");
-                    }
+                    nodeQueryCacheEventService.removeAllListeners(mapName, "a");
                 }
-            };
+            });
             threads.add(thread);
         }
 

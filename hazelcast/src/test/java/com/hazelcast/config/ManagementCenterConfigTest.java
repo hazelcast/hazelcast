@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ManagementCenterConfigTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
     public void testDefaultConfig() {
@@ -51,9 +51,10 @@ public class ManagementCenterConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testXmlConfig() {
-        InMemoryXmlConfig xmlConfig = new InMemoryXmlConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n"
-                + "<management-center />\n"
-                + "</hazelcast>");
+        InMemoryXmlConfig xmlConfig = new InMemoryXmlConfig("""
+                <hazelcast xmlns="http://www.hazelcast.com/schema/config">
+                <management-center />
+                </hazelcast>""");
         HazelcastInstance hz = factory.newHazelcastInstance(xmlConfig);
         checkConfig(hz);
     }

@@ -28,7 +28,6 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -181,12 +180,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
                 .setPartitionId(partitionId);
         final InternalCompletableFuture<Object> future = opService.invokeOnPartition(op);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(future.isDone());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(future.isDone()));
 
         assertEquals(Boolean.FALSE, future.join());
     }
@@ -312,12 +306,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         // now we are going to do a get on the future by a whole bunch of threads
         final List<Future> futures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
-            futures.add(spawn(new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    return future.join();
-                }
-            }));
+            futures.add(spawn((Callable) () -> future.join()));
         }
 
         // lets do a very long wait so that the heartbeat/retrying mechanism have kicked in.

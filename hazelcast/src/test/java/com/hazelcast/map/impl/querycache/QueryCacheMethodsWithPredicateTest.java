@@ -51,7 +51,6 @@ import static org.junit.Assert.assertNotEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     @Parameters(name = "inMemoryFormat: {0}")

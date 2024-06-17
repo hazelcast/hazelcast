@@ -35,7 +35,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -43,10 +42,10 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +64,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -79,7 +79,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class KafkaConnectIT extends SimpleTestInClusterSupport {
     @ClassRule
@@ -87,16 +86,35 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
     public static final int ITEM_COUNT = 1_000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIT.class);
+    private static final Properties RANDOM_PROPERTIES = new Properties();
+    private static final Config CONFIG = smallInstanceConfig();
+
+    static {
+        RANDOM_PROPERTIES.setProperty("name", "datagen-connector");
+        RANDOM_PROPERTIES.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        RANDOM_PROPERTIES.setProperty("max.interval", "1");
+        RANDOM_PROPERTIES.setProperty("kafka.topic", "orders");
+        RANDOM_PROPERTIES.setProperty("quickstart", "orders");
+
+        CONFIG.getJetConfig().setResourceUploadEnabled(true);
+        enableEventJournal(CONFIG);
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, CONFIG);
+    }
 
     @Test
     public void test_non_serializable() {
         assertThatThrownBy(() -> Pipeline.create()
-                                     .readFrom(connect(new Properties(), new NonSerializableMapping()))
-                                     .withIngestionTimestamps()
-                                     .writeTo(Sinks.logger()))
+                .readFrom(connect(new Properties(), new NonSerializableMapping()))
+                .withIngestionTimestamps()
+                .writeTo(Sinks.logger()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("\"projectionFn\" must be serializable");
     }
+
     private static class NonSerializableMapping implements FunctionEx<SourceRecord, Object> {
         @SuppressWarnings("unused")
         private final Object nonSerializableField = new Object();
@@ -109,15 +127,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
     @Test
     public void test_reading_without_timestamps() throws URISyntaxException {
-        Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "datagen-connector");
-        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "orders");
-        randomProperties.setProperty("quickstart", "orders");
-
         Pipeline pipeline = Pipeline.create();
-        StreamStage<SourceRecord> streamStage = pipeline.readFrom(connect(randomProperties))
+        StreamStage<SourceRecord> streamStage = pipeline.readFrom(connect(RANDOM_PROPERTIES))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
         streamStage
@@ -127,10 +138,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hz = createHazelcastInstance(config);
-        Job job = hz.getJet().newJob(pipeline, jobConfig);
+        Job job = instance().getJet().newJob(pipeline, jobConfig);
 
         try {
             job.join();
@@ -148,26 +156,15 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-
-        Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "datagen-connector");
-        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "orders");
-        randomProperties.setProperty("quickstart", "orders");
-
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(connect(randomProperties, ConnectRecord::hashCode))
+        pipeline.readFrom(connect(RANDOM_PROPERTIES, ConnectRecord::hashCode))
                 .withNativeTimestamps(0)
                 .setLocalParallelism(1)
                 .window(WindowDefinition.tumbling(5))
                 .aggregate(AggregateOperations.counting())
                 .writeTo(Sinks.noop());
 
-        assertThatThrownBy(() -> hazelcastInstance.getJet().newJob(pipeline, jobConfig).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline, jobConfig).join())
                 .isInstanceOf(CompletionException.class)
                 .hasMessageContaining("Neither timestampFn nor nativeEventTime specified");
     }
@@ -177,18 +174,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-
-        Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "datagen-connector");
-        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "orders");
-        randomProperties.setProperty("quickstart", "orders");
-
         Pipeline pipeline = Pipeline.create();
-        StreamStage<WindowResult<Long>> streamStage = pipeline.readFrom(connect(randomProperties, ConnectRecord::hashCode))
+        StreamStage<WindowResult<Long>> streamStage = pipeline.readFrom(connect(RANDOM_PROPERTIES, ConnectRecord::hashCode))
                 .withIngestionTimestamps()
                 .setLocalParallelism(1)
                 .window(WindowDefinition.tumbling(5))
@@ -197,7 +184,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                 .writeTo(assertCollectedEventually(60,
                         list -> assertThat(list).hasSizeGreaterThan(ITEM_COUNT)));
 
-        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+        Job job = instance().getJet().newJob(pipeline, jobConfig);
 
         try {
             job.join();
@@ -211,16 +198,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
     @Test
     public void test_reading_and_writing_to_map() throws URISyntaxException {
-        Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "datagen-connector");
-        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "orders");
-        randomProperties.setProperty("quickstart", "orders");
-
         Pipeline pipeline = Pipeline.create();
         StreamStage<Map.Entry<String, Order>> streamStage = pipeline
-                .readFrom(connect(randomProperties,
+                .readFrom(connect(RANDOM_PROPERTIES,
                         rec -> entry(convertToString(rec.keySchema(), rec.key()), new Order(rec))))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
@@ -233,66 +213,16 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hz = createHazelcastInstance(config);
-
-        HazelcastInstance[] instances = {hz};
         // Create the collector before the job to make sure it is scheduled
-        try (var collectors = new MultiNodeMetricsCollector<>(instances, new KafkaMetricsCollector())) {
+        try (var collectors = new MultiNodeMetricsCollector<>(instances(), new KafkaMetricsCollector())) {
             try {
-                Job job = hz.getJet().newJob(pipeline, jobConfig);
+                Job job = instance().getJet().newJob(pipeline, jobConfig);
                 job.join();
                 fail("Job should have completed with an AssertionCompletedException, but completed normally");
             } catch (CompletionException e) {
                 String errorMsg = e.getCause().getMessage();
                 assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                           + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-                assertTrueEventually(() -> assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
-            }
-        }
-    }
-
-    @Test
-    public void test_scaling() throws URISyntaxException {
-        final int instanceCount = 3;
-        final int localParallelism = 3;
-        final int tasksMax = 2 * localParallelism;
-        Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "datagen-connector");
-        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "orders");
-        randomProperties.setProperty("quickstart", "orders");
-        randomProperties.setProperty("tasks.max", String.valueOf(tasksMax)); // reduced from possible 3x
-
-        Pipeline pipeline = Pipeline.create();
-        StreamStage<Order> streamStage = pipeline
-                .readFrom(connect(randomProperties, Order::new))
-                .withoutTimestamps()
-                .setLocalParallelism(localParallelism);
-        streamStage
-                .writeTo(assertCollectedEventually(120, list -> assertThat(list).hasSize(ITEM_COUNT * tasksMax)));
-
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getDataGenConnectorURL());
-
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, instanceCount);
-
-        // Create the collector before the job to make sure it is scheduled
-        try (var collectors = new MultiNodeMetricsCollector<>(hazelcastInstances, new KafkaMetricsCollector())) {
-            try {
-                HazelcastInstance hazelcastInstance = hazelcastInstances[0];
-                Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-                job.join();
-                fail("Job should have completed with an AssertionCompletedException, but completed normally");
-            } catch (CompletionException e) {
-                String errorMsg = e.getCause().getMessage();
-                assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                           + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-
+                        + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
                 assertTrueEventually(() -> assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
             }
         }
@@ -304,11 +234,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
     @Test
     public void test_snapshotting() throws URISyntaxException {
-        Config config = smallInstanceConfig();
-        enableEventJournal(config);
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
@@ -339,9 +264,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         jobConfig.addJarsInZip(getDataGenConnectorURL());
         enableSnapshotting(jobConfig);
 
-        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+        Job job = instance().getJet().newJob(pipeline, jobConfig);
 
-        Map<String, List<Order>> ordersByTaskId = hazelcastInstance.getMap("testResults");
+        Map<String, List<Order>> ordersByTaskId = instance().getMap("testResults");
 
         Map<String, Integer> minOrderIdByTaskIdBeforeSuspend = new HashMap<>();
         assertTrueEventually(() -> {
@@ -356,10 +281,10 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             LOGGER.debug("Max order ids before snapshot = {}", getMaxOrderIdByTaskId(ordersByTaskId));
         });
 
-        waitForNextSnapshot(hazelcastInstance, job);
-        assertJobStatusEventually(job, RUNNING);
+        waitForNextSnapshot(instance(), job);
+        assertThat(job).eventuallyHasStatus(RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         ordersByTaskId.clear();
         job.resume();
@@ -377,14 +302,14 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             LOGGER.debug("Max order ids after snapshot = {}", getMaxOrderIdByTaskId(ordersByTaskId));
             job.cancel();
         });
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
         for (Map.Entry<String, Integer> minOrderId : minOrderIdByTaskIdAfterSuspend.entrySet()) {
             String taskId = minOrderId.getKey();
             assertThat(minOrderId.getValue()).isGreaterThan(minOrderIdByTaskIdBeforeSuspend.get(taskId));
         }
     }
 
-    private URL getDataGenConnectorURL() throws URISyntaxException {
+    URL getDataGenConnectorURL() throws URISyntaxException {
         ClassLoader classLoader = getClass().getClassLoader();
         final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-datagen-0.6.0.zip";
         URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
@@ -452,7 +377,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         }
     }
 
-    private static class KafkaMetricsCollector implements MetricsCollector {
+    static class KafkaMetricsCollector implements MetricsCollector {
         private final AtomicLong sourceRecordPollTotal = new AtomicLong();
         private final AtomicLong sourceRecordPollAvgTime = new AtomicLong();
 

@@ -43,8 +43,8 @@ public abstract class ReactorBuilderTest {
     @Test
     public void test_setReactorNameSupplier() {
         ReactorBuilder builder = newBuilder();
-        builder.setReactorNameSupplier(new Supplier<String>() {
-            private AtomicInteger idGenerator = new AtomicInteger();
+        builder.setReactorNameSupplier(new Supplier<>() {
+            private final AtomicInteger idGenerator = new AtomicInteger();
 
             @Override
             public String get() {

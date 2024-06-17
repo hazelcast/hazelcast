@@ -19,6 +19,8 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
 
+import java.io.Serial;
+
 /**
  * Thrown when a job could not be found on the master node
  *
@@ -26,6 +28,7 @@ import com.hazelcast.jet.Util;
  */
 public class JobNotFoundException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public JobNotFoundException(long jobId) {

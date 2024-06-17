@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 
 @Category(NightlyTest.class)
 public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCdcIntegrationTest {
@@ -250,7 +251,7 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
             assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap(SINK_MAP_NAME))));
         } finally {
             job.cancel();
-            assertJobStatusEventually(job, JobStatus.FAILED);
+            assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
         }
     }
 

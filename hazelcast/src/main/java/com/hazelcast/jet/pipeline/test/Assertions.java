@@ -55,7 +55,7 @@ public final class Assertions {
      * }</pre>
      *
      * <b>Note:</b> Since Jet jobs are distributed, input from multiple upstream
-     * processors is merged in a non-deterministic way. Therefore this assertion
+     * processors is merged in a non-deterministic way. Therefore, this assertion
      * is recommended only for testing of non-distributed sources.
      */
     @Nonnull
@@ -82,7 +82,7 @@ public final class Assertions {
      * }</pre>
      *
      * <b>Note:</b> Since Jet jobs are distributed, input from multiple upstream
-     * processors is merged in a non-deterministic way. Therefore this assertion
+     * processors is merged in a non-deterministic way. Therefore, this assertion
      * is recommended only for testing of non-distributed sources.
      */
     @Nonnull
@@ -236,7 +236,7 @@ public final class Assertions {
      * }
      * }</pre>
      *
-     * <b>Note:</b> This assertions requires that there are no other assertions in the
+     * <b>Note:</b> This assertion requires that there are no other assertions in the
      * job as this one can complete the job before the other ones succeeded.
      */
     @Nonnull

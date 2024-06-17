@@ -40,7 +40,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -51,7 +50,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -135,7 +133,7 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<String, String> map1 = instance1.getMap(name);
         IMap<String, String> map2 = instance2.getMap(name);
         final CountDownLatch latch = new CountDownLatch(1);
-        map1.addEntryListener(new EntryAdapter<Object, Object>() {
+        map1.addEntryListener(new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 assertNotNull(event.getMember());
@@ -241,13 +239,10 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private void checkCountWithExpected(final int expectedGlobal, final int expectedLocal, final int expectedValue) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedLocal, localCount.get());
-                assertEquals(expectedGlobal, globalCount.get());
-                assertEquals(expectedValue, valueCount.get());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(expectedLocal, localCount.get());
+            assertEquals(expectedGlobal, globalCount.get());
+            assertEquals(expectedValue, valueCount.get());
         });
     }
 
@@ -271,12 +266,7 @@ public class ListenerTest extends HazelcastTestSupport {
 
         map.replace(1, 1, 2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, entryUpdatedEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, entryUpdatedEventCount.get()));
     }
 
     /**
@@ -288,7 +278,7 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map = instance.getMap(randomString());
         final CountDownLatch updateLatch = new CountDownLatch(1);
         final CountDownLatch addLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
+        map.addEntryListener(new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addLatch.countDown();
@@ -351,12 +341,7 @@ public class ListenerTest extends HazelcastTestSupport {
         }
         final int eventPerPartitionMin = count / instanceCount - count / 10;
         final int eventPerPartitionMax = count / instanceCount + count / 10;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax));
     }
 
     @Test
@@ -370,12 +355,7 @@ public class ListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < count; i++) {
             map.put("key" + i, "value" + i);
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(globalCount.get() == 1);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(globalCount.get() == 1));
     }
 
     @Test
@@ -399,15 +379,12 @@ public class ListenerTest extends HazelcastTestSupport {
             map.replace(i, "WrongValue", newVal);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < replaceTotal; i++) {
-                    assertEquals(oldVal, map.get(i));
-                }
-                assertEquals(putTotal, listener.addCount.get());
-                assertEquals(0, listener.updateCount.get());
+        assertTrueEventually(() -> {
+            for (int i = 0; i < replaceTotal; i++) {
+                assertEquals(oldVal, map.get(i));
             }
+            assertEquals(putTotal, listener.addCount.get());
+            assertEquals(0, listener.updateCount.get());
         });
     }
 
@@ -480,16 +457,13 @@ public class ListenerTest extends HazelcastTestSupport {
             map.replace(i, oldVal, newVal);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < replaceTotal; i++) {
-                    assertEquals(newVal, map.get(i));
-                }
-
-                assertEquals(putTotal, listener.addCount.get());
-                assertEquals(replaceTotal, listener.updateCount.get());
+        assertTrueEventually(() -> {
+            for (int i = 0; i < replaceTotal; i++) {
+                assertEquals(newVal, map.get(i));
             }
+
+            assertEquals(putTotal, listener.addCount.get());
+            assertEquals(replaceTotal, listener.updateCount.get());
         });
     }
 
@@ -540,12 +514,9 @@ public class ListenerTest extends HazelcastTestSupport {
 
         final EventService eventService = getNode(instance).getNodeEngine().getEventService();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final Collection<EventRegistration> registrations = eventService.getRegistrations(MapService.SERVICE_NAME, name);
-                assertFalse(registrations.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            final Collection<EventRegistration> registrations = eventService.getRegistrations(MapService.SERVICE_NAME, name);
+            assertFalse(registrations.isEmpty());
         });
     }
 
@@ -647,12 +618,12 @@ public class ListenerTest extends HazelcastTestSupport {
         static volatile boolean deserialized = false;
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
             serialized = true;
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
             deserialized = true;
         }
 
@@ -692,21 +663,11 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private Predicate<String, String> matchingPredicate() {
-        return new Predicate<>() {
-            @Override
-            public boolean apply(Map.Entry<String, String> mapEntry) {
-                return true;
-            }
-        };
+        return mapEntry -> true;
     }
 
     private Predicate<String, String> nonMatchingPredicate() {
-        return new Predicate<>() {
-            @Override
-            public boolean apply(Map.Entry<String, String> mapEntry) {
-                return false;
-            }
-        };
+        return mapEntry -> false;
     }
 
     private class UpdateListenerRecordingOldValue<K, V> implements EntryUpdatedListener<K, V> {

@@ -71,7 +71,7 @@ public class ExtractionInPortableSpecTest extends AbstractExtractionTest {
     );
 
     private static final Person HUNT_WITH_NULLS = person(null,
-            limb(null, new ArrayList<String>(), new Finger[]{})
+            limb(null, new ArrayList<>(), new Finger[]{})
     );
 
     public ExtractionInPortableSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {

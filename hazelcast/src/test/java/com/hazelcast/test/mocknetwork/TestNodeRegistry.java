@@ -53,7 +53,7 @@ public final class TestNodeRegistry {
     }
 
     public NodeContext createNodeContext(Address address) {
-        return createNodeContext(address, Collections.<Address>emptySet());
+        return createNodeContext(address, Collections.emptySet());
     }
 
     public NodeContext createNodeContext(final Address address, Set<Address> initiallyBlockedAddresses) {

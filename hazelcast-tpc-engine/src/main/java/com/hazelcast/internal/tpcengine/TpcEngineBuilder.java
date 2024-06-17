@@ -22,7 +22,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * The builder for the the {@link TpcEngine}.
+ * The builder for the {@link TpcEngine}.
  */
 public class TpcEngineBuilder {
 

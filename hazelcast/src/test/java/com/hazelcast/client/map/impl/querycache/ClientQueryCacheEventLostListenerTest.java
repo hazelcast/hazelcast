@@ -44,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheEventLostListenerTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance node;
 
     @Before

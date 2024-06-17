@@ -18,6 +18,8 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
+import java.io.Serial;
+
 /**
  * Represents the definition of a session window.
  *
@@ -26,6 +28,7 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 @SerializableByConvention
 public class SessionWindowDefinition extends WindowDefinition {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final long sessionTimeout;

@@ -69,7 +69,7 @@ public class OSTest {
     }
 
     @Test
-    public void test_linuxMinorVersion0_whenisLinux() {
+    public void test_linuxMinorVersion0_whenIsLinux() {
         assertEquals(16, OS.linuxMinorVersion0("5.16.12-200.fc35.x86_64", true));
     }
 

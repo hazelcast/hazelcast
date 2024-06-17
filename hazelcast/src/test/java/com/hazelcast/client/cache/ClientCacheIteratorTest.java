@@ -37,7 +37,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Override
     protected CachingProvider createCachingProvider() {

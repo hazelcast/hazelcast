@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -25,23 +26,31 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private ReplicatedMap<String, String> replicatedMap;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+    }
 
     @Override
     String getServiceName() {
@@ -71,20 +80,17 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
     }
 
     protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory, int expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                boolean found = false;
-                for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
-                    NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
-                    EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
-                    EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
-                    if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == expected) {
-                        found = true;
-                    }
+        assertTrueEventually(() -> {
+            boolean found = false;
+            for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+                NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+                EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
+                EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
+                if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == expected) {
+                    found = true;
                 }
-                assertTrue(found);
             }
+            assertTrue(found);
         });
     }
 }

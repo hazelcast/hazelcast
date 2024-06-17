@@ -40,6 +40,7 @@ import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -246,6 +247,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
      */
     public static final class Supplier<T> implements ProcessorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String destination;

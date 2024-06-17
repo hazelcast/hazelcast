@@ -79,7 +79,7 @@ public class ClientConfig {
 
     /**
      * The Network Configuration properties like:
-     * addresses to connect, smart-routing, socket-options...
+     * addresses to connect, smart-routing, subset-routing, socket-options...
      */
     private ClientNetworkConfig networkConfig = new ClientNetworkConfig();
 
@@ -944,9 +944,11 @@ public class ClientConfig {
 
     /**
      * Note that backup acks to client can be enabled only for smart client.
-     * This config has no effect for unisocket clients.
+     * This config has no effect for unisocket or subset clients.
      *
-     * @return true if backup acknowledgements comes to client
+     * @return {@code true} means backup acknowledgements
+     * come to client, otherwise {@code false}
+     * indicates that acknowledgements go to members
      */
     public boolean isBackupAckToClientEnabled() {
         return backupAckToClientEnabled;

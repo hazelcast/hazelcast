@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -261,7 +262,6 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
      * Compares based on the employee age
      */
     class EmployeeEntryComparator implements IdentifiedDataSerializable, Comparator<Map.Entry<Integer, Employee>> {
-        private int multiplier;
 
         @Override
         public int getFactoryId() {
@@ -299,15 +299,8 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 int leftKey = lhs.getKey();
                 int rightKey = rhs.getKey();
 
-                if (leftKey == rightKey) {
-                    return 0;
-                }
+                return Integer.compare(leftKey, rightKey);
 
-                if (leftKey < rightKey) {
-                    return -1;
-                }
-
-                return 1;
             }
 
             if (null == lv) {
@@ -344,15 +337,8 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 return 1;
             }
 
-            if (key1 == key2) {
-                return 0;
-            }
+            return key1.compareTo(key2);
 
-            if (key1 < key2) {
-                return -1;
-            }
-
-            return 1;
         }
     }
 
@@ -390,6 +376,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
     }
 
     class MapGetInterceptor extends MapInterceptorAdaptor implements IdentifiedDataSerializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String prefix;
@@ -463,7 +450,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
     }
 
-    public static class CallableSignalsRunAndSleep implements Callable, IdentifiedDataSerializable, HazelcastInstanceAware {
+    public static class CallableSignalsRunAndSleep implements Callable<Boolean>, IdentifiedDataSerializable, HazelcastInstanceAware {
 
         private transient HazelcastInstance hazelcastInstance;
         private String startSignalLatchName;
@@ -477,7 +464,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public Object call() {
+        public Boolean call() {
             hazelcastInstance.getCPSubsystem().getCountDownLatch("callableStartedLatch").countDown();
             try {
                 Thread.sleep(Long.MAX_VALUE);

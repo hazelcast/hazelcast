@@ -23,6 +23,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,6 +90,7 @@ public final class EvaluatePredicate implements Predicate, IndexAwarePredicate {
         return "eval(" + predicate.toString() + ")";
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         throw new UnsupportedOperationException("can't be serialized");
     }

@@ -41,7 +41,7 @@ public class ClientMapEvictAllTest extends AbstractClientMapTest {
         final String mapName = randomMapName();
         final IMap<Object, Object> map = client.getMap(mapName);
         final CountDownLatch evictedEntryCount = new CountDownLatch(3);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
+        map.addEntryListener(new EntryAdapter<>() {
             @Override
             public void mapEvicted(MapEvent event) {
                 final int affected = event.getNumberOfEntriesAffected();
@@ -66,7 +66,7 @@ public class ClientMapEvictAllTest extends AbstractClientMapTest {
         final String mapName = randomMapName();
         final IMap<Object, Object> map = client.getMap(mapName);
         final CountDownLatch eventCount = new CountDownLatch(2);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
+        map.addEntryListener(new EntryAdapter<>() {
             @Override
             public void mapEvicted(MapEvent event) {
                 eventCount.countDown();

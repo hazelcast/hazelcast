@@ -22,15 +22,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 // read and updated only by partition threads
 final class PartitionReplicaVersions {
     private final int partitionId;
 
     private final Map<ServiceNamespace, PartitionReplicaFragmentVersions> fragmentVersionsMap = new HashMap<>();
+    private final Function<? super ServiceNamespace,
+            ? extends PartitionReplicaFragmentVersions> createFragmentVersionsFunction;
 
     PartitionReplicaVersions(int partitionId) {
         this.partitionId = partitionId;
+        this.createFragmentVersionsFunction
+                = namespace -> new PartitionReplicaFragmentVersions(partitionId, namespace);
     }
 
     long[] incrementAndGet(ServiceNamespace namespace, int backupCount) {
@@ -43,8 +48,9 @@ final class PartitionReplicaVersions {
 
     /**
      * Returns whether given replica version is behind the current version or not.
-     * @param namespace replica namespace
-     * @param newVersions new replica versions
+     *
+     * @param namespace    replica namespace
+     * @param newVersions  new replica versions
      * @param replicaIndex replica index
      * @return true if given version is stale, false otherwise
      */
@@ -56,8 +62,8 @@ final class PartitionReplicaVersions {
      * Updates replica version if it is newer than current version. Otherwise has no effect.
      * Marks versions as dirty if version increase is not incremental.
      *
-     * @param namespace replica namespace
-     * @param newVersions new replica versions
+     * @param namespace    replica namespace
+     * @param newVersions  new replica versions
      * @param replicaIndex replica index
      * @return returns false if versions are dirty, true otherwise
      */
@@ -82,8 +88,7 @@ final class PartitionReplicaVersions {
     }
 
     private PartitionReplicaFragmentVersions getFragmentVersions(ServiceNamespace namespace) {
-        return fragmentVersionsMap.computeIfAbsent(namespace,
-                x -> new PartitionReplicaFragmentVersions(partitionId, namespace));
+        return fragmentVersionsMap.computeIfAbsent(namespace, createFragmentVersionsFunction);
     }
 
     void retainNamespaces(Collection<ServiceNamespace> namespaces) {

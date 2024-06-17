@@ -73,17 +73,16 @@ public final class OperatingSystemMXBeanSupport {
                 return defaultValue;
             }
 
-            if (value instanceof Long) {
-                return (Long) value;
+            if (value instanceof Long longValue) {
+                return longValue;
             }
 
-            if (value instanceof Double) {
-                double v = (Double) value;
-                return Math.round(v * PERCENTAGE_MULTIPLIER);
+            if (value instanceof Double doubleValue) {
+                return Math.round(doubleValue * PERCENTAGE_MULTIPLIER);
             }
 
-            if (value instanceof Number) {
-                return ((Number) value).longValue();
+            if (value instanceof Number numberValue) {
+                return numberValue.longValue();
             }
 
         } catch (RuntimeException re) {

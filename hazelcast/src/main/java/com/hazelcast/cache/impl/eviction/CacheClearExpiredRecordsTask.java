@@ -142,7 +142,7 @@ public class CacheClearExpiredRecordsTask
             ICacheRecordStore recordStore = iterator.next();
             int totalBackupCount = recordStore.getConfig().getTotalBackupCount();
             int partitionId = recordStore.getPartitionId();
-            toBackupSender.invokeBackupExpiryOperation(Collections.<ExpiredKey>emptyList(),
+            toBackupSender.invokeBackupExpiryOperation(Collections.emptyList(),
                     totalBackupCount, partitionId, recordStore);
         }
     }

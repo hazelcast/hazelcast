@@ -25,7 +25,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -143,12 +142,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     private void assertLoaderIsClosedEventually() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(loader.isLoadAllKeysClosed());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(loader.isLoadAllKeysClosed()));
     }
 
     private Config newConfig(String mapName, boolean sizeLimited, MapStoreConfig.InitialLoadMode loadMode) {

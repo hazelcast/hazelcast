@@ -663,7 +663,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 mapDataStore.remove(key, now, null);
             }
         } else {
-            return removeRecord(key, record, now, provenance, null) != null;
+            Object oldValue = removeRecord(key, record, now, provenance, null);
+            updateStatsOnRemove(now);
+            return oldValue != null;
         }
         return false;
     }

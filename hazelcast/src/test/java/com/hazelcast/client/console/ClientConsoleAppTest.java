@@ -51,7 +51,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     private static PrintWriter printWriter;
 
     private HazelcastInstance hazelcastInstance;
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void beforeClass() {

@@ -71,9 +71,7 @@ public class SocketTest {
     @Test
     public void test_close_whenCloseListenerConfigured() {
         MockChannel channel = new MockChannel();
-        Executor executor = command -> {
-            command.run();
-        };
+        Executor executor = Runnable::run;
         AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
         channel.setCloseListener(listener, executor);
 
@@ -87,9 +85,7 @@ public class SocketTest {
         MockChannel channel = new MockChannel();
         channel.close();
 
-        Executor executor = command -> {
-            command.run();
-        };
+        Executor executor = Runnable::run;
         AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
         channel.setCloseListener(listener, executor);
 
@@ -99,9 +95,7 @@ public class SocketTest {
     @Test
     public void test_close_whenCloseListenerThrowsException_thenIgnore() {
         MockChannel channel = new MockChannel();
-        Executor executor = command -> {
-            command.run();
-        };
+        Executor executor = Runnable::run;
         AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
         channel.setCloseListener(listener, executor);
 
@@ -113,7 +107,7 @@ public class SocketTest {
     }
 
     @Test
-    public void test_close_whenClose0ThrowsException_thenIgnore() throws IOException {
+    public void test_close_whenClose0ThrowsException_thenIgnore() {
         MockChannel channel = new MockChannel();
         channel.exceptionToThrow = new IOException();
 

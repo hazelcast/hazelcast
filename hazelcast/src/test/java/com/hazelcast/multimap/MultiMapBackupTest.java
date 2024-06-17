@@ -50,7 +50,7 @@ public class MultiMapBackupTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(MultiMapBackupTest.class);
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
     public void testBackupsPutAll() {

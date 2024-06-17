@@ -18,6 +18,8 @@ package com.hazelcast.jet.cdc;
 
 import com.hazelcast.jet.annotation.EvolvingApi;
 
+import java.io.Serial;
+
 /**
  * Exception to indicate that parsing CDC JSON data has failed irrecoverably.
  *
@@ -26,6 +28,7 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 @EvolvingApi
 public class ParsingException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

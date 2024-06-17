@@ -18,6 +18,7 @@ package com.example.broken;
 
 import org.junit.Test;
 
+@SuppressWarnings("squid:S2699")
 class MixedTestAnnotationsTest {
 
     @Test

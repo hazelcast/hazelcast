@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -73,20 +72,17 @@ public class OperationExecutorImpl_GetOperationRunnerTest extends OperationExecu
 
         executor.execute(op);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                boolean found = false;
-                OperationRunner foundHandler = op.getResponse();
-                for (OperationRunner h : executor.getGenericOperationRunners()) {
-                    if (foundHandler == h) {
-                        found = true;
-                        break;
-                    }
+        assertTrueEventually(() -> {
+            boolean found = false;
+            OperationRunner foundHandler = op.getResponse();
+            for (OperationRunner h : executor.getGenericOperationRunners()) {
+                if (foundHandler == h) {
+                    found = true;
+                    break;
                 }
-
-                assertTrue("handler is not found is one of the generic handlers", found);
             }
+
+            assertTrue("handler is not found is one of the generic handlers", found);
         });
     }
 

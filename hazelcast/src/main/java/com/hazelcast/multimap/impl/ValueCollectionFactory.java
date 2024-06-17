@@ -77,7 +77,7 @@ public final class ValueCollectionFactory {
     public static <T> Collection<T> createCollection(MultiMapConfig.ValueCollectionType collectionType, int initialCapacity) {
         switch (collectionType) {
             case SET:
-                return initialCapacity <= 0 ? new HashSet<T>() : SetUtil.<T>createHashSet(initialCapacity);
+                return initialCapacity <= 0 ? new HashSet<>() : SetUtil.createHashSet(initialCapacity);
             case LIST:
                 return new LinkedList<>();
             default:

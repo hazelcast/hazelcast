@@ -58,9 +58,9 @@ import com.hazelcast.spi.annotation.NamespacesSupported;
  * that uses a ValueExtractor, like: customAttribute[argumentString]
  * <p>
  * Let's have a look at the following query: 'currency[incoming] == EUR'
- * Let's assume that currency is an custom attribute that uses com.test.CurrencyExtractor for extraction.
+ * Let's assume that currency is a custom attribute that uses com.test.CurrencyExtractor for extraction.
  * The string "incoming" is an argument that will be passed to the {@link ArgumentParser} during the extraction.
- * The parser will parse the string according to the parser's custom logic and it will return a parsed object.
+ * The parser will parse the string according to the parser's custom logic, and it will return a parsed object.
  * The parsed object may be a single object, array, collection, etc. It's up to the ValueExtractor implementor's
  * to understand the semantics of the parsed argument object.
  * <p>

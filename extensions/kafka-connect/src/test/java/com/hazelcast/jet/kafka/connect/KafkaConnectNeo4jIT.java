@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
@@ -113,7 +114,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         LOGGER.info("Creating testReadFromNeo4jConnector job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         insertNodes(sourceName, "items-2");
 
@@ -157,7 +158,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         LOGGER.info("Creating testDbNotStarted job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
 
-        assertJobStatusEventually(job, FAILED);
+        assertThat(job).eventuallyHasStatus(FAILED);
     }
 
     @Test
@@ -186,7 +187,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
         LOGGER.info("Creating a job");
         Job testJob = instance.getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(testJob, RUNNING);
+        assertThat(testJob).eventuallyHasStatus(RUNNING);
 
         String boltUrl = container.getBoltUrl();
         final int expectedSize = 9;

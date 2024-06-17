@@ -410,7 +410,7 @@ public class ProcessorTaskletTest_Snapshots {
 
     private List<Object> getSnapshotBufferValues() {
         return snapshotCollector.getBuffer().stream()
-                                .map(e -> (e instanceof Map.Entry) ? deserializeEntryValue((Map.Entry) e) : e)
+                                .map(e -> (e instanceof Map.Entry entry) ? deserializeEntryValue(entry) : e)
                                 .collect(Collectors.toList());
     }
 

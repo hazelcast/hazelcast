@@ -110,7 +110,7 @@ public class ThreadLeakClientTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
                 new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
-                        Collections.<String, Comparable>emptyMap()));
+                        Collections.emptyMap()));
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(zeroTimeout);
         Set<Thread> testStartThreads = getThreads();
         try {

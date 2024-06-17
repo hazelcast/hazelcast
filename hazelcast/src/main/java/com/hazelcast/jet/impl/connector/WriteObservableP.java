@@ -28,6 +28,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferProxy;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -86,6 +87,7 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
 
     public static final class Supplier extends AbstractHazelcastConnectorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String observableName;

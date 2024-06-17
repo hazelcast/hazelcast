@@ -26,6 +26,7 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -162,6 +163,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     public static class TestItem implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
         private final String id;
         private final String name;

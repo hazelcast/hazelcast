@@ -15,7 +15,6 @@
  */
 package com.hazelcast.internal.util;
 
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class DummyNetworkInterfacesEnumerator implements NetworkInterfacesEnumer
     }
 
     @Override
-    public List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
+    public List<NetworkInterfaceInfo> getNetworkInterfaces() {
         return networkInterfaceInfos;
     }
 }

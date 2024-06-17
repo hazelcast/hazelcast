@@ -114,7 +114,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         IMap<String, String> map = getInitializedMap();
 
         map.lock("key1");
-        Map<String, Object> result = map.executeOnKeys(new HashSet<String>(asList("key1", "key2")),
+        Map<String, Object> result = map.executeOnKeys(new HashSet<>(asList("key1", "key2")),
                 new TestNonOffloadableEntryProcessor());
 
         assertTrue((Boolean) result.get("key1"));

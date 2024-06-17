@@ -41,6 +41,7 @@ public final class Preconditions {
      * @return the string argument that was tested.
      * @throws java.lang.IllegalArgumentException if the string is empty
      */
+    @Nonnull
     public static String checkHasText(String argument, String errorMessage) {
         if (argument == null || argument.isEmpty()) {
             throw new IllegalArgumentException(errorMessage);

@@ -49,6 +49,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +63,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.SHUTDOWN_REQUEST;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
@@ -227,7 +229,7 @@ public class TopologyChangeTest extends JetTestSupport {
         instances[2].getLifecycleService().terminate();
         NoOutputSourceP.proceedLatch.countDown();
 
-        assertJobStatusEventually(job, snapshotted ? SUSPENDED : FAILED, 10);
+        assertThat(job).eventuallyHasStatus(snapshotted ? SUSPENDED : FAILED, Duration.ofSeconds(10));
         if (!snapshotted) {
             try {
                 job.join();
@@ -393,7 +395,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
 
         // Then
-        assertJobStatusEventually(job, STARTING);
+        assertThat(job).eventuallyHasStatus(STARTING);
         assertTrueAllTheTime(() -> assertEquals(STARTING, job.getStatus()), 5);
 
         resetPacketFiltersFrom(instances[0]);
@@ -474,7 +476,7 @@ public class TopologyChangeTest extends JetTestSupport {
         spawn(() -> instances[2].shutdown());
 
         // Then, it restarts until the shutting down node is gone
-        assertJobStatusEventually(job, STARTING);
+        assertThat(job).eventuallyHasStatus(STARTING);
         assertTrueAllTheTime(() -> assertEquals(STARTING, job.getStatus()), 5);
 
         resetPacketFiltersFrom(instances[2]);
@@ -493,7 +495,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
         Job job = instances[0].getJet().newJob(dag);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         // When a participant shuts down during execution
         instances[2].getLifecycleService().terminate();
@@ -510,7 +512,7 @@ public class TopologyChangeTest extends JetTestSupport {
         int memberListVersion = Accessors.getClusterService(master).getMemberListVersion();
         Set<MemberInfo> memberInfos = new HashSet<>();
         for (int i = 1; i < instances.length; i++) {
-            memberInfos.add(new MemberInfo(getNode(instances[i]).getLocalMember()));
+            memberInfos.add(new MemberInfo(Accessors.getNode(instances[i]).getLocalMember()));
         }
 
         Version version = instances[0].getCluster().getLocalMember().getVersion().asVersion();

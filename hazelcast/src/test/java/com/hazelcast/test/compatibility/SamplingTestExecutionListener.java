@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.test.compatibility.SamplingConf.FILE_NAME;
 import static com.hazelcast.test.compatibility.SamplingConf.INDEX_FILE_SUFFIX;
@@ -71,7 +70,7 @@ public class SamplingTestExecutionListener implements TestExecutionListener {
                     indexOutput.write("," + samplesOutputChannel.position() + "," + sample.length);
                     serializedSamplesOutput.write(sample);
                 }
-                indexOutput.write(LINE_SEPARATOR);
+                indexOutput.write(System.lineSeparator());
             }
 
             writeSchemas(serializedSchemaOutput);

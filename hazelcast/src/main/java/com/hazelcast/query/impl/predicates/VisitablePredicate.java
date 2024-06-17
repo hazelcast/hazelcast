@@ -26,7 +26,7 @@ import com.hazelcast.query.impl.IndexRegistry;
 public interface VisitablePredicate {
 
     /**
-     * Accept visitor. Predicate can either return it's own instance if no modification
+     * Accept visitor. Predicate can either return its own instance if no modification
      * was done as a result of the visit. In the case there is a change needed then
      * the predicate has to return changed copy of itself. Predicates has to be treated
      * as immutable for optimization purposes.

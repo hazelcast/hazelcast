@@ -510,7 +510,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     static class TestBreakingChangesDiscoveryStrategy extends AbstractDiscoveryStrategy {
         TestBreakingChangesDiscoveryStrategy() {
-            super(null, Collections.<String, Comparable>emptyMap());
+            super(null, Collections.emptyMap());
         }
 
         @Override
@@ -844,7 +844,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
-        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
         return config;
     }

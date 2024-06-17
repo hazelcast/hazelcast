@@ -67,7 +67,7 @@ public class ClientCompatibilityNullTest_2_7 {
     @Test
     public void test_ClientAuthenticationCodec_encodeRequest() {
         int fileClientMessageIndex = 0;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeRequest(aString, null, null, null, aString, aByte, aString, aString, aListOfStrings);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeRequest(aString, null, null, null, aString, aByte, aString, aString, aListOfStrings, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -97,12 +97,13 @@ public class ClientCompatibilityNullTest_2_7 {
         assertTrue(isEqual(anInt, parameters.partitionListVersion));
         assertTrue(parameters.isPartitionsExists);
         assertTrue(isEqual(aListOfUUIDToListOfIntegers, parameters.partitions));
+        assertFalse(parameters.isKeyValuePairsExists);
     }
 
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeRequest() {
         int fileClientMessageIndex = 2;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeRequest(aString, aByteArray, null, aString, aByte, aString, aString, aListOfStrings);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeRequest(aString, aByteArray, null, aString, aByte, aString, aString, aListOfStrings, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -132,6 +133,7 @@ public class ClientCompatibilityNullTest_2_7 {
         assertTrue(isEqual(anInt, parameters.partitionListVersion));
         assertTrue(parameters.isPartitionsExists);
         assertTrue(isEqual(null, parameters.partitions));
+        assertFalse(parameters.isKeyValuePairsExists);
     }
 
     @Test
@@ -157,6 +159,14 @@ public class ClientCompatibilityNullTest_2_7 {
         public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfUUIDToListOfIntegers, partitions));
+        }
+        @Override
+        public void handleMemberGroupsViewEvent(int version, java.util.Collection<java.util.Collection<java.util.UUID>> memberGroups) {
+            fail("This method should not be called since this is an v2.8 event handler but the test is for v2.7");
+        }
+        @Override
+        public void handleClusterVersionEvent(com.hazelcast.version.Version version) {
+            fail("This method should not be called since this is an v2.8 event handler but the test is for v2.7");
         }
     }
 

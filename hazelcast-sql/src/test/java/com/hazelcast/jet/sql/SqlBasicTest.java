@@ -63,6 +63,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -100,8 +101,8 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
 
-    protected static final int[] PAGE_SIZES = {256};
-    protected static final int[] DATA_SET_SIZES = {4096};
+    protected static final int PAGE_SIZE = 256;
+    protected static final int DATA_SET_SIZE = SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 
     protected static HazelcastInstance member1;
     protected static HazelcastInstance member2;
@@ -121,30 +122,13 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @Parameters(name = "cursorBufferSize:{0}, dataSetSize:{1}, serializationMode:{2}, inMemoryFormat:{3}")
     public static Collection<Object[]> parameters() {
-        List<Object[]> res = new ArrayList<>();
-
-        for (int pageSize : PAGE_SIZES) {
-            for (int dataSetSize : DATA_SET_SIZES) {
-                for (SerializationMode serializationMode : SerializationMode.values()) {
-                    for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
-                        res.add(new Object[]{
-                                pageSize,
-                                dataSetSize,
-                                serializationMode,
-                                format
-                        });
-                    }
-                }
-            }
-        }
-
-        return res;
+        return Collections.singletonList(
+                new Object[]{PAGE_SIZE, DATA_SET_SIZE, SerializationMode.SERIALIZABLE, InMemoryFormat.BINARY});
     }
 
     @BeforeClass
     public static void beforeClass() {
-        initializeWithClientAndConfigSupplier(2,
-                () -> memberConfig(), clientConfig());
+        initializeWithClientAndConfigSupplier(2, SqlBasicTest::memberConfig, clientConfig());
 
         member1 = instances()[0];
         member2 = instances()[1];

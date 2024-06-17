@@ -41,7 +41,6 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -64,11 +63,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
     public void cleanAtomikosLogs() {
         try {
             File currentDir = new File(".");
-            final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".epoch") || name.startsWith("tmlog");
-                }
-            });
+            final File[] tmLogs = currentDir.listFiles((dir, name) -> name.endsWith(".epoch") || name.startsWith("tmlog"));
             for (File tmLog : tmLogs) {
                 tmLog.delete();
             }

@@ -53,7 +53,7 @@ public class CacheLoadAllTest extends CacheTestSupport {
 
     private static final int INSTANCE_COUNT = 2;
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
     private HazelcastInstance[] hazelcastInstances;
     private HazelcastInstance hazelcastInstance;
 

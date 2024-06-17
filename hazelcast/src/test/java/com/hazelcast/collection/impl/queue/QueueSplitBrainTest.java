@@ -329,7 +329,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
      * <p>
      * <b>Note</b>: The {@link QueueStore} uses the internal item ID from the {@link QueueItem}.
      * This ID is not reliable during a split-brain situation, since there can be duplicates in each sub-cluster.
-     * Also the order is not guaranteed to be the same between the sub-clusters.
+     * Also, the order is not guaranteed to be the same between the sub-clusters.
      * So after the split-brain healing we cannot make a strict test on the stored items.
      * The split-brain healing also doesn't try to delete any old items, but adds newly created items to the store.
      */

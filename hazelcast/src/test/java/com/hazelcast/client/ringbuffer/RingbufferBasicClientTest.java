@@ -34,7 +34,7 @@ import java.util.function.Function;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RingbufferBasicClientTest extends RingbufferAbstractTest {
 
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void beforeClass() throws Exception {

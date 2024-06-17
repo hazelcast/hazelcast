@@ -25,10 +25,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -42,9 +40,6 @@ import static com.hazelcast.test.Accessors.getNode;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterVersionChangeTest
         extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance instance;
     private ClusterServiceImpl cluster;
@@ -65,16 +60,14 @@ public class ClusterVersionChangeTest
     public void test_clusterVersionUpgradeFails_whenNodeMajorVersionPlusOne() {
         Version newVersion = Version.of(codebaseVersion.getMajor() + 1, codebaseVersion.getMinor());
 
-        expectedException.expect(VersionMismatchException.class);
-        cluster.changeClusterVersion(newVersion);
+        assertThrows(VersionMismatchException.class, () -> cluster.changeClusterVersion(newVersion));
     }
 
     @Test
     public void test_clusterVersionUpgradeFails_whenNodeMinorVersionPlusOne() {
         Version newVersion = Version.of(codebaseVersion.getMajor(), codebaseVersion.getMinor() + 1);
 
-        expectedException.expect(VersionMismatchException.class);
-        cluster.changeClusterVersion(newVersion);
+        assertThrows(VersionMismatchException.class, () -> cluster.changeClusterVersion(newVersion));
     }
 
     public static class ClusterVersionChangedListener implements ClusterVersionListener {

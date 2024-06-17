@@ -26,7 +26,6 @@ import com.hazelcast.transaction.TransactionContext;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -75,14 +74,11 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     public void testSingleSetAtomicity() throws ExecutionException, InterruptedException {
         final int itemCount = 200;
 
-        Future<Integer> f = spawn(new Callable<Integer>() {
-            @Override
-            public Integer call() {
-                ISet<Object> set = local.getSet(setName);
-                while (!set.remove("item-1")) {
-                }
-                return set.size();
+        Future<Integer> f = spawn(() -> {
+            ISet<Object> set = local.getSet(setName);
+            while (!set.remove("item-1")) {
             }
+            return set.size();
         });
 
         TransactionContext context = local.newTransactionContext();

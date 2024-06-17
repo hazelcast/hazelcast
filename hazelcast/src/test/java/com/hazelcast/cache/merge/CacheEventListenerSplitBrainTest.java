@@ -26,7 +26,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -160,12 +159,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void assert_no_update_event_generated_on_merge_of_equal_entries() {
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, cacheAUpdatedListener.updated.get());
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> assertEquals(0, cacheAUpdatedListener.updated.get()), 5);
     }
 
     private void assert_update_event_generated_on_merge_of_not_equal_entries() {

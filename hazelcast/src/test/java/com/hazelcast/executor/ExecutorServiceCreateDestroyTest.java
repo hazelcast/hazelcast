@@ -48,8 +48,8 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
 
     private static final int INSTANCE_COUNT = 3;
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-    private HazelcastInstance[] instances = new HazelcastInstance[INSTANCE_COUNT];
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    private final HazelcastInstance[] instances = new HazelcastInstance[INSTANCE_COUNT];
 
     @Before
     public void setup() {
@@ -132,7 +132,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
 
     private static class VoidCallableTask implements Callable<Void>, Serializable {
         @Override
-        public Void call() throws Exception {
+        public Void call() {
             return null;
         }
     }

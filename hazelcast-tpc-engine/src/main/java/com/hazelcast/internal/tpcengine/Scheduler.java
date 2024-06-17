@@ -17,15 +17,15 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * Every Reactor has a scheduler. So incoming work (IOBuffers) can be scheduled
+ * Every Reactor has a scheduler. So incoming work (IOBuffers) can be scheduled,
  * and it is up to the Scheduler to process these tasks. The Scheduler gets a frequent
  * tick from the {@link Reactor} to process whatever tasks are pending.
  * <p/>
  * It is important that the scheduler does a bit of work so that other sources
- * of work like e.g. networking, storage, outside tasks etc can be processed as well;
+ * of work like e.g. networking, storage, outside tasks etc. can be processed as well;
  * otherwise they would starve.
  * <p/>
- * This API probably needs a lot of additional design improvements. Currently there are
+ * This API probably needs a lot of additional design improvements. Currently, there are
  * other sources of work for the eventloop (like concurrent tasks) that get processed
  * without any control of the scheduler. Perhaps it should all go through the scheduler
  * so that the scheduler controls all aspects of tasks executed on the Eventloop.

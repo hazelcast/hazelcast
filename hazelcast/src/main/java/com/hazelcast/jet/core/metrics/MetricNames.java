@@ -85,7 +85,7 @@ public final class MetricNames {
 
     /**
      * Tracks the highest coalesced watermark observed on all input
-     * {@link Edge}s of a particular {@link Vertex} (ie. the highest
+     * {@link Edge}s of a particular {@link Vertex} (i.e. the highest
      * watermark observed on all input queues of that {@link Vertex}).
      * The {@link Vertex} and the {@link Processor} can be identified
      * based on the {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR}

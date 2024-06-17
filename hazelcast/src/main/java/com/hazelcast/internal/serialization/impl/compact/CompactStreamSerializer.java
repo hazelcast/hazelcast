@@ -110,8 +110,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     void write(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
-        if (o instanceof CompactGenericRecord) {
-            writeGenericRecord(out, (CompactGenericRecord) o, includeSchemaOnBinary);
+        if (o instanceof CompactGenericRecord compactGenericRecord) {
+            writeGenericRecord(out, compactGenericRecord, includeSchemaOnBinary);
         } else {
             writeObject(out, o, includeSchemaOnBinary);
         }
@@ -231,7 +231,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             return currentRegistration;
         }
         // Execute potentially long-lasting operation outside CHM lock in computeIfAbsent.
-        // Some special classloaders (eg. JetClassLoader) may try to access external resources
+        // Some special classloaders (e.g. JetClassLoader) may try to access external resources
         // and require other threads.
         // We might try to load the same class multiple times in parallel but this is not a problem.
         CompactSerializableRegistration newRegistration = getOrCreateRegistration0(typeName);

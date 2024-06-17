@@ -40,6 +40,7 @@ import org.apache.kafka.common.errors.TimeoutException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Collection;
@@ -246,6 +247,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     ) {
         return new ProcessorSupplier() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             private transient KafkaDataConnection kafkaDataConnection;
@@ -290,6 +292,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     ) {
         return new ProcessorSupplier() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             private transient KafkaDataConnection kafkaDataConnection;
@@ -383,6 +386,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
     public static class KafkaTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final int processorIndex;

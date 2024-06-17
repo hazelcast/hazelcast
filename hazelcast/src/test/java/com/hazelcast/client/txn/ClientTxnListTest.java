@@ -59,7 +59,7 @@ public class ClientTxnListTest {
     @Test
     public void testAddRemove() {
         String listName = randomString();
-        final IList l = client.getList(listName);
+        final IList<String> l = client.getList(listName);
         l.add("item1");
 
         final TransactionContext context = client.newTransactionContext();
@@ -79,7 +79,7 @@ public class ClientTxnListTest {
     @Test
     public void testAddAndRoleBack() {
         final String listName = randomString();
-        final IList l = client.getList(listName);
+        final IList<String> l = client.getList(listName);
         l.add("item1");
 
         final TransactionContext context = client.newTransactionContext();

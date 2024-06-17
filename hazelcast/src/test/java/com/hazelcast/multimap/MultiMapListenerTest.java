@@ -23,7 +23,6 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapEvent;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -345,7 +344,8 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         final CountDownLatch latchAdded = new CountDownLatch(3);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
-        multiMap.addEntryListener(new EntryAdapter<String, String>() {
+        multiMap.addEntryListener(new EntryAdapter<>() {
+            @Override
             public void entryAdded(EntryEvent<String, String> event) {
                 String key = event.getKey();
                 String value = event.getValue();
@@ -486,12 +486,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     private static <T> void assertContainsAllEventually(final Collection<T> collection, final Collection<T> expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertContainsAll(collection, expected);
-            }
-        });
+        assertTrueEventually(() -> assertContainsAll(collection, expected));
     }
 
     private abstract static class MyEntryListener extends EntryAdapter<Object, Object> {
@@ -617,7 +612,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
 
     private static class KeyCollectingListener<V> extends EntryAdapter<String, V> {
 
-        private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<>());
         private final AtomicInteger eventCount = new AtomicInteger();
 
         public void entryAdded(EntryEvent<String, V> event) {

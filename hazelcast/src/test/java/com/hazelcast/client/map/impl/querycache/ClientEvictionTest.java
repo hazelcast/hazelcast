@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientEvictionTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
     public void setUp() throws Exception {

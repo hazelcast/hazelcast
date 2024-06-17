@@ -16,9 +16,8 @@
 
 package com.hazelcast.internal.partition.membergroup;
 
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
@@ -34,7 +33,7 @@ public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
         Map<String, MemberGroup> groups = createHashMap(allMembers.size());
         for (Member member : allMembers) {
-            Address address = ((MemberImpl) member).getAddress();
+            Address address = member.getAddress();
             MemberGroup group = groups.get(address.getHost());
             if (group == null) {
                 group = new DefaultMemberGroup();

@@ -34,6 +34,7 @@ import jakarta.jms.XAConnection;
 import jakarta.jms.XASession;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.stream.Stream;
 
@@ -128,6 +129,7 @@ public final class WriteJmsP<T> extends XaSinkProcessorBase {
 
     private static final class Supplier<T> implements ProcessorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final SupplierEx<? extends Connection> newConnectionFn;

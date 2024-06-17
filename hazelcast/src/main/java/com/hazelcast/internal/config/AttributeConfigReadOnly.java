@@ -19,7 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.AttributeConfig;
 
 /**
- * Contains the configuration for a extractor of Map.
+ * Contains the configuration for an extractor of Map.
  */
 public class AttributeConfigReadOnly extends AttributeConfig {
 

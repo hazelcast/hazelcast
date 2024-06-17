@@ -65,7 +65,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
         Job job = hz().getJet().newJob(dag, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
 
         // Then
         assertThatThrownBy(job::getSuspensionCause)
@@ -96,11 +96,11 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
         Job job = hz().getJet().newJob(dag, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
 
         // When
         job.cancel();
-        assertJobStatusEventually(job, FAILED);
+        JobAssertions.assertThat(job).eventuallyHasStatus(FAILED);
 
         // Then
         assertThatThrownBy(job::getSuspensionCause)
@@ -115,9 +115,9 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
         // When
         Job job = hz().getJet().newJob(dag, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
         job.suspend();
-        assertJobSuspendedEventually(job);
+        JobAssertions.assertThat(job).eventuallySuspended();
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::requestedByUser);
         assertThat(job.getSuspensionCause().description()).isEqualTo("Requested by user");
         assertThatThrownBy(job.getSuspensionCause()::errorCause)
@@ -138,7 +138,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, jobConfig);
 
         // Then
-        assertJobSuspendedEventually(job);
+        JobAssertions.assertThat(job).eventuallySuspended();
 
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::dueToError);
         assertThat(job.getSuspensionCause().errorCause())
@@ -187,7 +187,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
                 .setSnapshotIntervalMillis(50);
 
         Job job = hz().getJet().newJob(p, jobConfig);
-        assertJobStatusEventually(job, SUSPENDED);
+        JobAssertions.assertThat(job).eventuallyHasStatus(SUSPENDED);
 
         IMap<Integer, Integer> sinkMap = hz().getMap("SuspendExecutionOnFailureTest_sinkMap");
 

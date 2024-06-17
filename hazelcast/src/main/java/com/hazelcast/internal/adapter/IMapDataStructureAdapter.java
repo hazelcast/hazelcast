@@ -218,7 +218,6 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void removeAll() {
         map.removeAll(Predicates.alwaysTrue());
     }

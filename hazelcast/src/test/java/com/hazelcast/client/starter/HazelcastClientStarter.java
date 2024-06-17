@@ -43,7 +43,6 @@ public class HazelcastClientStarter {
         return newHazelcastClient(version, null, enterprise);
     }
 
-    @SuppressWarnings("unchecked")
     public static HazelcastInstance newHazelcastClient(String version, ClientConfig clientConfig, boolean enterprise) {
         return newHazelcastClient(version, clientConfig, enterprise, Collections.emptyList());
     }

@@ -34,6 +34,7 @@ import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -49,6 +50,7 @@ import static java.util.Collections.nCopies;
 
 public class WindowAggregateTransform<A, R> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final int MAX_WATERMARK_STRIDE = 100;

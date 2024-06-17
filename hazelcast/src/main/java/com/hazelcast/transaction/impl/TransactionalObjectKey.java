@@ -31,11 +31,9 @@ public class TransactionalObjectKey {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TransactionalObjectKey)) {
+        if (!(o instanceof TransactionalObjectKey that)) {
             return false;
         }
-
-        TransactionalObjectKey that = (TransactionalObjectKey) o;
 
         if (!name.equals(that.name)) {
             return false;

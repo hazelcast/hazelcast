@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -93,11 +92,6 @@ public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTes
     protected abstract HazelcastInstance[] getMembers();
 
     private void assertCounterValueEventually(final long expectedValue, final PNCounter counter) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedValue, counter.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedValue, counter.get()));
     }
 }

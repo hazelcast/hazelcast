@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.time.temporal.Temporal;
 import java.util.Locale;
 
@@ -78,6 +79,7 @@ public class ToCharFunction extends TriExpression<String> {
         prepareCache();
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
         in.defaultReadObject();
         prepareCache();

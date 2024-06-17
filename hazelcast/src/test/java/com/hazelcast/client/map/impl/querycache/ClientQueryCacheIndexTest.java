@@ -49,7 +49,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private TestHazelcastFactory factory;
@@ -262,13 +261,10 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
 
     private void assertKeySetSizeEventually(final int expectedSize, final Predicate predicate,
                                             final QueryCache<Integer, Employee> cache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = cache.size();
-                Set<Integer> keySet = cache.keySet(predicate);
-                assertEquals("cache size = " + size, expectedSize, keySet.size());
-            }
+        AssertTask task = () -> {
+            int size = cache.size();
+            Set<Integer> keySet = cache.keySet(predicate);
+            assertEquals("cache size = " + size, expectedSize, keySet.size());
         };
 
         assertTrueEventually(task, 15);
@@ -276,13 +272,10 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
 
     private void assertEntrySetSizeEventually(final int expectedSize, final Predicate predicate,
                                               final QueryCache<Integer, Employee> cache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = cache.size();
-                Set<Map.Entry<Integer, Employee>> entries = cache.entrySet(predicate);
-                assertEquals("cache size = " + size, expectedSize, entries.size());
-            }
+        AssertTask task = () -> {
+            int size = cache.size();
+            Set<Map.Entry<Integer, Employee>> entries = cache.entrySet(predicate);
+            assertEquals("cache size = " + size, expectedSize, entries.size());
         };
 
         assertTrueEventually(task, 15);
@@ -290,13 +283,10 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
 
     private void assertValuesSizeEventually(final int expectedSize, final Predicate predicate,
                                             final QueryCache<Integer, Employee> cache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = cache.size();
-                Collection<Employee> values = cache.values(predicate);
-                assertEquals("cache size = " + size, expectedSize, values.size());
-            }
+        AssertTask task = () -> {
+            int size = cache.size();
+            Collection<Employee> values = cache.values(predicate);
+            assertEquals("cache size = " + size, expectedSize, values.size());
         };
 
         assertTrueEventually(task, 15);

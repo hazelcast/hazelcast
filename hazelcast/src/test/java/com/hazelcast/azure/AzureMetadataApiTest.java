@@ -49,7 +49,7 @@ public class AzureMetadataApiTest {
 
     @Before
     public void setUp() {
-        azureMetadataApi = new AzureMetadataApi(String.format("http://localhost:%s", wireMockRule.port()), new HashMap<String, String>());
+        azureMetadataApi = new AzureMetadataApi(String.format("http://localhost:%s", wireMockRule.port()), new HashMap<>());
         //given
         stubFor(get(urlEqualTo(String.format("/metadata/instance/compute?api-version=%s", API_VERSION)))
                 .withHeader("Metadata", equalTo("true"))
@@ -127,100 +127,102 @@ public class AzureMetadataApiTest {
 
     private static String accessTokenResponse() {
         return String.format(
-                "{\n"
-                + "  \"access_token\": \"%s\",\n"
-                + "  \"refresh_token\": \"\",\n"
-                + "  \"expires_in\": \"3599\",\n"
-                + "  \"expires_on\": \"1506484173\",\n"
-                + "  \"not_before\": \"1506480273\",\n"
-                + "  \"resource\": \"https://management.azure.com/\",\n"
-                + "  \"token_type\": \"Bearer\"\n"
-                + "}", ACCESS_TOKEN);
+                """
+                        {
+                          "access_token": "%s",
+                          "refresh_token": "",
+                          "expires_in": "3599",
+                          "expires_on": "1506484173",
+                          "not_before": "1506480273",
+                          "resource": "https://management.azure.com/",
+                          "token_type": "Bearer"
+                        }""", ACCESS_TOKEN);
     }
 
     private String metadataResponse() {
         return String.format(
-                "{\n"
-                + "  \"azEnvironment\": \"AzurePublicCloud\",\n"
-                + "  \"customData\": \"\",\n"
-                + "  \"location\": \"%s\",\n"
-                + "  \"name\": \"negasonic\",\n"
-                + "  \"offer\": \"lampstack\",\n"
-                + "  \"osType\": \"Linux\",\n"
-                + "  \"placementGroupId\": \"\",\n"
-                + "  \"plan\": {\n"
-                + "    \"name\": \"5-6\",\n"
-                + "    \"product\": \"lampstack\",\n"
-                + "    \"publisher\": \"bitnami\"\n"
-                + "  },\n"
-                + "  \"platformFaultDomain\": \"%s\",\n"
-                + "  \"platformUpdateDomain\": \"0\",\n"
-                + "  \"provider\": \"Microsoft.Compute\",\n"
-                + "  \"publicKeys\": [],\n"
-                + "  \"publisher\": \"bitnami\",\n"
-                + "  \"resourceGroupName\": \"%s\",\n"
-                + "  \"resourceId\": \"/subscriptions/xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx/resourceGroups/myrg/providers/Microsoft.Compute/virtualMachines/negasonic\",\n"
-                + "  \"sku\": \"5-6\",\n"
-                + "  \"storageProfile\": {\n"
-                + "    \"dataDisks\": [\n"
-                + "      {\n"
-                + "        \"caching\": \"None\",\n"
-                + "        \"createOption\": \"Empty\",\n"
-                + "        \"diskSizeGB\": \"1024\",\n"
-                + "        \"image\": {\n"
-                + "          \"uri\": \"\"\n"
-                + "        },\n"
-                + "        \"lun\": \"0\",\n"
-                + "        \"managedDisk\": {\n"
-                + "          \"id\": \"/subscriptions/xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx/resourceGroups/macikgo-test-may-23/providers/Microsoft.Compute/disks/exampledatadiskname\",\n"
-                + "          \"storageAccountType\": \"Standard_LRS\"\n"
-                + "        },\n"
-                + "        \"name\": \"exampledatadiskname\",\n"
-                + "        \"vhd\": {\n"
-                + "          \"uri\": \"\"\n"
-                + "        },\n"
-                + "        \"writeAcceleratorEnabled\": \"false\"\n"
-                + "      }\n"
-                + "    ],\n"
-                + "    \"imageReference\": {\n"
-                + "      \"id\": \"\",\n"
-                + "      \"offer\": \"UbuntuServer\",\n"
-                + "      \"publisher\": \"Canonical\",\n"
-                + "      \"sku\": \"16.04.0-LTS\",\n"
-                + "      \"version\": \"latest\"\n"
-                + "    },\n"
-                + "    \"osDisk\": {\n"
-                + "      \"caching\": \"ReadWrite\",\n"
-                + "      \"createOption\": \"FromImage\",\n"
-                + "      \"diskSizeGB\": \"30\",\n"
-                + "      \"diffDiskSettings\": {\n"
-                + "        \"option\": \"Local\"\n"
-                + "      },\n"
-                + "      \"encryptionSettings\": {\n"
-                + "        \"enabled\": \"false\"\n"
-                + "      },\n"
-                + "      \"image\": {\n"
-                + "        \"uri\": \"\"\n"
-                + "      },\n"
-                + "      \"managedDisk\": {\n"
-                + "        \"id\": \"/subscriptions/xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx/resourceGroups/macikgo-test-may-23/providers/Microsoft.Compute/disks/exampleosdiskname\",\n"
-                + "        \"storageAccountType\": \"Standard_LRS\"\n"
-                + "      },\n"
-                + "      \"name\": \"exampleosdiskname\",\n"
-                + "      \"osType\": \"Linux\",\n"
-                + "      \"vhd\": {\n"
-                + "        \"uri\": \"\"\n"
-                + "      },\n"
-                + "      \"writeAcceleratorEnabled\": \"false\"\n"
-                + "    }\n"
-                + "  },\n"
-                + "  \"subscriptionId\": \"%s\",\n"
-                + "  \"tags\": \"Department:IT;Environment:Test;Role:WebRole\",\n"
-                + "  \"version\": \"7.1.1902271506\",\n"
-                + "  \"vmId\": \"13f56399-bd52-4150-9748-7190aae1ff21\",\n"
-                + "  \"vmScaleSetName\": \"%s\",\n"
-                + "  \"vmSize\": \"Standard_A1_v2\",\n"
-                + "  \"zone\": \"%s\"\n"
-                + "}", LOCATION, PLATFORM_FAULT_DOMAIN, RESOURCE_GROUP_NAME, SUBSCRIPTION_ID, SCALE_SET_NAME, ZONE);
+                """
+                        {
+                          "azEnvironment": "AzurePublicCloud",
+                          "customData": "",
+                          "location": "%s",
+                          "name": "negasonic",
+                          "offer": "lampstack",
+                          "osType": "Linux",
+                          "placementGroupId": "",
+                          "plan": {
+                            "name": "5-6",
+                            "product": "lampstack",
+                            "publisher": "bitnami"
+                          },
+                          "platformFaultDomain": "%s",
+                          "platformUpdateDomain": "0",
+                          "provider": "Microsoft.Compute",
+                          "publicKeys": [],
+                          "publisher": "bitnami",
+                          "resourceGroupName": "%s",
+                          "resourceId": "/subscriptions/xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx/resourceGroups/myrg/providers/Microsoft.Compute/virtualMachines/negasonic",
+                          "sku": "5-6",
+                          "storageProfile": {
+                            "dataDisks": [
+                              {
+                                "caching": "None",
+                                "createOption": "Empty",
+                                "diskSizeGB": "1024",
+                                "image": {
+                                  "uri": ""
+                                },
+                                "lun": "0",
+                                "managedDisk": {
+                                  "id": "/subscriptions/xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx/resourceGroups/macikgo-test-may-23/providers/Microsoft.Compute/disks/exampledatadiskname",
+                                  "storageAccountType": "Standard_LRS"
+                                },
+                                "name": "exampledatadiskname",
+                                "vhd": {
+                                  "uri": ""
+                                },
+                                "writeAcceleratorEnabled": "false"
+                              }
+                            ],
+                            "imageReference": {
+                              "id": "",
+                              "offer": "UbuntuServer",
+                              "publisher": "Canonical",
+                              "sku": "16.04.0-LTS",
+                              "version": "latest"
+                            },
+                            "osDisk": {
+                              "caching": "ReadWrite",
+                              "createOption": "FromImage",
+                              "diskSizeGB": "30",
+                              "diffDiskSettings": {
+                                "option": "Local"
+                              },
+                              "encryptionSettings": {
+                                "enabled": "false"
+                              },
+                              "image": {
+                                "uri": ""
+                              },
+                              "managedDisk": {
+                                "id": "/subscriptions/xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx/resourceGroups/macikgo-test-may-23/providers/Microsoft.Compute/disks/exampleosdiskname",
+                                "storageAccountType": "Standard_LRS"
+                              },
+                              "name": "exampleosdiskname",
+                              "osType": "Linux",
+                              "vhd": {
+                                "uri": ""
+                              },
+                              "writeAcceleratorEnabled": "false"
+                            }
+                          },
+                          "subscriptionId": "%s",
+                          "tags": "Department:IT;Environment:Test;Role:WebRole",
+                          "version": "7.1.1902271506",
+                          "vmId": "13f56399-bd52-4150-9748-7190aae1ff21",
+                          "vmScaleSetName": "%s",
+                          "vmSize": "Standard_A1_v2",
+                          "zone": "%s"
+                        }""", LOCATION, PLATFORM_FAULT_DOMAIN, RESOURCE_GROUP_NAME, SUBSCRIPTION_ID, SCALE_SET_NAME, ZONE);
     }
 }

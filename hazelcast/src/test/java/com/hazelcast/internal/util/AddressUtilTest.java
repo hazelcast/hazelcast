@@ -60,7 +60,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
         assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", asList("10.235.194.23", "10.235.193.121")));
 
         assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", null));
-        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Collections.<String>emptyList()));
+        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Collections.emptyList()));
         assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", singletonList("10.235.193.*")));
     }
 
@@ -80,7 +80,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
         assertTrue(AddressUtil.matchAnyDomain("hazelcast.com", singletonList("hazelcast.com")));
 
         assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", null));
-        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", Collections.<String>emptyList()));
+        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", Collections.emptyList()));
         assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", singletonList("abc.com")));
     }
 

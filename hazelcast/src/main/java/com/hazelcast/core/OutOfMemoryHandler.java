@@ -89,10 +89,10 @@ public abstract class OutOfMemoryHandler {
     }
 
     /**
-     * Tries to shutdown <code>HazelcastInstance</code> forcefully;
+     * Tries to shut down <code>HazelcastInstance</code> forcefully;
      * including closing sockets and connections, stopping threads, etc.
      *
-     * @param hazelcastInstance the Hazelcast instance to shutdown
+     * @param hazelcastInstance the Hazelcast instance to shut down
      */
     protected final void tryShutdown(final HazelcastInstance hazelcastInstance) {
         OutOfMemoryHandlerHelper.tryShutdown(hazelcastInstance);

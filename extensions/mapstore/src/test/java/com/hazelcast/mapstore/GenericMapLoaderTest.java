@@ -410,7 +410,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRowAndIdColumn_whenLoad_thenReturnSingleColumn() throws Exception {
+    public void givenRowAndIdColumn_whenLoad_thenReturnSingleColumn() {
         ObjectSpec spec = objectProvider.createObject(mapName, true);
         objectProvider.insertItems(spec, 1);
 
@@ -451,7 +451,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRowDoesNotExist_whenLoad_thenReturnNullSingleColumn() throws Exception {
+    public void givenRowDoesNotExist_whenLoad_thenReturnNullSingleColumn() {
         objectProvider.createObject(mapName);
         mapLoaderSingleColumn = createMapLoaderSingleColumn();
 
@@ -477,7 +477,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRow_whenLoadAll_thenReturnMapWithSingleColumn() throws Exception {
+    public void givenRow_whenLoadAll_thenReturnMapWithSingleColumn() {
         ObjectSpec spec = objectProvider.createObject(mapName);
         mapLoaderSingleColumn = createMapLoaderSingleColumn();
 
@@ -508,7 +508,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRowAndIdColumn_whenLoadAll_thenReturnSingleColumn() throws Exception {
+    public void givenRowAndIdColumn_whenLoadAll_thenReturnSingleColumn() {
         ObjectSpec spec = objectProvider.createObject(mapName, true);
         objectProvider.insertItems(spec, 1);
 
@@ -537,7 +537,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRowAndIdColumn_whenLoadAllMultipleItems_thenReturnSingleColumn() throws Exception {
+    public void givenRowAndIdColumn_whenLoadAllMultipleItems_thenReturnSingleColumn() {
         ObjectSpec spec = objectProvider.createObject(mapName, true);
         objectProvider.insertItems(spec, 2);
 
@@ -562,7 +562,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRowDoesNotExist_whenLoadAllWithSingleColumn_thenReturnEmptyMap() throws Exception {
+    public void givenRowDoesNotExist_whenLoadAllWithSingleColumn_thenReturnEmptyMap() {
         objectProvider.createObject(mapName);
         mapLoaderSingleColumn = createMapLoaderSingleColumn();
 
@@ -582,7 +582,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRow_whenLoadAllKeysWithSingleColumn_thenReturnKeys() throws Exception {
+    public void givenRow_whenLoadAllKeysWithSingleColumn_thenReturnKeys() {
         ObjectSpec spec = objectProvider.createObject(mapName);
         mapLoaderSingleColumn = createMapLoaderSingleColumn();
 
@@ -608,7 +608,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     }
 
     @Test
-    public void givenRowAndIdColumn_whenLoadAllKeysWithSingleColumn_thenReturnKeys() throws Exception {
+    public void givenRowAndIdColumn_whenLoadAllKeysWithSingleColumn_thenReturnKeys() {
         ObjectSpec spec = objectProvider.createObject(mapName, true);
         objectProvider.insertItems(spec, 1);
 

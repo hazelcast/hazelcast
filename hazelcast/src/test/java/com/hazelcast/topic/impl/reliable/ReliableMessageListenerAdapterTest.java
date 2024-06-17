@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,7 +55,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         MessageListenerMock listener = new MessageListenerMock();
         UUID id = topic.addMessageListener(listener);
 
-        MessageRunner runner = topic.runnersMap.get(id);
+        MessageRunner<String> runner = topic.runnersMap.get(id);
         assertNotNull(runner);
         ReliableMessageListenerAdapter adapter = assertInstanceOf(ReliableMessageListenerAdapter.class, runner.listener);
         assertSame(listener, adapter.messageListener);
@@ -71,15 +70,10 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         topic.addMessageListener(listener);
 
         topic.publish("item");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(singletonList("item"), listener.messages);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(singletonList("item"), listener.messages));
     }
 
-    class MessageListenerMock implements MessageListener<String> {
+    private static class MessageListenerMock implements MessageListener<String> {
 
         private final List<String> messages = new CopyOnWriteArrayList<>();
 

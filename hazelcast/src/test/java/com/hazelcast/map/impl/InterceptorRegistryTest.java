@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -195,6 +196,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     }
 
     private static class TestMapInterceptor extends MapInterceptorAdaptor {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         public final String id = TestMapInterceptor.class.toString();

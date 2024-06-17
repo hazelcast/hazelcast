@@ -19,7 +19,6 @@ package com.hazelcast.client.multimap;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -180,13 +179,11 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final Object key = "Key1";
         mm.lock(key);
         final CountDownLatch tryLockFailed = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                if (!mm.tryLock(key)) {
-                    tryLockFailed.countDown();
-                }
+        new Thread(() -> {
+            if (!mm.tryLock(key)) {
+                tryLockFailed.countDown();
             }
-        }.start();
+        }).start();
         assertOpenEventually(tryLockFailed);
     }
 
@@ -198,17 +195,15 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         mm.lock(key);
 
         final CountDownLatch tryLockReturnsTrue = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    if (mm.tryLock(key, 10, TimeUnit.SECONDS)) {
-                        tryLockReturnsTrue.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        new Thread(() -> {
+            try {
+                if (mm.tryLock(key, 10, TimeUnit.SECONDS)) {
+                    tryLockReturnsTrue.countDown();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
 
         mm.unlock(key);
 
@@ -247,12 +242,10 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final Object key = "key";
         mm.lock(key);
         final CountDownLatch forceUnlock = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                mm.forceUnlock(key);
-                forceUnlock.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            mm.forceUnlock(key);
+            forceUnlock.countDown();
+        }).start();
         assertOpenEventually(forceUnlock);
         assertFalse(mm.isLocked(key));
     }
@@ -264,12 +257,10 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         mm.lock(key);
         mm.lock(key);
         final CountDownLatch forceUnlock = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                mm.forceUnlock(key);
-                forceUnlock.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            mm.forceUnlock(key);
+            forceUnlock.countDown();
+        }).start();
         assertOpenEventually(forceUnlock);
         assertFalse(mm.isLocked(key));
     }
@@ -312,12 +303,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final Object key = "Key";
 
         mm.lock(key, 1, TimeUnit.SECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(mm.isLocked(key));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(mm.isLocked(key)));
     }
 
     @Test
@@ -327,12 +313,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
 
         mm.lock(key);
         mm.lock(key, 1, TimeUnit.SECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(mm.isLocked(key));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(mm.isLocked(key)));
     }
 
     @Test
@@ -342,17 +323,15 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
 
         mm.lock(key, 2, TimeUnit.SECONDS);
         final CountDownLatch tryLockSuccess = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    if (mm.tryLock(key, 10, TimeUnit.SECONDS)) {
-                        tryLockSuccess.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    fail(e.getMessage());
+        new Thread(() -> {
+            try {
+                if (mm.tryLock(key, 10, TimeUnit.SECONDS)) {
+                    tryLockSuccess.countDown();
                 }
+            } catch (InterruptedException e) {
+                fail(e.getMessage());
             }
-        }.start();
+        }).start();
         assertOpenEventually(tryLockSuccess);
     }
 
@@ -368,11 +347,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
         final MultiMap multiMap = getMultiMapForLock();
         final String key = randomString();
-        Thread thread = new Thread() {
-            public void run() {
-                multiMap.lock(key);
-            }
-        };
+        Thread thread = new Thread(() -> multiMap.lock(key));
         thread.start();
         thread.join();
 
@@ -385,12 +360,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final MultiMap multiMap = getMultiMapForLock();
         final String key = randomString();
         multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Assert.assertFalse(multiMap.isLocked(key));
-            }
-        }, 30);
+        assertTrueEventually(() -> Assert.assertFalse(multiMap.isLocked(key)), 30);
     }
 
     private MultiMap getMultiMapForLock() {

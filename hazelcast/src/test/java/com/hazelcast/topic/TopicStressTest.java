@@ -19,7 +19,6 @@ package com.hazelcast.topic;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -108,15 +107,12 @@ public class TopicStressTest extends HazelcastTestSupport {
 
         System.out.println("All publish threads have completed");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int topicIndex = 0; topicIndex < TOPIC_COUNT; topicIndex++) {
-                    String topicName = getTopicName(topicIndex);
-                    long expected = getExpectedCount(topicName);
-                    long actual = getActualCount(topicName);
-                    assertEquals("Count for topic " + topicName + " is not the same", expected, actual);
-                }
+        assertTrueEventually(() -> {
+            for (int topicIndex = 0; topicIndex < TOPIC_COUNT; topicIndex++) {
+                String topicName = getTopicName(topicIndex);
+                long expected = getExpectedCount(topicName);
+                long actual = getActualCount(topicName);
+                assertEquals("Count for topic " + topicName + " is not the same", expected, actual);
             }
         });
     }
@@ -130,7 +126,7 @@ public class TopicStressTest extends HazelcastTestSupport {
             }
         }
 
-        // since each message is send to multiple nodes, we need to multiply it
+        // since each message is sent to multiple nodes, we need to multiply it
         return result * NODE_COUNT;
     }
 
@@ -223,7 +219,7 @@ public class TopicStressTest extends HazelcastTestSupport {
         return listeners;
     }
 
-    private class MessageListenerImpl implements MessageListener<Integer> {
+    private static class MessageListenerImpl implements MessageListener<Integer> {
         private final AtomicLong counter = new AtomicLong();
 
         @Override

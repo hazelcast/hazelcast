@@ -57,7 +57,7 @@ public class FilteringClassLoader extends ClassLoader {
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        return checkResourceExcluded(name) ? enumeration(Collections.<URL>emptyList())
+        return checkResourceExcluded(name) ? enumeration(Collections.emptyList())
                 : delegatingClassLoader.getResources(name);
     }
 

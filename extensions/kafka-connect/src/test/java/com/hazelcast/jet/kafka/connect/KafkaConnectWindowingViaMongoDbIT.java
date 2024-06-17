@@ -48,6 +48,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.convertToType;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
@@ -124,7 +125,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
         JobConfig jobConfig = jobConfig();
 
         Job testJob = instance.getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(testJob, RUNNING);
+        assertThat(testJob).eventuallyHasStatus(RUNNING);
         Thread.sleep(200);
 
         testList.clear();

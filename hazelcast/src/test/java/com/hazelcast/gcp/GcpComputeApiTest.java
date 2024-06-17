@@ -112,263 +112,265 @@ public class GcpComputeApiTest {
      * Reponse recorded from the real Cloud Compute API call.
      */
     private static String instancesResponse() {
-        return String.format("{\n"
-                        + "  \"kind\": \"compute#instanceList\",\n"
-                        + "  \"id\": \"projects/hazelcast-33/zones/us-east1-b/instances\",\n"
-                        + "  \"items\": [\n"
-                        + "    {\n"
-                        + "      \"kind\": \"compute#instance\",\n"
-                        + "      \"id\": \"*********\",\n"
-                        + "      \"creationTimestamp\": \"2017-05-18T07:54:24.521-07:00\",\n"
-                        + "      \"name\": \"hazelcast-3-8-1-1\",\n"
-                        + "      \"description\": \"\",\n"
-                        + "      \"tags\": {\n"
-                        + "        \"items\": [\n"
-                        + "          \"http-server\",\n"
-                        + "          \"https-server\"\n"
-                        + "        ],\n"
-                        + "        \"fingerprint\": \"********\"\n"
-                        + "      },\n"
-                        + "      \"machineType\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/machineTypes/n1-standard-1\",\n"
-                        + "      \"status\": \"RUNNING\",\n"
-                        + "      \"zone\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b\",\n"
-                        + "      \"canIpForward\": false,\n"
-                        + "      \"networkInterfaces\": [\n"
-                        + "        {\n"
-                        + "          \"kind\": \"compute#networkInterface\",\n"
-                        + "          \"network\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/global/networks/default\",\n"
-                        + "          \"networkIP\": \"%s\",\n"
-                        + "          \"name\": \"nic0\",\n"
-                        + "          \"accessConfigs\": [\n"
-                        + "            {\n"
-                        + "              \"kind\": \"compute#accessConfig\",\n"
-                        + "              \"type\": \"ONE_TO_ONE_NAT\",\n"
-                        + "              \"name\": \"External NAT\",\n"
-                        + "              \"natIP\": \"%s\",\n"
-                        + "              \"networkTier\": \"STANDARD\"\n"
-                        + "            }\n"
-                        + "          ],\n"
-                        + "          \"fingerprint\": \"*********\"\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"disks\": [\n"
-                        + "        {\n"
-                        + "          \"kind\": \"compute#attachedDisk\",\n"
-                        + "          \"type\": \"PERSISTENT\",\n"
-                        + "          \"mode\": \"READ_WRITE\",\n"
-                        + "          \"source\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/disks/hazelcast-3-8-1-1\",\n"
-                        + "          \"deviceName\": \"hazelcast-3-8-1-1\",\n"
-                        + "          \"index\": 0,\n"
-                        + "          \"boot\": true,\n"
-                        + "          \"autoDelete\": true,\n"
-                        + "          \"licenses\": [\n"
-                        + "            \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-1604-xenial\"\n"
-                        + "          ],\n"
-                        + "          \"interface\": \"SCSI\"\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"metadata\": {\n"
-                        + "        \"kind\": \"compute#metadata\",\n"
-                        + "        \"fingerprint\": \"*******\"\n"
-                        + "      },\n"
-                        + "      \"serviceAccounts\": [\n"
-                        + "        {\n"
-                        + "          \"email\": \"*******@developer.gserviceaccount.com\",\n"
-                        + "          \"scopes\": [\n"
-                        + "            \"https://www.googleapis.com/auth/devstorage.read_only\",\n"
-                        + "            \"https://www.googleapis.com/auth/logging.write\",\n"
-                        + "            \"https://www.googleapis.com/auth/monitoring.write\",\n"
-                        + "            \"https://www.googleapis.com/auth/servicecontrol\",\n"
-                        + "            \"https://www.googleapis.com/auth/service.management.readonly\",\n"
-                        + "            \"https://www.googleapis.com/auth/trace.append\"\n"
-                        + "          ]\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"selfLink\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances/hazelcast-3-8-1-1\",\n"
-                        + "      \"scheduling\": {\n"
-                        + "        \"onHostMaintenance\": \"MIGRATE\",\n"
-                        + "        \"automaticRestart\": true,\n"
-                        + "        \"preemptible\": false\n"
-                        + "      },\n"
-                        + "      \"cpuPlatform\": \"Intel Haswell\",\n"
-                        + "      \"labelFingerprint\": \"********\",\n"
-                        + "      \"startRestricted\": false,\n"
-                        + "      \"deletionProtection\": false\n"
-                        + "    },\n"
-                        + "    {\n"
-                        + "      \"kind\": \"compute#instance\",\n"
-                        + "      \"id\": \"**********\",\n"
-                        + "      \"creationTimestamp\": \"2018-08-09T02:12:18.097-07:00\",\n"
-                        + "      \"name\": \"rafal-test\",\n"
-                        + "      \"description\": \"\",\n"
-                        + "      \"tags\": {\n"
-                        + "        \"items\": [\n"
-                        + "          \"hazelcast\"\n"
-                        + "        ],\n"
-                        + "        \"fingerprint\": \"*******\"\n"
-                        + "      },\n"
-                        + "      \"machineType\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/machineTypes/n1-standard-1\",\n"
-                        + "      \"status\": \"RUNNING\",\n"
-                        + "      \"zone\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b\",\n"
-                        + "      \"canIpForward\": false,\n"
-                        + "      \"networkInterfaces\": [\n"
-                        + "        {\n"
-                        + "          \"kind\": \"compute#networkInterface\",\n"
-                        + "          \"network\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/global/networks/default\",\n"
-                        + "          \"networkIP\": \"%s\",\n"
-                        + "          \"name\": \"nic0\",\n"
-                        + "          \"accessConfigs\": [\n"
-                        + "            {\n"
-                        + "              \"kind\": \"compute#accessConfig\",\n"
-                        + "              \"type\": \"ONE_TO_ONE_NAT\",\n"
-                        + "              \"name\": \"External NAT\",\n"
-                        + "              \"natIP\": \"%s\",\n"
-                        + "              \"networkTier\": \"PREMIUM\"\n"
-                        + "            }\n"
-                        + "          ],\n"
-                        + "          \"fingerprint\": \"********\"\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"disks\": [\n"
-                        + "        {\n"
-                        + "          \"kind\": \"compute#attachedDisk\",\n"
-                        + "          \"type\": \"PERSISTENT\",\n"
-                        + "          \"mode\": \"READ_WRITE\",\n"
-                        + "          \"source\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/disks/rafal-test\",\n"
-                        + "          \"deviceName\": \"rafal-test\",\n"
-                        + "          \"index\": 0,\n"
-                        + "          \"boot\": true,\n"
-                        + "          \"autoDelete\": true,\n"
-                        + "          \"licenses\": [\n"
-                        + "            \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-1604-xenial\"\n"
-                        + "          ],\n"
-                        + "          \"interface\": \"SCSI\",\n"
-                        + "          \"guestOsFeatures\": [\n"
-                        + "            {\n"
-                        + "              \"type\": \"VIRTIO_SCSI_MULTIQUEUE\"\n"
-                        + "            }\n"
-                        + "          ]\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"metadata\": {\n"
-                        + "        \"kind\": \"compute#metadata\",\n"
-                        + "        \"fingerprint\": \"********\"\n"
-                        + "      },\n"
-                        + "      \"serviceAccounts\": [\n"
-                        + "        {\n"
-                        + "          \"email\": \"*********@hazelcast-33.iam.gserviceaccount.com\",\n"
-                        + "          \"scopes\": [\n"
-                        + "            \"https://www.googleapis.com/auth/cloud-platform\"\n"
-                        + "          ]\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"selfLink\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances/rafal-test\",\n"
-                        + "      \"scheduling\": {\n"
-                        + "        \"onHostMaintenance\": \"MIGRATE\",\n"
-                        + "        \"automaticRestart\": true,\n"
-                        + "        \"preemptible\": false\n"
-                        + "      },\n"
-                        + "      \"cpuPlatform\": \"Intel Haswell\",\n"
-                        + "      \"labels\": {\n"
-                        + "        \"application\": \"hazelcast\"\n"
-                        + "      },\n"
-                        + "      \"labelFingerprint\": \"*******\",\n"
-                        + "      \"startRestricted\": false,\n"
-                        + "      \"deletionProtection\": false\n"
-                        + "    },\n"
-                        + "    {\n"
-                        + "      \"kind\": \"compute#instance\",\n"
-                        + "      \"id\": \"***********\",\n"
-                        + "      \"creationTimestamp\": \"2018-08-13T07:17:30.113-07:00\",\n"
-                        + "      \"name\": \"rafal-test-2\",\n"
-                        + "      \"description\": \"\",\n"
-                        + "      \"tags\": {\n"
-                        + "        \"fingerprint\": \"********\"\n"
-                        + "      },\n"
-                        + "      \"machineType\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/machineTypes/n1-standard-1\",\n"
-                        + "      \"status\": \"TERMINATED\",\n"
-                        + "      \"zone\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b\",\n"
-                        + "      \"canIpForward\": false,\n"
-                        + "      \"networkInterfaces\": [\n"
-                        + "        {\n"
-                        + "          \"kind\": \"compute#networkInterface\",\n"
-                        + "          \"network\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/global/networks/default\",\n"
-                        + "          \"networkIP\": \"%s\",\n"
-                        + "          \"name\": \"nic0\",\n"
-                        + "          \"accessConfigs\": [\n"
-                        + "            {\n"
-                        + "              \"kind\": \"compute#accessConfig\",\n"
-                        + "              \"type\": \"ONE_TO_ONE_NAT\",\n"
-                        + "              \"name\": \"External NAT\",\n"
-                        + "              \"networkTier\": \"PREMIUM\"\n"
-                        + "            }\n"
-                        + "          ],\n"
-                        + "          \"fingerprint\": \"*********\"\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"disks\": [\n"
-                        + "        {\n"
-                        + "          \"kind\": \"compute#attachedDisk\",\n"
-                        + "          \"type\": \"PERSISTENT\",\n"
-                        + "          \"mode\": \"READ_WRITE\",\n"
-                        + "          \"source\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/disks/rafal-test-2\",\n"
-                        + "          \"deviceName\": \"rafal-test-2\",\n"
-                        + "          \"index\": 0,\n"
-                        + "          \"boot\": true,\n"
-                        + "          \"autoDelete\": true,\n"
-                        + "          \"licenses\": [\n"
-                        + "            \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-1604-xenial\"\n"
-                        + "          ],\n"
-                        + "          \"interface\": \"SCSI\",\n"
-                        + "          \"guestOsFeatures\": [\n"
-                        + "            {\n"
-                        + "              \"type\": \"VIRTIO_SCSI_MULTIQUEUE\"\n"
-                        + "            }\n"
-                        + "          ]\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"metadata\": {\n"
-                        + "        \"kind\": \"compute#metadata\",\n"
-                        + "        \"fingerprint\": \"********\"\n"
-                        + "      },\n"
-                        + "      \"serviceAccounts\": [\n"
-                        + "        {\n"
-                        + "          \"email\": \"********@developer.gserviceaccount.com\",\n"
-                        + "          \"scopes\": [\n"
-                        + "            \"https://www.googleapis.com/auth/devstorage.read_only\",\n"
-                        + "            \"https://www.googleapis.com/auth/logging.write\",\n"
-                        + "            \"https://www.googleapis.com/auth/monitoring.write\",\n"
-                        + "            \"https://www.googleapis.com/auth/servicecontrol\",\n"
-                        + "            \"https://www.googleapis.com/auth/service.management.readonly\",\n"
-                        + "            \"https://www.googleapis.com/auth/trace.append\"\n"
-                        + "          ]\n"
-                        + "        }\n"
-                        + "      ],\n"
-                        + "      \"selfLink\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances/rafal-test-2\",\n"
-                        + "      \"scheduling\": {\n"
-                        + "        \"onHostMaintenance\": \"MIGRATE\",\n"
-                        + "        \"automaticRestart\": true,\n"
-                        + "        \"preemptible\": false\n"
-                        + "      },\n"
-                        + "      \"cpuPlatform\": \"Unknown CPU Platform\",\n"
-                        + "      \"labelFingerprint\": \"*********\",\n"
-                        + "      \"startRestricted\": false,\n"
-                        + "      \"deletionProtection\": false\n"
-                        + "    }\n"
-                        + "  ],\n"
-                        + "  \"selfLink\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances\"\n"
-                        + "}  ", INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP, INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP,
+        return String.format("""
+                        {
+                          "kind": "compute#instanceList",
+                          "id": "projects/hazelcast-33/zones/us-east1-b/instances",
+                          "items": [
+                            {
+                              "kind": "compute#instance",
+                              "id": "*********",
+                              "creationTimestamp": "2017-05-18T07:54:24.521-07:00",
+                              "name": "hazelcast-3-8-1-1",
+                              "description": "",
+                              "tags": {
+                                "items": [
+                                  "http-server",
+                                  "https-server"
+                                ],
+                                "fingerprint": "********"
+                              },
+                              "machineType": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/machineTypes/n1-standard-1",
+                              "status": "RUNNING",
+                              "zone": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b",
+                              "canIpForward": false,
+                              "networkInterfaces": [
+                                {
+                                  "kind": "compute#networkInterface",
+                                  "network": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/global/networks/default",
+                                  "networkIP": "%s",
+                                  "name": "nic0",
+                                  "accessConfigs": [
+                                    {
+                                      "kind": "compute#accessConfig",
+                                      "type": "ONE_TO_ONE_NAT",
+                                      "name": "External NAT",
+                                      "natIP": "%s",
+                                      "networkTier": "STANDARD"
+                                    }
+                                  ],
+                                  "fingerprint": "*********"
+                                }
+                              ],
+                              "disks": [
+                                {
+                                  "kind": "compute#attachedDisk",
+                                  "type": "PERSISTENT",
+                                  "mode": "READ_WRITE",
+                                  "source": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/disks/hazelcast-3-8-1-1",
+                                  "deviceName": "hazelcast-3-8-1-1",
+                                  "index": 0,
+                                  "boot": true,
+                                  "autoDelete": true,
+                                  "licenses": [
+                                    "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-1604-xenial"
+                                  ],
+                                  "interface": "SCSI"
+                                }
+                              ],
+                              "metadata": {
+                                "kind": "compute#metadata",
+                                "fingerprint": "*******"
+                              },
+                              "serviceAccounts": [
+                                {
+                                  "email": "*******@developer.gserviceaccount.com",
+                                  "scopes": [
+                                    "https://www.googleapis.com/auth/devstorage.read_only",
+                                    "https://www.googleapis.com/auth/logging.write",
+                                    "https://www.googleapis.com/auth/monitoring.write",
+                                    "https://www.googleapis.com/auth/servicecontrol",
+                                    "https://www.googleapis.com/auth/service.management.readonly",
+                                    "https://www.googleapis.com/auth/trace.append"
+                                  ]
+                                }
+                              ],
+                              "selfLink": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances/hazelcast-3-8-1-1",
+                              "scheduling": {
+                                "onHostMaintenance": "MIGRATE",
+                                "automaticRestart": true,
+                                "preemptible": false
+                              },
+                              "cpuPlatform": "Intel Haswell",
+                              "labelFingerprint": "********",
+                              "startRestricted": false,
+                              "deletionProtection": false
+                            },
+                            {
+                              "kind": "compute#instance",
+                              "id": "**********",
+                              "creationTimestamp": "2018-08-09T02:12:18.097-07:00",
+                              "name": "rafal-test",
+                              "description": "",
+                              "tags": {
+                                "items": [
+                                  "hazelcast"
+                                ],
+                                "fingerprint": "*******"
+                              },
+                              "machineType": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/machineTypes/n1-standard-1",
+                              "status": "RUNNING",
+                              "zone": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b",
+                              "canIpForward": false,
+                              "networkInterfaces": [
+                                {
+                                  "kind": "compute#networkInterface",
+                                  "network": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/global/networks/default",
+                                  "networkIP": "%s",
+                                  "name": "nic0",
+                                  "accessConfigs": [
+                                    {
+                                      "kind": "compute#accessConfig",
+                                      "type": "ONE_TO_ONE_NAT",
+                                      "name": "External NAT",
+                                      "natIP": "%s",
+                                      "networkTier": "PREMIUM"
+                                    }
+                                  ],
+                                  "fingerprint": "********"
+                                }
+                              ],
+                              "disks": [
+                                {
+                                  "kind": "compute#attachedDisk",
+                                  "type": "PERSISTENT",
+                                  "mode": "READ_WRITE",
+                                  "source": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/disks/rafal-test",
+                                  "deviceName": "rafal-test",
+                                  "index": 0,
+                                  "boot": true,
+                                  "autoDelete": true,
+                                  "licenses": [
+                                    "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-1604-xenial"
+                                  ],
+                                  "interface": "SCSI",
+                                  "guestOsFeatures": [
+                                    {
+                                      "type": "VIRTIO_SCSI_MULTIQUEUE"
+                                    }
+                                  ]
+                                }
+                              ],
+                              "metadata": {
+                                "kind": "compute#metadata",
+                                "fingerprint": "********"
+                              },
+                              "serviceAccounts": [
+                                {
+                                  "email": "*********@hazelcast-33.iam.gserviceaccount.com",
+                                  "scopes": [
+                                    "https://www.googleapis.com/auth/cloud-platform"
+                                  ]
+                                }
+                              ],
+                              "selfLink": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances/rafal-test",
+                              "scheduling": {
+                                "onHostMaintenance": "MIGRATE",
+                                "automaticRestart": true,
+                                "preemptible": false
+                              },
+                              "cpuPlatform": "Intel Haswell",
+                              "labels": {
+                                "application": "hazelcast"
+                              },
+                              "labelFingerprint": "*******",
+                              "startRestricted": false,
+                              "deletionProtection": false
+                            },
+                            {
+                              "kind": "compute#instance",
+                              "id": "***********",
+                              "creationTimestamp": "2018-08-13T07:17:30.113-07:00",
+                              "name": "rafal-test-2",
+                              "description": "",
+                              "tags": {
+                                "fingerprint": "********"
+                              },
+                              "machineType": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/machineTypes/n1-standard-1",
+                              "status": "TERMINATED",
+                              "zone": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b",
+                              "canIpForward": false,
+                              "networkInterfaces": [
+                                {
+                                  "kind": "compute#networkInterface",
+                                  "network": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/global/networks/default",
+                                  "networkIP": "%s",
+                                  "name": "nic0",
+                                  "accessConfigs": [
+                                    {
+                                      "kind": "compute#accessConfig",
+                                      "type": "ONE_TO_ONE_NAT",
+                                      "name": "External NAT",
+                                      "networkTier": "PREMIUM"
+                                    }
+                                  ],
+                                  "fingerprint": "*********"
+                                }
+                              ],
+                              "disks": [
+                                {
+                                  "kind": "compute#attachedDisk",
+                                  "type": "PERSISTENT",
+                                  "mode": "READ_WRITE",
+                                  "source": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/disks/rafal-test-2",
+                                  "deviceName": "rafal-test-2",
+                                  "index": 0,
+                                  "boot": true,
+                                  "autoDelete": true,
+                                  "licenses": [
+                                    "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-1604-xenial"
+                                  ],
+                                  "interface": "SCSI",
+                                  "guestOsFeatures": [
+                                    {
+                                      "type": "VIRTIO_SCSI_MULTIQUEUE"
+                                    }
+                                  ]
+                                }
+                              ],
+                              "metadata": {
+                                "kind": "compute#metadata",
+                                "fingerprint": "********"
+                              },
+                              "serviceAccounts": [
+                                {
+                                  "email": "********@developer.gserviceaccount.com",
+                                  "scopes": [
+                                    "https://www.googleapis.com/auth/devstorage.read_only",
+                                    "https://www.googleapis.com/auth/logging.write",
+                                    "https://www.googleapis.com/auth/monitoring.write",
+                                    "https://www.googleapis.com/auth/servicecontrol",
+                                    "https://www.googleapis.com/auth/service.management.readonly",
+                                    "https://www.googleapis.com/auth/trace.append"
+                                  ]
+                                }
+                              ],
+                              "selfLink": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances/rafal-test-2",
+                              "scheduling": {
+                                "onHostMaintenance": "MIGRATE",
+                                "automaticRestart": true,
+                                "preemptible": false
+                              },
+                              "cpuPlatform": "Unknown CPU Platform",
+                              "labelFingerprint": "*********",
+                              "startRestricted": false,
+                              "deletionProtection": false
+                            }
+                          ],
+                          "selfLink": "https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances"
+                        } \s""", INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP, INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP,
                 INSTANCE_3_PRIVATE_IP);
     }
 
     String regionResponse(String project, String region) {
-        return ("{\n"
-                + "  \"zones\": [\n"
-                + "    \"https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-a\",\n"
-                + "    \"https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-b\",\n"
-                + "    \"https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-c\"\n"
-                + "  ]\n"
-                + "}")
+        return ("""
+                {
+                  "zones": [
+                    "https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-a",
+                    "https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-b",
+                    "https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-c"
+                  ]
+                }""")
                 .replace("{PROJECT}", project)
                 .replace("{REGION}", region);
     }

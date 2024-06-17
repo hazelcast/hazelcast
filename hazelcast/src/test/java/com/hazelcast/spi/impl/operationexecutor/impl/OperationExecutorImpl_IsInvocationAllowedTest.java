@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import static java.lang.Boolean.FALSE;
@@ -95,12 +94,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return executor.isInvocationAllowed(genericOperation, false);
-            }
-        });
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> executor.isInvocationAllowed(genericOperation, false));
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
@@ -114,12 +108,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return executor.isInvocationAllowed(genericOperation, true);
-            }
-        });
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> executor.isInvocationAllowed(genericOperation, true));
 
         DummyOperationHostileThread hostileThread = new DummyOperationHostileThread(futureTask);
         hostileThread.start();
@@ -220,12 +209,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final Operation operation = new DummyOperation(1);
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return executor.isInvocationAllowed(operation, false);
-            }
-        });
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> executor.isInvocationAllowed(operation, false));
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
@@ -239,12 +223,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final Operation operation = new DummyOperation(1);
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return executor.isInvocationAllowed(operation, true);
-            }
-        });
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> executor.isInvocationAllowed(operation, true));
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();

@@ -24,7 +24,6 @@ import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
 import com.hazelcast.internal.json.Json;
@@ -93,7 +92,7 @@ public class RestClusterTest {
     }
 
     @Test
-    public void testDisabledRest() throws Exception {
+    public void testDisabledRest() {
         // REST should be disabled by default
         HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
@@ -229,24 +228,21 @@ public class RestClusterTest {
         String clusterName = config.getClusterName();
         ConnectionResponse resp = communicator.listClusterNodes(clusterName, getPassword());
         assertSuccessJson(resp,
-                "response", String.format("[%s]\n%s\n%s", instance.getCluster().getLocalMember().toString(),
+                "response", String.format("[%s]\n%s\n%s", instance.getCluster().getLocalMember(),
                         BuildInfoProvider.getBuildInfo().getVersion(),
                         System.getProperty("java.version")));
     }
 
     @Test
-    public void testShutdownNode() throws Exception {
+    public void testShutdownNode() {
         Config config = createConfigWithRestEnabled();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
-        instance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
-                    shutdownLatch.countDown();
-                }
+        instance.getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                shutdownLatch.countDown();
             }
         });
         String clusterName = config.getClusterName();

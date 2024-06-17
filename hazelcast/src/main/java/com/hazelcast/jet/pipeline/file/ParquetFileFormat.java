@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 
 /**
  * {@link FileFormat} for Parquet files. See {@link FileFormat#parquet} for
@@ -32,6 +33,7 @@ public class ParquetFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_PARQUET = "parquet";
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

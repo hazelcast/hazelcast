@@ -95,7 +95,7 @@ public final class FileSinkBuilder<T> {
      * example, if the {@code datePattern} is {@code yyyy-MM-dd}, a new file
      * will be started every day.
      * <p>
-     * The rolling is based on system time, not on event time. By default no
+     * The rolling is based on system time, not on event time. By default, no
      * rolling by date is done. If the system clock goes back, the outcome is
      * unspecified and possibly corrupt.
      *

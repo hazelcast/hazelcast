@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -126,12 +125,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new SilentOperation(), partitionId).invoke();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED)));
 
         spawn((Runnable) () -> instance2.getLifecycleService().terminate());
         try {
@@ -198,12 +192,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new SilentOperation(), target).invoke();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED)));
 
         spawn((Runnable) () -> instance2.getLifecycleService().terminate());
 

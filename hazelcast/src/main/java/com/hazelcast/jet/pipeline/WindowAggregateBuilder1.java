@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  * further details.
  * <p>
  * <strong>Note:</strong> this is not a builder of {@code
- * AggregateOperation}. If that' s what you are looking for, go {@link
+ * AggregateOperation}. If that's what you are looking for, go {@link
  * AggregateOperation#withCreate here}.
  *
  * @param <T0> the type of the stream-0 item

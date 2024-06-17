@@ -26,7 +26,6 @@ import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -105,13 +104,10 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         assertOpenEventually(lifeCycleListener.latch);
         assertClusterSizeEventually(2, h1, h2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ReplicatedMap<Object, Object> mapTest = h1.getReplicatedMap(mapName);
-                for (Map.Entry<Object, Object> entry : expectedValues.entrySet()) {
-                    assertEquals(entry.getValue(), mapTest.get(entry.getKey()));
-                }
+        assertTrueEventually(() -> {
+            ReplicatedMap<Object, Object> mapTest = h1.getReplicatedMap(mapName);
+            for (Map.Entry<Object, Object> entry : expectedValues.entrySet()) {
+                assertEquals(entry.getValue(), mapTest.get(entry.getKey()));
             }
         });
     }

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public final class SingleIndexVectorValues implements VectorValues.SingleVectorValues, IdentifiedDataSerializable {
+
     private float[] vector;
 
     public SingleIndexVectorValues() {

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,16 +45,13 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
 
         final int numberOfItems = 1024;
         populateMap(map, numberOfItems);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                // expecting more than half of operations should have the write batch size.
-                // takes this a lower bound.
-                final int expectedBatchOpCount = (numberOfItems / writeBatchSize) / 2;
-                final int numberOfBatchOperationsEqualWriteBatchSize
-                        = mapStore.findNumberOfBatchsEqualWriteBatchSize(writeBatchSize);
-                assertTrue(numberOfBatchOperationsEqualWriteBatchSize >= expectedBatchOpCount);
-            }
+        assertTrueEventually(() -> {
+            // expecting more than half of operations should have the write batch size.
+            // takes this a lower bound.
+            final int expectedBatchOpCount = (numberOfItems / writeBatchSize) / 2;
+            final int numberOfBatchOperationsEqualWriteBatchSize
+                    = mapStore.findNumberOfBatchsEqualWriteBatchSize(writeBatchSize);
+            assertTrue(numberOfBatchOperationsEqualWriteBatchSize >= expectedBatchOpCount);
         }, 20);
     }
 

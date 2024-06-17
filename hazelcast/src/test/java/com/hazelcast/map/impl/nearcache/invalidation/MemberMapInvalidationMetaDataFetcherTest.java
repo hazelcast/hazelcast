@@ -53,7 +53,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberMapInvalidationMetaDataFetcherTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
 
     @After
     public void tearDown() throws Exception {

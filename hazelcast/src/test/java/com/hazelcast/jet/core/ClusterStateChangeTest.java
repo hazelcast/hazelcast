@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

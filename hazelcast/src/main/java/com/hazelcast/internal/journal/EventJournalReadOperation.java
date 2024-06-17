@@ -31,10 +31,10 @@ import java.io.IOException;
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
+ * the minimum required number of items in the response, the maximum number of items
  * in the response, a predicate that the events should pass and a projection to
  * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
+ * If the event journal currently contains fewer events than the required minimum, the
  * call will wait until it has sufficient items.
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
@@ -90,7 +90,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         journal.isAvailableOrNextSequence(namespace, partitionId, startSequence);
         // we'll store the wait notify key because ICache destroys the record store
         // and the cache config is unavailable at the time operations are being
-        // cancelled. Hence, we cannot create the journal and fetch it's wait notify
+        // cancelled. Hence, we cannot create the journal and fetch its wait notify
         // key
         waitNotifyKey = journal.getWaitNotifyKey(namespace, partitionId);
     }
@@ -179,6 +179,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         startSequence = in.readLong();
     }
 
+    @Override
     public abstract String getServiceName();
 
     protected abstract ReadResultSetImpl<J, T> createResultSet();
@@ -202,7 +203,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         final long oldestSequence = journal.oldestSequence(namespace, partitionId);
         final long newestSequence = journal.newestSequence(namespace, partitionId);
 
-        // fast forward if late and no store is configured
+        // fast-forward if late and no store is configured
         if (requestedSequence < oldestSequence && !journal.isPersistenceEnabled(namespace, partitionId)) {
             return oldestSequence;
         }

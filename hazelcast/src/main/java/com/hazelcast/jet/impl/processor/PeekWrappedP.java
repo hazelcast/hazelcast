@@ -90,8 +90,8 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
     private void log(String prefix, @Nonnull T object) {
         if (shouldLogFn.test(object)) {
             logger.info(prefix + ": " + toStringFn.apply(object)
-                    + (object instanceof JetEvent
-                            ? " (eventTime=" + toLocalTime(((JetEvent) object).timestamp()) + ")"
+                    + (object instanceof JetEvent jetEvent
+                            ? " (eventTime=" + toLocalTime(jetEvent.timestamp()) + ")"
                             : ""));
         }
     }
@@ -229,7 +229,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         }
 
         @Override
-        public boolean offer(int[] ordinals, @Nonnull Object item) {
+        public boolean offer(@Nonnull int[] ordinals, @Nonnull Object item) {
             // use broadcast logic to be able to report accurately
             // which queue was pushed to when.
             for (int i = 0; i < ordinals.length; i++) {

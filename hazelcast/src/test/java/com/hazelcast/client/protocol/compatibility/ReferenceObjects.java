@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryStrategyConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
@@ -99,10 +100,12 @@ import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.vector.SearchOptions;
 import com.hazelcast.vector.SearchOptionsBuilder;
+import com.hazelcast.vector.SearchResult;
 import com.hazelcast.vector.VectorValues;
 import com.hazelcast.vector.impl.DataSearchResult;
 import com.hazelcast.vector.impl.DataVectorDocument;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
@@ -188,6 +191,10 @@ public class ReferenceObjects {
         }
         if (a instanceof DefaultQueryCacheEventData && b instanceof DefaultQueryCacheEventData) {
             return isEqual((DefaultQueryCacheEventData) a, (DefaultQueryCacheEventData) b);
+        }
+        if (a instanceof VectorValues && b instanceof List list && !list.isEmpty() && list.get(0) instanceof VectorPairHolder) {
+            // VectorValues are asymmetrically encoded and decoded
+            return a.equals(CustomTypeFactory.toVectorValues(list));
         }
         return a.equals(b);
     }
@@ -756,6 +763,7 @@ public class ReferenceObjects {
     public static List<Integer> aListOfIntegers = Collections.singletonList(anInt);
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
+    public static Collection<Collection<UUID>> aListOfListOfUUIDs = Collections.singletonList(aListOfUUIDs);
     public static Address anAddress;
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
@@ -1052,12 +1060,14 @@ public class ReferenceObjects {
     public static DataVectorDocument aVectorDocument = new DataVectorDocument(aData, aVectorValues);
     public static List<Map.Entry<Data, DataVectorDocument>> aEntryList_Data_VectorDocument =
             List.of(Map.entry(aData, aVectorDocument));
+    public static VectorValues aList_VectorPair = aVectorValues;
     public static SearchOptions aVectorSearchOptions = new SearchOptionsBuilder()
-            .setIncludePayload(false)
+            .setIncludeValue(false)
             .setIncludeVectors(false)
             .limit(100)
-            .vectors(aVectorValues)
             .hint(aString, aString)
             .build();
-    public static List<DataSearchResult> aList_VectorSearchResult = List.of(new DataSearchResult(aData, aData, aFloat, aVectorValues));
+    public static List<SearchResult<Data, Data>> aList_VectorSearchResult = List.of(new DataSearchResult(aData, aData, aFloat, aVectorValues));
+
+    public static Version aVersion = CustomTypeFactory.createVersion(aByte, aByte);
 }

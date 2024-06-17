@@ -194,8 +194,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     }
 
     int sampleRunnable(Runnable runnable) {
-        if (runnable instanceof LocalEventDispatcher) {
-            LocalEventDispatcher eventDispatcher = (LocalEventDispatcher) runnable;
+        if (runnable instanceof LocalEventDispatcher eventDispatcher) {
             return sampleLocalDispatcherEvent(eventDispatcher);
         }
         occurrenceMap.add(runnable.getClass().getName(), 1);
@@ -204,29 +203,25 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
 
     private int sampleLocalDispatcherEvent(LocalEventDispatcher eventDispatcher) {
         Object dispatcherEvent = eventDispatcher.getEvent();
-        if (dispatcherEvent instanceof EntryEventData) {
+        if (dispatcherEvent instanceof EntryEventData event) {
             // IMap event
-            EntryEventData event = (EntryEventData) dispatcherEvent;
             EntryEventType type = EntryEventType.getByType(event.getEventType());
             String mapName = event.getMapName();
             occurrenceMap.add(format("IMap '%s' %s", mapName, type), 1);
             return 1;
-        } else if (dispatcherEvent instanceof CacheEventSet) {
+        } else if (dispatcherEvent instanceof CacheEventSet eventSet) {
             // ICache event
-            CacheEventSet eventSet = (CacheEventSet) dispatcherEvent;
             Set<CacheEventData> events = eventSet.getEvents();
             for (CacheEventData event : events) {
                 occurrenceMap.add(format("ICache '%s' %s", event.getName(), event.getCacheEventType()), 1);
             }
             return events.size();
-        } else if (dispatcherEvent instanceof QueueEvent) {
+        } else if (dispatcherEvent instanceof QueueEvent event) {
             // IQueue event
-            QueueEvent event = (QueueEvent) dispatcherEvent;
             occurrenceMap.add(format("IQueue '%s' %s", event.getName(), event.getEventType()), 1);
             return 1;
-        } else if (dispatcherEvent instanceof CollectionEvent) {
+        } else if (dispatcherEvent instanceof CollectionEvent event) {
             // ISet or IList event
-            CollectionEvent event = (CollectionEvent) dispatcherEvent;
             String serviceName = eventDispatcher.getServiceName();
             if (SetService.SERVICE_NAME.equals(serviceName)) {
                 serviceName = "ISet";

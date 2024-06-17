@@ -432,7 +432,7 @@ class DefaultAddressPicker
      * Checks given network interface and returns true when it should not be used for picking address. Reasons for skipping are
      * the interface is: down, virtual or loopback.
      */
-    private boolean skipInterface(NetworkInterfaceInfo ni) throws SocketException {
+    private boolean skipInterface(NetworkInterfaceInfo ni) {
         boolean skipInterface = !ni.isUp() || ni.isVirtual() || ni.isLoopback();
         if (skipInterface && logger.isFineEnabled()) {
             logger.fine("Skipping NetworkInterface '" + ni.getName() + "': isUp=" + ni.isUp() + ", isVirtual=" + ni.isVirtual()

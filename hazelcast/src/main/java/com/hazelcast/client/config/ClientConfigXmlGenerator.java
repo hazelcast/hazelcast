@@ -150,9 +150,12 @@ public final class ClientConfigXmlGenerator {
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
         gen.open("network")
-                .node("smart-routing", network.isSmartRouting())
-                .node("redo-operation", network.isRedoOperation())
-                .node("connection-timeout", network.getConnectionTimeout());
+           .node("smart-routing", network.isSmartRouting())
+           .node("subset-routing", null,
+                   "enabled", network.getSubsetRoutingConfig().isEnabled(),
+                   "routing-strategy", network.getSubsetRoutingConfig().getRoutingStrategy())
+           .node("redo-operation", network.isRedoOperation())
+           .node("connection-timeout", network.getConnectionTimeout());
 
         clusterMembers(gen, network.getAddresses());
         socketOptions(gen, network.getSocketOptions());

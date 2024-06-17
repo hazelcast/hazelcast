@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -24,6 +25,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -47,14 +49,16 @@ public interface ClientInvocationService {
      * @param partitionId partition id that invocation should go to
      * @return true if successfully send to partition owner, false otherwise
      */
-    boolean invokeOnPartitionOwner(ClientInvocation invocation, int partitionId);
+    boolean invokeOnPartitionOwner(ClientInvocation invocation,
+                                   int partitionId);
 
     /**
      * @param invocation to be invoked
      * @param uuid       member uuid that invocation should go to
      * @return true if successfully send the member with given uuid, false otherwise
      */
-    boolean invokeOnTarget(ClientInvocation invocation, UUID uuid);
+    boolean invokeOnTarget(ClientInvocation invocation,
+                           UUID uuid);
 
     /**
      * Behaviour of this method varies for unisocket and smart client
@@ -68,6 +72,11 @@ public interface ClientInvocationService {
 
     boolean isRedoOperation();
 
+    /**
+     * @see ClientConfig#isBackupAckToClientEnabled()
+     */
+    boolean isBackupAckToClientEnabled();
+
     Consumer<ClientMessage> getResponseHandler();
 
     /**
@@ -78,4 +87,11 @@ public interface ClientInvocationService {
      * @param connection closed connection
      */
     void onConnectionClose(ClientConnection connection);
+
+    /**
+     * @param connection provided connection to query if it has any associated invocation
+     * @return {@code true} if there is an ongoing invocation that
+     * still uses the provided connection, {@code false} otherwise
+     */
+    boolean isConnectionInUse(@Nonnull ClientConnection connection);
 }

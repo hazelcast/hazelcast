@@ -48,6 +48,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -89,7 +90,7 @@ public class KafkaConnectMongoDbIT extends JetTestSupport {
 
         var job = leader.getJet().newJob(p, jobConfig());
         var jobRepository = new JobRepository(leader);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
         waitForNextSnapshot(jobRepository, job.getId(), 30, false);
 
         //Start creating new docs

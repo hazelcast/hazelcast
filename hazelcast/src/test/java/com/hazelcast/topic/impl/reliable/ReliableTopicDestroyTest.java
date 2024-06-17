@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -70,12 +69,7 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
         topic.publish("foo");
 
         // it should not receive any events.
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, listener.objects.size());
-            }
-        });
+        assertTrueDelayed5sec(() -> assertEquals(0, listener.objects.size()));
     }
 
     @Test
@@ -85,15 +79,12 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
         final RingbufferService ringbufferService
                 = getNodeEngineImpl(getMember()).getService(RingbufferService.SERVICE_NAME);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final String name = TOPIC_RB_PREFIX + RELIABLE_TOPIC_NAME;
-                final Map<ObjectNamespace, RingbufferContainer> partitionContainers =
-                        ringbufferService.getContainers().get(ringbufferService.getRingbufferPartitionId(name));
-                assertNotNull(partitionContainers);
-                assertFalse(partitionContainers.containsKey(RingbufferService.getRingbufferNamespace(name)));
-            }
+        assertTrueEventually(() -> {
+            final String name = TOPIC_RB_PREFIX + RELIABLE_TOPIC_NAME;
+            final Map<ObjectNamespace, RingbufferContainer> partitionContainers =
+                    ringbufferService.getContainers().get(ringbufferService.getRingbufferPartitionId(name));
+            assertNotNull(partitionContainers);
+            assertFalse(partitionContainers.containsKey(RingbufferService.getRingbufferNamespace(name)));
         });
     }
 

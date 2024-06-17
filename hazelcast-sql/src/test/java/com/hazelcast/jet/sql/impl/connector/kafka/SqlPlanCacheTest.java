@@ -16,11 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlPlanCacheTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
 

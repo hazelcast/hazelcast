@@ -35,7 +35,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -87,24 +86,14 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         final IMap<Integer, String> map = instance.getMap("default");
 
         final int total = 10;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.getEvents().poll());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.getEvents().poll()));
 
         for (int i = 0; i < total; i++) {
             map.put(i, "value" + i);
         }
 
         sleepSeconds(11);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, map.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, map.size()));
         assertEquals(total, testMapStore.getStore().size());
     }
 
@@ -128,12 +117,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         }
         //wait for all store ops.
         assertOpenEventually(testMapStore.storeLatch);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, writeBehindQueueSize(instance, mapName));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, writeBehindQueueSize(instance, mapName)));
 
         // init before eviction
         testMapStore.storeLatch = new CountDownLatch(populationCount);
@@ -236,12 +220,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         map.put("key", "value");
         Thread.sleep(2000);
         map.put("key", "value2");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("value2", testMapStore.getStore().get("key"));
-            }
-        });
+        assertTrueEventually(() -> assertEquals("value2", testMapStore.getStore().get("key")));
     }
 
     @Test(timeout = 120000)
@@ -286,38 +265,20 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap("default");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Object event = testMapStore.getEvents().poll();
-                assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, event);
-            }
+        assertTrueEventually(() -> {
+            Object event = testMapStore.getEvents().poll();
+            assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, event);
         });
 
         map.put("1", "value1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.getEvents().poll());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.getEvents().poll()));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(EventBasedMapStore.STORE_EVENTS.STORE, testMapStore.getEvents().poll());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(EventBasedMapStore.STORE_EVENTS.STORE, testMapStore.getEvents().poll()));
 
         map.remove("1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(EventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.getEvents().poll());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(EventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.getEvents().poll()));
     }
 
     @Test(timeout = 120000)
@@ -352,14 +313,11 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         HazelcastInstance instance = createHazelcastInstance(newConfig(testMapStore, 0));
         final IMap map = instance.getMap("default");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Set result = map.keySet();
-                assertContains(result, "key1");
-                assertContains(result, "key2");
-                assertContains(result, "key3");
-            }
+        assertTrueEventually(() -> {
+            Set result = map.keySet();
+            assertContains(result, "key1");
+            assertContains(result, "key2");
+            assertContains(result, "key3");
         });
     }
 
@@ -417,13 +375,10 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         // wait store ops. finish.
         mapStore.awaitStores();
         // we should see at least expected store count.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int storeOperationCount = mapStore.count.intValue();
-                assertTrue("expected: " + expectedStoreCount
-                        + ", actual: " + storeOperationCount, expectedStoreCount <= storeOperationCount);
-            }
+        assertTrueEventually(() -> {
+            int storeOperationCount = mapStore.count.intValue();
+            assertTrue("expected: " + expectedStoreCount
+                    + ", actual: " + storeOperationCount, expectedStoreCount <= storeOperationCount);
         });
     }
 
@@ -495,18 +450,8 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             map.put("key" + i, "value" + i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("value" + (size1 - 1), testMapStore.getStore().get("key"));
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("value" + (size2 - 1), testMapStore.getStore().get("key" + (size2 - 1)));
-            }
-        });
+        assertTrueEventually(() -> assertEquals("value" + (size1 - 1), testMapStore.getStore().get("key")));
+        assertTrueEventually(() -> assertEquals("value" + (size2 - 1), testMapStore.getStore().get("key" + (size2 - 1))));
     }
 
     @Test(timeout = 120000)
@@ -535,12 +480,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             map.put(key, value);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedStoreSizeEventually, store.getStore().size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedStoreSizeEventually, store.getStore().size()));
         assertEquals("value" + (iterationCount - 1), map.get(key));
     }
 

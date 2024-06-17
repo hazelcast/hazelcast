@@ -34,7 +34,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -107,32 +106,14 @@ public class ClientCacheClearTest extends CacheClearTest {
 
         CacheConfig config = cache.getConfiguration(CacheConfig.class);
 
-        registerInvalidationListener(new EventHandler() {
-            @Override
-            public void handle(Object event) {
-                counter.getAndIncrement();
-            }
-
-        }, config.getNameWithPrefix());
+        registerInvalidationListener(event -> counter.getAndIncrement(), config.getNameWithPrefix());
 
         cache.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(1, counter.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, counter.get()));
 
         // Make sure that the callback is not called for a while
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(counter.get() <= 1);
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertTrue(counter.get() <= 1), 3);
 
     }
 
@@ -162,22 +143,10 @@ public class ClientCacheClearTest extends CacheClearTest {
         ICache<Object, Object> serverCache = getHazelcastInstance().getCacheManager().getCache(config.getName());
         serverCache.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(1, counter.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, counter.get()));
 
         // Make sure that the callback is not called for a while
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(counter.get() <= 1);
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertTrue(counter.get() <= 1), 3);
 
     }
 

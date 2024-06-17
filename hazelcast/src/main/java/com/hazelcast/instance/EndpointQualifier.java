@@ -30,7 +30,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * of network connections sharing a common {@link ProtocolType} and the same network settings, when Hazelcast
  * is configured with {@link com.hazelcast.config.AdvancedNetworkConfig} enabled.
  * <p>
- * In some cases, just the {@link ProtocolType} is enough (eg since there can be only a single
+ * In some cases, just the {@link ProtocolType} is enough (e.g. since there can be only a single
  * {@link ProtocolType#MEMBER MEMBER} server socket, there can be only one instance of
  * {@link com.hazelcast.config.ServerSocketEndpointConfig ServerSocketEndpointConfig} network
  * configuration for {@code MEMBER} connections).

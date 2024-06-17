@@ -23,12 +23,16 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.jet.test.SerialTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import javax.annotation.Nonnull;
@@ -37,6 +41,7 @@ import static com.hazelcast.jet.elastic.ElasticClients.client;
 import static com.hazelcast.jet.elastic.ElasticSupport.PORT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Category({NightlyTest.class, SerialTest.class, IgnoreInJenkinsOnWindows.class})
 public class AuthElasticSourcesTest extends BaseElasticTest {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();

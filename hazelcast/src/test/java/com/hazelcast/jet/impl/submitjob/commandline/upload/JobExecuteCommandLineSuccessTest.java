@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getParalleJarPath;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExistInTempDirectory;
 import static org.junit.Assert.assertFalse;
@@ -86,7 +87,7 @@ public class JobExecuteCommandLineSuccessTest extends JetTestSupport {
 
         // Assert job status
         Job job = jetService.getJobs().get(0);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         // Assert job jar does is deleted
         jarDoesNotExistInTempDirectory();

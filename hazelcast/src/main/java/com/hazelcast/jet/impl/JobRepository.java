@@ -764,7 +764,7 @@ public class JobRepository {
             }
             if (entry.getValue() != null && entry.getValue().getTimestamp() >= jobExecutionRecord.getTimestamp()) {
                 // ignore older update.
-                // It can happen because we allow to execute updates in parallel and they can overtake each other.
+                // It can happen because we allow to execute updates in parallel, and they can overtake each other.
                 // We don't want to overwrite newer update.
                 return "Update to JobRecord for job " + idToString(jobId) + " ignored, newer timestamp found. "
                         + "Stored timestamp=" + entry.getValue().getTimestamp() + ", timestamp of the update="

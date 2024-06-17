@@ -72,9 +72,9 @@ public class TopicDestroyTest extends HazelcastTestSupport {
         assertEquals(size, regs.size());
     }
 
-    static class EmptyListener implements MessageListener<Object> {
+    private static class EmptyListener implements MessageListener<Object> {
         @Override
-        public void onMessage(Message message) {
+        public void onMessage(Message<Object> message) {
         }
     }
 }

@@ -25,10 +25,12 @@ import com.hazelcast.internal.util.collection.ArrayUtils;
 import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
@@ -493,9 +495,10 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         }
         if (len > 0) {
             float[] values = new float[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = readFloat();
-            }
+            int sizeInBytes = len * FLOAT_SIZE_IN_BYTES;
+            checkAvailable(pos, sizeInBytes);
+            ByteBuffer.wrap(data, pos, sizeInBytes).order(getByteOrder()).asFloatBuffer().get(values);
+            pos += sizeInBytes;
             return values;
         }
         return new float[0];

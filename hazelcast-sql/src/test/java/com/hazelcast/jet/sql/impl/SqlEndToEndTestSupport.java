@@ -24,7 +24,6 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.JobInvocationObserver;
@@ -43,6 +42,7 @@ import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -87,7 +87,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        nodeEngine = getNodeEngineImpl(instance());
+        nodeEngine = Accessors.getNodeEngineImpl(instance());
         sqlJobInvocationObserver = new SqlJobInvocationObserverImpl();
         jobInvocationObserver = new JobInvocationObserverImpl();
         sqlService = (SqlServiceImpl) instance().getSql();
@@ -169,7 +169,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
 
     protected void assertInvokedOnlyOnMembers(HazelcastInstance... members) {
         Set<Address> expectedMembers = Arrays.stream(members)
-                .map(JetTestSupport::getAddress)
+                .map(instance -> Accessors.getAddress(instance))
                 .collect(Collectors.toSet());
         assertEquals(expectedMembers, jobInvocationObserver.getMembers());
     }

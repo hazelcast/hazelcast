@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -29,8 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.ref.WeakReference;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -49,12 +46,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     public void setup() {
         serializationService = mock(InternalSerializationService.class);
         bufferPoolThreadLocal = new BufferPoolThreadLocal(serializationService, new BufferPoolFactoryImpl()
-                , new Supplier<RuntimeException>() {
-            @Override
-            public RuntimeException get() {
-                return new HazelcastInstanceNotActiveException();
-            }
-        });
+                , HazelcastInstanceNotActiveException::new);
     }
 
     @Test
@@ -67,12 +59,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     @Test
     public void get_whenDifferentThreads_thenDifferentInstances() throws Exception {
         BufferPool pool1 = bufferPoolThreadLocal.get();
-        BufferPool pool2 = spawn(new Callable<BufferPool>() {
-            @Override
-            public BufferPool call() {
-                return bufferPoolThreadLocal.get();
-            }
-        }).get();
+        BufferPool pool2 = spawn(() -> bufferPoolThreadLocal.get()).get();
 
         assertNotSame(pool1, pool2);
     }
@@ -86,15 +73,12 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
         bufferPoolThreadLocal.clear();
 
         // then eventually when we try to get the pool, we should get a HazelcastInstanceNotActiveException
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                System.gc();
-                try {
-                    bufferPoolThreadLocal.get();
-                    fail();
-                } catch (HazelcastInstanceNotActiveException ignore) {
-                }
+        assertTrueEventually(() -> {
+            System.gc();
+            try {
+                bufferPoolThreadLocal.get();
+                fail();
+            } catch (HazelcastInstanceNotActiveException ignore) {
             }
         });
     }
@@ -123,13 +107,10 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
         // call clear; kills the strong references.
         bufferPoolThreadLocal.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                System.gc();
-                // eventually the reference should point to zero; indicating that the pool is gc'ed.
-                assertNull(poolRef.get());
-            }
+        assertTrueEventually(() -> {
+            System.gc();
+            // eventually the reference should point to zero; indicating that the pool is gc'ed.
+            assertNull(poolRef.get());
         });
     }
 }

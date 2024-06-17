@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file.impl;
 
 import com.hazelcast.jet.pipeline.file.FileFormat;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -34,6 +35,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class FileSourceConfiguration<T> implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String path;

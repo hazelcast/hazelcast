@@ -16,8 +16,11 @@
 
 package com.hazelcast.test;
 
+import java.io.Serial;
+
 public class ExpectedRuntimeException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 83105880382695411L;
 
     public ExpectedRuntimeException() {

@@ -27,6 +27,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.junit.Test;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
@@ -39,8 +40,8 @@ public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
         }
         instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options());
 
-        DataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
@@ -69,8 +70,8 @@ public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
                 connectionString);
         instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options);
 
-        MongoDataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        MongoDataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
 
@@ -101,8 +102,8 @@ public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
         instance().getSql().execute("CREATE DATA CONNECTION " + dataConnName + " TYPE Mongo " + sharedString + options)
                 .close();
 
-        DataConnection dataConnection = getNodeEngineImpl(
-                instance()).getDataConnectionService().getAndRetainDataConnection(dataConnName, MongoDataConnection.class);
+        var dataConnectionService = getNodeEngineImpl(instance()).getDataConnectionService();
+        MongoDataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dataConnName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");

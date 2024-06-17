@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.ToxicDirection;
@@ -49,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -58,6 +60,7 @@ import static org.junit.Assert.assertFalse;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 @SuppressWarnings("StaticVariableName")
+@Category(NightlyTest.class)
 public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule
@@ -249,7 +252,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
         Job job1 = writeOneEntry(valid);
         job1.join();
-        assertJobStatusEventually(job1, JobStatus.COMPLETED);
+        assertThat(job1).eventuallyHasStatus(JobStatus.COMPLETED);
 
         Job job2 = writeOneEntry(invalid);
         assertThrowsJetException(job2, error);

@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.util.UUID;
 
 /**
- * The result of a Event Registration.
+ * The result of an Event Registration.
  */
 public interface EventRegistration extends IdentifiedDataSerializable {
 

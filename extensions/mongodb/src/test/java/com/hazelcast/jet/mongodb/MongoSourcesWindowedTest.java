@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
@@ -74,7 +75,7 @@ public class MongoSourcesWindowedTest extends AbstractMongoTest {
             }
         });
         Job job = instance().getJet().newJob(pipeline);
-        assertJobStatusEventually(job, RUNNING);
+        assertThat(job).eventuallyHasStatus(RUNNING);
 
         assertTrueEventually(() -> {
             assertThat(result).isNotEmpty();

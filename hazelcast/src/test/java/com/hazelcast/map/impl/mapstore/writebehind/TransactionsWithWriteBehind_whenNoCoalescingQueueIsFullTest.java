@@ -40,10 +40,8 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalQueue;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -66,9 +64,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void get_for_update_does_not_increment_node_wide_used_capacity() {
@@ -99,7 +94,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         Config config = getConfig(mapName, maxWbqCapacity);
         HazelcastInstance node = createHazelcastInstance(config);
 
-        IMap entries = node.getMap(mapName);
+        IMap<Integer, Integer> entries = node.getMap(mapName);
         for (int i = 0; i < 100; i++) {
             entries.set(i, i);
         }
@@ -213,8 +208,6 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     @Test
     public void throws_reached_max_size_exception_when_one_phase() {
-        expectedException.expect(ReachedMaxSizeException.class);
-
         String mapName = "map";
         Config config = getConfig(mapName, 100);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -222,13 +215,13 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         TransactionContext context = newTransactionContext(node, ONE_PHASE);
         context.beginTransaction();
 
-        TransactionalMap map = context.getMap("map");
+        TransactionalMap<String, String> map = context.getMap("map");
 
         for (int i = 0; i < 101; i++) {
             map.put("item-" + i, "value");
         }
 
-        context.commitTransaction();
+        assertThrows(ReachedMaxSizeException.class, context::commitTransaction);
     }
 
     @Ignore
@@ -383,7 +376,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                 TransactionContext context = newTransactionContext(node, TWO_PHASE);
                 context.beginTransaction();
 
-                TransactionalMap map = context.getMap(mapName);
+                TransactionalMap<String, String> map = context.getMap(mapName);
 
                 for (int i = 0; i < keySpace; i++) {
                     map.put("item-" + i, "value");
@@ -403,7 +396,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                 TransactionContext context = newTransactionContext(node, TWO_PHASE);
                 context.beginTransaction();
 
-                TransactionalMap map = context.getMap(mapName);
+                TransactionalMap<String, String> map = context.getMap(mapName);
 
                 for (int i = 0; i < keySpace; i++) {
                     map.remove("item-" + i);
@@ -423,7 +416,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                 TransactionContext context = newTransactionContext(node, TWO_PHASE);
                 context.beginTransaction();
 
-                TransactionalMap map = context.getMap(mapName);
+                TransactionalMap<String, Integer> map = context.getMap(mapName);
 
                 for (int i = 0; i < keySpace; i++) {
                     map.put("item-" + i, i);
@@ -460,7 +453,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
             TransactionContext context = newTransactionContext(node1, TWO_PHASE);
             context.beginTransaction();
 
-            TransactionalMap map = context.getMap("map");
+            TransactionalMap<String, String> map = context.getMap("map");
 
             for (int i = 0; i < 51; i++) {
                 map.put("item-" + i, "value");

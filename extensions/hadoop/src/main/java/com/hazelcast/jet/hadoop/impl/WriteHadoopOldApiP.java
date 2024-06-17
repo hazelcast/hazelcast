@@ -139,7 +139,8 @@ public final class WriteHadoopOldApiP<T, K, V> extends AbstractProcessor {
 
     private static class Supplier<T, K, V> implements ProcessorSupplier {
 
-        static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @SuppressFBWarnings("SE_BAD_FIELD")
         private final JobConf jobConf;

@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -193,7 +194,7 @@ public class JobSummaryTest extends JetTestSupport {
 
     @Test
     @Ignore("Flaky due to race condition described in JobCoordinationService.getJobAndSqlSummary(LightMasterContext)")
-    // To see it failing add some delay (eg. 100ms) in JobCoordinationService.submitLightJob in mc.getCompletionFuture().whenComplete invocation
+    // To see it failing add some delay (e.g. 100ms) in JobCoordinationService.submitLightJob in mc.getCompletionFuture().whenComplete invocation
     public void when_lightJobIsCancelled_then_itIsNotReportedOnList() throws InterruptedException {
         // given
         Job job = instance.getJet().newLightJob(newStreamPipeline());
@@ -233,7 +234,7 @@ public class JobSummaryTest extends JetTestSupport {
                 job = instances[i % 4 / 2].getJet().newLightJob(p);
                 // We need to assert this for light jobs as newLightJob returns immediately before the
                 // SubmitOp is handled
-                assertJobRunningEventually(instance, job, null);
+                assertThat(job).eventuallyJobRunning(instance, null);
             } else {
                 job = instance.getJet().newJob(p);
             }

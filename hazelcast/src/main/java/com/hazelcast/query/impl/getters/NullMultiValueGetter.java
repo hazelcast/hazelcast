@@ -27,12 +27,12 @@ public final class NullMultiValueGetter extends Getter {
      */
     public static final NullMultiValueGetter NULL_MULTIVALUE_GETTER = new NullMultiValueGetter();
 
-    private static final MultiResult NULL_MULTIVALUE_RESULT;
+    private static final MultiResult<Object> NULL_MULTIVALUE_RESULT;
 
     static {
         MultiResult<Object> result = new MultiResult<>();
         result.addNullOrEmptyTarget();
-        NULL_MULTIVALUE_RESULT = new ImmutableMultiResult<Object>(result);
+        NULL_MULTIVALUE_RESULT = new ImmutableMultiResult<>(result);
     }
 
     private NullMultiValueGetter() {
@@ -45,7 +45,7 @@ public final class NullMultiValueGetter extends Getter {
     }
 
     @Override
-    Class getReturnType() {
+    Class<?> getReturnType() {
         return null;
     }
 

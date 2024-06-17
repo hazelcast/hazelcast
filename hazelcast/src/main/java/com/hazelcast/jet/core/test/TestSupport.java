@@ -607,7 +607,7 @@ public final class TestSupport {
 
     private void run() {
         // filter null items from testEvents. They are there only to affect the number of ordinals. See class javadoc.
-        testEvents.removeIf(event -> event instanceof ItemWithOrdinal && ((ItemWithOrdinal) event).item == null);
+        testEvents.removeIf(event -> event instanceof ItemWithOrdinal iwo && iwo.item == null);
 
         boolean isAfterProcessorAssertion = false;
         for (TestEventInt e : testEvents) {
@@ -998,9 +998,8 @@ public final class TestSupport {
 
     private void initProcessor(Processor processor, TestOutbox outbox) {
         SerializationService serializationService;
-        if (hazelcastInstance != null && hazelcastInstance instanceof SerializationServiceSupport) {
-            SerializationServiceSupport impl = (SerializationServiceSupport) hazelcastInstance;
-            serializationService = impl.getSerializationService();
+        if (hazelcastInstance != null && hazelcastInstance instanceof SerializationServiceSupport support) {
+            serializationService = support.getSerializationService();
         } else {
             serializationService = new DefaultSerializationServiceBuilder()
                     .setManagedContext(e -> e)
@@ -1021,8 +1020,8 @@ public final class TestSupport {
         if (jobConfig != null) {
             context.setJobConfig(jobConfig);
         }
-        if (processor instanceof SerializationServiceAware) {
-            ((SerializationServiceAware) processor).setSerializationService(serializationService);
+        if (processor instanceof SerializationServiceAware aware) {
+            aware.setSerializationService(serializationService);
         }
         try {
             processor.init(outbox, context);
@@ -1094,8 +1093,8 @@ public final class TestSupport {
     private static String listToString(List<?> list) {
         return list.stream()
                 .map(obj -> {
-                    if (obj instanceof Object[]) {
-                        return Arrays.toString((Object[]) obj);
+                    if (obj instanceof Object[] objects) {
+                        return Arrays.toString(objects);
                     }
                     return String.valueOf(obj);
                 })

@@ -3000,7 +3000,8 @@
               "connector",
               "sql",
               "cpmap",
-              "user-code-namespace"
+              "user-code-namespace",
+              "vector-collection"
             ]
           },
           "properties": {
@@ -3095,6 +3096,7 @@
         "aggregate",
         "projection",
         "deploy",
+        "optimize",
         "submit",
         "cancel",
         "restart",
@@ -4939,10 +4941,27 @@
         "outbound-ports": {
           "$ref": "#/definitions/OutboundPorts"
         },
+        "subset-routing": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, this client will only connect to a limited subset of the cluster, as specified with the defined routing-strategy. Default value of routing-strategy is PARTITION_GROUPS when not set. And subset-routing is disabled by default. Note: This feature may only be enabled if smart-routing is disabled."
+            },
+            "routing-strategy": {
+              "type": "string",
+              "enum": ["PARTITION_GROUPS"],
+              "default": "PARTITION_GROUPS",
+              "description": "Determines the routing strategy to use with subset routing."
+            }
+          },
+          "description": "Configures the subset routing capabilities."
+        },
         "smart-routing": {
           "type": "boolean",
           "default": true,
-          "description": "If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that the operation will always be executed on the owner. The cached table is updated every second."
+          "description": "If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that the operation will always be executed on the owner. The cached table is updated every second. Also note that this feature may only be enabled if subset-routing is disabled."
         },
         "redo-operation": {
           "type": "boolean",

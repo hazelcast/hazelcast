@@ -21,7 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -59,21 +58,15 @@ public class SystemLogPluginConnectionTest extends AbstractDiagnosticsPluginTest
     @Test
     public void testConnection() {
         HazelcastInstance instance = hzFactory.newHazelcastClient();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                plugin.run(logWriter);
-                assertContains("ConnectionAdded");
-            }
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
+            assertContains("ConnectionAdded");
         });
 
         instance.shutdown();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                plugin.run(logWriter);
-                assertContains("ConnectionRemoved");
-            }
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
+            assertContains("ConnectionRemoved");
         });
     }
 }

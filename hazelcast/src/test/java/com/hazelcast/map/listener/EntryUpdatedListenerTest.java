@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -68,13 +69,14 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
         // Create a map
         final IMap<Object, AtomicInteger> map = instance.getMap(randomMapName());
 
-        // Setup the listeners
+        // Set up the listeners
         final CompletableFuture<Integer> entryListenerOldValue = setMapListener(
                 listener -> map.addEntryListener(listener, true));
         final CompletableFuture<Integer> entryLocalListenerOldValue = setMapListener(map::addLocalEntryListener);
 
         final CompletableFuture<Integer> interceptorOldValue = new CompletableFuture<>();
         map.addInterceptor(new MapInterceptorAdaptor() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override

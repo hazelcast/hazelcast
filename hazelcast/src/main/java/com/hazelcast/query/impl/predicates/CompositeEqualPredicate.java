@@ -26,6 +26,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -110,6 +111,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
         fallbackPredicate = new AndPredicate(predicates);
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         throw new UnsupportedOperationException("can't be serialized");
     }

@@ -41,7 +41,7 @@ public class InstructionDefinitionTest {
 
     @Before
     public void setUp() {
-        PackageDefinition definition = new PackageDefinition("packageName", true, "version", Collections.<String>emptySet());
+        PackageDefinition definition = new PackageDefinition("packageName", true, "version", Collections.emptySet());
         Instruction instruction = mock(Instruction.class);
 
         instructionDefinition = new InstructionDefinition(definition, instruction);

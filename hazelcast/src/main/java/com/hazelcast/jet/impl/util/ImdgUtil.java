@@ -41,6 +41,7 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serial;
 import java.nio.charset.StandardCharsets;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -236,6 +237,7 @@ public final class ImdgUtil {
 
     private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final Predicate<T> wrapped;
@@ -252,6 +254,7 @@ public final class ImdgUtil {
 
     private static final class ImdgFunctionWrapper<T, R> implements FunctionEx<T, R> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final Function<T, R> wrapped;

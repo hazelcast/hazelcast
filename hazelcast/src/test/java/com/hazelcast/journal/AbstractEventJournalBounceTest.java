@@ -60,7 +60,6 @@ public abstract class AbstractEventJournalBounceTest {
     public JitterRule jitterRule = new JitterRule();
     private LinkedList<Object> expectedEvents;
 
-    @SuppressWarnings("unchecked")
     @Before
     public void setup() {
         final HazelcastInstance instance = bounceMemberRule.getSteadyMember();
@@ -89,7 +88,6 @@ public abstract class AbstractEventJournalBounceTest {
                 .setProperty(EVENT_THREAD_COUNT.getName(), "1");
     }
 
-    @SuppressWarnings("unchecked")
     class EventJournalReadRunnable<T> implements Runnable {
         private final HazelcastInstance hazelcastInstance;
         private final LinkedList<T> expected;
@@ -119,7 +117,7 @@ public abstract class AbstractEventJournalBounceTest {
                 final ReadResultSet<T> partitionEvents = reader.readFromEventJournal(
                         state.getOldestSequence(), 1,
                         (int) (state.getNewestSequence() - state.getOldestSequence() + 1), i,
-                        new TruePredicate<T>(), new IdentityFunction<T>()).toCompletableFuture().get();
+                        new TruePredicate<>(), new IdentityFunction<>()).toCompletableFuture().get();
                 for (T event : partitionEvents) {
                     events.add(event);
                 }

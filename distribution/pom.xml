@@ -46,20 +46,21 @@
                             <goal>add-third-party</goal>
                         </goals>
                         <phase>prepare-package</phase>
+                        <configuration>
+                            <fileTemplate>
+                                ${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                            </fileTemplate>
+                            <includedLicenses combine.children="append">
+                                <includedLicense>CDDL</includedLicense>
+                                <includedLicense>CDDL 1.1</includedLicense>
+                                <includedLicense>Lesser General Public License (LGPL)</includedLicense>
+                                <includedLicense>The GNU General Public License, v2 with Universal FOSS Exception, v1.0</includedLicense>
+                                <includedLicense>The Go license</includedLicense>
+                                <includedLicense>Elastic License 2.0</includedLicense>
+                            </includedLicenses>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <force>true</force>
-                    <acceptPomPackaging>true</acceptPomPackaging>
-                    <includedLicenses combine.children="append">
-                        <includedLicense>CDDL</includedLicense>
-                        <includedLicense>CDDL 1.1</includedLicense>
-                        <includedLicense>Lesser General Public License (LGPL)</includedLicense>
-                        <includedLicense>The GNU General Public License, v2 with Universal FOSS Exception, v1.0</includedLicense>
-                        <includedLicense>The Go license</includedLicense>
-                        <includedLicense>Elastic License 2.0</includedLicense>
-                    </includedLicenses>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -120,24 +121,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>${maven.enforcer.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>enforce-versions</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <rules>
-                        <dependencyConvergence/>
-                    </rules>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -209,7 +192,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
-            <version>4.0</version>
+            <version>5.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.hazelcast</groupId>

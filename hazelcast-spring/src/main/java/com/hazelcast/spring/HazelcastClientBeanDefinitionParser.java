@@ -30,7 +30,9 @@ import com.hazelcast.client.config.ClientSqlConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -69,6 +71,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
@@ -85,6 +88,7 @@ import static org.springframework.util.Assert.isTrue;
  *          connection-timeout="1000"
  *          redo-operation="true"
  *          smart-routing="true">
+ *              <hz:subset-routing enabled="false" routing-strategy="PARTITION_GROUPS"/>
  *              <hz:member>10.10.1.2:5701</hz:member>
  *              <hz:member>10.10.1.3:5701</hz:member>
  *      </hz:network>
@@ -122,9 +126,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
-        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
-        private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
-        private final ManagedMap<String, BeanDefinition> reliableTopicConfigMap = new ManagedMap<String, BeanDefinition>();
+        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<>();
+        private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<>();
+        private final ManagedMap<String, BeanDefinition> reliableTopicConfigMap = new ManagedMap<>();
 
         SpringXmlBuilder(ParserContext parserContext) {
             this(parserContext, rootBeanDefinition(HazelcastClient.class)
@@ -160,12 +164,12 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("network".equals(nodeName)) {
                     handleNetwork(node);
                 } else if ("listeners".equals(nodeName)) {
-                    List listeners = parseListeners(node, ListenerConfig.class);
+                    List<BeanDefinition> listeners = parseListeners(node, ListenerConfig.class);
                     configBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("serialization".equals(nodeName)) {
                     handleSerialization(node);
                 } else if ("proxy-factories".equals(nodeName)) {
-                    List list = parseProxyFactories(node, ProxyFactoryConfig.class);
+                    List<BeanDefinition> list = parseProxyFactories(node, ProxyFactoryConfig.class);
                     configBuilder.addPropertyValue("proxyFactoryConfigs", list);
                 } else if ("load-balancer".equals(nodeName)) {
                     handleLoadBalancer(node);
@@ -174,7 +178,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("spring-aware".equals(nodeName)) {
                     handleSpringAware();
                 } else if ("query-caches".equals(nodeName)) {
-                    ManagedMap queryCaches = getQueryCaches(node);
+                    ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches = getQueryCaches(node);
                     configBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 } else if ("connection-strategy".equals(nodeName)) {
                     handleConnectionStrategy(node);
@@ -276,8 +280,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleUserCodeDeployment(Node node) {
             BeanDefinitionBuilder userCodeDeploymentConfig = createBeanBuilder(ClientUserCodeDeploymentConfig.class);
-            List<String> jarPaths = new ArrayList<String>(INITIAL_CAPACITY);
-            List<String> classNames = new ArrayList<String>(INITIAL_CAPACITY);
+            List<String> jarPaths = new ArrayList<>(INITIAL_CAPACITY);
+            List<String> classNames = new ArrayList<>(INITIAL_CAPACITY);
             fillAttributeValues(node, userCodeDeploymentConfig);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -303,9 +307,10 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("userCodeDeploymentConfig", userCodeDeploymentConfig.getBeanDefinition());
         }
 
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private void handleNetwork(Node node) {
             BeanDefinitionBuilder clientNetworkConfig = createBeanBuilder(ClientNetworkConfig.class);
-            List<String> members = new ArrayList<String>(INITIAL_CAPACITY);
+            List<String> members = new ArrayList<>(INITIAL_CAPACITY);
             fillAttributeValues(node, clientNetworkConfig);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -331,6 +336,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("hazelcast-cloud".equals(nodeName)) {
                     createAndFillBeanBuilder(child, ClientCloudConfig.class,
                             "cloudConfig", clientNetworkConfig);
+                } else if ("subset-routing".equals(nodeName)) {
+                    handleSubsetRouting(child, clientNetworkConfig);
                 }
 
             }
@@ -355,6 +362,20 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleSubsetRouting(Node node, BeanDefinitionBuilder networkConfigBuilder) {
+            boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+            if (enabled) {
+                BeanDefinitionBuilder subsetRoutingConfig = createBeanBuilder(SubsetRoutingConfig.class);
+                String attribute = getAttribute(node, "routing-strategy");
+                RoutingStrategy routingStrategy = attribute == null
+                        ? SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY : RoutingStrategy.valueOf(attribute);
+
+                subsetRoutingConfig.addPropertyValue("enabled", true);
+                subsetRoutingConfig.addPropertyValue("routingStrategy", routingStrategy);
+                networkConfigBuilder.addPropertyValue("subsetRoutingConfig", subsetRoutingConfig.getBeanDefinition());
+            }
         }
 
         private void handleLoadBalancer(Node node) {
@@ -417,9 +438,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("preloaderConfig", getPreloaderConfig(node));
         }
 
-        private ManagedMap getQueryCaches(Node childNode) {
+        private ManagedMap<String, ManagedMap<String, BeanDefinition>> getQueryCaches(Node childNode) {
             ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches
-                    = new ManagedMap<String, ManagedMap<String, BeanDefinition>>();
+                    = new ManagedMap<>();
             for (Node queryCacheNode : childElements(childNode)) {
                 parseQueryCache(queryCaches, queryCacheNode);
             }
@@ -444,7 +465,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             ManagedMap<String, BeanDefinition> configMap = queryCaches.get(mapName);
             if (configMap == null) {
-                configMap = new ManagedMap<String, BeanDefinition>();
+                configMap = new ManagedMap<>();
                 queryCaches.put(mapName, configMap);
             }
             configMap.put(cacheName, builder.getBeanDefinition());
@@ -456,7 +477,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 BeanDefinitionBuilder predicateBuilder = getPredicate(node, textContent);
                 builder.addPropertyValue("predicateConfig", predicateBuilder.getBeanDefinition());
             } else if ("entry-listeners".equals(nodeName)) {
-                ManagedList listeners = getEntryListeners(node);
+                ManagedList<BeanDefinition> listeners = getEntryListeners(node);
                 builder.addPropertyValue("entryListenerConfigs", listeners);
             } else if ("include-value".equals(nodeName)) {
                 builder.addPropertyValue("includeValue", textContent);
@@ -476,7 +497,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             } else if ("serialize-keys".equals(nodeName)) {
                 builder.addPropertyValue("serializeKeys", textContent);
             } else if ("indexes".equals(nodeName)) {
-                ManagedList indexes = getIndexes(node);
+                ManagedList<BeanDefinition> indexes = getIndexes(node);
                 builder.addPropertyValue("indexConfigs", indexes);
             } else if ("eviction".equals(nodeName)) {
                 builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false, false));
@@ -495,7 +516,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private ManagedList<BeanDefinition> getIndexes(Node node) {
-            ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> indexes = new ManagedList<>();
             for (Node indexNode : childElements(node)) {
                 handleIndex(indexes, indexNode);
             }
@@ -503,7 +524,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private ManagedList<BeanDefinition> getEntryListeners(Node node) {
-            ManagedList<BeanDefinition> listeners = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
                 BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(EntryListenerConfig.class);
@@ -518,7 +539,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleOutboundPorts(Node node, BeanDefinitionBuilder networkConfigBuilder) {
-            ManagedList<String> outboundPorts = new ManagedList<String>();
+            ManagedList<String> outboundPorts = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("ports".equals(name)) {
@@ -531,7 +552,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
 
         private void handleLabels(Node node) {
-            ManagedList<String> labels = new ManagedList<String>();
+            ManagedList<String> labels = new ManagedList<>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
                 if (!"label".equals(name)) {

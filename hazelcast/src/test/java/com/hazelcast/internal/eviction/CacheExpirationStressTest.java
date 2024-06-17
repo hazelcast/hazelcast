@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
-import javax.cache.event.CacheEntryExpiredListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -142,7 +141,6 @@ public class CacheExpirationStressTest extends HazelcastTestSupport {
     class TestRunner implements Runnable {
         private Cache cache;
         private AtomicBoolean done;
-        private CacheEntryExpiredListener listener;
 
         TestRunner(Cache cache, AtomicBoolean done) {
             this.cache = cache;

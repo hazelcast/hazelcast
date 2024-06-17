@@ -99,8 +99,6 @@ public class ReplicatedMapServiceTest extends HazelcastTestSupport {
         ReplicatedMapService service = getNodeEngineImpl(hazelcastInstance).getService(ReplicatedMapService.SERVICE_NAME);
         service.getIterationService().createIterator(name, 0, UuidUtil.newUnsecureUUID());
         assertThat(service.getIterationService().getIteratorManager().getKeySet()).hasSize(1);
-        assertTrueEventually(() -> {
-            assertThat(service.getIterationService().getIteratorManager().getKeySet()).isEmpty();
-        });
+        assertTrueEventually(() -> assertThat(service.getIterationService().getIteratorManager().getKeySet()).isEmpty());
     }
 }

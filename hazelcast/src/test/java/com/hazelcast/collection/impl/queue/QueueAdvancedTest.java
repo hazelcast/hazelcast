@@ -655,7 +655,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         Config config = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         // ownership changes happen on stable
-        // instance and it shouldn't leak memory
+        // instance, and it shouldn't leak memory
         HazelcastInstance stableInstance = factory.newHazelcastInstance(config);
 
         String queueName = "itemQueue";

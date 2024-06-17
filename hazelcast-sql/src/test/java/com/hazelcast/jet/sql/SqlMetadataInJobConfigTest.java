@@ -34,6 +34,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.stream.Collectors.toList;
@@ -96,7 +97,8 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
 
         String sql = "CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 2";
         instance().getSql().execute(sql);
-        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+        Job job = instance().getJet().getJob("testJob");
+        assertThat(job).eventuallyHasStatus(COMPLETED);
 
         List<Job> completedJobs = getJobsByStatus(COMPLETED);
         assertEquals(1, completedJobs.size());

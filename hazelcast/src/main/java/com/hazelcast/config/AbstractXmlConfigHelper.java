@@ -44,7 +44,6 @@ import java.net.URI;
 import java.util.ArrayList;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Contains Hazelcast XML Configuration helper methods and variables.
@@ -81,8 +80,8 @@ public abstract class AbstractXmlConfigHelper extends AbstractConfigBuilder {
             if (xsdLocation.isEmpty()) {
                 continue;
             }
-            String namespace = xsdLocation.split('[' + LINE_SEPARATOR + " ]+")[0];
-            String uri = xsdLocation.split('[' + LINE_SEPARATOR + " ]+")[1];
+            String namespace = xsdLocation.split('[' + System.lineSeparator() + " ]+")[0];
+            String uri = xsdLocation.split('[' + System.lineSeparator() + " ]+")[1];
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {

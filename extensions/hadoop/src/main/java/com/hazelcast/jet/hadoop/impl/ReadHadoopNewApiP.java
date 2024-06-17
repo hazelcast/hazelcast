@@ -53,6 +53,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.lang.reflect.Constructor;
 import java.security.Permission;
 import java.util.Arrays;
@@ -158,6 +159,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
     }
 
     public static class MetaSupplier<K, V, R> extends ReadHdfsMetaSupplierBase<R> {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         /**
@@ -230,6 +232,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         /**

@@ -120,7 +120,7 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getItemAtPositionOrNull_whenSmallerArray_thenReturNull() {
+    public void getItemAtPositionOrNull_whenSmallerArray_thenReturnNull() {
         Object obj = new Object();
         Object[] src = new Object[1];
         src[0] = obj;
@@ -131,7 +131,7 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getItemAtPositionOrNull_whenNegative_thenReturNull() {
+    public void getItemAtPositionOrNull_whenNegative_thenReturnNull() {
         Object obj = new Object();
         Object[] src = new Object[1];
         src[0] = obj;

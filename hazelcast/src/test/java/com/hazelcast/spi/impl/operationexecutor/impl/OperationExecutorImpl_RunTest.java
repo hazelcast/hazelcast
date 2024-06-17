@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
@@ -74,12 +72,9 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                boolean contains = genericOperationHandler.operations.contains(genericOperation);
-                assertTrue("operation is not found in the generic operation handler", contains);
-            }
+        assertTrueEventually(() -> {
+            boolean contains = genericOperationHandler.operations.contains(genericOperation);
+            assertTrue("operation is not found in the generic operation handler", contains);
         });
     }
 
@@ -100,12 +95,9 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
-                assertContains(handler.operations, genericOperation);
-            }
+        assertTrueEventually(() -> {
+            DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
+            assertContains(handler.operations, genericOperation);
         });
     }
 
@@ -116,15 +108,12 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                try {
-                    executor.run(genericOperation);
-                    return Boolean.FALSE;
-                } catch (IllegalThreadStateException e) {
-                    return Boolean.TRUE;
-                }
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
+            try {
+                executor.run(genericOperation);
+                return Boolean.FALSE;
+            } catch (IllegalThreadStateException e) {
+                return Boolean.TRUE;
             }
         });
 
@@ -208,12 +197,9 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
-                assertContains(handler.operations, partitionOperation);
-            }
+        assertTrueEventually(() -> {
+            DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
+            assertContains(handler.operations, partitionOperation);
         });
     }
 
@@ -223,15 +209,12 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                try {
-                    executor.run(partitionOperation);
-                    return Boolean.FALSE;
-                } catch (IllegalThreadStateException e) {
-                    return Boolean.TRUE;
-                }
+        FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
+            try {
+                executor.run(partitionOperation);
+                return Boolean.FALSE;
+            } catch (IllegalThreadStateException e) {
+                return Boolean.TRUE;
             }
         });
 
