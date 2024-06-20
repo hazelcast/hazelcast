@@ -65,7 +65,6 @@ public interface StreamSerializer<T> extends Serializer {
      * @param object that will be written to out
      * @throws IOException in case of failure to write
      */
-
     void write(@Nonnull ObjectDataOutput out, @Nonnull T object) throws IOException;
 
     /**

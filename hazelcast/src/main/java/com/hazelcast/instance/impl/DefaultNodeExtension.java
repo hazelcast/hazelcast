@@ -86,6 +86,7 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.CodebaseClusterVersionAware;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
@@ -404,6 +405,8 @@ public class DefaultNodeExtension implements NodeExtension {
                     .setVersion(version)
                     .setSchemaService(node.getSchemaService())
                     .setNotActiveExceptionSupplier(HazelcastInstanceNotActiveException::new)
+                    .setVersionedSerializationEnabled(true)
+                    .setClusterVersionAware(new CodebaseClusterVersionAware())
                     .isCompatibility(isCompatibility)
                     .build();
         } catch (Exception e) {

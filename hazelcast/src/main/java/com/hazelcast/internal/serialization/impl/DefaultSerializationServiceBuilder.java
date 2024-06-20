@@ -84,6 +84,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected SchemaService schemaService;
     protected boolean isCompatibility;
+    protected boolean versionedSerializationEnabled;
+    protected ClusterVersionAware clusterVersionAware;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -230,6 +232,18 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
+    public SerializationServiceBuilder setVersionedSerializationEnabled(boolean versionedSerializationEnabled) {
+        this.versionedSerializationEnabled = versionedSerializationEnabled;
+        return this;
+    }
+
+    @Override
+    public SerializationServiceBuilder setClusterVersionAware(ClusterVersionAware clusterVersionAware) {
+        this.clusterVersionAware = clusterVersionAware;
+        return this;
+    }
+
+    @Override
     public InternalSerializationService build() {
         initVersions();
         if (config != null) {
@@ -305,6 +319,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withCheckClassDefErrors(checkClassDefErrors)
                     .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
                     .withCompactSerializationConfig(compactSerializationConfig)
+                    .withClusterVersionAware(clusterVersionAware)
+                    .withVersionedSerializationEnabled(versionedSerializationEnabled)
                     .withSchemaService(schemaService)
                     .withCompatibility(isCompatibility)
                     .build();

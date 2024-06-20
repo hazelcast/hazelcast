@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.impl.ClusterVersionAware;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -69,6 +70,10 @@ public interface SerializationServiceBuilder {
     SerializationServiceBuilder setSchemaService(SchemaService schemaService);
 
     SerializationServiceBuilder isCompatibility(boolean isCompatibility);
+
+    SerializationServiceBuilder setVersionedSerializationEnabled(boolean versionedSerializationEnabled);
+
+    SerializationServiceBuilder setClusterVersionAware(ClusterVersionAware clusterVersionAware);
 
     <T extends SerializationService> T build();
 }
