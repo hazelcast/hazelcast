@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
 import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCDemoteDataMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
@@ -52,6 +53,8 @@ import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -399,6 +402,19 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     public void testPromoteLiteMemberMessageTask() throws Exception {
         assertFailure(MCPromoteLiteMemberCodec.encodeRequest(), IllegalStateException.class,
                 member.getCluster().getLocalMember() + " is not a lite member!");
+    }
+
+    @Test
+    public void testDemoteDataMemberMessageTask() throws Exception {
+        Cluster cluster = member.getCluster();
+        Address address = cluster.getLocalMember().getAddress();
+
+        assertFailure(
+                MCDemoteDataMemberCodec.encodeRequest(),
+                IllegalStateException.class,
+                "Cannot demote to lite member! Previous master was: " + address
+                        + ", Current master is: " + address + ". Cluster state is " + cluster.getClusterState()
+        );
     }
 
     @Test
