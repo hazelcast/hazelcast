@@ -25,9 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class CountingMapLoader extends SimpleMapLoader {
 
-    private AtomicInteger loadedValueCount = new AtomicInteger();
-    private AtomicInteger loadAllKeysInvocations = new AtomicInteger();
-    private AtomicBoolean loadAllKeysClosed = new AtomicBoolean();
+    private final AtomicInteger loadedValueCount = new AtomicInteger();
+    private final AtomicInteger loadAllKeysInvocations = new AtomicInteger();
+    private final AtomicBoolean loadAllKeysClosed = new AtomicBoolean();
 
     CountingMapLoader(int size) {
         super(size, false);

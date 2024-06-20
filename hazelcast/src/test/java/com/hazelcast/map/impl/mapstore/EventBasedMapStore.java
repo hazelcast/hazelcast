@@ -60,7 +60,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         initCount.incrementAndGet();
     }
 
-    public BlockingQueue getEvents() {
+    public BlockingQueue<STORE_EVENTS> getEvents() {
         return events;
     }
 

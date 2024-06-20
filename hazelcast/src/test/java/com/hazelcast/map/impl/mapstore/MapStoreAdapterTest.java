@@ -78,11 +78,11 @@ public class MapStoreAdapterTest extends HazelcastTestSupport {
         assertEquals(2, adapter.deleted.size());
     }
 
-    private class MockMapStoreAdapter extends MapStoreAdapter<Integer, Integer> {
+    private static class MockMapStoreAdapter extends MapStoreAdapter<Integer, Integer> {
 
-        private List<Object> deleted;
-        private List<Object> stored;
-        private List<Object> loaded;
+        private final List<Object> deleted;
+        private final List<Object> stored;
+        private final List<Object> loaded;
 
         MockMapStoreAdapter() {
             deleted = new LinkedList<>();

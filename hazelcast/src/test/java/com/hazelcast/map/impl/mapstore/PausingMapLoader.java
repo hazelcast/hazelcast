@@ -30,12 +30,12 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  **/
 class PausingMapLoader<K, V> implements MapLoader<K, V> {
 
-    private MapLoader<K, V> delegate;
+    private final MapLoader<K, V> delegate;
 
-    private int pauseAtKey;
+    private final int pauseAtKey;
     private int counter;
-    private CountDownLatch resumeLatch = new CountDownLatch(1);
-    private CountDownLatch pauseLatch = new CountDownLatch(1);
+    private final CountDownLatch resumeLatch = new CountDownLatch(1);
+    private final CountDownLatch pauseLatch = new CountDownLatch(1);
 
     PausingMapLoader(MapLoader<K, V> delegate, int pauseAtKey) {
         this.delegate = delegate;

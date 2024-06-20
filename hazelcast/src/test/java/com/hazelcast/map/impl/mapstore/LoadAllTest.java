@@ -251,7 +251,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
 
     private static class SimpleStore implements MapStore<Integer, Integer> {
 
-        private ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<>();
 
         @Override
         public void store(Integer key, Integer value) {

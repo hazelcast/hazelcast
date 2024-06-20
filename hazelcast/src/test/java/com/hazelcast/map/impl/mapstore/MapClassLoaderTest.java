@@ -85,7 +85,7 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
         assertFalse(anEmptyCtxClassLoaderExist);
     }
 
-    private class InMemoryMapStore implements MapStore<String, String> {
+    private static class InMemoryMapStore implements MapStore<String, String> {
 
         private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<String, Boolean> contextClassLoaders = new ConcurrentHashMap<>();

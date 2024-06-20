@@ -42,8 +42,8 @@ import static org.mockito.Mockito.withSettings;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderLifecycleTest extends HazelcastTestSupport {
 
-    private MapLoaderLifecycleSupport loader = mockMapLoaderWithLifecycle();
-    private Config config = new Config();
+    private final MapLoaderLifecycleSupport loader = mockMapLoaderWithLifecycle();
+    private final Config config = new Config();
 
     @Before
     public void configure() {

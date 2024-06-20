@@ -71,7 +71,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDoesntLoadAgain_whenLoaderNodeGoesDown() {
+    public void testDoesNotLoadAgain_whenLoaderNodeGoesDown() {
         HazelcastInstance[] nodes
                 = nodeFactory.newInstances(this::newConfig, 3);
         HazelcastInstance hz3 = nodes[2];
@@ -137,7 +137,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         String mapName = generateKeyOwnedBy(hz3);
         IMap<Integer, Integer> map = nodes[0].getMap(mapName);
 
-        // trigger loading and pause half way through
+        // trigger loading and pause halfway through
         Future<Integer> asyncVal = map.getAsync(1).toCompletableFuture();
         pausingLoader.awaitPause();
 
@@ -150,7 +150,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         //
         // in short, there is an edge case in which the get operation is
         // processed before loading the partition holding the given key
-        // restarts on the previously replica node, after the owner node
+        // restarts on the previous replica node, after the owner node
         // died during the load process
         // for the details, see the issue
         //
@@ -191,7 +191,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         String mapName = generateKeyOwnedBy(node3);
         IMap<Object, Object> map = node1.getMap(mapName);
 
-        // trigger loading and pause half way through
+        // trigger loading and pause halfway through
         map.putAsync(1, 2);
         pausingLoader3.awaitPause();
 
