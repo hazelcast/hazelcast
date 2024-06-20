@@ -228,7 +228,7 @@ public final class PostgresCdcSources {
          * Optional regular expressions that match schema names to be monitored
          * ("schema" is used here to denote logical groups of tables). Any
          * schema name not included in the whitelist will be excluded from
-         * monitoring. By default all non-system schemas will be monitored. May
+         * monitoring. By default, all non-system schemas will be monitored. May
          * not be used with
          * {@link #setSchemaBlacklist(String...) schema blacklist}.
          */
@@ -255,7 +255,7 @@ public final class PostgresCdcSources {
          * Optional regular expressions that match fully-qualified table
          * identifiers for tables to be monitored; any table not included in the
          * whitelist will be excluded from monitoring. Each identifier is of the
-         * form <em>schemaName.tableName</em>. By default the connector will
+         * form <em>schemaName.tableName</em>. By default, the connector will
          * monitor every non-system table in each monitored database. May not be
          * used with {@link #setTableBlacklist(String...) table blacklist}.
          */

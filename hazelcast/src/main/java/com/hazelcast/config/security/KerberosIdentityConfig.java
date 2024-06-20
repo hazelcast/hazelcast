@@ -51,7 +51,7 @@ public class KerberosIdentityConfig implements IdentityConfig {
     }
 
     /**
-     * Defines prefix of the Service Principal name. It's default value is {@code "hz/"}. By default the member's principal name
+     * Defines prefix of the Service Principal name. It's default value is {@code "hz/"}. By default, the member's principal name
      * (for which this credentials factory asks the service ticket) is in form "[servicePrefix][memberIpAddress]@[REALM]" (e.g.
      * "hz/192.168.1.1@ACME.COM").
      */

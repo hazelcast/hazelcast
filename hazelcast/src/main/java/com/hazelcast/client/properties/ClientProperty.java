@@ -184,7 +184,7 @@ public final class ClientProperty {
      * setting to 0 should be regarded an experimental feature.
      * <p>
      * If set to 0, the IO_OUTPUT_THREAD_COUNT is really going to matter because the
-     * inbound thread will have more work to do. By default when TLS isn't enable,
+     * inbound thread will have more work to do. By default, when TLS isn't enable,
      * there is just 1 inbound thread.
      */
     public static final HazelcastProperty RESPONSE_THREAD_COUNT

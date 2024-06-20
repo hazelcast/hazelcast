@@ -130,7 +130,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * @return {@code true} when persistence of replicated data into backing
-     * store is enabled, otherwise returns {@code false}. By default this
+     * store is enabled, otherwise returns {@code false}. By default, this
      * method returns {@value #DEFAULT_PERSIST_WAN_REPLICATED_DATA}.
      */
     public boolean isPersistWanReplicatedData() {

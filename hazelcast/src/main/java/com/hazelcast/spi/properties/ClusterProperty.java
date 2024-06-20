@@ -340,14 +340,14 @@ public final class ClusterProperty {
     });
 
     /**
-     * Controls the number of socket input threads. By default it is the same
+     * Controls the number of socket input threads. By default, it is the same
      * as {@link #IO_THREAD_COUNT}.
      */
     public static final HazelcastProperty IO_INPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.io.input.thread.count", IO_THREAD_COUNT);
 
     /**
-     * Controls the number of socket output threads. By default it is the same
+     * Controls the number of socket output threads. By default, it is the same
      * as {@link #IO_THREAD_COUNT}.
      */
     public static final HazelcastProperty IO_OUTPUT_THREAD_COUNT

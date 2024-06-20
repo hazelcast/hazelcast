@@ -181,7 +181,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets the offset of timestamp component in milliseconds. By default it's {@value
+     * Sets the offset of timestamp component in milliseconds. By default, it's {@value
      * DEFAULT_EPOCH_START}, that is the beginning of 2018. You can adjust the value to determine the
      * lifespan of the generator. See {@link FlakeIdGenerator}'s class javadoc for more information.
      * <p>

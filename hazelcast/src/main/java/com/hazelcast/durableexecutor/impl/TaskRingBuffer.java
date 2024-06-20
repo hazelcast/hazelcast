@@ -54,7 +54,7 @@ public class TaskRingBuffer {
      *
      * @param task The task
      * @return the sequence
-     * @throws RejectedExecutionException if there is not available spot for the task
+     * @throws RejectedExecutionException if there is no available spot for the task
      */
     public int add(Callable task) {
         int index = findEmptySpot();

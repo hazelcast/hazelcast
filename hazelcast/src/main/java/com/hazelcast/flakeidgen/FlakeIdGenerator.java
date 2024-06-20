@@ -51,7 +51,7 @@ import com.hazelcast.internal.cluster.ClusterService;
  * example the 41 bits assigned by default allow the generator to generate IDs during about 70 years
  * (or 140 years, if you can tolerate negative IDs). Along with {@linkplain
  * FlakeIdGeneratorConfig#setEpochStart(long) epoch start}, which is at the beginning of 2018 by
- * default and is also configurable, you can determine when the generator will run out. By default
+ * default and is also configurable, you can determine when the generator will run out. By default,
  * it runs out slightly before the end of 2088.
  *
  * <p><b>Sequence bits</b>
