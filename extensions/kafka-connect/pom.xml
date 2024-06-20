@@ -200,7 +200,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.6.2</version>
+            <version>3.7.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Neo4J-->
