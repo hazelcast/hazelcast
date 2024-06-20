@@ -36,7 +36,7 @@ public final class DistributedObjectUtil {
          * For example, for the point of view of cache,
          * it has pure name and full name which contains prefixes also.
          *
-         * However both of our `DistributedObject` and `javax.cache.Cache` (from JCache spec) interfaces
+         * However, both of our `DistributedObject` and `javax.cache.Cache` (from JCache spec) interfaces
          * have same method name with same signature. It is `String getName()`.
          *
          * From the distributed object side, name must be fully qualified name of object,

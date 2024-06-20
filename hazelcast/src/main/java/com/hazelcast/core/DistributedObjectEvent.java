@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serial;
 import java.util.EventObject;
 import java.util.UUID;
 
@@ -31,12 +32,13 @@ import java.util.UUID;
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
 public class DistributedObjectEvent extends EventObject {
+    @Serial
     private static final long serialVersionUID = -4532279189146831926L;
     protected DistributedObject distributedObject;
 
-    private EventType eventType;
-    private String serviceName;
-    private String objectName;
+    private final EventType eventType;
+    private final String serviceName;
+    private final String objectName;
 
     /**
      * Constructs a DistributedObject Event.

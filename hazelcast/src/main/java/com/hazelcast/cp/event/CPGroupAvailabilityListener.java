@@ -20,7 +20,7 @@ import java.util.EventListener;
 
 /**
  * CPGroupAvailabilityListener is notified when availability
- * of a CP group decreases or it loses the majority completely.
+ * of a CP group decreases, or it loses the majority completely.
  * <p>
  * In general, availability decreases when a CP member becomes unreachable
  * because of process crash, network partition, out of memory etc.
@@ -30,7 +30,7 @@ import java.util.EventListener;
  * CP group that member belongs to.
  * <p>
  * As a special case, CPGroupAvailabilityListener has a separate method
- * to report loss of majority. When majority of a CP group is lost,
+ * to report loss of majority. When the majority of a CP group is lost,
  * that CP group cannot make progress anymore. Even a new CP member cannot join
  * to this CP group, because membership changes also go through the Raft consensus
  * algorithm. When a CP group has lost its majority:

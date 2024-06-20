@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -53,7 +52,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
             Collection<DistributedObject> distributedObjects = instance.getDistributedObjects()
                     .stream()
                     .filter(obj -> !obj.getName().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
-                    .collect(Collectors.toList());
+                    .toList();
             Assert.assertTrue(distributedObjects.isEmpty());
         };
         assertTrueEventually(task, 5);

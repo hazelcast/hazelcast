@@ -30,7 +30,7 @@ public enum ItemEventType {
      */
     REMOVED(2);
 
-    private int type;
+    private final int type;
 
     ItemEventType(final int type) {
         this.type = type;

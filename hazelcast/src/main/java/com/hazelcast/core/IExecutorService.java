@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
  * IExecutorService provides additional methods like executing tasks
  * on a specific member, on a member who is owner of a specific key,
  * executing a tasks on multiple members and listening execution result using a callback.
- *
+ * <p>
  * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster
  * versions 3.10 and higher.
  *

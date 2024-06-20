@@ -23,7 +23,7 @@ import java.util.Collection;
 
 /**
  * CPGroupAvailabilityEvent is published when a CP group's
- * availability is decreased or it has lost the majority completely.
+ * availability is decreased, or it has lost the majority completely.
  *
  * @since 4.1
  */

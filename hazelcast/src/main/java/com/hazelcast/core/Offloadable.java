@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 /**
  * Allows off-loading the processing unit implementing this interface to the specified or default Executor.
- *
+ * <p>
  * Currently supported in:
  * <ul>
  *     <li>{@link IMap#executeOnKey(Object, EntryProcessor)}</li>
@@ -49,13 +49,13 @@ public interface Offloadable {
 
     /**
      * Returns the name of the executor to which the processing unit will be off-loaded.
-     *
+     * <p>
      * The return value equal to {@value OFFLOADABLE_EXECUTOR} indicates that the processing should off-loaded to the
      * default {@link ExecutionService#OFFLOADABLE_EXECUTOR}.
-     *
+     * <p>
      * The return value equal to {@value NO_OFFLOADING} indicates that the processing should not be off-loaded at all.
      * The processing will be executed as if the processing-unit didn't implement the {@link Offloadable} interface.
-     *
+     * <p>
      * Other return values will look up the executor with the returned value which can be configured in the Hazelcast
      * configuration.
      *

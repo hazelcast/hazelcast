@@ -70,7 +70,7 @@ public enum EntryEventType {
      */
     LOADED(TypeId.LOADED);
 
-    private int typeId;
+    private final int typeId;
 
     EntryEventType(final int typeId) {
         this.typeId = typeId;

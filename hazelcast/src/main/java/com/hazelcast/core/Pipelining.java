@@ -34,43 +34,43 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 /**
  * The Pipelining can be used to speed up requests. It is build on top of asynchronous
  * requests like e.g. {@link IMap#getAsync(Object)} or any other asynchronous call.
- *
+ * <p>
  * The main purpose of the Pipelining is to control the number of concurrent requests
  * when using asynchronous invocations. This can be done by setting the depth using
  * the constructor. So you could set the depth to e.g. 100 and do 1000 calls. That means
  * that at any given moment, there will only be 100 concurrent requests.
- *
+ * <p>
  * It depends on the situation what the optimal depth (number of invocations in
  * flight) should be. If it is too high, you can run into memory related problems.
  * If it is too low, it will provide little or no performance advantage at all. In
  * most cases a Pipelining and a few hundred map/cache puts/gets should not lead to any
  * problems. For testing purposes we frequently have a Pipelining of 1000 or more
  * concurrent requests to be able to saturate the system.
- *
+ * <p>
  * The Pipelining can't be used for transaction purposes. So you can't create a
  * Pipelining, add a set of asynchronous request and then not call {@link #results()}
  * to prevent executing these requests. Invocations can be executed before the
  * {@link #results()} is called.
- *
+ * <p>
  * Pipelining can be used by both clients or members.
- *
+ * <p>
  * The Pipelining isn't thread safe. So only a single thread should add requests to
  * the Pipelining and wait for results.
- *
+ * <p>
  * Currently, all {@link CompletionStage} and their responses are stored in the
  * Pipelining. So be careful executing a huge number of request with a single Pipelining
- * because it can lead to a huge memory bubble. In this cases it is better to
+ * because it can lead to a huge memory bubble. In this case it is better to
  * periodically, after waiting for completion, to replace the Pipelining by a new one.
  * In the future we might provide this as an out-of-the-box experience, but currently
  * we do not.
- *
+ * <p>
  * A Pipelining provides its own backpressure on the system. So there will not be more
  * in flight invocations than the depth of the Pipelining. This means that the Pipelining
  * will work fine when backpressure on the client/member is disabled (default). Also,
  * when it is enabled it will work fine, but keep in mind that the number of concurrent
  * invocations in the Pipelining could be lower than the configured number of invocation
  * of the Pipelining because the backpressure on the client/member is leading.
- *
+ * <p>
  * The Pipelining has been marked as Beta since we need to see how the API needs to
  * evolve. But there is no problem using it in production. We use similar techniques
  * to achieve high performance.
