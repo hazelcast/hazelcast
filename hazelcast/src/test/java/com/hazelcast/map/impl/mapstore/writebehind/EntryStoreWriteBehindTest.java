@@ -44,9 +44,7 @@ public class EntryStoreWriteBehindTest extends EntryStoreSimpleTest {
 
     @Override
     protected void assertEntryStore(String key, String value) {
-        assertTrueEventually(() -> {
-            super.assertEntryStore(key, value);
-        });
+        assertTrueEventually(() -> super.assertEntryStore(key, value));
     }
 
     @Override
@@ -57,8 +55,6 @@ public class EntryStoreWriteBehindTest extends EntryStoreSimpleTest {
 
     @Override
     protected void assertEntryNotStored(String key) {
-        assertTrueEventually(() -> {
-            super.assertEntryNotStored(key);
-        });
+        assertTrueEventually(() -> super.assertEntryNotStored(key));
     }
 }

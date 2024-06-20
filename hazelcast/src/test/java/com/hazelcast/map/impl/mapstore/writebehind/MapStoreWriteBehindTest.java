@@ -235,7 +235,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         assertEquals(0, map.size());
 
         long timeBeforePut = System.nanoTime();
-        assertEquals("Map produced a value out of thin air", null, map.put("1", "value1"));
+        assertNull("Map produced a value out of thin air", map.put("1", "value1"));
         assertEquals("Map did not return a previously stored value", "value1", map.get("1"));
         String mapStoreValue = (String) testMapStore.getStore().get("1");
         if (mapStoreValue != null) {
@@ -344,7 +344,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() {
+    public void testIssue1085WriteBehindBackupWithLongRunningMapStore() {
         final String name = randomMapName("testIssue1085WriteBehindBackup");
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
@@ -435,7 +435,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testWriteBehindSameSecondSameKey() {
-        final TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
+        final TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happen
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -809,7 +809,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         }
     }
 
-    class FailingLoadMapStore extends MapStoreAdapter<Object, Object> {
+    static class FailingLoadMapStore extends MapStoreAdapter<Object, Object> {
         @Override
         public Object load(Object key) {
             throw new IllegalStateException();

@@ -89,7 +89,7 @@ public class WriteBehindStaleReadTest extends HazelcastTestSupport {
         CountDownLatch waitForSecondStoreOperation;
         AtomicReference<Object> valueAfterMapGet = new AtomicReference<>();
 
-        private AtomicInteger countAdd = new AtomicInteger();
+        private final AtomicInteger countAdd = new AtomicInteger();
 
         public WaitingMapStore() {
             store = new ConcurrentHashMap<>();

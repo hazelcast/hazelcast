@@ -123,7 +123,7 @@ public class WriteBehindCoalescingBatchingTest extends HazelcastTestSupport {
         }
     }
 
-    private class CountingMapStore implements MapStore<String, String> {
+    private static class CountingMapStore implements MapStore<String, String> {
 
         AtomicInteger countStore = new AtomicInteger();
         AtomicInteger countStoreAll = new AtomicInteger();
@@ -133,7 +133,7 @@ public class WriteBehindCoalescingBatchingTest extends HazelcastTestSupport {
         AtomicInteger countDeleteAll = new AtomicInteger();
         AtomicInteger countDeletedEntries = new AtomicInteger();
 
-        private ConcurrentHashMap<String, String> inMemoryStore = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, String> inMemoryStore = new ConcurrentHashMap<>();
 
         @Override
         public Set<String> loadAllKeys() {

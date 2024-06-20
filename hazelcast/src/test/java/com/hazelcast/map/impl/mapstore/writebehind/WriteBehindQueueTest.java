@@ -187,7 +187,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
             queue.addLast(entry, false);
         }
         List<DelayedEntry> entries = new ArrayList<>();
-        queue.filter(new IPredicate<DelayedEntry>() {
+        queue.filter(new IPredicate<>() {
             int count = 0;
 
             @Override

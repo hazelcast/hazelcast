@@ -71,9 +71,7 @@ public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
 
         map.evictAll();
 
-        assertTrueEventually(() -> {
-            store.assertRecordStored(1, 1, expectedExpirationTime, 10000);
-        }, 20);
+        assertTrueEventually(() -> store.assertRecordStored(1, 1, expectedExpirationTime, 10000), 20);
         assertEquals(1, (int) map.get(1));
         sleepAtLeastSeconds(30);
         assertNull(map.get(1));

@@ -42,8 +42,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindStoreTest {
 
-    private MapStoreContext mapStoreContext = mock(MapStoreContext.class, RETURNS_DEEP_STUBS);
-    private WriteBehindProcessor writeBehindProcessor = mock(WriteBehindProcessor.class, RETURNS_DEEP_STUBS);
+    private final MapStoreContext mapStoreContext = mock(MapStoreContext.class, RETURNS_DEEP_STUBS);
+    private final WriteBehindProcessor writeBehindProcessor = mock(WriteBehindProcessor.class, RETURNS_DEEP_STUBS);
 
     @Test
     public void shouldNotChangeSequenceAfterAddingToQueue() throws IllegalAccessException {

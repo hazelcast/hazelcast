@@ -33,6 +33,6 @@ public class EntryStoreWriteBehindDistributedTest extends EntryStoreWriteBehindT
 
     @Override
     protected HazelcastInstance[] createInstances() {
-        return createHazelcastInstanceFactory().newInstances(() -> getConfig(), 3);
+        return createHazelcastInstanceFactory().newInstances(this::getConfig, 3);
     }
 }

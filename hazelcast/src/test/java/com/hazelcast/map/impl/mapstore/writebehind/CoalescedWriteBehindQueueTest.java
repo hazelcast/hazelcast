@@ -40,8 +40,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
 
-    private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-    private CoalescedWriteBehindQueue queue = new CoalescedWriteBehindQueue();
+    private final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final CoalescedWriteBehindQueue queue = new CoalescedWriteBehindQueue();
 
     @Test
     public void test_addFirst() {

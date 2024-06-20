@@ -265,7 +265,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     private static class CustomerDataStore extends MapStoreAdapter<Long, Customer> {
 
-        private AtomicInteger storeCallCount;
+        private final AtomicInteger storeCallCount;
         private final Map<Long, List<Subscription>> store;
         private final long customerId;
 
@@ -330,7 +330,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     }
 
     private static class Subscription implements Serializable {
-        private long productId;
+        private final long productId;
 
         private Subscription(long productId) {
             this.productId = productId;

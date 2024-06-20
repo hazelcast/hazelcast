@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
     private HazelcastInstance instance;
     private IMap<String, String> map;
-    private TestEntryStore<String, String> testEntryStore = new TestEntryStore<>();
+    private final TestEntryStore<String, String> testEntryStore = new TestEntryStore<>();
 
     @Before
     public void setup() {
