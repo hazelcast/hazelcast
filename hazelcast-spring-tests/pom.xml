@@ -32,8 +32,6 @@
     <properties>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-
-        <maven-artifact.version>3.9.7</maven-artifact.version>
     </properties>
 
     <dependencies>
@@ -96,7 +94,6 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>${maven-artifact.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
