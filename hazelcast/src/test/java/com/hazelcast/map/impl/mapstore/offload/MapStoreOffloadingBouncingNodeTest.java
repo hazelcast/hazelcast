@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -138,7 +137,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
                 .setEnabled(true)
                 .setOffload(true)
                 .setWriteDelaySeconds(writeBehindEnabled ? 3 : 0)
-                .setImplementation(new MapStoreAdapter() {
+                .setImplementation(new MapStoreAdapter<>() {
 
                     @Override
                     public void store(Object key, Object value) {
@@ -227,7 +226,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
             @Override
             void doOp(IMap<String, String> map, int keySpace) {
                 for (int i = 0; i < keySpace; i++) {
-                    map.executeOnKey(toKey(i), (EntryProcessor) entry -> {
+                    map.executeOnKey(toKey(i), entry -> {
                         entry.setValue(null);
                         return null;
                     });
@@ -243,7 +242,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
                     keys.add(toKey(i));
                 }
 
-                map.executeOnKeys(keys, (EntryProcessor) entry -> {
+                map.executeOnKeys(keys, entry -> {
                     entry.setValue(null);
                     return null;
                 });
@@ -254,7 +253,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
             @Override
             void doOp(IMap<String, String> map, int keySpace) {
                 for (int i = 0; i < keySpace; i++) {
-                    map.executeOnKey(toKey(i), (EntryProcessor) entry -> {
+                    map.executeOnKey(toKey(i), entry -> {
                         entry.setValue(randomString());
                         return null;
                     });
@@ -270,7 +269,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
                     keys.add(toKey(i));
                 }
 
-                map.executeOnKeys(keys, (EntryProcessor) entry -> {
+                map.executeOnKeys(keys, entry -> {
                     entry.setValue(randomString());
                     return null;
                 });

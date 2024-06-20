@@ -79,9 +79,9 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
 
         // create client
         HazelcastInstance client = factory.newHazelcastClient();
-        IMap map = client.getMap(slowMapName);
+        IMap<Integer, Integer> map = client.getMap(slowMapName);
 
-        List<Future> futures = new ArrayList<>();
+        List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             futures.add(map.getAsync(i).toCompletableFuture());
         }
@@ -91,7 +91,7 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
 
         try {
             assertTrueEventually(() -> {
-                for (Future future : futures) {
+                for (Future<?> future : futures) {
                     assertEquals(-1, future.get());
                 }
             });
@@ -111,11 +111,11 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Integer>() {
 
-            ConcurrentHashMap store = new ConcurrentHashMap<>();
+            final ConcurrentHashMap<Integer, Integer> store = new ConcurrentHashMap<>();
 
             @Override
             public Integer load(Integer key) {
-                return (Integer) store.get(key);
+                return store.get(key);
             }
 
             @Override
@@ -130,11 +130,11 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Object, Object> slowMap = node.getMap(slowMapName);
 
-        Future oldIsNull = slowMap.putAsync(1, 1).toCompletableFuture();
-        Future oldIs1 = slowMap.putAsync(1, 2).toCompletableFuture();
-        Future oldIs2 = slowMap.putAsync(1, 3).toCompletableFuture();
-        Future oldIs3 = slowMap.putAsync(1, 4).toCompletableFuture();
-        Future oldIs4 = slowMap.putAsync(1, 5).toCompletableFuture();
+        Future<Object> oldIsNull = slowMap.putAsync(1, 1).toCompletableFuture();
+        Future<Object> oldIs1 = slowMap.putAsync(1, 2).toCompletableFuture();
+        Future<Object> oldIs2 = slowMap.putAsync(1, 3).toCompletableFuture();
+        Future<Object> oldIs3 = slowMap.putAsync(1, 4).toCompletableFuture();
+        Future<Object> oldIs4 = slowMap.putAsync(1, 5).toCompletableFuture();
 
         assertTrueEventually(() -> {
             assertEquals(4, oldIs4.get());
@@ -156,7 +156,7 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Integer>() {
 
-            ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<>();
+            final ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<>();
 
             @Override
             public Integer load(Integer key) {
