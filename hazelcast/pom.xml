@@ -47,7 +47,6 @@
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
-                <version>${git.commit.id.maven.plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>

@@ -63,7 +63,6 @@
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
-                <version>${maven.download.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>download-datagen-zip-file</id>
