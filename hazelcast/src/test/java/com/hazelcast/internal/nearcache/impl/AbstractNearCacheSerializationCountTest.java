@@ -161,10 +161,10 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         VALUE_SERIALIZE_COUNT.set(0);
         VALUE_DESERIALIZE_COUNT.set(0);
 
-        KEY_SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
-        KEY_DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
-        VALUE_SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
-        VALUE_DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
+        KEY_SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<>());
+        KEY_DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<>());
+        VALUE_SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<>());
+        VALUE_DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<>());
     }
 
     /**
@@ -295,10 +295,10 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         int actualValueSerializeCount = VALUE_SERIALIZE_COUNT.getAndSet(0);
         int actualValueDeserializeCount = VALUE_DESERIALIZE_COUNT.getAndSet(0);
 
-        List<String> keySerializeStackTrace = KEY_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
-        List<String> keyDeserializeStackTrace = KEY_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
-        List<String> valueSerializeStackTrace = VALUE_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
-        List<String> valueDeserializeStackTrace = VALUE_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
+        List<String> keySerializeStackTrace = KEY_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<>());
+        List<String> keyDeserializeStackTrace = KEY_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<>());
+        List<String> valueSerializeStackTrace = VALUE_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<>());
+        List<String> valueDeserializeStackTrace = VALUE_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<>());
 
         NearCacheSerializationCountConfigBuilder configBuilder = new NearCacheSerializationCountConfigBuilder();
         configBuilder.append(expectedKeySerializationCounts);
@@ -328,7 +328,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                     label, expectedValueDeserializeCount, actualValueDeserializeCount, getStatsOrEmptyString(context),
                     configBuilder.build(false, false, index, valueDeserializeStackTrace)));
         }
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
             fail(sb.toString());
         }
     }
@@ -432,10 +432,9 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof KeySerializationCountingData)) {
+            if (!(o instanceof KeySerializationCountingData that)) {
                 return false;
             }
-            KeySerializationCountingData that = (KeySerializationCountingData) o;
             return that.executeEqualsAndHashCode;
         }
 
@@ -496,10 +495,9 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof ValueSerializationCountingData)) {
+            if (!(o instanceof ValueSerializationCountingData that)) {
                 return false;
             }
-            ValueSerializationCountingData that = (ValueSerializationCountingData) o;
             return that.executeEqualsAndHashCode;
         }
 

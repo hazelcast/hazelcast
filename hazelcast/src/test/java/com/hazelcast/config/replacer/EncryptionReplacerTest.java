@@ -184,7 +184,7 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
 
     private File createFileWithString(String string) throws IOException {
         File file = tempFolder.newFile();
-        if (string != null && string.length() > 0) {
+        if (string != null && !string.isEmpty()) {
             PrintWriter out = new PrintWriter(file);
             try {
                 out.print(string);
