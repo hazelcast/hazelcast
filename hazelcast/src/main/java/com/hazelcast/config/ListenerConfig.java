@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Contains the configuration for an {@link EventListener}. The configuration
- * contains either the classname of the EventListener implementation, or the
+ * contains either the class name of the EventListener implementation, or the
  * actual EventListener instance.
  */
 @NamespacesSupported
@@ -85,7 +85,7 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     /**
      * Sets the class name of the EventListener.
      * <p>
-     * If a implementation was set, it will be removed.
+     * If an implementation was set, it will be removed.
      *
      * @param className the name of the class of the EventListener
      * @return the updated ListenerConfig

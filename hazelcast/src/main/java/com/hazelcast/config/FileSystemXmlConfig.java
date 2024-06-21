@@ -28,7 +28,7 @@ import java.util.Properties;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
- * A {@link Config} which includes functionality for loading itself from a
+ * A {@link Config} which includes functionality for loading itself from an
  * XML configuration file.
  * <p>
  * Unlike {@link Config#loadFromFile(File)} and its variants, a configuration constructed via

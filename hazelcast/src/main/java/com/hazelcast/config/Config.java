@@ -543,7 +543,7 @@ public class Config {
     /**
      * Returns the pattern matcher which is used to match item names to
      * configuration objects.
-     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     * By default, the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @return the pattern matcher
      */
@@ -554,7 +554,7 @@ public class Config {
     /**
      * Sets the pattern matcher which is used to match item names to
      * configuration objects.
-     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     * By default, the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @param configPatternMatcher the pattern matcher
      * @throws IllegalArgumentException if the pattern matcher is {@code null}
@@ -2829,7 +2829,7 @@ public class Config {
 
     /**
      * Returns the native memory configuration for this hazelcast instance.
-     * The native memory configuration defines the how native memory
+     * The native memory configuration defines how native memory
      * is used and the limits on its usage.
      *
      * @return the native memory configuration
@@ -2840,7 +2840,7 @@ public class Config {
 
     /**
      * Sets the native memory configuration for this hazelcast instance.
-     * The native memory configuration defines the how native memory
+     * The native memory configuration defines how native memory
      * is used and the limits on its usage.
      *
      * @param nativeMemoryConfig the native memory configuration

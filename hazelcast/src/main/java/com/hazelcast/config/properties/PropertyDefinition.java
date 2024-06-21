@@ -20,7 +20,7 @@ import com.hazelcast.core.TypeConverter;
 
 /**
  * This interface describes an extended approach of the currently available
- * pure property based configuration inside Hazelcast and helps implementing
+ * pure property based configuration inside Hazelcast and helps to implement
  * an automatic and transparent way to verify configuration as well as converting
  * types based on provided validators and converters.
  * <p>

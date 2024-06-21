@@ -34,7 +34,7 @@ import static com.hazelcast.internal.util.Preconditions.checkHasText;
  * <li>What address Hazelcast will advertise to other members on which they can bind to</li>
  * </ul>
  * In most environments you don't need to customize this and the default strategy will work just
- * fine. However in some cloud environments the default strategy does not make the right choice and
+ * fine. However, in some cloud environments the default strategy does not make the right choice and
  * the member address provider delegates the process of address picking to external code.
  */
 public final class MemberAddressProviderConfig {

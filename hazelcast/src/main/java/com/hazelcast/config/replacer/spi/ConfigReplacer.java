@@ -20,9 +20,9 @@ import java.util.Properties;
 
 /**
  * Interface to be implemented by pluggable variable replacers for the configuration files. The replacers can be configured in
- * XML configuration files and they are used to replace custom strings during loading the configuration.
+ * XML configuration files, and they are used to replace custom strings during loading the configuration.
  * <p>
- * A Variable to be replaced within the configuration file has following form:
+ * A Variable to be replaced within the configuration file has the following form:
  *
  * <pre>
  * "$" PREFIX "{" MASKED_VALUE "}"

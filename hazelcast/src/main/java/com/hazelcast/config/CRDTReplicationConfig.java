@@ -51,7 +51,7 @@ public class CRDTReplicationConfig {
     /**
      * Sets the period between two replications of CRDT states in milliseconds.
      * A lower value will increase the speed at which changes are disseminated
-     * to other cluster members at the expense of burst-like behaviour - less
+     * to other cluster members at the expense of burst-like behaviour - fewer
      * updates will be batched together in one replication message and one
      * update to a CRDT may cause a sudden burst of replication messages in a
      * short time interval.

@@ -83,7 +83,7 @@ public interface QueueStore<T> {
     Map<Long, T> loadAll(Collection<Long> keys);
 
     /**
-     * Loads all of the keys from the store.
+     * Loads all the keys from the store.
      * <p>
      * The items identified by the keys will be loaded in the iteration order of the returned Set
      *

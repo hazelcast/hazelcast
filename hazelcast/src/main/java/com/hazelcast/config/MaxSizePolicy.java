@@ -22,22 +22,22 @@ package com.hazelcast.config;
 public enum MaxSizePolicy {
     /**
      * Policy based on maximum number of entries stored per data
-     * structure (map, cache etc) on each Hazelcast instance
+     * structure (map, cache etc.) on each Hazelcast instance
      */
     PER_NODE(0),
     /**
      * Policy based on maximum number of entries stored per
-     * data structure (map, cache etc) on each partition
+     * data structure (map, cache etc.) on each partition
      */
     PER_PARTITION(1),
     /**
      * Policy based on maximum used JVM heap memory percentage per
-     * data structure (map, cache etc) on each Hazelcast instance
+     * data structure (map, cache etc.) on each Hazelcast instance
      */
     USED_HEAP_PERCENTAGE(2),
     /**
      * Policy based on maximum used JVM heap memory in megabytes per
-     * data structure (map, cache etc) on each Hazelcast instance
+     * data structure (map, cache etc.) on each Hazelcast instance
      */
     USED_HEAP_SIZE(3),
     /**
@@ -52,17 +52,17 @@ public enum MaxSizePolicy {
     FREE_HEAP_SIZE(5),
     /**
      * Policy based on maximum number of entries
-     * stored per data structure (map, cache etc)
+     * stored per data structure (map, cache etc.)
      */
     ENTRY_COUNT(6),
     /**
      * Policy based on maximum used native memory in megabytes per
-     * data structure (map, cache etc) on each Hazelcast instance
+     * data structure (map, cache etc.) on each Hazelcast instance
      */
     USED_NATIVE_MEMORY_SIZE(7),
     /**
      * Policy based on maximum used native memory percentage per
-     * data structure (map, cache etc) on each Hazelcast instance
+     * data structure (map, cache etc.) on each Hazelcast instance
      */
     USED_NATIVE_MEMORY_PERCENTAGE(8),
     /**

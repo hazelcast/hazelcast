@@ -93,7 +93,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
     /**
      * Sets the name of the class implementing
      * {@link WanPublisher}.
-     * To configure the built in WanBatchReplication, please use
+     * To configure the built-in WanBatchReplication, please use
      * {@link WanBatchPublisherConfig} config class.
      *
      * @param className the name of the class implementation for the WAN replication

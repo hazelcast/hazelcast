@@ -24,7 +24,7 @@ import com.hazelcast.internal.config.ConfigUtils;
  * This {@code ConfigPatternMatcher} supports a simplified wildcard matching.
  * See "Config.md ## Using Wildcard" for details about the syntax options.
  * <p>
- * In addition the candidates are weighted by the best match. The best result is returned.
+ * In addition, the candidates are weighted by the best match. The best result is returned.
  * Throws {@link com.hazelcast.config.InvalidConfigurationException} is multiple configurations are found.
  */
 public class MatchingPointConfigPatternMatcher implements ConfigPatternMatcher {

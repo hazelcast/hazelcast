@@ -26,7 +26,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
 
 /**
- * Security realm represents the security configuration for part of the system (e.g. member-to-member comunication).
+ * Security realm represents the security configuration for part of the system (e.g. member-to-member communication).
  */
 public class RealmConfig {
 

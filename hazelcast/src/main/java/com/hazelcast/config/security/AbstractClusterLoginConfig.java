@@ -61,7 +61,7 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
     }
 
     /**
-     * Allows skipping role assignment during authentication. Setting this value to {@code true} might speed-up authentication
+     * Allows skipping role assignment during authentication. Setting this value to {@code true} might speed up authentication
      * between cluster members (member-to-member). The roles only need to be assigned in client-to-member authentications.
      */
     public T setSkipRole(Boolean skipRole) {

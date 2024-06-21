@@ -284,7 +284,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * determines how many IDs can be generated per second. We allow the generator to generate IDs
      * with future timestamps, and this settings limits how much. When more IDs are requested, the
      * call will block. This is important in case of a cluster black-out or cluster restart: we
-     * don't store how far the members went and after they restart, they will start from current
+     * don't store how far the members went, and after they restart, they will start from current
      * time. If before the restart the generator went beyond the current time, duplicate IDs could
      * be generated.
      * <p>

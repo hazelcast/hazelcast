@@ -61,27 +61,27 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the classname of the {@link SplitBrainMergePolicy}.
+     * Returns the class name of the {@link SplitBrainMergePolicy}.
      *
-     * @return the classname of the merge policy
+     * @return the class name of the merge policy
      */
     public String getPolicy() {
         return policy;
     }
 
     /**
-     * Sets the classname of your {@link SplitBrainMergePolicy}.
+     * Sets the class name of your {@link SplitBrainMergePolicy}.
      * <p>
-     * For the out-of-the-box merge policies the simple classname
+     * For the out-of-the-box merge policies the simple class name
      * is sufficient, e.g. {@code PutIfAbsentMergePolicy}.
-     * But also the fully qualified classname is fine, e.g.
+     * But also the fully qualified class name is fine, e.g.
      * com.hazelcast.spi.merge.PutIfAbsentMergePolicy. For a
-     * custom merge policy the fully qualified classname is needed.
+     * custom merge policy the fully qualified class name is needed.
      * <p>
      * Must be a non-empty string. The default
      * value is {@code PutIfAbsentMergePolicy}.
      *
-     * @param policy the classname of the merge policy
+     * @param policy the class name of the merge policy
      * @return this {@code MergePolicyConfig} instance
      */
     public MergePolicyConfig setPolicy(String policy) {

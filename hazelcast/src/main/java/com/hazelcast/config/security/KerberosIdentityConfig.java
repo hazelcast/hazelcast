@@ -38,7 +38,7 @@ public class KerberosIdentityConfig implements IdentityConfig {
     }
 
     /**
-     * Allows to configure static service principal name (SPN). It's meant for usecases where all members share a single
+     * Allows to configure static service principal name (SPN). It's meant for use cases where all members share a single
      * Kerberos identity.
      */
     public KerberosIdentityConfig setSpn(String spn) {

@@ -33,7 +33,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Endpoint configuration that defines communication/networking properties common to both incoming/outgoing connections
- * eg.
+ * e.g.
  *
  * - Encryption / Security
  * - Hazelcast protocol type

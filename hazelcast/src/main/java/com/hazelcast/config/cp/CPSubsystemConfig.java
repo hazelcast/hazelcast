@@ -263,7 +263,7 @@ public class CPSubsystemConfig {
     private boolean failOnIndeterminateOperationState;
 
     /**
-     * Flag to denote whether or not CP Subsystem Persistence is enabled.
+     * Flag to denote whether CP Subsystem Persistence is enabled.
      * If enabled, CP members persist their local CP data to stable storage and
      * can recover from crashes.
      */

@@ -420,7 +420,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
     /**
      * Sets the {@link MergePolicyConfig} for this map.
-     *
+     * <p>
      * Note that you may need to enable per entry stats
      * via {@link MapConfig#setPerEntryStatsEnabled}
      * to see all fields of entry view in your {@link
@@ -445,7 +445,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
     /**
      * Set to enable/disable map level statistics for this map.
-     *
+     * <p>
      * This setting is only for map level stats such as last
      * access time to map, total number of hits etc. For
      * entry level stats see {@link #perEntryStatsEnabled}
@@ -474,7 +474,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     /**
      * Set to enable/disable per entry statistics.
      * Its default value is {@code false}.
-     *
+     * <p>
      * When you enable per entry stats, you can retrieve entry
      * level statistics such as hits, creation time, last access
      * time, last update time, last stored time for an entry.

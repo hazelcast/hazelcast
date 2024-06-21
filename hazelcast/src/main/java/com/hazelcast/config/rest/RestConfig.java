@@ -122,7 +122,7 @@ public class RestConfig {
         /**
          * Set the supported SSL ciphers.
          *
-         * @param ciphers Comma seperated list of supported SSL ciphers
+         * @param ciphers Comma separated list of supported SSL ciphers
          * @return the {@link Ssl} to use
          */
         public Ssl setCiphers(String ciphers) {

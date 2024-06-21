@@ -166,7 +166,7 @@ public class HotRestartPersistenceConfig {
      * Sets the number of Hot Restart store instances to create for one Hazelcast instance.
      */
     public HotRestartPersistenceConfig setParallelism(int parallelism) {
-        checkPositive(parallelism, "Palallelism must be a positive integer");
+        checkPositive(parallelism, "Parallelism must be a positive integer");
         this.parallelism = parallelism;
         return this;
     }
@@ -232,7 +232,7 @@ public class HotRestartPersistenceConfig {
      * remaining members redistributes data among themselves and data persisted on terminated member's storage becomes
      * stale. That terminated member cannot rejoin the cluster without removing Hot Restart data.
      * When auto-removal of stale Hot Restart data is enabled, while restarting that member, Hot Restart data is
-     * automatically removed and it joins the cluster as a completely new member.
+     * automatically removed, and it joins the cluster as a completely new member.
      * Otherwise, Hot Restart data should be removed manually.
      *
      * @param autoRemoveStaleData {@code true} to enable auto-removal of stale data, {@code false} otherwise

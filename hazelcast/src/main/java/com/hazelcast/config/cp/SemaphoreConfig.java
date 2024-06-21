@@ -53,7 +53,7 @@ public class SemaphoreConfig {
      * auto-cleanup mechanism for acquired permits upon Hazelcast
      * server / client failures. If a permit holder fails, its permits must be
      * released manually. When JDK compatibility is disabled,
-     * a {@link HazelcastInstance} must acquire permits before releasing them
+     * a {@link HazelcastInstance} must acquire permits before releasing them,
      * and it cannot release a permit that it has not acquired. It means, you
      * can acquire a permit from one thread and release it from another thread
      * using the same {@link HazelcastInstance}, but not different

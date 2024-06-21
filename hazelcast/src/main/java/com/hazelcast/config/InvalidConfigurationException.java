@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A InvalidConfigurationException is thrown when an Hazelcast faces
+ * A InvalidConfigurationException is thrown when Hazelcast faces
  * an invalid configuration. Invalid configuration is detected during
  * initialization of an instance generally. Still, it is possible to
  * run into InvalidConfigurationExceptions during run time.

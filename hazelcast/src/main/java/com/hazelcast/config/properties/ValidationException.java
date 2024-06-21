@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastException;
 
 /**
  * This exception is thrown from {@link com.hazelcast.config.properties.ValueValidator}
- * implementations whenever the validation has not succeed for any reason.
+ * implementations whenever the validation has not succeeded for any reason.
  */
 public class ValidationException extends HazelcastException {
 

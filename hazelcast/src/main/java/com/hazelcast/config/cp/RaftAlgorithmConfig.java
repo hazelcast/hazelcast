@@ -68,7 +68,7 @@ public class RaftAlgorithmConfig {
 
     /**
      * Leader election timeout in milliseconds. If a candidate cannot win
-     * majority of the votes in time, a new leader election round is initiated.
+     * the majority of the votes in time, a new leader election round is initiated.
      */
     private long leaderElectionTimeoutInMillis = DEFAULT_LEADER_ELECTION_TIMEOUT_IN_MILLIS;
 
@@ -78,7 +78,7 @@ public class RaftAlgorithmConfig {
      * Periodic heartbeat messages are actually append entries requests and
      * can contain log entries for the lagging followers. If a too small value
      * is set, heartbeat messages are sent from Raft leaders to followers too
-     * frequently and it can cause an unnecessary usage of CPU and network.
+     * frequently, and it can cause an unnecessary usage of CPU and network.
      */
     private long leaderHeartbeatPeriodInMillis = DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS;
 
