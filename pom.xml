@@ -218,32 +218,6 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
-                <configuration>
-                    <release>${jdk.version}</release>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <!--
-                    Workaround for compilation failure on Windows in hazelcast-sql module:
-                    Compilation failure
-                    org.immutables.value.internal.$processor$.$Processor threw com.sun.tools.javac.jvm.ClassReader$BadClassFile: bad class file: hazelcast\target\hazelcast-5.2-SNAPSHOT.jar(com/hazelcast/jet/package-info.class)
-                    class file contains wrong class: com\hazelcast\jet\package-info
-                    Please remove or make sure it appears in the correct subdirectory of the classpath.
-                    -->
-                    <excludes>
-                        <exclude>**/package-info.java</exclude>
-                    </excludes>
-                    <testExcludes>
-                        <exclude>**/package-info.java</exclude>
-                    </testExcludes>
-                    <compilerArgs>
-                        <arg>-Xlint:-deprecation,-removal</arg>
-                    </compilerArgs>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <executions>
                     <execution>
