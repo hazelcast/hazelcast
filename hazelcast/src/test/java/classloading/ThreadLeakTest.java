@@ -94,7 +94,7 @@ public class ThreadLeakTest {
 
     // Fixes https://github.com/hazelcast/hazelcast/issues/24484
     @Test
-    public void testThreadLeakWithAsynExecutor() {
+    public void testThreadLeakWithAsyncExecutor() {
         Set<Thread> oldThreads = getThreads();
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
 

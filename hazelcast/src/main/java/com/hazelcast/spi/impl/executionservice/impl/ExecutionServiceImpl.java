@@ -348,7 +348,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         try {
             // Some of our ExecutorService implementations (such as CachedExecutorServiceDelegate) do not support
             // the awaitTermination method. So we should handle the UnsupportedOperationException.
-            if (!executorService.awaitTermination(AWAIT_TIME, TimeUnit.MILLISECONDS)) {
+            if (!executorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS)) {
                 executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
