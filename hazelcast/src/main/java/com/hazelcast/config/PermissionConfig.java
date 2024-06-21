@@ -402,11 +402,9 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PermissionConfig)) {
+        if (!(o instanceof PermissionConfig that)) {
             return false;
         }
-
-        PermissionConfig that = (PermissionConfig) o;
 
         if (type != that.type) {
             return false;

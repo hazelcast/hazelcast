@@ -170,11 +170,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof RingbufferStoreConfig)) {
+        if (!(o instanceof RingbufferStoreConfig that)) {
             return false;
         }
-
-        RingbufferStoreConfig that = (RingbufferStoreConfig) o;
 
         return enabled == that.enabled
             && Objects.equals(storeImplementation, that.storeImplementation)

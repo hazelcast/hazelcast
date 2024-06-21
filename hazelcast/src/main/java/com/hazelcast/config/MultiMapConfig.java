@@ -426,11 +426,10 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MultiMapConfig)) {
+        if (!(o instanceof MultiMapConfig that)) {
             return false;
         }
 
-        MultiMapConfig that = (MultiMapConfig) o;
         if (binary != that.binary) {
             return false;
         }

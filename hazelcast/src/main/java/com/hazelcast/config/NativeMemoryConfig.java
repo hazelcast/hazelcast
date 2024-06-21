@@ -349,11 +349,9 @@ public class NativeMemoryConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof NativeMemoryConfig)) {
+        if (o == null || !(o instanceof NativeMemoryConfig that)) {
             return false;
         }
-
-        NativeMemoryConfig that = (NativeMemoryConfig) o;
 
         if (enabled != that.enabled) {
             return false;

@@ -52,7 +52,7 @@ import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
  * <p>
  * When a ReliableTopic starts, it will always start from the {@code tail+1}
  * item from the RingBuffer. It will not chew its way through all available
- * events but it will wait for the next item being published.
+ * events, but it will wait for the next item being published.
  * <p>
  * In the reliable topic, global order is always maintained, so all listeners
  * will observe exactly the same order of sequence of messages.
@@ -174,7 +174,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * <p>
      * In some cases it is desirable to set a specific executor. For example,
      * you may want to isolate a certain topic from other topics because it
-     * contains long running messages or very high priority messages.
+     * contains long-running messages or very high priority messages.
      * <p>
      * A single executor can be shared between multiple Reliable topics, although
      * it could take more time to process a message.
@@ -381,11 +381,9 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ReliableTopicConfig)) {
+        if (!(o instanceof ReliableTopicConfig that)) {
             return false;
         }
-
-        ReliableTopicConfig that = (ReliableTopicConfig) o;
 
         if (readBatchSize != that.readBatchSize) {
             return false;

@@ -37,7 +37,7 @@ public class WanSyncConfig implements IdentifiedDataSerializable {
      * Returns the strategy for checking consistency of data between source and
      * target cluster. Any inconsistency will not be reconciled, it will be
      * merely reported via the usual mechanisms (e.g. statistics, diagnostics).
-     * The user must initiate WAN sync to reconcile there differences. For the
+     * The user must initiate WAN sync to reconcile the differences. For the
      * check procedure to work properly, the target cluster should support the
      * chosen strategy.
      * <p>
@@ -52,7 +52,7 @@ public class WanSyncConfig implements IdentifiedDataSerializable {
      * Sets the strategy for checking consistency of data between source and
      * target cluster. Any inconsistency will not be reconciled, it will be
      * merely reported via the usual mechanisms (e.g. statistics, diagnostics).
-     * The user must initiate WAN sync to reconcile there differences. For the
+     * The user must initiate WAN sync to reconcile the differences. For the
      * check procedure to work properly, the target cluster should support the
      * chosen strategy.
      * <p>

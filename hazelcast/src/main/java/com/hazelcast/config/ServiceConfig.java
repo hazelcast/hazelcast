@@ -109,11 +109,9 @@ public class ServiceConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof ServiceConfig)) {
+        if (o == null || !(o instanceof ServiceConfig that)) {
             return false;
         }
-
-        ServiceConfig that = (ServiceConfig) o;
 
         if (enabled != that.enabled) {
             return false;

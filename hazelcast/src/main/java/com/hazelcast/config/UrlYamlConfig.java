@@ -91,7 +91,7 @@ public class UrlYamlConfig extends Config {
         checkTrue(url != null, "url can't be null");
         checkTrue(properties != null, "properties can't be null");
 
-        LOGGER.info("Configuring Hazelcast from '" + url.toString() + "'.");
+        LOGGER.info("Configuring Hazelcast from '" + url + "'.");
         InputStream in = url.openStream();
         new YamlConfigBuilder(in).setProperties(properties).build(this);
     }

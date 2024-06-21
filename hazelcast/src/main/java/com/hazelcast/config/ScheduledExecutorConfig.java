@@ -194,7 +194,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * The capacity represents the maximum number of tasks that a scheduler can have at any given point in time
      * per partition or per node according to the capacity policy.
      * If this is set to 0 then there is no limit
-     *
+     * <p>
      * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
      * the count is updated accordingly, however the rejection is not enforced.
      *
@@ -215,7 +215,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     /**
      * Set the capacity policy for the configured capacity value
-     *
+     * <p>
      * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
      * the count is updated accordingly, however the rejection is not enforced.
      *
@@ -377,10 +377,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
             return true;
         }
 
-        if (!(o instanceof ScheduledExecutorConfig)) {
+        if (!(o instanceof ScheduledExecutorConfig that)) {
             return false;
         }
-        ScheduledExecutorConfig that = (ScheduledExecutorConfig) o;
 
         if (durability != that.durability) {
             return false;
@@ -440,7 +439,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
          * This policy should not be used often.
          * Avoid using this policy with a small cluster: if the cluster is small it will
          * be hosting more partitions, and therefore tasks, than that of a larger cluster.
-         *
+         * <p>
          * This policy has no effect when scheduling is done using the OnMember APIs
          * eg. {@link IScheduledExecutorService#scheduleOnMember(Runnable, Member, long, TimeUnit)}
          */

@@ -133,8 +133,8 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     }
 
     /**
-     * Checks if multi-threaded processing of incoming messages is enabled or not.
-     * When disabled only one dedicated thread will handle all topic messages. Otherwise
+     * Checks if multithreaded processing of incoming messages is enabled or not.
+     * When disabled only one dedicated thread will handle all topic messages. Otherwise,
      * any thread from events thread pool can be used for message handling.
      *
      * @return {@code true} if multi-threading is enabled, {@code false} if disabled
@@ -145,15 +145,15 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
 
     /**
-     * Enable multi-threaded message handling. When enabled any thread from events
-     * thread pool can be used for incoming message processing. Otherwise only one
+     * Enable multithreaded message handling. When enabled any thread from events
+     * thread pool can be used for incoming message processing. Otherwise, only one
      * dedicated thread will be used to handle topic messages.
      * Note: it can be enabled only in case when global ordering is disabled. Moreover,
      * the local message ordering is not supported in this mode also. This means the
      * messages produced by local publisher can be processed by several threads with
      * no ordering guarantee.
      *
-     * @param multiThreadingEnabled set to {@code true} to enable multi-threaded message processing, {@code false} to disable
+     * @param multiThreadingEnabled set to {@code true} to enable multithreaded message processing, {@code false} to disable
      * @return the updated TopicConfig
      */
     public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
@@ -247,11 +247,9 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TopicConfig)) {
+        if (!(o instanceof TopicConfig that)) {
             return false;
         }
-
-        TopicConfig that = (TopicConfig) o;
 
         if (globalOrderingEnabled != that.globalOrderingEnabled) {
             return false;

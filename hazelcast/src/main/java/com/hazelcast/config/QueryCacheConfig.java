@@ -342,11 +342,11 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns {@code true} if coalescing is is enabled, otherwise returns {@code false}.
+     * Returns {@code true} if coalescing is enabled, otherwise returns {@code false}.
      * <p>
      * Default value is {@value #DEFAULT_COALESCE}.
      *
-     * @return {@code true} if coalescing is is enabled, otherwise returns {@code false}
+     * @return {@code true} if coalescing is enabled, otherwise returns {@code false}
      * @see #setCoalesce
      */
     public boolean isCoalesce() {
@@ -506,11 +506,9 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof QueryCacheConfig)) {
+        if (!(o instanceof QueryCacheConfig that)) {
             return false;
         }
-
-        QueryCacheConfig that = (QueryCacheConfig) o;
 
         if (batchSize != that.batchSize) {
             return false;

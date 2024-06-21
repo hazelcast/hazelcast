@@ -115,11 +115,9 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TieredStoreConfig)) {
+        if (!(o instanceof TieredStoreConfig that)) {
             return false;
         }
-
-        TieredStoreConfig that = (TieredStoreConfig) o;
 
         if (enabled != that.enabled) {
             return false;

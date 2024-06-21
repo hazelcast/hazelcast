@@ -84,7 +84,7 @@ public class PersistentMemoryConfig {
      * Returns the persistent memory directory configurations to be used
      * to store memory structures allocated by native memory manager.
      * <p>
-     * By default there are no configuration is set indicating that
+     * By default, there are no configuration is set indicating that
      * volatile RAM is being used.
      *
      * @return the list of the persistent memory directory configurations

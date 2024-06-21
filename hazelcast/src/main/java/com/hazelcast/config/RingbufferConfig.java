@@ -476,11 +476,10 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         if (this == o) {
             return true;
         }
-        if (!(o instanceof RingbufferConfig)) {
+        if (!(o instanceof RingbufferConfig that)) {
             return false;
         }
 
-        RingbufferConfig that = (RingbufferConfig) o;
         return capacity == that.capacity
                 && backupCount == that.backupCount
                 && asyncBackupCount == that.asyncBackupCount

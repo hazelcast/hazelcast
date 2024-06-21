@@ -69,7 +69,7 @@ public class UserCodeNamespacesConfig {
     /**
      * Adds the specified {@code namespaceConfig}, replacing any existing {@link UserCodeNamespaceConfig} with the same
      * {@link UserCodeNamespaceConfig#getName() name}.
-     *
+     * <p>
      * The {@code namespaceConfig} is not broadcast to cluster members.
      */
     protected void addNamespaceConfigLocally(UserCodeNamespaceConfig userCodeNamespaceConfig) {

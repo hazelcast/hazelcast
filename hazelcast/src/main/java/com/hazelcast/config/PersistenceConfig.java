@@ -169,7 +169,7 @@ public class PersistenceConfig {
      * Sets the number of Persistence store instances to create for one Hazelcast instance.
      */
     public PersistenceConfig setParallelism(int parallelism) {
-        checkPositive(parallelism, "Palallelism must be a positive integer");
+        checkPositive(parallelism, "Parallelism must be a positive integer");
         this.parallelism = parallelism;
         return this;
     }
@@ -220,22 +220,22 @@ public class PersistenceConfig {
     }
 
     /**
-     * Returns whether or not automatic removal of stale Persistence restart data is enabled.
+     * Returns whether automatic removal of stale Persistence restart data is enabled.
      *
-     * @return whether or not automatically removal of stale data is enabled
+     * @return whether automatically removal of stale data is enabled
      */
     public boolean isAutoRemoveStaleData() {
         return autoRemoveStaleData;
     }
 
     /**
-     * Sets whether or not automatic removal of stale Persistence restart data is enabled.
+     * Sets whether automatic removal of stale Persistence restart data is enabled.
      * <p>
      * When a member terminates or crashes when cluster state is {@link com.hazelcast.cluster.ClusterState#ACTIVE},
      * remaining members redistributes data among themselves and data persisted on terminated member's storage becomes
      * stale. That terminated member cannot rejoin the cluster without removing Persistence data.
      * When auto-removal of stale Persistence data is enabled, while restarting that member, Persistence data is
-     * automatically removed and it joins the cluster as a completely new member.
+     * automatically removed, and it joins the cluster as a completely new member.
      * Otherwise, Persistence data should be removed manually.
      *
      * @param autoRemoveStaleData {@code true} to enable auto-removal of stale data, {@code false} otherwise
@@ -316,11 +316,10 @@ public class PersistenceConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PersistenceConfig)) {
+        if (!(o instanceof PersistenceConfig that)) {
             return false;
         }
 
-        PersistenceConfig that = (PersistenceConfig) o;
         if (enabled != that.enabled) {
             return false;
         }

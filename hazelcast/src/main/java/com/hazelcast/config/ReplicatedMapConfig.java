@@ -326,11 +326,10 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ReplicatedMapConfig)) {
+        if (!(o instanceof ReplicatedMapConfig that)) {
             return false;
         }
 
-        ReplicatedMapConfig that = (ReplicatedMapConfig) o;
         if (asyncFillup != that.asyncFillup) {
             return false;
         }

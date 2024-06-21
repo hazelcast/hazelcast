@@ -33,7 +33,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Configuration for WAN replication. This configuration is referenced from a
  * IMap or ICache configuration to determine the receivers for the WAN events.
- * Each receiver is defined with a either a
+ * Each receiver is defined with an either a
  * {@link WanBatchPublisherConfig} or a {@link WanCustomPublisherConfig}.
  * <p>
  * A single WAN replication configuration may consist of several WAN publisher

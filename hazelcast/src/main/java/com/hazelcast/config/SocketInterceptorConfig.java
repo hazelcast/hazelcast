@@ -161,11 +161,9 @@ public class SocketInterceptorConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof SocketInterceptorConfig)) {
+        if (o == null || !(o instanceof SocketInterceptorConfig that)) {
             return false;
         }
-
-        SocketInterceptorConfig that = (SocketInterceptorConfig) o;
 
         return enabled == that.enabled
             && Objects.equals(implementation, that.implementation)

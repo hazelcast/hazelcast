@@ -196,10 +196,9 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof VaultSecureStoreConfig)) {
+        if (!(o instanceof VaultSecureStoreConfig other)) {
             return false;
         }
-        VaultSecureStoreConfig other = (VaultSecureStoreConfig) o;
         if (!Objects.equals(address, other.address)) {
             return false;
         }

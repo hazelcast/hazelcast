@@ -156,11 +156,9 @@ public class SerializerConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof SerializerConfig)) {
+        if (o == null || !(o instanceof SerializerConfig that)) {
             return false;
         }
-
-        SerializerConfig that = (SerializerConfig) o;
 
         return Objects.equals(implementation, that.implementation)
             && Objects.equals(className, that.className)

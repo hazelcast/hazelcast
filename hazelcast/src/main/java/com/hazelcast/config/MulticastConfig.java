@@ -279,11 +279,9 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof MulticastConfig)) {
+        if (o == null || !(o instanceof MulticastConfig that)) {
             return false;
         }
-
-        MulticastConfig that = (MulticastConfig) o;
 
         if (enabled != that.enabled) {
             return false;

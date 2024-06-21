@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * or even configure your own implementation for a WAN consumer. A custom
  * WAN consumer allows you to define custom processing logic and is usually
  * used in combination with a custom WAN publisher.
- * A custom consumer is optional and you may simply omit defining it which
+ * A custom consumer is optional, and you may simply omit defining it which
  * will cause the default processing logic to be used.
  * <p>
  * NOTE: EE only

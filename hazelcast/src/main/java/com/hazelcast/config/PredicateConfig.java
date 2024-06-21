@@ -87,7 +87,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
     /**
      * Sets the class name of the Predicate.
      * <p>
-     * If a implementation or sql was set, it will be removed.
+     * If an implementation or sql was set, it will be removed.
      *
      * @param className the name of the class of the Predicate
      * @return the updated PredicateConfig
@@ -160,11 +160,10 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PredicateConfig)) {
+        if (!(o instanceof PredicateConfig that)) {
             return false;
         }
 
-        PredicateConfig that = (PredicateConfig) o;
         if (!Objects.equals(className, that.className)) {
             return false;
         }

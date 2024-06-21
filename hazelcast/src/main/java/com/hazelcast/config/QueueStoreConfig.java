@@ -305,11 +305,10 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof QueueStoreConfig)) {
+        if (!(o instanceof QueueStoreConfig that)) {
             return false;
         }
 
-        QueueStoreConfig that = (QueueStoreConfig) o;
         return isEnabled() == that.isEnabled()
                 && Objects.equals(getProperties(), that.getProperties())
                 && Objects.equals(className, that.className)

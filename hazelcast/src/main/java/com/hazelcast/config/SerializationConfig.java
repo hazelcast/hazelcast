@@ -388,7 +388,7 @@ public class SerializationConfig {
 
     /**
      * Default value is {@code true} (enabled).
-     * When enabled, serialization system will check for class definitions error at start and throw an Serialization
+     * When enabled, serialization system will check for class definitions error at start and throw a Serialization
      * Exception with error definition.
      *
      * @return {@code true} if enabled, {@code false} otherwise
@@ -398,7 +398,7 @@ public class SerializationConfig {
     }
 
     /**
-     * When enabled, serialization system will check for class definitions error at start and throw an Serialization
+     * When enabled, serialization system will check for class definitions error at start and throw a Serialization
      * Exception with error definition.
      *
      * @param checkClassDefErrors set to {@code false} to disable

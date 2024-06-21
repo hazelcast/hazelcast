@@ -26,7 +26,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * With PartitionGroupConfig, you can control how primary and backup partitions are mapped to physical Members.
  * <p>
- * Hazelcast will always place partitions on different partition groups so as to provide redundancy.
+ * Hazelcast will always place partitions on different partition groups to provide redundancy.
  * There are seven partition group schemes defined in {@link MemberGroupType}: PER_MEMBER, HOST_AWARE
  * CUSTOM, ZONE_AWARE, NODE_AWARE, PLACEMENT_AWARE, SPI.
  * <p>
@@ -95,7 +95,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * machine that containers/pods run on. A node may be a virtual or physical machine.
  * The backups of the partitions are not placed on same group so this is very useful for ensuring partitions
  * are placed on different nodes without providing the IP addresses to the config ahead.
- *
+ * <p>
  * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="NODE_AWARE"/&gt;
@@ -108,7 +108,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * fault domain, etc.) of a VM in a zone. This scheme provides a finer granularity than ZONE_AWARE
  * for partition groups and is useful to provide good redundancy when running members within a
  * single availability zone.
- *
+ * <p>
  * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="PLACEMENT_AWARE"/&gt;
@@ -138,7 +138,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * </pre>
  *
  * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, this  member
- * may store store primary and backups.
+ * may store primary and backups.
  */
 public class PartitionGroupConfig {
 
@@ -288,11 +288,9 @@ public class PartitionGroupConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof PartitionGroupConfig)) {
+        if (o == null || !(o instanceof PartitionGroupConfig that)) {
             return false;
         }
-
-        PartitionGroupConfig that = (PartitionGroupConfig) o;
 
         if (enabled != that.enabled) {
             return false;

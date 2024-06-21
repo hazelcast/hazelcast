@@ -196,11 +196,9 @@ public class TcpIpConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof TcpIpConfig)) {
+        if (o == null || !(o instanceof TcpIpConfig that)) {
             return false;
         }
-
-        TcpIpConfig that = (TcpIpConfig) o;
 
         if (connectionTimeoutSeconds != that.connectionTimeoutSeconds) {
             return false;

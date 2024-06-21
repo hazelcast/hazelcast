@@ -48,6 +48,7 @@ public final class SSLConfig extends AbstractFactoryWithPropertiesConfig<SSLConf
      *
      * @param factoryClassName the name implementation class
      */
+    @Override
     public SSLConfig setFactoryClassName(@Nonnull String factoryClassName) {
         super.setFactoryClassName(factoryClassName);
         this.factoryImplementation = null;
