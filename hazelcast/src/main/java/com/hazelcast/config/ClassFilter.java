@@ -82,9 +82,7 @@ public class ClassFilter {
 
     public ClassFilter addClasses(String... names) {
         checkNotNull(names);
-        for (String name : names) {
-            classes.add(name);
-        }
+        Collections.addAll(classes, names);
         return this;
     }
 
@@ -97,9 +95,7 @@ public class ClassFilter {
 
     public ClassFilter addPackages(String... names) {
         checkNotNull(names);
-        for (String name : names) {
-            packages.add(name);
-        }
+        Collections.addAll(packages, names);
         return this;
     }
 
@@ -112,9 +108,7 @@ public class ClassFilter {
 
     public ClassFilter addPrefixes(String... names) {
         checkNotNull(names);
-        for (String name : names) {
-            prefixes.add(name);
-        }
+        Collections.addAll(prefixes, names);
         return this;
     }
 
