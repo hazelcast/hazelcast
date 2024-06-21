@@ -281,11 +281,9 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         if (this == o) {
             return true;
         }
-        if (!(o instanceof EvictionConfig)) {
+        if (!(o instanceof EvictionConfig that)) {
             return false;
         }
-
-        EvictionConfig that = (EvictionConfig) o;
 
         return size == that.size
                 && maxSizePolicy == that.maxSizePolicy

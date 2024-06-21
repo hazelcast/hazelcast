@@ -92,11 +92,9 @@ public class MemberGroupConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof MemberGroupConfig)) {
+        if (!(o instanceof MemberGroupConfig that)) {
             return false;
         }
-
-        MemberGroupConfig that = (MemberGroupConfig) o;
 
         return interfaces.equals(that.interfaces);
     }

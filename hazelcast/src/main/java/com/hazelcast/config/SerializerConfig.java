@@ -156,7 +156,7 @@ public class SerializerConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof SerializerConfig that)) {
+        if (!(o instanceof SerializerConfig that)) {
             return false;
         }
 

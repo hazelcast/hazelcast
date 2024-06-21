@@ -110,11 +110,9 @@ public class MetricsManagementCenterConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MetricsManagementCenterConfig)) {
+        if (!(o instanceof MetricsManagementCenterConfig that)) {
             return false;
         }
-
-        MetricsManagementCenterConfig that = (MetricsManagementCenterConfig) o;
 
         if (enabled != that.enabled) {
             return false;

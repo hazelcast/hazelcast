@@ -297,11 +297,10 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DurableExecutorConfig)) {
+        if (!(o instanceof DurableExecutorConfig that)) {
             return false;
         }
 
-        DurableExecutorConfig that = (DurableExecutorConfig) o;
         if (poolSize != that.poolSize) {
             return false;
         }

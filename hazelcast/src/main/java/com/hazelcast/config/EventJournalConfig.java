@@ -193,11 +193,10 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof EventJournalConfig)) {
+        if (!(o instanceof EventJournalConfig that)) {
             return false;
         }
 
-        EventJournalConfig that = (EventJournalConfig) o;
         if (enabled != that.enabled) {
             return false;
         }

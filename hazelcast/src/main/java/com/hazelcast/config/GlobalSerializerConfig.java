@@ -69,11 +69,9 @@ public class GlobalSerializerConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof GlobalSerializerConfig)) {
+        if (!(o instanceof GlobalSerializerConfig that)) {
             return false;
         }
-
-        GlobalSerializerConfig that = (GlobalSerializerConfig) o;
 
         if (overrideJavaSerialization != that.overrideJavaSerialization) {
             return false;

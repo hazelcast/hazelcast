@@ -86,11 +86,9 @@ public class InterfacesConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof InterfacesConfig)) {
+        if (!(o instanceof InterfacesConfig that)) {
             return false;
         }
-
-        InterfacesConfig that = (InterfacesConfig) o;
 
         if (enabled != that.enabled) {
             return false;

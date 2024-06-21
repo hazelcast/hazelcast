@@ -196,7 +196,7 @@ public class TcpIpConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof TcpIpConfig that)) {
+        if (!(o instanceof TcpIpConfig that)) {
             return false;
         }
 

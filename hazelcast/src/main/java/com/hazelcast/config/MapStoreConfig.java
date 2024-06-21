@@ -391,11 +391,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable, Versioned {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MapStoreConfig)) {
+        if (!(o instanceof MapStoreConfig that)) {
             return false;
         }
-
-        MapStoreConfig that = (MapStoreConfig) o;
 
         return enabled == that.enabled
                 && writeCoalescing == that.writeCoalescing

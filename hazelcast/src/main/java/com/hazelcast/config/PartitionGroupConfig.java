@@ -288,7 +288,7 @@ public class PartitionGroupConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof PartitionGroupConfig that)) {
+        if (!(o instanceof PartitionGroupConfig that)) {
             return false;
         }
 

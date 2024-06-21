@@ -73,11 +73,9 @@ public class MetricsJmxConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MetricsJmxConfig)) {
+        if (!(o instanceof MetricsJmxConfig that)) {
             return false;
         }
-
-        MetricsJmxConfig that = (MetricsJmxConfig) o;
 
         return enabled == that.enabled;
     }

@@ -349,7 +349,7 @@ public class NativeMemoryConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof NativeMemoryConfig that)) {
+        if (!(o instanceof NativeMemoryConfig that)) {
             return false;
         }
 

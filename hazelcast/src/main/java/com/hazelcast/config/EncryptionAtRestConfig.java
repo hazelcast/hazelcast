@@ -83,10 +83,9 @@ public class EncryptionAtRestConfig extends AbstractSymmetricEncryptionConfig<En
         if (this == o) {
             return true;
         }
-        if (!(o instanceof EncryptionAtRestConfig)) {
+        if (!(o instanceof EncryptionAtRestConfig other)) {
             return false;
         }
-        EncryptionAtRestConfig other = (EncryptionAtRestConfig) o;
         if (enabled != other.enabled) {
             return false;
         }

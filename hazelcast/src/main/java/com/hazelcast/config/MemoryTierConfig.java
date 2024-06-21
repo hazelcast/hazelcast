@@ -73,11 +73,9 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MemoryTierConfig)) {
+        if (!(o instanceof MemoryTierConfig that)) {
             return false;
         }
-
-        MemoryTierConfig that = (MemoryTierConfig) o;
 
         return Objects.equals(capacity, that.capacity);
     }

@@ -161,7 +161,7 @@ public class SocketInterceptorConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof SocketInterceptorConfig that)) {
+        if (!(o instanceof SocketInterceptorConfig that)) {
             return false;
         }
 

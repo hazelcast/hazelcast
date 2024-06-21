@@ -109,7 +109,7 @@ public class ServiceConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof ServiceConfig that)) {
+        if (!(o instanceof ServiceConfig that)) {
             return false;
         }
 

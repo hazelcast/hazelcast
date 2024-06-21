@@ -257,11 +257,9 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig, 
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ExecutorConfig)) {
+        if (!(o instanceof ExecutorConfig that)) {
             return false;
         }
-
-        ExecutorConfig that = (ExecutorConfig) o;
 
         if (poolSize != that.poolSize) {
             return false;

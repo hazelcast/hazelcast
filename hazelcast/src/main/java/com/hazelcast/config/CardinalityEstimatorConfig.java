@@ -270,11 +270,10 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CardinalityEstimatorConfig)) {
+        if (!(o instanceof CardinalityEstimatorConfig that)) {
             return false;
         }
 
-        CardinalityEstimatorConfig that = (CardinalityEstimatorConfig) o;
         if (backupCount != that.backupCount) {
             return false;
         }

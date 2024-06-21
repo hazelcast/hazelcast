@@ -112,11 +112,9 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CacheSimpleEntryListenerConfig)) {
+        if (!(o instanceof CacheSimpleEntryListenerConfig that)) {
             return false;
         }
-
-        CacheSimpleEntryListenerConfig that = (CacheSimpleEntryListenerConfig) o;
 
         if (oldValueRequired != that.oldValueRequired) {
             return false;

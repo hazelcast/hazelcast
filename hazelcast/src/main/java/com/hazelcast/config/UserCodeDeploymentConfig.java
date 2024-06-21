@@ -100,7 +100,7 @@ public class UserCodeDeploymentConfig {
      * only to members which have a member attribute {@code foo} set. Attribute value is ignored,
      * it can be of any type, a presence of the attribute is sufficient.
      *
-     * <p>This facility allows to have a fine grained control over classloading. You can e.g. start Hazelcast lite
+     * <p>This facility allows to have a fine-grained control over classloading. You can e.g. start Hazelcast lite
      * members dedicated for class-serving.
      *
      * <p>Example usage:
@@ -154,7 +154,7 @@ public class UserCodeDeploymentConfig {
      * <p>
      * For example, setting a blacklist prefix to {@code com.foo} will disable remote loading of all classes
      * from the {@code com.foo} package and its sub-packages.
-     * Eg. {@code com.foo.bar.MyClass} will be black-listed too.
+     * E.g. {@code com.foo.bar.MyClass} will be black-listed too.
      * <p>
      * The prefix is compared to the class name string. For example, when you set the blacklist to
      * {@code com.foo.Class}, the class {@code com.foo.ClassSuffix} will be blacklisted too.

@@ -56,11 +56,9 @@ public class MetricsConfig extends BaseMetricsConfig<MetricsConfig> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MetricsConfig)) {
+        if (!(o instanceof MetricsConfig that)) {
             return false;
         }
-
-        MetricsConfig that = (MetricsConfig) o;
 
         if (enabled != that.enabled) {
             return false;

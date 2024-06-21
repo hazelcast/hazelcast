@@ -194,10 +194,9 @@ public class JavaKeyStoreSecureStoreConfig
         if (this == o) {
             return true;
         }
-        if (!(o instanceof JavaKeyStoreSecureStoreConfig)) {
+        if (!(o instanceof JavaKeyStoreSecureStoreConfig other)) {
             return false;
         }
-        JavaKeyStoreSecureStoreConfig other = (JavaKeyStoreSecureStoreConfig) o;
         if (!Objects.equals(path, other.path)) {
             return false;
         }

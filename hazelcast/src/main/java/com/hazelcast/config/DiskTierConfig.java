@@ -115,11 +115,9 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DiskTierConfig)) {
+        if (!(o instanceof DiskTierConfig that)) {
             return false;
         }
-
-        DiskTierConfig that = (DiskTierConfig) o;
 
         if (enabled != that.enabled) {
             return false;

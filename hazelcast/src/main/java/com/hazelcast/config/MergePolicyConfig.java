@@ -141,11 +141,10 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MergePolicyConfig)) {
+        if (!(o instanceof MergePolicyConfig that)) {
             return false;
         }
 
-        MergePolicyConfig that = (MergePolicyConfig) o;
         if (batchSize != that.batchSize) {
             return false;
         }
