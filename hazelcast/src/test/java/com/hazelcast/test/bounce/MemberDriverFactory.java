@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Arrays;
-import java.util.function.Supplier;
 
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 
@@ -40,9 +39,10 @@ public class MemberDriverFactory implements DriverFactory {
                 Arrays.fill(drivers, rule.getSteadyMember());
                 return drivers;
             case MEMBER:
+            case LITE_MEMBER:
                 for (int i = 0; i < drivers.length; i++) {
-                    Supplier<Config> driverConfigSupplier = getDriverConfig(testConfiguration);
-                    drivers[i] = rule.getFactory().newHazelcastInstance(driverConfigSupplier.get());
+                    Config driverConfig = getDriverConfig(testConfiguration);
+                    drivers[i] = rule.getFactory().newHazelcastInstance(driverConfig);
                 }
                 waitAllForSafeState(drivers);
                 return drivers;
@@ -52,13 +52,13 @@ public class MemberDriverFactory implements DriverFactory {
         }
     }
 
-    private Supplier<Config> getDriverConfig(BounceTestConfiguration testConfiguration) {
+    private Config getDriverConfig(BounceTestConfiguration testConfiguration) {
         Config config = getConfig();
-        Supplier<Config> driverConfigSupplier = () -> config;
-        if (config == null) {
-            driverConfigSupplier = testConfiguration.getMemberConfigSupplier();
+        Config driverConfig = config != null ? config : testConfiguration.getMemberConfigSupplier().get();
+        if (testConfiguration.getDriverType() == BounceTestConfiguration.DriverType.LITE_MEMBER) {
+            driverConfig.setLiteMember(true);
         }
-        return driverConfigSupplier;
+        return driverConfig;
     }
 
     /**

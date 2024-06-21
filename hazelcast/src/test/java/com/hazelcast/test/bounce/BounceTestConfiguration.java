@@ -47,6 +47,11 @@ public class BounceTestConfiguration {
          */
         MEMBER,
         /**
+         * Setup separate lite members as test drivers. Lite members do not affect
+         * partition distribution.
+         */
+        LITE_MEMBER,
+        /**
          * Setup clients as test drivers
          */
         CLIENT,

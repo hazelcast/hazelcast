@@ -47,6 +47,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
+import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.LITE_MEMBER;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -279,11 +280,11 @@ public class BounceMemberRule implements TestRule {
     }
 
     public static Builder with(Config memberConfig) {
-        return with(() -> memberConfig);
+        return new Builder(() -> memberConfig, true);
     }
 
     public static Builder with(Supplier<Config> memberConfigSupplier) {
-        return new Builder(memberConfigSupplier);
+        return new Builder(memberConfigSupplier, false);
     }
 
     @Override
@@ -448,6 +449,7 @@ public class BounceMemberRule implements TestRule {
     public static class Builder {
 
         private final Supplier<Config> memberConfigSupplier;
+        private final boolean constantConfigSupplier;
 
         private int clusterSize = DEFAULT_CLUSTER_SIZE;
         private int driversCount = DEFAULT_DRIVERS_COUNT;
@@ -457,8 +459,9 @@ public class BounceMemberRule implements TestRule {
         private int bouncingIntervalSeconds = DEFAULT_BOUNCING_INTERVAL_SECONDS;
         private long maximumStaleSeconds = DEFAULT_MAXIMUM_STALE_SECONDS;
 
-        private Builder(Supplier<Config> memberConfigSupplier) {
+        private Builder(Supplier<Config> memberConfigSupplier, boolean constantConfigSupplier) {
             this.memberConfigSupplier = memberConfigSupplier;
+            this.constantConfigSupplier = constantConfigSupplier;
         }
 
         public BounceMemberRule build() {
@@ -471,11 +474,17 @@ public class BounceMemberRule implements TestRule {
                         : "Driver count can only be 1 when driver type is ALWAYS_UP_MEMBER but found " + driversCount;
             }
 
+            if (testDriverType == LITE_MEMBER) {
+                assert !constantConfigSupplier
+                        : "Usage of lite members as test drivers requires independent Config for each member";
+            }
+
             if (driverFactory == null) {
                 // choose a default driver factory
                 switch (testDriverType) {
                     case ALWAYS_UP_MEMBER:
                     case MEMBER:
+                    case LITE_MEMBER:
                         driverFactory = new MemberDriverFactory();
                         break;
                     case CLIENT:
