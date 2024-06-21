@@ -18,9 +18,10 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.FLOAT_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeFloat;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeFloat;
 
 public final class FloatArrayCodec {
 
@@ -30,18 +31,14 @@ public final class FloatArrayCodec {
     public static void encode(ClientMessage clientMessage, float[] array) {
         int itemCount = array.length;
         ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * FLOAT_SIZE_IN_BYTES]);
-        for (int i = 0; i < itemCount; i++) {
-            encodeFloat(frame.content, i * FLOAT_SIZE_IN_BYTES, array[i]);
-        }
+        ByteBuffer.wrap(frame.content).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().put(array);
         clientMessage.add(frame);
     }
 
     public static float[] decode(ClientMessage.Frame frame) {
         int itemCount = frame.content.length / FLOAT_SIZE_IN_BYTES;
         float[] result = new float[itemCount];
-        for (int i = 0; i < itemCount; i++) {
-            result[i] = decodeFloat(frame.content, i * FLOAT_SIZE_IN_BYTES);
-        }
+        ByteBuffer.wrap(frame.content).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(result);
         return result;
     }
 
