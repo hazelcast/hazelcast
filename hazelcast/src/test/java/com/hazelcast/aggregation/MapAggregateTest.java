@@ -33,10 +33,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -44,15 +42,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.query.Predicates.greaterThan;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapAggregateTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test(expected = NullPointerException.class)
     public void null_aggregator() {
@@ -71,7 +67,6 @@ public class MapAggregateTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("RedundantCast")
     public void pagingPredicate_fails() {
         getMapWithNodeCount(1).aggregate(new DoubleAverageAggregator<>(), Predicates.pagingPredicate(1));
     }
@@ -99,10 +94,10 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Double> map = getMapWithNodeCount(3);
         populateMap(map);
 
-        expected.expect(RuntimeException.class);
-        expected.expectMessage("accumulate() exception");
-
-        map.aggregate(new ExceptionThrowingAggregator<>(true, false, false));
+        ExceptionThrowingAggregator<Object> aggregator = new ExceptionThrowingAggregator<>(true, false, false);
+        assertThatThrownBy(() -> map.aggregate(aggregator))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("accumulate() exception");
     }
 
     @Test
@@ -110,10 +105,10 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Double> map = getMapWithNodeCount(3);
         populateMap(map);
 
-        expected.expect(RuntimeException.class);
-        expected.expectMessage("combine() exception");
-
-        map.aggregate(new ExceptionThrowingAggregator<>(false, true, false));
+        ExceptionThrowingAggregator<Object> aggregator = new ExceptionThrowingAggregator<>(false, true, false);
+        assertThatThrownBy(() -> map.aggregate(aggregator))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("combine() exception");
     }
 
     @Test
@@ -121,10 +116,10 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Double> map = getMapWithNodeCount(3);
         populateMap(map);
 
-        expected.expect(RuntimeException.class);
-        expected.expectMessage("aggregate() exception");
-
-        map.aggregate(new ExceptionThrowingAggregator<>(false, false, true));
+        ExceptionThrowingAggregator<Object> aggregator = new ExceptionThrowingAggregator<>(false, false, true);
+        assertThatThrownBy(() -> map.aggregate(aggregator))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("aggregate() exception");
     }
 
     private IMap<String, Double> populateMap(IMap<String, Double> map) {
@@ -189,9 +184,9 @@ public class MapAggregateTest extends HazelcastTestSupport {
 
     private static class ExceptionThrowingAggregator<I> implements Aggregator<I, Double> {
 
-        private boolean throwOnAccumulate;
-        private boolean throwOnCombine;
-        private boolean throwOnAggregate;
+        private final boolean throwOnAccumulate;
+        private final boolean throwOnCombine;
+        private final boolean throwOnAggregate;
 
         ExceptionThrowingAggregator(boolean throwOnAccumulate, boolean throwOnCombine, boolean throwOnAggregate) {
             this.throwOnAccumulate = throwOnAccumulate;

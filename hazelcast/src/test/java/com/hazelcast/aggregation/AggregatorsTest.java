@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -118,7 +119,7 @@ public class AggregatorsTest extends HazelcastTestSupport {
         // THEN
         assertThat(accumulatedCollection).containsExactlyInAnyOrderElementsOf(accumulatedArray);
         assertThat(accumulatedArray).containsExactlyInAnyOrderElementsOf(accumulatedCollection);
-        assertThat(accumulatedCollection).hasSize(0);
+        assertThat(accumulatedCollection).isEmpty();
     }
 
     private Car getCornerCaseCar(Long... values) {
@@ -131,9 +132,7 @@ public class AggregatorsTest extends HazelcastTestSupport {
         Wheel wheel = new Wheel();
         wheel.tiresA = values;
         wheel.tiresC = new ArrayList<>();
-        for (Long value : values) {
-            wheel.tiresC.add(value);
-        }
+        Collections.addAll(wheel.tiresC, values);
 
         Car car = new Car();
         car.wheelsA = new Wheel[]{wheel, emptyWheel, nullWheel};

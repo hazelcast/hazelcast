@@ -109,7 +109,7 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
         List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulated).hasSize(0);
+        assertThat(accumulated).isEmpty();
     }
 
     @Test
