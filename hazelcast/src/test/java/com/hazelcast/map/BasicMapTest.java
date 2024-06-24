@@ -135,19 +135,22 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         instances = factory.newInstances(() -> getConfig(), INSTANCE_COUNT);
+        assertClusterSizeEventually(INSTANCE_COUNT, instances);
     }
 
     @Override
     protected Config getConfig() {
         Config cfg = smallInstanceConfigWithoutJetAndMetrics();
-        cfg.getMapConfig("default")
+        MapConfig defaultConfig = cfg.getMapConfig("default")
                 .setStatisticsEnabled(statisticsEnabled)
                 .setPerEntryStatsEnabled(perEntryStatsEnabled);
+        defaultConfig.getMerkleTreeConfig().setEnabled(false);
 
         MapConfig mapConfig = new MapConfig("mapWithTTL*");
         mapConfig.setTimeToLiveSeconds(1);
         mapConfig.setStatisticsEnabled(statisticsEnabled);
         mapConfig.setPerEntryStatsEnabled(perEntryStatsEnabled);
+        mapConfig.getMerkleTreeConfig().setEnabled(false);
         cfg.addMapConfig(mapConfig);
 
         cfg.getMapConfig("testEntryView")

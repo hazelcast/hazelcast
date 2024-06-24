@@ -93,6 +93,7 @@ public class DataSerializableConventionsTest {
      * <li> their factory/class ID depend on the underlying data, such as QueryDataType.
      */
     private final Set<Class> classWhiteList;
+    private final Set<Class> hookWhiteList;
     private final Set<String> packageWhiteList;
     /**
      * Classes contained in these packages have serialization implemented in EE modules.
@@ -102,6 +103,7 @@ public class DataSerializableConventionsTest {
     public DataSerializableConventionsTest() {
         classWhiteList = Collections.unmodifiableSet(getWhitelistedClasses());
         packageWhiteList = Collections.unmodifiableSet(getWhitelistedPackageNames());
+        hookWhiteList = Collections.unmodifiableSet(getWhitelistedHookClasses());
         enterprisePackages = Collections.unmodifiableSet(getEnterprisePackages());
     }
 
@@ -268,6 +270,7 @@ public class DataSerializableConventionsTest {
         Set<DataSerializerHook> hooks = new HashSet<>();
         Map<Integer, DataSerializableFactory> factories = new HashMap<>();
 
+        hookClasses.removeAll(hookWhiteList);
         for (Class<? extends DataSerializerHook> hookClass : hookClasses) {
             DataSerializerHook dsHook = hookClass.newInstance();
             DataSerializableFactory factory = dsHook.createFactory();
@@ -432,5 +435,9 @@ public class DataSerializableConventionsTest {
             throw new RuntimeException(e);
         }
         return whiteList;
+    }
+
+    protected Set<Class> getWhitelistedHookClasses() {
+        return new HashSet<>();
     }
 }

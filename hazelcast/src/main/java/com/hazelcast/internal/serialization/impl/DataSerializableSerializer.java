@@ -69,6 +69,10 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                     .forEachRemaining(hooks::add);
 
             for (DataSerializerHook hook : hooks) {
+                if (!hook.shouldRegister()) {
+                    continue;
+                }
+
                 final DataSerializableFactory factory = hook.createFactory();
                 if (factory != null) {
                     register(hook.getFactoryId(), factory);

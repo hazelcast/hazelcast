@@ -19,6 +19,7 @@ com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook
 com.hazelcast.spi.impl.SpiDataSerializerHook
 com.hazelcast.internal.partition.impl.PartitionDataSerializerHook
 com.hazelcast.map.impl.MapDataSerializerHook
+com.hazelcast.map.impl.EECompatMapDataSerializerHook
 com.hazelcast.collection.impl.queue.QueueDataSerializerHook
 com.hazelcast.multimap.impl.MultiMapDataSerializerHook
 com.hazelcast.collection.impl.collection.CollectionDataSerializerHook

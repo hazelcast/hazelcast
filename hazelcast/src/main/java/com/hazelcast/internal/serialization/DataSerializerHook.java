@@ -38,4 +38,11 @@ public interface DataSerializerHook {
     default void afterFactoriesCreated(Map<Integer, DataSerializableFactory> factories) {
         // nothing by default
     }
+
+    /**
+     * Gives the hook a chance to decide for itself if it should get registered or not.
+     */
+    default boolean shouldRegister() {
+        return true;
+    }
 }

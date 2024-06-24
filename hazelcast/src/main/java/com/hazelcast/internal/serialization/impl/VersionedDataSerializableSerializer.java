@@ -79,6 +79,10 @@ class VersionedDataSerializableSerializer implements StreamSerializer<DataSerial
                     .forEachRemaining(hooks::add);
 
             for (DataSerializerHook hook : hooks) {
+                if (!hook.shouldRegister()) {
+                    continue;
+                }
+
                 final DataSerializableFactory factory = hook.createFactory();
                 if (factory != null) {
                     register(hook.getFactoryId(), factory);

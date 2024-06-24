@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * Propagates {@link PermissionConfig} changes to members.
  */
-public class UpdatePermissionConfigOperation extends AbstractManagementOperation implements AllowedDuringPassiveState {
+public class UpdatePermissionConfigOperation extends AbstractManagementOperation implements AllowedDuringPassiveState, Versioned {
 
     private Set<PermissionConfig> permissionConfigs;
 
