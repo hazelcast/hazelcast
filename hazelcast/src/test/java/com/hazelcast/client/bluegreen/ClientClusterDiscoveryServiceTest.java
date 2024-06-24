@@ -48,7 +48,7 @@ public class ClientClusterDiscoveryServiceTest {
                 null, null, null);
     }
 
-    private LifecycleService lifecycleService = new AlwaysUpLifecycleService();
+    private final LifecycleService lifecycleService = new AlwaysUpLifecycleService();
 
     @Test
     public void test_oneIteration() {
@@ -228,7 +228,7 @@ public class ClientClusterDiscoveryServiceTest {
         assertTrue(scannedClusters.contains(context));
     }
 
-    private class AlwaysUpLifecycleService implements LifecycleService {
+    private static class AlwaysUpLifecycleService implements LifecycleService {
 
         @Override
         public boolean isRunning() {

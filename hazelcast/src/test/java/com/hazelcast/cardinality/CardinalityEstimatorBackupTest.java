@@ -45,7 +45,7 @@ public class CardinalityEstimatorBackupTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance2;
 
-    private String name = randomName();
+    private final String name = randomName();
 
     private int partitionId;
 

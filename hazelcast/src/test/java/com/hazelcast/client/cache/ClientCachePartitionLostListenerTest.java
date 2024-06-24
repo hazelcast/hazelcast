@@ -80,10 +80,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         final Cache<Integer, String> cache = cacheManager.createCache(cacheName, cacheConfig);
         final ICache iCache = cache.unwrap(ICache.class);
 
-        iCache.addPartitionLostListener(new CachePartitionLostListener() {
-            @Override
-            public void partitionLost(CachePartitionLostEvent event) {
-            }
+        iCache.addPartitionLostListener(event -> {
         });
 
         assertRegistrationsSizeEventually(instance, cacheName, 1);

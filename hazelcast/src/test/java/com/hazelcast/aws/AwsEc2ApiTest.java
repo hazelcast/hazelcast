@@ -102,43 +102,44 @@ public class AwsEc2ApiTest {
             + "&Version=2016-11-15";
 
         //language=XML
-        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-            + "    <reservationSet>\n"
-            + "        <item>\n"
-            + "            <instancesSet>\n"
-            + "                <item>\n"
-            + "                    <privateIpAddress>10.0.1.25</privateIpAddress>\n"
-            + "                    <ipAddress>54.93.121.213</ipAddress>\n"
-            + "                    <tagSet>\n"
-            + "                        <item>\n"
-            + "                            <key>kubernetes.io/cluster/openshift-cluster</key>\n"
-            + "                            <value>openshift-cluster-eu-central-1</value>\n"
-            + "                        </item>\n"
-            + "                        <item>\n"
-            + "                            <key>Name</key>\n"
-            + "                            <value>* OpenShift Node 1</value>\n"
-            + "                        </item>\n"
-            + "                    </tagSet>\n"
-            + "                </item>\n"
-            + "            </instancesSet>\n"
-            + "        </item>\n"
-            + "        <item>\n"
-            + "            <instancesSet>\n"
-            + "                <item>\n"
-            + "                    <privateIpAddress>172.31.14.42</privateIpAddress>\n"
-            + "                    <ipAddress>18.196.228.248</ipAddress>\n"
-            + "                    <tagSet>\n"
-            + "                        <item>\n"
-            + "                            <key>Name</key>\n"
-            + "                            <value>rafal-ubuntu-2</value>\n"
-            + "                        </item>\n"
-            + "                    </tagSet>\n"
-            + "                </item>\n"
-            + "            </instancesSet>\n"
-            + "        </item>\n"
-            + "    </reservationSet>\n"
-            + "</DescribeInstancesResponse>";
+        String response = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <DescribeInstancesResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/">
+                    <reservationSet>
+                        <item>
+                            <instancesSet>
+                                <item>
+                                    <privateIpAddress>10.0.1.25</privateIpAddress>
+                                    <ipAddress>54.93.121.213</ipAddress>
+                                    <tagSet>
+                                        <item>
+                                            <key>kubernetes.io/cluster/openshift-cluster</key>
+                                            <value>openshift-cluster-eu-central-1</value>
+                                        </item>
+                                        <item>
+                                            <key>Name</key>
+                                            <value>* OpenShift Node 1</value>
+                                        </item>
+                                    </tagSet>
+                                </item>
+                            </instancesSet>
+                        </item>
+                        <item>
+                            <instancesSet>
+                                <item>
+                                    <privateIpAddress>172.31.14.42</privateIpAddress>
+                                    <ipAddress>18.196.228.248</ipAddress>
+                                    <tagSet>
+                                        <item>
+                                            <key>Name</key>
+                                            <value>rafal-ubuntu-2</value>
+                                        </item>
+                                    </tagSet>
+                                </item>
+                            </instancesSet>
+                        </item>
+                    </reservationSet>
+                </DescribeInstancesResponse>""";
 
         stubFor(get(urlEqualTo(requestUrl))
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
@@ -167,25 +168,26 @@ public class AwsEc2ApiTest {
             + "&Version=2016-11-15";
 
         //language=XML
-        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-            + "    <reservationSet>\n"
-            + "        <item>\n"
-            + "            <instancesSet>\n"
-            + "                <item>\n"
-            + "                    <privateIpAddress>10.0.1.25</privateIpAddress>\n"
-            + "                </item>\n"
-            + "            </instancesSet>\n"
-            + "        </item>\n"
-            + "        <item>\n"
-            + "            <instancesSet>\n"
-            + "                <item>\n"
-            + "                    <privateIpAddress>172.31.14.42</privateIpAddress>\n"
-            + "                </item>\n"
-            + "            </instancesSet>\n"
-            + "        </item>\n"
-            + "    </reservationSet>\n"
-            + "</DescribeInstancesResponse>";
+        String response = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <DescribeInstancesResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/">
+                    <reservationSet>
+                        <item>
+                            <instancesSet>
+                                <item>
+                                    <privateIpAddress>10.0.1.25</privateIpAddress>
+                                </item>
+                            </instancesSet>
+                        </item>
+                        <item>
+                            <instancesSet>
+                                <item>
+                                    <privateIpAddress>172.31.14.42</privateIpAddress>
+                                </item>
+                            </instancesSet>
+                        </item>
+                    </reservationSet>
+                </DescribeInstancesResponse>""";
 
         stubFor(get(urlEqualTo(requestUrl))
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
@@ -214,26 +216,27 @@ public class AwsEc2ApiTest {
             + "&Version=2016-11-15";
 
         //language=XML
-        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<DescribeNetworkInterfacesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-            + "    <requestId>21bc9f93-2196-4107-87a3-9e5b2b3f29d9</requestId>\n"
-            + "    <networkInterfaceSet>\n"
-            + "        <item>\n"
-            + "            <availabilityZone>eu-central-1a</availabilityZone>\n"
-            + "            <privateIpAddress>10.0.1.207</privateIpAddress>\n"
-            + "            <association>\n"
-            + "                <publicIp>54.93.217.194</publicIp>\n"
-            + "            </association>\n"
-            + "        </item>\n"
-            + "        <item>\n"
-            + "            <availabilityZone>eu-central-1a</availabilityZone>\n"
-            + "            <privateIpAddress>10.0.1.82</privateIpAddress>\n"
-            + "            <association>\n"
-            + "                <publicIp>35.156.192.128</publicIp>\n"
-            + "            </association>\n"
-            + "        </item>\n"
-            + "    </networkInterfaceSet>\n"
-            + "</DescribeNetworkInterfacesResponse>";
+        String response = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <DescribeNetworkInterfacesResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/">
+                    <requestId>21bc9f93-2196-4107-87a3-9e5b2b3f29d9</requestId>
+                    <networkInterfaceSet>
+                        <item>
+                            <availabilityZone>eu-central-1a</availabilityZone>
+                            <privateIpAddress>10.0.1.207</privateIpAddress>
+                            <association>
+                                <publicIp>54.93.217.194</publicIp>
+                            </association>
+                        </item>
+                        <item>
+                            <availabilityZone>eu-central-1a</availabilityZone>
+                            <privateIpAddress>10.0.1.82</privateIpAddress>
+                            <association>
+                                <publicIp>35.156.192.128</publicIp>
+                            </association>
+                        </item>
+                    </networkInterfaceSet>
+                </DescribeNetworkInterfacesResponse>""";
 
         stubFor(get(urlEqualTo(requestUrl))
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
@@ -310,17 +313,18 @@ public class AwsEc2ApiTest {
             + "&Version=2016-11-15";
 
         //language=XML
-        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<DescribeNetworkInterfacesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-            + "    <networkInterfaceSet>\n"
-            + "        <item>\n"
-            + "            <privateIpAddress>10.0.1.207</privateIpAddress>\n"
-            + "        </item>\n"
-            + "        <item>\n"
-            + "            <privateIpAddress>10.0.1.82</privateIpAddress>\n"
-            + "        </item>\n"
-            + "    </networkInterfaceSet>\n"
-            + "</DescribeNetworkInterfacesResponse>";
+        String response = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <DescribeNetworkInterfacesResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/">
+                    <networkInterfaceSet>
+                        <item>
+                            <privateIpAddress>10.0.1.207</privateIpAddress>
+                        </item>
+                        <item>
+                            <privateIpAddress>10.0.1.82</privateIpAddress>
+                        </item>
+                    </networkInterfaceSet>
+                </DescribeNetworkInterfacesResponse>""";
 
         stubFor(get(urlEqualTo(requestUrl))
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))

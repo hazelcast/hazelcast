@@ -50,8 +50,8 @@ public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
     private final int EXTRA_COUNT = 10000;
     private final int TOTAL_COUNT = INITIAL_COUNT + (brains().length * EXTRA_COUNT);
 
-    private String estimatorNameA = randomMapName("estimatorA-");
-    private String estimatorNameB = randomMapName("estimatorB-");
+    private final String estimatorNameA = randomMapName("estimatorA-");
+    private final String estimatorNameB = randomMapName("estimatorB-");
     private CardinalityEstimator estimatorA1;
     private CardinalityEstimator estimatorA2;
     private CardinalityEstimator estimatorB1;
