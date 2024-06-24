@@ -79,7 +79,7 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * When backoff reaches this upper bound, it does not increase any more.
+     * When backoff reaches this upper bound, it does not increase anymore.
      *
      * @return maxBackoffMillis
      */
@@ -88,7 +88,7 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * When backoff reaches this upper bound, it does not increase any more.
+     * When backoff reaches this upper bound, it does not increase anymore.
      *
      * @param maxBackoffMillis upper bound on backoff
      * @return updated ConnectionRetryConfig
@@ -120,7 +120,7 @@ public class ConnectionRetryConfig {
 
     /**
      * Timeout value in milliseconds for the client to give up to connect to the current cluster
-     * Depending on FailoverConfig, a client can shutdown or start trying on alternative clusters
+     * Depending on FailoverConfig, a client can shut down or start trying on alternative clusters
      * after reaching the timeout. If it is equal to {@code -1}, which is the default value,
      * the client will not stop trying to connect to the cluster. If the failover client is used,
      * for the default value, the client will start trying to connect alternative clusters after
@@ -135,7 +135,7 @@ public class ConnectionRetryConfig {
 
     /**
      * @param clusterConnectTimeoutMillis timeout in milliseconds for the client to give up to connect to the current cluster
-     *                                    Depending on FailoverConfig, a client can shutdown or start trying on alternative
+     *                                    Depending on FailoverConfig, a client can shut down or start trying on alternative
      *                                    clusters after reaching the timeout. If set to {@code -1}, which is the default
      *                                    value, the client will not stop trying to connect to the cluster. If the
      *                                    failover client is used, for the default value, the client will start trying

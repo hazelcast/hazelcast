@@ -168,7 +168,7 @@ public class ClientNetworkConfig {
      * <p>
      * If {@code smartRouting == false}, all operations will be routed to single member. Operations will need two
      * hops if the chosen member is not owner of the key. Client will have only single open connection. Useful, if
-     * there are many clients and we want to avoid each of them connecting to each member.
+     * there are many clients, and we want to avoid each of them connecting to each member.
      * <p>
      * Default value is {@code true}.
      *
@@ -474,7 +474,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Set outbond ports
+     * Set outbound ports
      *
      * @param outboundPorts outbound ports
      * @return ClientNetworkConfig

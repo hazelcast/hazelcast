@@ -192,7 +192,7 @@ public class ClientConfig {
      * <p>
      * It tries to load Hazelcast Client configuration from a list of well-known locations,
      * and then applies overrides found in environment variables/system properties
-     *
+     * <p>
      * When no location contains Hazelcast Client configuration then it returns default.
      * <p>
      * Note that the same mechanism is used when calling
@@ -232,7 +232,7 @@ public class ClientConfig {
     /**
      * Sets the pattern matcher which is used to match item names to
      * configuration objects.
-     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     * By default, the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @param configPatternMatcher the pattern matcher
      * @return this configuration
@@ -247,7 +247,7 @@ public class ClientConfig {
     /**
      * Returns the pattern matcher which is used to match item names to
      * configuration objects.
-     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     * By default, the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @return the pattern matcher
      */
@@ -497,7 +497,7 @@ public class ClientConfig {
      * Returns the {@link ClientFlakeIdGeneratorConfig} for the given name, creating
      * one if necessary and adding it to the collection of known configurations.
      * <p>
-     * The configuration is found by matching the the configuration name
+     * The configuration is found by matching the configuration name
      * pattern to the provided {@code name} without the partition qualifier
      * (the part of the name after {@code '@'}).
      * If no configuration matches, it will create one by cloning the

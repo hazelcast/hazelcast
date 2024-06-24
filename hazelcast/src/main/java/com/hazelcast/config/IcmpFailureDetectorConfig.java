@@ -236,11 +236,9 @@ public class IcmpFailureDetectorConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof IcmpFailureDetectorConfig)) {
+        if (!(o instanceof IcmpFailureDetectorConfig that)) {
             return false;
         }
-
-        IcmpFailureDetectorConfig that = (IcmpFailureDetectorConfig) o;
 
         if (timeoutMilliseconds != that.timeoutMilliseconds) {
             return false;

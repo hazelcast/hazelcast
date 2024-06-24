@@ -40,11 +40,9 @@ public class ClientMetricsConfig extends BaseMetricsConfig<ClientMetricsConfig> 
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ClientMetricsConfig)) {
+        if (!(o instanceof ClientMetricsConfig that)) {
             return false;
         }
-
-        ClientMetricsConfig that = (ClientMetricsConfig) o;
 
         if (enabled != that.enabled) {
             return false;

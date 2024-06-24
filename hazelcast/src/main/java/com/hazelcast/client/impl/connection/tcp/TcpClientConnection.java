@@ -275,11 +275,10 @@ public class TcpClientConnection implements ClientConnection {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TcpClientConnection)) {
+        if (!(o instanceof TcpClientConnection that)) {
             return false;
         }
 
-        TcpClientConnection that = (TcpClientConnection) o;
         return connectionId == that.connectionId;
     }
 

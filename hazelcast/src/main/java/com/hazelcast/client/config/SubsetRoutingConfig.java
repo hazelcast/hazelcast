@@ -21,7 +21,7 @@ import com.hazelcast.client.UnsupportedClusterVersionException;
 
 /**
  * Config for routing client connections to subset of cluster members.
- *
+ * <p>
  * This feature requires the cluster members to be Enterprise nodes. If the cluster is not
  * licensed appropriately, the client will not be able to connect to the cluster,
  * failing with an {@link UnsupportedRoutingModeException}

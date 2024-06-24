@@ -82,7 +82,7 @@ public class ClientUserCodeDeploymentConfig {
     }
 
     /**
-     * @param classNames names of the classes that will be send to cluster
+     * @param classNames names of the classes that will be sent to cluster
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig setClassNames(List<String> classNames) {
@@ -98,7 +98,7 @@ public class ClientUserCodeDeploymentConfig {
      * 2. as URL,
      * 3. and in classpath.
      *
-     * @param jarPaths add list of jarPaths that will be send to clusters
+     * @param jarPaths add list of jarPaths that will be sent to clusters
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig setJarPaths(List<String> jarPaths) {
@@ -109,7 +109,7 @@ public class ClientUserCodeDeploymentConfig {
     }
 
     /**
-     * @param className name of the class that will be send to cluster
+     * @param className name of the class that will be sent to cluster
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig addClass(String className) {
@@ -118,10 +118,10 @@ public class ClientUserCodeDeploymentConfig {
     }
 
     /**
-     * @param clazz class that will be send to cluster
+     * @param clazz class that will be sent to cluster
      * @return this for chaining
      */
-    public ClientUserCodeDeploymentConfig addClass(Class clazz) {
+    public ClientUserCodeDeploymentConfig addClass(Class<?> clazz) {
         classNames.add(clazz.getName());
         return this;
     }
@@ -132,7 +132,7 @@ public class ClientUserCodeDeploymentConfig {
      * 2. as URL,
      * 3. and in classpath.
      *
-     * @param jarPath path of the jar that will be send to clusters
+     * @param jarPath path of the jar that will be sent to clusters
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig addJar(String jarPath) {
@@ -141,7 +141,7 @@ public class ClientUserCodeDeploymentConfig {
     }
 
     /**
-     * @param jarFile path of the jar that will be send to clusters
+     * @param jarFile path of the jar that will be sent to clusters
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig addJar(File jarFile) {

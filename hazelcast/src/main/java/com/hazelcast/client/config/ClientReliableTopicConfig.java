@@ -114,7 +114,7 @@ public class ClientReliableTopicConfig implements NamedConfig {
 
     /**
      * Gets the Executor that is going to process the events.
-     *
+     * <p>
      * If no Executor is selected, then the {@link ExecutionService#ASYNC_EXECUTOR} is used.
      *
      * @return the Executor used to process events.
@@ -126,10 +126,10 @@ public class ClientReliableTopicConfig implements NamedConfig {
 
     /**
      * Sets the Executor that is going to process the event.
-     *
+     * <p>
      * In some cases it is desirable to set a specific Executor. For example, you may want to isolate a certain topic from other
-     * topics because it contains long running messages or very high priority messages.
-     *
+     * topics because it contains long-running messages or very high priority messages.
+     * <p>
      * A single Executor can be shared between multiple Reliable topics, although it could take more time to process a message.
      * If a single Executor is not shared with other reliable topics, then the Executor only needs to have a single thread.
      *
@@ -153,24 +153,24 @@ public class ClientReliableTopicConfig implements NamedConfig {
 
     /**
      * Sets the read batch size.
-     *
+     * <p>
      * The ReliableTopic tries to read a batch of messages from the ringbuffer. It will get at least one, but
      * if there are more available, then it will try to get more to increase throughput. The minimal read
      * batch size can be influenced using the read batch size.
-     *
+     * <p>
      * Apart from influencing the number of messages to download, the readBatchSize also determines how many
      * messages will be processed by the thread running the MessageListener before it returns back to the pool
      * to look for other MessageListeners that need to be processed. The problem with returning to the pool and
      * looking for new work is that interacting with an Executor is quite expensive due to contention on the
      * work-queue. The more work that can be done without retuning to the pool, the smaller the overhead.
-     *
+     * <p>
      * If the readBatchSize is 10 and there are 50 messages available, 10 items are retrieved and processed
      * consecutively before the thread goes back to the pool and helps out with the processing of other messages.
-     *
+     * <p>
      * If the readBatchSize is 10 and there are 2 items available, 2 items are retrieved and processed consecutively.
-     *
-     * If the readBatchSize is an issue because a thread will be busy too long with processing a single MessageListener
-     * and it can't help out other MessageListeners, increase the size of the threadpool so the other MessageListeners don't
+     * <p>
+     * If the readBatchSize is an issue because a thread will be busy too long with processing a single MessageListener,
+     * and it can't help out other MessageListeners, increase the size of the thread pool so the other MessageListeners don't
      * need to wait for a thread, but can be processed in parallel.
      *
      * @param readBatchSize the maximum number of items to read in a batch.

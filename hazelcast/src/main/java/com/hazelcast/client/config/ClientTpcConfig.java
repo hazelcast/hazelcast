@@ -96,7 +96,7 @@ public final class ClientTpcConfig {
      * </ol>
      * Increasing the number of connections leads to more packets with a smaller
      * payload and this can lead to a performance penalty. Also in cloud environments
-     * e.g. AWS there can be a packets per second limit (pps) and it pretty easy
+     * e.g. AWS there can be a packets per second limit (pps) and it is pretty easy
      * to run into this limit if an equal number of connections is created as
      * TPC ports on the server and a lot of small interactions are done e.g. a
      * map.get with small payloads.
