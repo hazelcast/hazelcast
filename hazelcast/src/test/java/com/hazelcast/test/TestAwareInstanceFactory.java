@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -163,7 +165,8 @@ public class TestAwareInstanceFactory {
                     hz.getLifecycleService().terminate();
                 } catch (Exception e) {
                     // just log it - it can be already down for instance
-                    e.printStackTrace();
+                    Logger.getLogger(getClass().getName())
+                            .log(Level.FINEST, "Shutdown failed. The instance might have already been terminated.", e);
                 }
             }
         }
