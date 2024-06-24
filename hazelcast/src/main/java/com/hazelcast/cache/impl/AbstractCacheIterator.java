@@ -189,7 +189,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
         if (result != null) {
             if (prefetchValues) {
                 Map.Entry<Data, Data> entry = (Map.Entry<Data, Data>) result.get(index);
-                return (V) toObject(entry.getValue());
+                return toObject(entry.getValue());
             } else {
                 return cache.get(key);
             }

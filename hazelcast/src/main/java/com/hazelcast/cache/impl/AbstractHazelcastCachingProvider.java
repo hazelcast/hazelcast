@@ -301,7 +301,7 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
      * if not found, creates a new {@link HazelcastInstance} with the default
      * configuration and given {@code instanceName}.
      *
-     * @param instanceName name to lookup an existing {@link HazelcastInstance}
+     * @param instanceName name to look up an existing {@link HazelcastInstance}
      *                     or to create a new one
      * @return a {@link HazelcastInstance} with the given {@code instanceName}
      */

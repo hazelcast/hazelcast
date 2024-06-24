@@ -42,7 +42,7 @@ public abstract class AbstractICacheEvent extends EventObject implements ICacheE
      * @param eventType The event type as an enum {@link EntryEventType} integer.
      * @throws IllegalArgumentException if source is null.
      */
-    public AbstractICacheEvent(Object source, Member member, int eventType) {
+    protected AbstractICacheEvent(Object source, Member member, int eventType) {
         super(source);
         this.name = (String) source;
         this.member = member;

@@ -117,7 +117,7 @@ public abstract class InvocationBuilder {
      * <p>
      * Defaults to true.
      *
-     * @return true if the the result is automatically deserialized, false otherwise.
+     * @return true if the result is automatically deserialized, false otherwise.
      */
     public boolean isResultDeserialized() {
         return resultDeserialized;
@@ -270,7 +270,7 @@ public abstract class InvocationBuilder {
      * Sets a callback that will respond to the "task done" event for the invocation this builder is about to create.
      * It occurs upon the release of computational and other resources used by the task underlying the invocation.
      * The user loses interest in the computation as soon as the invocation's future is canceled, but our
-     * internal concern is keeping track of resource usage. Therefore we need a lifecycle event independent
+     * internal concern is keeping track of resource usage. Therefore, we need a lifecycle event independent
      * of the regular future completion/cancellation.
      */
     public InvocationBuilder setDoneCallback(Runnable doneCallback) {

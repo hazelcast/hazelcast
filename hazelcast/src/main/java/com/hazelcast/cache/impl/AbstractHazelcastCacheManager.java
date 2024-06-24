@@ -82,7 +82,7 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
     private final String cacheNamePrefix;
     private final UUID lifecycleListenerRegistrationId;
 
-    public AbstractHazelcastCacheManager(CachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
+    protected AbstractHazelcastCacheManager(CachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                          URI uri, ClassLoader classLoader, Properties properties) {
         checkNotNull(cachingProvider, "CachingProvider missing");
         this.cachingProvider = cachingProvider;

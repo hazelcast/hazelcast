@@ -42,7 +42,7 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
     protected AbstractCacheRecord() {
     }
 
-    public AbstractCacheRecord(long creationTime, long expirationTime) {
+    protected AbstractCacheRecord(long creationTime, long expirationTime) {
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
     }

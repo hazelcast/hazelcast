@@ -29,10 +29,10 @@ public abstract class BaseTxnQueueOperation extends QueueBackupAwareOperation
 
     private long itemId;
 
-    public BaseTxnQueueOperation() {
+    protected BaseTxnQueueOperation() {
     }
 
-    public BaseTxnQueueOperation(String name, long itemId) {
+    protected BaseTxnQueueOperation(String name, long itemId) {
         super(name);
         this.itemId = itemId;
     }

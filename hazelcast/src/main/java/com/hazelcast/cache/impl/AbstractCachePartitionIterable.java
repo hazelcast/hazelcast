@@ -26,7 +26,7 @@ public abstract class AbstractCachePartitionIterable<K, V> implements Iterable<C
     protected final int fetchSize;
     protected final boolean prefetchValues;
 
-    public AbstractCachePartitionIterable(int fetchSize, boolean prefetchValues) {
+    protected AbstractCachePartitionIterable(int fetchSize, boolean prefetchValues) {
         this.fetchSize = fetchSize;
         this.prefetchValues = prefetchValues;
     }
