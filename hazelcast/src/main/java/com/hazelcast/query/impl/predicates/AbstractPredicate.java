@@ -180,11 +180,10 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof AbstractPredicate)) {
+        if (!(o instanceof AbstractPredicate<?, ?> that)) {
             return false;
         }
 
-        AbstractPredicate<?, ?> that = (AbstractPredicate<?, ?>) o;
         if (!that.canEqual(this)) {
             return false;
         }

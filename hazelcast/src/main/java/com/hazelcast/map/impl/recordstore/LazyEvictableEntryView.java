@@ -136,11 +136,9 @@ public class LazyEvictableEntryView<R extends Record>
             return true;
         }
 
-        if (!(o instanceof EntryView)) {
+        if (!(o instanceof EntryView that)) {
             return false;
         }
-
-        EntryView that = (EntryView) o;
 
         return getKey().equals(that.getKey())
                 && getValue().equals(that.getValue())

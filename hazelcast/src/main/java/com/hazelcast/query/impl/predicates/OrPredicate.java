@@ -188,7 +188,7 @@ public final class OrPredicate
 
     /**
      * Visitable predicates are treated as effectively immutable, therefore callers should not make any changes to
-     * the array passed as argument after is has been set.
+     * the array passed as argument after it has been set.
      * @param predicates    the array of sub-predicates for this {@code Or} operator. It is not safe to make any changes to
      *                      this array after it has been set.
      */
@@ -207,11 +207,10 @@ public final class OrPredicate
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof OrPredicate)) {
+        if (!(o instanceof OrPredicate that)) {
             return false;
         }
 
-        OrPredicate that = (OrPredicate) o;
         return Arrays.equals(predicates, that.predicates);
     }
 

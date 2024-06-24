@@ -373,11 +373,9 @@ public class SqlPredicate
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SqlPredicate)) {
+        if (!(o instanceof SqlPredicate that)) {
             return false;
         }
-
-        SqlPredicate that = (SqlPredicate) o;
 
         return sql.equals(that.sql);
     }

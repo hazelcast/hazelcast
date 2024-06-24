@@ -31,7 +31,7 @@ import java.util.Map;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 /**
- * Predicate version of `instaceof` operator from Java.
+ * Predicate version of `instanceof` operator from Java.
  *
  */
 @BinaryInterface
@@ -94,11 +94,10 @@ public class InstanceOfPredicate
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof InstanceOfPredicate)) {
+        if (!(o instanceof InstanceOfPredicate that)) {
             return false;
         }
 
-        InstanceOfPredicate that = (InstanceOfPredicate) o;
         return klass != null ? klass.equals(that.klass) : that.klass == null;
     }
 

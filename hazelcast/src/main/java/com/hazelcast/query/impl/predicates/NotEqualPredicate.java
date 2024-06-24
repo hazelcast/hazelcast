@@ -100,11 +100,10 @@ public class NotEqualPredicate extends AbstractPredicate implements NegatablePre
         if (!super.equals(o)) {
             return false;
         }
-        if (!(o instanceof NotEqualPredicate)) {
+        if (!(o instanceof NotEqualPredicate that)) {
             return false;
         }
 
-        NotEqualPredicate that = (NotEqualPredicate) o;
         if (!that.canEqual(this)) {
             return false;
         }

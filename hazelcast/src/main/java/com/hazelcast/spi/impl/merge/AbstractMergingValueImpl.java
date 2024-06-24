@@ -88,11 +88,10 @@ public abstract class AbstractMergingValueImpl<V, T extends AbstractMergingValue
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AbstractMergingValueImpl)) {
+        if (!(o instanceof AbstractMergingValueImpl<?, ?> that)) {
             return false;
         }
 
-        AbstractMergingValueImpl<?, ?> that = (AbstractMergingValueImpl<?, ?>) o;
         return value != null ? value.equals(that.value) : that.value == null;
     }
 

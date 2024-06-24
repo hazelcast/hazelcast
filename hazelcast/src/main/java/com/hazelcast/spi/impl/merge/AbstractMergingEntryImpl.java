@@ -107,11 +107,10 @@ public abstract class AbstractMergingEntryImpl<K, V, T extends AbstractMergingEn
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AbstractMergingEntryImpl)) {
+        if (!(o instanceof AbstractMergingEntryImpl<?, ?, ?> that)) {
             return false;
         }
 
-        AbstractMergingEntryImpl<?, ?, ?> that = (AbstractMergingEntryImpl<?, ?, ?>) o;
         if (!Objects.equals(key, that.key)) {
             return false;
         }

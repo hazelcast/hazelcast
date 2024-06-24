@@ -217,16 +217,16 @@ public class HotRestartPersistenceConfig {
     }
 
     /**
-     * Returns whether or not automatically removal of stale Hot Restart data is enabled.
+     * Returns whether automatic removal of stale Hot Restart data is enabled.
      *
-     * @return whether or not automatically removal of stale data is enabled
+     * @return whether automatic removal of stale data is enabled
      */
     public boolean isAutoRemoveStaleData() {
         return autoRemoveStaleData;
     }
 
     /**
-     * Sets whether or not automatically removal of stale Hot Restart data is enabled.
+     * Sets whether automatic removal of stale Hot Restart data is enabled.
      * <p>
      * When a member terminates or crashes when cluster state is {@link com.hazelcast.cluster.ClusterState#ACTIVE},
      * remaining members redistributes data among themselves and data persisted on terminated member's storage becomes
@@ -268,11 +268,10 @@ public class HotRestartPersistenceConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HotRestartPersistenceConfig)) {
+        if (!(o instanceof HotRestartPersistenceConfig that)) {
             return false;
         }
 
-        HotRestartPersistenceConfig that = (HotRestartPersistenceConfig) o;
         if (enabled != that.enabled) {
             return false;
         }

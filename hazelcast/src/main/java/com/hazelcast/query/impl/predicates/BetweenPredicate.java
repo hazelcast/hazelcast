@@ -111,11 +111,10 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
         if (!super.equals(o)) {
             return false;
         }
-        if (!(o instanceof BetweenPredicate)) {
+        if (!(o instanceof BetweenPredicate that)) {
             return false;
         }
 
-        BetweenPredicate that = (BetweenPredicate) o;
         if (!that.canEqual(this)) {
             return false;
         }

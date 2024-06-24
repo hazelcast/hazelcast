@@ -144,11 +144,10 @@ public class BatchEventData implements Sequenced, EventData {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof BatchEventData)) {
+        if (!(o instanceof BatchEventData that)) {
             return false;
         }
 
-        BatchEventData that = (BatchEventData) o;
         return events != null ? events.equals(that.events) : that.events == null;
     }
 

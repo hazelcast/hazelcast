@@ -148,11 +148,10 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
         if (!super.equals(o)) {
             return false;
         }
-        if (!(o instanceof LikePredicate)) {
+        if (!(o instanceof LikePredicate that)) {
             return false;
         }
 
-        LikePredicate that = (LikePredicate) o;
         if (!that.canEqual(this)) {
             return false;
         }

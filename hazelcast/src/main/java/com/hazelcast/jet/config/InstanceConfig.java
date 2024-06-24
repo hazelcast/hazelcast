@@ -242,11 +242,9 @@ public class InstanceConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof InstanceConfig)) {
+        if (!(o instanceof InstanceConfig that)) {
             return false;
         }
-
-        InstanceConfig that = (InstanceConfig) o;
 
         if (cooperativeThreadCount != that.cooperativeThreadCount) {
             return false;

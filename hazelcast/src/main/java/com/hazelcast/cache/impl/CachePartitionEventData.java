@@ -76,14 +76,13 @@ public class CachePartitionEventData extends CacheEventDataImpl implements Cache
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CachePartitionEventData)) {
+        if (!(o instanceof CachePartitionEventData that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
 
-        CachePartitionEventData that = (CachePartitionEventData) o;
         if (partitionId != that.partitionId) {
             return false;
         }

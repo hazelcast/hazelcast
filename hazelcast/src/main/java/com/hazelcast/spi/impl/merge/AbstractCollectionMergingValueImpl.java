@@ -104,11 +104,10 @@ public abstract class AbstractCollectionMergingValueImpl<V, T extends AbstractCo
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AbstractCollectionMergingValueImpl)) {
+        if (!(o instanceof AbstractCollectionMergingValueImpl<?, ?> that)) {
             return false;
         }
 
-        AbstractCollectionMergingValueImpl<?, ?> that = (AbstractCollectionMergingValueImpl<?, ?>) o;
         return Objects.equals(value, that.value);
     }
 

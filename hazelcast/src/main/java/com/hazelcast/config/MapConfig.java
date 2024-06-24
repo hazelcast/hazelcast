@@ -871,11 +871,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MapConfig)) {
+        if (!(o instanceof MapConfig that)) {
             return false;
         }
 
-        MapConfig that = (MapConfig) o;
         if (backupCount != that.backupCount) {
             return false;
         }

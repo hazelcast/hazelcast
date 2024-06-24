@@ -131,11 +131,10 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         if (!super.equals(o)) {
             return false;
         }
-        if (!(o instanceof GreaterLessPredicate)) {
+        if (!(o instanceof GreaterLessPredicate that)) {
             return false;
         }
 
-        GreaterLessPredicate that = (GreaterLessPredicate) o;
         if (!that.canEqual(this)) {
             return false;
         }
