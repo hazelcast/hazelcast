@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.vector.SearchOptions;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
@@ -32,6 +33,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeM
 
 public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private boolean includeValue;
@@ -44,6 +46,9 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
 
     public SearchOptionsImpl(boolean includeValue, boolean includeVectors, int limit,
                              Map<String, String> hints) {
+        if (limit <= 0) {
+            throw new IllegalArgumentException("Limit must be positive");
+        }
         this.includeValue = includeValue;
         this.includeVectors = includeVectors;
         this.limit = limit;
