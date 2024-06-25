@@ -33,7 +33,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -86,29 +85,38 @@ public class PartitionContainerImpl implements PartitionContainer {
     }
 
     private RecordStore createRecordStore(String name) {
-        MapServiceContext serviceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = serviceContext.getMapContainer(name);
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        NodeEngine nodeEngine = serviceContext.getNodeEngine();
-        IPartitionService ps = nodeEngine.getPartitionService();
-        OperationService opService = nodeEngine.getOperationService();
-        ExecutionService execService = nodeEngine.getExecutionService();
-        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
 
-        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
-                execService, mapContainer.toData(), serviceContext.getNodeWideLoadedKeyLimiter());
-        keyLoader.setMaxBatch(hazelcastProperties.getInteger(ClusterProperty.MAP_LOAD_CHUNK_SIZE));
-        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
-        keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
-        keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+        MapKeyLoader keyLoader = mapContainer.getMapStoreContext().isMapLoader()
+                ? createMapKeyLoader(mapServiceContext, mapContainer) : null;
+
         int partitionId = getPartitionId();
-
         if (!mapContainer.shouldUseGlobalIndex()) {
             mapContainer.createIndexRegistry(false, partitionId);
         }
-        RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
+        RecordStore recordStore = mapServiceContext.createRecordStore(mapContainer, partitionId, keyLoader);
         recordStore.init();
         return recordStore;
+    }
+
+    private MapKeyLoader createMapKeyLoader(MapServiceContext mapServiceContext,
+                                            MapContainer mapContainer) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        String mapName = mapContainer.getName();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        OperationService opService = nodeEngine.getOperationService();
+
+        MapKeyLoader keyLoader = new MapKeyLoader(mapName, opService, partitionService,
+                nodeEngine.getClusterService(), executionService, mapContainer.toData(),
+                mapServiceContext.getNodeWideLoadedKeyLimiter());
+        keyLoader.setMaxBatch(nodeEngine.getProperties().getInteger(ClusterProperty.MAP_LOAD_CHUNK_SIZE));
+        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
+        keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
+        keyLoader.setMapOperationProvider(mapServiceContext.getMapOperationProvider(mapName));
+        return keyLoader;
     }
 
     @Override

@@ -101,6 +101,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
+    @Nullable
     protected final MapKeyLoader keyLoader;
     /**
      * A collection of futures representing pending completion of the key and
@@ -145,8 +146,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     // mapStoreOffloadedOperationsCount is for accessed by single thread
     private final SwCounter mapStoreOffloadedOperationsCount = newSwCounter();
 
-    public DefaultRecordStore(MapContainer mapContainer, int partitionId,
-                              MapKeyLoader keyLoader, ILogger logger) {
+    public DefaultRecordStore(MapContainer mapContainer,
+                              int partitionId,
+                              @Nullable MapKeyLoader keyLoader,
+                              ILogger logger) {
         super(mapContainer, partitionId);
 
         this.logger = logger;
@@ -1404,6 +1407,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean isKeyLoadFinished() {
+        if (keyLoader == null) {
+            // null means no MapLoader was configured
+            return true;
+        }
         return keyLoader.isKeyLoadFinished();
     }
 
@@ -1413,6 +1420,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 || loadingFutures.isEmpty()) {
             return;
         }
+
+        assert keyLoader != null;
 
         if (FutureUtil.allDone(loadingFutures)) {
             List<Future<?>> doneFutures = emptyList();
@@ -1454,6 +1463,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             logger.finest("StartLoading invoked " + getStateMessage());
         }
         if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
+            assert keyLoader != null;
+
             if (!loadedOnPreMigration) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Triggering load " + getStateMessage());
@@ -1487,6 +1498,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
+        if (keyLoader == null) {
+            return;
+        }
         if (logger.isFinestEnabled()) {
             logger.finest("loadAll invoked " + getStateMessage());
         }
@@ -1510,8 +1524,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void updateLoadStatus(boolean lastBatch, Throwable
-            exception) {
+    public void updateLoadStatus(boolean lastBatch, Throwable exception) {
+        if (keyLoader == null) {
+            return;
+        }
+
         keyLoader.trackLoading(lastBatch, exception);
 
         if (lastBatch) {
@@ -1521,7 +1538,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void maybeDoInitialLoad() {
-        if (keyLoader.shouldDoInitialLoad()) {
+        if (keyLoader != null && keyLoader.shouldDoInitialLoad()) {
             loadAll(false);
         }
     }
