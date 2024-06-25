@@ -164,7 +164,7 @@ public class LoggingServiceImpl implements LoggingService {
 
     @Nonnull
     @Override
-    public ILogger getLogger(@Nonnull Class clazz) {
+    public ILogger getLogger(@Nonnull Class<?> clazz) {
         checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }

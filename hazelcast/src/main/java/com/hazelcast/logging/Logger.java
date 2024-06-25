@@ -64,7 +64,7 @@ public final class Logger {
      * @param clazz the class to obtain the logger for.
      * @return the obtained logger.
      */
-    public static ILogger getLogger(@Nonnull Class clazz) {
+    public static ILogger getLogger(@Nonnull Class<?> clazz) {
         checkNotNull(clazz, "class must not be null");
         return getLoggerInternal(clazz.getName());
     }

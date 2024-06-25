@@ -80,7 +80,7 @@ public class ClientLoggingService implements LoggingService {
     }
 
     @Nonnull
-    public ILogger getLogger(@Nonnull Class clazz) {
+    public ILogger getLogger(@Nonnull Class<?> clazz) {
         checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }

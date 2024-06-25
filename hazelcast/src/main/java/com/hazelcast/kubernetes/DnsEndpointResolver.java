@@ -91,8 +91,8 @@ final class DnsEndpointResolver
                 }
             }
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof UnknownHostException) {
-                throw (UnknownHostException) e.getCause();
+            if (e.getCause() instanceof UnknownHostException unknownHostException) {
+                throw unknownHostException;
             } else {
                 throw e;
             }
