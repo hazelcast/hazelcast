@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Clear vector collection.
  */
 @SuppressWarnings("unused")
-@Generated("85d853af4bd7428c873aa74f6d0b5a17")
+@Generated("5478ae0a5d32f77ef9d99a6121806021")
 public final class VectorCollectionClearCodec {
     //hex: 0x240A00
     public static final int REQUEST_MESSAGE_TYPE = 2361856;
@@ -51,7 +51,7 @@ public final class VectorCollectionClearCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
+        clientMessage.setRetryable(false);
         clientMessage.setOperationName("VectorCollection.Clear");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
