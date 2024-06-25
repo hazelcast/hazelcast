@@ -1680,6 +1680,47 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("propValue1", properties.get("propName1"));
     }
 
+    @Test
+    public void testWanReplicationConfig_withMultipleBatchPublishersAndSameClusterName() {
+
+      String yaml = ""
+                + "hazelcast:\n"
+                + "  wan-replication:\n"
+                + "    fanout-test:\n"
+                + "      batch-publisher:\n"
+                + "        to-gtb:\n"
+                + "          cluster-name: same\n"
+                + "          publisher-id: 'gtb'\n"
+                + "          target-endpoints: 127.0.0.1:7901,127.0.0.1:7902\n"
+                + "        to-mta:\n"
+                + "          cluster-name: same\n"
+                + "          publisher-id: 'mta'\n"
+                + "          target-endpoints: 127.0.0.1:8901,127.0.0.1:8902\n"
+                + "        to-mtb:\n"
+                + "          cluster-name: same\n"
+                + "          publisher-id: 'mtb'\n"
+                + "          target-endpoints: 127.0.0.1:9901,127.0.0.1:9902\n";
+
+        Config config = buildConfig(yaml);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig("fanout-test");
+        List<WanBatchPublisherConfig> batchPublishers = wanReplicationConfig.getBatchPublisherConfigs();
+
+        assertEquals("fanout-test", wanReplicationConfig.getName());
+        assertEquals(3, batchPublishers.size());
+
+        WanBatchPublisherConfig publisherConfig = batchPublishers.get(0);
+        assertEquals("same", publisherConfig.getClusterName());
+        assertEquals("gtb", publisherConfig.getPublisherId());
+
+        publisherConfig = batchPublishers.get(1);
+        assertEquals("same", publisherConfig.getClusterName());
+        assertEquals("mta", publisherConfig.getPublisherId());
+
+        publisherConfig = batchPublishers.get(2);
+        assertEquals("same", publisherConfig.getClusterName());
+        assertEquals("mtb", publisherConfig.getPublisherId());
+    }
+
     @Override
     @Test
     public void testDefaultOfPersistWanReplicatedDataIsFalse() {

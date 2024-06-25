@@ -1279,6 +1279,8 @@ public class DynamicConfigYamlGenerator {
 
             addNonNullToMap(wanBatchPublisherConfigAsMap, "cluster-name",
                     wanBatchPublisherConfig.getClusterName());
+             addNonNullToMap(wanBatchPublisherConfigAsMap, "publisher-id",
+                     wanBatchPublisherConfig.getPublisherId());
             addNonNullToMap(wanBatchPublisherConfigAsMap, "batch-size",
                     wanBatchPublisherConfig.getBatchSize());
             addNonNullToMap(wanBatchPublisherConfigAsMap, "batch-max-delay-millis",

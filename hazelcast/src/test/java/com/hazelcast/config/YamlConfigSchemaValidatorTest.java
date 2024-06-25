@@ -86,4 +86,9 @@ public class YamlConfigSchemaValidatorTest {
     public void witoutRootObject() {
         new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/without-root-object.yaml")).build();
     }
+
+    @Test
+    public void withWanReplication() {
+        new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/with-wan-replication.yaml")).build();
+    }
 }

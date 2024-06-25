@@ -1,0 +1,16 @@
+hazelcast:
+  wan-replication:
+    fanout:
+      batch-publisher:
+        to-gtb:
+          cluster-name: same
+          publisher-id: 'gtb'
+          target-endpoints: 127.0.0.1:7901,127.0.0.1:7902
+        to-mta:
+          cluster-name: same
+          publisher-id: 'mta'
+          target-endpoints: 127.0.0.1:8901,127.0.0.1:8902
+        to-mtb:
+          cluster-name: same
+          publisher-id: 'mtb'
+          target-endpoints: 127.0.0.1:9901,127.0.0.1:9902

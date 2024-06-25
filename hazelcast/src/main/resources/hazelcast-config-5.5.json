@@ -4187,6 +4187,10 @@
                   "type": "string",
                   "description": "Sets the cluster name used as an endpoint cluster name for authentication on the target endpoint. If there is no separate publisher ID property defined, this cluster name will also be used as a WAN publisher ID. This ID is then used for identifying the publisher in a WanReplicationConfig."
                 },
+                "publisher-id": {
+                  "type": "string",
+                  "description": "Sets the publisher ID used for identifying the publisher in a WanReplicationConfig. If there is no publisher ID defined (it is empty), the cluster name will be used as a publisher ID."
+                },
                 "batch-size": {
                   "type": "integer",
                   "default": 500,

@@ -28,6 +28,8 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
@@ -607,6 +609,28 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
     }
 
     @Test
+    public void testWanReplicationConfig() {
+
+        var wanBatchPublisherConfigs = range(0, 3).mapToObj(
+                i -> new WanBatchPublisherConfig()
+                    .setClusterName("same")
+                    .setPublisherId("Target" + i)
+                    .setTargetEndpoints("127.0.0.1:79" + i + "1,127.0.0.1:79" + i + "2")
+                ).collect(Collectors.toList());
+
+        WanReplicationConfig wanRepConfig = new WanReplicationConfig();
+        wanRepConfig.setBatchPublisherConfigs(wanBatchPublisherConfigs);
+
+        Config config = new Config();
+        config.setWanReplicationConfigs(Map.of("fanout-test", wanRepConfig));
+
+        var generatedConfig = getNewConfigViaGenerator(config).getWanReplicationConfigs();
+        var wanReplicationGeneratedConfig = generatedConfig.get("fanout-test");
+
+        assertTrue(wanReplicationGeneratedConfig.getBatchPublisherConfigs().containsAll(wanBatchPublisherConfigs));
+    }
+
+    @Test
     public void testVectorConfig() {
         Config config = new Config();
         var vectorCollection = range(0, 2).mapToObj(
@@ -628,6 +652,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         var generatedConfig = getNewConfigViaGenerator(config).getVectorCollectionConfigs();
         assertThat(generatedConfig.entrySet()).containsExactlyInAnyOrderElementsOf(vectorCollection.entrySet());
     }
+
 
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
