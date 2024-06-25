@@ -21,7 +21,7 @@ import java.util.Arrays;
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
- * The expiration policy for the ring buffer items. Currently keeps the expiration times in an array of longs.
+ * The expiration policy for the ring buffer items. Currently, keeps the expiration times in an array of longs.
  */
 final class RingbufferExpirationPolicy {
 

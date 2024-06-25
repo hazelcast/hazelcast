@@ -64,7 +64,7 @@ import static java.util.Objects.requireNonNull;
  *     <li>Some connectors can delete/update rows only according to a primary
  *     key. Currently it's only the {@link com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector}. So a scan for
  *     affected rows must be performed separately.
- *
+ * <p>
  * </ol>
  *
  * The connectors communicate their abilities using {@link
@@ -103,7 +103,6 @@ import static java.util.Objects.requireNonNull;
  *     scan are supported
  *
  *     <li>{@link UpdateLogicalRel} with an input otherwise
- *
  * </ol>
  *
  * If the Calc wasn't eliminated, the {@link UpdateNoScanLogicalRule} rule will

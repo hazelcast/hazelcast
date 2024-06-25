@@ -181,7 +181,7 @@ public interface RecordStore<R extends Record> {
      * Returns corresponding value for key as {@link
      * Data}. This adds
      * an extra serialization step. For the reason of
-     * this behaviour please see issue 1292 on github.
+     * this behaviour please see issue 1292 on GitHub.
      *
      * @param key key to be accessed
      * @return value as {@link Data}
@@ -339,7 +339,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Fetch minimally {@code size} keys from the {@code pointers} position.
      * The key is fetched on-heap.
-     * The method may return less keys if iteration has completed.
+     * The method may return fewer keys if iteration has completed.
      * <p>
      * NOTE: The implementation is free to return more than {@code size} items.
      * This can happen if we cannot easily resume from the last returned item
@@ -550,7 +550,7 @@ public interface RecordStore<R extends Record> {
      * otherwise has no effect.
      * <p>
      * This method should be deleted when the map's lifecycle has been
-     * cleaned-up. Currently it's impossible to pass additional state when
+     * cleaned-up. Currently, it's impossible to pass additional state when
      * the record store is created, thus this state has to be passed in
      * post-creation setters which is cumbersome and error-prone.
      */
@@ -604,7 +604,7 @@ public interface RecordStore<R extends Record> {
      * loading future result if the {@code lastBatch} is {@code true}.
      * <p>
      * If there was an exception during key loading, you may pass it as the
-     * {@code exception} paramter and it will be set as the result of the future.
+     * {@code exception} parameter and it will be set as the result of the future.
      *
      * @param lastBatch if the last key batch was sent
      * @param exception an exception that occurred during key loading

@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Idea: in the future we could check the operation 'names', e.g. it would be helpful to figure out if a Get operation from
- * employees map would be slow. Currently you would see just 'Get operation'
+ * employees map would be slow. Currently, you would see just 'Get operation'
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

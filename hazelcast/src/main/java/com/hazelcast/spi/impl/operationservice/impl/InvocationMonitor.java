@@ -75,9 +75,9 @@ import static java.util.logging.Level.INFO;
 /**
  * The InvocationMonitor monitors all pending invocations and determines if there are any problems like timeouts. It uses the
  * {@link InvocationRegistry} to access the pending invocations.
- *
+ * <p>
  * The {@link InvocationMonitor} sends Operation heartbeats to the other member informing them about if the operation is still
- * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
+ * alive. Also, if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
  */
 public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvider {
@@ -175,7 +175,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         // The heartbeat period is configured to be 1/4 of the call timeout. So with default settings, every 15 seconds,
         // every member in the cluster, will notify every other member in the cluster about all calls that are pending.
         // This is done quite efficiently; imagine at any given moment one node has 1000 concurrent calls pending on another
-        // node; then every 15 seconds an 8 KByte packet is send to the other member.
+        // node; then every 15 seconds an 8 KByte packet is sent to the other member.
         // Another advantage is that multiple heartbeat timeouts are allowed to get lost; without leading to premature
         // abortion of the invocation.
         int callTimeoutMs = properties.getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
@@ -292,11 +292,11 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
     }
 
     /**
-     * The MonitorTask iterates over all pending invocations and sees what needs to be done. Currently its tasks are:
+     * The MonitorTask iterates over all pending invocations and sees what needs to be done. Currently, its tasks are:
      * - getting rid of duplicates
      * - checking for heartbeat timeout
      * - checking for backup timeout
-     *
+     * <p>
      * In the future additional checks can be added here like checking if a retry is needed etc.
      */
     private final class MonitorInvocationsTask extends FixedRateMonitorTask {
@@ -417,10 +417,10 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
             //
             // Comparison of invocation's target and left member is done using member UUID.
             // Normally Hazelcast does not support crash-recover, a left member cannot rejoin
-            // with the same UUID. Hence UUID comparison is enough.
+            // with the same UUID. Hence, UUID comparison is enough.
             //
             // But Hot-Restart breaks this limitation and when Hot-Restart is enabled a member
-            // can restore its UUID and it's allowed to rejoin when cluster state is FROZEN or PASSIVE.
+            // can restore its UUID, and it's allowed to rejoin when cluster state is FROZEN or PASSIVE.
             //
             // That's why another ordering property is needed. Invocation keeps member-list-version before
             // operation is submitted to the target. If a member restarts with the same identity (UUID),
