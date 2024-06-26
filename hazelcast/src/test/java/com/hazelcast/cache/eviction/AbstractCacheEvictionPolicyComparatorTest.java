@@ -47,7 +47,7 @@ public abstract class AbstractCacheEvictionPolicyComparatorTest extends Hazelcas
 
     protected abstract HazelcastInstance createInstance(Config config);
 
-    protected abstract ConcurrentMap getUserContext(HazelcastInstance hazelcastInstance);
+    protected abstract ConcurrentMap<String, Object> getUserContext(HazelcastInstance hazelcastInstance);
 
     protected Config createConfig() {
         return new Config();

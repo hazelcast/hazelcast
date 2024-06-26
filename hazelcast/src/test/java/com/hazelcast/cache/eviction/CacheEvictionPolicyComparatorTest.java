@@ -51,7 +51,7 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
     }
 
     @Override
-    protected ConcurrentMap getUserContext(HazelcastInstance hazelcastInstance) {
+    protected ConcurrentMap<String, Object> getUserContext(HazelcastInstance hazelcastInstance) {
         return hazelcastInstance.getUserContext();
     }
 
