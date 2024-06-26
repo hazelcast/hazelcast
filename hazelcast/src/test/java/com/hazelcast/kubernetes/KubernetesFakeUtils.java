@@ -440,6 +440,25 @@ class KubernetesFakeUtils {
                 .build();
     }
 
+    static Service serviceLbWithMultiplePorts(String name, List<ServicePort> ports, String lbIp) {
+        return new ServiceBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(name)
+                        .build())
+                .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
+                        .withPorts(ports)
+                        .build())
+                .withStatus(new ServiceStatusBuilder()
+                        .withLoadBalancer(new LoadBalancerStatusBuilder()
+                                .withIngress(new LoadBalancerIngressBuilder()
+                                        .withIp(lbIp)
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+    }
+
     static Service serviceLbHost(ServicePort port, String hostname) {
         return new ServiceBuilder()
                 .withSpec(new ServiceSpecBuilder()
@@ -477,6 +496,15 @@ class KubernetesFakeUtils {
 
     static ServicePort servicePort(Integer port, Integer targetPort, Integer nodePort) {
         return new ServicePortBuilder()
+                .withPort(port)
+                .withTargetPort(new IntOrString(targetPort))
+                .withNodePort(nodePort)
+                .build();
+    }
+
+    static ServicePort servicePortWithName(String name, Integer port, Integer targetPort, Integer nodePort) {
+        return new ServicePortBuilder()
+                .withName(name)
                 .withPort(port)
                 .withTargetPort(new IntOrString(targetPort))
                 .withNodePort(nodePort)

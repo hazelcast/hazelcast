@@ -635,22 +635,34 @@ class KubernetesClient {
 
     private static Integer extractServicePort(JsonObject serviceJson) {
         JsonArray ports = toJsonArray(serviceJson.get("spec").asObject().get("ports"));
-        // Service must have one and only one Node Port assigned.
-        if (ports.size() != 1) {
-            throw new KubernetesClientException(String.format("Cannot expose externally, service %s needs to have "
-                    + "exactly one port defined", serviceJson.get("metadata").asObject().get("name")));
+        if (ports.size() == 1) {
+            return ports.get(0).asObject().get("port").asInt();
         }
-        return ports.get(0).asObject().get("port").asInt();
+        for (JsonValue port : ports) {
+            JsonValue servicePortName = port.asObject().get("name");
+            if (servicePortName != null && servicePortName.asString().equals("hazelcast")) {
+                return port.asObject().get("port").asInt();
+            }
+        }
+        throw new KubernetesClientException(String.format("Cannot expose externally, service %s needs to have "
+                    + "either exactly one port defined, or a port with 'hazelcast' name",
+                    serviceJson.get("metadata").asObject().get("name")));
     }
 
     private static Integer extractNodePort(JsonObject serviceJson) {
         JsonArray ports = toJsonArray(serviceJson.get("spec").asObject().get("ports"));
-        // Service must have one and only one Node Port assigned.
-        if (ports.size() != 1) {
-            throw new KubernetesClientException(String.format("Cannot expose externally, service %s needs to have "
-                    + "exactly one nodePort defined", serviceJson.get("metadata").asObject().get("name")));
+        if (ports.size() == 1) {
+            return ports.get(0).asObject().get("nodePort").asInt();
         }
-        return ports.get(0).asObject().get("nodePort").asInt();
+        for (JsonValue port: ports) {
+            JsonValue servicePortName = port.asObject().get("name");
+            if (servicePortName != null && servicePortName.asString().equals("hazelcast")) {
+                return port.asObject().get("nodePort").asInt();
+            }
+        }
+        throw new KubernetesClientException(String.format("Cannot expose externally, service %s needs to have "
+                    + "either exactly one port defined, or a port with 'hazelcast' name",
+                    serviceJson.get("metadata").asObject().get("name")));
     }
 
     private static String extractNodePublicIp(JsonObject nodeJson) {

@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.PodStatusBuilder;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -73,8 +74,10 @@ import static com.hazelcast.kubernetes.KubernetesFakeUtils.podsListMultiplePorts
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.service;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.serviceLb;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.serviceLbHost;
+import static com.hazelcast.kubernetes.KubernetesFakeUtils.serviceLbWithMultiplePorts;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.serviceLbWithoutAddr;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.servicePort;
+import static com.hazelcast.kubernetes.KubernetesFakeUtils.servicePortWithName;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -379,7 +382,7 @@ public class KubernetesClientTest {
         stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE),
                 serviceLb(servicePort(32123, 5701, 31916), "35.232.226.200"));
         stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE),
-                serviceLb(servicePort(32124, 5701, 31916), "35.232.226.201"));
+                serviceLb(servicePort(32124, 5701, 31917), "35.232.226.201"));
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -552,6 +555,28 @@ public class KubernetesClientTest {
     }
 
     @Test
+    public void endpointsByNamespaceWithPublicIpExposingMultiplePorts()throws JsonProcessingException {
+        // given
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE),
+                serviceLbWithMultiplePorts("hazelcast-0", List.of(
+                        servicePortWithName("hazelcast", 5701, 5701, 31916),
+                        servicePortWithName("wan-port", 5710, 5710, 31926)), "35.232.226.200"));
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE),
+                serviceLbWithMultiplePorts("service-1", List.of(
+                        servicePortWithName("hazelcast", 5701, 5701, 31917),
+                        servicePortWithName("wan-port", 5701, 5701, 31916)), "35.232.226.201"));
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 5701), ready("35.232.226.201", 5701));
+    }
+
+    @Test
     public void endpointsIgnoreNoPublicAccess() throws JsonProcessingException {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
@@ -634,6 +659,29 @@ public class KubernetesClientTest {
                 serviceLbWithoutAddr(servicePort(0, 0, 0)));
         stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE),
                 serviceLbWithoutAddr(servicePort(0, 0, 0)));
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        // exception
+    }
+
+    @Test(expected = KubernetesClientException.class)
+    public void endpointsFailFastWhenLbServiceHasNoHazelcastPort() throws JsonProcessingException {
+        // given
+        kubernetesClient = newKubernetesClient(ExposeExternallyMode.ENABLED, false, null, null);
+
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE),
+                serviceLbWithMultiplePorts("hazelcast-0", List.of(
+                        servicePortWithName("hz-port", 5701, 5701, 31916),
+                        servicePortWithName("wan-port", 5710, 5710, 31926)), "35.232.226.200"));
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE),
+                serviceLbWithMultiplePorts("service-1", List.of(
+                        servicePortWithName("hz-port", 5701, 5701, 31917),
+                        servicePortWithName("wan-port", 5701, 5701, 31916)), "35.232.226.201"));
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
