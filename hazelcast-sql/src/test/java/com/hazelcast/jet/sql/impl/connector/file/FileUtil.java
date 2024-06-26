@@ -203,7 +203,7 @@ final class FileUtil {
 
     static void writeParquetPayloadTo(OutputFile file) throws IOException {
         try (ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(file)
-                .withRowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .withRowGroupSize((long) ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .withSchema(PARQUET_RECORD.getSchema())
                 .withConf(new Configuration())

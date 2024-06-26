@@ -90,11 +90,11 @@ public class UnionSlidingWindowAggregationTest extends SqlTestSupport {
                 row(timestampTz(41L), 41) // flushing event
         );
 
-        instance().getSql().execute("CREATE VIEW s1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_a, DESCRIPTOR(b), INTERVAL '0.003' SECOND))");
-        instance().getSql().execute("CREATE VIEW s2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_b, DESCRIPTOR(c), INTERVAL '0.003' SECOND))");
-        instance().getSql().execute("CREATE VIEW s3 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s3 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_c, DESCRIPTOR(e), INTERVAL '0.003' SECOND))");
 
         String sql = " SELECT window_start AS ws1, SUM(a) AS sum1 FROM " +

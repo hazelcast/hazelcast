@@ -62,9 +62,9 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 row(timestampTz(101L), 101) // flushing event
         );
 
-        instance().getSql().execute("CREATE VIEW s1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
-        instance().getSql().execute("CREATE VIEW s2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_a, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
 
         String sql = "SELECT we1, _sum, _max FROM " +
@@ -112,9 +112,9 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 row(timestampTz(41L), 41) // flushing event
         );
 
-        instance().getSql().execute("CREATE VIEW s1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.003' SECOND))");
-        instance().getSql().execute("CREATE VIEW s2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_a, DESCRIPTOR(c), INTERVAL '0.003' SECOND))");
 
         String sql = "SELECT we1, sum1, max2 FROM " +
@@ -160,9 +160,9 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 row(timestampTz(101L), 101) // flushing event
         );
 
-        instance().getSql().execute("CREATE VIEW s1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1x, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
-        instance().getSql().execute("CREATE VIEW s2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_ax, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
 
         String sql = "SELECT we1, _sum, _max FROM " +
@@ -210,9 +210,9 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 row(timestampTz(41L), 41) // flushing event
         );
 
-        instance().getSql().execute("CREATE VIEW s1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream11, DESCRIPTOR(b), INTERVAL '0.003' SECOND))");
-        instance().getSql().execute("CREATE VIEW s2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_aa, DESCRIPTOR(c), INTERVAL '0.003' SECOND))");
 
         String sql = "SELECT we1, sum1, max2 FROM " +

@@ -40,7 +40,7 @@ public class JsonResolverTest {
     @Test
     public void test_resolveFields() {
         // given
-        Map<String, Object> json = new LinkedHashMap<String, Object>() {
+        Map<String, Object> json = new LinkedHashMap<>() {
             {
                 put("boolean", true);
                 put("number", 1);

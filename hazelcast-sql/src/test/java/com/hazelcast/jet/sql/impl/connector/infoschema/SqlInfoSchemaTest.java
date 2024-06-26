@@ -68,7 +68,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                           OPTION_VALUE_CLASS, Value.class.getName())
                  .create();
 
-        sqlService.execute("CREATE VIEW " + viewName + " AS SELECT * FROM " + mappingName);
+        sqlService.executeUpdate("CREATE VIEW " + viewName + " AS SELECT * FROM " + mappingName);
 
         new SqlType(firstTypeName)
                 .fields("id BIGINT",

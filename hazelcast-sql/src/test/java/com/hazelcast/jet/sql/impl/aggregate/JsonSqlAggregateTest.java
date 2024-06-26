@@ -28,9 +28,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -140,7 +141,7 @@ public class JsonSqlAggregateTest {
 
             assertRowsAnyOrder(
                     "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance) FROM " + name + " GROUP BY name",
-                    asList(
+                    List.of(
                             new Row("Alice", json("[1,4,7]")),
                             new Row("Bob", json("[3]")),
                             new Row(null, json("[6,8]"))
@@ -150,7 +151,7 @@ public class JsonSqlAggregateTest {
 
             assertRowsAnyOrder(
                     "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance DESC) FROM " + name + " GROUP BY name",
-                    asList(
+                    List.of(
                             new Row("Alice", json("[7,4,1]")),
                             new Row("Bob", json("[3]")),
                             new Row(null, json("[8,6]"))
@@ -169,7 +170,7 @@ public class JsonSqlAggregateTest {
                             "JSON_ARRAYAGG(distance ORDER BY distance ASC) " +
                             "FROM " + name + " " +
                             "GROUP BY name",
-                    asList(
+                    List.of(
                             new Row("Alice", json("[7,4,1]"), json("[1,4,7]")),
                             new Row("Bob", json("[3]"), json("[3]")),
                             new Row(null, json("[8,6]"), json("[6,8]"))
@@ -183,9 +184,9 @@ public class JsonSqlAggregateTest {
             TestBatchSqlConnector.create(
                     sqlService,
                     name,
-                    asList("name", "distance"),
-                    asList(VARCHAR, INTEGER),
-                    asList(new String[]{"Alice", "1"},
+                    List.of("name", "distance"),
+                    List.of(VARCHAR, INTEGER),
+                    List.of(new String[]{"Alice", "1"},
                             new String[]{"Bob", "3"},
                             new String[]{"Alice", "4"},
                             new String[]{null, "6"},
@@ -242,7 +243,7 @@ public class JsonSqlAggregateTest {
             assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(NULL VALUE 'v')").iterator().next())
                     .hasMessageContaining("NULL key is not supported for JSON_OBJECTAGG");
 
-            TestBatchSqlConnector.create(sqlService, "m1", asList("k", "v"), asList(VARCHAR, VARCHAR),
+            TestBatchSqlConnector.create(sqlService, "m1", List.of("k", "v"), List.of(VARCHAR, VARCHAR),
                     singletonList(new String[]{null, "v1"}));
 
             // null column value for key
@@ -262,8 +263,8 @@ public class JsonSqlAggregateTest {
 
         @Test
         public void test_duplicateKey() {
-            TestBatchSqlConnector.create(sqlService, "m", asList("k", "v"), asList(VARCHAR, VARCHAR),
-                    asList(new String[]{"k", "v1"},
+            TestBatchSqlConnector.create(sqlService, "m", List.of("k", "v"), List.of(VARCHAR, VARCHAR),
+                    List.of(new String[]{"k", "v1"},
                             new String[]{"k", "v2"}));
 
             assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG(k VALUE v) FROM m", singletonList(new Row(json("{\"k\":\"v1\",\"k\":\"v2\"}"))));
@@ -275,7 +276,7 @@ public class JsonSqlAggregateTest {
 
             assertJsonRowsAnyOrder(
                     "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " WHERE name IS NOT NULL GROUP BY name",
-                    asList(
+                    List.of(
                             new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
                             new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\" }"))
                     )
@@ -283,7 +284,7 @@ public class JsonSqlAggregateTest {
 
             assertJsonRowsAnyOrder(
                     "SELECT name, JSON_OBJECTAGG(k VALUE v NULL ON NULL) FROM " + name + " WHERE name IS NOT NULL GROUP BY name",
-                    asList(
+                    List.of(
                             new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
                             new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\", \"description\" : null }"))
                     )
@@ -296,7 +297,7 @@ public class JsonSqlAggregateTest {
 
             assertRowsAnyOrder(
                     "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " WHERE name = 'Bob' AND k = 'description' GROUP BY name",
-                    asList(new Row("Bob", null))
+                    List.of(new Row("Bob", null))
             );
         }
 
@@ -305,9 +306,9 @@ public class JsonSqlAggregateTest {
             TestBatchSqlConnector.create(
                     sqlService,
                     name,
-                    asList("name", "k", "v"),
-                    asList(VARCHAR, VARCHAR, VARCHAR),
-                    asList(new String[]{"Alice", "department", "dep1"},
+                    List.of("name", "k", "v"),
+                    List.of(VARCHAR, VARCHAR, VARCHAR),
+                    List.of(new String[]{"Alice", "department", "dep1"},
                             new String[]{"Bob", "department", "dep2"},
                             new String[]{"Alice", "job", "job1"},
                             new String[]{null, "department", "dep2"},

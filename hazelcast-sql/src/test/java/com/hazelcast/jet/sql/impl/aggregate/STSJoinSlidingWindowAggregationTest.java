@@ -81,21 +81,21 @@ public class STSJoinSlidingWindowAggregationTest extends SqlTestSupport {
         );
 
         // S2S JOIN Left input view : sliding window SUM aggregation
-        instance().getSql().execute("CREATE VIEW s1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_a, DESCRIPTOR(b), INTERVAL '0.003' SECOND))");
-        instance().getSql().execute("CREATE VIEW s_agg1 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s_agg1 AS " +
                 " SELECT window_end AS we1, SUM(a) AS max2 FROM " +
                 " TABLE(TUMBLE(TABLE s1, DESCRIPTOR(b), INTERVAL '0.003' SECOND)) GROUP BY window_end");
 
         // S2S JOIN right input view : sliding window MAX aggregation
-        instance().getSql().execute("CREATE VIEW s2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_b, DESCRIPTOR(c), INTERVAL '0.003' SECOND))");
-        instance().getSql().execute("CREATE VIEW s_agg2 AS " +
+        instance().getSql().executeUpdate("CREATE VIEW s_agg2 AS " +
                 " SELECT window_end AS we2, MAX(d) AS max2 FROM " +
                 " TABLE(TUMBLE(TABLE s2, DESCRIPTOR(c), INTERVAL '0.003' SECOND)) GROUP BY window_end");
 
         // S2S JOIN view
-        instance().getSql().execute("CREATE VIEW joined_aggregated_streams AS " +
+        instance().getSql().executeUpdate("CREATE VIEW joined_aggregated_streams AS " +
                 "SELECT * FROM s_agg1 JOIN s_agg2 ON s_agg1.we1 = s_agg2.we2"
         );
 
