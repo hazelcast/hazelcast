@@ -50,16 +50,13 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(false));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
-        try {
+        try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData(GET);
             client.waitUntilClosed();
             assertEquals(3, client.getSentBytesCount());
             assertEquals(0, client.getReceivedBytes().length);
             assertTrue(client.isConnectionClosed());
-        } finally {
-            client.close();
         }
     }
 
@@ -73,16 +70,13 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
     @Test
     public void testRestApiDisabledByDefault() throws Exception {
         HazelcastInstance hz = factory.newHazelcastInstance(null);
-        TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
-        try {
+        try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData(GET);
             client.waitUntilClosed();
             assertEquals(3, client.getSentBytesCount());
             assertEquals(0, client.getReceivedBytes().length);
             assertTrue(client.isConnectionClosed());
-        } finally {
-            client.close();
         }
     }
 
@@ -98,16 +92,13 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
-        try {
+        try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData("ver");
             client.waitUntilClosed();
             assertEquals(3, client.getSentBytesCount());
             assertEquals(0, client.getReceivedBytes().length);
             assertTrue(client.isConnectionClosed());
-        } finally {
-            client.close();
         }
     }
 
@@ -123,8 +114,7 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
-        try {
+        try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData(GET);
             client.waitUntilClosed(2000);
@@ -133,8 +123,6 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
             client.waitUntilClosed();
             assertEquals(0, client.getReceivedBytes().length);
             assertTrue(client.isConnectionClosed());
-        } finally {
-            client.close();
         }
     }
 }
