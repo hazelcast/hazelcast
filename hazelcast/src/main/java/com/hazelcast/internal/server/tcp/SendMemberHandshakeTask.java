@@ -86,6 +86,16 @@ public class SendMemberHandshakeTask implements Runnable {
         boolean isWanHandshake = qualifier != null && qualifier.getType().equals(ProtocolType.WAN);
 
         Map<ProtocolType, Collection<Address>> addressMap = new HashMap<>();
+        populateAddressMap(addressMap, isWanHandshake);
+
+        // If this is a WAN handshake and no WAN-specific interfaces are available, fallback to the standard address map
+        if (addressMap.isEmpty() && isWanHandshake) {
+            populateAddressMap(addressMap, false);
+        }
+        return addressMap;
+    }
+
+    private void populateAddressMap(Map<ProtocolType, Collection<Address>> addressMap, boolean isWanHandshake) {
         Map<EndpointQualifier, Address> addressesPerEndpointQualifier = serverContext.getThisAddresses();
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressesPerEndpointQualifier.entrySet()) {
             if (isWanHandshake && !addressEntry.getKey().getType().equals(ProtocolType.WAN)) {
@@ -97,6 +107,5 @@ public class SendMemberHandshakeTask implements Runnable {
             Collection<Address> addresses = addressMap.computeIfAbsent(addressEntry.getKey().getType(), k -> new ArrayList<>());
             addresses.add(addressEntry.getValue());
         }
-        return addressMap;
     }
 }
