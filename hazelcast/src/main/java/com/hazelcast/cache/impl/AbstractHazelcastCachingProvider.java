@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
@@ -32,7 +31,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -44,7 +42,6 @@ import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_NA
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.System.getProperty;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * Abstract {@link CachingProvider} implementation providing shared
@@ -76,7 +73,7 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
      */
     public static final String NAMED_JCACHE_HZ_INSTANCE = "hazelcast.named.jcache.instance";
 
-    protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
+    protected static final ILogger LOGGER = Logger.getLogger(AbstractHazelcastCachingProvider.class);
 
     private static final String INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE = "No available Hazelcast instance."
             + " Please specify your Hazelcast configuration file path via"
@@ -86,13 +83,7 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
     private static final Set<String> SUPPORTED_SCHEMES;
 
     static {
-        Set<String> supportedSchemes = new HashSet<>();
-        supportedSchemes.add("classpath");
-        supportedSchemes.add("file");
-        supportedSchemes.add("http");
-        supportedSchemes.add("https");
-        supportedSchemes.add("jar");
-        SUPPORTED_SCHEMES = unmodifiableSet(supportedSchemes);
+        SUPPORTED_SCHEMES = Set.of("classpath", "file", "http", "https", "jar");
     }
 
     protected final boolean namedDefaultHzInstance = parseBoolean(getProperty(NAMED_JCACHE_HZ_INSTANCE, "true"));
@@ -330,7 +321,7 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
                 return getOrCreateFromUri(uri, classLoader, instanceName);
             } catch (Exception e) {
                 if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Could not get or create Hazelcast instance from URI " + uri.toString(), e);
+                    LOGGER.finest("Could not get or create Hazelcast instance from URI " + uri, e);
                 }
             }
             // could not locate the Hazelcast instance, return null and an exception will be thrown by the invoker
