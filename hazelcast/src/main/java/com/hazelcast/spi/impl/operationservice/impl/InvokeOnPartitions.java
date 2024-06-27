@@ -163,7 +163,7 @@ final class InvokeOnPartitions {
                 return;
             }
 
-            // partitionResult is null for partitions which had no keys and it's NULL_RESULT
+            // partitionResult is null for partitions which had no keys, and it's NULL_RESULT
             // for partitions which had a result, but the result was null.
             if (partitionResult != null) {
                 result.put(partitionId, partitionResult == NULL_RESULT ? null : partitionResult);

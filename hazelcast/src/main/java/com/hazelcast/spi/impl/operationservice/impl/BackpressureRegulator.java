@@ -41,7 +41,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * The BackpressureRegulator is responsible for regulating invocation 'pressure'. If it sees that the system
- * is getting overloaded, it will apply back pressure so the the system won't crash.
+ * is getting overloaded, it will apply back pressure so the system won't crash.
  * <p>
  * The BackpressureRegulator is responsible for regulating invocation pressure on the Hazelcast system to prevent it from
  * crashing on overload. Most Hazelcast invocations on Hazelcast are simple; you do (for example) a map.get and you wait for the
@@ -165,7 +165,7 @@ class BackpressureRegulator {
     /**
      * Checks if a sync is forced for the given BackupAwareOperation.
      * <p>
-     * Once and a while for every BackupAwareOperation with one or more async backups, these async backups are transformed
+     * Once in a while for every BackupAwareOperation with one or more async backups, these async backups are transformed
      * into a sync backup.
      *
      * @param backupAwareOp the BackupAwareOperation to check

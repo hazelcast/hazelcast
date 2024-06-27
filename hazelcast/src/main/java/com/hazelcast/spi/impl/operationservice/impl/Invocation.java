@@ -163,7 +163,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      * Shows the current target member.
      * <p>
      * If this Invocation is targeting an existing member, then this field will be set.
-     * Otherwise it can be null in some cases (join, wan-replication etc.).
+     * Otherwise, it can be null in some cases (join, wan-replication etc.).
      */
     private Member targetMember;
     /**
@@ -363,7 +363,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
     protected void notifyThrowable(Throwable cause, int expectedBackups) {
         // if a regular response comes and there are backups, we need to wait for the backups
-        // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
+        // when the backups complete, the response will be sent by the last backup or backup-timeout-handle mechanism kicks on
 
         if (expectedBackups > backupsAcksReceived) {
             // so the invocation has backups and since not all backups have completed, we need to wait
@@ -378,7 +378,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             this.pendingResponse = new ExceptionalResult(cause);
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefore we should not notify the future
+                // we are done since not all backups have completed. Therefore, we should not notify the future
                 return;
             }
         }
@@ -429,10 +429,10 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
     /**
      * Checks if this Invocation has received a heartbeat in time.
-     *
+     * <p>
      * If the response is already set, or if a heartbeat has been received in time, then {@code false} is returned.
      * If no heartbeat has been received, then the future.set is called with HEARTBEAT_TIMEOUT and {@code true} is returned.
-     *
+     * <p>
      * Gets called from the monitor-thread.
      *
      * @return {@code true} if there is a timeout detected, {@code false} otherwise.
@@ -573,7 +573,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         setInvocationTime(op, context.clusterClock.getClusterTime());
 
         // We'll initialize the invocation before registering it. Invocation monitor iterates over
-        // registered invocations and it must observe completely initialized invocations.
+        // registered invocations, and it must observe completely initialized invocations.
         Exception initializationFailure = null;
         try {
             initInvocationTarget();
@@ -837,9 +837,9 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     /**
      * The {@link Context} contains all 'static' dependencies for an Invocation; dependencies that don't change between
      * invocations. All invocation specific dependencies/settings are passed in through the constructor of the invocation.
-     *
+     * <p>
      * This object should have no functionality apart from providing dependencies. So no methods should be added to this class.
-     *
+     * <p>
      * The goals of the Context are:
      * <ol>
      * <li>reduce the need on having a cluster running when testing Invocations. This is one of the primary drivers behind this

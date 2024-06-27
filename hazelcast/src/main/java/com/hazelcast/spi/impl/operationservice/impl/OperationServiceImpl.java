@@ -89,11 +89,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * <h1>System Operation</h1>
  * When a {@link UrgentSystemOperation} is invoked on this OperationService, it will be executed with a
- * high urgency by making use of a urgent queue. So when the system is under load, and the operation queues are
+ * high urgency by making use of an urgent queue. So when the system is under load, and the operation queues are
  * filled, then system operations are executed before normal operation. The advantage is that when a system is under
  * pressure, it still is able to do things like recognizing new members in the cluster and moving partitions around.
  * <p>
- * When a UrgentSystemOperation is send to a remote machine, it is wrapped in a {@link Packet} and the packet is marked as a
+ * When a UrgentSystemOperation is sent to a remote machine, it is wrapped in a {@link Packet} and the packet is marked as an
  * urgent packet. When this packet is received on the remove OperationService, the urgent flag is checked and if
  * needed, the operation is set on the urgent queue. So local and remote execution of System operations will obey
  * the urgency.

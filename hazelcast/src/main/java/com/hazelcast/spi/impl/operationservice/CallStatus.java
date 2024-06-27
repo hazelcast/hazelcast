@@ -18,10 +18,10 @@ package com.hazelcast.spi.impl.operationservice;
 
 /**
  * The result of an {@link Operation#call()}.
- *
+ * <p>
  * Using the CallStatus the operation can control how the system will deal with
  * the operation after it is executed. For example when the CallStatus is
- * {@link CallStatus#RESPONSE}, a response can be send to the caller. But
+ * {@link CallStatus#RESPONSE}, a response can be sent to the caller. But
  * it also allows for different behavior where no response is available yet e.g.
  * when an operation gets offloaded.
  *
@@ -56,8 +56,8 @@ public class CallStatus {
      * Signals that the Operation is done running and that a response is ready
      * to be returned. Most of the normal operations like IAtomicLong.get will
      * fall in this category.
-     *
-     * Also operations like an IMap.put should return 'RESPONSE' because the
+     * <p>
+     * Also, operations like an IMap.put should return 'RESPONSE' because the
      * operation will be checked if backups should be made.
      */
     public static final CallStatus RESPONSE = new CallStatus(RESPONSE_ORDINAL);
@@ -67,7 +67,7 @@ public class CallStatus {
      * returned. Most of the regular operations like map.get will return a
      * response, but there are also fire and forget operations (lot of
      * cluster operations) that don't return a response.
-     *
+     * <p>
      * If an operation returns void, it will be checked if backups should be made.
      */
     public static final CallStatus VOID = new CallStatus(VOID_ORDINAL);
@@ -76,8 +76,8 @@ public class CallStatus {
      * Indicates that the call could not complete because waiting is required.
      * E.g. a queue.take on an empty queue. This can only be returned by
      * BlockingOperations.
-     *
-     * In this case no responses/backups will be send.
+     * <p>
+     * In this case no responses/backups will be sent.
      */
     public static final CallStatus WAIT = new CallStatus(WAIT_ORDINAL);
 

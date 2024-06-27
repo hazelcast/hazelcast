@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.operationservice;
 /**
  * Can be implemented by a Service to track live operations. This functionality is needed to let the executing side
  * inform the caller side which operations are still running. If an operation doesn't provide a heartbeat, the caller
- * can eventually decide to timeout the operation.
- *
+ * can eventually decide to time out the operation.
+ * <p>
  * Some operations are not executing on regular operation threads (e.g. IExecutorService) or not running at all
  * (blocking operations).
  */

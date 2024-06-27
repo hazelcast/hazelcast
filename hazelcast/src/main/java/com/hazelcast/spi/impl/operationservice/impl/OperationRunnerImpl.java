@@ -153,7 +153,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         this.failedBackupsCounter = failedBackupsCounter;
         this.backupHandler = operationService.backupHandler;
         this.opLatencyDistributions = opLatencyDistributions;
-        // only a ad-hoc operation runner will be called concurrently
+        // only an ad-hoc operation runner will be called concurrently
         this.executedOperationsCounter = partitionId == AD_HOC_PARTITION_ID ? newMwCounter() : newSwCounter();
     }
 
@@ -354,7 +354,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
      *
      * @param op the operation for which the minimum cluster size property must satisfy
      * @throws SplitBrainProtectionException if the operation requires a split brain protection and
-     *                                       the the minimum cluster size property is not satisfied
+     *                                       the minimum cluster size property is not satisfied
      */
     private void ensureNoSplitBrain(Operation op) {
         SplitBrainProtectionServiceImpl splitBrainProtectionService =
@@ -437,7 +437,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         }
 
         // A response is sent regardless of the Operation.returnsResponse method because some operations do want to send
-        // back a response, but they didn't want to send it yet but they ran into some kind of error. If on the receiving
+        // back a response, but they didn't want to send it yet, but they ran into some kind of error. If on the receiving
         // side no invocation is waiting, the response is ignored.
         sendResponseAfterOperationError(operation, e);
     }

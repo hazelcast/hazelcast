@@ -37,11 +37,13 @@ public abstract class AbstractNamedOperation extends Operation implements NamedO
         return name;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeString(name);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         name = in.readString();

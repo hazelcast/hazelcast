@@ -87,7 +87,7 @@ public abstract class BaseInvocation {
      */
     protected void notifyResponse(Object response, int expectedBackups) {
         // if a regular response comes and there are backups, we need to wait for the backups
-        // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
+        // when the backups complete, the response will be sent by the last backup or backup-timeout-handle mechanism kicks on
 
         if (expectedBackups > backupsAcksReceived) {
             // so the invocation has backups and since not all backups have completed, we need to wait
@@ -102,7 +102,7 @@ public abstract class BaseInvocation {
             this.pendingResponse = response;
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefore we should not notify the future
+                // we are done since not all backups have completed. Therefore, we should not notify the future
                 return;
             }
         }
@@ -124,7 +124,7 @@ public abstract class BaseInvocation {
             return false;
         }
 
-        // if no response has yet been received, we we are done; we are only going to re-invoke an operation
+        // if no response has yet been received, we are done; we are only going to re-invoke an operation
         // if the response of the primary has been received, but the backups have not replied
         if (pendingResponse == VOID) {
             return false;

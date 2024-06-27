@@ -28,13 +28,13 @@ import java.util.Set;
  * This is an internal class. So if you are a regular Hazelcast user, you don't
  * want to use this class. You probably want to use
  * {@link com.hazelcast.core.Offloadable}.
- *
+ * <p>
  * The Offload is a {@link CallStatus} designed when an offloaded operation
  * needs to offload the processing of the operation to a different system, e.g
  * a different thread and at some point in the future a response will be ready.
  * Offload instance can be created by Operations that require offloading, for
  * more information see the {@link Operation#call()}.
- *
+ * <p>
  * If the operation 'offloads' some work, but doesn't send a response ever,
  * {@link CallStatus#VOID} should be used instead.
  *
@@ -49,7 +49,7 @@ import java.util.Set;
  * the response handler of an offloaded Operation because otherwise one could
  * e.g. run into a memory leak (the offloaded operation will not be removed
  * from the asynchronous operations).
- *
+ * <p>
  * There is an important difference with exception handling. With regular
  * operation when an exception is thrown, first the
  * {@link Operation#onExecutionFailure(Throwable)} is called before the
@@ -63,7 +63,7 @@ import java.util.Set;
  * The Offload functionality automatically registers the offloaded operation for
  * operation heartbeats. The registration is done when the
  * {@link Offload#init(NodeEngineImpl, Set)} is called. And it is unregistered,
- * as soon as a response is send to the offloaded operation. This is done by
+ * as soon as a response is sent to the offloaded operation. This is done by
  * decorating updating the original response handler of the operation by wrapping
  * it in a decorating response handler that automatically deregisters on completion.
  */
@@ -89,8 +89,8 @@ public abstract class Offload extends CallStatus {
     /**
      * Returns the Operation that created this Offload. Returned operation
      * should not be null.
-     *
-     * Currently this is used to automatically register the operation for the
+     * <p>
+     * Currently, this is used to automatically register the operation for the
      * sake of heartbeats.
      *
      * @return the Operation.
@@ -101,11 +101,11 @@ public abstract class Offload extends CallStatus {
 
     /**
      * Initializes the Offload.
-     *
+     * <p>
      * As part of the initialization, the {@link OperationResponseHandler} of
      * the offloaded {@link Operation} is replaced by a decorated version that
      * takes care of automatic deregistration of the operation on completion.
-     *
+     * <p>
      * This method is called before the {@link #start()} is called by the
      * Operation infrastructure. An implementor of the {@link Offload} doesn't
      * need to deal with this method.
@@ -136,17 +136,17 @@ public abstract class Offload extends CallStatus {
 
     /**
      * Starts the actual offloading.
-     *
+     * <p>
      * This method is still called on the same thread that called the
      * {@link Operation#call()} where this Offload instance was returned. So in
      * most cases you want to schedule some work and then return from this method ASAP so
      * that the thread is released.
-     *
+     * <p>
      * This method is called after the {@link Operation#afterRun()} is called.
-     *
+     * <p>
      * It is allowed to call {@link Operation#sendResponse(Object)} in the start
      * method if there is nothing to offload.
-     *
+     * <p>
      * Note: TenantControl propagation is the implementor's responsibility
      * as it will not automatically be propagated to the offloaded thread.
      *

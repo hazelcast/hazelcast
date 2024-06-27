@@ -31,7 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * whose cancellation was requested.
  * <p>
  * This data-structure can be optimized to generate less litter. Instead of using an ArrayList for Long objects,
- * use an array for primitive longs. Also the lists don't need to be recreated every time the
+ * use an array for primitive longs. Also, the lists don't need to be recreated every time the
  * {@link LiveOperationsTracker#populate(LiveOperations)} method is called; they could be recycled. This would be easy
  * to do since the {@link CallsPerMember} is used by a single thread.
  */
