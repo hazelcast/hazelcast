@@ -68,7 +68,7 @@ public final class Hazelcast {
      * <p>
      * To shut down all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
-     *
+     * <p>
      * Hazelcast will look into two places for the configuration file:
      * <ol>
      *     <li>
@@ -128,7 +128,7 @@ public final class Hazelcast {
      * </ol>
      *
      * If a configuration file is not located, an {@link IllegalArgumentException} will be thrown.
-     *
+     * <p>
      * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
      *
      * @return the HazelcastInstance
@@ -141,9 +141,9 @@ public final class Hazelcast {
 
     /**
      * Gets or creates the HazelcastInstance with a certain name.
-     *
+     * <p>
      * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
-     *
+     * <p>
      * If {@code config} is {@code null}, then an XML configuration file is looked up in the following order:
      * <ol>
      *     <li>

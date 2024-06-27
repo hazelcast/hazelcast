@@ -21,7 +21,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 /**
  * A {@link com.hazelcast.core.HazelcastException} that is thrown when the system won't handle more load due to
  * an overload.
- *
+ * <p>
  * This exception is thrown when backpressure is enabled. For more information see
  * {@link ClusterProperty#BACKPRESSURE_ENABLED}.
  */

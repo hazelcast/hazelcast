@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * references are released. The initial refCount is 1. It is incremented by
  * calling {@link #retain()} and decremented by calling {@link #release()},
  * which must be paired. When the refCount gets to 0, the {@link #destroyAction}
- * is ran, and it is not possible to call {@link #retain()} afterwards.
+ * is run, and it is not possible to call {@link #retain()} afterwards.
  * <p>
  * It is useful to delay closing of a resource provider itself until all
  * resources it provided are closed too. The initial refCount of 1 is for the

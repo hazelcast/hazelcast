@@ -17,7 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 /**
- * Exception thrown in case of a HTTP Forbidden
+ * Exception thrown in case of an HTTP Forbidden
  */
 public class HttpForbiddenException extends RuntimeException {
 }

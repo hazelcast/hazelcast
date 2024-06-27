@@ -112,7 +112,7 @@ import java.util.concurrent.TimeUnit;
  * the exactly-once execution semantics for the session-aware version.
  * For instance, even if a {@link #release()} call is internally retried
  * because of a crashed Hazelcast member, the permit is released only once.
- * However, this guarantee is not given for the sessionless, a.k.a,
+ * However, this guarantee is not given for the sessionless, a.k.a.,
  * JDK-compatible CP {@link ISemaphore}. For this version, you can tune
  * execution semantics via
  * {@link CPSubsystemConfig#setFailOnIndeterminateOperationState(boolean)}.

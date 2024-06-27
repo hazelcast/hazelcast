@@ -17,7 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 /**
- * Exception thrown in case of a HTTP bad request
+ * Exception thrown in case of an HTTP bad request
  */
 public class HttpBadRequestException extends RuntimeException {
 

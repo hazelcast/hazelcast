@@ -392,7 +392,7 @@ public class KinesisSinkP<T> implements Processor {
 
         private static BufferEntry[] initEntries() {
             return IntStream.range(0, MAX_RECORDS_IN_REQUEST).boxed()
-                    .map(IGNORED -> new BufferEntry())
+                    .map(ignored -> new BufferEntry())
                     .toArray(BufferEntry[]::new);
         }
     }

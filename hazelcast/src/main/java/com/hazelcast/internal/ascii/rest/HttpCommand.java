@@ -124,7 +124,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     }
 
     /**
-     * Prepares a HTTP response with no content and the provided status line and
+     * Prepares an HTTP response with no content and the provided status line and
      * response headers.
      *
      * @param statusCode the HTTP response status code

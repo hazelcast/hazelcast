@@ -441,7 +441,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         }
     }
 
-    protected void handleWanSyncProgress(HttpGetCommand command) throws Throwable {
+    protected void handleWanSyncProgress(HttpGetCommand command) {
         prepareResponse(
                 SC_500,
                 command,
