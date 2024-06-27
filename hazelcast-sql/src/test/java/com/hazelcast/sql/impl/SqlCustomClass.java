@@ -23,7 +23,7 @@ import java.util.Objects;
  * Simple custom class for tests.
  */
 public class SqlCustomClass implements Serializable {
-    private int id;
+    private final int id;
 
     public SqlCustomClass(int id) {
         this.id = id;

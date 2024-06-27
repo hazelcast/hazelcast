@@ -57,28 +57,30 @@ public class IMapResolverTest extends SqlTestSupport {
         instance().getMap("m1").put(42, new BigDecimal((43)));
         String mappingDdl1 = ((SqlClientService) client().getSql()).mappingDdl(member, "m1").get();
         assertThat(mappingDdl1).isEqualToNormalizingNewlines(
-                "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m1\" EXTERNAL NAME \"m1\"\n"
-                        + "TYPE \"IMap\"\n"
-                        + "OPTIONS (\n"
-                        + "  'keyFormat'='java',\n"
-                        + "  'keyJavaClass'='java.lang.Integer',\n"
-                        + "  'valueFormat'='java',\n"
-                        + "  'valueJavaClass'='java.math.BigDecimal'\n"
-                        + ")");
-        instance().getSql().execute(mappingDdl1); // we check that it doesn't fail
+                """
+                        CREATE OR REPLACE EXTERNAL MAPPING "hazelcast"."public"."m1" EXTERNAL NAME "m1"
+                        TYPE "IMap"
+                        OPTIONS (
+                          'keyFormat'='java',
+                          'keyJavaClass'='java.lang.Integer',
+                          'valueFormat'='java',
+                          'valueJavaClass'='java.math.BigDecimal'
+                        )""");
+        instance().getSql().executeUpdate(mappingDdl1); // we check that it doesn't fail
 
         instance().getMap("m2").put("foo", new Person("person name"));
         String mappingDdl2 = ((SqlClientService) client().getSql()).mappingDdl(member, "m2").get();
         assertThat(mappingDdl2).isEqualToNormalizingNewlines(
-                "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m2\" EXTERNAL NAME \"m2\"\n"
-                        + "TYPE \"IMap\"\n"
-                        + "OPTIONS (\n"
-                        + "  'keyFormat'='java',\n"
-                        + "  'keyJavaClass'='java.lang.String',\n"
-                        + "  'valueFormat'='java',\n"
-                        + "  'valueJavaClass'='com.hazelcast.jet.sql.impl.schema.model.Person'\n"
-                        + ")");
-        instance().getSql().execute(mappingDdl2);
+                """
+                        CREATE OR REPLACE EXTERNAL MAPPING "hazelcast"."public"."m2" EXTERNAL NAME "m2"
+                        TYPE "IMap"
+                        OPTIONS (
+                          'keyFormat'='java',
+                          'keyJavaClass'='java.lang.String',
+                          'valueFormat'='java',
+                          'valueJavaClass'='com.hazelcast.jet.sql.impl.schema.model.Person'
+                        )""");
+        instance().getSql().executeUpdate(mappingDdl2);
     }
 
     @Test
@@ -88,17 +90,18 @@ public class IMapResolverTest extends SqlTestSupport {
         instance().getMap("m3").put("foo", new CompactClass(1));
         String mappingDdl = ((SqlClientService) client().getSql()).mappingDdl(member, "m3").get();
         assertThat(mappingDdl).isEqualToNormalizingNewlines(
-                "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m3\" EXTERNAL NAME \"m3\" (\n"
-                        + "  \"field\" INTEGER EXTERNAL NAME \"this.field\"\n"
-                        + ")\n"
-                        + "TYPE \"IMap\"\n"
-                        + "OPTIONS (\n"
-                        + "  'keyFormat'='java',\n"
-                        + "  'keyJavaClass'='java.lang.String',\n"
-                        + "  'valueFormat'='compact',\n"
-                        + "  'valueCompactTypeName'='com.hazelcast.sql.impl.schema.IMapResolverTest$CompactClass'\n"
-                        + ")");
-        instance().getSql().execute(mappingDdl);
+                """
+                        CREATE OR REPLACE EXTERNAL MAPPING "hazelcast"."public"."m3" EXTERNAL NAME "m3" (
+                          "field" INTEGER EXTERNAL NAME "this.field"
+                        )
+                        TYPE "IMap"
+                        OPTIONS (
+                          'keyFormat'='java',
+                          'keyJavaClass'='java.lang.String',
+                          'valueFormat'='compact',
+                          'valueCompactTypeName'='com.hazelcast.sql.impl.schema.IMapResolverTest$CompactClass'
+                        )""");
+        instance().getSql().executeUpdate(mappingDdl);
     }
 
     private static class CompactClass {

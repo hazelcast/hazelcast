@@ -25,7 +25,7 @@ import java.io.IOException;
 
 public class FunctionalPredicateExpression implements Expression<Boolean> {
 
-    private NullablePredicate predicate;
+    private final NullablePredicate predicate;
 
     public FunctionalPredicateExpression(NullablePredicate predicate) {
         this.predicate = predicate;
