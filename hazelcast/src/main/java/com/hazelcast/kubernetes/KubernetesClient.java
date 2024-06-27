@@ -49,6 +49,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.net.HttpURLConnection.HTTP_GONE;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 
 /**
  * Responsible for connecting to the Kubernetes API.
@@ -61,9 +64,6 @@ class KubernetesClient {
     static final String SERVICE_TYPE_NODEPORT = "NodePort";
 
     private static final ILogger LOGGER = Logger.getLogger(KubernetesClient.class);
-    private static final int HTTP_GONE = 410;
-    private static final int HTTP_UNAUTHORIZED = 401;
-    private static final int HTTP_FORBIDDEN = 403;
 
     private static final int CONNECTION_TIMEOUT_SECONDS = 10;
     private static final int READ_TIMEOUT_SECONDS = 10;

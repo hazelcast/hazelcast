@@ -33,8 +33,8 @@ import java.net.URL;
 public interface MetricsProvider {
 
     int TIMEOUT = 2000;
-    int RESPONSE_OK = 200;
-    int RESPONSE_UNAUTHORIZED = 401;
+    int RESPONSE_OK = HttpURLConnection.HTTP_OK;
+    int RESPONSE_UNAUTHORIZED = HttpURLConnection.HTTP_UNAUTHORIZED;
 
     int A_INTERVAL = 5;
     int B_INTERVAL = 10;

@@ -27,16 +27,15 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 
 /**
  * Responsible for fetching the discovery information from GCP APIs.
  */
 class GcpClient {
     private static final ILogger LOGGER = Logger.getLogger(GcpDiscoveryStrategy.class);
-
-    private static final int HTTP_UNAUTHORIZED = 401;
-    private static final int HTTP_FORBIDDEN = 403;
-    private static final int HTTP_NOT_FOUND = 404;
 
     private static final int RETRIES = 3;
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList("Private key json file not found",

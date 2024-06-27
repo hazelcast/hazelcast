@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -48,15 +49,11 @@ import java.util.Set;
 
 public final class RestClient {
 
-    /**
-     * HTTP status code 200 OK
-     */
-    public static final int HTTP_OK = 200;
+    /** @see HttpURLConnection#HTTP_OK */
+    public static final int HTTP_OK = HttpURLConnection.HTTP_OK;
 
-    /**
-     * HTTP status code 404 NOT FOUND
-     */
-    public static final int HTTP_NOT_FOUND = 404;
+    /** @see HttpURLConnection#HTTP_NOT_FOUND */
+    public static final int HTTP_NOT_FOUND = HttpURLConnection.HTTP_NOT_FOUND;
     /**
      * Default value of -1 results in connection timeout not being explicitly defined
      */

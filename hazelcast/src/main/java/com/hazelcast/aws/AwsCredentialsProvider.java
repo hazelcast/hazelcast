@@ -23,10 +23,10 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.NoCredentialsException;
 import com.hazelcast.spi.exception.RestClientException;
 
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+
 class AwsCredentialsProvider {
     private static final ILogger LOGGER = Logger.getLogger(AwsCredentialsProvider.class);
-
-    private static final int HTTP_NOT_FOUND = 404;
 
     private final AwsConfig awsConfig;
     private final AwsMetadataApi awsMetadataApi;
