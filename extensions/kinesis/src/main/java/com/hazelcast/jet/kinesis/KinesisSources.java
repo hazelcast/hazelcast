@@ -269,9 +269,9 @@ public final class KinesisSources {
          *     <li><b>AT_TIMESTAMP</b>: start reading at the first record
          *      with a timestamp equal to or greater than the provided one</li>
          *     <li><b>TRIM_HORIZON</b>: start reading at the oldest
-         *      record in the shard, ie. read all available records</li>
+         *      record in the shard, i.e. read all available records</li>
          *     <li><b>LATEST</b>: start reading just after the most
-         *      recent record in the shard, ie. read only records that will
+         *      recent record in the shard, i.e. read only records that will
          *      be ingested later into the shard</li>
          * </ul>
          * <p>
@@ -300,7 +300,7 @@ public final class KinesisSources {
         /**
          * Specifies projection function, that will map input {@link Record}
          * and {@link com.amazonaws.services.kinesis.model.Shard} from which this record was read into user-defined type.
-         *
+         * <p>
          * If not provided, source will return {@code Map.Entry<String, byte[]>} with {@link Record#getPartitionKey()}
          * as key and {@link Record#getData()} as value.
          */

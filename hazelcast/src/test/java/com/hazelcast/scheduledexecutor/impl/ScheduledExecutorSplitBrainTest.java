@@ -176,9 +176,9 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void onAfterMergeDiscardMergePolicy() throws Exception {
-        // assert everything else (ie. tasks created before split) is in order
-        assertContents(scheduledExecutorService1.<Double>getAllScheduledFutures());
-        assertContents(scheduledExecutorService2.<Double>getAllScheduledFutures());
+        // assert everything else (i.e. tasks created before split) is in order
+        assertContents(scheduledExecutorService1.getAllScheduledFutures());
+        assertContents(scheduledExecutorService2.getAllScheduledFutures());
         assertHandlersAreStillCorrect();
         assertDiscardedFutures();
     }
@@ -198,8 +198,8 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void onAfterMergePassThroughMergePolicy() throws Exception {
-        assertContents(scheduledExecutorService1.<Double>getAllScheduledFutures());
-        assertContents(scheduledExecutorService2.<Double>getAllScheduledFutures());
+        assertContents(scheduledExecutorService1.getAllScheduledFutures());
+        assertContents(scheduledExecutorService2.getAllScheduledFutures());
         assertHandlersAreStillCorrect();
         assertUnexpectedFuturesHaveMergedValue();
     }
@@ -219,8 +219,8 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void onAfterMergePutIfAbsentMergePolicy() throws Exception {
-        assertContents(scheduledExecutorService1.<Double>getAllScheduledFutures());
-        assertContents(scheduledExecutorService2.<Double>getAllScheduledFutures());
+        assertContents(scheduledExecutorService1.getAllScheduledFutures());
+        assertContents(scheduledExecutorService2.getAllScheduledFutures());
         assertHandlersAreStillCorrect();
         assertUnexpectedFuturesHaveMergedValue();
     }

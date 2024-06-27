@@ -142,7 +142,7 @@ public final class CdcSinks {
      * by applying the provided {@code valueFn} to the change record.
      * <p>
      * <strong>NOTE:</strong> if {@code valueFn} returns {@code null},
-     * then the key will be deleted no matter the operation (ie. even for
+     * then the key will be deleted no matter the operation (i.e. even for
      * update and insert records).
      *
      * @since Jet 4.2
@@ -184,7 +184,7 @@ public final class CdcSinks {
      * by applying the provided {@code valueFn} to the change record.
      * <p>
      * <strong>NOTE:</strong> if {@code valueFn} returns {@code null},
-     * then the key will be deleted no matter the operation (ie. even for
+     * then the key will be deleted no matter the operation (i.e. even for
      * update and insert records).
      *
      * @since Jet 4.2
@@ -208,7 +208,7 @@ public final class CdcSinks {
      * using it.
      * <p>
      * <strong>NOTE 2:</strong> if {@code valueFn} returns {@code null},
-     * then the key will be deleted no matter the operation (ie. even for
+     * then the key will be deleted no matter the operation (i.e. even for
      * update and insert records).
      * <p>
      * Due to the used API, the remote cluster must be at least version 4.0.
@@ -235,7 +235,7 @@ public final class CdcSinks {
             @Nonnull FunctionEx<? super ChangeRecord, ? extends V> valueFn
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
-                record -> DELETE.equals(record.operation()) ? null : valueFn.apply(record);
+                changeRecord -> DELETE.equals(changeRecord.operation()) ? null : valueFn.apply(changeRecord);
         String clientXml = asXmlString(clientConfig);
         ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(clientXml,
                 procFn(name, map, clientXml, keyFn, toValueFn));

@@ -83,7 +83,7 @@ public final class JVMUtil {
 
     /**
      * Returns used memory as reported by the {@link Runtime} and the function (totalMemory - freeMemory)
-     * It attempts to correct atomicity issues (ie. when totalMemory expands) and reported usedMemory
+     * It attempts to correct atomicity issues (i.e. when totalMemory expands) and reported usedMemory
      * results in negative values
      *
      * @param runtime
@@ -140,11 +140,11 @@ public final class JVMUtil {
 
     /**
      * Estimates the reference by comparing the address offset of two fields.
-     *
+     * <p>
      * We can't rely on Unsafe to get a real reference size when oops compression is enabled.
-     * Hence we have to do a simple experiment: Let's have a class with 2 references.
+     * Hence, we have to do a simple experiment: Let's have a class with 2 references.
      * The difference between address offsets is the reference size in bytes.
-     *
+     * <p>
      * It is not bullet-proof, it assumes a certain object layout, but this happens
      * to work for all JVMs tested.
      */

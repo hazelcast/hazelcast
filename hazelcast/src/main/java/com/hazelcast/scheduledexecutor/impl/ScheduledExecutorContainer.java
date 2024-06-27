@@ -75,18 +75,18 @@ public class ScheduledExecutorContainer {
     /**
      * Permits are acquired through two different places
      * a. When a task is scheduled by the user-facing API
-     * ie. {@link IScheduledExecutorService#schedule(Runnable, long, TimeUnit)}
+     * i.e. {@link IScheduledExecutorService#schedule(Runnable, long, TimeUnit)}
      * whereas the permit policy is enforced, rejecting new tasks once the capacity is reached.
-     * b. When a task is promoted (ie. migration finished)
+     * b. When a task is promoted (i.e. migration finished)
      * whereas the permit policy is not-enforced, meaning that actual task count might be more than the configured capacity,
      * but that is purposefully done to prevent any data-loss during node/cluster failures.
-     *
+     * <p>
      * Permits are released similarly through two different places
      * a. When a task is disposed by user-facing API
-     * ie. {@link IScheduledFuture#dispose()} or {@link IScheduledExecutorService#destroy()}
-     * b. When a task is suspended (ie. migration started / roll-backed)
+     * i.e. {@link IScheduledFuture#dispose()} or {@link IScheduledExecutorService#destroy()}
+     * b. When a task is suspended (i.e. migration started / roll-backed)
      * Note: Permit releases are done, only if the task was previously active
-     * (ie. {@link ScheduledTaskDescriptor#status == {@link Status#ACTIVE}}
+     * (i.e. {@link ScheduledTaskDescriptor#status == {@link Status#ACTIVE}}
      *
      * As a result, {@link #tasks} size will be inconsistent with the number of acquired permits at times.
      */
@@ -232,7 +232,7 @@ public class ScheduledExecutorContainer {
         descriptor.setStats(stats);
 
         if (descriptor.getTaskResult() != null) {
-            // Task result previously populated - ie. through cancel
+            // Task result previously populated - i.e. through cancel
             // Ignore all subsequent results
             if (logger.isFineEnabled()) {
                 log(FINE, taskName, format("New state ignored! Current: %s New: %s ", descriptor.getTaskResult(), resolution));

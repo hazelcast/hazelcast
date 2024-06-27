@@ -39,7 +39,7 @@ public final class TimeStripUtil {
      * The fixed time in the past (instead of {@link
      * System#currentTimeMillis()} prevents any time
      * discrepancies among nodes, mis-translated as
-     * diffs of -1 ie. {@link Record#UNSET} values.
+     * diffs of -1 i.e. {@link Record#UNSET} values.
      * <p>
      * (see:
      * https://github.com/hazelcast/hazelcast-enterprise/issues/2527)

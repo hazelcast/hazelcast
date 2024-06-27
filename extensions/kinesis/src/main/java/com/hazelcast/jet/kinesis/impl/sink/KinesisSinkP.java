@@ -424,7 +424,7 @@ public class KinesisSinkP<T> implements Processor {
 
     /**
      * Under normal circumstances, when our sinks don't saturate the stream
-     * (ie. they don't send out more data than the sink can ingest), sinks
+     * (i.e. they don't send out more data than the sink can ingest), sinks
      * will not sleep or introduce any kind of delay between two consecutive
      * send operations (as long as there is data to send).
      * <p>
@@ -440,7 +440,7 @@ public class KinesisSinkP<T> implements Processor {
     private static final class ThroughputController extends SleepController {
 
         /**
-         * The ideal sleep duratio after sends, while rate limiting is necessary.
+         * The ideal sleep duration after sends, while rate limiting is necessary.
          */
         private static final int IDEAL_SLEEP_MS = 250;
 
