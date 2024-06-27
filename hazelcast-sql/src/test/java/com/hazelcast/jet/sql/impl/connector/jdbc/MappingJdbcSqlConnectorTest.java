@@ -324,7 +324,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     /**
-     * Source : <a href=https://github.com/hazelcast/hazelcast/issues/24337">issue #24337</a>.
+     * Source : <a href="https://github.com/hazelcast/hazelcast/issues/24337">issue #24337</a>.
      */
     @Test
     public void given_mappingIsDeclaredWithDataConn_when_DataConnWasRemoved_then_success() throws Exception {

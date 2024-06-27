@@ -71,7 +71,7 @@ public class GcpDiscoveryStrategyFactory
      * GCP discovery will not work.
      *
      * @return true if running on GCP Instance which has a service account attached
-     * @see <a href=https://cloud.google.com/compute/docs/instances/managing-instances#dmi>GCP Managing Instances</a>
+     * @see <a href="https://cloud.google.com/compute/docs/instances/managing-instances#dmi">GCP Managing Instances</a>
      */
     @Override
     public boolean isAutoDetectionApplicable() {
