@@ -167,7 +167,7 @@ public final class RestClient {
         if (requestTimeoutSeconds > 0) {
             builder.timeout(Duration.ofSeconds(requestTimeoutSeconds));
         }
-        headers.forEach(parameter -> builder.header(parameter.getKey(), parameter.getValue()));
+        headers.forEach(parameter -> builder.header(parameter.key(), parameter.value()));
 
         HttpRequest.BodyPublisher publisher = body == null ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(body);
@@ -215,7 +215,7 @@ public final class RestClient {
             }
 
             for (Parameter header : headers) {
-                requestBuilder.header(header.getKey(), header.getValue());
+                requestBuilder.header(header.key(), header.value());
             }
 
             if (body != null) {
@@ -243,8 +243,10 @@ public final class RestClient {
             String errorMessage = "none, body type: " + response.body().getClass();
             if (response.body() instanceof String) {
                 errorMessage = (String) response.body();
-            } else if (response.body() instanceof InputStream) {
-                Scanner scanner = new Scanner((InputStream) response.body(), StandardCharsets.UTF_8);
+            } else if (response.body() instanceof InputStream inputStream) {
+                // Closed in WatchResponse#disconnect
+                @SuppressWarnings("resource")
+                Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8);
                 scanner.useDelimiter("\\Z");
                 if (scanner.hasNext()) {
                     errorMessage = scanner.next();
@@ -328,7 +330,7 @@ public final class RestClient {
         private final HttpResponse<InputStream> response;
         private final BufferedReader reader;
 
-        public WatchResponse(HttpResponse<InputStream> response) throws IOException {
+        public WatchResponse(HttpResponse<InputStream> response) {
             this.code = response.statusCode();
             this.response = response;
             this.reader = new BufferedReader(new InputStreamReader(response.body()));
@@ -347,21 +349,6 @@ public final class RestClient {
         }
     }
 
-    private static final class Parameter {
-        private final String key;
-        private final String value;
-
-        private Parameter(String key, String value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        private String getKey() {
-            return key;
-        }
-
-        private String getValue() {
-            return value;
-        }
+    private record Parameter(String key, String value) {
     }
 }
