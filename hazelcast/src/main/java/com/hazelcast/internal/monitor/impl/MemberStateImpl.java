@@ -54,6 +54,8 @@ import static java.util.Collections.emptySet;
         "checkstyle:methodcount"})
 public class MemberStateImpl implements MemberState {
 
+    private static final String VECTOR_COLLECTIONS = "vectorCollections";
+
     private String address;
     private UUID uuid;
     private UUID cpMemberUuid;
@@ -72,6 +74,7 @@ public class MemberStateImpl implements MemberState {
     private Set<String> cachesWithStats = emptySet();
     private Set<String> flakeIdGeneratorsWithStats = emptySet();
     private Set<String> userCodeNamespacesWithStats = emptySet();
+    private Set<String> vectorCollections = emptySet();
     private Collection<ClientEndPointDTO> clients = emptySet();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
@@ -223,6 +226,14 @@ public class MemberStateImpl implements MemberState {
         this.userCodeNamespacesWithStats = userCodeNamespacesWithStats;
     }
 
+    public Set<String> getVectorCollections() {
+        return vectorCollections;
+    }
+
+    public void setVectorCollections(Set<String> vectorCollections) {
+        this.vectorCollections = vectorCollections;
+    }
+
     public void putLocalWanStats(String name, LocalWanStats localWanStats) {
         wanStats.put(name, localWanStats);
     }
@@ -318,6 +329,7 @@ public class MemberStateImpl implements MemberState {
         serializeAsMap(root, "flakeIdStats", flakeIdGeneratorsWithStats);
         serializeMap(root, "wanStats", wanStats);
         serializeAsMap(root, "userCodeNamespacesStats", userCodeNamespacesWithStats);
+        serializeAsMap(root, VECTOR_COLLECTIONS, vectorCollections);
 
         final JsonArray clientsArray = new JsonArray();
         for (ClientEndPointDTO client : clients) {
@@ -459,6 +471,10 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "userCodeNamespacesStats")) {
             userCodeNamespacesWithStats.add(next.getName());
         }
+        vectorCollections = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, VECTOR_COLLECTIONS)) {
+            vectorCollections.add(next.getName());
+        }
 
         for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
             putDeserializedIfSerializable(wanStats, next.getName(), next.getValue().asObject(),
@@ -518,6 +534,7 @@ public class MemberStateImpl implements MemberState {
                 + ", cachesWithStats=" + cachesWithStats
                 + ", flakeIdGeneratorsWithStats=" + flakeIdGeneratorsWithStats
                 + ", userCodeNamespacesWithStats=" + userCodeNamespacesWithStats
+                + ", vectorCollections=" + vectorCollections
                 + ", wanStats=" + wanStats
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState

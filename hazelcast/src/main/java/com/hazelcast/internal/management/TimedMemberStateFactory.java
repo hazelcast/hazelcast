@@ -211,7 +211,7 @@ public class TimedMemberStateFactory {
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    private void createMemState(MemberStateImpl memberState,
+    protected void createMemState(MemberStateImpl memberState,
                                 Collection<StatisticsAwareService> services) {
         Config config = instance.getConfig();
         for (StatisticsAwareService<?> service : services) {
