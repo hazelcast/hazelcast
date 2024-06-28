@@ -224,19 +224,19 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
 
     @Test
     public void compactArrayFirst_compactAtTheEnd() throws IOException {
-        Chip expected = ((Wheel) PORSCHE.wheels[1]).chip;
+        Chip expected = PORSCHE.wheels[1].chip;
         assertEquals(expected, reader(PORSCHE).read("wheels[1].chip"));
     }
 
     @Test
     public void compactArrayFirst_compactArrayAtTheEnd_oneElementFetched() throws IOException {
-        Chip expected = ((Wheel) PORSCHE.wheels[0]).chips[1];
+        Chip expected = PORSCHE.wheels[0].chips[1];
         assertEquals(expected, reader(PORSCHE).read("wheels[0].chips[1]"));
     }
 
     @Test
     public void compactArrayFirst_compactArrayAtTheEnd_wholeArrayFetched() throws IOException {
-        Chip[] expected = ((Wheel) PORSCHE.wheels[0]).chips;
+        Chip[] expected = PORSCHE.wheels[0].chips;
         assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[0].chips"));
     }
 
@@ -264,13 +264,13 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
 
     @Test
     public void compactArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched() throws IOException {
-        int[] expected = ((Wheel) PORSCHE.wheels[0]).serial;
+        int[] expected = PORSCHE.wheels[0].serial;
         assertArrayEquals(expected, (int[]) reader(PORSCHE).read("wheels[0].serial"));
     }
 
     @Test
     public void compactArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
-        int[] expected = ((Wheel) PORSCHE.wheels[0]).serial;
+        int[] expected = PORSCHE.wheels[0].serial;
         List<Integer> collect = Arrays.stream(expected).boxed().collect(Collectors.toList());
         assertCollection(collect, ((MultiResult) reader(PORSCHE).read("wheels[0].serial[any]")).getResults());
     }
@@ -283,8 +283,8 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     @Test
     public void compactArrayFirst_withAny_ObjectArrayAtTheEnd2() throws IOException {
         Chip[] expected = new Chip[]{
-                ((Wheel) PORSCHE.wheels[0]).chip,
-                ((Wheel) PORSCHE.wheels[1]).chip,
+                PORSCHE.wheels[0].chip,
+                PORSCHE.wheels[1].chip,
         };
         assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].chip")).getResults());
     }
@@ -292,8 +292,8 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     @Test
     public void compactArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
         Chip[] expected = new Chip[]{
-                ((Wheel) PORSCHE.wheels[0]).chips[1],
-                ((Wheel) PORSCHE.wheels[1]).chips[1],
+                PORSCHE.wheels[0].chips[1],
+                PORSCHE.wheels[1].chips[1],
         };
         assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].chips[1]")).getResults());
     }

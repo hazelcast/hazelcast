@@ -64,8 +64,8 @@ import static org.assertj.core.util.Arrays.asObjectArray;
  * (number or any) with all possible object types. It's impossible to do it manually, since there's 20 supported
  * types and a read method for each one of them.
  * <p>
- * Each test case is documented, plus each test outputs it's scenario in a readable way, so you it's easy to follow
- * the test case while you run it. Also each test case shows in which method it is generated.
+ * Each test case is documented, plus each test outputs its scenario in a readable way, so it's easy to follow
+ * the test case while you run it. Also, each test case shows in which method it is generated.
  * <p>
  * IF YOU SEE A FAILURE HERE:
  * - check the test output - analyse the test scenario
@@ -114,7 +114,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         // handle resultz
         Object resultToMatchVar = expectedResult;
         if (expectedResult instanceof List) {
-            // just convenience -> if result is a list if will be compared to an array, so it has to be converted
+            // just convenience -> if result is a list it will be compared to an array, so it has to be converted
             resultToMatchVar = ((List<?>) resultToMatchVar).toArray();
         }
 
@@ -125,7 +125,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
             // it makes debugging easier since all scenarios are generated
             printlnScenarioDescription(resultToMatch);
 
-            InternalSerializationService ss = (InternalSerializationService) createSerializationService();
+            InternalSerializationService ss = createSerializationService();
 
             Data data = ss.toData(inputObject);
             GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
@@ -436,21 +436,21 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         result.addAll(asList(
                 scenario(nestedFullGroup, (nestedFullGroup.object),
                         "object", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.object)).object,
+                scenario(nestedFullGroup, nestedFullGroup.object.object,
                         "object.object", p)
         ));
-        result.addAll(expandPrimitiveScenario(nestedFullGroup, ((GroupObject) nestedFullGroup.object).object,
+        result.addAll(expandPrimitiveScenario(nestedFullGroup, nestedFullGroup.object.object,
                 "object.object.primitive_", p));
         result.addAll(expandPrimitiveArrayScenario(nestedFullGroup,
-                (PrimitiveObject) ((GroupObject) nestedFullGroup.object).object,
+                nestedFullGroup.object.object,
                 "object.object.primitiveArray", p));
 
         NestedGroupObject nestedFullEmptyNullGroup = nested(group(prim(1, FULL), prim(10, NONE), prim(100, NULL)));
         result.addAll(expandPrimitiveScenario(nestedFullEmptyNullGroup,
-                ((GroupObject) nestedFullEmptyNullGroup.object).object,
+                nestedFullEmptyNullGroup.object.object,
                 "object.object.primitive_", p));
         result.addAll(expandPrimitiveArrayScenario(nestedFullEmptyNullGroup,
-                (PrimitiveObject) ((GroupObject) nestedFullEmptyNullGroup.object).object,
+                nestedFullEmptyNullGroup.object.object,
                 "object.object.primitiveArray", p));
 
         // empty or null object array de-referenced further
@@ -481,26 +481,26 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         NestedGroupObject nestedFullGroup = nested(group(prim(1, FULL), prim(10, FULL), prim(100, FULL)));
 
         result.addAll(asList(
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.object)).objects,
+                scenario(nestedFullGroup, nestedFullGroup.object.objects,
                         "object.objects", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.object)).objects,
+                scenario(nestedFullGroup, nestedFullGroup.object.objects,
                         "object.objects[any]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.object)).objects[0],
+                scenario(nestedFullGroup, nestedFullGroup.object.objects[0],
                         "object.objects[0]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.object)).objects[1],
+                scenario(nestedFullGroup, nestedFullGroup.object.objects[1],
                         "object.objects[1]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.object)).objects[2],
+                scenario(nestedFullGroup, nestedFullGroup.object.objects[2],
                         "object.objects[2]", p),
                 scenario(nestedFullGroup, null, "object.objects[12]", p)
         ));
-        result.addAll(expandObjectArrayPrimitiveScenario(nestedFullGroup, (GroupObject) nestedFullGroup.object,
+        result.addAll(expandObjectArrayPrimitiveScenario(nestedFullGroup, nestedFullGroup.object,
                 "object.objectArray.primitive_", p)
         );
 
 
         NestedGroupObject nestedFullEmptyNullGroup = nested(group(prim(1, FULL), prim(10, NONE), prim(100, NULL)));
         result.addAll(expandObjectArrayPrimitiveScenario(nestedFullEmptyNullGroup,
-                (GroupObject) nestedFullEmptyNullGroup.object, "object.objectArray.primitive_", p)
+                nestedFullEmptyNullGroup.object, "object.objectArray.primitive_", p)
         );
 
         // empty or null object array de-referenced further
@@ -513,7 +513,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedNullArrayGroup, null, "object.objects[1]", p),
                 scenario(nestedNullArrayGroup, null, "object.objects[2]", p)
         ));
-        result.addAll(expandObjectArrayPrimitiveScenario(nestedNullArrayGroup, (GroupObject) nestedNullArrayGroup.object,
+        result.addAll(expandObjectArrayPrimitiveScenario(nestedNullArrayGroup, nestedNullArrayGroup.object,
                 "object.objectArray.primitive_", p)
         );
 
@@ -527,7 +527,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedEmptyArrayGroup, null, "object.objects[2]", p)
         ));
         result.addAll(expandObjectArrayPrimitiveScenario(nestedEmptyArrayGroup,
-                (GroupObject) nestedEmptyArrayGroup.object, "object.objectArray.primitive_", p)
+                nestedEmptyArrayGroup.object, "object.objectArray.primitive_", p)
         );
 
         NestedGroupObject nestedEmpty = nested(new GroupObject[0]);
@@ -539,7 +539,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedEmpty, null, "object.objects[1]", p),
                 scenario(nestedEmpty, null, "object.objects[2]", p)
         ));
-        result.addAll(expandObjectArrayPrimitiveScenario(nestedEmpty, (GroupObject) nestedEmpty.object,
+        result.addAll(expandObjectArrayPrimitiveScenario(nestedEmpty, nestedEmpty.object,
                 "object.objectArray.primitive_", p)
         );
 
@@ -552,7 +552,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedNull, null, "object.objects[1]", p),
                 scenario(nestedNull, null, "object.objects[2]", p)
         ));
-        result.addAll(expandObjectArrayPrimitiveScenario(nestedNull, (GroupObject) nestedNull.object,
+        result.addAll(expandObjectArrayPrimitiveScenario(nestedNull, nestedNull.object,
                 "object.objectArray.primitive_", p)
         );
     }
@@ -717,32 +717,32 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         NestedGroupObject nestedFullGroup = nested(group(prim(1, FULL), prim(10, FULL), prim(100, FULL)));
 
         result.addAll(asList(
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects,
+                scenario(nestedFullGroup, nestedFullGroup.objects[0].objects,
                         "objects[0].objects", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects,
+                scenario(nestedFullGroup, nestedFullGroup.objects[0].objects,
                         "objects[0].objects[any]", p),
                 scenario(nestedFullGroup, prim(1, FULL),
                         "objects[any].objects[0]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects,
+                scenario(nestedFullGroup, nestedFullGroup.objects[0].objects,
                         "objects[any].objects[any]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects[0],
+                scenario(nestedFullGroup, nestedFullGroup.objects[0].objects[0],
                         "objects[0].objects[0]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects[1],
+                scenario(nestedFullGroup, nestedFullGroup.objects[0].objects[1],
                         "objects[0].objects[1]", p),
-                scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects[2],
+                scenario(nestedFullGroup, nestedFullGroup.objects[0].objects[2],
                         "objects[0].objects[2]", p),
                 scenario(nestedFullGroup, null,
                         "objects[0].objects[12]", p)
         ));
 
-        result.addAll(expandObjectArrayPrimitiveScenario(nestedFullGroup, (GroupObject) nestedFullGroup.object,
+        result.addAll(expandObjectArrayPrimitiveScenario(nestedFullGroup, nestedFullGroup.object,
                 "objects[0].objectArray.primitive_", p)
         );
 
         NestedGroupObject anyGroup = nested(new GroupObject[]{
                 group(NULL), group(NONE), group(prim(1, FULL), prim(10, NONE), prim(50, NULL)), group(prim(2, FULL), prim(20, NONE), prim(80, NULL)),
         });
-        result.addAll(expandObjectArrayPrimitiveScenario(anyGroup, (GroupObject) anyGroup.objects[0],
+        result.addAll(expandObjectArrayPrimitiveScenario(anyGroup, anyGroup.objects[0],
                 "objects[0].objectArray.primitive_", p)
         );
 
@@ -759,7 +759,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedNullArrayGroup, null, "objects[0].objects[2]", p)
         ));
         result.addAll(expandObjectArrayPrimitiveScenario(nestedNullArrayGroup,
-                (GroupObject) nestedNullArrayGroup.object, "objects[0].objectArray.primitive_", p)
+                nestedNullArrayGroup.object, "objects[0].objectArray.primitive_", p)
         );
 
         NestedGroupObject nestedEmptyArrayGroup = nested(new GroupObject(new PrimitiveObject[0]));
@@ -774,7 +774,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedEmptyArrayGroup, null, "objects[0].objects[2]", p)
         ));
         result.addAll(expandObjectArrayPrimitiveScenario(nestedEmptyArrayGroup,
-                (GroupObject) nestedEmptyArrayGroup.object, "objects[0].objectArray.primitive_", p)
+                nestedEmptyArrayGroup.object, "objects[0].objectArray.primitive_", p)
         );
 
         NestedGroupObject nestedEmpty = nested(new GroupObject[0]);
@@ -789,7 +789,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedEmpty, null, "objects[0].objects[2]", p)
         ));
         result.addAll(expandObjectArrayPrimitiveScenario(nestedEmpty,
-                (GroupObject) nestedEmpty.object, "objects[0].objectArray.primitive_", p)
+                nestedEmpty.object, "objects[0].objectArray.primitive_", p)
         );
 
         NestedGroupObject nestedNull = nested((GroupObject[]) null);
@@ -804,7 +804,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(nestedNull, null, "objects[0].objects[2]", p)
         ));
         result.addAll(expandObjectArrayPrimitiveScenario(nestedNull,
-                (GroupObject) nestedNull.object, "objects[0].objectArray.primitive_", p)
+                nestedNull.object, "objects[0].objectArray.primitive_", p)
         );
     }
 
@@ -819,7 +819,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         });
 
         result.addAll(asList(
-                scenario(anyGroup, ((GroupObject) (anyGroup.objects[0])).objects,
+                scenario(anyGroup, anyGroup.objects[0].objects,
                         "objects[0].objects[any]", p),
                 scenario(anyGroup, new PrimitiveObject[]{prim(1, FULL), prim(2, FULL)},
                         "objects[any].objects[0]", p),
