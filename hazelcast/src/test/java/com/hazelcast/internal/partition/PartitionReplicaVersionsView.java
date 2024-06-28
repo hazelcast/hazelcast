@@ -53,11 +53,9 @@ public class PartitionReplicaVersionsView {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PartitionReplicaVersionsView)) {
+        if (!(o instanceof PartitionReplicaVersionsView that)) {
             return false;
         }
-
-        PartitionReplicaVersionsView that = (PartitionReplicaVersionsView) o;
 
         long[] emptyVersions = new long[InternalPartition.MAX_BACKUP_COUNT];
 

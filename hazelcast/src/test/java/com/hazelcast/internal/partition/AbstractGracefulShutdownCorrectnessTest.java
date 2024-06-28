@@ -166,7 +166,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
     }
 
     private Collection<Address> shutdownNodes(List<HazelcastInstance> instances, int count) throws InterruptedException {
-        assertThat(instances.size()).isGreaterThanOrEqualTo(count);
+        assertThat(instances).hasSizeGreaterThanOrEqualTo(count);
 
         if (count == 1) {
             HazelcastInstance hz = instances.remove(0);

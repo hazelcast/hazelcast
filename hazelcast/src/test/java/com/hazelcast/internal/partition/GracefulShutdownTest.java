@@ -466,9 +466,9 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             warmUpPartitions(master);
         }
 
-        Future f1 = spawn((Runnable) () -> master.shutdown());
+        Future<?> f1 = spawn((Runnable) () -> master.shutdown());
 
-        Future f2 = spawn((Runnable) () -> {
+        Future<?> f2 = spawn((Runnable) () -> {
             changeClusterStateEventually(slaves[0], ClusterState.PASSIVE);
             slaves[0].getCluster().shutdown();
         });
@@ -507,7 +507,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         // instance-1 starts mastership claim
         assertTrueEventually(() -> assertTrue(getNode(instances[1]).isMaster()));
 
-        Future future = spawn((Runnable) () -> instances[1].shutdown());
+        Future<?> future = spawn((Runnable) () -> instances[1].shutdown());
 
         assertTrueAllTheTime(() -> {
             // other members have not received/accepted mastership claim yet
@@ -517,7 +517,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             // no partition state version change
             assertEquals(partitionStateStamp, partitionService.getPartitionStateStamp());
 
-            // no migrations has been submitted yet
+            // no migrations have been submitted yet
             assertNull(startedMigration.get());
         }, 5);
         assertFalse(future.isDone());

@@ -36,7 +36,7 @@ import java.util.UUID;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionRuntimeStateTest extends HazelcastTestSupport {
 
-    private UUID[] uuids = {
+    private final UUID[] uuids = {
             new UUID(57, 2),
             new UUID(57, 1)
     };

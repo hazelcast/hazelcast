@@ -87,7 +87,7 @@ public class MasterSplitTest extends HazelcastTestSupport {
         InvocationBuilder invocationBuilder = getOperationService(member1)
                 .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
                 .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
-        Future future = invocationBuilder.invoke();
+        Future<?> future = invocationBuilder.invoke();
 
         try {
             future.get();
@@ -127,7 +127,7 @@ public class MasterSplitTest extends HazelcastTestSupport {
         InvocationBuilder invocationBuilder = getOperationService(member1)
                 .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
                 .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
-        Future future = invocationBuilder.invoke();
+        Future<?> future = invocationBuilder.invoke();
 
         try {
             future.get();

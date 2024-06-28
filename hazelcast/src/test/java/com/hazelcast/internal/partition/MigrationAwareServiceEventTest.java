@@ -115,7 +115,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static class FailingOperationResponseHandler implements OperationResponseHandler {
+    private static class FailingOperationResponseHandler implements OperationResponseHandler<Operation> {
         private final Queue<String> failures = new ConcurrentLinkedQueue<>();
 
         @Override

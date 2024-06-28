@@ -50,7 +50,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void testReadOperationFailsWhenStaleReadDisabledDuringMigration()
-            throws ExecutionException, InterruptedException {
+            throws InterruptedException {
         final Config config = new Config();
         config.setProperty(ClusterProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION.getName(), "true");
 
@@ -90,7 +90,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
     private static class DummyOperation extends Operation implements ReadonlyOperation {
 
         @Override
-        public void run() throws Exception {
+        public void run() {
         }
 
         @Override
