@@ -157,7 +157,9 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         version = in.readObject();
         memberListJoinVersion = in.readInt();
         addressMap = readMap(in);
-        cpMemberUUID = UUIDSerializationUtil.readUUID(in);
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            cpMemberUUID = UUIDSerializationUtil.readUUID(in);
+        }
     }
 
     @Override
@@ -175,7 +177,9 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         out.writeObject(version);
         out.writeInt(memberListJoinVersion);
         writeMap(addressMap, out);
-        UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
+        }
     }
 
     @Override
