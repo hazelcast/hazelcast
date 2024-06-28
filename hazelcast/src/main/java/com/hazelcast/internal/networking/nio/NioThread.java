@@ -352,7 +352,11 @@ public class NioThread extends HazelcastManagedThread implements OperationHostil
             if (task == null) {
                 break;
             }
-            task.run();
+            try {
+                task.run();
+            } catch (Exception e) {
+                logger.warning("Task run exception", e);
+            }
             completedTaskCount.inc();
             tasksProcessed = true;
         }
