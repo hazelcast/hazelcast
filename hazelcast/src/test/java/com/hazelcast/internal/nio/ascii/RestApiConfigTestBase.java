@@ -24,7 +24,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_WRITE;
@@ -128,7 +127,7 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
     /**
      * Asserts that a text protocol client call to given {@link TestUrl} returns an expected response.
      */
-    protected void assertTextProtocolResponse(HazelcastInstance hz, TestUrl testUrl) throws UnknownHostException, IOException {
+    protected void assertTextProtocolResponse(HazelcastInstance hz, TestUrl testUrl) throws IOException {
         try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData(testUrl.method + " " + testUrl.requestUri + " HTTP/1.0" + CRLF + CRLF);
@@ -142,9 +141,8 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
      * response (e.g. a call to a disabled REST API).
      */
     protected void assertNoTextProtocolResponse(HazelcastInstance hz, TestUrl testUrl)
-            throws UnknownHostException, InterruptedException, IOException {
-        TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
-        try {
+            throws InterruptedException, IOException {
+        try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData(testUrl.method + " " + testUrl.requestUri + " HTTP/1.0" + CRLF);
             client.waitUntilClosed();
@@ -153,8 +151,6 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
             if (receivedResponse != null && !receivedResponse.isEmpty()) {
                 fail("Empty response was expected, but got '" + receivedResponse + "'. " + testUrl);
             }
-        } finally {
-            client.close();
         }
     }
 
