@@ -30,11 +30,10 @@ import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.Externalizable;
@@ -51,9 +50,6 @@ import static org.junit.Assert.assertNotNull;
 public class AbstractSerializationServiceTest {
 
     private AbstractSerializationService abstractSerializationService;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -143,12 +139,10 @@ public class AbstractSerializationServiceTest {
 
     @Test
     public void testToObject_ServiceInactive() {
-        expectedException.expect(HazelcastInstanceNotActiveException.class);
-
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
         abstractSerializationService.dispose();
-        abstractSerializationService.toObject(data);
+        Assert.assertThrows(HazelcastInstanceNotActiveException.class, () -> abstractSerializationService.toObject(data));
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -160,14 +154,13 @@ public class AbstractSerializationServiceTest {
 
     @Test
     public void testReadObject_ServiceInactive() {
-        expectedException.expect(HazelcastInstanceNotActiveException.class);
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
         abstractSerializationService.dispose();
 
         BufferObjectDataInput in = abstractSerializationService.createObjectDataInput(data);
         in.position(HeapData.TYPE_OFFSET);
-        abstractSerializationService.readObject(in);
+        Assert.assertThrows(HazelcastInstanceNotActiveException.class, () -> abstractSerializationService.readObject(in));
     }
 
     @Test(expected = IllegalArgumentException.class)

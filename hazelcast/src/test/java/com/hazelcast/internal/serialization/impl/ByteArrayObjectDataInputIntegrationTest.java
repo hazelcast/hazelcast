@@ -39,12 +39,12 @@ public class ByteArrayObjectDataInputIntegrationTest {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
-    public void testNotNull() throws Exception {
+    public void testNotNull() {
         readDataAsObject("foo");
     }
 
     @Test
-    public void testNull() throws Exception {
+    public void testNull() {
         readDataAsObject(null);
     }
 
