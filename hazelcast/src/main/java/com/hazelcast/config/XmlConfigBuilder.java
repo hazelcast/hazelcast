@@ -211,4 +211,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
         }
         return doc;
     }
+
+    protected InputStream getInputStream() {
+        return in;
+    }
 }
