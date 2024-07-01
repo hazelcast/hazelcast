@@ -240,7 +240,7 @@ public class DistributedScheduledExecutorService
 
         ScheduledExecutorPartition partition = partitions[event.getPartitionId()];
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE && event.getCurrentReplicaIndex() == 0) {
-            // this is the partition owner at the beginning of the migration
+            // this is the partition owner at the beginning of the migration,
             // so we suspend tasks now and promote them back if the migration
             // is rolled back
             partition.suspendTasks();

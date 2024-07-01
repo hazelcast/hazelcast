@@ -27,7 +27,7 @@ public interface ScheduledTaskStatistics
         extends IdentifiedDataSerializable {
 
     /**
-     * Returns how many times the task was ran/called.
+     * Returns how many times the task was run/called.
      *
      * @return The numbers of runs
      */

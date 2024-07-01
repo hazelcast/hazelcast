@@ -109,7 +109,7 @@ public final class ScheduledFutureProxy<V>
         if (mayInterruptIfRunning) {
             // DelegateAndSkipOnConcurrentExecutionDecorator doesn't expose the Executor's future
             // therefore we don't have access to the runner thread to interrupt. We could access through Thread.currentThread()
-            // inside the TaskRunner but it adds extra complexity.
+            // inside the TaskRunner, but it adds extra complexity.
             throw new UnsupportedOperationException("mayInterruptIfRunning flag is not supported.");
         }
 

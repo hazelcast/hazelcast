@@ -33,14 +33,13 @@ public class ScheduledExecutorWaitNotifyKey
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ScheduledExecutorWaitNotifyKey)) {
+        if (!(o instanceof ScheduledExecutorWaitNotifyKey that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
 
-        ScheduledExecutorWaitNotifyKey that = (ScheduledExecutorWaitNotifyKey) o;
         return urn.equals(that.urn);
     }
 

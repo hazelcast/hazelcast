@@ -29,7 +29,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeM
 
 /**
  * Simple HashMap adapter class to implement DataSerializable serialization semantics
- * to not loose hands on serialization while sending intermediate results.
+ * to not lose hands on serialization while sending intermediate results.
  *
  * @param <K> key type
  * @param <V> value type

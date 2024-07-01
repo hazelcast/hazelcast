@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
  * An interface to provide means for saving &amp; loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
  * tasks scheduled with an {@link IScheduledExecutorService}. When task implements this interface, the Scheduled Executor will
  * be able to handle state of the task among the replicas in an event of Migration or Node failure.
- *
+ * <p>
  * Example:
  * <pre>
  * public class CleanUpTask implements Runnable, StatefulTask&lt;String, Integer&gt;, HazelcastInstanceAware {
@@ -65,10 +65,10 @@ public interface StatefulTask<K, V> {
      * {@link Callable#call()} to capture a snapshot of the state and publish to replicas. If two or more replicas of the same
      * task run at the same time and publish their states, then only the one running on the owner member will be allowed to update
      * the replicas.
-     *
+     * <p>
      * <b>Note: </b> The state of the cluster is not known or guaranteed during task's execution, thus, publication of the task's
      * state to replicas is done on best-effort basis.
-     *
+     * <p>
      * Called immediately after run() or call() of the {@link Runnable} or {@link java.util.concurrent.Callable} respectively.
      *
      * @param snapshot The {@link Map} responsible for holding a snapshot of the current state.
@@ -77,9 +77,9 @@ public interface StatefulTask<K, V> {
 
     /**
      * Task callback to initialize its inner state, after a replica promotion, from the given map. This is invoked once per task's
-     * lifecycle in a single member, before invocation of {@link Runnable#run()} or {@link Callable#call()} to setup task's state
+     * lifecycle in a single member, before invocation of {@link Runnable#run()} or {@link Callable#call()} to set up task's state
      * as published from the previous owner of the task in the cluster.
-     *
+     * <p>
      * <code>load</code> will not be called if the snapshot is empty.
      *
      * @param snapshot The {@link Map} responsible for providing a snapshot of the task's state.
