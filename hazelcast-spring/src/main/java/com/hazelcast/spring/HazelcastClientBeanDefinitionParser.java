@@ -206,6 +206,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSql(node);
                 } else if ("tpc".equals(nodeName)) {
                     handleTpc(node);
+                } else if ("cp-direct-to-leader-routing".equals(nodeName)) {
+                    configBuilder.addPropertyValue("cpDirectToLeaderRoutingEnabled", getTextContent(node));
                 }
             }
             return configBuilder.getBeanDefinition();

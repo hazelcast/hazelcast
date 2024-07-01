@@ -27,6 +27,8 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.impl.spi.impl.listener.ClientCPGroupViewService;
+import com.hazelcast.client.impl.spi.impl.listener.NoOpClientCPGroupViewService;
 import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -265,5 +267,11 @@ public class DefaultClientExtension implements ClientExtension {
                     + "You must use Hazelcast enterprise to enable this feature.");
         }
         return new ClientClusterServiceImpl(loggingService);
+    }
+
+    @Override
+    public ClientCPGroupViewService createClientCPGroupViewService(HazelcastClientInstanceImpl hazelcastClientInstance,
+                                                                   boolean directToLeaderRoutingEnabled) {
+        return new NoOpClientCPGroupViewService();
     }
 }

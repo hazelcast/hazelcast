@@ -260,4 +260,14 @@ public interface CPSubsystemManagementService {
      * @see #isDiscoveryCompleted()
      */
     boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException;
+
+    /**
+     * Creates a {@link CPGroupsSnapshot} based on the internal
+     * CP group view tracker's current view of all groups. This
+     * snapshot will always be empty if the ADVANCED_CP license
+     * component is not present.
+     *
+     * @return a new {@link CPGroupsSnapshot}
+     */
+    CPGroupsSnapshot getCurrentGroupsSnapshot();
 }

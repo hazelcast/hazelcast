@@ -77,4 +77,5 @@ public abstract class RaftServiceSerializerConstants {
     public static final int UNSAFE_MODE_PARTITION_STATE = 51;
     public static final int UNSAFE_STATE_REPLICATE_OP = 52;
     public static final int GET_CP_OBJECT_INFOS_OP = 53;
+    public static final int PUBLISH_CP_GROUP_INFO_OP = 54;
 }

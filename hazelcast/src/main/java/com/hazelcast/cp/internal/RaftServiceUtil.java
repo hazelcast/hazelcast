@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal;
 public class RaftServiceUtil {
 
     public static final String SERVICE_NAME = "hz:core:raft";
+    public static final String CP_SUBSYSTEM_EXECUTOR = "hz:cpSubsystem";
 
     private RaftServiceUtil() {
     }

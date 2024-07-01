@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.cp.CPGroupsSnapshot;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -66,6 +67,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     transient byte clientSerializationVersion;
     transient String clientVersion;
     transient byte routingMode;
+    transient boolean cpDirectToLeaderRouting;
 
     AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -212,7 +214,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         setConnectionType();
         setTpcTokenToEndpoint();
         endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels,
-                RoutingMode.getById(routingMode));
+                RoutingMode.getById(routingMode), cpDirectToLeaderRouting);
         validateNodeStart();
         final UUID clusterId = nodeEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;
@@ -237,10 +239,18 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         MembersView membersView = clusterViewListenerService.getMembersView();
         PartitionsView partitionsView = clusterViewListenerService.getPartitionsView();
         Collection<Collection<UUID>> memberGroups = clusterViewListenerService.toMemberGroups(membersView);
+
+        CPGroupsSnapshot cpMemberSnapshot = CPGroupsSnapshot.EMPTY;
         boolean enterprise = nodeEngine.getNode().getBuildInfo().isEnterprise();
+        if (enterprise && nodeEngine.getConfig().getCPSubsystemConfig().getGroupSize() > 0) {
+            // The snapshot will be empty if ADVANCED_CP license component is not present
+            cpMemberSnapshot = nodeEngine.getHazelcastInstance().getCPSubsystem()
+                                         .getCPSubsystemManagementService().getCurrentGroupsSnapshot();
+        }
+
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         Map<String, String> keyValuePairs = createKeyValuePairs(
-                memberGroups, membersView.getVersion(), enterprise, clusterVersion);
+                memberGroups, membersView.getVersion(), enterprise, clusterVersion, cpMemberSnapshot);
 
         return encodeAuthenticationResponse(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
                 nodeEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,

@@ -19,6 +19,7 @@ import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.ClientListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientCPGroupViewService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
@@ -47,4 +48,9 @@ public interface HazelcastClientInstance extends HazelcastInstance {
      * Get cluster service
      */
     ClientClusterService getClientClusterService();
+
+    /**
+     * Get CP group view service
+     */
+    ClientCPGroupViewService getCPGroupViewService();
 }

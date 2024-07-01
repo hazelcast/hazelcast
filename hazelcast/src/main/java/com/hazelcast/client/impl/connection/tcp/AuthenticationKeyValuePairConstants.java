@@ -41,6 +41,7 @@ public final class AuthenticationKeyValuePairConstants {
                     + "Make sure your cluster has Hazelcast Enterprise JARs on its classpath.",
             PARTITION_GROUPS);
     public static final String SUBSET_MEMBER_GROUPS_INFO = "memberGroups";
+    public static final String CP_LEADERS_INFO = "cp.leaders";
     private static final Version SUBSET_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION = Versions.V5_5;
 
 

@@ -82,7 +82,7 @@ public class TestUtil {
             String clusterName = node.getConfig().getClusterName();
             ClientMessage request = ClientAuthenticationCodec.encodeRequest(
                     clusterName, null, null, uuid,
-                    clientType, (byte) 1, clientVersion, uuid.toString(), Collections.emptyList(), (byte) 1);
+                    clientType, (byte) 1, clientVersion, uuid.toString(), Collections.emptyList(), (byte) 1, false);
             InetSocketAddress address = node.getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
             DummyConnection connection = new DummyConnection(address.getAddress(), address.getPort());
             connections.add(connection);

@@ -196,6 +196,9 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getTpcConfig(), alternativeConfig.getTpcConfig())) {
             throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "tpcConfig");
         }
+        if (notEqual(mainConfig.isCPDirectToLeaderRoutingEnabled(), alternativeConfig.isCPDirectToLeaderRoutingEnabled())) {
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "isCPDirectToLeaderRoutingEnabled");
+        }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})

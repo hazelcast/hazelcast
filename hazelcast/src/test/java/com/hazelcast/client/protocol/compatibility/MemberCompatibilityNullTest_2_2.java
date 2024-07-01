@@ -78,6 +78,7 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(aString, parameters.clientName));
         assertTrue(isEqual(aListOfStrings, parameters.labels));
         assertFalse(parameters.isRoutingModeExists);
+        assertFalse(parameters.isCpDirectToLeaderRoutingExists);
     }
 
     @Test
@@ -102,6 +103,7 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(aString, parameters.clientName));
         assertTrue(isEqual(aListOfStrings, parameters.labels));
         assertFalse(parameters.isRoutingModeExists);
+        assertFalse(parameters.isCpDirectToLeaderRoutingExists);
     }
 
     @Test

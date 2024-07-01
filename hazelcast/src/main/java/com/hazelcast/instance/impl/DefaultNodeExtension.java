@@ -20,6 +20,8 @@ import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AuditlogConfig;
@@ -731,5 +733,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public TpcServerBootstrap createTpcServerBootstrap() {
         return new TpcServerBootstrapImpl(node);
+    }
+
+    @Override
+    public ClientEngine createClientEngine() {
+        return new ClientEngineImpl(node);
     }
 }

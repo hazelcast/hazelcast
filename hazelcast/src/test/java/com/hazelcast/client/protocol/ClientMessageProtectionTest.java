@@ -215,7 +215,7 @@ public class ClientMessageProtectionTest {
 
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String clientName) {
         return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), null, null, UUID.randomUUID(), "FOO",
-                (byte) 1, clientName, "xxx", emptyList(), (byte) 1);
+                (byte) 1, clientName, "xxx", emptyList(), (byte) 1, false);
     }
 
     private <T> Condition<T> connectionClosedException() {

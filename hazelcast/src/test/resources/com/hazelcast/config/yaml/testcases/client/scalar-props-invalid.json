@@ -5,6 +5,7 @@
       "instance-name": false,
       "properties": null,
       "backup-ack-to-client-enabled": "Off",
+      "cp-direct-to-leader-routing": "On",
       "unknown": false
     }
   },
@@ -22,6 +23,13 @@
       {
         "schemaLocation": "#/properties/hazelcast-client/properties/backup-ack-to-client-enabled",
         "pointerToViolation": "#/hazelcast-client/backup-ack-to-client-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast-client/properties/cp-direct-to-leader-routing",
+        "pointerToViolation": "#/hazelcast-client/cp-direct-to-leader-routing",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
@@ -48,6 +56,6 @@
         "message": "expected type: JSONObject, found: Null"
       }
     ],
-    "message": "5 schema violations found"
+    "message": "6 schema violations found"
   }
 }

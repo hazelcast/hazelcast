@@ -64,6 +64,8 @@
 
     <backup-ack-to-client-enabled>false</backup-ack-to-client-enabled>
 
+    <cp-direct-to-leader-routing>false</cp-direct-to-leader-routing>
+
     <network>
         <cluster-members>
             <address>127.0.0.1</address>

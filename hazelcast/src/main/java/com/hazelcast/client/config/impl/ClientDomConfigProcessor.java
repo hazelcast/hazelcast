@@ -67,6 +67,7 @@ import org.w3c.dom.Node;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.client.config.impl.ClientConfigSections.CP_DIRECT_TO_LEADER_ROUTING;
 import static com.hazelcast.client.config.impl.ClientConfigSections.TPC;
 import static com.hazelcast.client.config.impl.ClientConfigSections.BACKUP_ACK_TO_CLIENT;
 import static com.hazelcast.client.config.impl.ClientConfigSections.CLUSTER_NAME;
@@ -195,6 +196,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSql(node, clientConfig.getSqlConfig());
         } else if (matches(TPC.getName(), nodeName)) {
             handleTpc(node, clientConfig.getTpcConfig());
+        } else if (matches(CP_DIRECT_TO_LEADER_ROUTING.getName(), nodeName)) {
+            clientConfig.setCPDirectToLeaderRoutingEnabled(Boolean.parseBoolean(getTextContent(node)));
         }
     }
 

@@ -51,6 +51,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheSetExpiryPolicyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddCPGroupViewListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMigrationListenerCodec;
@@ -447,6 +448,7 @@ import com.hazelcast.client.impl.protocol.task.cache.CacheSetExpiryPolicyMessage
 import com.hazelcast.client.impl.protocol.task.cache.CacheSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
+import com.hazelcast.client.impl.protocol.task.cp.AddCPGroupViewListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetConfiguredReplicaCountMessageTask;
 import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetMessageTask;
@@ -1461,6 +1463,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
         factories.put(ClientTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ClientTpcAuthenticationMessageTask(cm, node, con));
+        factories.put(ClientAddCPGroupViewListenerCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new AddCPGroupViewListenerMessageTask(cm, node, con));
     }
 
     private void initializeQueueTaskFactories() {

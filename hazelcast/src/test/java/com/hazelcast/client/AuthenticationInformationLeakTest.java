@@ -174,7 +174,8 @@ public class AuthenticationInformationLeakTest {
     private ClientMessage authenticate(String clusterName, byte serVersion, OutputStream os, InputStream is)
             throws IOException {
         UUID uuid = new UUID(0, 0);
-        ClientMessage msg = ClientAuthenticationCodec.encodeRequest(clusterName, null, null, uuid, "", serVersion, "", "", new ArrayList<>(), (byte) 1);
+        ClientMessage msg = ClientAuthenticationCodec.encodeRequest(clusterName, null, null, uuid, "",
+                serVersion, "", "", new ArrayList<>(), (byte) 1, false);
         ClientTestUtil.writeClientMessage(os, msg);
 
         ClientMessage res = ClientTestUtil.readResponse(is);

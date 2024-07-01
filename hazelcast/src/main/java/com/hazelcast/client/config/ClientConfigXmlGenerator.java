@@ -113,6 +113,8 @@ public final class ClientConfigXmlGenerator {
         network(gen, clientConfig.getNetworkConfig());
         //Backup Ack To Client
         gen.node("backup-ack-to-client-enabled", clientConfig.isBackupAckToClientEnabled());
+        //CP direct-to-leader operation routing
+        gen.node("cp-direct-to-leader-routing", clientConfig.isCPDirectToLeaderRoutingEnabled());
         //Security
         security(gen, clientConfig.getSecurityConfig());
         //Listeners

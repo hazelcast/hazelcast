@@ -1177,8 +1177,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         if (response.isKeyValuePairsExists()) {
             Map<String, String> keyValuePairs = Collections.unmodifiableMap(response.getKeyValuePairs());
+            // Pass along KV pairs for MULTI_MEMBER routing if required
             client.getClientClusterService()
                     .updateOnAuth(connection.getClusterUuid(), connection.getRemoteUuid(), keyValuePairs);
+
+            // Pass CP leadership data to our tracking service
+            client.getCPGroupViewService().initializeKnownLeaders(keyValuePairs);
         } else {
             // If there are no key-value pairs, we have connected to a member that is older than 5_5
             // this is unsupported for clients operating with subset routing mode.
@@ -1293,10 +1297,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         Credentials credentials = currentContext.getCredentialsFactory().newCredentials(toAddress);
         String clusterName = currentContext.getClusterName();
         currentCredentials = credentials;
+        boolean cpDirectToLeader = client.getCPGroupViewService().isDirectToLeaderEnabled();
         byte routingModeByte = (byte) client.getConnectionManager().getRoutingMode().ordinal();
         if (credentials instanceof PasswordCredentials passwordCredentials) {
             return encodePasswordCredentialsRequest(clusterName, passwordCredentials,
-                    ss.getVersion(), clientVersion, routingModeByte);
+                    ss.getVersion(), clientVersion, routingModeByte, cpDirectToLeader);
         } else {
             byte[] secretBytes;
             if (credentials instanceof TokenCredentials tokenCredentials) {
@@ -1305,26 +1310,29 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 secretBytes = ss.toDataWithSchema(credentials).toByteArray();
             }
 
-            return encodeCustomCredentialsRequest(clusterName, secretBytes, ss.getVersion(), clientVersion, routingModeByte);
+            return encodeCustomCredentialsRequest(clusterName, secretBytes, ss.getVersion(), clientVersion, routingModeByte,
+                    cpDirectToLeader);
         }
     }
 
     private ClientMessage encodePasswordCredentialsRequest(String clusterName,
                                                            PasswordCredentials credentials,
                                                            byte serializationVersion,
-                                                           String clientVersion, byte routingMode) {
+                                                           String clientVersion, byte routingMode,
+                                                           boolean cpDirectToLeader) {
         return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
                 credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                clientVersion, client.getName(), labels, routingMode);
+                clientVersion, client.getName(), labels, routingMode, cpDirectToLeader);
     }
 
     private ClientMessage encodeCustomCredentialsRequest(String clusterName,
                                                          byte[] secretBytes,
                                                          byte serializationVersion,
                                                          String clientVersion,
-                                                         byte routingMode) {
+                                                         byte routingMode,
+                                                         boolean cpDirectToLeader) {
         return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                connectionType, serializationVersion, clientVersion, client.getName(), labels, routingMode);
+                connectionType, serializationVersion, clientVersion, client.getName(), labels, routingMode, cpDirectToLeader);
     }
 
     protected void checkClientActive() {

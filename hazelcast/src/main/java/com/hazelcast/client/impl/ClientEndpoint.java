@@ -88,7 +88,8 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
     void setLoginContext(LoginContext lc);
 
     void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
-                       long authCorrelationId, String clientName, Set<String> labels, RoutingMode routingMode);
+                       long authCorrelationId, String clientName, Set<String> labels, RoutingMode routingMode,
+                       boolean cpDirectToLeaderRouting);
 
     /**
      * @return true if endpoint is authenticated with valid security credentials, returns false otherwise
@@ -165,4 +166,11 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
      */
     RoutingMode getRoutingMode();
 
+    /**
+     * Returns whether this client has the `cp-direct-to-leader-routing`
+     * option enabled or not.
+     *
+     * @return {@code true} if it is enabled, else {@code false}
+     */
+    boolean isCpDirectToLeaderEnabled();
 }

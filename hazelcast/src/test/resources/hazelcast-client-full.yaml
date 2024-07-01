@@ -49,6 +49,8 @@ hazelcast-client:
 
   backup-ack-to-client-enabled: false
 
+  cp-direct-to-leader-routing: false
+
   network:
     cluster-members:
       - 127.0.0.1

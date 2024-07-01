@@ -91,6 +91,16 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     ClusterViewListenerService getClusterViewListenerService();
 
     /**
+     * Retrieves the {@link CPGroupViewListenerService} which maintains
+     * a view of CP leaders based on events received by cluster members.
+     * This service is called internally when license requirements are met
+     * to provide direct-to-leader CP operation sending.
+     *
+     * @return the {@link CPGroupViewListenerService} implementation
+     */
+    CPGroupViewListenerService getCPGroupViewListenerService();
+
+    /**
      * Returns the map of the active clients connected to
      * the cluster. Mapping is from the client type to
      * client count.

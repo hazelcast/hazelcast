@@ -21,6 +21,7 @@ import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.impl.listener.ClientCPGroupViewService;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -135,4 +136,13 @@ public interface ClientExtension {
      */
     ClientClusterService createClientClusterService(LoggingService loggingService,
                                                     SubsetRoutingConfig subsetRoutingConfig);
+
+    /**
+     * Creates the correct implementation of {@link ClientCPGroupViewService}.
+     *
+     * @param hazelcastClientInstance the client instance
+     * @return the concrete {@link ClientCPGroupViewService} implementation.
+     */
+    ClientCPGroupViewService createClientCPGroupViewService(HazelcastClientInstanceImpl hazelcastClientInstance,
+                                                            boolean directToLeaderRoutingEnabled);
 }

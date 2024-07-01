@@ -1763,6 +1763,7 @@
                     <xs:element name="native-memory" type="native-memory" minOccurs="0"/>
                     <xs:element name="sql" type="clientSql" minOccurs="0"/>
                     <xs:element name="tpc" type="tpc-client" minOccurs="0"/>
+                    <xs:element name="cp-direct-to-leader-routing" type="xs:boolean" minOccurs="0" default="false"/>
                 </xs:choice>
             </xs:extension>
         </xs:complexContent>

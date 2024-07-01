@@ -102,8 +102,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private static final int BLOCKING_THREADS_PER_CORE = 20;
     private static final int THREADS_PER_CORE = 1;
     private static final int QUERY_THREADS_PER_CORE = 1;
-    private final Node node;
-    private final NodeEngineImpl nodeEngine;
+    protected final Node node;
+    protected final NodeEngineImpl nodeEngine;
     private final Executor executor;
     private final Executor blockingExecutor;
     private final Executor queryExecutor;
@@ -123,6 +123,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final AddressChecker addressChecker;
     private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096, true);
     private final boolean tpcEnabled;
+    private final CPGroupViewListenerService cpGroupViewListenerService;
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -146,6 +147,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.endpointStatisticsManager = PhoneHome.isPhoneHomeEnabled(node)
                 ? new ClientEndpointStatisticsManagerImpl() : new NoOpClientEndpointStatisticsManager();
         this.tpcEnabled = nodeEngine.getTpcServerBootstrap().isEnabled();
+        this.cpGroupViewListenerService = createCpGroupViewListenerService();
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
@@ -426,6 +428,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
+    public CPGroupViewListenerService getCPGroupViewListenerService() {
+        return cpGroupViewListenerService;
+    }
+
+    @Override
     public boolean isClientAllowed(Client client) {
         return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType()) || clientSelector.select(client);
     }
@@ -554,5 +561,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public void setEndpointStatisticsManager(ClientEndpointStatisticsManager endpointStatisticsManager) {
         // this should only be used in tests
         this.endpointStatisticsManager = endpointStatisticsManager;
+    }
+
+    protected CPGroupViewListenerService createCpGroupViewListenerService() {
+        return new NoOpCPGroupViewListenerService();
     }
 }

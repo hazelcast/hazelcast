@@ -112,6 +112,15 @@ hazelcast-client:
   backup-ack-to-client-enabled: true
 
   #
+  # The cp-direct-to-leader-routing element lets you enable/disable direct-to-leader routing behaviour.
+  # This feature allows CP data structure operations to be sent directly to group leaders instead of using
+  # all members of the cluster. This functionality requires the cluster to have the appropriate Hazelcast
+  # Enterprise license, otherwise it will provide no benefit on the client.
+  # It is disabled by default. This option has no effect for unisocket clients.
+  #
+  cp-direct-to-leader-routing: false
+
+  #
   # ===== HAZELCAST NETWORK CONFIGURATION =====
   #
   # The configuration to build your Hazelcast's network includes configuration for port, interface, discovery

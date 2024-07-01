@@ -57,7 +57,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
         }
 
         clientMessage = ClientAuthenticationCodec.encodeRequest(clientName, username, password, uuid,
-                clientType, (byte) 1, clientSerializationVersion, clusterName, labels, (byte) 1);
+                clientType, (byte) 1, clientSerializationVersion, clusterName, labels, (byte) 1, false);
     }
 
     @Test

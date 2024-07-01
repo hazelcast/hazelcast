@@ -113,6 +113,11 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
+    public CPGroupViewListenerService getCPGroupViewListenerService() {
+        return null;
+    }
+
+    @Override
     public Map<String, Long> getActiveClientsInCluster() {
         return emptyMap();
     }

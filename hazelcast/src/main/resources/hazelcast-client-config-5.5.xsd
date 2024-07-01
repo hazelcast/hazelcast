@@ -49,6 +49,7 @@
                 <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                 <xs:element name="sql" type="sql" minOccurs="0"/>
                 <xs:element name="tpc" type="tpc" minOccurs="0"/>
+                <xs:element name="cp-direct-to-leader-routing" type="xs:boolean" minOccurs="0" default="false"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>

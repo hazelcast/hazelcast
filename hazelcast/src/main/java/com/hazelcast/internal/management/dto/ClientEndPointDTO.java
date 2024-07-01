@@ -67,6 +67,11 @@ public class ClientEndPointDTO implements JsonSerializable {
      */
     public String canonicalHostName;
 
+    /**
+     * Whether the Client has cp direct-to-leader operation routing enabled (requires member-side license components)
+     */
+    public boolean cpDirectToLeader;
+
     public ClientEndPointDTO() {
     }
 
@@ -87,6 +92,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         InetAddress address = socketAddress.getAddress();
         this.ipAddress = address != null ? address.getHostAddress() : null;
         this.canonicalHostName = address != null ? address.getCanonicalHostName() : null;
+        this.cpDirectToLeader = clientEndpoint.isCpDirectToLeaderEnabled();
     }
 
     @Override
@@ -108,6 +114,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         root.add("labels", labelsObject);
         root.add("ipAddress", ipAddress);
         root.add("canonicalHostName", canonicalHostName);
+        root.add("cpDirectToLeader", cpDirectToLeader);
         return root;
     }
 
@@ -129,5 +136,6 @@ public class ClientEndPointDTO implements JsonSerializable {
         }
         ipAddress = getString(json, "ipAddress", null);
         canonicalHostName = getString(json, "canonicalHostName", null);
+        cpDirectToLeader = getBoolean(json, "cpDirectToLeader", false);
     }
 }

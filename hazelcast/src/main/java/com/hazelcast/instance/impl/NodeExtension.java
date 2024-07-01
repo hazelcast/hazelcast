@@ -17,6 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.CPSubsystem;
@@ -426,6 +427,13 @@ public interface NodeExtension {
     UserCodeNamespaceService getNamespaceService();
 
     TpcServerBootstrap createTpcServerBootstrap();
+
+    /**
+     * Creates an implementation of the {@link ClientEngine} depending on Hazelcast edition.
+     *
+     * @return a new {@link ClientEngine} instance for this member
+     */
+    ClientEngine createClientEngine();
 
     /**
      * @return the license object, if a Hazelcast Enterprise license is configured, otherwise {@code null}

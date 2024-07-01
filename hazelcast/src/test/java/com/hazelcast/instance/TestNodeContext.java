@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.impl.NoOpClientEngine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
@@ -97,6 +98,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
         when(nodeExtension.getNamespaceService()).thenReturn(new NoOpUserCodeNamespaceService(TestNodeContext.class.getClassLoader()));
         when(nodeExtension.createTpcServerBootstrap()).thenReturn(new TpcServerBootstrapImpl(node));
+        when(nodeExtension.createClientEngine()).thenReturn(new NoOpClientEngine());
         return nodeExtension;
     }
 

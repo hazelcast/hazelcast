@@ -71,6 +71,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.RaftGroupInfo;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -808,7 +809,10 @@ public class ReferenceObjects {
     }
 
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
+    public static RaftGroupInfo aRaftGroupInfo = new RaftGroupInfo(aRaftGroupId, aCpMember, aListOfCpMembers);
     public static List<RaftGroupId> aListOfRaftGroupIds = Collections.singletonList(aRaftGroupId);
+    public static List<RaftGroupInfo> aListOfRaftGroupInfo = Collections.singletonList(aRaftGroupInfo);
+    public static Map<RaftGroupId, Collection<UUID>> aMapOfRaftGroupIdToListUuid = Collections.singletonMap(aRaftGroupId, aListOfUUIDs);
     public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(aUUID, anInt, aString, aString);
     public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
     public static ReplicatedMapEntryViewHolder aReplicatedMapEntryViewHolder = new ReplicatedMapEntryViewHolder(

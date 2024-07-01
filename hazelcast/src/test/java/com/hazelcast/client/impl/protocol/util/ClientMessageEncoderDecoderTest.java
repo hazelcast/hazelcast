@@ -142,7 +142,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID uuid = UUID.randomUUID();
         ClientMessage message = ClientAuthenticationCodec.encodeRequest("cluster", "user", "pass",
                 uuid, "JAVA", (byte) 1,
-                "1.0", "name", labels, (byte) 1);
+                "1.0", "name", labels, (byte) 1, false);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
