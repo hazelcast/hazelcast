@@ -30,7 +30,7 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * A Ringbuffer is a data structure where the content is stored in a ring-like
- * structure. A ringbuffer has a fixed capacity so it won't grow beyond
+ * structure. A ringbuffer has a fixed capacity, so it won't grow beyond
  * that capacity and endanger the stability of the system. If that capacity
  * is exceeded, the oldest item in the ringbuffer is overwritten.
  * <p>
@@ -173,13 +173,13 @@ public interface Ringbuffer<E> extends DistributedObject {
      * you can read the added item.
      *
      * <h3>Using the sequence as ID</h3>
-     * This sequence will always be unique for this Ringbuffer instance so it
+     * This sequence will always be unique for this Ringbuffer instance, so it
      * can be used as a unique ID generator if you are publishing items on this
-     * Ringbuffer. However you need to take care of correctly determining an
+     * Ringbuffer. However, you need to take care of correctly determining an
      * initial ID when any node uses the Ringbuffer for the first time. The
      * most reliable way to do that is to write a dummy item into the Ringbuffer
      * and use the returned sequence as initial ID. On the reading side, this
-     * dummy item should be discard. Please keep in mind that this ID is not the
+     * dummy item should be discarded. Please keep in mind that this ID is not the
      * sequence of the item you are about to publish but from a previously
      * published item. So it can't be used to find that item.
      * <p>
@@ -255,10 +255,10 @@ public interface Ringbuffer<E> extends DistributedObject {
      * }</pre>
      * <p>
      * This method is not destructive unlike e.g. a {@link BaseQueue#take()}.
-     * So the same item can be read by multiple readers or it can be read
+     * So the same item can be read by multiple readers, or it can be read
      * multiple times by the same reader.
      * <p>
-     * Currently it isn't possible to control how long this call is going to
+     * Currently, it isn't possible to control how long this call is going to
      * block. In the future we could add e.g.
      * {@code tryReadOne(long sequence, long timeout, TimeUnit unit)}.
      * <p>
@@ -304,7 +304,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * </ol>
      * <p>
      * If the collection is larger than the capacity of the Ringbuffer, then
-     * the items that were written first will be overwritten. Therefore this
+     * the items that were written first will be overwritten. Therefore, this
      * call will not block.
      * <p>
      * The items are inserted in the order of the Iterator of the collection.
@@ -337,7 +337,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * these items are returned. So it could be the number of items read is
      * smaller than the {@code maxCount}.
      * <p>
-     * If there are less items available than {@code minCount}, then this call
+     * If there are fewer items available than {@code minCount}, then this call
      * blocks.
      * <p>
      * <b>Warning:</b>
@@ -370,7 +370,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * If the startSequence is bigger than the last available sequence in the
      * Ringbuffer ({@link #tailSequence()}), then the last available sequence
      * plus one will be used as the start sequence and the call will block
-     * until further items become available and it can read at least the
+     * until further items become available, and it can read at least the
      * minimum number of items.
      *
      * @param startSequence the startSequence of the first item to read.

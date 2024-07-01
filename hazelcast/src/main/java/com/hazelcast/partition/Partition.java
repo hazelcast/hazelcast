@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 /**
  * In Hazelcast the data is split up in partitions: by default, 271 and configurable through the 'hazelcast.partition.count'
  * ClusterProperty. Each partition is owned by one member and the ownership can change if members join or leave the cluster.
- *
+ * <p>
  * Using this Partition object, you get access to who is the owner of a given partition. This object is not a DTO, so it will
  * be updated when a member changes ownership.
  */
@@ -39,9 +39,9 @@ public interface Partition {
 
     /**
      * Returns the current member that owns this partition.
-     *
+     * <p>
      * The returned value could be stale as soon as it is returned.
-     *
+     * <p>
      * It can be that null is returned if the owner of a partition has not been established.
      *
      * @return the owner member of the partition

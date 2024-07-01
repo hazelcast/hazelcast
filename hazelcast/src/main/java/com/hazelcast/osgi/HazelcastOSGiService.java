@@ -103,7 +103,7 @@ public interface HazelcastOSGiService {
     /**
      * Shuts down the given {@link HazelcastOSGiInstance} on the owner bundle.
      *
-     * @param instance the {@link HazelcastOSGiInstance} to shutdown
+     * @param instance the {@link HazelcastOSGiInstance} to shut down
      */
     void shutdownHazelcastInstance(HazelcastOSGiInstance instance);
 

@@ -28,8 +28,8 @@ import com.hazelcast.spi.annotation.NamespacesSupported;
 public interface RingbufferStore<T> {
 
     /**
-     * Stores one item with it's corresponding sequence.
-     *
+     * Stores one item with its corresponding sequence.
+     * <p>
      * Exceptions thrown by this method prevent {@link com.hazelcast.ringbuffer.Ringbuffer}
      * from adding the item. It is the responsibility of the store to
      * ensure that it keeps consistent with the Ringbuffer and in case
@@ -44,7 +44,7 @@ public interface RingbufferStore<T> {
 
     /**
      * Stores multiple items. Implementation of this method can optimize the store operation.
-     *
+     * <p>
      * Exceptions thrown by this method prevents {@link com.hazelcast.ringbuffer.Ringbuffer}
      * from adding any of the items. It is the responsibility of the store
      * to ensure that it keeps consistent with the Ringbuffer and in case
@@ -71,7 +71,7 @@ public interface RingbufferStore<T> {
     /**
      * Return the largest sequence seen by the data store. Can return -1 if
      * the data store doesn't have or can't access any data. Used to
-     * initialize a Ringbuffer with the previously seen largest sequence number.
+     * initialize a Ringbuffer with the previously seen the largest sequence number.
      *
      * @return the largest sequence of the data in the data store
      */

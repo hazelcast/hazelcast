@@ -221,7 +221,7 @@ public final class Predicates {
      * @param <V>   the type of values the predicate operates on.
      * @return the created <b>instance of</b> predicate.
      */
-    public static <K, V> Predicate<K, V> instanceOf(final Class klass) {
+    public static <K, V> Predicate<K, V> instanceOf(final Class<?> klass) {
         return new InstanceOfPredicate(klass);
     }
 
@@ -485,7 +485,7 @@ public final class Predicates {
      * operators are supported: {@code =}, {@code <}, {@code >}, {@code <=}, {@code >=}, {@code ==},
      * {@code !=}, {@code <>}, {@code BETWEEN}, {@code IN}, {@code LIKE}, {@code ILIKE}, {@code REGEX},
      * {@code AND}, {@code OR} and {@code NOT}. The operators are case-insensitive, but attribute names are
-     * case sensitive.
+     * case-sensitive.
      * <p>
      * Example: {@code active AND (age > 20 OR salary < 60000)}
      * <p>

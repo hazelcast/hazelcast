@@ -108,7 +108,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key);
 
     /**
-     * Adds an continuous entry listener for this map. The listener will be notified
+     * Adds a continuous entry listener for this map. The listener will be notified
      * for map add/remove/update/evict events filtered by the given predicate.
      *
      * @param listener  the entry listener to add
@@ -118,7 +118,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate);
 
     /**
-     * Adds an continuous entry listener for this map. The listener will be notified
+     * Adds a continuous entry listener for this map. The listener will be notified
      * for map add/remove/update/evict events filtered by the given predicate.
      *
      * @param listener  the entry listener

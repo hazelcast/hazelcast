@@ -31,7 +31,7 @@ public interface PartitioningStrategy<K> extends Serializable {
      * Returns the key object that will be used by Hazelcast to specify the partition.
      *
      * @param key actual key object used by Hazelcast to specify the partition
-     * @return the partition key object, or null to fallback to the default partition calculation
+     * @return the partition key object, or null to fall back to the default partition calculation
      */
     Object getPartitionKey(K key);
 }

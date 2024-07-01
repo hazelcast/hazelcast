@@ -41,9 +41,9 @@ public class InstanceOfPredicate
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Class klass;
+    private Class<?> klass;
 
-    public InstanceOfPredicate(Class klass) {
+    public InstanceOfPredicate(Class<?> klass) {
         this.klass = klass;
     }
 
