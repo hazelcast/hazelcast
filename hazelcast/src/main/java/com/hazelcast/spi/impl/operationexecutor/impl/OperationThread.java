@@ -172,6 +172,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     private void process(Operation operation) {
         currentRunner = operationRunner(operation.getPartitionId());
         currentRunner.run(operation);
+        completedOperationCount.inc();
     }
 
     /**
