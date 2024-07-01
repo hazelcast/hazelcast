@@ -22,6 +22,12 @@
         http://www.hazelcast.com/schema/spring
         http://www.hazelcast.com/schema/spring/hazelcast-spring-5.5.xsd">
 
-    <hz:hazelcast id="instance"/>
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <!-- Choose a random port -->
+            <hz:network port="0"/>
+        </hz:config>
+
+    </hz:hazelcast>
 
 </beans>
