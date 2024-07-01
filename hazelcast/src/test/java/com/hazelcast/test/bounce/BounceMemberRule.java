@@ -554,7 +554,6 @@ public class BounceMemberRule implements TestRule {
             // rotate members 1..members.length(), member.get(0) is the steady member
             int divisor = members.length() - 1;
             int i = 1;
-            int nextInstance;
             try {
                 while (testRunning.get()) {
                     if (bounceTestConfig.isUseTerminate()) {
@@ -562,7 +561,6 @@ public class BounceMemberRule implements TestRule {
                     } else {
                         members.get(i).shutdown();
                     }
-                    nextInstance = i % divisor + 1;
                     sleepSecondsWhenRunning(bouncingIntervalSeconds);
                     if (!testRunning.get()) {
                         break;
@@ -571,7 +569,7 @@ public class BounceMemberRule implements TestRule {
                     members.set(i, factory.newHazelcastInstance(memberConfigSupplier.get()));
                     sleepSecondsWhenRunning(bouncingIntervalSeconds);
                     // move to next member
-                    i = nextInstance;
+                    i = i % divisor + 1;
                 }
             } catch (Throwable t) {
                 LOGGER.warning("Error while bouncing members", t);
