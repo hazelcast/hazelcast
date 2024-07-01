@@ -1420,7 +1420,7 @@ hazelcast:
             - "name"
         # ordered/tree index on the age attribute
         - attributes:
-          - "age"
+            - "age"
         # composite unordered/hash index on the name and age attributes
         - type: HASH
           attributes:
@@ -1428,8 +1428,8 @@ hazelcast:
             - "age"
         # composite ordered/tree index on the age and name attributes
         - attributes:
-          - "age"
-          - "name"
+            - "age"
+            - "name"
         # bitmap index on the age attribute
         - type: BITMAP
           attributes:
@@ -1518,7 +1518,7 @@ hazelcast:
             eviction-policy: LFU
           indexes:
             - attributes:
-              - "name"
+                - "name"
       # In an actual config, only one of {partition-strategy, partition-attributes} should be present
       partition-strategy: "com.example.Strategy"
       partition-attributes:
@@ -1806,11 +1806,11 @@ hazelcast:
         max-size-policy: ENTRY_COUNT
         eviction-policy: LFU
       wan-replication-ref:
-         name: my-wan-cluster-batch
-         merge-policy-class-name: PassThroughMergePolicy
-         republishing-enabled: true
-         filters:
-           - com.example.SampleFilter
+        name: my-wan-cluster-batch
+        merge-policy-class-name: PassThroughMergePolicy
+        republishing-enabled: true
+        filters:
+          - com.example.SampleFilter
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
@@ -2403,39 +2403,39 @@ hazelcast:
       - name: ldapRealm
         authentication:
           ldap:
-             url: ldap://ldap.my-company.example
-             socket-factory-class-name: socketFactoryClassName
-             parse-dn: true
-             role-context: roleContext
-             role-filter: roleFilter
-             role-mapping-attribute: roleMappingAttribute
-             role-mapping-mode: reverse
-             role-name-attribute: roleNameAttribute
-             role-recursion-max-depth: 25
-             role-search-scope: object
-             user-name-attribute: userNameAttribute
-             system-user-dn: systemUserDn
-             system-user-password: systemUserPassword
-             system-authentication: simple
-             security-realm: realmName
-             password-attribute: passwordAttribute
-             user-context: userContext
-             user-filter: userFilter
-             user-search-scope: one-level
+            url: ldap://ldap.my-company.example
+            socket-factory-class-name: socketFactoryClassName
+            parse-dn: true
+            role-context: roleContext
+            role-filter: roleFilter
+            role-mapping-attribute: roleMappingAttribute
+            role-mapping-mode: reverse
+            role-name-attribute: roleNameAttribute
+            role-recursion-max-depth: 25
+            role-search-scope: object
+            user-name-attribute: userNameAttribute
+            system-user-dn: systemUserDn
+            system-user-password: systemUserPassword
+            system-authentication: simple
+            security-realm: realmName
+            password-attribute: passwordAttribute
+            user-context: userContext
+            user-filter: userFilter
+            user-search-scope: one-level
       - name: tlsRealm
         authentication:
           tls:
-             roleAttribute: cn
+            roleAttribute: cn
       - name: usernamePasswordIdentityRealm
         identity:
           username-password:
-             username: user
-             password: Hazelcast
+            username: user
+            password: Hazelcast
       - name: tokenIdentityRealm
         identity:
           token:
-             encoding: base64
-             value: SGF6ZWxjYXN0
+            encoding: base64
+            value: SGF6ZWxjYXN0
       - name: kerberosRealm
         authentication:
           kerberos:
@@ -4087,31 +4087,33 @@ hazelcast:
         prefix:
           - com.hazelcast.
           - java
-    # Sub-Attribute of namespaces, an object which defines a namespace.
-    ns1:
-      # Sub-Attribute of namespace Object, defines the id of the namespace, must be unique.
-      - id: jarId
-        # Sub-Attribute of a namespace object, Defines a Jar resource to be loaded for the namespace.
-        resource-type: JAR
-        # Sub-Attribute of a namespace object, Defines the URL of the Jar resource.
-        url: "file:///etc/hazelcast/jar.jar"
-      - id: jarsInZipId
-        # Sub-Attribute of a namespace object, Defines Jars in a zip file to be loaded for the namespace.
-        resource-type: JARS_IN_ZIP
-        # Sub-Attribute of a namespace object, Defines the URL of the zip resource.
-        url: "file:///etc/hazelcast/jarsInZip.zip"
-      - id: classId
-        # Sub-Attribute of a namespace object, Defines a class resource to be loaded for the namespace.
-        resource-type: CLASS
-        # Sub-Attribute of a namespace object, Defines the URL of the class resource.
-        url: "file:///etc/hazelcast/classes/MyClass.class"
-    ns2:
-      - id: jarId2
-        resource-type: JAR
-        url: "file:///etc/hazelcast/jar2.jar"
-      - id: jarId3
-        resource-type: JAR
-        url: "file:///etc/hazelcast/jar3.jar"
+    # Sub-Attribute of namespaces, an object which collects a namespaces definitions.
+    name-spaces:
+      # Sub-Attribute of namespaces, an object which collects a namespaces definitions.
+      ns1:
+        # Sub-Attribute of namespace Object, defines the id of the namespace, must be unique.
+        - id: jarId
+          # Sub-Attribute of a namespace object, Defines a Jar resource to be loaded for the namespace.
+          resource-type: JAR
+          # Sub-Attribute of a namespace object, Defines the URL of the Jar resource.
+          url: "file:///etc/hazelcast/jar.jar"
+        - id: jarsInZipId
+          # Sub-Attribute of a namespace object, Defines Jars in a zip file to be loaded for the namespace.
+          resource-type: JARS_IN_ZIP
+          # Sub-Attribute of a namespace object, Defines the URL of the zip resource.
+          url: "file:///etc/hazelcast/jarsInZip.zip"
+        - id: classId
+          # Sub-Attribute of a namespace object, Defines a class resource to be loaded for the namespace.
+          resource-type: CLASS
+          # Sub-Attribute of a namespace object, Defines the URL of the class resource.
+          url: "file:///etc/hazelcast/classes/MyClass.class"
+      ns2:
+        - id: jarId2
+          resource-type: JAR
+          url: "file:///etc/hazelcast/jar2.jar"
+        - id: jarId3
+          resource-type: JAR
+          url: "file:///etc/hazelcast/jar3.jar"
 
   vector-collection:
     vector-1:

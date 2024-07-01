@@ -5242,6 +5242,16 @@
           "$ref": "#/definitions/JavaSerializationFilter",
           "description":
           "Allows to configure blacklisting and whitelisting by class, package or prefix.\nIf a filtered class has been blacklisted, a SecurityException will be thrown.\nIf whitelisting is enabled, either by explicit declaration under whitelist or setting defaults-disabled=false, a SecurityException will be thrown if a filtered class has not been whitelisted.\nIf defaults-disabled is set to true, the default whitelist will not be used.\nIf set to false, the default whitelist will be used. In such cases that a class name does not match any of the whitelisted classes, packages or prefixes, a SecurityException will be thrown."
+        },
+        "name-spaces": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Namespace"
+            }
+          },
+          "description": "A list of User Code Namespace configurations."
         }
       },
       "additionalProperties": {

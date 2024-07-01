@@ -34,6 +34,7 @@ import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
+import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.jet.config.ResourceType;
@@ -5019,6 +5020,232 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(filterConfig.getWhitelist().isListed("not.in.the.whitelist.ClassName"));
         assertTrue(filterConfig.getBlacklist().isListed("com.acme.app.BeanComparator"));
         assertFalse(filterConfig.getBlacklist().isListed("not.in.the.blacklist.ClassName"));
+    }
+
+    @Test
+    public void testNamespaceConfigs_newStyle() throws IOException {
+
+        File tempJar = tempFolder.newFile("tempJar.jar");
+        try (FileOutputStream out = new FileOutputStream(tempJar)) {
+            out.write(new byte[]{0x50, 0x4B, 0x03, 0x04});
+        }
+        File tempJarZip = tempFolder.newFile("tempZip.zip");
+        File tempClass = tempFolder.newFile("TempClass.class");
+
+        String yamlTestString = "hazelcast:\n"
+                + "  user-code-namespaces:\n"
+                + "    enabled: true\n"
+                + "    class-filter:\n"
+                + "      defaults-disabled: false\n"
+                + "      blacklist:\n"
+                + "        class:\n"
+                + "          - com.acme.app.BeanComparator\n"
+                + "      whitelist:\n"
+                + "        package:\n"
+                + "          - com.acme.app\n"
+                + "        prefix:\n"
+                + "          - com.hazelcast.\n"
+                + "    name-spaces:\n"
+                + "      ns1:\n"
+                + "        - id: \"jarId\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "        - id: \"zipId\"\n"
+                + "          resource-type: \"jars_in_zip\"\n"
+                + "          url: " + tempJarZip.toURI().toURL() + "\n"
+                + "        - id: \"classId\"\n"
+                + "          resource-type: \"class\"\n"
+                + "          url: " + tempClass.toURI().toURL() + "\n"
+                + "      ns2:\n"
+                + "        - id: \"jarId2\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n";
+
+        final UserCodeNamespacesConfig userCodeNamespacesConfig = buildConfig(yamlTestString).getNamespacesConfig();
+        assertThat(userCodeNamespacesConfig.isEnabled()).isTrue();
+        assertThat(userCodeNamespacesConfig.getNamespaceConfigs()).hasSize(2);
+        final UserCodeNamespaceConfig userCodeNamespaceConfig = userCodeNamespacesConfig.getNamespaceConfigs().get("ns1");
+
+        assertNotNull(userCodeNamespaceConfig);
+
+        assertThat(userCodeNamespaceConfig.getName()).isEqualTo("ns1");
+        assertThat(userCodeNamespaceConfig.getResourceConfigs()).hasSize(3);
+
+        // validate NS1 ResourceDefinition contents.
+        Collection<ResourceDefinition> ns1Resources = userCodeNamespaceConfig.getResourceConfigs();
+        Optional<ResourceDefinition> jarIdResource = ns1Resources.stream().filter(r -> r.id().equals("jarId")).findFirst();
+        assertThat(jarIdResource).isPresent();
+        assertThat(jarIdResource.get().url()).isEqualTo(tempJar.toURI().toURL().toString());
+        assertEquals(ResourceType.JAR, jarIdResource.get().type());
+        // check the bytes[] are equal
+        assertArrayEquals(getTestFileBytes(tempJar), jarIdResource.get().payload());
+        Optional<ResourceDefinition> zipId = ns1Resources.stream().filter(r -> r.id().equals("zipId")).findFirst();
+        Optional<ResourceDefinition> classId = ns1Resources.stream().filter(r -> r.id().equals("classId")).findFirst();
+        assertThat(zipId).isPresent();
+        assertThat(zipId.get().url()).isEqualTo(tempJarZip.toURI().toURL().toString());
+        assertEquals(ResourceType.JARS_IN_ZIP, zipId.get().type());
+        assertThat(classId).isPresent();
+        assertThat(classId.get().url()).isEqualTo(tempClass.toURI().toURL().toString());
+        assertEquals(ResourceType.CLASS, classId.get().type());
+        // check the bytes[] are equal
+        assertArrayEquals(getTestFileBytes(tempJarZip), zipId.get().payload());
+        // validate NS2 ResourceDefinition contents.
+        final UserCodeNamespaceConfig userCodeNamespaceConfig2 = userCodeNamespacesConfig.getNamespaceConfigs().get("ns2");
+        assertNotNull(userCodeNamespaceConfig2);
+        assertThat(userCodeNamespaceConfig2.getName()).isEqualTo("ns2");
+        assertThat(userCodeNamespaceConfig2.getResourceConfigs()).hasSize(1);
+        Collection<ResourceDefinition> ns2Resources = userCodeNamespaceConfig2.getResourceConfigs();
+        assertThat(ns2Resources).hasSize(1);
+        Optional<ResourceDefinition> jarId2Resource = ns2Resources.stream().filter(r -> r.id().equals("jarId2")).findFirst();
+        assertThat(jarId2Resource).isPresent();
+        assertThat(jarId2Resource.get().url()).isEqualTo(tempJar.toURI().toURL().toString());
+        assertEquals(ResourceType.JAR, jarId2Resource.get().type());
+        // check the bytes[] are equal
+        assertArrayEquals(getTestFileBytes(tempJar), jarId2Resource.get().payload());
+
+        // Validate filtering config
+        assertNotNull(userCodeNamespacesConfig.getClassFilterConfig());
+        JavaSerializationFilterConfig filterConfig = userCodeNamespacesConfig.getClassFilterConfig();
+        assertFalse(filterConfig.isDefaultsDisabled());
+        assertTrue(filterConfig.getWhitelist().isListed("com.acme.app.FakeClass"));
+        assertTrue(filterConfig.getWhitelist().isListed("com.hazelcast.fake.place.MagicClass"));
+        assertFalse(filterConfig.getWhitelist().isListed("not.in.the.whitelist.ClassName"));
+        assertTrue(filterConfig.getBlacklist().isListed("com.acme.app.BeanComparator"));
+        assertFalse(filterConfig.getBlacklist().isListed("not.in.the.blacklist.ClassName"));
+    }
+
+    /**
+     * Unit test for {@link YamlMemberDomConfigProcessor}. It is placed under {@link com.hazelcast.config} package,
+     * because we need access to the {@link UserCodeNamespacesConfig#getNamespaceConfigs()} package-private method.
+     */
+    @Test
+    public void unitTestNamespaceConfigs_oldStyle() throws IOException {
+        File tempJar = tempFolder.newFile("tempJar.jar");
+
+        String yamlTestString = "hazelcast:\n"
+                + "  user-code-namespaces:\n"
+                + "    enabled: true\n"
+                + "    ns1:\n"
+                + "      - id: \"jarId1\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n"
+                + "      - id: \"jarId2\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n"
+                + "    ns2:\n"
+                + "      - id: \"jarId3\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n"
+                + "      - id: \"jarId4\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n";
+
+        assertNamespaceConfig(yamlTestString);
+    }
+
+    /**
+     * Unit test for {@link YamlMemberDomConfigProcessor}. It is placed under {@link com.hazelcast.config} package,
+     * because we need access to the {@link UserCodeNamespacesConfig#getNamespaceConfigs()} package-private method.
+     */
+    @Test
+    public void unitTestNamespaceConfigs_newStyle() throws IOException {
+        File tempJar = tempFolder.newFile("tempJar.jar");
+
+        String yamlTestString = "hazelcast:\n"
+                + "  user-code-namespaces:\n"
+                + "    enabled: true\n"
+                + "    name-spaces:\n"
+                + "      ns1:\n"
+                + "        - id: \"jarId1\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "        - id: \"jarId2\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "      ns2:\n"
+                + "        - id: \"jarId3\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "        - id: \"jarId4\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n";
+
+        assertNamespaceConfig(yamlTestString);
+    }
+
+    /**
+     * Unit test for {@link YamlMemberDomConfigProcessor}. It is placed under {@link com.hazelcast.config} package,
+     * because we need access to the {@link UserCodeNamespacesConfig#getNamespaceConfigs()} package-private method.
+     */
+    @Test
+    public void unitTestDuplicatedNamespaceConfigs_mixedStyle_throws() throws IOException {
+        File tempJar = tempFolder.newFile("tempJar.jar");
+
+        /*
+           name-spaces:
+              ns1
+           ns1
+         */
+        final String yamlTestString = "hazelcast:\n"
+                + "  user-code-namespaces:\n"
+                + "    enabled: true\n"
+                + "    name-spaces:\n"
+                + "      ns1:\n"
+                + "        - id: \"jarId1\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "        - id: \"jarId2\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "    ns1:\n"
+                + "      - id: \"jarId3\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n"
+                + "      - id: \"jarId4\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n";
+
+        assertThatThrownBy(() -> buildConfig(yamlTestString).getNamespacesConfig())
+                .isInstanceOf(InvalidConfigurationException.class);
+
+        /*
+           ns1
+           name-spaces:
+              ns1
+         */
+        final String _yamlTestString = "hazelcast:\n"
+                + "  user-code-namespaces:\n"
+                + "    enabled: true\n"
+                + "    ns1:\n"
+                + "      - id: \"jarId3\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n"
+                + "      - id: \"jarId4\"\n"
+                + "        resource-type: \"jar\"\n"
+                + "        url: " + tempJar.toURI().toURL() + "\n"
+                + "    name-spaces:\n"
+                + "      ns1:\n"
+                + "        - id: \"jarId1\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "        - id: \"jarId2\"\n"
+                + "          resource-type: \"jar\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n";
+
+        assertThatThrownBy(() -> buildConfig(_yamlTestString).getNamespacesConfig())
+                .isInstanceOf(InvalidConfigurationException.class);
+    }
+
+    private void assertNamespaceConfig(String yamlTestString) {
+        final UserCodeNamespacesConfig ucnConfig = buildConfig(yamlTestString).getNamespacesConfig();
+        assertNotNull(ucnConfig);
+        assertTrue(ucnConfig.isEnabled());
+        Map<String, UserCodeNamespaceConfig> namespaceConfigs = ucnConfig.getNamespaceConfigs();
+        assertEquals(2, namespaceConfigs.size());
+        assertTrue(namespaceConfigs.keySet().containsAll(asList("ns1", "ns2")));
+        namespaceConfigs.values().forEach(namespaceConfig -> {
+            assertEquals(2, namespaceConfig.getResourceConfigs().size());
+        });
     }
 
     @Override

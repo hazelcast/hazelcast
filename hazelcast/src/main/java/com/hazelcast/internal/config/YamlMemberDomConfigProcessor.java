@@ -112,6 +112,8 @@ import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.YamlMemberDomConfigProcessor.NamespaceDefinitionStyle.NEW_STYLE;
+import static com.hazelcast.internal.config.YamlMemberDomConfigProcessor.NamespaceDefinitionStyle.OLD_STYLE;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlSequence;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -317,49 +319,82 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         }
     }
 
+    /**
+     * Backward-compatible implementation of YAML version of UserCodeNamespacesConfig handling.
+     * The implementation includes two styles of configuration:
+     * <pre>
+     * 1. Released in 5.4 - namespace configurations are a part of the 'user-code-namespaces' array.
+     * 2. Released in 5.5 and backported to 5.4.1 namespace configurations are inside the 'name-spaces' object.
+     * </pre>
+     */
     @Override
     protected void handleNamespacesNode(Node node) {
+        NamespaceDefinitionStyle styleInUse = null;
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
+            boolean matchesNamespace = matches("name-spaces", nodeName);
             if (matches(nodeName, "class-filter")) {
                 fillJavaSerializationFilter(n, config.getNamespacesConfig());
-            } else if (!matches("enabled", nodeName)) {
-                UserCodeNamespaceConfig ns = new UserCodeNamespaceConfig(n.getNodeName());
-                //get list of resources
-                for (Node subChild : childElements(n)) {
-                    String resourceId = null;
-                    String resourceTypeName = null;
-                    String resourceUrl = null;
-                    for (Node resourceChild : childElements(subChild)) {
-                        if (resourceChild.getNodeName().equals("resource-type")) {
-                            resourceTypeName = resourceChild.getNodeValue();
-                        } else if (resourceChild.getNodeName().equals("url")) {
-                            resourceUrl = resourceChild.getNodeValue();
-                        } else if (resourceChild.getNodeName().equals("id")) {
-                            resourceId = resourceChild.getNodeValue();
-                        }
-                    }
-                    if (resourceTypeName == null || resourceUrl == null || resourceId == null) {
-                        throw new IllegalArgumentException("For each namespace, resource elements \"id\","
-                                + " \"resource-type\" and \"url\" must be defined.");
-                    }
-                    try {
-                        if ("jar".equalsIgnoreCase(resourceTypeName)) {
-                            ns.addJar(new URI(resourceUrl).toURL(), resourceId);
-                        } else if ("jars_in_zip".equalsIgnoreCase(resourceTypeName)) {
-                            ns.addJarsInZip(new URI(resourceUrl).toURL(), resourceId);
-                        } else if ("class".equalsIgnoreCase(resourceTypeName)) {
-                            ns.addClass(new URI(resourceUrl).toURL(), resourceId);
-                        }
-                    } catch (MalformedURLException | URISyntaxException e) {
-                        throw new IllegalArgumentException(
-                                String.format("Namespace resource %s was configured with invalid URL %s",
-                                        resourceId, resourceUrl), e);
-                    }
+            } else if (matchesNamespace) {
+                if (styleInUse == OLD_STYLE) {
+                    throw new InvalidConfigurationException(
+                            "Namespace definitions are allowed to be enumerated or only under 'name-spaces' tag, "
+                                    + "or be enumerated as array members. Still, we strongly recommend to define "
+                                    + "namespace resources only under 'name-spaces' tag");
                 }
-                config.getNamespacesConfig().addNamespaceConfig(ns);
+                // 'new' style
+                styleInUse = NEW_STYLE;
+                for (Node child : childElements(n)) {
+                    extractUserCodeNamespaceConfigs(config, child);
+                }
+            } else if (!matches("enabled", nodeName)) {
+                if (styleInUse == NEW_STYLE) {
+                    throw new InvalidConfigurationException("Namespace configurations are not allowed outside of 'name-spaces'");
+                }
+                styleInUse = OLD_STYLE;
+                // RU_COMPAT 'old' style
+                extractUserCodeNamespaceConfigs(config, n);
             }
         }
+    }
+
+    @SuppressWarnings("checkstyle:InnerAssignment")
+    private static void extractUserCodeNamespaceConfigs(Config config, Node n) {
+        UserCodeNamespaceConfig ns = new UserCodeNamespaceConfig(n.getNodeName());
+        //get list of resources
+        for (Node subChild : childElements(n)) {
+            String resourceId = null;
+            String resourceTypeName = null;
+            String resourceUrl = null;
+            for (Node resourceChild : childElements(subChild)) {
+                switch (resourceChild.getNodeName()) {
+                    case "resource-type" -> resourceTypeName = resourceChild.getNodeValue();
+                    case "url" -> resourceUrl = resourceChild.getNodeValue();
+                    case "id" -> resourceId = resourceChild.getNodeValue();
+                    default -> throw new IllegalArgumentException(
+                            String.format("Namespace resource %s was configured with invalid element %s",
+                                    subChild.getNodeName(), resourceChild.getNodeName()));
+                }
+            }
+            if (resourceTypeName == null || resourceUrl == null || resourceId == null) {
+                throw new IllegalArgumentException("For each namespace, resource elements \"id\","
+                        + " \"resource-type\" and \"url\" must be defined.");
+            }
+            try {
+                if ("jar".equalsIgnoreCase(resourceTypeName)) {
+                    ns.addJar(new URI(resourceUrl).toURL(), resourceId);
+                } else if ("jars_in_zip".equalsIgnoreCase(resourceTypeName)) {
+                    ns.addJarsInZip(new URI(resourceUrl).toURL(), resourceId);
+                } else if ("class".equalsIgnoreCase(resourceTypeName)) {
+                    ns.addClass(new URI(resourceUrl).toURL(), resourceId);
+                }
+            } catch (MalformedURLException | URISyntaxException e) {
+                throw new IllegalArgumentException(
+                        String.format("Namespace resource %s was configured with invalid URL %s",
+                                resourceId, resourceUrl), e);
+            }
+        }
+        config.getNamespacesConfig().addNamespaceConfig(ns);
     }
 
     @Override
@@ -1073,5 +1108,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
         config.setAttributeName(getAttribute(node, "name"));
+    }
+
+    enum NamespaceDefinitionStyle {
+        OLD_STYLE,
+        NEW_STYLE
     }
 }
