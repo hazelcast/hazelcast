@@ -219,7 +219,7 @@ public interface CompactWriter {
     void writeArrayOfDecimal(@Nonnull String fieldName, @Nullable BigDecimal[] value);
 
     /**
-     * Writes an array of times consisting of hour, minute, second, and nano seconds.
+     * Writes an array of times consisting of hour, minute, second, and nanoseconds.
      *
      * @param fieldName name of the field.
      * @param value     to be written.

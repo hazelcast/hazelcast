@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 /**
  * IdentifiedDataSerializable is an extension to {@link DataSerializable} to avoid reflection during de-serialization.
- *
+ * <p>
  * Each IdentifiedDataSerializable is created by a registered {@link com.hazelcast.nio.serialization.DataSerializableFactory}.
  *
  * @see com.hazelcast.nio.serialization.DataSerializable

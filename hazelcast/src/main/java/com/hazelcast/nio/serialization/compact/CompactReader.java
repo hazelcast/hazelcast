@@ -190,7 +190,7 @@ public interface CompactReader {
 
 
     /**
-     * Reads an UTF-8 encoded string.
+     * Reads a UTF-8 encoded string.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -218,7 +218,7 @@ public interface CompactReader {
 
 
     /**
-     * Reads a time consisting of hour, minute, second, and nano seconds.
+     * Reads a time consisting of hour, minute, second, and nanoseconds.
      *
      * @param fieldName name of the field.
      * @return the value of the field.

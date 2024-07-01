@@ -23,13 +23,13 @@ import java.util.Properties;
 /**
  * An interface that provides the ability to intercept the creation of sockets.
  * It can be registered from client via config.
- *
+ * <p>
  * For members see {@link MemberSocketInterceptor}
  *
  * Warning: a SocketInterceptor provides access to the socket and will bypass
  * any TLS encryption. So be warned that any data send using the SocketInterceptor
  * could be visible as plain text and could therefor be a security risk.
- *
+ * <p>
  * see {@link com.hazelcast.config.SocketInterceptorConfig}
  */
 public interface SocketInterceptor {

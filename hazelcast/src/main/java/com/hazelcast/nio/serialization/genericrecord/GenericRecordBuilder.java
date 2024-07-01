@@ -520,7 +520,7 @@ public interface GenericRecordBuilder {
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         4. The type of the generic record is not
      *                                         the same as the generic record that is
-     *                                         being built. e.g using portable generic
+     *                                         being built. e.g. using portable generic
      *                                         record in a compact generic record builder.
      * @throws UnsupportedOperationException   if the setter is called after a
      *                                         GenericRecord is built by
@@ -1236,7 +1236,7 @@ public interface GenericRecordBuilder {
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         4. The type of the generic record is not
      *                                         the same as the generic record that is
-     *                                         being built. e.g using portable generic
+     *                                         being built. e.g. using portable generic
      *                                         record in a compact generic record builder.
      * @throws UnsupportedOperationException   if the setter is called after a
      *                                         GenericRecord is built by

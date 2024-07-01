@@ -21,7 +21,7 @@ import java.io.IOException;
 /**
  * For sample usage custom serialization and other way of custom serialization
  * see {@link com.hazelcast.nio.serialization.StreamSerializer}.
- *
+ * <p>
  *  Note that read and write methods should be compatible
  *
  * @param <T> type of serialized object

@@ -56,7 +56,7 @@ public interface PortableWriter {
     void writeLong(@Nonnull String fieldName, long value) throws IOException;
 
     /**
-     * Writes an UTF string.
+     * Writes a UTF string.
      *
      * @param fieldName name of the field
      * @param value     utf string value to be written
@@ -67,7 +67,7 @@ public interface PortableWriter {
     void writeUTF(@Nonnull String fieldName, @Nullable String value) throws IOException;
 
     /**
-     * Writes an UTF string.
+     * Writes a UTF string.
      *
      * @param fieldName name of the field
      * @param value     utf string value to be written

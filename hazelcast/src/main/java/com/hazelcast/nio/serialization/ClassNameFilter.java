@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * Allows to intercept class resolution during deserialization based on classname. It's used as a validation mechanism in
+ * Allows to intercept class resolution during deserialization based on class name. It's used as a validation mechanism in
  * Look-ahead ObjectInputStream.
  */
 public interface ClassNameFilter {
