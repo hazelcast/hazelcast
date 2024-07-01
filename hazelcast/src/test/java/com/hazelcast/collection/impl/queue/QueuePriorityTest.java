@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -237,5 +238,30 @@ public class QueuePriorityTest extends HazelcastTestSupport {
         assertNull(queue.poll());
         assertTrue(queue.offer(task));
         assertEquals(task, queue.poll());
+    }
+
+    @Test
+    public void test_elements_removed_in_priority_order_when_offered_unordered_then_partially_drained() {
+        int iterations = 10;
+        int drainMaxElements = 4;
+        PriorityQueue<PriorityElement> expected = new PriorityQueue<>(iterations * 2, new PriorityElementComparator());
+        for (int i = 0; i < iterations; i++) {
+            queue.offer(new PriorityElement(true, i));
+            queue.offer(new PriorityElement(false, i));
+
+            expected.offer(new PriorityElement(true, i));
+            expected.offer(new PriorityElement(false, i));
+        }
+        assertIterableEquals(queue, expected.toArray());
+
+        List<PriorityElement> listDrained = new ArrayList<>(drainMaxElements);
+        List<PriorityElement> listPolled = new ArrayList<>(drainMaxElements);
+
+        queue.drainTo(listDrained, drainMaxElements);
+        for (int i = 0; i < drainMaxElements; i++) {
+            listPolled.add(expected.poll());
+        }
+        assertEquals(listPolled, listDrained);
+        assertIterableEquals(queue, expected.toArray());
     }
 }
