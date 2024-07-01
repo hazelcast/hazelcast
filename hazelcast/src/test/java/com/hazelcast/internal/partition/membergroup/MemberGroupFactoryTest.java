@@ -57,9 +57,9 @@ public class MemberGroupFactoryTest {
         Collection<Member> members = createMembers();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 8, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 8, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 2, memberGroup.size());
         }
     }
 
@@ -84,9 +84,9 @@ public class MemberGroupFactoryTest {
         Collection<Member> members = createMembersWithZoneAwareMetadata();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 3, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 1, memberGroup.size());
         }
     }
 
@@ -113,9 +113,9 @@ public class MemberGroupFactoryTest {
         Collection<Member> members = createMembersWithNodeAwareMetadata();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 3, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 1, memberGroup.size());
         }
     }
 
@@ -191,9 +191,9 @@ public class MemberGroupFactoryTest {
         MemberGroupFactory groupFactory = new ConfigMemberGroupFactory(groupConfigs);
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 4, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 4, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 2, memberGroup.size());
         }
     }
 
@@ -209,9 +209,9 @@ public class MemberGroupFactoryTest {
         MemberGroupFactory groupFactory = new ConfigMemberGroupFactory(groupConfigs);
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 2, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 2, memberGroup.size());
         }
     }
 
