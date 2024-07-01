@@ -36,7 +36,7 @@ public final class JmxLeakHelper {
         // No-op.
     }
 
-    public static Collection<ObjectInstance> getBeansByClass(Class clazz) {
+    public static Collection<ObjectInstance> getBeansByClass(Class<?> clazz) {
         String className = clazz.getName();
 
         List<ObjectInstance> res = new ArrayList<>();

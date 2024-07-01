@@ -232,7 +232,7 @@ public class SplitBrainProtectionOperationTest {
     }
 
     private static boolean isForcedReadOnly(String name) {
-        for (Class whitelistedClass : FORCED_READONLY_CLASSES) {
+        for (Class<?> whitelistedClass : FORCED_READONLY_CLASSES) {
             if (name.equals(whitelistedClass.getName())) {
                 return true;
             }

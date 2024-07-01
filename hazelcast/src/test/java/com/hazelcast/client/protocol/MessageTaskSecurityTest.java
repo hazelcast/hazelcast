@@ -114,7 +114,7 @@ public class MessageTaskSecurityTest {
     public void testGetRequiredPermissions() throws Exception {
         Reflections reflections = new Reflections("com.hazelcast");
         Set<Class<? extends AbstractMessageTask>> subTypes = reflections.getSubTypesOf(AbstractMessageTask.class);
-        for (Class clazz : subTypes) {
+        for (Class<?> clazz : subTypes) {
             if (!Modifier.isAbstract(clazz.getModifiers())) {
                 assertGetRequiredPermission(clazz.getName());
             }

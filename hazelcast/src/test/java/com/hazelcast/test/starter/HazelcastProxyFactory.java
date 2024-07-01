@@ -232,11 +232,11 @@ public class HazelcastProxyFactory {
         return (T) Proxy.newProxyInstance(proxyTargetClassloader, expectedInterfaces, myInvocationHandler);
     }
 
-    private static boolean isJDKClass(Class clazz) {
+    private static boolean isJDKClass(Class<?> clazz) {
         return clazz.getClassLoader() == String.class.getClassLoader();
     }
 
-    private static boolean isHazelcastAPIDelegatingClassloader(Class clazz) {
+    private static boolean isHazelcastAPIDelegatingClassloader(Class<?> clazz) {
         return HazelcastAPIDelegatingClassloader.class.equals(clazz);
     }
 

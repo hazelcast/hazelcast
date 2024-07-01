@@ -35,7 +35,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Setups HZ instance and map for extraction testing.
- * Enables configuring the HZ Instance through the getInstanceConfigurator() method that the sub-classes may override.
+ * Enables configuring the HZ Instance through the getInstanceConfigurator() method that the subclasses may override.
  */
 public abstract class AbstractExtractionTest extends AbstractExtractionSpecification {
 
@@ -62,7 +62,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
     }
 
     /**
-     * Method may be overridden in sub-classes to tweak the HZ instance for purposes of each test.
+     * Method may be overridden in subclasses to tweak the HZ instance for purposes of each test.
      */
     protected Configurator getInstanceConfigurator() {
         return null;
@@ -195,7 +195,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
         } catch (Exception ex) {
             // EXPECT
             if (expected.throwables != null) {
-                for (Class throwable : expected.throwables) {
+                for (Class<?> throwable : expected.throwables) {
                     if (throwable.equals(ex.getClass())) {
                         return;
                     }

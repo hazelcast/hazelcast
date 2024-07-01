@@ -237,7 +237,7 @@ public class MemberAddressProviderTest {
                 .has(rootCause(BindException.class));
     }
 
-    private Config getConfig(Class memberAddressProviderClass) {
+    private Config getConfig(Class<?> memberAddressProviderClass) {
         Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
                 .setEnabled(true)
