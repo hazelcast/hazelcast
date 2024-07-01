@@ -24,7 +24,7 @@ import java.io.IOException;
 /**
  * Sent from the coordinator member to participants node so that they
  * will mark the schema in their local as replicated.
- *
+ * <p>
  * Must be sent from the coordinator only after making sure that each
  * participant member has the schema in their local with the
  * prepared/replicated status.

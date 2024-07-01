@@ -255,13 +255,12 @@ public final class ValueReaderWriters {
     }
 
     private static Class<?> getSingleComponentType(Type genericType) {
-        if (!(genericType instanceof ParameterizedType)) {
+        if (!(genericType instanceof ParameterizedType parameterizedType)) {
             throw new HazelcastSerializationException(
                     "It is required that the type " + genericType + " must be parameterized."
             );
         }
 
-        ParameterizedType parameterizedType = (ParameterizedType) genericType;
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
         if (typeArguments.length != 1) {
             throw new HazelcastSerializationException(
@@ -280,13 +279,12 @@ public final class ValueReaderWriters {
     }
 
     private static BiTuple<Class<?>, Class<?>> getTupleComponentTypes(Type genericType) {
-        if (!(genericType instanceof ParameterizedType)) {
+        if (!(genericType instanceof ParameterizedType parameterizedType)) {
             throw new HazelcastSerializationException(
                     "Expected the type " + genericType + " to be parameterized."
             );
         }
 
-        ParameterizedType parameterizedType = (ParameterizedType) genericType;
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
         if (typeArguments.length != 2) {
             throw new HazelcastSerializationException(

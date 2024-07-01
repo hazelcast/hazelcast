@@ -41,6 +41,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
         super(serializer, in, schema, associatedClass, schemaIncludedInBinary);
     }
 
+    @Override
     @Nonnull
     protected String getMethodPrefixForErrorMessages() {
         return "read";

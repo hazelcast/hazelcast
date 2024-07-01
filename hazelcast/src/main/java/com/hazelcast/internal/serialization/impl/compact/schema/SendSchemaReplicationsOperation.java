@@ -30,16 +30,16 @@ import java.util.Collection;
 /**
  * Sent by the master member to the joining member to replay
  * replications occurred so far.
- *
+ * <p>
  * The joining member replays the preparation phase for the replications
  * and puts the schema replications to its local registry with the same
  * status.
- *
+ * <p>
  * For already {@link SchemaReplicationStatus#REPLICATED} replications,
  * replaying the preparation phase and then putting the replication with
  * the same status to the local registry is enough to maintain the same
  * status across the cluster.
- *
+ * <p>
  * For replications in the {@link SchemaReplicationStatus#PREPARED} status,
  * the joining member will eagerly replay the preparation phases again.
  * When the coordinator members start sending {@link AckSchemaReplicationOperation}
