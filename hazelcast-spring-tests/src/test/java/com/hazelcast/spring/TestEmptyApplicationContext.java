@@ -18,8 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"withoutconfig-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestEmptyApplicationContext {
 
     @Autowired

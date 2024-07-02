@@ -165,19 +165,20 @@ import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.WanPublisherState;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -205,16 +206,17 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.Boolean.TRUE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"fullConfig-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 @SuppressWarnings("unused")
 public class TestFullApplicationContext extends HazelcastTestSupport {
 
@@ -235,22 +237,22 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private IMap<Object, Object> map2;
 
     @Autowired
-    private MultiMap multiMap;
+    private MultiMap<Object, Object> multiMap;
 
     @Autowired
-    private ReplicatedMap replicatedMap;
+    private ReplicatedMap<Object, Object> replicatedMap;
 
     @Autowired
-    private IQueue queue;
+    private IQueue<Object> queue;
 
     @Autowired
-    private ITopic topic;
+    private ITopic<Object> topic;
 
     @Autowired
-    private ISet set;
+    private ISet<Object> set;
 
     @Autowired
-    private IList list;
+    private IList<Object> list;
 
     @Autowired
     private ExecutorService executorService;
@@ -259,29 +261,29 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private FlakeIdGenerator flakeIdGenerator;
 
     @Autowired
-    private MapStore dummyMapStore;
+    private MapStore<Object, Object> dummyMapStore;
 
     @Autowired
-    private MapStoreFactory dummyMapStoreFactory;
+    private MapStoreFactory<Object, Object> dummyMapStoreFactory;
 
     @Autowired
-    private QueueStore dummyQueueStore;
+    private QueueStore<Object> dummyQueueStore;
     @Autowired
-    private QueueStoreFactory dummyQueueStoreFactory;
+    private QueueStoreFactory<Object> dummyQueueStoreFactory;
 
     @Autowired
-    private RingbufferStore dummyRingbufferStore;
+    private RingbufferStore<Object> dummyRingbufferStore;
     @Autowired
-    private RingbufferStoreFactory dummyRingbufferStoreFactory;
+    private RingbufferStoreFactory<Object> dummyRingbufferStoreFactory;
 
     @Autowired
-    private WanPublisher wanReplication;
+    private WanPublisher<Object> wanReplication;
 
     @Autowired
     private MembershipListener membershipListener;
 
     @Autowired
-    private EntryListener entryListener;
+    private EntryListener<Object, Object> entryListener;
 
     @Autowired
     private SSLContextFactory sslContextFactory;
@@ -295,7 +297,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Autowired
     private PNCounter pnCounter;
 
-    @BeforeClass
+    @BeforeAll
     public static void start() {
         // OverridePropertyRule can't be used here since the Spring context
         // with the Hazelcast instance is created before the rules
@@ -303,13 +305,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    @AfterClass
+
+    @AfterAll
     public static void stop() {
         HazelcastInstanceFactory.terminateAll();
         System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "1");
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         config = instance.getConfig();
     }
@@ -659,7 +662,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         for (PermissionConfig pc : clientPermissionConfigs) {
             permTypes.remove(pc.getType());
         }
-        assertTrue("All permission types should be listed in fullConfig. Not found ones: " + permTypes, permTypes.isEmpty());
+        assertTrue(permTypes.isEmpty(), "All permission types should be listed in fullConfig. Not found ones: " + permTypes);
         RealmConfig kerberosRealm = securityConfig.getRealmConfig("kerberosRealm");
         assertNotNull(kerberosRealm);
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
@@ -844,9 +847,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
         assertEquals(2, allowedPorts.size());
-        Iterator portIter = allowedPorts.iterator();
-        assertEquals("35000-35100", portIter.next());
-        assertEquals("36000,36100", portIter.next());
+        Iterator<String> portIterator = allowedPorts.iterator();
+        assertEquals("35000-35100", portIterator.next());
+        assertEquals("36000,36100", portIterator.next());
         assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(8, networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
@@ -863,7 +866,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(tcp.isEnabled());
 
         List<String> members = tcp.getMembers();
-        assertEquals(members.toString(), 2, members.size());
+        assertEquals(2, members.size(), members.toString());
         assertEquals("127.0.0.1:5700", members.get(0));
         assertEquals("127.0.0.1:5701", members.get(1));
         assertEquals("127.0.0.1:5700", tcp.getRequiredMember());
@@ -873,7 +876,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertKubernetesConfig(networkConfig.getJoin().getKubernetesConfig());
         assertEurekaConfig(networkConfig.getJoin().getEurekaConfig());
 
-        assertTrue("reuse-address", networkConfig.isReuseAddress());
+        assertTrue(networkConfig.isReuseAddress(), "reuse-address");
 
         MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
         assertFalse(memberAddressProviderConfig.isEnabled());
@@ -941,13 +944,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     private void assertDiscoveryConfig(DiscoveryConfig discoveryConfig) {
-        assertTrue(discoveryConfig.getDiscoveryServiceProvider() instanceof DummyDiscoveryServiceProvider);
-        assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
+        assertInstanceOf(DummyDiscoveryServiceProvider.class, discoveryConfig.getDiscoveryServiceProvider());
+        assertInstanceOf(DummyNodeFilter.class, discoveryConfig.getNodeFilter());
         List<DiscoveryStrategyConfig> discoveryStrategyConfigs
                 = (List<DiscoveryStrategyConfig>) discoveryConfig.getDiscoveryStrategyConfigs();
         assertEquals(2, discoveryStrategyConfigs.size());
         DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.get(0);
-        assertTrue(discoveryStrategyConfig.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
+        assertInstanceOf(DummyDiscoveryStrategyFactory.class, discoveryStrategyConfig.getDiscoveryStrategyFactory());
         assertEquals(3, discoveryStrategyConfig.getProperties().size());
         assertEquals("foo", discoveryStrategyConfig.getProperties().get("key-string"));
         assertEquals("123", discoveryStrategyConfig.getProperties().get("key-int"));
@@ -1368,7 +1371,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
-            assertFalse(indexConfig.getType() == IndexType.SORTED);
+            assertNotSame(IndexType.SORTED, indexConfig.getType());
         }
     }
 
@@ -1399,7 +1402,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());
         assertEquals("sugar", encryptionAtRestConfig.getSalt());
         assertEquals(16, encryptionAtRestConfig.getKeySize());
-        assertTrue(encryptionAtRestConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
+        assertInstanceOf(VaultSecureStoreConfig.class, encryptionAtRestConfig.getSecureStoreConfig());
         VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig();
         assertEquals("http://localhost:1234", vaultConfig.getAddress());
         assertEquals("secret/path", vaultConfig.getSecretPath());
@@ -1544,7 +1547,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(restApiConfig);
         assertFalse(restApiConfig.isEnabled());
         for (RestEndpointGroup group : RestEndpointGroup.values()) {
-            assertTrue("Unexpected status of REST Endpoint group" + group, restApiConfig.isGroupEnabled(group));
+            assertTrue(restApiConfig.isGroupEnabled(group), "Unexpected status of REST Endpoint group" + group);
         }
     }
 
@@ -1606,7 +1609,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAuditlogConfig() {
+    public void testAuditLogConfig() {
         AuditlogConfig auditlogConfig = config.getAuditlogConfig();
         assertFalse(auditlogConfig.isEnabled());
         assertEquals("com.acme.AuditlogToSyslogFactory", auditlogConfig.getFactoryClassName());

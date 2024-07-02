@@ -20,31 +20,26 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.MapEvent;
 
-public class DummyEntryListener implements EntryListener {
+public class DummyEntryListener implements EntryListener<Object, Object> {
 
     @Override
-    public void entryAdded(EntryEvent event) {
-        //System.err.println("Added: " + event);
+    public void entryAdded(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryRemoved(EntryEvent event) {
-        //System.err.println("Removed: " + event);
+    public void entryRemoved(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryUpdated(EntryEvent event) {
-        //System.err.println("Updated: " + event);
+    public void entryUpdated(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryEvicted(EntryEvent event) {
-        //System.err.println("Evicted: " + event);
+    public void entryEvicted(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryExpired(EntryEvent event) {
-        //System.err.println("Expired: " + event);
+    public void entryExpired(EntryEvent<Object, Object> event) {
     }
 
     @Override
