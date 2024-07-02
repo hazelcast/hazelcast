@@ -349,7 +349,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 }
             } else if (!matches("enabled", nodeName)) {
                 if (styleInUse == NEW_STYLE) {
-                    throw new InvalidConfigurationException("Namespace configurations are not allowed outside of 'name-spaces'");
+                    throw new InvalidConfigurationException(
+                            "Namespace configurations are not allowed outside of 'name-spaces'");
                 }
                 styleInUse = OLD_STYLE;
                 // RU_COMPAT 'old' style
@@ -371,25 +372,26 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     case "resource-type" -> resourceTypeName = resourceChild.getNodeValue();
                     case "url" -> resourceUrl = resourceChild.getNodeValue();
                     case "id" -> resourceId = resourceChild.getNodeValue();
-                    default -> throw new IllegalArgumentException(
+                    default -> throw new InvalidConfigurationException(
                             String.format("Namespace resource %s was configured with invalid element %s",
                                     subChild.getNodeName(), resourceChild.getNodeName()));
                 }
             }
             if (resourceTypeName == null || resourceUrl == null || resourceId == null) {
-                throw new IllegalArgumentException("For each namespace, resource elements \"id\","
+                throw new InvalidConfigurationException("For each namespace, resource elements \"id\","
                         + " \"resource-type\" and \"url\" must be defined.");
             }
             try {
-                if ("jar".equalsIgnoreCase(resourceTypeName)) {
-                    ns.addJar(new URI(resourceUrl).toURL(), resourceId);
-                } else if ("jars_in_zip".equalsIgnoreCase(resourceTypeName)) {
-                    ns.addJarsInZip(new URI(resourceUrl).toURL(), resourceId);
-                } else if ("class".equalsIgnoreCase(resourceTypeName)) {
-                    ns.addClass(new URI(resourceUrl).toURL(), resourceId);
+                switch (resourceTypeName.toLowerCase()) {
+                    case "jar" -> ns.addJar(new URI(resourceUrl).toURL(), resourceId);
+                    case "jars_in_zip" -> ns.addJarsInZip(new URI(resourceUrl).toURL(), resourceId);
+                    case "class" -> ns.addClass(new URI(resourceUrl).toURL(), resourceId);
+                    default -> throw new InvalidConfigurationException(
+                            String.format("Namespace resource %s was configured with invalid resource type %s",
+                                    resourceId, resourceTypeName));
                 }
             } catch (MalformedURLException | URISyntaxException e) {
-                throw new IllegalArgumentException(
+                throw new InvalidConfigurationException(
                         String.format("Namespace resource %s was configured with invalid URL %s",
                                 resourceId, resourceUrl), e);
             }

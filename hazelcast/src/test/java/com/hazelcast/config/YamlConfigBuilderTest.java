@@ -5236,6 +5236,24 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 .isInstanceOf(InvalidConfigurationException.class);
     }
 
+    @Test
+    public void unitTestNamespaceConfigs_throws() throws IOException {
+        File tempJar = tempFolder.newFile("tempJar.jar");
+
+        String yamlTestString = "hazelcast:\n"
+                + "  user-code-namespaces:\n"
+                + "    enabled: true\n"
+                + "    name-spaces:\n"
+                + "      ns1:\n"
+                + "        - id: \"jarId1\"\n"
+                + "          resource-type: \"jars\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n";
+
+        assertThatThrownBy(() -> buildConfig(yamlTestString))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("was configured with invalid resource type");
+    }
+
     private void assertNamespaceConfig(String yamlTestString) {
         final UserCodeNamespacesConfig ucnConfig = buildConfig(yamlTestString).getNamespacesConfig();
         assertNotNull(ucnConfig);
@@ -5243,9 +5261,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Map<String, UserCodeNamespaceConfig> namespaceConfigs = ucnConfig.getNamespaceConfigs();
         assertEquals(2, namespaceConfigs.size());
         assertTrue(namespaceConfigs.keySet().containsAll(asList("ns1", "ns2")));
-        namespaceConfigs.values().forEach(namespaceConfig -> {
-            assertEquals(2, namespaceConfig.getResourceConfigs().size());
-        });
+        namespaceConfigs.values().forEach(namespaceConfig ->
+                assertEquals(2, namespaceConfig.getResourceConfigs().size()));
     }
 
     @Override
@@ -5419,13 +5436,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
-        String yaml = ""
-                + "hazelcast:\n"
+        return "hazelcast:\n"
                 + "  advanced-network:\n"
                 + "    enabled: true\n"
                 + "    member-server-socket-endpoint-config: \n"
                 + "      socket-options: \n"
                 + "        " + socketOption + ": " + value + "\n";
-        return yaml;
     }
 }
