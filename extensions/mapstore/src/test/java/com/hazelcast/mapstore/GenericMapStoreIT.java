@@ -157,6 +157,18 @@ public class GenericMapStoreIT extends JdbcSqlTestSupport {
         assertThat(p.getName()).isEqualTo("name-0");
     }
 
+    /**
+     * https://hazelcast.atlassian.net/browse/ESC-26
+     */
+    @Test
+    public void testGetAll() throws Exception {
+        insertItems(tableName, 1, 99);
+        HazelcastInstance client = client();
+        Map<Integer, Person> map = client.getMap(tableName);
+
+        assertTrueEventually(() -> assertThat(map).hasSize(100));
+    }
+
     @Test
     public void testPut() {
         HazelcastInstance client = client();

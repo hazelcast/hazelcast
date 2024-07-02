@@ -31,7 +31,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.version.Version;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -56,47 +55,22 @@ public class InitExecutionOperation extends AsyncJobOperation {
     private int coordinatorMemberListVersion;
     private Version coordinatorVersion;
     private Set<MemberInfo> participants;
-    /**
-     * Job execution plan:
-     * <ul>
-     * <li>for normal jobs: {@link ExecutionPlan} serialized to {@link Data}.
-     *     Deserialization is delayed to use appropriate job class loader
-     * <li>for light jobs: {@link ExecutionPlan} object. Not serialized eagerly
-     *     so we can avoid serialization overhead for local execution.
-     * </ul>
-     */
-    private Object plan;
+    private Data serializedPlan;
     private boolean isLightJob;
 
     public InitExecutionOperation() {
     }
 
-    private InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
-                                   Version coordinatorVersion,
-                                   Set<MemberInfo> participants, @Nonnull Object plan, boolean isLightJob) {
+    public InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
+                                  Version coordinatorVersion,
+                                  Set<MemberInfo> participants, Data serializedPlan, boolean isLightJob) {
         super(jobId);
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
         this.coordinatorVersion = coordinatorVersion;
         this.participants = participants;
-        assert isLightJob || plan instanceof Data : "Serialized plan is expected for normal job";
-        assert !isLightJob || plan instanceof ExecutionPlan : "Non-serialized plan is expected for light job";
-        this.plan = plan;
+        this.serializedPlan = serializedPlan;
         this.isLightJob = isLightJob;
-    }
-
-    public static InitExecutionOperation forNormalJob(long jobId, long executionId, int coordinatorMemberListVersion,
-                                                      Version coordinatorVersion, Set<MemberInfo> participants,
-                                                      @Nonnull Data serializedPlan) {
-        return new InitExecutionOperation(jobId, executionId, coordinatorMemberListVersion, coordinatorVersion,
-                participants, serializedPlan, false);
-    }
-
-    public static InitExecutionOperation forLightJob(long jobId, long executionId, int coordinatorMemberListVersion,
-                                                     Version coordinatorVersion, Set<MemberInfo> participants,
-                                                     @Nonnull ExecutionPlan plan) {
-        return new InitExecutionOperation(jobId, executionId, coordinatorMemberListVersion, coordinatorVersion,
-                participants, plan, true);
     }
 
     @Override
@@ -111,14 +85,17 @@ public class InitExecutionOperation extends AsyncJobOperation {
 
         JetServiceBackend service = getJetServiceBackend();
         Address caller = getCallerAddress();
-        logger.fine("Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId), caller);
+        logger.fine("Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId),
+                caller);
+
+        ExecutionPlan plan = deserializePlan(serializedPlan);
 
         if (isLightJob) {
             return service.getJobExecutionService().runLightJob(jobId(), executionId, getCallerAddress(),
-                    coordinatorMemberListVersion, participants, (ExecutionPlan) plan);
+                    coordinatorMemberListVersion, participants, plan);
         } else {
             return service.getJobExecutionService().initExecution(jobId(), executionId, getCallerAddress(),
-                    coordinatorMemberListVersion, participants, deserializedPlan());
+                    coordinatorMemberListVersion, participants, plan);
         }
     }
 
@@ -139,11 +116,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
         for (MemberInfo participant : participants) {
             out.writeObject(participant);
         }
-        if (isLightJob) {
-            out.writeObject(plan);
-        } else {
-            IOUtil.writeData(out, (Data) plan);
-        }
+        IOUtil.writeData(out, serializedPlan);
     }
 
     @Override
@@ -159,25 +132,24 @@ public class InitExecutionOperation extends AsyncJobOperation {
         for (int i = 0; i < count; i++) {
             participants.add(in.readObject());
         }
-        if (isLightJob) {
-            plan = in.readObject();
-        } else {
-            plan = IOUtil.readData(in);
-        }
+        serializedPlan = IOUtil.readData(in);
     }
 
-    private ExecutionPlan deserializedPlan() {
-        assert !isLightJob;
-        JetServiceBackend service = getJetServiceBackend();
-        JobConfig jobConfig = service.getJobConfig(jobId(), isLightJob);
-        JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
+    private ExecutionPlan deserializePlan(Data planBlob) {
+        if (isLightJob) {
+            return getNodeEngine().getSerializationService().toObject(planBlob);
+        } else {
+            JetServiceBackend service = getJetServiceBackend();
+            JobConfig jobConfig = service.getJobConfig(jobId(), isLightJob);
+            JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
 
-        ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);
-        try {
-            jobClassloaderService.prepareProcessorClassLoaders(jobId());
-            return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, (Data) plan);
-        } finally {
-            jobClassloaderService.clearProcessorClassLoaders();
+            ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);
+            try {
+                jobClassloaderService.prepareProcessorClassLoaders(jobId());
+                return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
+            } finally {
+                jobClassloaderService.clearProcessorClassLoaders();
+            }
         }
     }
 }

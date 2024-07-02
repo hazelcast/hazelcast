@@ -350,8 +350,8 @@ public class MasterJobContext {
         mc.coordinationService().jobInvocationObservers.forEach(obs ->
                 obs.onJobInvocation(mc.jobId(), mc.executionPlanMap(), dag, mc.jobConfig()));
         Function<ExecutionPlan, Operation> operationCtor = plan ->
-                InitExecutionOperation.forNormalJob(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
-                        participants, mc.nodeEngine().getSerializationService().toData(plan));
+                new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                        participants, mc.nodeEngine().getSerializationService().toData(plan), false);
         mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
     }
 

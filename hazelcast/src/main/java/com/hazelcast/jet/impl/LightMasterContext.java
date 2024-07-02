@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -173,9 +174,11 @@ public final class LightMasterContext {
                     coordinationService.jobInvocationObservers.forEach(obs ->
                             obs.onLightJobInvocation(jobId, participants, dag, jobConfig));
 
-                    Function<ExecutionPlan, Operation> operationCtor = plan ->
-                            InitExecutionOperation.forLightJob(jobId, jobId, membersView.getVersion(), coordinatorVersion,
-                                    participants, plan);
+                    Function<ExecutionPlan, Operation> operationCtor = plan -> {
+                        Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
+                        return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion,
+                                participants, serializedPlan, true);
+                    };
 
                     mc.invokeOnParticipants(operationCtor,
                             responses -> mc.finalizeJob(mc.findError(responses)),
