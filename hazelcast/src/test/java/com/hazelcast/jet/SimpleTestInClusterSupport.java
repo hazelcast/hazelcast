@@ -171,7 +171,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                 : instance().getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
-                + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
+                + objects.stream().map(o -> o.getServiceName() + "/" + String.valueOf(o.getName()))
                 .collect(Collectors.joining(", ", "[", "]")));
         // Jet keeps some IMap references in JobRepository.
         // Destroying proxies removes the objects from proxy registry but JobRepository keeps
