@@ -140,8 +140,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     /**
      * A private property to let users control the reconnection behavior of the client.
      * <p>
-     * When enabled, the client will skip trying to connect to members in the last known
-     * member list during reconnection attempts.
+     * When enabled (true), the client will skip trying to connect to members in the last known
+     * member list during reconnection attempts. Default is false.
      * <p>
      * This property might be handy for users who are using the client with unisocket
      * mode and exposing their multi-member cluster via a single load balancer or node port

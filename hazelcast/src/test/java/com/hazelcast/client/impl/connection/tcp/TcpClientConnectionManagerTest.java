@@ -128,7 +128,7 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
         Address address = instance.getCluster().getLocalMember().getAddress();
         String addressString = address.getHost() + ":" + address.getPort();
         ClientConfig config = new ClientConfig();
-        config.setProperty(TcpClientConnectionManager.SKIP_MEMBER_LIST_DURING_RECONNECTION.getName(), "true");
+        config.setProperty("hazelcast.client.internal.skip.member.list.during.reconnection", "true");
         config.getNetworkConfig().setSmartRouting(false);
         config.getNetworkConfig().addAddress(addressString);
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3_000);
