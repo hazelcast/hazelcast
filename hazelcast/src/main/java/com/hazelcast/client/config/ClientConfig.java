@@ -1055,10 +1055,12 @@ public class ClientConfig {
      * See {@link #isCPDirectToLeaderRoutingEnabled()}.
      *
      * @param cpDirectToLeaderRoutingEnabled the boolean value to set
+     * @return configured {@link ClientConfig} for chaining
      * @since 5.5
      */
-    public void setCPDirectToLeaderRoutingEnabled(boolean cpDirectToLeaderRoutingEnabled) {
+    public ClientConfig setCPDirectToLeaderRoutingEnabled(boolean cpDirectToLeaderRoutingEnabled) {
         this.cpDirectToLeaderRoutingEnabled = cpDirectToLeaderRoutingEnabled;
+        return this;
     }
 
     @Override

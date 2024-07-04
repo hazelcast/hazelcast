@@ -1182,7 +1182,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     .updateOnAuth(connection.getClusterUuid(), connection.getRemoteUuid(), keyValuePairs);
 
             // Pass CP leadership data to our tracking service
-            client.getCPGroupViewService().initializeKnownLeaders(keyValuePairs);
+            client.getCPGroupViewService().initializeKnownLeaders(connection.getRemoteUuid(), connection.getRemoteAddress(),
+                    keyValuePairs);
         } else {
             // If there are no key-value pairs, we have connected to a member that is older than 5_5
             // this is unsupported for clients operating with subset routing mode.

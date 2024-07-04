@@ -36,7 +36,6 @@ import com.hazelcast.client.impl.protocol.task.RemoveMigrationListenerMessageTas
 import com.hazelcast.client.impl.protocol.task.RemovePartitionLostListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.TriggerPartitionAssignmentMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheFetchNearCacheInvalidationMetadataTask;
-import com.hazelcast.client.impl.protocol.task.cp.AddCPGroupViewListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapFetchNearCacheInvalidationMetadataTask;
 import com.hazelcast.client.impl.protocol.task.map.MapMadePublishableMessageTask;
@@ -109,7 +108,6 @@ public class MessageTaskSecurityTest {
         skip(AuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
         skip(ClientTpcAuthenticationMessageTask.class, "Authentication message processing");
         skip(CreateProxiesMessageTask.class, "Permissions handled in beforeProcess() method");
-        skip(AddCPGroupViewListenerMessageTask.class, "Adds listener for listening to CP group view changes");
     }
 
     @Test

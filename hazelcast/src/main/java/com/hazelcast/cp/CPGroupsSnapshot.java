@@ -18,6 +18,7 @@ package com.hazelcast.cp;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -72,6 +73,31 @@ public class CPGroupsSnapshot {
 
     public UUID getApUuid(CPMember cpMember) {
         return cpToApUuids.get(cpMember.getUuid());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CPGroupsSnapshot that = (CPGroupsSnapshot) o;
+        return Objects.equals(groupIdToInfo, that.groupIdToInfo) && Objects.equals(cpToApUuids, that.cpToApUuids);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupIdToInfo, cpToApUuids);
+    }
+
+    @Override
+    public String toString() {
+        return "CPGroupsSnapshot{"
+                + "groupIdToInfo=" + groupIdToInfo
+                + ", cpToApUuids=" + cpToApUuids
+                + '}';
     }
 
     public record GroupInfo(CPMember leader, Set<CPMember> followers, int term) {

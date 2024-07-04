@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.CPGroupViewListenerService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.internal.nio.ConnectionListener;
 
@@ -68,11 +69,14 @@ public interface ClientCPGroupViewService extends ConnectionListener {
     /**
      * Initializes the known CP group leaders map with information received within the
      * {@link com.hazelcast.client.impl.connection.tcp.AuthenticationResponse} after
-     * connecting to a new member of the cluster
+     * connecting to a new member of the cluster.
      *
+     * @param providerUuid              The UUID of the member providing this data
+     * @param providerAddress           The Address of the member providing this data
      * @param authResponseKeyValuePairs The full key-value bag passed to the client
      */
-    void initializeKnownLeaders(Map<String, String> authResponseKeyValuePairs);
+    void initializeKnownLeaders(UUID providerUuid, Address providerAddress,
+                                Map<String, String> authResponseKeyValuePairs);
 
     /**
      * Convenience method to easily check if the client is configured for CP

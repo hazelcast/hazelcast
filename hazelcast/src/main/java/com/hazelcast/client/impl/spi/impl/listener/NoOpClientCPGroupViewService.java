@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl.listener;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.internal.nio.Connection;
 
@@ -52,7 +53,8 @@ public class NoOpClientCPGroupViewService implements ClientCPGroupViewService {
     }
 
     @Override
-    public void initializeKnownLeaders(Map<String, String> authResponseKeyValuePairs) {
+    public void initializeKnownLeaders(UUID providerUuid, Address providerAddress,
+                                       Map<String, String> authResponseKeyValuePairs) {
 
     }
 
