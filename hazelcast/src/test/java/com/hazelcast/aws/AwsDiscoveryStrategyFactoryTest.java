@@ -29,6 +29,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -108,7 +109,7 @@ public class AwsDiscoveryStrategyFactoryTest {
         // given
         String endpoint = "/some-endpoint";
         String url = String.format("http://localhost:%d%s", wireMockRule.port(), endpoint);
-        stubFor(get(urlEqualTo(endpoint)).willReturn(aResponse().withStatus(200).withBody("some-body")));
+        stubFor(get(urlEqualTo(endpoint)).willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody("some-body")));
 
         // when
         boolean isAvailable = AwsDiscoveryStrategyFactory.isEndpointAvailable(url);

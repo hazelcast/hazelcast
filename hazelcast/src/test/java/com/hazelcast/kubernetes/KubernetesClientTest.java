@@ -45,6 +45,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public class KubernetesClientTest {
     public void setUp() {
         kubernetesClient = newKubernetesClient();
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
-                .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_UNAUTHORIZED).withBody("\"reason\":\"Forbidden\"")));
     }
 
     @After
@@ -134,7 +135,7 @@ public class KubernetesClientTest {
                   "code": 404
                 }""";
         stub(String.format("/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", NAMESPACE),
-                404, endpointSlicesResponse);
+                HttpURLConnection.HTTP_NOT_FOUND, endpointSlicesResponse);
         assertThat(kubernetesClient.buildKubernetesApiUrlProvider()).isInstanceOf(KubernetesApiEndpointProvider.class);
     }
 
@@ -543,8 +544,8 @@ public class KubernetesClientTest {
                 pod("hazelcast-1", NAMESPACE, "node-name-1", 5701));
 
         String forbiddenBody = "\"reason\":\"Forbidden\"";
-        stub("/api/v1/nodes/node-name-1", 403, forbiddenBody);
-        stub("/api/v1/nodes/node-name-2", 403, forbiddenBody);
+        stub("/api/v1/nodes/node-name-1", HttpURLConnection.HTTP_FORBIDDEN, forbiddenBody);
+        stub("/api/v1/nodes/node-name-2", HttpURLConnection.HTTP_FORBIDDEN, forbiddenBody);
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -698,16 +699,16 @@ public class KubernetesClientTest {
 
         stubFor(get(urlMatching("/apis/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-1"))
-                .willReturn(aResponse().withStatus(200).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody("{}")));
         stubFor(get(urlMatching("/api/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-1"))
-                .willReturn(aResponse().withStatus(200).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody("{}")));
         stubFor(get(urlMatching("/api/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-2"))
-                .willReturn(aResponse().withStatus(402).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_PAYMENT_REQUIRED).withBody("{}")));
         stubFor(get(urlMatching("/apis/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-2"))
-                .willReturn(aResponse().withStatus(402).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_PAYMENT_REQUIRED).withBody("{}")));
 
         cleanUpClient();
         kubernetesClient = newKubernetesClient(new FileReaderTokenProvider(file.toString()));
@@ -720,16 +721,16 @@ public class KubernetesClientTest {
         // Api server will not accept token with old value
         stubFor(get(urlMatching("/apis/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-1"))
-                .willReturn(aResponse().withStatus(402).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_PAYMENT_REQUIRED).withBody("{}")));
         stubFor(get(urlMatching("/api/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-1"))
-                .willReturn(aResponse().withStatus(402).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_PAYMENT_REQUIRED).withBody("{}")));
         stubFor(get(urlMatching("/api/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-2"))
-                .willReturn(aResponse().withStatus(200).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody("{}")));
         stubFor(get(urlMatching("/apis/.*")).atPriority(1)
                 .withHeader("Authorization", equalTo("Bearer value-2"))
-                .willReturn(aResponse().withStatus(200).withBody("{}")));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody("{}")));
 
         kubernetesClient.endpoints();
         assertFalse(kubernetesClient.isKnownExceptionAlreadyLogged());
@@ -739,7 +740,7 @@ public class KubernetesClientTest {
     public void forbidden() {
         // given
         String forbiddenBody = "\"reason\":\"Forbidden\"";
-        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), 403, forbiddenBody);
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), HttpURLConnection.HTTP_FORBIDDEN, forbiddenBody);
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -752,7 +753,7 @@ public class KubernetesClientTest {
     public void wrongApiToken() {
         // given
         String unauthorizedBody = "\"reason\":\"Unauthorized\"";
-        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), 401, unauthorizedBody);
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), HttpURLConnection.HTTP_UNAUTHORIZED, unauthorizedBody);
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -974,11 +975,11 @@ public class KubernetesClientTest {
     }
 
     private static void stub(String url, KubernetesResource response) throws JsonProcessingException {
-        stub(url, 200, WRITER.writeValueAsString(response));
+        stub(url, HttpURLConnection.HTTP_OK, WRITER.writeValueAsString(response));
     }
 
     private static void stub(String url, String response) {
-        stub(url, 200, response);
+        stub(url, HttpURLConnection.HTTP_OK, response);
     }
 
     private static void stub(String url, int status, String response) {
@@ -998,7 +999,7 @@ public class KubernetesClientTest {
         }
         stubFor(mappingBuilder
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(response)));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(response)));
     }
 
     private static String ready(String ip, Integer port) {

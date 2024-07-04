@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -65,11 +66,11 @@ public class AzureComputeApiTest {
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                 + "/networkInterfaces?api-version=%s", SUBSCRIPTION_ID, RESOURCE_GROUP, API_VERSION)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponseForNetworkInterfaces())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForNetworkInterfaces())));
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                 + "/publicIPAddresses?api-version=%s", SUBSCRIPTION_ID, RESOURCE_GROUP, API_VERSION)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponseForPublicIPAddresses())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForPublicIPAddresses())));
 
         // when
         Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, null, ACCESS_TOKEN);
@@ -94,12 +95,12 @@ public class AzureComputeApiTest {
                         + "/virtualMachineScaleSets/%s/networkInterfaces?api-version=%s",
                         SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, API_VERSION_SCALE_SET)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponseForNetworkInterfaces())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForNetworkInterfaces())));
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
                         + "/virtualMachineScaleSets/%s/publicIPAddresses?api-version=%s",
                         SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, API_VERSION_SCALE_SET)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponseForPublicIPAddresses())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForPublicIPAddresses())));
 
         // when
         Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, null, ACCESS_TOKEN);
@@ -123,11 +124,11 @@ public class AzureComputeApiTest {
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                 + "/networkInterfaces?api-version=%s", SUBSCRIPTION_ID, RESOURCE_GROUP, API_VERSION)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponseForNetworkInterfaces())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForNetworkInterfaces())));
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                 + "/publicIPAddresses?api-version=%s", SUBSCRIPTION_ID, RESOURCE_GROUP, API_VERSION)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponseForPublicIPAddresses())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForPublicIPAddresses())));
 
         // when
         Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, TAG, ACCESS_TOKEN);

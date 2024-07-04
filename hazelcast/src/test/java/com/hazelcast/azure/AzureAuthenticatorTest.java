@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.net.HttpURLConnection;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -50,7 +52,7 @@ public class AzureAuthenticatorTest {
         // given
         stubFor(post("/" + TENANT_ID + "/oauth2/token")
                 .withRequestBody(matching(START_OF_REQUEST_BODY + ".*"))
-                .willReturn(aResponse().withStatus(200).withBody(responseBody(ACCESS_TOKEN))));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(responseBody(ACCESS_TOKEN))));
 
         // when
         String result = azureAuthenticator.refreshAccessToken(TENANT_ID, CLIENT_ID, CLIENT_SECRET);

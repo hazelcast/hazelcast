@@ -46,6 +46,8 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+
+import java.net.HttpURLConnection;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -112,7 +114,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     private ResponseDefinitionBuilder checkStatusConditional(boolean condition) {
-        return condition ? aResponse().withStatus(200) : aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER);
+        return condition ? aResponse().withStatus(HttpURLConnection.HTTP_OK) : aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER);
     }
 
     @Test

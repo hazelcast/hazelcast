@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -71,7 +72,7 @@ public class RestApiPhoneHomeIntegrationTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         http = new HTTPCommunicator(instance);
         phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + wireMockRule.port() + "/ping");
-        stubFor(post(urlPathEqualTo("/ping")).willReturn(aResponse().withStatus(200)));
+        stubFor(post(urlPathEqualTo("/ping")).willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK)));
     }
 
     @After

@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -75,7 +76,7 @@ public class RestClientTest {
     public void getSuccess() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get().getBody();
@@ -91,7 +92,7 @@ public class RestClientTest {
         String headerValue = "Google";
         stubFor(get(urlEqualTo(API_ENDPOINT))
             .withHeader(headerKey, equalTo(headerValue))
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
@@ -109,12 +110,12 @@ public class RestClientTest {
         stubFor(get(urlEqualTo(API_ENDPOINT))
             .inScenario("Retry Scenario")
             .whenScenarioStateIs(STARTED)
-            .willReturn(aResponse().withStatus(500).withBody("Internal error"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR).withBody("Internal error"))
             .willSetStateTo("Second Try"));
         stubFor(get(urlEqualTo(API_ENDPOINT))
             .inScenario("Retry Scenario")
             .whenScenarioStateIs("Second Try")
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT), 1200)
@@ -131,7 +132,7 @@ public class RestClientTest {
     public void getFailure() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .willReturn(aResponse().withStatus(500).withBody("Internal error")));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR).withBody("Internal error")));
 
         // when
         RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
@@ -145,7 +146,7 @@ public class RestClientTest {
         // given
         stubFor(post(urlEqualTo(API_ENDPOINT))
             .withRequestBody(equalTo(BODY_REQUEST))
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
@@ -160,8 +161,8 @@ public class RestClientTest {
     @Test
     public void expectedResponseCode() {
         // given
-        int expectedCode1 = 201;
-        int expectedCode2 = 202;
+        int expectedCode1 = HttpURLConnection.HTTP_CREATED;
+        int expectedCode2 = HttpURLConnection.HTTP_ACCEPTED;
         stubFor(post(urlEqualTo(API_ENDPOINT))
                 .withRequestBody(equalTo(BODY_REQUEST))
                 .willReturn(aResponse().withStatus(expectedCode1).withBody(BODY_RESPONSE)));
@@ -180,7 +181,7 @@ public class RestClientTest {
     @Test
     public void expectHttpOkByDefault() {
         // given
-        int responseCode = 201;
+        int responseCode = HttpURLConnection.HTTP_CREATED;
         stubFor(post(urlEqualTo(API_ENDPOINT))
                 .withRequestBody(equalTo(BODY_REQUEST))
                 .willReturn(aResponse().withStatus(responseCode).withBody(BODY_RESPONSE)));
@@ -198,8 +199,8 @@ public class RestClientTest {
     @Test
     public void unexpectedResponseCode() {
         // given
-        int expectedCode = 201;
-        int unexpectedCode = 202;
+        int expectedCode = HttpURLConnection.HTTP_CREATED;
+        int unexpectedCode = HttpURLConnection.HTTP_ACCEPTED;
         stubFor(post(urlEqualTo(API_ENDPOINT))
                 .withRequestBody(equalTo(BODY_REQUEST))
                 .willReturn(aResponse().withStatus(unexpectedCode).withBody(BODY_RESPONSE)));

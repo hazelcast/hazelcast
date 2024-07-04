@@ -21,7 +21,7 @@ package com.hazelcast.spi.exception;
  */
 public class RestClientException
         extends RuntimeException {
-    private int httpErrorCode;
+    private final int httpErrorCode;
 
     public RestClientException(String message, int httpErrorCode) {
         super(String.format("%s. HTTP Error Code: %s", message, httpErrorCode));
@@ -30,6 +30,7 @@ public class RestClientException
 
     public RestClientException(String message, Throwable cause) {
         super(message, cause);
+        httpErrorCode = 0;
     }
 
     public int getHttpErrorCode() {

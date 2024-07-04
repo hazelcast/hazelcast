@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.net.HttpURLConnection;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -63,7 +64,7 @@ public class GcpComputeApiTest {
                 String.format("/compute/v1/projects/%s/zones/%s/instances?filter=labels.%s+eq+%s", PROJECT, ZONE, LABEL_KEY,
                         LABEL_VALUE)))
                 .withHeader("Authorization", equalTo(String.format("OAuth %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponse())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponse())));
         Label label = new Label(String.format("%s=%s", LABEL_KEY, LABEL_VALUE));
 
         // when
@@ -81,7 +82,7 @@ public class GcpComputeApiTest {
         stubFor(get(urlEqualTo(
                 String.format("/compute/v1/projects/%s/regions/%s?alt=json&fields=zones", PROJECT, REGION)))
                 .withHeader("Authorization", equalTo(String.format("OAuth %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(regionResponse(PROJECT, REGION))));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(regionResponse(PROJECT, REGION))));
         // when
         List<String> zones = gcpComputeApi.zones(PROJECT, REGION, ACCESS_TOKEN);
 
@@ -97,7 +98,7 @@ public class GcpComputeApiTest {
         // given
         stubFor(get(urlEqualTo(String.format("/compute/v1/projects/%s/zones/%s/instances", PROJECT, ZONE)))
                 .withHeader("Authorization", equalTo(String.format("OAuth %s", ACCESS_TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(instancesResponse())));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponse())));
 
         // when
         List<GcpAddress> result = gcpComputeApi.instances(PROJECT, ZONE, null, ACCESS_TOKEN);

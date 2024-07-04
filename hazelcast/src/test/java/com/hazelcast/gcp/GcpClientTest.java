@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.net.HttpURLConnection;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -149,7 +150,7 @@ public class GcpClientTest {
         // given
         Label label = null;
         String forbiddenMessage = "\"reason\":\"Request had insufficient authentication scopes\"";
-        RestClientException exception = new RestClientException(forbiddenMessage, 401);
+        RestClientException exception = new RestClientException(forbiddenMessage, HttpURLConnection.HTTP_UNAUTHORIZED);
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
 
         GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
@@ -167,7 +168,7 @@ public class GcpClientTest {
         // given
         Label label = null;
         String forbiddenMessage = "\"reason\":\"Request had insufficient authentication scopes\"";
-        RestClientException exception = new RestClientException(forbiddenMessage, 403);
+        RestClientException exception = new RestClientException(forbiddenMessage, HttpURLConnection.HTTP_FORBIDDEN);
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
 
         GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
@@ -185,7 +186,7 @@ public class GcpClientTest {
         // given
         Label label = null;
         String forbiddenMessage = "Service account not enabled on this instance";
-        RestClientException exception = new RestClientException(forbiddenMessage, 404);
+        RestClientException exception = new RestClientException(forbiddenMessage, HttpURLConnection.HTTP_NOT_FOUND);
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
 
         GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
@@ -202,7 +203,7 @@ public class GcpClientTest {
     public void getAddressesUnknownException() {
         // given
         Label label = null;
-        RestClientException exception = new RestClientException("unknown", 500);
+        RestClientException exception = new RestClientException("unknown", HttpURLConnection.HTTP_INTERNAL_ERROR);
         given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
 
         GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
@@ -304,7 +305,7 @@ public class GcpClientTest {
     public void setZonesUnknownException() {
         // given
         GcpConfig gcpConfig = GcpConfig.builder().build();
-        RestClientException exception = new RestClientException("unknown", 500);
+        RestClientException exception = new RestClientException("unknown", HttpURLConnection.HTTP_INTERNAL_ERROR);
         given(gcpComputeApi.zones(any(), any(), any())).willThrow(exception);
 
         // when

@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -145,7 +146,7 @@ public class AwsEc2ApiTest {
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
             .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
             .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(response)));
 
         // when
         Map<String, String> result = awsEc2Api.describeInstances(CREDENTIALS);
@@ -193,7 +194,7 @@ public class AwsEc2ApiTest {
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
             .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
             .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(response)));
 
         // when
         Map<String, String> result = createAwsEc2Api(null, "some-tag-value").describeInstances(CREDENTIALS);
@@ -242,7 +243,7 @@ public class AwsEc2ApiTest {
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
             .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
             .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(response)));
 
         // when
         Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
@@ -290,7 +291,7 @@ public class AwsEc2ApiTest {
                 .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
                 .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
                 .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-                .willReturn(aResponse().withStatus(500)));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
 
         // when
         Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
@@ -330,7 +331,7 @@ public class AwsEc2ApiTest {
             .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
             .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
             .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(response)));
 
         // when
         Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
@@ -360,7 +361,7 @@ public class AwsEc2ApiTest {
     @Test
     public void awsError() {
         // given
-        int errorCode = 401;
+        int errorCode = HttpURLConnection.HTTP_UNAUTHORIZED;
         String errorMessage = "Error message retrieved from AWS";
         stubFor(get(urlMatching("/.*"))
                 .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));

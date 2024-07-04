@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -116,7 +117,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
                         default -> throw new IllegalStateException("Unexpected token");
                     };
 
-                    t.sendResponseHeaders(200, response.getBytes().length);
+                    t.sendResponseHeaders(HttpURLConnection.HTTP_OK, response.getBytes().length);
                     try (OutputStream os = t.getResponseBody()) {
                         os.write(response.getBytes());
                     }
@@ -124,7 +125,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
                 }
             }
 
-            t.sendResponseHeaders(404, NOT_FOUND_RESPONSE.getBytes().length);
+            t.sendResponseHeaders(HttpURLConnection.HTTP_NOT_FOUND, NOT_FOUND_RESPONSE.getBytes().length);
             try (OutputStream os = t.getResponseBody()) {
                 os.write(NOT_FOUND_RESPONSE.getBytes());
             }

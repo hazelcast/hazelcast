@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.net.HttpURLConnection;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -49,7 +51,7 @@ public class GcpMetadataApiTest {
         // given
         stubFor(get(urlEqualTo("/computeMetadata/v1/project/project-id"))
                 .withHeader("Metadata-Flavor", equalTo("Google"))
-                .willReturn(aResponse().withStatus(200).withBody(PROJECT)));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(PROJECT)));
 
         // when
         String result = gcpMetadataApi.currentProject();
@@ -63,7 +65,7 @@ public class GcpMetadataApiTest {
         // given
         stubFor(get(urlEqualTo("/computeMetadata/v1/instance/zone"))
                 .withHeader("Metadata-Flavor", equalTo("Google"))
-                .willReturn(aResponse().withStatus(200).withBody(zoneResponse(ZONE))));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(zoneResponse(ZONE))));
 
         // when
         String result = gcpMetadataApi.currentZone();
@@ -77,7 +79,7 @@ public class GcpMetadataApiTest {
         // given
         stubFor(get(urlEqualTo("/computeMetadata/v1/instance/zone"))
                 .withHeader("Metadata-Flavor", equalTo("Google"))
-                .willReturn(aResponse().withStatus(200).withBody(zoneResponse(ZONE))));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(zoneResponse(ZONE))));
 
         // when
         String result = gcpMetadataApi.currentRegion();
@@ -96,7 +98,7 @@ public class GcpMetadataApiTest {
         // given
         stubFor(get(urlEqualTo("/computeMetadata/v1/instance/service-accounts/default/token"))
                 .withHeader("Metadata-Flavor", equalTo("Google"))
-                .willReturn(aResponse().withStatus(200).withBody(accessTokenResponse(ACCESS_TOKEN))));
+                .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(accessTokenResponse(ACCESS_TOKEN))));
 
         // when
         String result = gcpMetadataApi.accessToken();

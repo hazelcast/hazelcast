@@ -16,25 +16,28 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import java.net.HttpURLConnection;
+
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public enum HttpStatusCode {
 
-    SC_100(100, stringToBytes("HTTP/1.1 100 Continue\r\n")),
-    SC_200(200, stringToBytes("HTTP/1.1 200 OK\r\n")),
-    SC_204(204, stringToBytes("HTTP/1.1 204 No Content\r\n")),
-    SC_400(400, stringToBytes("HTTP/1.1 400 Bad Request\r\n")),
-    SC_403(403, stringToBytes("HTTP/1.1 403 Forbidden\r\n")),
-    SC_404(404, stringToBytes("HTTP/1.1 404 Not Found\r\n")),
-    SC_500(500, stringToBytes("HTTP/1.1 500 Internal Server Error\r\n")),
-    SC_503(503, stringToBytes("HTTP/1.1 503 Service Unavailable\r\n"))
+    SC_100(100, "Continue"),
+    SC_200(HttpURLConnection.HTTP_OK, "OK"),
+    SC_204(HttpURLConnection.HTTP_NO_CONTENT, "No Content"),
+    SC_400(HttpURLConnection.HTTP_BAD_REQUEST, "Bad Request"),
+    SC_403(HttpURLConnection.HTTP_FORBIDDEN, "Forbidden"),
+    SC_404(HttpURLConnection.HTTP_NOT_FOUND, "Not Found"),
+    SC_500(HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Server Error"),
+    SC_503(HttpURLConnection.HTTP_UNAVAILABLE, "Service Unavailable")
     ;
 
     final int code;
     final byte[] statusLine;
 
-    HttpStatusCode(int code, byte[] statusLine) {
+    @SuppressWarnings("squid:S3457")
+    HttpStatusCode(int code, String statusLine) {
         this.code = code;
-        this.statusLine = statusLine;
+        this.statusLine = stringToBytes(String.format("HTTP/1.1 %d %s\r\n", code, statusLine));
     }
 }
