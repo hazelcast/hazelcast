@@ -58,7 +58,8 @@ hazelcast-client:
     outbound-ports:
       - 34600
       - 34700-34710
-    smart-routing: true
+    cluster-routing:
+      mode: "ALL_MEMBERS"
     redo-operation: true
     connection-timeout: 60000
     socket-options:

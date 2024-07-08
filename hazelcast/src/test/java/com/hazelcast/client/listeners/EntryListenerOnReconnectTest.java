@@ -31,8 +31,8 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -43,7 +43,7 @@ public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTe
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, SMART);
+        return Arrays.asList(SINGLE_MEMBER, ALL_MEMBERS);
     }
 
     @Override

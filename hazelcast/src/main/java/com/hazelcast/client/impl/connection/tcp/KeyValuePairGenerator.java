@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CP_LEADERS_INFO;
-import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.MEMBER_GROUPS_INFO;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 
 /**
@@ -63,7 +63,7 @@ public final class KeyValuePairGenerator {
         Map<String, String> keyValuePairs = new HashMap<>();
         keyValuePairs.put(CLUSTER_VERSION, clusterVersion.toString());
         if (enterprise) {
-            keyValuePairs.put(SUBSET_MEMBER_GROUPS_INFO, toJsonString(memberGroups, version));
+            keyValuePairs.put(MEMBER_GROUPS_INFO, toJsonString(memberGroups, version));
             // CP Group information will be empty if license check is not met
             if (!cpMemberSnapshot.getAllGroupInformation().isEmpty()) {
                 keyValuePairs.put(CP_LEADERS_INFO, toJsonString(cpMemberSnapshot));

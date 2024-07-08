@@ -17,6 +17,7 @@
 package com.hazelcast.client.splitbrainprotection;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
@@ -37,7 +38,7 @@ public class SplitBrainProtectionTestUtil {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         clientConfig.setClusterName(instance.getConfig().getClusterName());
         return clientConfig;
     }

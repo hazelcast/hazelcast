@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.clientside.SubsetMembers;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
@@ -60,7 +60,7 @@ public interface ClientClusterService {
      * changed the cluster and the new member list is not received yet.
      * </p>
      * <p>
-     * When {@link SubsetRoutingConfig} is enabled, this method
+     * When {@link ClusterRoutingConfig} is enabled, this method
      * returns list of members seen by {@link SubsetMembers}
      * </p>
      * @return The collection of members.
@@ -96,6 +96,13 @@ public interface ClientClusterService {
      */
     boolean removeMembershipListener(@Nonnull UUID registrationId);
 
+    /**
+     * Returns this client's view of member group subsets, used when the
+     * {@link com.hazelcast.client.impl.connection.tcp.RoutingMode#MULTI_MEMBER}
+     * routing mode is set on the client.
+     *
+     * @return the {@link SubsetMembers} view.
+     */
     SubsetMembers getSubsetMembers();
 
     /**

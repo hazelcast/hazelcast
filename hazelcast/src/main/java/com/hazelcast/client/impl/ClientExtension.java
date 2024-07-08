@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
@@ -135,7 +135,7 @@ public interface ClientExtension {
      * @throws InvalidConfigurationException if the service cannot be created due to an invalid configuration.
      */
     ClientClusterService createClientClusterService(LoggingService loggingService,
-                                                    SubsetRoutingConfig subsetRoutingConfig);
+                                                    ClusterRoutingConfig clusterRoutingConfig);
 
     /**
      * Creates the correct implementation of {@link ClientCPGroupViewService}.

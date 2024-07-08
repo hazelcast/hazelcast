@@ -17,7 +17,6 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
@@ -737,20 +736,6 @@ public final class ConfigValidator {
     private static void checkPreloaderConfig(NearCacheConfig nearCacheConfig, boolean isClient) {
         if (!isClient && nearCacheConfig.getPreloaderConfig().isEnabled()) {
             throw new InvalidConfigurationException("The Near Cache pre-loader is just available on Hazelcast clients!");
-        }
-    }
-
-    /**
-     * Throws {@link InvalidConfigurationException} if the given {@link ClientNetworkConfig}
-     * has an invalid configuration.
-     * <p>
-     * If both smart routing and subset routing are enabled, this configuration is deemed invalid.
-     *
-     * @param networkConfig supplied ClientNetworkConfig
-     */
-    public static void checkClientNetworkConfig(ClientNetworkConfig networkConfig) {
-        if (networkConfig.isSmartRouting() && networkConfig.getSubsetRoutingConfig().isEnabled()) {
-            throw new InvalidConfigurationException("Only one of subset-routing or smart-routing can be enabled at once!");
         }
     }
 }

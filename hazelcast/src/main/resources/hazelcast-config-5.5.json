@@ -196,7 +196,7 @@
         "backup-ack-to-client-enabled": {
           "type": "boolean",
           "default": true,
-          "description": "The 'backup-ack-to-client-enabled' element lets you enable/disable backups ack to client. This feature reduces number of hops and increase performance for smart clients. It is enabled by default for smart clients. This config has no effect for unisocket clients."
+          "description": "The 'backup-ack-to-client-enabled' element lets you enable/disable backups ack to client. This feature reduces number of hops and increase performance for ALL_MEMBERS routing clients. It is enabled by default for smart clients. This config has no effect for SINGLE_MEMBER routing clients."
         },
         "listeners": {
           "$ref": "#/definitions/Listeners"
@@ -252,7 +252,7 @@
         "cp-direct-to-leader-routing": {
           "type": "boolean",
           "default": false,
-          "description": "The cp-direct-to-leader-routing element lets you enable/disable direct-to-leader routing behaviour. This feature allows CP data structure operations to be sent directly to group leaders instead of using all members of the cluster. This functionality requires the cluster to have the appropriate Hazelcast Enterprise license, otherwise it will provide no benefit on the client. It is disabled by default. This option has no effect for unisocket clients."
+          "description": "The cp-direct-to-leader-routing element lets you enable/disable direct-to-leader routing behaviour. This feature allows CP data structure operations to be sent directly to group leaders instead of using all members of the cluster. This functionality requires the cluster to have the appropriate Hazelcast Enterprise license, otherwise it will provide no benefit on the client. It is disabled by default. This option has no effect for SINGLE_MEMBER routing clients."
         }
       }
     },
@@ -4950,27 +4950,28 @@
         "outbound-ports": {
           "$ref": "#/definitions/OutboundPorts"
         },
-        "subset-routing": {
+        "cluster-routing": {
           "type": "object",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, this client will only connect to a limited subset of the cluster, as specified with the defined routing-strategy. Default value of routing-strategy is PARTITION_GROUPS when not set. And subset-routing is disabled by default. Note: This feature may only be enabled if smart-routing is disabled."
+            "mode": {
+              "type": "string",
+              "enum": ["ALL_MEMBERS", "MULTI_MEMBER", "SINGLE_MEMBER"],
+              "default": "ALL_MEMBERS",
+              "description": "Defines the mode to use when connecting to the cluster - this can either be \"SINGLE_MEMBER\" to connect\nto a single member of the cluster, \"MULTI_MEMBER\" to connect to a subset of the cluster as defined by\nthe \"routing-strategy\" property, or \"ALL_MEMBERS\" to connect to all members of the cluster."
             },
             "routing-strategy": {
               "type": "string",
               "enum": ["PARTITION_GROUPS"],
               "default": "PARTITION_GROUPS",
-              "description": "Determines the routing strategy to use with subset routing."
+              "description": "Determines the routing strategy to use when the routing mode is MULTI_MEMBER."
             }
           },
-          "description": "Configures the subset routing capabilities."
+          "description": "Configures the client's routing preferences, which determine which members of the cluster it connects to."
         },
         "smart-routing": {
           "type": "boolean",
           "default": true,
-          "description": "If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that the operation will always be executed on the owner. The cached table is updated every second. Also note that this feature may only be enabled if subset-routing is disabled."
+          "description": "This feature is deprecated, please see \"cluster-routing\" configuration options."
         },
         "redo-operation": {
           "type": "boolean",

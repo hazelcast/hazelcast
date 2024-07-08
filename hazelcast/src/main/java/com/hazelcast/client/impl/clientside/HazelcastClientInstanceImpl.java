@@ -164,7 +164,6 @@ import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
-import static com.hazelcast.internal.config.ConfigValidator.checkClientNetworkConfig;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_MEMORY;
 import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.clientMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -226,7 +225,6 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         } else {
             this.config = clientFailoverConfig.getClientConfigs().get(0);
         }
-        checkClientNetworkConfig(config.getNetworkConfig());
         this.clientFailoverConfig = clientFailoverConfig;
         this.instanceName = instanceName;
 
@@ -262,7 +260,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
         clusterService = clientExtension.createClientClusterService(loggingService,
-                config.getNetworkConfig().getSubsetRoutingConfig());
+                config.getNetworkConfig().getClusterRoutingConfig());
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);

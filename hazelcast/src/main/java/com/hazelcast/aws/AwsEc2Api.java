@@ -165,7 +165,7 @@ class AwsEc2Api {
      * </ul>
      * <p>
      * This is performed regardless of the configured use-public-ip value
-     * to make external smart clients able to work properly when possible.
+     * to make external multi socket clients able to work properly when possible.
      */
     Map<String, String> describeNetworkInterfaces(List<String> privateAddresses, AwsCredentials credentials) {
         if (privateAddresses.isEmpty()) {

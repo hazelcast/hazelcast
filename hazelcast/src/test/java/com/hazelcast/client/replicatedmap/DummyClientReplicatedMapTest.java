@@ -18,6 +18,7 @@ package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -256,7 +257,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         String addressString = address.getHost() + ":" + address.getPort();
         ClientConfig dummyClientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = new ClientNetworkConfig();
-        networkConfig.setSmartRouting(false);
+        networkConfig.getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         networkConfig.addAddress(addressString);
         dummyClientConfig.setNetworkConfig(networkConfig);
         return dummyClientConfig;

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -173,15 +174,15 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Returns config to configure a non-smart client that connects to the
+     * Returns config to configure a SINGLE_MEMBER routing client that connects to the
      * given instance only.
      */
-    protected ClientConfig configForNonSmartClientConnectingTo(HazelcastInstance targetInstance) {
+    protected ClientConfig configForSingleMemberClientConnectingTo(HazelcastInstance targetInstance) {
         ClientConfig clientConfig = new ClientConfig();
         Member coordinator = targetInstance.getCluster().getLocalMember();
         clientConfig.getNetworkConfig()
                 .addAddress(coordinator.getAddress().getHost() + ':' + coordinator.getAddress().getPort())
-                .setSmartRouting(false);
+                .getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         return clientConfig;
     }
 

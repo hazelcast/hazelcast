@@ -86,7 +86,7 @@ public class SqlClientService implements SqlService {
     private final boolean skipUpdateStatistics;
     private final long resubmissionTimeoutNano;
     private final long resubmissionRetryPauseMillis;
-    private final boolean isSmartRouting;
+    private final boolean isAllMembersRouting;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -96,7 +96,7 @@ public class SqlClientService implements SqlService {
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
 
-        this.isSmartRouting = client.getConnectionManager().getRoutingMode() == RoutingMode.SMART;
+        this.isAllMembersRouting = client.getConnectionManager().getRoutingMode() == RoutingMode.ALL_MEMBERS;
         final int partitionArgCacheSize = client.getProperties().getInteger(PARTITION_ARGUMENT_CACHE_SIZE);
         final int partitionArgCacheThreshold = partitionArgCacheSize + Math.min(partitionArgCacheSize / 10, 50);
         this.partitionArgumentIndexCache = new ReadOptimizedLruCache<>(partitionArgCacheSize, partitionArgCacheThreshold);
@@ -309,7 +309,7 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
-            if (isSmartRouting && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
+            if (isAllMembersRouting && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
                 if (response.partitionArgumentIndex != -1) {
                     partitionArgumentIndexCache.put(statement.getSql(), response.partitionArgumentIndex);
                     // We're writing to a non-volatile field from multiple threads. But it's safe because all
@@ -454,7 +454,7 @@ public class SqlClientService implements SqlService {
     }
 
     private Integer extractPartitionId(SqlStatement statement, int argIndex) {
-        if (!isSmartRouting) {
+        if (!isAllMembersRouting) {
             return null;
         }
 

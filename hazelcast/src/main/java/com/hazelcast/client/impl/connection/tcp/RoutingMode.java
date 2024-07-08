@@ -19,31 +19,30 @@ package com.hazelcast.client.impl.connection.tcp;
 import com.hazelcast.client.config.RoutingStrategy;
 
 /**
- * <p>Client requests can be routed to members in one of 3 modes:</p>
+ * <p>Clients can connect to cluster members in one of 3 modes:</p>
  * <ul>
- *     <li>{@code UNISOCKET}: All requests are sent to a single member</li>
- *     <li>{@code SMART}: {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting}</li>
- *     <li>{@code SUBSET}: A request can be sent to a subset of members based on
- *     {@link RoutingStrategy}.</li>
+ *     <li>{@code SINGLE_MEMBER}: Client only connects to a single member</li>
+ *     <li>{@code ALL_MEMBERS}: Client connects to all cluster members</li>
+ *     <li>{@code MULTI_MEMBER}: Client only connects to a subset of members based on {@link RoutingStrategy}.</li>
  * </ul>
  * <p>The {@code UNKNOWN} enumeration represents a state where the client's
  * {@link RoutingMode} is not known, usually due to < 5.5 client versions</p>
  */
 public enum RoutingMode {
     /**
-     * Represents a single member routing mode
+     * Represents a single member routing mode, previously known as `UNISOCKET`.
      */
-    UNISOCKET(0),
+    SINGLE_MEMBER(0),
 
     /**
-     * Represents an all members routing mode
+     * Represents an all members routing mode, previously known as `SMART`.
      */
 
-    SMART(1),
+    ALL_MEMBERS(1),
     /**
-     * Represents a multi member routing mode that does not connect to all members
+     * Represents a multi member routing mode that does not connect to all members, previously known as `SUBSET`.
      */
-    SUBSET(2),
+    MULTI_MEMBER(2),
 
     /**
      * Represents an unknown routing mode, usually because of a pre-5.5 client

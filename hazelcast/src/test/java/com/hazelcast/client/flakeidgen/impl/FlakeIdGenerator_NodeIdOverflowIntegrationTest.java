@@ -17,6 +17,7 @@
 package com.hazelcast.client.flakeidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
@@ -74,8 +75,8 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
         assignOverflowedNodeId(instance2);
 
         ClientConfig clientConfig = new ClientConfig();
-        // disable smart routing - such clients must also work reliably
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        // use single member routing - such clients must also work reliably
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         for (int i = 0; i < 10; i++) {
             LOGGER.info("Creating client " + i);
             HazelcastInstance client = factory.newHazelcastClient(clientConfig);

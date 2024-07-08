@@ -22,6 +22,9 @@ import java.util.UUID;
 /**
  * Holds the state that is sent from the server side, state
  * includes a subset of member-uuids of a specific cluster.
+ * <p>
+ * This is only used when the client routing mode is set to
+ * {@link com.hazelcast.client.impl.connection.tcp.RoutingMode#MULTI_MEMBER}.
  *
  * @param clusterUuid     uuid of the cluster connected by a client
  * @param members         single member-group as memberUuid-collection

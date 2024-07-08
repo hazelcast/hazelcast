@@ -49,7 +49,7 @@
         cluster and route requests to them or only connects to the members
         listed above.
         -->
-        <smart-routing>false</smart-routing>
+        <cluster-routing mode="SINGLE_MEMBER"/>
     </network>
     <connection-strategy>
         <connection-retry>

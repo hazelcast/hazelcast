@@ -3,7 +3,10 @@
     "hazelcast-client": {
       "network": {
         "cluster-members": "127.0.0.1,127.0.1.*",
-        "smart-routing": "Off",
+        "cluster-routing": {
+          "mode": "FAKE_MEMBERS",
+          "routing-strategy": "UNKNOWN"
+        },
         "redo-operation": "Off",
         "connection-timeout": -1,
         "icmp-ping": {
@@ -72,11 +75,35 @@
         "message": "3 schema violations found"
       },
       {
-        "schemaLocation": "#/definitions/ClientNetwork/properties/smart-routing",
-        "pointerToViolation": "#/hazelcast-client/network/smart-routing",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: Boolean, found: String"
+        "schemaLocation": "#/definitions/ClientNetwork/properties/cluster-routing",
+        "pointerToViolation": "#/hazelcast-client/network/cluster-routing",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/cluster-routing/properties/mode",
+            "pointerToViolation": "#/hazelcast-client/network/cluster-routing/mode",
+            "causingExceptions": [{
+              "pointerToViolation": "#/hazelcast-client/network/cluster-routing/mode",
+              "causingExceptions": [],
+              "keyword": "enum",
+              "message": "FAKE_MEMBERS is not a valid enum value"
+            }],
+            "keyword": "allOf",
+            "message": "#: only 1 subschema matches out of 2"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/cluster-routing/properties/routing-strategy",
+            "pointerToViolation": "#/hazelcast-client/network/cluster-routing/routing-strategy",
+            "causingExceptions": [{
+              "pointerToViolation": "#/hazelcast-client/network/cluster-routing/routing-strategy",
+              "causingExceptions": [],
+              "keyword": "enum",
+              "message": "UNKNOWN is not a valid enum value"
+            }],
+            "keyword": "allOf",
+            "message": "#: only 1 subschema matches out of 2"
+          }
+        ],
+        "message": "2 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/ClientNetwork/properties/connection-timeout",
@@ -205,6 +232,6 @@
         "message": "expected type: Boolean, found: String"
       }
     ],
-    "message": "21 schema violations found"
+    "message": "22 schema violations found"
   }
 }

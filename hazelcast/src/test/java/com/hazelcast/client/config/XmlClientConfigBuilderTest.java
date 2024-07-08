@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -865,18 +866,18 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     }
 
     @Override
-    public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToSubsetRoutingConfig() {
+    public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToMultiMemberRoutingConfig() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "     <network>\n"
-                + "         <subset-routing enabled=\"true\" />\n"
+                + "         <cluster-routing mode=\"MULTI_MEMBER\" />\n"
                 + "     </network>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig clientConfig = buildConfig(xml);
 
-        assertTrue(clientConfig.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
-        assertEquals(SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY,
-                clientConfig.getNetworkConfig().getSubsetRoutingConfig().getRoutingStrategy());
+        assertEquals(RoutingMode.MULTI_MEMBER, clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
+        assertEquals(ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY,
+                clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {

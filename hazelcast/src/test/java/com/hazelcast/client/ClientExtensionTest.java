@@ -16,9 +16,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.clientside.DefaultClientExtension;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -57,13 +58,13 @@ public class ClientExtensionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_createClientClusterServiceWithSubsetRouting_throwsInvalidConfigurationException() {
-        String expectedMsg = "Subset routing is an enterprise feature since 5.5. "
+    public void test_createClientClusterServiceWithMultiMemberRouting_throwsInvalidConfigurationException() {
+        String expectedMsg = "MULTI_MEMBER routing is an enterprise feature since 5.5. "
                 + "You must use Hazelcast enterprise to enable this feature.";
         ClientExtension clientExtension = new DefaultClientExtension();
-        SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig().setEnabled(true);
+        ClusterRoutingConfig clusterRoutingConfig = new ClusterRoutingConfig().setRoutingMode(RoutingMode.MULTI_MEMBER);
 
-        Assertions.assertThatThrownBy(() -> clientExtension.createClientClusterService(null, subsetRoutingConfig))
+        Assertions.assertThatThrownBy(() -> clientExtension.createClientClusterService(null, clusterRoutingConfig))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessageContaining(expectedMsg);
     }
@@ -74,7 +75,7 @@ public class ClientExtensionTest extends HazelcastTestSupport {
         LoggingService loggingService = mock(LoggingService.class);
         when(loggingService.getLogger(any(Class.class))).thenReturn(mock(ILogger.class));
         assertInstanceOf(ClientClusterServiceImpl.class,
-                clientExtension.createClientClusterService(loggingService, new SubsetRoutingConfig()));
+                clientExtension.createClientClusterService(loggingService, new ClusterRoutingConfig()));
     }
 
     private static class TestService {

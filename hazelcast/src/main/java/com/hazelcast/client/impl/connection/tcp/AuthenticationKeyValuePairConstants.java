@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.UnsupportedClusterVersionException;
 import com.hazelcast.client.UnsupportedRoutingModeException;
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.version.Version;
 
@@ -36,38 +36,39 @@ public final class AuthenticationKeyValuePairConstants {
 
     public static final String CLUSTER_VERSION = "clusterVersion";
     public static final String ROUTING_MODE_NOT_SUPPORTED_MESSAGE = String.format(
-            "Subset routing strategy %s cannot be supported because the server has not sent "
-                    + "the required information. Subset routing is an Enterprise feature in Hazelcast 5.5. "
+            "%s routing mode %s cannot be supported because the server has not sent "
+                    + "the required information. %s routing is an Enterprise feature in Hazelcast 5.5. "
                     + "Make sure your cluster has Hazelcast Enterprise JARs on its classpath.",
-            PARTITION_GROUPS);
-    public static final String SUBSET_MEMBER_GROUPS_INFO = "memberGroups";
+            RoutingMode.MULTI_MEMBER, PARTITION_GROUPS, RoutingMode.MULTI_MEMBER);
+    public static final String MEMBER_GROUPS_INFO = "memberGroups";
     public static final String CP_LEADERS_INFO = "cp.leaders";
-    private static final Version SUBSET_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION = Versions.V5_5;
+    private static final Version MULTI_MEMBER_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION = Versions.V5_5;
 
 
     private AuthenticationKeyValuePairConstants() { }
 
-    public static boolean checkRequiredFieldsForSubsetRoutingExist(SubsetRoutingConfig subsetRoutingConfig,
-                                                                   Map<String, String> keyValuePairs) {
-        if (!subsetRoutingConfig.isEnabled()) {
+    public static boolean checkRequiredFieldsForMultiMemberRoutingExist(ClusterRoutingConfig clusterRoutingConfig,
+                                                                        Map<String, String> keyValuePairs) {
+        if (clusterRoutingConfig.getRoutingMode() != RoutingMode.MULTI_MEMBER) {
             return false;
         }
 
-        if (subsetRoutingConfig.getRoutingStrategy() != PARTITION_GROUPS) {
+        if (clusterRoutingConfig.getRoutingStrategy() != PARTITION_GROUPS) {
             return false;
         }
 
-        if (!keyValuePairs.containsKey(SUBSET_MEMBER_GROUPS_INFO)) {
+        if (!keyValuePairs.containsKey(MEMBER_GROUPS_INFO)) {
             throw new UnsupportedRoutingModeException(ROUTING_MODE_NOT_SUPPORTED_MESSAGE);
         }
 
         return true;
     }
 
-    public static void checkMinimumClusterVersionForSubsetRouting(Map<String, String> keyValuePairs) {
+    public static void checkMinimumClusterVersionForMultiMemberRouting(Map<String, String> keyValuePairs) {
         if (!keyValuePairs.containsKey(CLUSTER_VERSION)
                 || Version.of(keyValuePairs.get(CLUSTER_VERSION)).isUnknown()
-                || Version.of(keyValuePairs.get(CLUSTER_VERSION)).isLessThan(SUBSET_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION)) {
+                || Version.of(keyValuePairs.get(CLUSTER_VERSION)).isLessThan(
+                MULTI_MEMBER_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION)) {
             throw new UnsupportedClusterVersionException(ROUTING_MODE_NOT_SUPPORTED_MESSAGE);
         }
     }

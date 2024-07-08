@@ -47,7 +47,9 @@
 
     <hz:client id="client1">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
-        <hz:network connection-timeout="1000" smart-routing="false">
+        <hz:network connection-timeout="1000">
+            <hz:cluster-routing mode="SINGLE_MEMBER"/>
+
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:member>127.0.0.1:5702</hz:member>
@@ -64,7 +66,9 @@
 
     <hz:client id="client2">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
-        <hz:network connection-timeout="1000" smart-routing="false">
+        <hz:network connection-timeout="1000">
+            <hz:cluster-routing mode="SINGLE_MEMBER"/>
+
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:member>127.0.0.1:5702</hz:member>

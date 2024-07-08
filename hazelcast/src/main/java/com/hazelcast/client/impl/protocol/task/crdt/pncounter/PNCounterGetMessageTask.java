@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.crdt.pncounter;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec.RequestParameters;
@@ -39,7 +40,7 @@ import java.util.UUID;
 /**
  * Task responsible for processing client messages for retrieving the
  * current {@link PNCounter} state.
- * If this message was sent from a client with smart routing disabled, the
+ * If this message was sent from a client with {@link RoutingMode#ALL_MEMBERS} routing not selected, the
  * member may forward the request to a different target member.
  */
 public class PNCounterGetMessageTask extends AbstractTargetMessageTask<RequestParameters> {

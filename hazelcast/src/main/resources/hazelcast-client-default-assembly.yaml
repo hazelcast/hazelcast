@@ -32,7 +32,8 @@ hazelcast-client:
     # Whether client should discover and connect other members in the cluster
     # and route requests to them or only connects to the members listed
     # above.
-    smart-routing: false
+    cluster-routing:
+      mode: "SINGLE_MEMBER"
   connection-strategy:
     connection-retry:
       # how long the client should keep trying connecting to the server

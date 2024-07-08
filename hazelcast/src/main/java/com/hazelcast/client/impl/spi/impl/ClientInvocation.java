@@ -189,7 +189,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             }
 
             boolean invoked;
-            if (routingMode != RoutingMode.UNISOCKET) {
+            if (routingMode != RoutingMode.SINGLE_MEMBER) {
                 if (partitionId != -1) {
                     invoked = invocationService.invokeOnPartitionOwner(this, partitionId);
                 } else if (uuid != null) {

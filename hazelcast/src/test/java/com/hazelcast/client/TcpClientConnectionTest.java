@@ -52,9 +52,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -68,7 +70,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, RoutingMode.SMART);
+        return Arrays.asList(SINGLE_MEMBER, RoutingMode.ALL_MEMBERS);
     }
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -134,7 +136,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
 
         ClientConfig config = newClientConfig();
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
-        config.getNetworkConfig().setSmartRouting(false);
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
 
         Address address1 = server1.getCluster().getLocalMember().getAddress();
         Address address2 = server2.getCluster().getLocalMember().getAddress();
@@ -239,7 +241,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
 
         assertTrueEventually(() -> {
             // non=smart ones will not connect to newly added server
-            int expectedConnectionCount = routingMode == SMART ? 2 : 0;
+            int expectedConnectionCount = routingMode == ALL_MEMBERS ? 2 : 0;
             assertEquals(expectedConnectionCount, listener.connectionAddedCount.get());
         });
     }
@@ -254,7 +256,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         ClientConfig clientConfig = newClientConfig();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        int expectedConnectionCount = routingMode == SMART ? memberCount : 1;
+        int expectedConnectionCount = routingMode == ALL_MEMBERS ? memberCount : 1;
         makeSureConnectedToServers(client, expectedConnectionCount);
     }
 
@@ -269,7 +271,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        int expectedConnectionCount = routingMode == SMART ? memberCount : 1;
+        int expectedConnectionCount = routingMode == ALL_MEMBERS ? memberCount : 1;
         makeSureConnectedToServers(client, expectedConnectionCount);
     }
 

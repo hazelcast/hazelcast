@@ -23,6 +23,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Represents a subset of cluster members, used when
+ * {@link com.hazelcast.client.impl.connection.tcp.RoutingMode#MULTI_MEMBER}
+ * is used as the client routing mode.
+ */
 public interface SubsetMembers {
 
     SubsetMembers NOOP = new NoopSubsetMembers();

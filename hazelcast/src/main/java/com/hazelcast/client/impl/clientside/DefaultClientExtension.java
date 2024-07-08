@@ -20,9 +20,10 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
@@ -261,10 +262,10 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public ClientClusterService createClientClusterService(LoggingService loggingService,
-                                                           SubsetRoutingConfig subsetRoutingConfig) {
-        if (subsetRoutingConfig.isEnabled()) {
-            throw new InvalidConfigurationException("Subset routing is an enterprise feature since 5.5. "
-                    + "You must use Hazelcast enterprise to enable this feature.");
+                                                           ClusterRoutingConfig clusterRoutingConfig) {
+        if (clusterRoutingConfig.getRoutingMode() == RoutingMode.MULTI_MEMBER) {
+            throw new InvalidConfigurationException(String.format("%s routing is an enterprise feature since 5.5. "
+                    + "You must use Hazelcast enterprise to enable this feature.", RoutingMode.MULTI_MEMBER));
         }
         return new ClientClusterServiceImpl(loggingService);
     }

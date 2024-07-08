@@ -52,8 +52,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
 import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -74,7 +74,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, SMART);
+        return Arrays.asList(SINGLE_MEMBER, ALL_MEMBERS);
     }
 
     @Override

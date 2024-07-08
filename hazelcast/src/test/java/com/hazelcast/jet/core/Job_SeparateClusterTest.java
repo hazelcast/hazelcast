@@ -18,6 +18,8 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
@@ -134,7 +136,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         ClientConfig config = new ClientConfig()
                 .setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), Integer.toString(timeoutSecs))
                 .setNetworkConfig(new ClientNetworkConfig()
-                        .setSmartRouting(false)
+                        .setClusterRoutingConfig(new ClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER))
                         .addAddress(address.getHost() + ":" + address.getPort())
                 );
         HazelcastInstance client = createHazelcastClient(config);

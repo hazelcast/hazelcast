@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -64,7 +65,7 @@ public final class ClientTpcConfig {
      * Enables or disables the TPC-aware mode.
      * <p>
      * When enabled, the configuration option set by the
-     * {@link ClientNetworkConfig#setSmartRouting(boolean)} is ignored.
+     * {@link ClusterRoutingConfig#setRoutingMode(RoutingMode)}} is ignored.
      *
      * @param enabled flag to enable or disable TPC-aware mode
      * @return this configuration for chaining.

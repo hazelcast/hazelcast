@@ -17,6 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
@@ -165,19 +166,17 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void network() {
         ClientNetworkConfig expected = new ClientNetworkConfig();
-        expected.setSmartRouting(false)
-                .setRedoOperation(true)
+        expected.setRedoOperation(true)
                 .setConnectionTimeout(randomInt())
                 .addAddress(randomString())
                 .setOutboundPortDefinitions(Collections.singleton(randomString()))
-                .getSubsetRoutingConfig().setEnabled(true);
+                .getClusterRoutingConfig().setRoutingMode(RoutingMode.MULTI_MEMBER);
 
 
         clientConfig.setNetworkConfig(expected);
         ClientNetworkConfig actual = newConfigViaGenerator().getNetworkConfig();
 
-        assertFalse(actual.isSmartRouting());
-        assertTrue(actual.getSubsetRoutingConfig().isEnabled());
+        assertEquals(RoutingMode.MULTI_MEMBER, actual.getClusterRoutingConfig().getRoutingMode());
         assertTrue(actual.isRedoOperation());
         assertEquals(expected.getConnectionTimeout(), actual.getConnectionTimeout());
         assertCollection(expected.getAddresses(), actual.getAddresses());

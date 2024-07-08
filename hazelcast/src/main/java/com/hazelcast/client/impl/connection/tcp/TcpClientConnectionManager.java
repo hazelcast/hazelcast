@@ -143,7 +143,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      * When enabled (true), the client will skip trying to connect to members in the last known
      * member list during reconnection attempts. Default is false.
      * <p>
-     * This property might be handy for users who are using the client with unisocket
+     * This property might be handy for users who are using the client with SINGLE_MEMBER routing
      * mode and exposing their multi-member cluster via a single load balancer or node port
      * in Kubernetes. In that scenario, the client would normally try to reconnect to the
      * members in the last known member list first after disconnection, but that would fail
@@ -277,19 +277,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     private static RoutingMode decideRoutingMode(ClientConfig config) {
         if (config.getTpcConfig().isEnabled()) {
-            return RoutingMode.SMART;
+            return RoutingMode.ALL_MEMBERS;
         }
 
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        if (networkConfig.isSmartRouting()) {
-            return RoutingMode.SMART;
-        }
-
-        if (networkConfig.getSubsetRoutingConfig().isEnabled()) {
-            return RoutingMode.SUBSET;
-        }
-
-        return RoutingMode.UNISOCKET;
+        return networkConfig.getClusterRoutingConfig().getRoutingMode();
     }
 
     private int initConnectionTimeoutMillis() {
@@ -349,7 +341,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             return configuredThreadCount;
         }
 
-        if (routingMode == RoutingMode.UNISOCKET) {
+        if (routingMode == RoutingMode.SINGLE_MEMBER) {
             return 1;
         }
 
@@ -390,7 +382,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     public void tryConnectToAllClusterMembers(boolean sync) {
-        if (routingMode == RoutingMode.UNISOCKET) {
+        if (routingMode == RoutingMode.SINGLE_MEMBER) {
             return;
         }
 
@@ -980,7 +972,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     @Override
     public ClientConnection getRandomConnection() {
         // 1. Try getting the connection from the load balancer, if the client is not unisocket
-        if (routingMode != RoutingMode.UNISOCKET) {
+        if (routingMode != RoutingMode.SINGLE_MEMBER) {
             Member member = loadBalancer.next();
 
             // Failed to get a member
@@ -999,7 +991,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getConnectionForSql() {
-        if (routingMode != RoutingMode.UNISOCKET) {
+        if (routingMode != RoutingMode.SINGLE_MEMBER) {
             // There might be a race - the chosen member might be just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
@@ -1186,8 +1178,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     keyValuePairs);
         } else {
             // If there are no key-value pairs, we have connected to a member that is older than 5_5
-            // this is unsupported for clients operating with subset routing mode.
-            if (routingMode.equals(RoutingMode.SUBSET)) {
+            // this is unsupported for clients operating with MULTI_MEMBER routing mode.
+            if (routingMode.equals(RoutingMode.MULTI_MEMBER)) {
                 throw new UnsupportedClusterVersionException(ROUTING_MODE_NOT_SUPPORTED_MESSAGE);
             }
         }
@@ -1509,7 +1501,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 });
             }
 
-            if (getRoutingMode() == RoutingMode.SUBSET) {
+            if (getRoutingMode() == RoutingMode.MULTI_MEMBER) {
                 tryCloseConnectionsToMembersNotInSubset();
             }
         }
@@ -1540,7 +1532,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
 
                 // connection can be closed
-                candidateForClosure.close("Connection is closed because it is not for a subset member", null);
+                candidateForClosure.close("Connection is closed because it is not relevant for the current MULTI_MEMBER "
+                        + "configuration", null);
             }
         }
 

@@ -37,7 +37,10 @@
           "self-registration": true,
           "enabled": false
         },
-        "smart-routing": true,
+        "cluster-routing": {
+          "mode": "ALL_MEMBERS",
+          "routing-strategy": "PARTITION_GROUPS"
+        },
         "ssl": {
           "factory-class-name": "com.hazelcast.nio.ssl.BasicSSLContextFactory",
           "enabled": false,

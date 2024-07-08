@@ -82,8 +82,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,7 +105,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, SMART);
+        return Arrays.asList(SINGLE_MEMBER, ALL_MEMBERS);
     }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

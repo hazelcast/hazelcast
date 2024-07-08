@@ -24,8 +24,8 @@ import com.hazelcast.core.HazelcastException;
  * An UnsupportedRoutingModeException is thrown when a Hazelcast Client
  * is configured with a {@link RoutingMode} that is not supported by the cluster.
  * <p>
- * For example, a client configured with routing mode :
- * {@link RoutingMode#SUBSET}
+ * For example, a client configured with routing mode:
+ * {@link RoutingMode#MULTI_MEMBER}
  * and RoutingStrategy
  * {@link RoutingStrategy#PARTITION_GROUPS}
  * will be unable to connect to a cluster that is not correctly licensed

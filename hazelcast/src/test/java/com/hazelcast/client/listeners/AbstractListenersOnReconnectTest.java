@@ -318,14 +318,15 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private void validateRegistrations(final int clusterSize, final UUID registrationId,
                                        final HazelcastClientInstanceImpl clientInstanceImpl) {
-        final boolean smartRouting = clientInstanceImpl.getClientConfig().getNetworkConfig().isSmartRouting();
+        final boolean allMembersRouting = clientInstanceImpl.getClientConfig().getNetworkConfig()
+                .getClusterRoutingConfig().getRoutingMode() == RoutingMode.ALL_MEMBERS;
 
         assertTrueEventually(() -> {
-            int size = smartRouting ? clusterSize : 1;
+            int size = allMembersRouting ? clusterSize : 1;
             Map<ClientConnection, ClientConnectionRegistration> registrations = getClientEventRegistrations(client,
                     registrationId);
             assertEquals(size, registrations.size());
-            if (smartRouting) {
+            if (allMembersRouting) {
                 Collection<Member> members = clientInstanceImpl.getClientClusterService().getMemberList();
                 for (ClientConnection registeredSubscriber : registrations.keySet()) {
                     boolean contains = false;

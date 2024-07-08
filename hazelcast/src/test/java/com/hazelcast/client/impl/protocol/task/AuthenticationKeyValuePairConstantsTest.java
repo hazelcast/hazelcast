@@ -18,10 +18,11 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.UnsupportedClusterVersionException;
 import com.hazelcast.client.UnsupportedRoutingModeException;
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.client.impl.clientside.SubsetMembersView;
 import com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPGroupsSnapshot;
@@ -54,9 +55,9 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CP_LEADERS_INFO;
-import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
-import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkMinimumClusterVersionForSubsetRouting;
-import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkRequiredFieldsForSubsetRoutingExist;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.MEMBER_GROUPS_INFO;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkMinimumClusterVersionForMultiMemberRouting;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.checkRequiredFieldsForMultiMemberRoutingExist;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.createKeyValuePairs;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.parseJsonForCPMembership;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.parseJsonForMemberGroups;
@@ -111,7 +112,7 @@ public class AuthenticationKeyValuePairConstantsTest {
         Map<String, String> keyValuePairs = createKeyValuePairs(array, 123, true,
                 Version.of(5, 5), new DummyCPGroupsSnapshot());
         String clusterVersionStr = keyValuePairs.get(CLUSTER_VERSION);
-        String subsetMemberGroupsStr = keyValuePairs.get(SUBSET_MEMBER_GROUPS_INFO);
+        String subsetMemberGroupsStr = keyValuePairs.get(MEMBER_GROUPS_INFO);
         String cpLeadersString = keyValuePairs.get(CP_LEADERS_INFO);
 
         // parse stringified values
@@ -134,31 +135,31 @@ public class AuthenticationKeyValuePairConstantsTest {
     }
 
     @Test
-    public void testRequiredFieldsForSubsetRoutingExist_subsetRoutingDisabled() {
+    public void testRequiredFieldsForMultiMemberRoutingExist_multiMemberRoutingDisabled() {
         Map<String, String> map = new HashMap<>();
-        map.put("enabled", "false");
+        map.put("mode", "SINGLE_MEMBER");
         map.put("routingStrategy", "PARTITION_GROUPS");
-        assertFalse(checkRequiredFieldsForSubsetRoutingExist(new SubsetRoutingConfig(), map));
+        assertFalse(checkRequiredFieldsForMultiMemberRoutingExist(new ClusterRoutingConfig(), map));
     }
 
     @Test
-    public void testRequiredFieldsForSubsetRoutingExist_missingMemberGroups() {
+    public void testRequiredFieldsForMultiMemberRoutingExist_missingMemberGroups() {
         Map<String, String> map = new HashMap<>();
-        SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig();
-        subsetRoutingConfig.setEnabled(true);
+        ClusterRoutingConfig clusterRoutingConfig = new ClusterRoutingConfig();
+        clusterRoutingConfig.setRoutingMode(RoutingMode.MULTI_MEMBER);
         assertThrows(UnsupportedRoutingModeException.class,
-                () -> checkRequiredFieldsForSubsetRoutingExist(subsetRoutingConfig, map));
+                () -> checkRequiredFieldsForMultiMemberRoutingExist(clusterRoutingConfig, map));
     }
 
     @Test
-    public void testRequiredFieldsForSubsetRoutingExist_returnsTrue() {
+    public void testRequiredFieldsForMultiMemberRoutingExist_returnsTrue() {
         Map<String, String> map = new HashMap<>();
         map.put("memberGroups", "[]");
-        map.put("enabled", "true");
+        map.put("mode", "MULTI_MEMBER");
         map.put("routingStrategy", "PARTITION_GROUPS");
-        SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig();
-        subsetRoutingConfig.setEnabled(true);
-        assertTrue(checkRequiredFieldsForSubsetRoutingExist(subsetRoutingConfig, map));
+        ClusterRoutingConfig clusterRoutingConfig = new ClusterRoutingConfig();
+        clusterRoutingConfig.setRoutingMode(RoutingMode.MULTI_MEMBER);
+        assertTrue(checkRequiredFieldsForMultiMemberRoutingExist(clusterRoutingConfig, map));
     }
 
     @ParameterizedTest
@@ -166,26 +167,26 @@ public class AuthenticationKeyValuePairConstantsTest {
     void checkClusterVersionThrowsClusterVersionLessThan5_5(Version version) {
         Map<String, String> map = new HashMap<>();
         map.put("clusterVersion", version.toString());
-        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForSubsetRouting(map));
+        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForMultiMemberRouting(map));
     }
 
     @Test
     public void checkClusterVersionThrowsWhenNoClusterVersionPresent() {
-        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForSubsetRouting(emptyMap()));
+        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForMultiMemberRouting(emptyMap()));
     }
 
     @Test
     public void checkClusterVersion5_5_supported() {
         Map<String, String> map = new HashMap<>();
         map.put("clusterVersion", "5.5");
-        checkMinimumClusterVersionForSubsetRouting(map);
+        checkMinimumClusterVersionForMultiMemberRouting(map);
     }
 
     @Test
     public void checkThrowsOnUnknownClusterVersion() {
         Map<String, String> map = new HashMap<>();
         map.put("clusterVersion", Version.UNKNOWN.toString());
-        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForSubsetRouting(map));
+        assertThrows(UnsupportedClusterVersionException.class, () -> checkMinimumClusterVersionForMultiMemberRouting(map));
     }
 
     @Nonnull

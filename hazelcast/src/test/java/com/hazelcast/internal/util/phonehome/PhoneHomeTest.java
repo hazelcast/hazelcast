@@ -122,9 +122,9 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UPTIME_OF_R
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UUID_OF_CLUSTER;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.VIRIDIAN;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.V_CPU_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SMART_CLIENTS_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SUBSET_CLIENTS_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UNISOCKET_CLIENTS_COUNT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ALL_MEMBERS_CLIENTS_COUNT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MULTI_MEMBER_CLIENTS_COUNT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SINGLE_MEMBER_CLIENTS_COUNT;
 import static com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry.INTERNAL_OBJECTS_PREFIXES;
 import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.Long.parseLong;
@@ -225,9 +225,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals("false", get(DYNAMIC_CONFIG_PERSISTENCE_ENABLED));
         assertEquals("false", get(UCN_ENABLED));
 
-        assertEquals(0, Integer.parseInt(get(SMART_CLIENTS_COUNT)));
-        assertEquals(0, Integer.parseInt(get(SUBSET_CLIENTS_COUNT)));
-        assertEquals(0, Integer.parseInt(get(UNISOCKET_CLIENTS_COUNT)));
+        assertEquals(0, Integer.parseInt(get(ALL_MEMBERS_CLIENTS_COUNT)));
+        assertEquals(0, Integer.parseInt(get(MULTI_MEMBER_CLIENTS_COUNT)));
+        assertEquals(0, Integer.parseInt(get(SINGLE_MEMBER_CLIENTS_COUNT)));
 
         assertThat(Integer.valueOf(get(V_CPU_COUNT))).isPositive();
     }

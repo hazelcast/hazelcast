@@ -18,6 +18,7 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
@@ -55,7 +56,7 @@ public class DummyClientCachePartitionIteratorTest extends AbstractClientCachePa
         String addressString = address.getHost() + ":" + address.getPort();
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = new ClientNetworkConfig();
-        networkConfig.setSmartRouting(false);
+        networkConfig.getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         networkConfig.addAddress(addressString);
         clientConfig.setNetworkConfig(networkConfig);
         return clientConfig;

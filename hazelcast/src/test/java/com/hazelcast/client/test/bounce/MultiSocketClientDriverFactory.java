@@ -17,6 +17,7 @@
 package com.hazelcast.client.test.bounce;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.core.HazelcastInstance;
 
 /**
@@ -32,7 +33,7 @@ public class MultiSocketClientDriverFactory extends AbstractClientDriverFactory 
     }
 
     /**
-     * Creates client config for smart client
+     * Creates client config for {@link RoutingMode#ALL_MEMBERS} routing client
      */
     protected ClientConfig getClientConfig(HazelcastInstance member) {
         ClientConfig config = clientConfig == null ? new ClientConfig() : clientConfig;

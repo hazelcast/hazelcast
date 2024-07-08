@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
-import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.MEMBER_GROUPS_INFO;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.GROUPS;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.VERSION;
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
@@ -119,7 +119,7 @@ public final class ClientTestUtil {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(GROUPS, groupsArray);
         jsonObject.put(VERSION, version);
-        keyValuePairs.put(SUBSET_MEMBER_GROUPS_INFO, jsonObject.toString());
+        keyValuePairs.put(MEMBER_GROUPS_INFO, jsonObject.toString());
         keyValuePairs.put(CLUSTER_VERSION, Versions.V5_5.toString());
         return keyValuePairs;
     }

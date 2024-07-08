@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -841,18 +842,18 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     }
 
     @Override
-    public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToSubsetRoutingConfig() {
+    public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToMultiMemberRoutingConfig() {
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  network:\n"
-                + "    subset-routing:\n"
-                + "      enabled: true\n";
+                + "    cluster-routing:\n"
+                + "      mode: MULTI_MEMBER\n";
 
         ClientConfig clientConfig = buildConfig(yaml);
 
-        assertTrue(clientConfig.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
-        assertEquals(SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY,
-                clientConfig.getNetworkConfig().getSubsetRoutingConfig().getRoutingStrategy());
+        assertEquals(RoutingMode.MULTI_MEMBER, clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
+        assertEquals(ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY,
+                clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
     }
 
     public static ClientConfig buildConfig(String yaml) {

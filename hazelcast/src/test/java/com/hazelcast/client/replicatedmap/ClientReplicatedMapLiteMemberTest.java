@@ -58,7 +58,7 @@ public class ClientReplicatedMapLiteMemberTest {
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+        return Arrays.asList(RoutingMode.SINGLE_MEMBER, RoutingMode.ALL_MEMBERS);
     }
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -105,7 +105,7 @@ public class ClientReplicatedMapLiteMemberTest {
         List<HazelcastInstance> instances = createNodes(3, 1);
 
         ClientConfig clientConfig = newClientConfig();
-        if (routingMode == RoutingMode.UNISOCKET) {
+        if (routingMode == RoutingMode.SINGLE_MEMBER) {
             configureDummyClientConnection(instances.get(0), clientConfig);
         }
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);

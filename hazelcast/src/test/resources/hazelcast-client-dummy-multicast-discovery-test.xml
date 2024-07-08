@@ -36,7 +36,7 @@
     <network>
         <aws enabled="false"/>
         <connection-timeout>5000</connection-timeout>
-        <smart-routing>true</smart-routing>
+        <cluster-routing mode="ALL_MEMBERS"/>
         <redo-operation>true</redo-operation>
         <discovery-strategies>
             <discovery-strategy class="com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy" enabled="true">

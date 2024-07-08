@@ -18,6 +18,7 @@ package com.hazelcast.client.standalone;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryAdapter;
@@ -56,7 +57,7 @@ public class ClientEntryListenerDisconnectTest {
         clientConfig.setClusterName("test");
         clientConfig.getNetworkConfig()
                 .addAddress("localhost:6701", "localhost:6702")
-                .setSmartRouting(false);
+                .getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, GenericEvent> mapClient = client.getMap("test");

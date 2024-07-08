@@ -77,7 +77,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART);
+        return Arrays.asList(RoutingMode.SINGLE_MEMBER, RoutingMode.ALL_MEMBERS);
     }
 
     private static final int HEARTBEAT_TIMEOUT_MILLIS = 10000;
@@ -102,7 +102,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 
-        int expectedServerCount = routingMode == RoutingMode.SMART ? 2 : 1;
+        int expectedServerCount = routingMode == RoutingMode.ALL_MEMBERS ? 2 : 1;
         makeSureConnectedToServers(client, expectedServerCount);
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -118,7 +118,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             }
         });
 
-        if (routingMode == RoutingMode.SMART) {
+        if (routingMode == RoutingMode.ALL_MEMBERS) {
             blockMessagesFromInstance(server2, client);
         } else {
             blockMessagesFromInstance(server1, client);
@@ -160,10 +160,10 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         map.put(keyOwnedByServer2, randomString());
 
         // double check that the connection to servers is alive
-        int expectedServerCount = routingMode == RoutingMode.SMART ? 2 : 1;
+        int expectedServerCount = routingMode == RoutingMode.ALL_MEMBERS ? 2 : 1;
         makeSureConnectedToServers(client, expectedServerCount);
 
-        if (routingMode == RoutingMode.SMART) {
+        if (routingMode == RoutingMode.ALL_MEMBERS) {
             blockMessagesFromInstance(server2, client);
         } else {
             blockMessagesFromInstance(server1, client);
@@ -314,12 +314,12 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
         assertTrueEventually(()
                 -> {
-            int expectedActive = routingMode == RoutingMode.SMART ? 2 : 1;
+            int expectedActive = routingMode == RoutingMode.ALL_MEMBERS ? 2 : 1;
             assertEquals(expectedActive,
                     clientInstanceImpl.getConnectionManager().getActiveConnections().size());
         });
 
-        if (routingMode == RoutingMode.SMART) {
+        if (routingMode == RoutingMode.ALL_MEMBERS) {
             blockMessagesFromInstance(server2, client);
         } else {
             blockMessagesFromInstance(server1, client);
@@ -327,7 +327,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         assertOpenEventually(heartbeatStopped);
         blockIncoming.countDown();
 
-        if (routingMode == RoutingMode.SMART) {
+        if (routingMode == RoutingMode.ALL_MEMBERS) {
             unblockMessagesFromInstance(server2, client);
         } else {
             unblockMessagesFromInstance(server1, client);

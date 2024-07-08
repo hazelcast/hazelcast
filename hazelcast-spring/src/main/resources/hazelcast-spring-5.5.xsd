@@ -2350,35 +2350,21 @@
 
     <xs:simpleType name="routing-strategy-mode">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="PARTITION_GROUPS">
-                <xs:annotation>
-                    <xs:documentation>
-                        Defines member subsets based on existing Partition Groups.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
+            <xs:enumeration value="PARTITION_GROUPS"/>
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="subset-routing">
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    If true, this client will only connect to a
-                    limited subset of the cluster, as specified
-                    with the defined routing-strategy. Its default
-                    value is false. Note: This feature may only
-                    be enabled if smart-routing is disabled.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="routing-strategy" default="PARTITION_GROUPS" type="routing-strategy-mode">
-            <xs:annotation>
-                <xs:documentation>
-                    Determines the routing strategy to use with subset routing.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
+    <xs:simpleType name="routing-mode">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="SINGLE_MEMBER"/>
+            <xs:enumeration value="MULTI_MEMBER"/>
+            <xs:enumeration value="ALL_MEMBERS"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="cluster-routing">
+        <xs:attribute name="mode" default="ALL_MEMBERS" type="routing-mode"/>
+        <xs:attribute name="routing-strategy" default="PARTITION_GROUPS" type="routing-strategy-mode"/>
     </xs:complexType>
 
     <xs:simpleType name="propertyNameEnum">
@@ -3346,7 +3332,7 @@
 
     <xs:complexType name="network-client">
         <xs:sequence>
-            <xs:element name="subset-routing" type="subset-routing" minOccurs="0"/>
+            <xs:element name="cluster-routing" type="cluster-routing" minOccurs="0"/>
             <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>

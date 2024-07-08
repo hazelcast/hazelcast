@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -50,18 +51,22 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
  * the create and manage Hazelcast clients. Hazelcast clients are {@link HazelcastInstance} implementations, so
  * in most cases most of the code is unaware of talking to a cluster member or a client.
  * <p>
- * <h1>Smart vs unisocket clients</h1>
- * Hazelcast Client enables you to do all Hazelcast operations without being a member of the cluster. Clients can be:
+ * <h1>ALL_MEMBERS vs MULTI_MEMBER vs SINGLE_MEMBER routing clients</h1>
+ * Hazelcast Client enables you to do all Hazelcast operations without being a member of the cluster. Clients can
+ * use one of the following routing modes:
  * <ol>
- * <li>smart: this means that they immediately can send an operation like map.get(key) to the member that owns that
- * specific key.
+ * <li>ALL_MEMBERS: client connects to all members of the cluster and this means that they immediately can send an
+ * operation like map.get(key) to the member that owns that specific key.
  * </li>
- * <li>
- * unisocket: it will connect to a random member in the cluster and send requests to this member. This member then needs
- * to send the request to the correct member.
+ * <li>MULTI_MEMBER: client connects to a subset of members of the cluster, based on a provided grouping strategy.
+ * This means that they can send an operation like map.get(key) to the member that owns that specific key, if
+ * that member is available in this client's subset.
+ * </li>
+ * <li>SINGLE_MEMBER: it will connect to a random single member of the cluster and send requests to this member.
+ * This member then needs to send the request to the correct member.
  * </li>
  * </ol>
- * For more information see {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}.
+ * For more information see {@link ClientNetworkConfig#getClusterRoutingConfig()}}.
  * <p>
  * <h1>High availability</h1>
  * When the connected cluster member dies, client will automatically switch to another live member.

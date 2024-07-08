@@ -189,10 +189,10 @@ public final class TpcChannelConnector {
             closeAllChannels();
         }
 
-        logger.warning("TPC channel establishments for the " + connection + " have failed. "
+        logger.warning(String.format("TPC channel establishments for the " + connection + " have failed. "
                 + "The client will not be using the TPC channels to route partition specific invocations, "
-                + "and fallback to the smart routing mode for this connection. Check the firewall settings "
-                + "to make sure the TPC channels are accessible from the client.");
+                + "and fallback to the %s routing mode for this connection. Check the firewall settings "
+                + "to make sure the TPC channels are accessible from the client.", RoutingMode.ALL_MEMBERS));
     }
 
     private boolean connectionFailed() {

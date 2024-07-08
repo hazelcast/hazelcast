@@ -55,7 +55,7 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
     public void when_coordinatorFails_then_jobNotRetriedWithAnotherCoordinator() {
         HazelcastInstance coordinatorInst = createHazelcastInstance();
         createHazelcastInstance();
-        HazelcastInstance coordinatorClient = createHazelcastClient(configForNonSmartClientConnectingTo(coordinatorInst));
+        HazelcastInstance coordinatorClient = createHazelcastClient(configForSingleMemberClientConnectingTo(coordinatorInst));
 
         Job job = coordinatorClient.getJet().newLightJob(streamingDag());
         assertTrueEventually(() -> assertThat(job).isExecutingOn(coordinatorInst));

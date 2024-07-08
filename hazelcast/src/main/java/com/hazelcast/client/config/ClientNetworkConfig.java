@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
@@ -33,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -45,8 +47,7 @@ public class ClientNetworkConfig {
 
     private static final int CONNECTION_TIMEOUT = 5000;
     private final List<String> addressList;
-    private boolean smartRouting = true;
-    private SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig();
+    private ClusterRoutingConfig clusterRoutingConfig = new ClusterRoutingConfig();
     private boolean redoOperation;
     private int connectionTimeout = CONNECTION_TIMEOUT;
     private SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
@@ -70,8 +71,7 @@ public class ClientNetworkConfig {
 
     public ClientNetworkConfig(ClientNetworkConfig networkConfig) {
         addressList = new ArrayList<>(networkConfig.addressList);
-        subsetRoutingConfig = new SubsetRoutingConfig(networkConfig.getSubsetRoutingConfig());
-        smartRouting = networkConfig.smartRouting;
+        clusterRoutingConfig = new ClusterRoutingConfig(networkConfig.getClusterRoutingConfig());
         redoOperation = networkConfig.redoOperation;
         connectionTimeout = networkConfig.connectionTimeout;
         socketInterceptorConfig = new SocketInterceptorConfig(networkConfig.socketInterceptorConfig);
@@ -155,10 +155,12 @@ public class ClientNetworkConfig {
     /**
      * See {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
      *
+     * @deprecated since 5.5, this option is superseded by {@link ClusterRoutingConfig#getRoutingMode()}
      * @return true if client is smart
      */
+    @Deprecated(since = "5.5")
     public boolean isSmartRouting() {
-        return smartRouting;
+        return clusterRoutingConfig.getRoutingMode() == RoutingMode.ALL_MEMBERS;
     }
 
     /**
@@ -172,11 +174,13 @@ public class ClientNetworkConfig {
      * <p>
      * Default value is {@code true}.
      *
+     * @deprecated since 5.5, this option is superseded by {@link ClusterRoutingConfig#setRoutingMode(RoutingMode)}}.
      * @param smartRouting true if smart routing should be enabled.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
+    @Deprecated(since = "5.5")
     public ClientNetworkConfig setSmartRouting(boolean smartRouting) {
-        this.smartRouting = smartRouting;
+        clusterRoutingConfig.setRoutingMode(smartRouting ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         return this;
     }
 
@@ -533,21 +537,21 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * @return config for routing client connections to subset of cluster members.
+     * @return config for managing how the client routes to members of the cluster.
      */
-    public SubsetRoutingConfig getSubsetRoutingConfig() {
-        return subsetRoutingConfig;
+    public ClusterRoutingConfig getClusterRoutingConfig() {
+        return clusterRoutingConfig;
     }
 
     /**
-     * Sets config for routing client connections to subset of cluster members.
+     * Sets config for managing how the client routes to members of the cluster.
      *
-     * @param subsetRoutingConfig subsetRoutingConfig object
+     * @param clusterRoutingConfig clusterRoutingConfig object
      * @return this {@link ClientNetworkConfig} object
      */
-    public ClientNetworkConfig setSubsetRoutingConfig(SubsetRoutingConfig subsetRoutingConfig) {
-        this.subsetRoutingConfig = Preconditions.checkNotNull(subsetRoutingConfig,
-                "subsetRoutingConfig cannot be null");
+    public ClientNetworkConfig setClusterRoutingConfig(ClusterRoutingConfig clusterRoutingConfig) {
+        this.clusterRoutingConfig = Preconditions.checkNotNull(clusterRoutingConfig,
+                "clusterRoutingConfig cannot be null");
         return this;
     }
 
@@ -563,9 +567,6 @@ public class ClientNetworkConfig {
 
         ClientNetworkConfig that = (ClientNetworkConfig) o;
 
-        if (smartRouting != that.smartRouting) {
-            return false;
-        }
         if (redoOperation != that.redoOperation) {
             return false;
         }
@@ -581,7 +582,7 @@ public class ClientNetworkConfig {
         if (!socketOptions.equals(that.socketOptions)) {
             return false;
         }
-        if (sslConfig != null ? !sslConfig.equals(that.sslConfig) : that.sslConfig != null) {
+        if (!Objects.equals(sslConfig, that.sslConfig)) {
             return false;
         }
         if (!awsConfig.equals(that.awsConfig)) {
@@ -605,11 +606,13 @@ public class ClientNetworkConfig {
         if (!discoveryConfig.equals(that.discoveryConfig)) {
             return false;
         }
-        if (outboundPortDefinitions != null
-                ? !outboundPortDefinitions.equals(that.outboundPortDefinitions) : that.outboundPortDefinitions != null) {
+        if (!Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)) {
             return false;
         }
-        if (outboundPorts != null ? !outboundPorts.equals(that.outboundPorts) : that.outboundPorts != null) {
+        if (!Objects.equals(outboundPorts, that.outboundPorts)) {
+            return false;
+        }
+        if (!clusterRoutingConfig.equals(that.clusterRoutingConfig)) {
             return false;
         }
         return clientIcmpPingConfig.equals(that.clientIcmpPingConfig);
@@ -618,7 +621,6 @@ public class ClientNetworkConfig {
     @Override
     public int hashCode() {
         int result = addressList.hashCode();
-        result = 31 * result + (smartRouting ? 1 : 0);
         result = 31 * result + (redoOperation ? 1 : 0);
         result = 31 * result + connectionTimeout;
         result = 31 * result + socketInterceptorConfig.hashCode();
@@ -634,6 +636,7 @@ public class ClientNetworkConfig {
         result = 31 * result + (outboundPortDefinitions != null ? outboundPortDefinitions.hashCode() : 0);
         result = 31 * result + (outboundPorts != null ? outboundPorts.hashCode() : 0);
         result = 31 * result + clientIcmpPingConfig.hashCode();
+        result = 31 * result + clusterRoutingConfig.hashCode();
         return result;
     }
 
@@ -641,7 +644,6 @@ public class ClientNetworkConfig {
     public String toString() {
         return "ClientNetworkConfig{"
                 + "addressList=" + addressList
-                + ", smartRouting=" + smartRouting
                 + ", redoOperation=" + redoOperation
                 + ", connectionTimeout=" + connectionTimeout
                 + ", socketInterceptorConfig=" + socketInterceptorConfig
@@ -657,6 +659,7 @@ public class ClientNetworkConfig {
                 + ", outboundPortDefinitions=" + outboundPortDefinitions
                 + ", outboundPorts=" + outboundPorts
                 + ", clientIcmpPingConfig=" + clientIcmpPingConfig
+                + ", clusterRoutingConfig=" + clusterRoutingConfig
                 + '}';
     }
 }

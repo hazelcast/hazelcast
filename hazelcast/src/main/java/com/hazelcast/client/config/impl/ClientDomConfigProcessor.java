@@ -33,7 +33,8 @@ import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.config.SubsetRoutingConfig;
+import com.hazelcast.client.config.ClusterRoutingConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
@@ -114,6 +115,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     protected final ClientConfig clientConfig;
 
     protected final QueryCacheConfigBuilderHelper queryCacheConfigBuilderHelper;
+    // Used to prevent configuring legacy smart-routing with modern cluster-routing
+    protected boolean processedRoutingMode;
 
     public ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig) {
         this(domLevel3, clientConfig, new QueryCacheXmlConfigBuilderHelper(domLevel3));
@@ -430,9 +433,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("cluster-members", nodeName)) {
                 handleClusterMembers(child, clientNetworkConfig);
             } else if (matches("smart-routing", nodeName)) {
-                clientNetworkConfig.setSmartRouting(Boolean.parseBoolean(getTextContent(child)));
-            } else if (matches("subset-routing", nodeName)) {
-                handleSubsetRouting(child, clientNetworkConfig);
+                handleLegacySmartRouting(child, clientNetworkConfig);
+            } else if (matches("cluster-routing", nodeName)) {
+                handleClusterRouting(child, clientNetworkConfig);
             } else if (matches("redo-operation", nodeName)) {
                 clientNetworkConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
             } else if (matches("connection-timeout", nodeName)) {
@@ -460,16 +463,52 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientConfig.setNetworkConfig(clientNetworkConfig);
     }
 
-    private void handleSubsetRouting(Node child, ClientNetworkConfig clientNetworkConfig) {
-        boolean enabled = getBooleanValue(getAttribute(child, "enabled"));
-        if (enabled) {
-            String attribute = getAttribute(child, "routing-strategy");
-            RoutingStrategy routingStrategy = attribute == null
-                    ? SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY : RoutingStrategy.valueOf(attribute);
-            SubsetRoutingConfig subsetRoutingConfig = clientNetworkConfig.getSubsetRoutingConfig();
-            subsetRoutingConfig.setEnabled(true);
-            subsetRoutingConfig.setRoutingStrategy(routingStrategy);
+    /**
+     * Internal method used to prevent both legacy smart-routing and modern cluster-routing to be configured
+     * in the same config, as this could lead to non-deterministic routing modes being used.
+     */
+    private void checkForAlreadyProcessed() {
+        if (processedRoutingMode) {
+            throw new InvalidConfigurationException("""
+                            "smart-routing" should not be present in configuration when \
+                            "cluster-routing" is present - only "cluster-routing" should be used.
+                            """);
         }
+    }
+
+    private void handleLegacySmartRouting(Node child, ClientNetworkConfig clientNetworkConfig) {
+        checkForAlreadyProcessed();
+        // since this option has been explicitly defined, we should translate it to the
+        //  modern equivalent to support backwards compatibility
+        boolean enabled = Boolean.parseBoolean(getTextContent(child));
+        clientNetworkConfig.getClusterRoutingConfig().setRoutingMode(enabled
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
+        processedRoutingMode = true;
+    }
+
+    private void handleClusterRouting(Node child, ClientNetworkConfig clientNetworkConfig) {
+        checkForAlreadyProcessed();
+        String mode = getAttribute(child, "mode");
+        final RoutingMode routingMode;
+        try {
+            routingMode = RoutingMode.valueOf(mode);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("Invalid RoutingMode '" + mode + "' defined.", e);
+        }
+
+        String attribute = getAttribute(child, "routing-strategy");
+        final RoutingStrategy routingStrategy;
+        try {
+            routingStrategy = attribute == null
+                    ? ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY : RoutingStrategy.valueOf(attribute);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("Invalid RoutingStrategy '" + attribute + "' defined.", e);
+        }
+
+        ClusterRoutingConfig clusterRoutingConfig = clientNetworkConfig.getClusterRoutingConfig();
+        clusterRoutingConfig.setRoutingMode(routingMode);
+        clusterRoutingConfig.setRoutingStrategy(routingStrategy);
+        processedRoutingMode = true;
     }
 
     private void handleHazelcastCloud(Node node, ClientNetworkConfig clientNetworkConfig) {

@@ -18,6 +18,7 @@ package com.hazelcast.client.executor;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.test.executor.tasks.CancellationAwareTask;
 import com.hazelcast.config.Config;
@@ -83,30 +84,31 @@ import static org.junit.Assert.assertTrue;
         server2 = hazelcastFactory.newHazelcastInstance(config);
     }
 
-    private HazelcastInstance createClient(boolean smartRouting)
+    private HazelcastInstance createClient(boolean allMembersRouting)
             throws IOException {
         ClientConfig config = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
-        config.getNetworkConfig().setSmartRouting(smartRouting);
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(allMembersRouting
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         return hazelcastFactory.newHazelcastClient(config);
     }
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitRandom_withSmartRouting()
+    public void testCancel_submitRandom_withAllMembersRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitRandom(true);
     }
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitRandom_withDummyRouting()
+    public void testCancel_submitRandom_withSingleMemberRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitRandom(false);
     }
 
-    private void testCancel_submitRandom(boolean smartRouting)
+    private void testCancel_submitRandom(boolean allMembersRouting)
             throws ExecutionException, InterruptedException, IOException {
-        HazelcastInstance client = createClient(smartRouting);
+        HazelcastInstance client = createClient(allMembersRouting);
 
         IExecutorService executorService = client.getExecutorService(randomString());
         Future<Boolean> future = executorService.submit(new CancellationAwareTask(SLEEP_TIME));
@@ -117,60 +119,60 @@ import static org.junit.Assert.assertTrue;
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitToMember1_withSmartRouting()
+    public void testCancel_submitToMember1_withAllMembersRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(true, server1, false);
     }
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitToMember2_withSmartRouting()
+    public void testCancel_submitToMember2_withAllMembersRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(true, server2, false);
     }
 
     @Test(expected = CancellationException.class)
-    public void testCancel_submitToMember1_withSmartRouting_WaitTaskStart()
+    public void testCancel_submitToMember1_withAllMembersRouting_WaitTaskStart()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(true, server1, true);
     }
 
     @Test(expected = CancellationException.class)
-    public void testCancel_submitToMember2_withSmartRouting_WaitTaskStart()
+    public void testCancel_submitToMember2_withAllMembersRouting_WaitTaskStart()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(true, server2, true);
     }
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitToMember1_withDummyRouting()
+    public void testCancel_submitToMember1_withSingleMemberRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(false, server1, false);
     }
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitToMember2_withDummyRouting()
+    public void testCancel_submitToMember2_withSingleMemberRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(false, server2, false);
     }
 
     @Test(expected = CancellationException.class)
-    public void testCancel_submitToMember1_withDummyRouting_WaitTaskStart()
+    public void testCancel_submitToMember1_withSingleMemberRouting_WaitTaskStart()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(false, server1, true);
     }
 
     @Test(expected = CancellationException.class)
-    public void testCancel_submitToMember2_withDummyRouting_WaitTaskStart()
+    public void testCancel_submitToMember2_withSingleMemberRouting_WaitTaskStart()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToMember(false, server2, true);
     }
 
-    private void testCancel_submitToMember(boolean smartRouting, HazelcastInstance server, boolean waitTaskStart)
+    private void testCancel_submitToMember(boolean allMembersRouting, HazelcastInstance server, boolean waitTaskStart)
             throws ExecutionException, InterruptedException, IOException {
 
-        HazelcastInstance client = createClient(smartRouting);
+        HazelcastInstance client = createClient(allMembersRouting);
 
         IExecutorService executorService = client.getExecutorService(randomString());
         Future<Boolean> future = executorService
@@ -190,33 +192,33 @@ import static org.junit.Assert.assertTrue;
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitToKeyOwner_withSmartRouting()
+    public void testCancel_submitToKeyOwner_withAllMembersRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToKeyOwner(true, false);
     }
 
     @Test(expected = CancellationException.class)
     @Ignore
-    public void testCancel_submitToKeyOwner_withDummyRouting()
+    public void testCancel_submitToKeyOwner_withSingleMemberRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToKeyOwner(false, false);
     }
 
     @Test(expected = CancellationException.class)
-    public void testCancel_submitToKeyOwner_withSmartRouting_WaitTaskStart()
+    public void testCancel_submitToKeyOwner_withAllMembersRouting_WaitTaskStart()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToKeyOwner(true, true);
     }
 
     @Test(expected = CancellationException.class)
-    public void testCancel_submitToKeyOwner_withDummyRouting_WaitTaskStart()
+    public void testCancel_submitToKeyOwner_withSingleMemberRouting_WaitTaskStart()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToKeyOwner(false, true);
     }
 
-    private void testCancel_submitToKeyOwner(boolean smartRouting, boolean waitTaskStart)
+    private void testCancel_submitToKeyOwner(boolean allMembersRouting, boolean waitTaskStart)
             throws ExecutionException, InterruptedException, IOException {
-        HazelcastInstance client = createClient(smartRouting);
+        HazelcastInstance client = createClient(allMembersRouting);
 
         IExecutorService executorService = client.getExecutorService(randomString());
         String key = generateKeyOwnedBy(server1);

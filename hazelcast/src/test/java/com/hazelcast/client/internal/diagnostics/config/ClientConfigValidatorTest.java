@@ -17,7 +17,6 @@
 package com.hazelcast.client.internal.diagnostics.config;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
@@ -57,23 +56,6 @@ public class ClientConfigValidatorTest extends HazelcastTestSupport {
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessageContaining("Wrong `local-update-policy`");
     }
-
-    @Test
-    public void createClientFailsWhen_networkConfigIsMisConfigured() {
-        ClientNetworkConfig networkConfig = new ClientNetworkConfig();
-        networkConfig.setSmartRouting(true);
-        networkConfig.getSubsetRoutingConfig().setEnabled(true);
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setNetworkConfig(networkConfig);
-
-        factory.newHazelcastInstance();
-
-        assertThatThrownBy(() -> factory.newHazelcastClient(clientConfig))
-                .isInstanceOf(InvalidConfigurationException.class)
-                .hasMessageContaining("Only one of subset-routing or smart-routing can be enabled at once!");
-    }
-
 
     @After
     public void tearDown() throws Exception {

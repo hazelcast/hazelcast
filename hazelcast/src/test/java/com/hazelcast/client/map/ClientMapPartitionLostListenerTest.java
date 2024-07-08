@@ -17,6 +17,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -114,7 +115,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
 
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
         ClientConfig clientConfig = getClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 

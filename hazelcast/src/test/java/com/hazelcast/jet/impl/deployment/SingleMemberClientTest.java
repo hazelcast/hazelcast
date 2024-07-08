@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
@@ -57,7 +58,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NonSmartClientTest extends SimpleTestInClusterSupport {
+public class SingleMemberClientTest extends SimpleTestInClusterSupport {
 
     private static HazelcastInstance masterInstance;
     private static HazelcastInstance nonMasterInstance;
@@ -76,7 +77,7 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
     private static HazelcastInstance createClientConnectingTo(HazelcastInstance targetInstance) {
         Address address = targetInstance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         clientConfig.getNetworkConfig().getAddresses().clear();
         clientConfig.getNetworkConfig().getAddresses().add(address.getHost() + ":" + address.getPort());
         return factory().newHazelcastClient(clientConfig);

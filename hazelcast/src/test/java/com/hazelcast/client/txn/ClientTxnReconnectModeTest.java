@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -48,9 +49,9 @@ public class ClientTxnReconnectModeTest {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Parameterized.Parameter
-    public boolean smartRouting;
+    public boolean allMembersRouting;
 
-    @Parameterized.Parameters(name = "smartRouting:{0} ")
+    @Parameterized.Parameters(name = "allMembersRouting:{0} ")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {true},
@@ -67,7 +68,8 @@ public class ClientTxnReconnectModeTest {
     public void testNewTransactionContext_ReconnectMode_ON() throws Throwable {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        config.getNetworkConfig().setSmartRouting(smartRouting);
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(allMembersRouting
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         config.getConnectionStrategyConfig().setAsyncStart(true);
         config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         config.getConnectionStrategyConfig().setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ON);
@@ -83,7 +85,8 @@ public class ClientTxnReconnectModeTest {
     public void testNewTransactionContext_ReconnectMode_ASYNC() throws Throwable {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        config.getNetworkConfig().setSmartRouting(smartRouting);
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(allMembersRouting
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         config.getConnectionStrategyConfig().setAsyncStart(true);
 
         config.getConnectionStrategyConfig().setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC);
@@ -99,7 +102,8 @@ public class ClientTxnReconnectModeTest {
     public void testNewTransactionContext_After_shutdown() throws Throwable {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        config.getNetworkConfig().setSmartRouting(smartRouting);
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(allMembersRouting
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         config.getConnectionStrategyConfig().setAsyncStart(true);
 
         config.getConnectionStrategyConfig().setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC);

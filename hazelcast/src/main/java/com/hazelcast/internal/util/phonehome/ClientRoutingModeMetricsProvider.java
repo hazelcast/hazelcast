@@ -23,9 +23,9 @@ import com.hazelcast.instance.impl.Node;
 import java.util.EnumMap;
 import java.util.Map;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SUBSET;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.MULTI_MEMBER;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
 
 public class ClientRoutingModeMetricsProvider implements MetricsProvider {
 
@@ -41,8 +41,8 @@ public class ClientRoutingModeMetricsProvider implements MetricsProvider {
             }
         }
 
-        context.collect(PhoneHomeMetrics.SMART_CLIENTS_COUNT, routingModeCounts.getOrDefault(SMART, 0));
-        context.collect(PhoneHomeMetrics.UNISOCKET_CLIENTS_COUNT, routingModeCounts.getOrDefault(UNISOCKET, 0));
-        context.collect(PhoneHomeMetrics.SUBSET_CLIENTS_COUNT, routingModeCounts.getOrDefault(SUBSET, 0));
+        context.collect(PhoneHomeMetrics.ALL_MEMBERS_CLIENTS_COUNT, routingModeCounts.getOrDefault(ALL_MEMBERS, 0));
+        context.collect(PhoneHomeMetrics.SINGLE_MEMBER_CLIENTS_COUNT, routingModeCounts.getOrDefault(SINGLE_MEMBER, 0));
+        context.collect(PhoneHomeMetrics.MULTI_MEMBER_CLIENTS_COUNT, routingModeCounts.getOrDefault(MULTI_MEMBER, 0));
     }
 }

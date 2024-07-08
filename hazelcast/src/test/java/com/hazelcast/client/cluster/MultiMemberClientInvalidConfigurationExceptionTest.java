@@ -17,6 +17,7 @@
 package com.hazelcast.client.cluster;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -35,10 +36,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SubsetClientInvalidConfigurationExceptionTest extends ClientTestSupport {
+public class MultiMemberClientInvalidConfigurationExceptionTest extends ClientTestSupport {
 
     private TestHazelcastFactory factory;
-    private static final String EXPECTED_MSG = "Subset routing is an enterprise feature since 5.5. "
+    private static final String EXPECTED_MSG = "MULTI_MEMBER routing is an enterprise feature since 5.5. "
             +  "You must use Hazelcast enterprise to enable this feature.";
 
     @Before
@@ -52,14 +53,13 @@ public class SubsetClientInvalidConfigurationExceptionTest extends ClientTestSup
     }
 
     @Test
-    public void testSubsetClientThrowsInvalidConfigurationException() {
-        // create a subset client config
+    public void testMultiMemberClientThrowsInvalidConfigurationException() {
+        // create a multi member client config
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.getNetworkConfig().getSubsetRoutingConfig().setEnabled(true);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.MULTI_MEMBER);
 
         // Check that we get an UnsupportedOperationException when trying to create client
-        // with subset routing enabled and no member group defined
+        // with MULTI_MEMBER routing enabled and no member group defined
         assertThatThrownBy(() -> factory.newHazelcastClient(clientConfig))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessage(EXPECTED_MSG);

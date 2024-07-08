@@ -20,6 +20,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientConfigLocator;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
@@ -79,7 +80,7 @@ public class ClientConfig {
 
     /**
      * The Network Configuration properties like:
-     * addresses to connect, smart-routing, subset-routing, socket-options...
+     * addresses to connect, cluster-routing, socket-options...
      */
     private ClientNetworkConfig networkConfig = new ClientNetworkConfig();
 
@@ -930,9 +931,9 @@ public class ClientConfig {
     }
 
     /**
-     * This feature reduces number of hops and increase performance for smart clients.
-     * It is enabled by default for smart clients.
-     * This config has no effect for unisocket clients.
+     * This feature reduces number of hops and increases performance for {@link RoutingMode#ALL_MEMBERS} routing clients.
+     * It is enabled by default for {@link RoutingMode#ALL_MEMBERS} routing clients.
+     * This config has no effect for {@link RoutingMode#MULTI_MEMBER} or {@link RoutingMode#SINGLE_MEMBER} routing clients.
      *
      * @param backupAckToClientEnabled enables client to get backup acknowledgements directly from the member
      *                                 that backups are applied
@@ -944,8 +945,8 @@ public class ClientConfig {
     }
 
     /**
-     * Note that backup acks to client can be enabled only for smart client.
-     * This config has no effect for unisocket or subset clients.
+     * Note that backup acks to client can be enabled only for all members routing client.
+     * This config has no effect for single member or multi member clients.
      *
      * @return {@code true} means backup acknowledgements
      * come to client, otherwise {@code false}

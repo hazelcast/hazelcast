@@ -18,6 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
@@ -57,8 +58,9 @@ public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIte
         String addressString = address.getHost() + ":" + address.getPort();
 
         ClientNetworkConfig networkConfig = new ClientNetworkConfig()
-                .setSmartRouting(false)
                 .addAddress(addressString);
+        networkConfig.getClusterRoutingConfig()
+                     .setRoutingMode(RoutingMode.SINGLE_MEMBER);
 
         return new ClientConfig().setNetworkConfig(networkConfig);
     }

@@ -63,8 +63,8 @@
     <hz:client id="client" lazy-init="true" scope="prototype">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network connection-timeout="1000"
-                    redo-operation="true"
-                    smart-routing="true">
+                    redo-operation="true">
+            <hz:cluster-routing mode="ALL_MEMBERS"/>
 
             <hz:member>127.0.0.1:5850</hz:member>
             <hz:member>127.0.0.1:5851</hz:member>

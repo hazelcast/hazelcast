@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -67,13 +68,13 @@ import static org.mockito.Mockito.mock;
 public class ListenerLeakTest extends ClientTestSupport {
 
 
-    @Parameterized.Parameters(name = "smartRouting:{0}")
+    @Parameterized.Parameters(name = "allMembersRouting:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{{false}, {true}});
     }
 
     @Parameterized.Parameter
-    public boolean smartRouting;
+    public boolean allMembersRouting;
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -119,7 +120,8 @@ public class ListenerLeakTest extends ClientTestSupport {
 
     private HazelcastInstance newHazelcastClient() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(allMembersRouting
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         return hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -244,7 +246,8 @@ public class ListenerLeakTest extends ClientTestSupport {
         //This test does not add any user listener because
         //we are testing if any event handler of internal listeners are leaking
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(allMembersRouting
+                ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

@@ -119,7 +119,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationServiceInter
         this.connectionManager = client.getConnectionManager();
         this.partitionService = client.getClientPartitionService();
         this.routingMode = connectionManager.getRoutingMode();
-        this.isBackupAckToClientEnabled = routingMode == RoutingMode.SMART
+        this.isBackupAckToClientEnabled = routingMode == RoutingMode.ALL_MEMBERS
                 && client.getClientConfig().isBackupAckToClientEnabled();
     }
 

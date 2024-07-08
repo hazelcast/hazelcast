@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestAwareClientFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,8 +34,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SMART_CLIENTS_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UNISOCKET_CLIENTS_COUNT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ALL_MEMBERS_CLIENTS_COUNT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SINGLE_MEMBER_CLIENTS_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,59 +72,59 @@ public class ClientRoutingModePhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMultipleClientsRegistered() {
-        ClientConfig smartClient = new ClientConfig();
-        smartClient.getNetworkConfig().setSmartRouting(true);
-        ClientConfig unisocketClient = new ClientConfig();
-        unisocketClient.getNetworkConfig().setSmartRouting(false);
+        ClientConfig allMembersClient = new ClientConfig();
+        allMembersClient.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.ALL_MEMBERS);
+        ClientConfig singleMemberClient = new ClientConfig();
+        allMembersClient.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
 
         newPhoneHome(instance);
-        assertThat(get(SMART_CLIENTS_COUNT)).isEqualTo("0");
-        assertThat(get(SMART_CLIENTS_COUNT)).isEqualTo("0");
+        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("0");
+        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("0");
 
-        factory.newHazelcastClient(smartClient);
-        factory.newHazelcastClient(unisocketClient);
-
-        newPhoneHome(instance);
-
-        assertThat(get(UNISOCKET_CLIENTS_COUNT)).isEqualTo("1");
-        assertThat(get(SMART_CLIENTS_COUNT)).isEqualTo("1");
-
-        factory.newHazelcastClient(smartClient);
-        factory.newHazelcastClient(smartClient);
-        factory.newHazelcastClient(unisocketClient);
-        factory.newHazelcastClient(unisocketClient);
+        factory.newHazelcastClient(allMembersClient);
+        factory.newHazelcastClient(singleMemberClient);
 
         newPhoneHome(instance);
-        assertThat(get(UNISOCKET_CLIENTS_COUNT)).isEqualTo("3");
-        assertThat(get(SMART_CLIENTS_COUNT)).isEqualTo("3");
+
+        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("1");
+        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("1");
+
+        factory.newHazelcastClient(allMembersClient);
+        factory.newHazelcastClient(allMembersClient);
+        factory.newHazelcastClient(singleMemberClient);
+        factory.newHazelcastClient(singleMemberClient);
+
+        newPhoneHome(instance);
+        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("3");
+        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("3");
     }
 
     @Test
     public void testMultipleClientsRemoved() {
-        ClientConfig smartClient = new ClientConfig();
-        smartClient.getNetworkConfig().setSmartRouting(true);
-        ClientConfig unisocketClient = new ClientConfig();
-        unisocketClient.getNetworkConfig().setSmartRouting(false);
+        ClientConfig allMembersClient = new ClientConfig();
+        allMembersClient.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.ALL_MEMBERS);
+        ClientConfig singleMemberClient = new ClientConfig();
+        singleMemberClient.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
 
-        HazelcastInstance client1 = factory.newHazelcastClient(smartClient);
-        HazelcastInstance client2 = factory.newHazelcastClient(unisocketClient);
+        HazelcastInstance client1 = factory.newHazelcastClient(allMembersClient);
+        HazelcastInstance client2 = factory.newHazelcastClient(singleMemberClient);
 
         newPhoneHome(instance);
-        assertThat(get(UNISOCKET_CLIENTS_COUNT)).isEqualTo("1");
-        assertThat(get(SMART_CLIENTS_COUNT)).isEqualTo("1");
+        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("1");
+        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("1");
 
-        // terminate SMART client
+        // terminate ALL_MEMBERS routing client
         client1.shutdown();
 
         newPhoneHome(instance);
-        assertThat(get(UNISOCKET_CLIENTS_COUNT)).isEqualTo("1");
-        assertThat(get(SMART_CLIENTS_COUNT)).isEqualTo("0");
+        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("1");
+        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("0");
 
-        // terminate UNISOCKET client
+        // terminate SINGLE_MEMBER routing client
         client2.shutdown();
 
         newPhoneHome(instance);
-        assertThat(get(UNISOCKET_CLIENTS_COUNT)).isEqualTo("0");
+        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("0");
     }
 
     private String get(Metric metric) {

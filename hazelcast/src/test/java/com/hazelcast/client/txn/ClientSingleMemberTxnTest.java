@@ -18,6 +18,7 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.util.AbstractLoadBalancer;
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientUniSocketTxnTest extends ClientTestSupport {
+public class ClientSingleMemberTxnTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -50,7 +51,7 @@ public class ClientUniSocketTxnTest extends ClientTestSupport {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().setRedoOperation(true);
-        config.getNetworkConfig().setSmartRouting(false);
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         //try to force second member to connect when exist
         config.setLoadBalancer(new AbstractLoadBalancer() {
             @Override

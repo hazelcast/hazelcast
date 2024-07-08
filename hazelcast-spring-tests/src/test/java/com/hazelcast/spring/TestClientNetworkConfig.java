@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.EurekaConfig;
@@ -90,10 +91,11 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeSubsetRoutingConfig() {
+    public void smokeClusterRoutingConfig() {
         ClientConfig config = client.getClientConfig();
-        assertFalse(config.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
-        assertEquals(RoutingStrategy.PARTITION_GROUPS, config.getNetworkConfig().getSubsetRoutingConfig().getRoutingStrategy());
+        assertEquals(RoutingMode.ALL_MEMBERS, config.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
+        assertEquals(RoutingStrategy.PARTITION_GROUPS,
+                config.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
     }
 
     @Test

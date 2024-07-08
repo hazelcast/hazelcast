@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 
 import javax.annotation.Nonnull;
@@ -24,8 +25,8 @@ import java.util.UUID;
 /**
  * Client service to add/remove remote listeners.
  * <p>
- * For smart client, it registers local  listeners to all nodes in cluster.
- * For unisocket client, it registers global listener to one node.
+ * For {@link RoutingMode#ALL_MEMBERS} routing clients, it registers local listeners to all nodes in cluster.
+ * For all other clients, it registers a global listener to one node.
  */
 public interface ClientListenerService {
 

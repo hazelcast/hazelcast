@@ -58,8 +58,8 @@ public class TestClientConfigAndSpringDefaults {
     public void testDefaults() {
         ClientConfig defaults = new ClientConfig();
 
-        assertEquals(defaults.getNetworkConfig().isSmartRouting(), clientConfig.getNetworkConfig().isSmartRouting());
         assertEquals(defaults.getNetworkConfig().getConnectionTimeout(), clientConfig.getNetworkConfig().getConnectionTimeout());
-        assertEquals(defaults.getNetworkConfig().getSubsetRoutingConfig().isEnabled(), clientConfig.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
+        assertEquals(defaults.getNetworkConfig().getClusterRoutingConfig().getRoutingMode(),
+                clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
     }
 }

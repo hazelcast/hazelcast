@@ -106,8 +106,8 @@ hazelcast-client:
 
   #
   # The "backup-ack-to-client-enabled" element lets you enable/disable backups ack to client.
-  # This feature reduces number of hops and increase performance for smart clients.
-  # It is enabled by default for smart clients. This config has no effect for unisocket clients.
+  # This feature reduces number of hops and increase performance for ALL_MEMBERS routing clients.
+  # It is enabled by default for ALL_MEMBERS routing clients. This config has no effect for SINGLE_MEMBER routing clients.
   #
   backup-ack-to-client-enabled: true
 
@@ -116,7 +116,7 @@ hazelcast-client:
   # This feature allows CP data structure operations to be sent directly to group leaders instead of using
   # all members of the cluster. This functionality requires the cluster to have the appropriate Hazelcast
   # Enterprise license, otherwise it will provide no benefit on the client.
-  # It is disabled by default. This option has no effect for unisocket clients.
+  # It is disabled by default. This option has no effect for SINGLE_MEMBER routing clients.
   #
   cp-direct-to-leader-routing: false
 
@@ -134,15 +134,13 @@ hazelcast-client:
   #     Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use
   #     only defined outbound ports.
   #     The outbound ports are listed as a sequence under the "outbound-ports" element.
-  # * "subset-routing":
-  #     If true, this client will only connect to a subset of the cluster based on the configured routing-strategy.
-  #     Its default value is false.
-  #     Note : This feature may only be enabled if smart-routing is disabled.
-  # * "smart-routing":
-  #     If true, client will route the key based operations to owner of the key at the best effort. Note that it
-  #     uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that
-  #     the operation will always be executed on the owner. The cached table is updated every second.
-  #     Note : This feature may only be enabled if subset-routing is disabled.
+  # * "cluster-routing":
+  #     Defines the cluster member routing this client will use. The following sub-elements are available:
+  #       - "mode": One of: "ALL_MEMBERS", "MULTI_MEMBER", or "SINGLE_MEMBER". The default mode is "ALL_MEMBERS".
+  #       - "routing-strategy": When the "MULTI_MEMBER" mode is used, this element may be provided to define
+  #         the strategy used in this mode. The default routing-strategy is "PARTITION_GROUPS".
+  #
+  #     Note : The "MULTI_MEMBER" routing mode is only available in Hazelcast Enterprise.
   # * "redo-operation":
   #     If true, client will redo the operations that were executing on the server and client lost the connection.
   #     This can be because of network, or simply because the member died. However it is not clear whether the
@@ -253,10 +251,8 @@ hazelcast-client:
     outbound-ports:
       - 34600
       - 34700-34710
-    subset-routing:
-      enabled : true
-      routing-strategy: PARTITION_GROUPS
-    smart-routing: true
+    cluster-routing:
+      mode: ALL_MEMBERS
     redo-operation: true
     connection-timeout: 60000
     socket-options:

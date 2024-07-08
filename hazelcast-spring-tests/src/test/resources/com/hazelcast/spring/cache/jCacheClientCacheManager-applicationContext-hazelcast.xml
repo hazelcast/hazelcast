@@ -63,8 +63,9 @@
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
         <hz:network connection-timeout="1000"
-                    redo-operation="true"
-                    smart-routing="true">
+                    redo-operation="true">
+            <hz:cluster-routing mode="ALL_MEMBERS"/>
+
             <hz:member> 127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:member>127.0.0.1:5702</hz:member>

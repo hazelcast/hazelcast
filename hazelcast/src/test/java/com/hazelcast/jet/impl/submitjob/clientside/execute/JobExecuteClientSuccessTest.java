@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.submitjob.clientside.execute;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -99,19 +100,19 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarExecuteByNonSmartClient_whenResourceUploadIsEnabled() {
+    public void test_jarExecuteBySingleMemberClient_whenResourceUploadIsEnabled() {
         HazelcastInstance[] hazelcastInstances = createMultiNodeCluster();
 
         // Get address of the member that is not Job Coordinator
         HazelcastInstance targetInstance = hazelcastInstances[1];
         Address targetAddress = targetInstance.getCluster().getLocalMember().getAddress();
 
-        // Create a non-smart client
+        // Create a SINGLE_MEMBER routing client
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
-        clientNetworkConfig.setSmartRouting(false);
+        clientNetworkConfig.getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
 
-        // Set the target address for non-smart client
+        // Set the target address for SINGLE_MEMBER routing client
         List<String> addresses = clientNetworkConfig.getAddresses();
         addresses.add(targetAddress.getHost() + ":" + targetAddress.getPort());
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -88,7 +89,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertTrue(allowedPorts.contains("34600"));
         assertTrue(allowedPorts.contains("34700-34710"));
 
-        assertTrue(networkConfig.isSmartRouting());
+        assertEquals(RoutingMode.ALL_MEMBERS, networkConfig.getClusterRoutingConfig().getRoutingMode());
         assertTrue(networkConfig.isRedoOperation());
 
         final SocketInterceptorConfig socketInterceptorConfig = networkConfig.getSocketInterceptorConfig();
@@ -557,7 +558,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
 
     @Test
-    public abstract void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToSubsetRoutingConfig();
+    public abstract void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToMultiMemberRoutingConfig();
 
     @Test
     public void testTpc() {

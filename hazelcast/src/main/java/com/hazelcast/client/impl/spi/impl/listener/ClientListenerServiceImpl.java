@@ -69,10 +69,10 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class ClientListenerServiceImpl
         implements ClientListenerService, StaticMetricsProvider, ConnectionListener<ClientConnection> {
 
-    private static final String ACTIVE_SUBSET_CONNECTIONS = "activeSubsetConnection";
+    private static final String ACTIVE_MULTI_MEMBER_CONNECTIONS = "activeMultiMemberConnection";
     private final HazelcastClientInstanceImpl client;
     private final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
-    private final Map<String, ClientConnection> subsetListenersConnection = new ConcurrentHashMap<>();
+    private final Map<String, ClientConnection> multiMemberRoutingListeners = new ConcurrentHashMap<>();
 
     private final ClientConnectionManager clientConnectionManager;
     private final ILogger logger;
@@ -110,17 +110,17 @@ public class ClientListenerServiceImpl
             Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
 
             switch (routingMode) {
-                case SUBSET -> {
-                    ClientConnection activeConnection = getOrUpdateSubsetModeListenerRegistrationConnection();
+                case MULTI_MEMBER -> {
+                    ClientConnection activeConnection = getOrUpdateMultiMemberModeListenerRegistrationConnection();
                     doRemoteRegistrationSync(registration, activeConnection, userRegistrationId);
                 }
-                case UNISOCKET -> {
+                case SINGLE_MEMBER -> {
                     ClientConnection firstConnection = IterableUtil.getFirst(connections, null);
                     if (firstConnection != null) {
                         doRemoteRegistrationSync(registration, firstConnection, userRegistrationId);
                     }
                 }
-                case SMART -> connections.forEach(connection ->
+                case ALL_MEMBERS -> connections.forEach(connection ->
                         doRemoteRegistrationSync(registration, connection, userRegistrationId));
                 default ->
                         throw new IllegalArgumentException("Unsupported routing mode: " + routingMode);
@@ -260,8 +260,8 @@ public class ClientListenerServiceImpl
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
         registrationExecutor.submit(() -> {
-            if (routingMode == RoutingMode.SUBSET) {
-                getOrUpdateSubsetModeListenerRegistrationConnection();
+            if (routingMode == RoutingMode.MULTI_MEMBER) {
+                getOrUpdateMultiMemberModeListenerRegistrationConnection();
             } else {
                 for (ClientListenerRegistration listenerRegistration : registrations.values()) {
                     invokeFromInternalThread(listenerRegistration, connection);
@@ -286,23 +286,23 @@ public class ClientListenerServiceImpl
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
         registrationExecutor.submit(() -> {
-            if (routingMode == RoutingMode.SUBSET) {
-                boolean removed = subsetListenersConnection.remove(ACTIVE_SUBSET_CONNECTIONS, connection);
+            if (routingMode == RoutingMode.MULTI_MEMBER) {
+                boolean removed = multiMemberRoutingListeners.remove(ACTIVE_MULTI_MEMBER_CONNECTIONS, connection);
                 if (removed) {
                     // if we removed the responsible connection
                     // for listener registration in subset mode,
                     // we need to assign a new connection with
-                    // `getOrUpdateSubsetModeListenerRegistrationConnection`
+                    // `getOrUpdateMultiMemberModeListenerRegistrationConnection`
                     // method
-                    getOrUpdateSubsetModeListenerRegistrationConnection();
+                    getOrUpdateMultiMemberModeListenerRegistrationConnection();
                 }
             }
             registrations.values().forEach(registry -> registry.getConnectionRegistrations().remove(connection));
         });
     }
 
-    private ClientConnection getOrUpdateSubsetModeListenerRegistrationConnection() {
-        return subsetListenersConnection.computeIfAbsent(ACTIVE_SUBSET_CONNECTIONS, k -> {
+    private ClientConnection getOrUpdateMultiMemberModeListenerRegistrationConnection() {
+        return multiMemberRoutingListeners.computeIfAbsent(ACTIVE_MULTI_MEMBER_CONNECTIONS, k -> {
             ClientConnection randomConnection = IterableUtil.getFirst(clientConnectionManager.getActiveConnections(),
                     null);
             if (randomConnection != null) {
@@ -356,7 +356,7 @@ public class ClientListenerServiceImpl
     }
 
     private boolean registersLocalOnly() {
-        return routingMode == RoutingMode.SMART;
+        return routingMode == RoutingMode.ALL_MEMBERS;
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {

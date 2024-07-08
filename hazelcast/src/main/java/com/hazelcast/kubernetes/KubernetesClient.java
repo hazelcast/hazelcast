@@ -428,7 +428,7 @@ class KubernetesClient {
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
                 LOGGER.warning("Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use "
-                        + "Hazelcast Smart Client from outside of the Kubernetes network");
+                        + "Hazelcast MULTI_MEMBER or ALL_MEMBERS routing Clients from outside of the Kubernetes network");
                 isNoPublicIpAlreadyLogged = true;
             }
             return endpoints;

@@ -36,16 +36,7 @@ public class ConfigRoutingUtil {
     public static ClientConfig newClientConfig(RoutingMode routingMode) {
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        switch (routingMode) {
-            case UNISOCKET ->
-                    networkConfig.setSmartRouting(false).getSubsetRoutingConfig().setEnabled(false);
-            case SMART ->
-                    networkConfig.setSmartRouting(true).getSubsetRoutingConfig().setEnabled(false);
-            case SUBSET ->
-                    networkConfig.setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true);
-            default ->
-                    throw new IllegalArgumentException(routingMode.name());
-        }
+        networkConfig.getClusterRoutingConfig().setRoutingMode(routingMode);
         return clientConfig;
     }
 }

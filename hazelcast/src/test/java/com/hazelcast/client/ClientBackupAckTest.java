@@ -38,9 +38,9 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SUBSET;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.MULTI_MEMBER;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 
@@ -54,7 +54,7 @@ public class ClientBackupAckTest extends ClientTestSupport {
 
     @Parameterized.Parameters(name = "{index}: routingMode={0}")
     public static Iterable<?> parameters() {
-        return Arrays.asList(UNISOCKET, RoutingMode.SMART);
+        return Arrays.asList(SINGLE_MEMBER, RoutingMode.ALL_MEMBERS);
     }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -66,7 +66,7 @@ public class ClientBackupAckTest extends ClientTestSupport {
 
     @Test
     public void testBackupAckToClientIsEnabled_byDefault() {
-        Assume.assumeTrue(routingMode == RoutingMode.SMART);
+        Assume.assumeTrue(routingMode == RoutingMode.ALL_MEMBERS);
 
         hazelcastFactory.newHazelcastInstance();
 
@@ -88,10 +88,10 @@ public class ClientBackupAckTest extends ClientTestSupport {
                 = getHazelcastClientInstanceImpl(client)
                 .getInvocationService().isBackupAckToClientEnabled();
 
-        if (routingMode == UNISOCKET || routingMode == SUBSET) {
+        if (routingMode == SINGLE_MEMBER || routingMode == MULTI_MEMBER) {
             assertFalse(isEnabled(client));
             assertFalse(backupAckToClientEnabled);
-        } else if (routingMode == SMART) {
+        } else if (routingMode == ALL_MEMBERS) {
             assertTrue(isEnabled(client));
             assertTrue(backupAckToClientEnabled);
         } else {

@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -37,11 +38,12 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 
 /**
- * A test that verifies that a non smart client, can send request to a wrong node, but still can get responses to its requests.
+ * A test that verifies that a SINGLE_MEMBER routing client, can send request to a wrong node,
+ * but still can get responses to its requests.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NonSmartClientRoutingTest {
+public class SingleMemberClientRoutingTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -58,7 +60,7 @@ public class NonSmartClientRoutingTest {
         server1 = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 

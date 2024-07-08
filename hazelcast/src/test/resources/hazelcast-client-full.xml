@@ -75,7 +75,7 @@
             <ports>34600</ports>
             <ports>34700-34710</ports>
         </outbound-ports>
-        <smart-routing>true</smart-routing>
+        <cluster-routing mode="ALL_MEMBERS"/>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>
         <socket-options>

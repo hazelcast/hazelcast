@@ -19,19 +19,19 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.version.Version;
+import com.hazelcast.internal.cluster.Versions;
 
 /**
  * An UnsupportedClusterVersionException is thrown when a Hazelcast Client
  * attempts to connect to a cluster with a configuration that is not supported
  * by the cluster version.
  * <p>
- * For example, a client configured with routing mode :
- * {@link RoutingMode#SUBSET}
+ * For example, a client configured with routing mode:
+ * {@link RoutingMode#MULTI_MEMBER}
  * and RoutingStrategy
  * {@link RoutingStrategy#PARTITION_GROUPS}
  * will be unable to connect to a cluster that has a minimum cluster version of
- * less than the supported version of {@link Version#V5_5}.
+ * less than the supported version of {@link Versions#V5_5}.
  */
 public class UnsupportedClusterVersionException extends HazelcastException {
     /**

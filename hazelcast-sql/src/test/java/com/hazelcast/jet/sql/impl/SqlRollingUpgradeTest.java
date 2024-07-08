@@ -63,8 +63,8 @@ public class SqlRollingUpgradeTest extends SqlTestSupport {
 
     @Test
     public void when_clientSql_then_usesEitherVersion() {
-        // Since the subsets of members with same version have the same size, the smart client must send the SQL command
-        // to the member with newer version.
+        // Since the subsets of members with same version have the same size,
+        //  the ALL_MEMBERS routing client must send the SQL command to the member with newer version.
         createMapping(client, "m", Integer.class, Integer.class);
         client.getSql().execute("select * from table(generate_stream(1)) join m on __key=v");
         assertTrueEventually(() ->

@@ -64,9 +64,8 @@
     <hz:client id="client">
         <hz:cluster-name>${cluster.name}-clientNetworkConfig</hz:cluster-name>
         <hz:network connection-timeout="1000"
-                    redo-operation="false"
-                    smart-routing="false">
-            <hz:subset-routing enabled="false" routing-strategy="PARTITION_GROUPS"/>
+                    redo-operation="false">
+            <hz:cluster-routing mode="ALL_MEMBERS"/>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:member>127.0.0.1:5702</hz:member>

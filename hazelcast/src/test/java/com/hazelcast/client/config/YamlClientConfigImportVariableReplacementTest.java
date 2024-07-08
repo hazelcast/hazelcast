@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -39,7 +40,6 @@ import static com.hazelcast.client.config.YamlClientConfigBuilderTest.buildConfi
 import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -182,10 +182,9 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    cluster-members:\n"
                 + "      - 192.168.100.100\n"
                 + "      - 127.0.0.10\n"
-                + "    subset-routing:\n"
-                + "      enabled: true\n"
+                + "    cluster-routing:\n"
+                + "      mode: MULTI_MEMBER\n"
                 + "      routing-strategy: PARTITION_GROUPS\n"
-                + "    smart-routing: false\n"
                 + "    redo-operation: true\n"
                 + "    socket-interceptor:\n"
                 + "      enabled: true\n"
@@ -200,10 +199,9 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    - ${config.location}";
 
         ClientConfig config = buildConfig(yaml, "config.location", networkConfigPath);
-        assertTrue(config.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
-        assertEquals(RoutingStrategy.PARTITION_GROUPS, config.getNetworkConfig()
-                .getSubsetRoutingConfig().getRoutingStrategy());
-        assertFalse(config.getNetworkConfig().isSmartRouting());
+        assertEquals(RoutingMode.MULTI_MEMBER, config.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
+        assertEquals(ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY,
+                config.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
         assertTrue(config.getNetworkConfig().isRedoOperation());
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.100.100");
         assertContains(config.getNetworkConfig().getAddresses(), "127.0.0.10");

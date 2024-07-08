@@ -17,6 +17,7 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,7 +48,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTestHazelcastInstanceFactory_smartClients() {
+    public void testTestHazelcastInstanceFactory_allMembersRoutingClients() {
         final HazelcastInstance instance1 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance instance3 = instanceFactory.newHazelcastInstance();
@@ -74,7 +75,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
         final HazelcastInstance instance3 = instanceFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.SINGLE_MEMBER);
         final HazelcastInstance client1 = instanceFactory.newHazelcastClient(clientConfig);
         final HazelcastInstance client2 = instanceFactory.newHazelcastClient(clientConfig);
 
