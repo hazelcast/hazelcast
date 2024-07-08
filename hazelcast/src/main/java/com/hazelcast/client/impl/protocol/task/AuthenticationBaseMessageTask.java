@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
@@ -128,8 +129,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
-        String nodeClusterName = nodeEngine.getConfig().getClusterName();
-        if (! nodeClusterName.equals(clusterName)) {
+        if (!verifyClusterName()) {
             return CREDENTIALS_FAILED;
         }
 
@@ -146,12 +146,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             return CREDENTIALS_FAILED;
         } finally {
             nodeEngine.getNode().getNodeExtension().getAuditlogService()
-                .eventBuilder(AuditlogTypeIds.AUTHENTICATION_CLIENT)
-                .message("Client connection authentication.")
-                .addParameter("connection", connection)
-                .addParameter("credentials", credentials)
-                .addParameter("passed", passed)
-                .log();
+                    .eventBuilder(AuditlogTypeIds.AUTHENTICATION_CLIENT)
+                    .message("Client connection authentication.")
+                    .addParameter("connection", connection)
+                    .addParameter("credentials", credentials)
+                    .addParameter("passed", passed)
+                    .log();
         }
     }
 
@@ -162,9 +162,15 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                     + " is disabled on the member, and client sends not-null username or password.");
             return CREDENTIALS_FAILED;
         }
-        String nodeClusterName = nodeEngine.getConfig().getClusterName();
-        boolean clusterNameMatched = nodeClusterName.equals(clusterName);
-        return clusterNameMatched ? AUTHENTICATED : CREDENTIALS_FAILED;
+
+        return verifyClusterName() ? AUTHENTICATED : CREDENTIALS_FAILED;
+    }
+
+    private boolean verifyClusterName() {
+        boolean skipClusterNameCheck =
+            nodeEngine.getProperties().getBoolean(ClientEngineImpl.SKIP_CLUSTER_NAME_CHECK_DURING_CONNECTION);
+
+        return skipClusterNameCheck || nodeEngine.getConfig().getClusterName().equals(clusterName);
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {

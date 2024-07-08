@@ -26,6 +26,7 @@ import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.internal.nio.Connection;
@@ -49,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -56,7 +58,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TcpClientConnectionTest extends ClientTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
@@ -264,6 +266,76 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         makeSureConnectedToServers(client, memberCount);
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isSameAsClient_whenSkipClusterNameDefault() {
+        // if the client is able to connect, it's a pass
+        createClientAndServer("Test", "Test", false);
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isSameAsClient_whenSkipClusterNameTrue() {
+        // if the client is able to connect, it's a pass
+        createClientAndServer("Test", "Test", true);
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isNotSetInMemberOrClient_whenSkipClusterNameDefault() {
+        // if the client is able to connect, it's a pass
+        createClientAndServer(null, null, false);
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isNotSetInMemberOrClient_whenSkipClusterNameTrue() {
+        // if the client is able to connect, it's a pass
+        createClientAndServer(null, null, true);
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isNotSetOnMemberAndSetInClient_whenSkipClusterNameDefault() {
+        // if the client is able to connect, it's a fail
+        assertThatThrownBy(() -> createClientAndServer(null, "Test", false))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Unable to connect to any cluster.");
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isNotSetOnMemberAndSetInClient_whenSkipClusterNameTrue() {
+        // if the client is able to connect, it's a pass
+        createClientAndServer(null, "Test", true);
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isDifferentToClient_whenSkipClusterNameDefault() {
+        // if the client is able to connect, it's a fail
+        assertThatThrownBy(() -> createClientAndServer("Dev", "Test", false))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Unable to connect to any cluster.");
+    }
+
+    @Test
+    public void testAuthentication_when_clusterName_isDifferentToClient_whenSkipClusterNameTrue() {
+        // if the client is able to connect, it's a pass
+        createClientAndServer("Dev", "Test", true);
+    }
+
+    private void createClientAndServer(String serverClusterName, String clientClusterName, boolean skipNameChecks) {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        if (serverClusterName != null) {
+            config.setClusterName(serverClusterName);
+        }
+        if (skipNameChecks) {
+            config.setProperty("hazelcast.client.internal.skip.cluster.namecheck.during.connection", "true");
+        }
+        hazelcastFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        if (clientClusterName != null) {
+            clientConfig.setClusterName(clientClusterName);
+        }
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(0);
+        hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     public static class DummySerializableCallable implements Callable, Serializable {

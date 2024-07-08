@@ -63,6 +63,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.sql.impl.client.SqlAbstractMessageTask;
 import com.hazelcast.transaction.TransactionManagerService;
 
@@ -93,6 +94,22 @@ import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService,
         ManagedService, EventPublishingService<ClientEvent, ClientListener> {
+
+    /**
+     * A private property to let users control the connection behavior of the client.
+     * <p>
+     * When enabled (true), the member will skip trying to check the target cluster name matches the name
+     * specified in the client. Default is false.
+     * <p>
+     * This property is handy for users who are looking for behaviour similar to Hazelcast 4.0.
+     * {@code true} means cluster name is not considered during authentication.
+     * <p>
+     * <b>NOTE:</b> This property does not skip cluster name checks performed in the DefaultLoginModule,
+     * so authentication for clients can still fail if security is enabled, no credentials are provided,
+     * and the client cluster name does not match the cluster's own name.
+     */
+    public static final HazelcastProperty SKIP_CLUSTER_NAME_CHECK_DURING_CONNECTION =
+            new HazelcastProperty("hazelcast.client.internal.skip.cluster.namecheck.during.connection", false);
 
     /**
      * Service name to be used in requests.
