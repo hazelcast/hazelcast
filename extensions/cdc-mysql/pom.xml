@@ -74,7 +74,8 @@
                 <artifactId>license-maven-plugin</artifactId>
                 <configuration>
                     <includedLicenses combine.children="append">
-                        <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
+                        <!-- License for  mysql-connector-j -->
+                        <includedLicense>The GNU General Public License, v2 with Universal FOSS Exception, v1.0</includedLicense>
                     </includedLicenses>
                 </configuration>
             </plugin>
@@ -93,6 +94,20 @@
             <groupId>io.debezium</groupId>
             <artifactId>debezium-connector-mysql</artifactId>
             <version>${debezium.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <groupId>mysql</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Debezium version 1.9.8.Final has dependency on old mysql-connector-java. Exclude the old mysql driver and use the new driver.
+            When debezium is upgraded, we may clean this explicit dependency -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.0.0</version>
         </dependency>
 
         <!-- TEST -->
