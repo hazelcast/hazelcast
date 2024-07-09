@@ -122,7 +122,7 @@ public class PackageDefinitionTest {
     }
 
     @Test
-    public void testToString() throws Exception {
+    public void testToString() {
         assertNotNull(packageDefinition.toString());
         assertTrue(packageDefinition.toString().contains("PackageDefinition"));
     }

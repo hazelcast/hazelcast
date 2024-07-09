@@ -44,7 +44,7 @@ public class HazelcastLicenseResourceTransformer implements ReproducibleResource
     }
 
     @Override
-    public void processResource(String resource, InputStream is, List<Relocator> relocators, long time) throws IOException {
+    public void processResource(String resource, InputStream is, List<Relocator> relocators, long time) {
         if (time > this.time) {
             this.time = time;
         }
@@ -65,7 +65,7 @@ public class HazelcastLicenseResourceTransformer implements ReproducibleResource
     }
 
     @Override
-    public void processResource(String resource, InputStream is, List<Relocator> relocators) throws IOException {
+    public void processResource(String resource, InputStream is, List<Relocator> relocators) {
         processResource(resource, is, relocators, 0);
     }
 
