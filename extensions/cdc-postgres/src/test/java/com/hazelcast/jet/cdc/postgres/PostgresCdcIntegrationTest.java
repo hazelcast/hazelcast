@@ -138,11 +138,11 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
                 .groupingKey(PostgresCdcIntegrationTest::getOrderNumber)
                 .mapStateful(
                         LongAccumulator::new,
-                        (accumulator, orderId, record) -> {
+                        (accumulator, orderId, changeRecord) -> {
                             long count = accumulator.get();
                             accumulator.add(1);
-                            Operation operation = record.operation();
-                            RecordPart value = record.value();
+                            Operation operation = changeRecord.operation();
+                            RecordPart value = changeRecord.value();
                             Order order = value.toObject(Order.class);
                             return entry(orderId + "/" + count, operation + ":" + order);
                         })
@@ -344,7 +344,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         pipeline.readFrom(source("customers", commitPeriod))
                 .withNativeTimestamps(0)
                 .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
-                .groupingKey(record -> (Integer) record.key().toMap().get("id"))
+                .groupingKey(changeRecord -> (Integer) changeRecord.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,
                         (accumulator, customerId, record) -> {
@@ -451,13 +451,13 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         }
     }
 
-    private static int getOrderNumber(ChangeRecord record) throws ParsingException {
+    private static int getOrderNumber(ChangeRecord changeRecord) throws ParsingException {
         //pick random method for extracting ID in order to test all code paths
         boolean primitive = ThreadLocalRandom.current().nextBoolean();
         if (primitive) {
-            return (Integer) record.key().toMap().get("id");
+            return (Integer) changeRecord.key().toMap().get("id");
         } else {
-            return record.key().toObject(OrderPrimaryKey.class).id;
+            return changeRecord.key().toObject(OrderPrimaryKey.class).id;
         }
     }
 

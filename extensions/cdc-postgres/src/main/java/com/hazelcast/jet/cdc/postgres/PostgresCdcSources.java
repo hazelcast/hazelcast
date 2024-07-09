@@ -132,7 +132,7 @@ public final class PostgresCdcSources {
 
         /**
          * Snapshot mode that will be used by the connector.
-         *
+         * <p>
          * If you want to use {@link io.debezium.connector.postgresql.PostgresConnectorConfig.SnapshotMode#CUSTOM},
          * please use {@link #setCustomSnapshotter(Class)} method instead.
          */
@@ -214,7 +214,7 @@ public final class PostgresCdcSources {
          * The name of the PostgreSQL database from which to stream the changes.
          * Has to be set.
          * <p>
-         * Currently this source is not capable of monitoring multiple
+         * Currently, this source is not capable of monitoring multiple
          * databases, only multiple schemas and/or tables. See white- and
          * black-listing configuration options for those.
          */
@@ -242,7 +242,7 @@ public final class PostgresCdcSources {
          * Optional regular expressions that match schema names to be excluded
          * from monitoring ("schema" is used here to denote logical groups of
          * tables). Any schema name not included in the blacklist will be
-         * monitored, with the exception of system schemas. May not be used with
+         * monitored, except system schemas. May not be used with
          * {@link #setSchemaWhitelist(String...) schema whitelist}.
          */
         @Nonnull
@@ -332,7 +332,7 @@ public final class PostgresCdcSources {
         }
 
         /**
-         * Whether or not to drop the logical replication slot when the
+         * Whether to drop the logical replication slot when the
          * connector disconnects cleanly.
          * <p>
          * Defaults to <em>false</em>
@@ -427,7 +427,7 @@ public final class PostgresCdcSources {
         }
 
         /**
-         * Specifies the file containing containing SSL certificate authority
+         * Specifies the file containing SSL certificate authority
          * (CA) certificate(s).
          */
         @Nonnull

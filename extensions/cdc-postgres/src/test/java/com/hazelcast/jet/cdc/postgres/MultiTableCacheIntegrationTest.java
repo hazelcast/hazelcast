@@ -70,13 +70,13 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
 
         allRecords.filter(r -> r.table().equals("customers"))
                 .writeTo(Sinks.mapWithEntryProcessor(CACHE,
-                        record -> (Integer) record.key().toMap().get("id"),
+                        changeRecord -> (Integer) changeRecord.key().toMap().get("id"),
                         CustomerEntryProcessor::new
                 ));
 
         allRecords.filter(r -> r.table().equals("orders"))
                 .writeTo(Sinks.mapWithEntryProcessor(CACHE,
-                        record -> (Integer) record.value().toMap().get("purchaser"),
+                        changeRecord -> (Integer) changeRecord.value().toMap().get("purchaser"),
                         OrderEntryProcessor::new
                 ));
 
@@ -208,24 +208,24 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
 
     private static class CustomerEntryProcessor implements EntryProcessor<Integer, OrdersOfCustomer, Object> {
 
-        private final ChangeRecord record;
+        private final ChangeRecord changeRecord;
 
-        CustomerEntryProcessor(ChangeRecord record) {
-            this.record = record;
+        CustomerEntryProcessor(ChangeRecord changeRecord) {
+            this.changeRecord = changeRecord;
         }
 
         @Override
         public Object process(Entry<Integer, OrdersOfCustomer> entry) {
             try {
                 OrdersOfCustomer value = entry.getValue();
-                if (value == null && (record.operation() == SYNC || record.operation() == INSERT)) {
+                if (value == null && (changeRecord.operation() == SYNC || changeRecord.operation() == INSERT)) {
                     value = new OrdersOfCustomer();
                 }
                 requireNonNull(value, "value is null");
-                if (DELETE == record.operation()) {
+                if (DELETE == changeRecord.operation()) {
                     value.setCustomer(null);
                 } else {
-                    value.setCustomer(record.value().toObject(Customer.class));
+                    value.setCustomer(changeRecord.value().toObject(Customer.class));
                 }
                 entry.setValue(value);
             } catch (ParsingException e) {
@@ -237,26 +237,26 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
 
     private static class OrderEntryProcessor implements EntryProcessor<Integer, OrdersOfCustomer, Object> {
 
-        private final ChangeRecord record;
+        private final ChangeRecord changeRecord;
 
-        OrderEntryProcessor(ChangeRecord record) {
-            this.record = record;
+        OrderEntryProcessor(ChangeRecord changeRecord) {
+            this.changeRecord = changeRecord;
         }
 
         @Override
         public Object process(Entry<Integer, OrdersOfCustomer> entry) {
             try {
-                boolean deletion = DELETE == record.operation();
+                boolean deletion = DELETE == changeRecord.operation();
                 OrdersOfCustomer value = entry.getValue();
                 if (deletion) {
                     if (value != null) {
-                        value.deleteOrder(record.value().toObject(Order.class));
+                        value.deleteOrder(changeRecord.value().toObject(Order.class));
                     }
                 } else {
                     if (value == null) {
                         value = new OrdersOfCustomer();
                     }
-                    value.addOrUpdateOrder(record.value().toObject(Order.class));
+                    value.addOrUpdateOrder(changeRecord.value().toObject(Order.class));
                 }
                 entry.setValue(value);
             } catch (ParsingException e) {
