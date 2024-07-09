@@ -59,7 +59,7 @@ public final class KafkaProcessors {
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
-                        (c) -> new KafkaConsumer<>(properties),
+                        c -> new KafkaConsumer<>(properties),
                         topicsConfig,
                         projectionFn,
                         eventTimePolicy
@@ -83,7 +83,7 @@ public final class KafkaProcessors {
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
-                        (c) -> new KafkaConsumer<>(properties),
+                        c -> new KafkaConsumer<>(properties),
                         topicsConfig,
                         projectionFn,
                         eventTimePolicy

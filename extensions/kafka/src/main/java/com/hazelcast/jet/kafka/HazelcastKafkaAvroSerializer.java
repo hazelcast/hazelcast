@@ -47,9 +47,9 @@ public class HazelcastKafkaAvroSerializer extends AbstractHazelcastAvroSerde imp
     }
 
     @Override
-    public byte[] serialize(String topic, GenericRecord record) {
+    public byte[] serialize(String topic, GenericRecord genericRecord) {
         try {
-            return AvroSerializerHooks.serialize(datumWriter, record);
+            return AvroSerializerHooks.serialize(datumWriter, genericRecord);
         } catch (Exception e) {
             throw new SerializationException("Error serializing Avro message", e);
         }

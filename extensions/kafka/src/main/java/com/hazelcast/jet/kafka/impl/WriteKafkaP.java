@@ -264,7 +264,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
                                 .mapToObj(i -> new WriteKafkaP<T, K, V>(
-                                        (txnId) -> kafkaDataConnection.getProducer(txnId),
+                                        txnId -> kafkaDataConnection.getProducer(txnId),
                                         toRecordFn,
                                         exactlyOnce
                                 ))
@@ -309,7 +309,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
                         .mapToObj(i -> new WriteKafkaP<T, K, V>(
-                                (txnId) -> kafkaDataConnection.getProducer(txnId, properties),
+                                txnId -> kafkaDataConnection.getProducer(txnId, properties),
                                 toRecordFn,
                                 exactlyOnce
                         ))
