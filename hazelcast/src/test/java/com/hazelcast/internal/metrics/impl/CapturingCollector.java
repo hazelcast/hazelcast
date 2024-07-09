@@ -86,5 +86,13 @@ public class CapturingCollector implements MetricsCollector {
         public List<Number> values() {
             return unmodifiableList(values);
         }
+
+        @Override
+        public String toString() {
+            return "Capture{"
+                    + "values=" + values
+                    + ", hits=" + hits
+                    + '}';
+        }
     }
 }

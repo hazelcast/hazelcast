@@ -744,6 +744,61 @@ public final class MetricDescriptorConstants {
     public static final String USER_CODE_NAMESPACE_RESOURCE_TYPE = "resourceType";
     // ===[/USER-CODE-NAMESPACES]=======================================================
 
+    // ===[VECTOR COLLECTION]=========================================================
+    public static final String VECTOR_COLLECTION_PREFIX = "vectorCollection";
+    public static final String VECTOR_COLLECTION_DISCRIMINATOR_NAME = "name";
+
+    public static final String VECTOR_COLLECTION_LAST_ACCESS_TIME = "lastAccessTime";
+    public static final String VECTOR_COLLECTION_LAST_UPDATE_TIME = "lastUpdateTime";
+
+    public static final String VECTOR_COLLECTION_GET_COUNT = "getCount";
+    public static final String VECTOR_COLLECTION_PUT_COUNT = "putCount";
+    public static final String VECTOR_COLLECTION_PUT_ALL_COUNT = "putAllCount";
+    public static final String VECTOR_COLLECTION_PUT_ALL_ENTRY_COUNT = "putAllEntryCount";
+    public static final String VECTOR_COLLECTION_SET_COUNT = "setCount";
+    public static final String VECTOR_COLLECTION_REMOVE_COUNT = "removeCount";
+    public static final String VECTOR_COLLECTION_DELETE_COUNT = "deleteCount";
+
+    public static final String VECTOR_COLLECTION_CREATION_TIME = "creationTime";
+    public static final String VECTOR_COLLECTION_OWNED_ENTRY_COUNT = "ownedEntryCount";
+    public static final String VECTOR_COLLECTION_BACKUP_ENTRY_COUNT = "backupEntryCount";
+    public static final String VECTOR_COLLECTION_OWNED_ENTRY_HEAP_MEMORY_COST = "ownedEntryHeapMemoryCost";
+    public static final String VECTOR_COLLECTION_BACKUP_ENTRY_HEAP_MEMORY_COST = "backupEntryHeapMemoryCost";
+    public static final String VECTOR_COLLECTION_HEAP_COST = "heapCost";
+    public static final String VECTOR_COLLECTION_BACKUP_COUNT = "backupCount";
+
+    public static final String VECTOR_COLLECTION_TOTAL_PUT_LATENCY = "totalPutLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_PUT_ALL_LATENCY = "totalPutAllLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_SET_LATENCY = "totalSetLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_GET_LATENCY = "totalGetLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_REMOVE_LATENCY = "totalRemoveLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_DELETE_LATENCY = "totalDeleteLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_MAX_PUT_LATENCY = "totalMaxPutLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_MAX_PUT_ALL_LATENCY = "totalMaxPutAllLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_MAX_SET_LATENCY = "totalMaxSetLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_MAX_GET_LATENCY = "totalMaxGetLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_MAX_REMOVE_LATENCY = "totalMaxRemoveLatency";
+    public static final String VECTOR_COLLECTION_TOTAL_MAX_DELETE_LATENCY = "totalMaxDeleteLatency";
+
+    public static final String VECTOR_COLLECTION_SEARCH_COUNT = "searchCount";
+    public static final String VECTOR_COLLECTION_SEARCH_RESULTS_COUNT = "searchResultsCount";
+    public static final String VECTOR_COLLECTION_TOTAL_SEARCH_LATENCY = "totalSearchLatency";
+    public static final String VECTOR_COLLECTION_MAX_SEARCH_LATENCY = "maxSearchLatency";
+
+    public static final String VECTOR_COLLECTION_OPTIMIZE_COUNT = "optimizeCount";
+    public static final String VECTOR_COLLECTION_TOTAL_OPTIMIZE_LATENCY = "totalOptimizeLatency";
+    public static final String VECTOR_COLLECTION_MAX_OPTIMIZE_LATENCY = "maxOptimizeLatency";
+
+    public static final String VECTOR_COLLECTION_CLEAR_COUNT = "clearCount";
+    public static final String VECTOR_COLLECTION_TOTAL_CLEAR_LATENCY = "totalClearLatency";
+    public static final String VECTOR_COLLECTION_MAX_CLEAR_LATENCY = "maxClearLatency";
+
+    public static final String VECTOR_COLLECTION_SIZE_COUNT = "sizeCount";
+    public static final String VECTOR_COLLECTION_TOTAL_SIZE_LATENCY = "totalSizeLatency";
+    public static final String VECTOR_COLLECTION_MAX_SIZE_LATENCY = "maxSizeLatency";
+
+    // ===[/VECTOR COLLECTION]=========================================================
+
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";
 
     private MetricDescriptorConstants() {
