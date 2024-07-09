@@ -38,9 +38,9 @@ public class JsonCdcSourceP extends CdcSourceP<Entry<String, String>> {
 
     @Nullable
     @Override
-    protected Entry<String, String> map(SourceRecord record) {
-        String keyJson = Values.convertToString(record.keySchema(), record.key());
-        String valueJson = Values.convertToString(record.valueSchema(), record.value());
+    protected Entry<String, String> map(SourceRecord sourceRecord) {
+        String keyJson = Values.convertToString(sourceRecord.keySchema(), sourceRecord.key());
+        String valueJson = Values.convertToString(sourceRecord.valueSchema(), sourceRecord.value());
         return entry(keyJson, valueJson);
     }
 }

@@ -57,19 +57,19 @@ public class CdcSerializerHooks {
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
-                    out.writeLong(record.timestamp());
-                    out.writeLong(record.sequenceSource());
-                    out.writeLong(record.sequenceValue());
-                    out.writeString(record.operation().code());
-                    out.writeString(record.getKeyJson());
-                    RecordPart oldValue = record.oldValue();
+                public void write(ObjectDataOutput out, ChangeRecordImpl changeRecord) throws IOException {
+                    out.writeLong(changeRecord.timestamp());
+                    out.writeLong(changeRecord.sequenceSource());
+                    out.writeLong(changeRecord.sequenceValue());
+                    out.writeString(changeRecord.operation().code());
+                    out.writeString(changeRecord.getKeyJson());
+                    RecordPart oldValue = changeRecord.oldValue();
                     out.writeString(oldValue == null ? null : oldValue.toJson());
-                    RecordPart newValue = record.newValue();
+                    RecordPart newValue = changeRecord.newValue();
                     out.writeString(newValue == null ? null : newValue.toJson());
-                    out.writeString(record.table());
-                    out.writeString(record.schema());
-                    out.writeString(record.database());
+                    out.writeString(changeRecord.table());
+                    out.writeString(changeRecord.schema());
+                    out.writeString(changeRecord.database());
                 }
 
                 @Override

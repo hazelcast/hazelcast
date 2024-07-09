@@ -93,10 +93,10 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             pipeline.readFrom(source)
                     .withNativeTimestamps(0)
                     .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
-                    .filter(record -> record.operation() != UNSPECIFIED)
-                    .map(record -> {
-                        Operation operation = record.operation();
-                        RecordPart value = record.value();
+                    .filter(changeRecord -> changeRecord.operation() != UNSPECIFIED)
+                    .map(changeRecord -> {
+                        Operation operation = changeRecord.operation();
+                        RecordPart value = changeRecord.value();
                         Customer customer = value.toObject(Customer.class);
                         return operation + ":" + customer;
                     })
@@ -265,11 +265,11 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             Pipeline pipeline = Pipeline.create();
             pipeline.readFrom(source)
                     .withNativeTimestamps(0)
-                    .filter(record -> record.operation() != UNSPECIFIED)
+                    .filter(changeRecord -> changeRecord.operation() != UNSPECIFIED)
                     .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
-                    .map(record -> {
-                        Operation operation = record.operation();
-                        RecordPart value = record.value();
+                    .map(changeRecord -> {
+                        Operation operation = changeRecord.operation();
+                        RecordPart value = changeRecord.value();
                         Customer customer = value.toObject(Customer.class);
                         return operation + ":" + customer;
                     })
@@ -422,7 +422,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .groupingKey(r -> r)
                     .mapStateful(
                             LongAccumulator::new,
-                            (acc, key, record) -> {
+                            (acc, key, changeRecord) -> {
                                 acc.add(1);
                                 return acc.get();
                             }

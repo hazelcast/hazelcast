@@ -173,11 +173,11 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
                 return false;
             }
 
-            for (SourceRecord record : records) {
-                Map<String, ?> partition = record.sourcePartition();
-                Map<String, ?> offset = record.sourceOffset();
+            for (SourceRecord sourceRecord : records) {
+                Map<String, ?> partition = sourceRecord.sourcePartition();
+                Map<String, ?> offset = sourceRecord.sourceOffset();
                 state.setOffset(partition, offset);
-                task.commitRecord(record, null);
+                task.commitRecord(sourceRecord, null);
             }
 
             if (!snapshotting && commitPeriod == 0) {
@@ -185,10 +185,10 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
             }
 
             traverser = Traversers.traverseIterable(records)
-                    .flatMap(record -> {
-                        T t = map(record);
+                    .flatMap(sourceRecord -> {
+                        T t = map(sourceRecord);
                         return t == null ? Traversers.empty() :
-                                eventTimeMapper.flatMapEvent(t, 0, extractTimestamp(record));
+                                eventTimeMapper.flatMapEvent(t, 0, extractTimestamp(sourceRecord));
                     });
             emitFromTraverser(traverser);
         } catch (InterruptedException ie) {
@@ -202,7 +202,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     @Nullable
-    protected abstract T map(SourceRecord record);
+    protected abstract T map(SourceRecord sourceRecord);
 
     private void reconnect(RuntimeException re) {
         if (reconnectTracker.shouldTryAgain()) {
@@ -507,8 +507,8 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
 
         @Override
-        protected void storeRecord(HistoryRecord record) throws DatabaseHistoryException {
-            history.add(DocumentWriter.defaultWriter().writeAsBytes(record.document()));
+        protected void storeRecord(HistoryRecord historyRecord) throws DatabaseHistoryException {
+            history.add(DocumentWriter.defaultWriter().writeAsBytes(historyRecord.document()));
         }
 
         @Override

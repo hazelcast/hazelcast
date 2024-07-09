@@ -53,17 +53,17 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
 
     @Nullable
     @Override
-    protected ChangeRecord map(SourceRecord record) {
-        if (record == null || record.topic().startsWith("__debezium")) {
+    protected ChangeRecord map(SourceRecord sourceRecord) {
+        if (sourceRecord == null || sourceRecord.topic().startsWith("__debezium")) {
             // internal Debezium messages about e.g. Heartbeat uses such topics
             return null;
         }
 
-        long sequenceSource = sequenceExtractor.source(record.sourcePartition(), record.sourceOffset());
-        long sequenceValue = sequenceExtractor.sequence(record.sourceOffset());
-        String keyJson = Values.convertToString(record.keySchema(), record.key());
-        Struct value = (Struct) record.value();
-        Schema valueSchema = record.valueSchema();
+        long sequenceSource = sequenceExtractor.source(sourceRecord.sourcePartition(), sourceRecord.sourceOffset());
+        long sequenceValue = sequenceExtractor.sequence(sourceRecord.sourceOffset());
+        String keyJson = Values.convertToString(sourceRecord.keySchema(), sourceRecord.key());
+        Struct value = (Struct) sourceRecord.value();
+        Schema valueSchema = sourceRecord.valueSchema();
 
         Struct source = (Struct) value.get("source");
 
