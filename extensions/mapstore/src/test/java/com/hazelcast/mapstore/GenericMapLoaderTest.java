@@ -148,8 +148,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         objectProvider.insertItems(spec, 1);
 
         mapLoader = createMapLoader(instances()[1]);
-        GenericRecord record = mapLoader.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapLoader.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     protected static void createMapping(String tableName, String mappingName) {
@@ -206,8 +206,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         GenericMapLoader<Object, GenericRecord> mapLoaderNonMaster = createMapLoader(instances()[1]);
         mapLoader = createMapLoader();
 
-        GenericRecord record = mapLoaderNonMaster.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapLoaderNonMaster.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     @Test
@@ -216,10 +216,10 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         objectProvider.insertItems(spec, 1);
 
         mapLoader = createMapLoader();
-        GenericRecord record = mapLoader.load(0);
+        GenericRecord genericRecord = mapLoader.load(0);
 
-        assertThat(record.getInt32("id")).isZero();
-        assertThat(record.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getInt32("id")).isZero();
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
     }
 
     @Test
@@ -244,12 +244,12 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         objectProvider.insertItems(spec, 1);
 
         mapLoader = createMapLoader();
-        GenericRecord record = mapLoader.load(0);
+        GenericRecord genericRecord = mapLoader.load(0);
 
-        assertThat(record.getInt32("id")).isZero();
-        assertThat(record.getString("name")).isEqualTo("name-0");
-        assertThat(record.getInt32("age")).isEqualTo(2);
-        assertThat(record.getString("address")).isEqualTo("address-0");
+        assertThat(genericRecord.getInt32("id")).isZero();
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getInt32("age")).isEqualTo(2);
+        assertThat(genericRecord.getString("address")).isEqualTo("address-0");
     }
 
     @Test
@@ -259,10 +259,10 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         objectProvider.insertItems(spec, 1);
 
         GenericMapLoader<String, GenericRecord> mapLoader = createMapLoader();
-        GenericRecord record = mapLoader.load("id-0");
+        GenericRecord genericRecord = mapLoader.load("id-0");
 
-        assertThat(record.getString("id")).isEqualTo("id-0");
-        assertThat(record.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getString("id")).isEqualTo("id-0");
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
         mapLoader.destroy();
     }
 
@@ -299,12 +299,12 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapLoader = createMapLoader(properties, hz);
 
-        GenericRecord record = mapLoader.load(0);
+        GenericRecord genericRecord = mapLoader.load(0);
 
-        assertThat(record.getInt32("id")).isZero();
-        assertThat(record.getString("name")).isEqualTo("name-0");
-        assertThat(record.getInt32("age")).isEqualTo(2);
-        assertThat(record.getFieldKind("address")).isEqualTo(NOT_AVAILABLE);
+        assertThat(genericRecord.getInt32("id")).isZero();
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getInt32("age")).isEqualTo(2);
+        assertThat(genericRecord.getFieldKind("address")).isEqualTo(NOT_AVAILABLE);
     }
 
     @Test
@@ -376,8 +376,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
 
         mapLoader = createMapLoader();
 
-        CompactGenericRecord record = (CompactGenericRecord) mapLoader.load(0);
-        assertThat(record.getSchema().getTypeName()).isEqualTo(mapName);
+        CompactGenericRecord genericRecord = (CompactGenericRecord) mapLoader.load(0);
+        assertThat(genericRecord.getSchema().getTypeName()).isEqualTo(mapName);
     }
 
     @Test
@@ -390,8 +390,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(TYPE_NAME_PROPERTY, "my.Person");
         mapLoader = createMapLoader(properties, hz);
 
-        CompactGenericRecord record = (CompactGenericRecord) mapLoader.load(0);
-        assertThat(record.getSchema().getTypeName()).isEqualTo("my.Person");
+        CompactGenericRecord genericRecord = (CompactGenericRecord) mapLoader.load(0);
+        assertThat(genericRecord.getSchema().getTypeName()).isEqualTo("my.Person");
     }
 
     @Test
@@ -403,10 +403,10 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapLoader = createMapLoader(properties, hz);
-        GenericRecord record = mapLoader.load(0);
+        GenericRecord genericRecord = mapLoader.load(0);
 
-        assertThat(record.getInt32("person-id")).isZero();
-        assertThat(record.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getInt32("person-id")).isZero();
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
     }
 
     @Test
@@ -434,8 +434,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(COLUMNS_PROPERTY, "name");
         mapLoader = createMapLoader(properties, hz);
 
-        GenericRecord record = mapLoader.load(0);
-        assertThat(record.getFieldKind("id")).isEqualTo(NOT_AVAILABLE);
+        GenericRecord genericRecord = mapLoader.load(0);
+        assertThat(genericRecord.getFieldKind("id")).isEqualTo(NOT_AVAILABLE);
 
         Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0));
         assertThat(records.get(0).getFieldKind("id")).isEqualTo(NOT_AVAILABLE);
@@ -446,8 +446,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         objectProvider.createObject(mapName, false);
         mapLoader = createMapLoader();
 
-        GenericRecord record = mapLoader.load(0);
-        assertThat(record).isNull();
+        GenericRecord genericRecord = mapLoader.load(0);
+        assertThat(genericRecord).isNull();
     }
 
     @Test
@@ -470,10 +470,10 @@ public class GenericMapLoaderTest extends SqlTestSupport {
 
         assertThat(records).containsKey(0);
 
-        GenericRecord record = records.values().iterator().next();
+        GenericRecord genericRecord = records.values().iterator().next();
         records.values().iterator().next();
-        assertThat(record.getInt32("id")).isZero();
-        assertThat(record.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getInt32("id")).isZero();
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
     }
 
     @Test
@@ -501,10 +501,10 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapLoader = createMapLoader(properties, hz);
-        GenericRecord record = mapLoader.loadAll(newArrayList(0)).get(0);
+        GenericRecord genericRecord = mapLoader.loadAll(newArrayList(0)).get(0);
 
-        assertThat(record.getInt32("person-id")).isZero();
-        assertThat(record.getString("name")).isEqualTo("name-0");
+        assertThat(genericRecord.getInt32("person-id")).isZero();
+        assertThat(genericRecord.getString("name")).isEqualTo("name-0");
     }
 
     @Test
@@ -728,8 +728,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapLoader = createMapLoader(properties, hz);
 
-        GenericRecord record = mapLoader.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapLoader.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     @Test
@@ -749,8 +749,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
         mapLoader = createMapLoader(properties, hz);
 
-        GenericRecord record = mapLoader.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapLoader.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     @Test
@@ -773,8 +773,8 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
         mapLoader = createMapLoader(properties, hz);
 
-        GenericRecord record = mapLoader.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapLoader.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     private <K, V> GenericMapLoader<K, V> createMapLoader() {

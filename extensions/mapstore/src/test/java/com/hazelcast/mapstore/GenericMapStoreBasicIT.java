@@ -117,8 +117,8 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         objectProvider.insertItems(spec, 1);
 
         mapStore = createMapStore(instances()[1]);
-        GenericRecord record = mapStore.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapStore.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     @Test
@@ -184,8 +184,8 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         GenericMapStore<Object, GenericRecord> mapStoreNonMaster = createMapStore(instances()[1]);
         mapStore = createMapStore();
 
-        GenericRecord record = mapStoreNonMaster.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapStoreNonMaster.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     @Test
@@ -394,8 +394,8 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapStore = createMapStore(properties, hz);
 
-        GenericRecord record = mapStore.load(0);
-        assertThat(record).isNotNull();
+        GenericRecord genericRecord = mapStore.load(0);
+        assertThat(genericRecord).isNotNull();
     }
 
     @Test
