@@ -124,7 +124,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(name -> Person.newBuilder().setName(name).build())
                 .groupingKey(identity())
                 .filterUsingService(sharedService(ctx -> null), (s, k, v) -> true)
-                .map(person -> person.getName())
+                .map(Person::getName)
                 .writeTo(AssertionSinks.assertAnyOrder(input));
 
         client().getJet().newJob(

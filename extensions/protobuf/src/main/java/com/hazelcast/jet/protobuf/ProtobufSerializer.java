@@ -99,7 +99,7 @@ public abstract class ProtobufSerializer<T extends GeneratedMessageV3> implement
     }
 
     /**
-     * An utility method that creates an anonymous {@link ProtobufSerializer}.
+     * A utility method that creates an anonymous {@link ProtobufSerializer}.
      *
      * @param clazz  {@link GeneratedMessageV3} type of created serializer
      * @param typeId unique type id of created serializer
@@ -108,7 +108,7 @@ public abstract class ProtobufSerializer<T extends GeneratedMessageV3> implement
      */
     @Nonnull
     public static <T extends GeneratedMessageV3> ProtobufSerializer<T> from(@Nonnull Class<T> clazz, int typeId) {
-        return new ProtobufSerializer<T>(clazz, typeId) {
+        return new ProtobufSerializer<>(clazz, typeId) {
         };
     }
 }
