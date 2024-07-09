@@ -42,6 +42,12 @@ public class NoOpClientCPGroupViewService implements ClientCPGroupViewService {
         return null;
     }
 
+    @Nullable
+    @Override
+    public UUID getLastKnownMetadataLeader() {
+        return null;
+    }
+
     @Override
     public void setLastKnownLeader(CPGroupId groupId, UUID leaderUuid) {
 

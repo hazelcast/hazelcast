@@ -49,6 +49,13 @@ public interface ClientCPGroupViewService extends ConnectionListener {
     UUID getLastKnownLeader(CPGroupId groupId);
 
     /**
+     * Retrieves the {@link UUID} of the last known Leader of the METADATA {@link CPGroupId}.
+     * @return the {@link UUID} of the last known leader for the METADATA group if it exists, or {@code null} otherwise
+     */
+    @Nullable
+    UUID getLastKnownMetadataLeader();
+
+    /**
      * Updates the internal mapping to set the provided {@link UUID} as
      * the leader of the provided {@link CPGroupId}. Primarily used
      * for testing purposes.
