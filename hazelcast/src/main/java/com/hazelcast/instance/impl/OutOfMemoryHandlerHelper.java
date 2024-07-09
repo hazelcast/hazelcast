@@ -59,7 +59,8 @@ public final class OutOfMemoryHandlerHelper {
         HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
         closeSockets(factory);
         try {
-            factory.node.shutdown(true);
+            // TODO or go through LifecycleService.terminate?
+            NodeShutdownHelper.shutdownNodeByFiringEvents(factory.node, true);
         } catch (Throwable ignored) {
             ignore(ignored);
         }
