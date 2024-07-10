@@ -177,6 +177,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -243,16 +244,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private ReplicatedMap<Object, Object> replicatedMap;
 
     @Autowired
-    private IQueue<Object> queue;
+    @Qualifier(value = "queue")
+    private IQueue<?> queue;
 
     @Autowired
-    private ITopic<Object> topic;
+    @Qualifier(value = "topic")
+    private ITopic<?> topic;
 
     @Autowired
-    private ISet<Object> set;
+    @Qualifier(value = "set")
+    private ISet<?> set;
 
     @Autowired
-    private IList<Object> list;
+    @Qualifier(value = "list")
+    private IList<?> list;
 
     @Autowired
     private ExecutorService executorService;
@@ -268,11 +273,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Autowired
     private QueueStore<Object> dummyQueueStore;
+
     @Autowired
     private QueueStoreFactory<Object> dummyQueueStoreFactory;
 
     @Autowired
     private RingbufferStore<Object> dummyRingbufferStore;
+
     @Autowired
     private RingbufferStoreFactory<Object> dummyRingbufferStoreFactory;
 
@@ -338,7 +345,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("PutIfAbsentMergePolicy", wanRef.getMergePolicyClassName());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
-        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(Boolean.TRUE, cacheConfig.getMerkleTreeConfig().getEnabled());
         assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
     }
 
@@ -359,7 +366,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(EvictionPolicy.NONE, testMapConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(Integer.MAX_VALUE, testMapConfig.getEvictionConfig().getSize());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
-        assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(Boolean.TRUE, testMapConfig.getMerkleTreeConfig().getEnabled());
         assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
         assertTrue(testMapConfig.getDataPersistenceConfig().isEnabled());
         assertTrue(testMapConfig.getDataPersistenceConfig().isFsync());
@@ -1105,9 +1112,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testConfigListeners() {
         assertNotNull(membershipListener);
-        List<ListenerConfig> list = config.getListenerConfigs();
-        assertEquals(2, list.size());
-        for (ListenerConfig lc : list) {
+        List<ListenerConfig> listenerConfigList = config.getListenerConfigs();
+        assertEquals(2, listenerConfigList.size());
+        for (ListenerConfig lc : listenerConfigList) {
             if (lc.getClassName() != null) {
                 assertNull(lc.getImplementation());
                 assertEquals(DummyMembershipListener.class.getName(), lc.getClassName());
@@ -1231,8 +1238,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testNativeMemoryConfig() {
         NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(GIGABYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(GIGABYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
