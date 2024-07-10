@@ -67,8 +67,7 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
     @Override
     @Test
     public void testVariableReplacementFromProperties() {
-        String xml = ""
-                + HAZELCAST_CLIENT_FAILOVER_START_TAG
+        String xml = HAZELCAST_CLIENT_FAILOVER_START_TAG
                 + "  <clients>"
                 + "    <client>hazelcast-client-c1.xml</client>\n"
                 + "    <client>hazelcast-client-c2.xml</client>\n"
@@ -85,8 +84,7 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
     @Override
     @Test
     public void testVariableReplacementFromSystemProperties() {
-        String xml = ""
-                + HAZELCAST_CLIENT_FAILOVER_START_TAG
+        String xml = HAZELCAST_CLIENT_FAILOVER_START_TAG
                 + "  <clients>"
                 + "    <client>hazelcast-client-c1.xml</client>\n"
                 + "    <client>hazelcast-client-c2.xml</client>\n"
