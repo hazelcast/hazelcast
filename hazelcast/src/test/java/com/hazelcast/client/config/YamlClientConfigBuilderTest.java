@@ -104,8 +104,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
-        String yaml = ""
-                + "hazelcast-client:\n"
+        String yaml = "hazelcast-client:\n"
                 + "  cluster-name: foobar";
 
         File file = File.createTempFile("foo", ".yaml");
@@ -123,14 +122,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
+    public void loadingThroughSystemProperty_nonExistingClasspathResource() {
         System.setProperty("hazelcast.client.config", "classpath:idontexist.yaml");
         new YamlClientConfigBuilder();
     }
 
     @Override
     @Test
-    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
+    public void loadingThroughSystemProperty_existingClasspathResource() {
         System.setProperty("hazelcast.client.config", "classpath:test-hazelcast-client.yaml");
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
@@ -147,12 +146,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testFlakeIdGeneratorConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  flake-id-generator:\n"
-                + "    gen:\n"
-                + "      prefetch-count: 3\n"
-                + "      prefetch-validity-millis: 10";
+        String yaml = """
+              hazelcast-client:
+                flake-id-generator:
+                  gen:
+                    prefetch-count: 3
+                    prefetch-validity-millis: 10
+              """;
+
         ClientConfig config = buildConfig(yaml);
         ClientFlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
         assertEquals("gen", fConfig.getName());
@@ -163,13 +164,15 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testSecurityConfig_onlyFactory() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  security:\n"
-                + "    credentials-factory:\n"
-                + "      class-name: com.hazelcast.examples.MyCredentialsFactory\n"
-                + "      properties:\n"
-                + "        property: value";
+        String yaml = """
+              hazelcast-client:
+                security:
+                  credentials-factory:
+                    class-name: com.hazelcast.examples.MyCredentialsFactory
+                    properties:
+                      property: value
+              """;
+
         ClientConfig config = buildConfig(yaml);
         ClientSecurityConfig securityConfig = config.getSecurityConfig();
         CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
@@ -181,8 +184,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastClientTagAppearsTwice() {
-        String yaml = ""
-                + "hazelcast-client: {}\n"
+        String yaml = "hazelcast-client: {}\n"
                 + "hazelcast-client: {}";
         buildConfig(yaml);
     }
@@ -191,8 +193,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testNearCacheInMemoryFormatNative_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
-        String yaml = ""
-                + "hazelcast-client:\n"
+        String yaml = "hazelcast-client:\n"
                 + "  near-cache:\n"
                 + "    " + mapName + ":\n"
                 + "      in-memory-format: NATIVE\n"
@@ -208,21 +209,22 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testNearCacheEvictionPolicy() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  near-cache:\n"
-                + "    lfu:\n"
-                + "      eviction:\n"
-                + "        eviction-policy: LFU\n"
-                + "    lru:\n"
-                + "      eviction:\n"
-                + "        eviction-policy: LRU\n"
-                + "    none:\n"
-                + "      eviction:\n"
-                + "        eviction-policy: NONE\n"
-                + "    random:\n"
-                + "      eviction:\n"
-                + "        eviction-policy: RANDOM";
+        String yaml = """
+              hazelcast-client:
+                near-cache:
+                  lfu:
+                    eviction:
+                      eviction-policy: LFU
+                  lru:
+                    eviction:
+                      eviction-policy: LRU
+                  none:
+                    eviction:
+                      eviction-policy: NONE
+                  random:
+                    eviction:
+                      eviction-policy: RANDOM
+              """;
 
         ClientConfig clientConfig = buildConfig(yaml);
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfu", clientConfig));
@@ -234,15 +236,16 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testClientUserCodeDeploymentConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  user-code-deployment:\n"
-                + "    enabled: true\n"
-                + "    jarPaths:\n"
-                + "      - /User/test/test.jar\n"
-                + "    classNames:\n"
-                + "      - test.testClassName\n"
-                + "      - test.testClassName2";
+        String yaml = """
+              hazelcast-client:
+                user-code-deployment:
+                  enabled: true
+                  jarPaths:
+                    - /User/test/test.jar
+                  classNames:
+                    - test.testClassName
+                    - test.testClassName2
+              """;
 
         ClientConfig clientConfig = buildConfig(yaml);
         ClientUserCodeDeploymentConfig userCodeDeploymentConfig = clientConfig.getUserCodeDeploymentConfig();
@@ -259,10 +262,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testReliableTopic_defaults() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  reliable-topic:\n"
-                + "    rel-topic: {}";
+        String yaml = """
+              hazelcast-client:
+                reliable-topic:
+                  rel-topic: {}
+              """;
 
         ClientConfig config = buildConfig(yaml);
         ClientReliableTopicConfig reliableTopicConfig = config.getReliableTopicConfig("rel-topic");
@@ -274,37 +278,38 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testQueryCacheBothPredicateDefinedThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  query-caches:\n"
-                + "    query-cache-name:\n"
-                + "      map-name: map-name\n"
-                + "      predicate:\n"
-                + "        class-name: com.hazelcast.example.Predicate\n"
-                + "        sql: \"%age=40\"";
-
+        String yaml = """
+              hazelcast-client:
+                query-caches:
+                  query-cache-name:
+                    map-name: map-name
+                    predicate:
+                      class-name: com.hazelcast.example.Predicate
+                      sql: "%age=40"
+              """;
         buildConfig(yaml);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testQueryCacheNoPredicateDefinedThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  query-caches:\n"
-                + "    query-cache-name:\n"
-                + "      predicate: {}";
-
+        String yaml = """
+              hazelcast-client:
+                query-caches:
+                  query-cache-name:
+                    predicate: {}
+              """;
         buildConfig(yaml);
     }
 
     @Override
     @Test
     public void testLoadBalancerRandom() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  load-balancer:\n"
-                + "    type: random";
+        String yaml = """
+              hazelcast-client:
+                load-balancer:
+                  type: random
+              """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -315,10 +320,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testLoadBalancerRoundRobin() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  load-balancer:\n"
-                + "    type: round-robin";
+        String yaml = """
+              hazelcast-client:
+                load-balancer:
+                  type: round-robin
+              """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -329,11 +335,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testLoadBalancerCustom() {
-        String yaml = ""
-                      + "hazelcast-client:\n"
-                      + "  load-balancer:\n"
-                      + "    type: custom\n"
-                      + "    class-name: com.hazelcast.client.test.CustomLoadBalancer\n";
+        String yaml = """
+              hazelcast-client:
+                load-balancer:
+                  type: custom
+                  class-name: com.hazelcast.client.test.CustomLoadBalancer
+              """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -343,31 +350,33 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Test
     public void testNullInMapThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  group:\n"
-                + "  name: instanceName";
+        String yaml = """
+                hazelcast-client:
+                  group:
+                  name: instanceName
+                """;
 
         assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/group"));
     }
 
     @Test
     public void testNullInSequenceThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  client-labels:\n"
-                + "    - admin\n"
-                + "    -\n";
+        String yaml = """
+              hazelcast-client:
+                client-labels:
+                  - admin
+                  -
+              """;
 
         assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/client-labels"));
     }
 
     @Test
     public void testExplicitNullScalarThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  group:\n"
-                + "   name: !!null";
+        String yaml = """
+                hazelcast-client:
+                  group:
+                   name: !!null""";
 
         assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/group/name"));
     }
@@ -375,10 +384,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testWhitespaceInNonSpaceStrings() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  load-balancer:\n"
-                + "    type:   random   \n";
+        String yaml = """
+                hazelcast-client:
+                  load-balancer:
+                    type:   random  \s
+                """;
 
         buildConfig(yaml);
     }
@@ -386,12 +396,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testTokenIdentityConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  security:\n"
-                + "    token:\n"
-                + "      encoding: base64\n"
-                + "      value: SGF6ZWxjYXN0\n";
+        String yaml = """
+                hazelcast-client:
+                  security:
+                    token:
+                      encoding: base64
+                      value: SGF6ZWxjYXN0
+                """;
 
         ClientConfig config = buildConfig(yaml);
         TokenIdentityConfig tokenIdentityConfig = config.getSecurityConfig().getTokenIdentityConfig();
@@ -403,17 +414,18 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testKerberosIdentityConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  security:\n"
-                + "    kerberos:\n"
-                + "      realm: HAZELCAST.COM\n"
-                + "      principal: jduke\n"
-                + "      keytab-file: /opt/jduke.keytab\n"
-                + "      security-realm: krb5Initiator\n"
-                + "      service-name-prefix: hz/\n"
-                + "      use-canonical-hostname: true\n"
-                + "      spn: hz/127.0.0.1@HAZELCAST.COM\n";
+        String yaml = """
+                hazelcast-client:
+                  security:
+                    kerberos:
+                      realm: HAZELCAST.COM
+                      principal: jduke
+                      keytab-file: /opt/jduke.keytab
+                      security-realm: krb5Initiator
+                      service-name-prefix: hz/
+                      use-canonical-hostname: true
+                      spn: hz/127.0.0.1@HAZELCAST.COM
+                """;
 
         ClientConfig config = buildConfig(yaml);
         KerberosIdentityConfig identityConfig = config.getSecurityConfig().getKerberosIdentityConfig();
@@ -430,13 +442,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testMetricsConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  metrics:\n"
-                + "    enabled: false\n"
-                + "    jmx:\n"
-                + "      enabled: false\n"
-                + "    collection-frequency-seconds: 10\n";
+        String yaml = """
+                hazelcast-client:
+                  metrics:
+                    enabled: false
+                    jmx:
+                      enabled: false
+                    collection-frequency-seconds: 10
+                """;
         ClientConfig config = buildConfig(yaml);
         ClientMetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
@@ -446,12 +459,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testInstanceTrackingConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  instance-tracking:\n"
-                + "    enabled: true\n"
-                + "    file-name: /dummy/file\n"
-                + "    format-pattern: dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}";
+        String yaml = """
+                hazelcast-client:
+                  instance-tracking:
+                    enabled: true
+                    file-name: /dummy/file
+                    format-pattern: dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}""";
         ClientConfig config = buildConfig(yaml);
         InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
         assertTrue(trackingConfig.isEnabled());
@@ -463,10 +476,10 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testMetricsConfigMasterSwitchDisabled() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  metrics:\n"
-                + "    enabled: false";
+        String yaml = """
+                hazelcast-client:
+                  metrics:
+                    enabled: false""";
         ClientConfig config = buildConfig(yaml);
         ClientMetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
@@ -476,11 +489,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testMetricsConfigJmxDisabled() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  metrics:\n"
-                + "    jmx:\n"
-                + "      enabled: false";
+        String yaml = """
+                hazelcast-client:
+                  metrics:
+                    jmx:
+                      enabled: false""";
         ClientConfig config = buildConfig(yaml);
         ClientMetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
@@ -489,17 +502,17 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Test
     public void nativeMemory() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    enabled: true\n"
-                + "    allocator-type: STANDARD\n"
-                + "    min-block-size: 32\n"
-                + "    page-size: 24\n"
-                + "    capacity:\n"
-                + "      unit: BYTES\n"
-                + "      value: 256\n"
-                + "    metadata-space-percentage: 70";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    enabled: true
+                    allocator-type: STANDARD
+                    min-block-size: 32
+                    page-size: 24
+                    capacity:
+                      unit: BYTES
+                      value: 256
+                    metadata-space-percentage: 70""";
 
         ClientConfig config = buildConfig(yaml);
 
@@ -515,16 +528,16 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Test
     public void testPersistentMemoryDirectoryConfiguration() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      directories:\n"
-                + "        - directory: /mnt/pmem0\n"
-                + "          numa-node: 0\n"
-                + "        - directory: /mnt/pmem1\n"
-                + "          numa-node: 1\n";
-
+        String yaml = """
+              hazelcast-client:
+                native-memory:
+                  persistent-memory:
+                    directories:
+                      - directory: /mnt/pmem0
+                        numa-node: 0
+                      - directory: /mnt/pmem1
+                        numa-node: 1
+              """;
         ClientConfig config = buildConfig(yaml);
         List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
                                                                        .getPersistentMemoryConfig()
@@ -540,10 +553,10 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Test
     public void testPersistentMemoryDirectoryConfigurationSimple() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory-directory: /mnt/pmem0";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory-directory: /mnt/pmem0""";
 
         ClientConfig config = buildConfig(yaml);
         PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
@@ -559,15 +572,16 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testPersistentMemoryDirectoryConfiguration_uniqueDirViolationThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      directories:\n"
-                + "        - directory: /mnt/pmem0\n"
-                + "          numa-node: 0\n"
-                + "        - directory: /mnt/pmem0\n"
-                + "          numa-node: 1\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      directories:
+                        - directory: /mnt/pmem0
+                          numa-node: 0
+                        - directory: /mnt/pmem0
+                          numa-node: 1
+                """;
 
         buildConfig(yaml);
     }
@@ -575,15 +589,16 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testPersistentMemoryDirectoryConfiguration_uniqueNumaNodeViolationThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      directories:\n"
-                + "        - directory: /mnt/pmem0\n"
-                + "          numa-node: 0\n"
-                + "        - directory: /mnt/pmem1\n"
-                + "          numa-node: 0\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      directories:
+                        - directory: /mnt/pmem0
+                          numa-node: 0
+                        - directory: /mnt/pmem1
+                          numa-node: 0
+                """;
 
         buildConfig(yaml);
     }
@@ -591,14 +606,15 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testPersistentMemoryDirectoryConfiguration_numaNodeConsistencyViolationThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      directories:\n"
-                + "        - directory: /mnt/pmem0\n"
-                + "          numa-node: 0\n"
-                + "        - directory: /mnt/pmem1\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      directories:
+                        - directory: /mnt/pmem0
+                          numa-node: 0
+                        - directory: /mnt/pmem1
+                """;
 
         buildConfig(yaml);
     }
@@ -606,15 +622,16 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory-directory: /mnt/optane\n"
-                + "    persistent-memory:\n"
-                + "      enabled: false\n"
-                + "      directories:\n"
-                + "        - directory: /mnt/pmem0\n"
-                + "        - directory: /mnt/pmem1\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory-directory: /mnt/optane
+                    persistent-memory:
+                      enabled: false
+                      directories:
+                        - directory: /mnt/pmem0
+                        - directory: /mnt/pmem1
+                """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -638,11 +655,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test
     public void testPersistentMemoryConfiguration_SystemMemoryMode() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      mode: SYSTEM_MEMORY\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      mode: SYSTEM_MEMORY
+                """;
 
         ClientConfig config = buildConfig(yaml);
         PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
@@ -652,11 +670,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testPersistentMemoryConfiguration_NotExistingModeThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      mode: NOT_EXISTING_MODE\n";
+        String yaml = """
+              hazelcast-client:
+                native-memory:
+                  persistent-memory:
+                    mode: NOT_EXISTING_MODE
+              """;
 
         buildConfig(yaml);
     }
@@ -664,12 +683,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     @Override
     public void testNativeMemoryConfiguration_isBackwardCompatible() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    capacity:\n"
-                + "      value: 1337\n"
-                + "      unit: GIGABYTES\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    capacity:
+                      value: 1337
+                      unit: GIGABYTES
+                """;
 
         ClientConfig clientConfig = buildConfig(yaml);
         assertThat(clientConfig.getNativeMemoryConfig().getCapacity())
@@ -679,25 +699,27 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  native-memory:\n"
-                + "    persistent-memory:\n"
-                + "      mode: SYSTEM_MEMORY\n"
-                + "      directories:\n"
-                + "        - directory: /mnt/pmem0\n";
+        String yaml = """
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      mode: SYSTEM_MEMORY
+                      directories:
+                        - directory: /mnt/pmem0
+                """;
 
         buildConfig(yaml);
     }
 
     @Override
     public void testCompactSerialization_serializerRegistration() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            serializers:\n"
-                + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            serializers:
+                                - serializer: example.serialization.SerializableEmployeeDTOSerializer
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         CompactTestUtil.verifyExplicitSerializerIsUsed(config);
@@ -705,12 +727,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_classRegistration() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            classes:\n"
-                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            classes:
+                                - class: example.serialization.ExternalizableEmployeeDTO
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
@@ -718,14 +741,15 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_serializerAndClassRegistration() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            serializers:\n"
-                + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n"
-                + "            classes:\n"
-                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            serializers:
+                                - serializer: example.serialization.SerializableEmployeeDTOSerializer
+                            classes:
+                                - class: example.serialization.ExternalizableEmployeeDTO
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         CompactTestUtil.verifyExplicitSerializerIsUsed(config);
@@ -734,13 +758,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_duplicateSerializerRegistration() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            serializers:\n"
-                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
-                + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            serializers:
+                                - serializer: example.serialization.EmployeeDTOSerializer
+                                - serializer: example.serialization.EmployeeDTOSerializer
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -750,13 +775,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_duplicateClassRegistration() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            classes:\n"
-                + "                - class: example.serialization.ExternalizableEmployeeDTO\n"
-                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            classes:
+                                - class: example.serialization.ExternalizableEmployeeDTO
+                                - class: example.serialization.ExternalizableEmployeeDTO
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -766,13 +792,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_registrationsWithDuplicateClasses() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            serializers:\n"
-                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
-                + "                - serializer: example.serialization.SameClassEmployeeDTOSerializer\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            serializers:
+                                - serializer: example.serialization.EmployeeDTOSerializer
+                                - serializer: example.serialization.SameClassEmployeeDTOSerializer
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -783,13 +810,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            serializers:\n"
-                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
-                + "                - serializer: example.serialization.SameTypeNameEmployeeDTOSerializer\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            serializers:
+                                - serializer: example.serialization.EmployeeDTOSerializer
+                                - serializer: example.serialization.SameTypeNameEmployeeDTOSerializer
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -800,12 +828,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_withInvalidSerializer() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            serializers:\n"
-                + "                - serializer: does.not.exist.FooSerializer\n";
+        String yaml = """
+                hazelcast-client:
+                    serialization:
+                        compact-serialization:
+                            serializers:
+                                - serializer: does.not.exist.FooSerializer
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -815,12 +844,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testCompactSerialization_withInvalidCompactSerializableClass() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            classes:\n"
-                + "                - class: does.not.exist.Foo\n";
+        String yaml = """
+              hazelcast-client:
+                serialization:
+                  compact-serialization:
+                    classes:
+                      - class: does.not.exist.Foo
+              """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -843,11 +873,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Override
     public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToMultiMemberRoutingConfig() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  network:\n"
-                + "    cluster-routing:\n"
-                + "      mode: MULTI_MEMBER\n";
+        String yaml = """
+              hazelcast-client:
+                network:
+                  cluster-routing:
+                    mode: MULTI_MEMBER
+              """;
 
         ClientConfig clientConfig = buildConfig(yaml);
 
