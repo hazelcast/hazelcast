@@ -61,7 +61,7 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
-                <version>2.20.95</version>
+                <version>${aws.sdk2.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

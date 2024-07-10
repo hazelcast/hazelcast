@@ -27,6 +27,7 @@ import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.io.OutputFile;
+import org.apache.parquet.util.AutoCloseables.ParquetCloseResourceException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -149,6 +150,9 @@ final class FileUtil {
                 .withDictionaryEncoding(false)
                 .build()) {
             writer.write(PARQUET_RECORD);
+        } catch (ParquetCloseResourceException ignored) {
+            // https://issues.apache.org/jira/browse/PARQUET-2496
+            // https://github.com/apache/parquet-java/issues/2935
         }
     }
 }

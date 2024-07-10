@@ -68,7 +68,7 @@
         <maven.assembly.plugin.version>3.5.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
+        <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.5.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
@@ -94,12 +94,13 @@
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
         <aws.sdk.version>1.12.688</aws.sdk.version>
+        <aws.sdk2.version>2.24.13</aws.sdk2.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.158</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.60.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
-        <hadoop.version>3.3.5</hadoop.version>
+        <hadoop.version>3.4.0</hadoop.version>
         <h2.version>2.1.214</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.15.2</jackson.version>
@@ -119,7 +120,7 @@
         <netty.version>4.1.100.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.13.0</parquet.version>
+        <parquet.version>1.14.1</parquet.version>
         <picocli.version>4.7.3</picocli.version>
         <postgresql.version>42.7.3</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
@@ -527,6 +528,7 @@
                                 -->
                                 <includedLicense>Apache-2.0</includedLicense>
                                 <includedLicense>MIT</includedLicense>
+                                <includedLicense>MIT-0</includedLicense>
                                 <includedLicense>BSD-2-Clause</includedLicense>
                                 <includedLicense>BSD-3-Clause</includedLicense>
                                 <includedLicense>CC0-1.0</includedLicense>
@@ -1897,6 +1899,11 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bundle</artifactId>
                 <version>${aws.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bundle</artifactId>
+                <version>${aws.sdk2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
