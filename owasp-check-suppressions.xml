@@ -146,4 +146,18 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-mapred@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
     </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive - it takes it as Hadoop 1.2.0
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_21@1.2.0$</packageUrl>
+       <cpe>cpe:/a:apache:hadoop</cpe>
+    </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive - it takes it as Hadoop 1.2.0
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_21@1.2.0$</packageUrl>
+       <cpe>cpe:/a:protobuf:protobuf</cpe>
+    </suppress>
 </suppressions>
