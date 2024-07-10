@@ -79,12 +79,13 @@
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
         <aws.sdk.version>1.12.756</aws.sdk.version>
+        <aws.sdk2.version>2.26.15</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.174</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <new.debezium.version>2.6.0.Final</new.debezium.version>
         <grpc.version>1.60.0</grpc.version>
-        <hadoop.version>3.3.6</hadoop.version>
+        <hadoop.version>3.4.0</hadoop.version>
         <h2.version>2.2.224</h2.version>
         <gson.version>2.10.1</gson.version>
         <jackson.version>2.17.1</jackson.version>
@@ -102,7 +103,7 @@
         <objenesis.version>3.3</objenesis.version>
         <oracle.version>23.4.0.24.05</oracle.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.13.1</parquet.version>
+        <parquet.version>1.14.1</parquet.version>
         <picocli.version>4.7.6</picocli.version>
         <postgresql.version>42.7.3</postgresql.version>
         <prometheus.version>0.20.0</prometheus.version>
@@ -456,6 +457,11 @@
                 <version>${aws.sdk.version}</version>
             </dependency>
             <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bundle</artifactId>
+                <version>${aws.sdk2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
                 <version>${avro.version}</version>
@@ -486,6 +492,7 @@
                 <groupId>org.jline</groupId>
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
+                <classifier>jdk8</classifier>
             </dependency>
             <dependency>
                 <groupId>org.checkerframework</groupId>

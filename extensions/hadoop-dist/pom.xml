@@ -110,6 +110,10 @@
                     <groupId>com.google.re2j</groupId>
                     <artifactId>re2j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
