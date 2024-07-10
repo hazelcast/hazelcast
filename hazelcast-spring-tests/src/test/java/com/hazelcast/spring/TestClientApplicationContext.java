@@ -212,23 +212,23 @@ public class TestClientApplicationContext {
 
     @Autowired
     @Qualifier(value = "multiMap")
-    private MultiMap multiMap;
+    private MultiMap<?, ?> multiMap;
 
     @Autowired
     @Qualifier(value = "queue")
-    private IQueue queue;
+    private IQueue<?> queue;
 
     @Autowired
     @Qualifier(value = "topic")
-    private ITopic topic;
+    private ITopic<?> topic;
 
     @Autowired
     @Qualifier(value = "set")
-    private ISet set;
+    private ISet<?> set;
 
     @Autowired
     @Qualifier(value = "list")
-    private IList list;
+    private IList<?> list;
 
     @Autowired
     @Qualifier(value = "executorService")
@@ -236,7 +236,7 @@ public class TestClientApplicationContext {
 
     @Autowired
     @Qualifier(value = "reliableTopic")
-    private ITopic reliableTopic;
+    private ITopic<?> reliableTopic;
 
     @Autowired
     private Credentials credentials;
@@ -276,10 +276,10 @@ public class TestClientApplicationContext {
         assertFalse(serConf.isUseNativeByteOrder());
         assertEquals(10, serConf.getPortableVersion());
 
-        Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
-        assertNotNull(map1);
-        assertTrue(map1.containsKey(1));
-        assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
+        Map<Integer, String> dataSerializableFactoryClasses = serConf.getDataSerializableFactoryClasses();
+        assertNotNull(dataSerializableFactoryClasses);
+        assertTrue(dataSerializableFactoryClasses.containsKey(1));
+        assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", dataSerializableFactoryClasses.get(1));
 
         Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
         assertNotNull(portableFactoryClasses);
@@ -614,8 +614,8 @@ public class TestClientApplicationContext {
         NativeMemoryConfig nativeMemoryConfig = nativeMemoryClient.getClientConfig().getNativeMemoryConfig();
 
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
@@ -638,8 +638,8 @@ public class TestClientApplicationContext {
         NativeMemoryConfig nativeMemoryConfig = pmemSystemMemoryClient.getClientConfig().getNativeMemoryConfig();
 
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
