@@ -30,14 +30,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Arrays;
 
@@ -45,28 +46,28 @@ import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"advancedNetworkConfig-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestAdvancedNetworkApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         HazelcastInstanceFactory.terminateAll();
     }
 
 
     @Test
-    public void testAdvancedNetworkConfig() {
+    void testAdvancedNetworkConfig() {
         Config config = instance.getConfig();
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         assertTrue(advancedNetworkConfig.isEnabled());

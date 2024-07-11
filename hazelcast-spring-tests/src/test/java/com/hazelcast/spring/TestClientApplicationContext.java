@@ -67,17 +67,16 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -91,15 +90,16 @@ import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestClientApplicationContext {
 
     @Autowired
@@ -241,15 +241,15 @@ public class TestClientApplicationContext {
     @Autowired
     private Credentials credentials;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testClient() {
+    void testClient() {
         assertNotNull(client);
         assertNotNull(client2);
         assertNotNull(client3);
@@ -305,7 +305,7 @@ public class TestClientApplicationContext {
 
         LoadBalancer loadBalancer = config3.getLoadBalancer();
         assertNotNull(loadBalancer);
-        assertTrue(loadBalancer instanceof RoundRobinLB);
+        assertInstanceOf(RoundRobinLB.class, loadBalancer);
 
         NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
         assertNotNull(nearCacheConfig);
@@ -320,7 +320,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testAwsClientConfig() {
+    void testAwsClientConfig() {
         assertNotNull(client4);
         ClientConfig config = client4.getClientConfig();
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
@@ -337,7 +337,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testUnlimitedConnectionAttempt() {
+    void testUnlimitedConnectionAttempt() {
         assertNotNull(client5);
 
         ClientConfig config = client5.getClientConfig();
@@ -345,7 +345,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testSecurityRealms() {
+    void testSecurityRealms() {
         assertNotNull(client5);
 
         RealmConfig realmConfig = client5.getClientConfig().getSecurityConfig().getRealmConfig("krb5Initiator");
@@ -359,7 +359,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testHazelcastInstances() {
+    void testHazelcastInstances() {
         assertNotNull(map1);
         assertNotNull(map2);
         assertNotNull(multiMap);
@@ -380,7 +380,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testDefaultSerializationConfig() {
+    void testDefaultSerializationConfig() {
         ClientConfig config7 = client7.getClientConfig();
         SerializationConfig serConf = config7.getSerializationConfig();
 
@@ -395,7 +395,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testOverrideDefaultSerializersSerializationConfig() {
+    void testOverrideDefaultSerializersSerializationConfig() {
         final ClientConfig config = clientWithOverriddenDefaultSerializers.getClientConfig();
         final SerializationConfig serializationConfig = config.getSerializationConfig();
 
@@ -403,7 +403,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void tesCompactSerializationConfig() {
+    void tesCompactSerializationConfig() {
         CompactSerializationConfig compactSerializationConfig = clientWithCompactSerialization.getClientConfig()
                 .getSerializationConfig()
                 .getCompactSerializationConfig();
@@ -426,7 +426,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testClientNearCacheEvictionPolicies() {
+    void testClientNearCacheEvictionPolicies() {
         ClientConfig config = client3.getClientConfig();
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCacheEviction", config));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEviction", config));
@@ -435,7 +435,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testNearCachePreloader() {
+    void testNearCachePreloader() {
         NearCachePreloaderConfig preloaderConfig = client3.getClientConfig()
                 .getNearCacheConfig("preloader")
                 .getPreloaderConfig();
@@ -447,7 +447,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testUserCodeDeploymentConfig() {
+    void testUserCodeDeploymentConfig() {
         ClientConfig config = userCodeDeploymentTestClient.getClientConfig();
         ClientUserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
         List<String> classNames = userCodeDeploymentConfig.getClassNames();
@@ -465,10 +465,11 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testFullQueryCacheConfig() {
+    void testFullQueryCacheConfig() {
         ClientConfig config = client6.getClientConfig();
 
         QueryCacheConfig queryCacheConfig = getQueryCacheConfig(config);
+        assert queryCacheConfig != null;
         EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
 
         assertTrue(entryListenerConfig.isIncludeValue());
@@ -506,14 +507,14 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testClientConnectionStrategyConfig() {
+    void testClientConnectionStrategyConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = client8.getClientConfig().getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
     }
 
     @Test
-    public void testFlakeIdGeneratorConfig() {
+    void testFlakeIdGeneratorConfig() {
         Map<String, ClientFlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
         assertEquals(1, configMap.size());
         ClientFlakeIdGeneratorConfig config = configMap.values().iterator().next();
@@ -523,7 +524,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testClientIcmpConfig() {
+    void testClientIcmpConfig() {
         ClientIcmpPingConfig icmpPingConfig = icmpPingTestClient.getClientConfig()
                 .getNetworkConfig().getClientIcmpPingConfig();
         assertFalse(icmpPingConfig.isEnabled());
@@ -535,7 +536,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testCloudConfig() {
+    void testCloudConfig() {
         ClientCloudConfig cloudConfig = hazelcastCloudClient.getClientConfig()
                 .getNetworkConfig().getCloudConfig();
         assertFalse(cloudConfig.isEnabled());
@@ -543,7 +544,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testConnectionRetry() {
+    void testConnectionRetry() {
         ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
                 .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
         assertEquals(5000, connectionRetryConfig.getClusterConnectTimeoutMillis());
@@ -554,7 +555,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testReliableTopicConfig() {
+    void testReliableTopicConfig() {
         ClientConfig clientConfig = hazelcastReliableTopic.getClientConfig();
         ClientReliableTopicConfig topicConfig = clientConfig.getReliableTopicConfig("rel-topic");
         assertEquals(100, topicConfig.getReadBatchSize());
@@ -574,24 +575,24 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testInstanceNameConfig() {
+    void testInstanceNameConfig() {
         assertEquals("clusterName", namedClient.getName());
     }
 
     @Test
-    public void testLabelsConfig() {
+    void testLabelsConfig() {
         Set<String> labels = namedClient.getClientConfig().getLabels();
         assertEquals(1, labels.size());
         assertContains(labels, "foo");
     }
 
     @Test
-    public void testBackupAckToClient() {
+    void testBackupAckToClient() {
         assertFalse(backupAckToClient.getClientConfig().isBackupAckToClientEnabled());
     }
 
     @Test
-    public void testMetrics() {
+    void testMetrics() {
         ClientMetricsConfig metricsConfig = metricsClient.getClientConfig().getMetricsConfig();
 
         assertFalse(metricsConfig.isEnabled());
@@ -600,7 +601,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testInstanceTracking() {
+    void testInstanceTracking() {
         InstanceTrackingConfig trackingConfig = instanceTrackingClient.getClientConfig().getInstanceTrackingConfig();
 
         assertTrue(trackingConfig.isEnabled());
@@ -610,7 +611,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testNativeMemory() {
+    void testNativeMemory() {
         NativeMemoryConfig nativeMemoryConfig = nativeMemoryClient.getClientConfig().getNativeMemoryConfig();
 
         assertFalse(nativeMemoryConfig.isEnabled());
@@ -634,7 +635,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testNativeMemorySystemMemory() {
+    void testNativeMemorySystemMemory() {
         NativeMemoryConfig nativeMemoryConfig = pmemSystemMemoryClient.getClientConfig().getNativeMemoryConfig();
 
         assertFalse(nativeMemoryConfig.isEnabled());
@@ -651,13 +652,13 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testSql() {
+    void testSql() {
         ClientSqlConfig sqlConfig = clientWithSql.getClientConfig().getSqlConfig();
         assertEquals(ClientSqlResubmissionMode.RETRY_SELECTS, sqlConfig.getResubmissionMode());
     }
 
     @Test
-    public void testTpc() {
+    void testTpc() {
         ClientTpcConfig tpcConfig = clientWithTpc.getClientConfig().getTpcConfig();
         assertTrue(tpcConfig.isEnabled());
     }
