@@ -95,7 +95,11 @@
         <jms.api.version>3.1.0</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
-        <kafka.version>3.7.1</kafka.version>
+        <!--
+        Confluent depends on Kafka, and consideration should be given when upgrading
+        https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
+        -->
+        <kafka.version>3.6.1</kafka.version>
         <kotlin.version>2.0.0</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.6.3.jre11</mssql.version>
@@ -131,6 +135,10 @@
         <commons-codec.version>1.17.0</commons-codec.version>
         <commons-io.version>2.16.1</commons-io.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
+        <!--
+        Confluent depends on Kafka, and consideration should be given when upgrading
+        https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
+        -->
         <confluent.version>7.6.1</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <http.core.version>4.4.16</http.core.version>
