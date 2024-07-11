@@ -22,24 +22,21 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES_STRING;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private final DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
@@ -73,21 +70,19 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:idontexist.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("idontexist.xml");
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("idontexist.xml");
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "idontexist.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("idontexist.xml");
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("idontexist.xml");
     }
 
     @Test
@@ -95,13 +90,12 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
         File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.yaml", 42);
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.yaml");
-        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_FAILOVER_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo.yaml")
+                .hasMessageContaining(XML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -109,38 +103,35 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
         helper.givenXmlClientFailoverConfigFileOnClasspath("foo.yaml", 42);
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.yaml");
-        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_FAILOVER_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo.yaml")
+                .hasMessageContaining(XML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentNonXml_throws() {
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:idontexist.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("idontexist.yaml");
-        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_FAILOVER_CONFIG)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("idontexist.yaml")
+                .hasMessageContaining(XML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonXml_throws() {
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
-        expectedException.expectMessage("foo.yaml");
-        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_FAILOVER_CONFIG)
+                .hasMessageContaining("foo.yaml")
+                .hasMessageContaining(XML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -163,9 +154,8 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveDefault() {
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("Failed to load ClientFailoverConfig");
-
-        new XmlClientFailoverConfigBuilder().build();
+        assertThatThrownBy(XmlClientFailoverConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Failed to load ClientFailoverConfig");
     }
 }
