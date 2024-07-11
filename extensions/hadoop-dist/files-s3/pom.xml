@@ -38,8 +38,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <configuration combine.self="append">
-                    <filters>
+                <configuration>
+                    <filters combine.children="append">
                         <filter>
                             <artifact>software.amazon.awssdk:bundle</artifact>
                             <includes>

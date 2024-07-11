@@ -68,7 +68,8 @@
         <maven.assembly.plugin.version>3.5.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
+        <!-- Do not upgrade maven-shade-plugin, see https://github.com/hazelcast/hazelcast-mono/pull/2591 -->
+        <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.5.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
@@ -734,7 +735,7 @@
                             <filter>
                                 <artifact>*:*</artifact>
                                 <excludes>
-                                    <exclude>module-info.class</exclude>
+                                    <exclude>**/module-info.class</exclude>
                                     <exclude>META-INF/*.SF</exclude>
                                     <exclude>META-INF/*.DSA</exclude>
                                     <exclude>META-INF/*.RSA</exclude>

@@ -73,6 +73,19 @@
                                 <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
                             </relocation>
                         </relocations>
+                        <filters combine.children="append">
+                            <filter>
+                                <artifact>org.apache.parquet:parquet-jackson</artifact>
+                                <excludes>
+                                    <!--
+                                    parquet-jackson is multi-jar since 1.14.0
+                                    Excludes optimizations for later Java versions because we can't
+                                    process them in shade plugin while building for Java 8
+                                    -->
+                                    <exclude>META-INF/versions/**</exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
                     </configuration>
                 </plugin>
             </plugins>
