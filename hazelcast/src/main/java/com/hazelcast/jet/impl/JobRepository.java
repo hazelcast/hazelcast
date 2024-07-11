@@ -23,6 +23,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.tpcengine.util.OS;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -33,7 +34,6 @@ import com.hazelcast.jet.impl.deployment.IMapOutputStream;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -224,8 +224,9 @@ public class JobRepository {
      */
     void uploadJobResources(long jobId, JobConfig jobConfig) {
         Map<String, byte[]> tmpMap = new HashMap<>();
+        boolean resourceImapCreated = false;
+        Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
         try {
-            Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
             for (ResourceConfig rc : jobConfig.getResourceConfigs().values()) {
                 switch (rc.getResourceType()) {
                     case CLASSPATH_RESOURCE, CLASS -> {
@@ -237,12 +238,14 @@ public class JobRepository {
                         try (InputStream in = rc.getUrl().openStream();
                              IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
                         ) {
+                            resourceImapCreated = true;
                             packStreamIntoZip(in, os, requireNonNull(fileNameFromUrl(rc.getUrl())));
                         }
                     }
                     case DIRECTORY -> {
                         Path baseDir = validateAndGetDirectoryPath(rc);
                         try (IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))) {
+                            resourceImapCreated = true;
                             packDirectoryIntoZip(baseDir, os);
                         }
                     }
@@ -252,11 +255,14 @@ public class JobRepository {
                 }
             }
         } catch (IOException | URISyntaxException e) {
+            if (resourceImapCreated) {
+                jobFileStorage.get().destroy();
+            }
             throw new JetException("Job resource upload failed", e);
         }
         // avoid creating resources map if map is empty
         if (!tmpMap.isEmpty()) {
-            IMap<String, byte[]> jobResourcesMap = getJobResources(jobId);
+            IMap<String, byte[]> jobResourcesMap = jobFileStorage.get();
             // now upload it all
             try {
                 jobResourcesMap.putAll(tmpMap);
@@ -437,13 +443,13 @@ public class JobRepository {
             }
         }
 
-        deleteJob(jobId);
+        deleteJob(jobId, !config.getResourceConfigs().isEmpty());
     }
 
     /**
      * Performs cleanup after job completion.
      */
-    void deleteJob(long jobId) {
+    void deleteJob(long jobId, boolean hasResources) {
         // delete the job record and related records
         // ignore the eventual failure - there's a separate cleanup process that will take care
         BiConsumer<Object, Throwable> callback = (v, t) -> {
@@ -454,6 +460,10 @@ public class JobRepository {
         };
         jobExecutionRecords.get().removeAsync(jobId).whenComplete(callback);
         jobRecords.get().removeAsync(jobId).whenComplete(callback);
+        if (hasResources) {
+            // avoid creating resource map if that is not necessary
+            getJobResources(jobId).destroy();
+        }
     }
 
     /**

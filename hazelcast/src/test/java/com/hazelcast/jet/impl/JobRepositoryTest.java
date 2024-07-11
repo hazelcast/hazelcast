@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -46,9 +47,11 @@ import java.io.File;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_MAX_SIZE;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -70,13 +73,30 @@ public class JobRepositoryTest extends JetTestSupport {
     public void setup() {
         Config config = new Config();
         config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
-        config.getJetConfig().setEnabled(true);
+        config.getJetConfig().setEnabled(true).setResourceUploadEnabled(true);
 
         instance = createHazelcastInstance(config);
         jobRepository = new JobRepository(instance);
         jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
         TestProcessors.reset(2);
+    }
+
+    @Test
+    public void when_jobIsComplete_then_resourcesImmediatelyDeleted() {
+        jobConfig.addClass(DummyClass.class);
+        var job = instance.getJet().newJob(newBatchPipeline(), jobConfig);
+        job.join();
+        assertThat((Map<?, ?>) jobRepository.getJobResources(job.getId())).isEmpty();
+    }
+
+    @Test
+    public void when_jobIsCancelled_then_resourcesImmediatelyDeleted() {
+        jobConfig.addClass(DummyClass.class);
+        var job = instance.getJet().newJob(newStreamPipeline(), jobConfig);
+        assertThat((Map<?, ?>) jobRepository.getJobResources(job.getId())).isNotEmpty();
+        cancelAndJoin(job);
+        assertThat((Map<?, ?>) jobRepository.getJobResources(job.getId())).isEmpty();
     }
 
     @Test
@@ -148,11 +168,40 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     @Test
+    public void when_jobSecondFileUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        File goodFile = File.createTempFile("job", "resource");
+        try {
+            jobConfig.attachFile(goodFile);
+            jobConfig.attachFile(URI.create("http://site/nonexistent").toURL());
+            testResourceCleanup();
+        } finally {
+            delete(goodFile);
+        }
+    }
+
+    @Test
     public void when_jobDirectoryUploadFails_then_jobResourcesCleanedUp() throws Exception {
         // Given
         File baseDir = createTempDirectory();
 
         try {
+            jobConfig.attachDirectory(baseDir);
+        } finally { // Ensure dir deleted even if attachDirectory fails
+            // When
+            delete(baseDir);
+        }
+        // Then
+        testResourceCleanup();
+    }
+
+    @Test
+    public void when_jobSecondDirectoryUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        // Given
+        File goodBaseDir = createTempDirectory();
+        File baseDir = createTempDirectory();
+
+        try {
+            jobConfig.attachDirectory(goodBaseDir);
             jobConfig.attachDirectory(baseDir);
         } finally { // Ensure dir deleted even if attachDirectory fails
             // When
@@ -168,7 +217,7 @@ public class JobRepositoryTest extends JetTestSupport {
             fail();
         } catch (JetException e) {
             Collection<DistributedObject> objects = instance.getDistributedObjects();
-            assertTrue(objects.stream().noneMatch(o -> o.getName().startsWith(JobRepository.RESOURCES_MAP_NAME_PREFIX)));
+            assertThat(objects).noneMatch(o -> o.getName().startsWith(JobRepository.RESOURCES_MAP_NAME_PREFIX));
         }
     }
 
@@ -248,5 +297,17 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private static class DummyClass {
+    }
+
+    private static Pipeline newBatchPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1)).writeTo(Sinks.noop());
+        return p;
+    }
+
+    private static Pipeline newStreamPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.itemStream(1)).withoutTimestamps().writeTo(Sinks.noop());
+        return p;
     }
 }

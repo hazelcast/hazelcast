@@ -290,7 +290,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 }
 
                 if (hasDuplicateJobName) {
-                    jobRepository.deleteJob(jobId);
+                    jobRepository.deleteJob(jobId, !jobConfig.getResourceConfigs().isEmpty());
                     throw new JobAlreadyExistsException("Another active job with equal name (" + jobConfig.getName()
                             + ") exists: " + idToString(jobId));
                 }
