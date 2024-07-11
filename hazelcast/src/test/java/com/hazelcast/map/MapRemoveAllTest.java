@@ -25,22 +25,19 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapRemoveAllTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private static final int MAP_SIZE = 1000;
     private static final int NODE_COUNT = 3;
@@ -57,11 +54,10 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
 
     @Test
     public void throws_exception_whenPredicateNull() {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("predicate cannot be null");
-
         IMap<Integer, Integer> map = member.getMap("test");
-        map.removeAll(null);
+        assertThatThrownBy(() -> map.removeAll(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("predicate cannot be null");
     }
 
     @Test
