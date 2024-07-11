@@ -16,9 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.instance.GeneratedBuildProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,7 +27,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.reflections.Reflections;
-import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,13 +44,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 import static org.junit.Assert.assertEquals;
+import static org.reflections.scanners.Scanners.Resources;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(QuickTest.class)
 public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     // list of schema location URLs which we do not want to check
@@ -56,6 +58,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     private static final String XML_SCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
     private static final String XML_SCHEMA_LOCATION_ATTRIBUTE = "schemaLocation";
+    private static final String CURRENT_VERSION_SUFFIX = "-" + GeneratedBuildProperties.VERSION.substring(0, 3) + ".xsd";
 
     private HttpClient httpClient;
     private DocumentBuilderFactory documentBuilderFactory;
@@ -75,9 +78,11 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     @Test
     public void testSchemaLocationsExist() throws Exception {
-        ResourcesScanner scanner = new ResourcesScanner();
-        Reflections reflections = new Reflections(scanner);
-        Set<String> resources = reflections.getResources(Pattern.compile(".*\\.xml"));
+        ConfigurationBuilder configuration = new ConfigurationBuilder()
+                .setUrls(ClasspathHelper.forJavaClassPath())
+                .setScanners(Resources);
+        Reflections reflections = new Reflections(configuration);
+        Set<String> resources = reflections.getResources(".*\\.xml");
         ClassLoader classLoader = getClass().getClassLoader();
         for (String resource : resources) {
             System.out.println(resource);
@@ -136,6 +141,10 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
             return true;
         }
         if (!nameSpaceUrl.endsWith(".xsd")) {
+            return true;
+        }
+        if (nameSpaceUrl.endsWith(CURRENT_VERSION_SUFFIX)) {
+            // Schemas of the current (snapshot) version are not published yet.
             return true;
         }
         if (WHITELIST.contains(nameSpaceUrl)) {

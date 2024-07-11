@@ -37,7 +37,6 @@ import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
 import com.hazelcast.query.impl.predicates.EvaluatePredicate;
 import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -61,8 +60,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
-import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
-import static com.hazelcast.test.ReflectionsHelper.filterNonHazelcastClasses;
+import static com.hazelcast.test.ReflectionsHelper.concreteSubTypesOf;
+import static com.hazelcast.test.ReflectionsHelper.subTypesOf;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -80,7 +79,7 @@ import static org.junit.Assert.fail;
  * their `getClassId` method and that F_ID/ID combinations are unique.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
+@Category(QuickTest.class)
 public class DataSerializableConventionsTest {
     private static final String JET_PACKAGE = "com.hazelcast.jet";
 
@@ -92,8 +91,8 @@ public class DataSerializableConventionsTest {
      * <li> they purposefully break conventions to fix a known issue, or
      * <li> their factory/class ID depend on the underlying data, such as QueryDataType.
      */
-    private final Set<Class> classWhiteList;
-    private final Set<Class> hookWhiteList;
+    private final Set<Class<?>> classWhiteList;
+    private final Set<Class<?>> hookWhiteList;
     private final Set<String> packageWhiteList;
     /**
      * Classes contained in these packages have serialization implemented in EE modules.
@@ -109,33 +108,21 @@ public class DataSerializableConventionsTest {
 
     /**
      * Verifies that any class which is {@link DataSerializable} and is not annotated with {@link BinaryInterface}
-     * is also an {@link IdentifiedDataSerializable}.
+     * or {@link SerializableByConvention} is also an {@link IdentifiedDataSerializable}.
      */
     @Test
     public void test_dataSerializableClasses_areIdentifiedDataSerializable() {
-        Set<Class<? extends DataSerializable>> dataSerializableClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
-        Set<Class<? extends IdentifiedDataSerializable>> allIdDataSerializableClasses
-                = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
-
-        dataSerializableClasses.removeAll(allIdDataSerializableClasses);
-        // also remove IdentifiedDataSerializable itself
-        dataSerializableClasses.remove(IdentifiedDataSerializable.class);
-        // do not check abstract classes & interfaces
-        filterNonConcreteClasses(dataSerializableClasses);
-
-        // locate all classes annotated with BinaryInterface and remove those as well
-        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, true);
-        dataSerializableClasses.removeAll(allAnnotatedClasses);
-
-        // exclude @SerializableByConvention classes
-        Set<?> serializableByConventions = REFLECTIONS.getTypesAnnotatedWith(SerializableByConvention.class, true);
-        dataSerializableClasses.removeAll(serializableByConventions);
+        Set<Class<? extends DataSerializable>> dataSerializableClasses = REFLECTIONS.get(
+                concreteSubTypesOf(DataSerializable.class)
+                        .filter(c -> !IdentifiedDataSerializable.class.isAssignableFrom(c))
+                        .filter(c -> !c.isAnnotationPresent(BinaryInterface.class))
+                        .filter(c -> !c.isAnnotationPresent(SerializableByConvention.class)));
 
         if (!dataSerializableClasses.isEmpty()) {
             SortedSet<String> nonCompliantClassNames = new TreeSet<>();
-            for (Object o : dataSerializableClasses) {
-                if (!inheritsFromWhiteListedClass((Class) o)) {
-                    nonCompliantClassNames.add(o.toString());
+            for (Class<?> c : dataSerializableClasses) {
+                if (!inheritsFromWhiteListedClass(c)) {
+                    nonCompliantClassNames.add(c.toString());
                 }
             }
             if (!nonCompliantClassNames.isEmpty()) {
@@ -152,34 +139,21 @@ public class DataSerializableConventionsTest {
 
     /**
      * Verifies that any class which is {@link Serializable} and is not annotated with {@link BinaryInterface}
-     * is also an {@link IdentifiedDataSerializable}.
+     * or {@link SerializableByConvention} is also an {@link IdentifiedDataSerializable}.
      */
     @Test
     public void test_serializableClasses_areIdentifiedDataSerializable() {
-        Set<Class<? extends Serializable>> serializableClasses = REFLECTIONS.getSubTypesOf(Serializable.class);
-        Set<Class<? extends IdentifiedDataSerializable>> allIdDataSerializableClasses
-                = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
-
-        serializableClasses.removeAll(allIdDataSerializableClasses);
-
-        // do not check non hazelcast classes & interfaces
-        filterNonHazelcastClasses(serializableClasses);
-        // do not check abstract classes & interfaces
-        filterNonConcreteClasses(serializableClasses);
-
-        // locate all classes annotated with BinaryInterface and remove those as well
-        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, true);
-        serializableClasses.removeAll(allAnnotatedClasses);
-
-        // exclude @SerializableByConvention classes
-        Set<?> serializableByConventions = REFLECTIONS.getTypesAnnotatedWith(SerializableByConvention.class, true);
-        serializableClasses.removeAll(serializableByConventions);
+        Set<Class<? extends Serializable>> serializableClasses = REFLECTIONS.get(
+                concreteSubTypesOf(Serializable.class)
+                        .filter(c -> !IdentifiedDataSerializable.class.isAssignableFrom(c))
+                        .filter(c -> !c.isAnnotationPresent(BinaryInterface.class))
+                        .filter(c -> !c.isAnnotationPresent(SerializableByConvention.class)));
 
         if (!serializableClasses.isEmpty()) {
             SortedSet<String> nonCompliantClassNames = new TreeSet<>();
-            for (Object o : serializableClasses) {
-                if (!inheritsFromWhiteListedClass((Class) o)) {
-                    nonCompliantClassNames.add(o.toString());
+            for (Class<?> c : serializableClasses) {
+                if (!inheritsFromWhiteListedClass(c)) {
+                    nonCompliantClassNames.add(c.toString());
                 }
             }
             if (!nonCompliantClassNames.isEmpty()) {
@@ -206,7 +180,10 @@ public class DataSerializableConventionsTest {
 
         Multimap<Integer, Integer> factoryToTypeId = HashMultimap.create();
 
-        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
+        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = REFLECTIONS.get(
+                concreteSubTypesOf(IdentifiedDataSerializable.class)
+                        .filter(c -> !classWhiteList.contains(c)));
+
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             // exclude classes which are known to be meant for local use only
             if (!AbstractLocalOperation.class.isAssignableFrom(klass) && !isReadOnlyConfig(klass)) {
@@ -266,13 +243,15 @@ public class DataSerializableConventionsTest {
      */
     @Test
     public void test_identifiedDataSerializables_areInstancesOfSameClass_whenConstructedFromFactory() throws Exception {
-        Set<Class<? extends DataSerializerHook>> hookClasses = REFLECTIONS.getSubTypesOf(DataSerializerHook.class);
+        Set<Class<? extends DataSerializerHook>> hookClasses = REFLECTIONS.get(
+                subTypesOf(DataSerializerHook.class)
+                    .filter(c -> !hookWhiteList.contains(c)));
+
         Set<DataSerializerHook> hooks = new HashSet<>();
         Map<Integer, DataSerializableFactory> factories = new HashMap<>();
 
-        hookClasses.removeAll(hookWhiteList);
         for (Class<? extends DataSerializerHook> hookClass : hookClasses) {
-            DataSerializerHook dsHook = hookClass.newInstance();
+            DataSerializerHook dsHook = hookClass.getDeclaredConstructor().newInstance();
             DataSerializableFactory factory = dsHook.createFactory();
             factories.put(dsHook.getFactoryId(), factory);
             hooks.add(dsHook);
@@ -281,8 +260,10 @@ public class DataSerializableConventionsTest {
             hook.afterFactoriesCreated(factories);
         }
 
+        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = REFLECTIONS.get(
+                concreteSubTypesOf(IdentifiedDataSerializable.class)
+                        .filter(c -> !classWhiteList.contains(c)));
 
-        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             if (AbstractLocalOperation.class.isAssignableFrom(klass)) {
                 continue;
@@ -328,57 +309,7 @@ public class DataSerializableConventionsTest {
                 && (className.contains("Config") || className.contains("WanReplicationRef"));
     }
 
-    /**
-     * Returns all concrete classes which implement {@link IdentifiedDataSerializable} located by
-     * {@link com.hazelcast.test.ReflectionsHelper#REFLECTIONS}.
-     *
-     * @return a set of all {@link IdentifiedDataSerializable} classes
-     */
-    private Set<Class<? extends IdentifiedDataSerializable>> getIDSConcreteClasses() {
-        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables
-                = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
-        filterNonConcreteClasses(identifiedDataSerializables);
-        identifiedDataSerializables.removeAll(classWhiteList);
-        return identifiedDataSerializables;
-    }
-
-    /**
-     * @return {@code true} when klass has a superclass that implements or is itself of type {@code inheritedClass}
-     */
-    private boolean inheritsClassFromPublicClass(Class klass, Class inheritedClass) {
-        // check interfaces implemented by klass: if one of these implements inheritedClass and is public, then true
-        Class[] interfaces = klass.getInterfaces();
-        if (interfaces != null) {
-            for (Class implementedInterface : interfaces) {
-                if (implementedInterface.equals(inheritedClass)) {
-                    return false;
-                } else if (inheritedClass.isAssignableFrom(implementedInterface) && isPublicClass(implementedInterface)) {
-                    return true;
-                }
-            }
-        }
-
-        // use hierarchyIteratingClass to iterate up the klass hierarchy
-        Class hierarchyIteratingClass = klass;
-        while (hierarchyIteratingClass.getSuperclass() != null) {
-            if (hierarchyIteratingClass.getSuperclass().equals(inheritedClass)) {
-                return true;
-            }
-            if (inheritedClass.isAssignableFrom(hierarchyIteratingClass.getSuperclass())
-                    && isPublicClass(hierarchyIteratingClass.getSuperclass())) {
-                return true;
-            }
-            hierarchyIteratingClass = hierarchyIteratingClass.getSuperclass();
-        }
-        return false;
-    }
-
-    private boolean isPublicClass(Class klass) {
-        return !klass.getName().contains(".impl.") && !klass.getName().contains(".internal.")
-                && klass.getAnnotation(PrivateApi.class) == null;
-    }
-
-    private boolean inheritsFromWhiteListedClass(Class klass) {
+    private boolean inheritsFromWhiteListedClass(Class<?> klass) {
         String className = klass.getName();
 
         for (String packageName : packageWhiteList) {
@@ -387,7 +318,7 @@ public class DataSerializableConventionsTest {
             }
         }
 
-        for (Class superclass : classWhiteList) {
+        for (Class<?> superclass : classWhiteList) {
             if (superclass.isAssignableFrom(klass)) {
                 return true;
             }
@@ -408,8 +339,8 @@ public class DataSerializableConventionsTest {
     /**
      * Returns the set of classes excluded from the conventions tests.
      */
-    protected Set<Class> getWhitelistedClasses() {
-        Set<Class> whiteList = new HashSet<>();
+    protected Set<Class<?>> getWhitelistedClasses() {
+        Set<Class<?>> whiteList = new HashSet<>();
         whiteList.add(BoundedRangePredicate.class);
         whiteList.add(CachedQueryEntry.class);
         whiteList.add(CompositeEqualPredicate.class);
@@ -437,7 +368,7 @@ public class DataSerializableConventionsTest {
         return whiteList;
     }
 
-    protected Set<Class> getWhitelistedHookClasses() {
+    protected Set<Class<?>> getWhitelistedHookClasses() {
         return new HashSet<>();
     }
 }

@@ -16,150 +16,70 @@
 
 package com.hazelcast.test;
 
-import com.google.common.collect.Sets;
-import org.reflections.Configuration;
-import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
-import org.reflections.adapters.JavaReflectionAdapter;
-import org.reflections.scanners.AbstractScanner;
-import org.reflections.scanners.TypeAnnotationsScanner;
+import org.reflections.Store;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.FilterBuilder;
+import org.reflections.util.QueryFunction;
 
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.function.Predicate;
 
-import static java.util.Collections.singletonList;
+import static org.reflections.scanners.Scanners.SubTypes;
 
 /**
  * Initialize the org.reflections library once to avoid duplicate work on scanning the classpath from individual tests.
  */
-@SuppressWarnings("WeakerAccess")
 public final class ReflectionsHelper {
 
     public static final Reflections REFLECTIONS;
 
+    /**
+     * Excludes classes that does not belong to {@code com.hazelcast} package or
+     * belongs to {@code com.hazelcast.internal.json} package.
+     */
+    public static final Predicate<String> EXCLUDE_NON_HAZELCAST_CLASSES =
+            c -> c.startsWith("com.hazelcast") && !c.startsWith("com.hazelcast.internal.json");
+
+    /**
+     * Excludes enums, interfaces, abstract and anonymous classes.
+     */
+    public static final Predicate<Class<?>> EXCLUDE_NON_CONCRETE_CLASSES =
+            c -> !(Enum.class.isAssignableFrom(c) || c.isAnonymousClass()
+                    || c.isInterface() || Modifier.isAbstract(c.getModifiers()));
+
     static {
-        // obtain all classpath URLs with com.hazelcast package classes
+        // Obtain all classpath URLs with com.hazelcast package classes.
         Collection<URL> comHazelcastPackageURLs = ClasspathHelper.forPackage("com.hazelcast");
-        // exclude hazelcast test artifacts from package URLs
-        for (Iterator<URL> iterator = comHazelcastPackageURLs.iterator(); iterator.hasNext(); ) {
-            URL url = iterator.next();
-            // detect hazelcast-VERSION-tests.jar & $SOMEPATH/hazelcast/target/test-classes/ and exclude it from classpath
-            // also exclude hazelcast-license-extractor artifact
-            if (url.toString().contains("-tests.jar") || url.toString().contains("target/test-classes")
-                    || url.toString().contains("hazelcast-license-extractor")) {
-                iterator.remove();
-            }
-        }
-        HierarchyTraversingSubtypesScanner subtypesScanner = new HierarchyTraversingSubtypesScanner();
-        subtypesScanner.setResultFilter(new FilterBuilder().exclude("java\\.lang\\.(Object|Enum)")
-                .exclude("com\\.hazelcast\\.internal\\.json.*"));
-        REFLECTIONS = new ReflectionsTransitive(new ConfigurationBuilder().addUrls(comHazelcastPackageURLs)
-                .addScanners(subtypesScanner, new TypeAnnotationsScanner())
-                .setMetadataAdapter(new JavaReflectionAdapter()));
+        // Exclude hazelcast test artifacts (hazelcast-VERSION-tests.jar, **/target/test-classes/)
+        // and hazelcast-license-extractor artifact from package URLs.
+        comHazelcastPackageURLs.removeIf(url -> url.toString().contains("-tests.jar")
+                || url.toString().contains("target/test-classes")
+                || url.toString().contains("hazelcast-license-extractor"));
+
+        REFLECTIONS = new Reflections(new ConfigurationBuilder().addUrls(comHazelcastPackageURLs));
     }
 
-    private ReflectionsHelper() {
+    private ReflectionsHelper() { }
+
+    /**
+     * Excludes {@linkplain #EXCLUDE_NON_HAZELCAST_CLASSES non-Hazelcast classes} from the results.
+     */
+    @SuppressWarnings({"ClassGetClass", "RedundantCast", "unchecked"})
+    public static <T> QueryFunction<Store, Class<? extends T>> subTypesOf(Class<T> type) {
+        return SubTypes.of(type)
+                .filter(EXCLUDE_NON_HAZELCAST_CLASSES)
+                .as((Class<Class<? extends T>>) type.getClass());
     }
 
     /**
-     * Removes abstract and anonymous classes and interfaces from the given set.
+     * Excludes {@linkplain #EXCLUDE_NON_HAZELCAST_CLASSES non-Hazelcast classes} and
+     * {@linkplain #EXCLUDE_NON_CONCRETE_CLASSES non-concrete classes} from the results.
      */
-    public static void filterNonConcreteClasses(Set<? extends Class> classes) {
-        classes.removeIf(klass -> klass.isAnonymousClass()
-                || klass.isInterface() || Modifier.isAbstract(klass.getModifiers())
-        );
-    }
-
-    /**
-     * Removes the classes that does not belong to `com.hazelcast` package.
-     */
-    public static void filterNonHazelcastClasses(Set<? extends Class> classes) {
-        classes.removeIf(klass -> !klass.getName().startsWith("com.hazelcast"));
-    }
-
-    /**
-     * Overrides the default implementation of {@link Reflections#getSubTypesOf(Class)}
-     * to also obtain transitive subtypes of the given class.
-     */
-    public static class ReflectionsTransitive extends Reflections {
-
-        public ReflectionsTransitive(Configuration configuration) {
-            super(configuration);
-        }
-
-        @Override
-        public <T> Set<Class<? extends T>> getSubTypesOf(Class<T> type) {
-            return Sets.newHashSet(ReflectionUtils.<T>forNames(
-                    store.getAll(
-                            HierarchyTraversingSubtypesScanner.class.getSimpleName(),
-                            singletonList(type.getName())),
-                    configuration.getClassLoaders()));
-        }
-    }
-
-    public static class HierarchyTraversingSubtypesScanner extends AbstractScanner {
-
-        /**
-         * Creates new HierarchyTraversingSubtypesScanner.
-         * <p>
-         * Excludes direct Object subtypes.
-         */
-        public HierarchyTraversingSubtypesScanner() {
-            // exclude direct Object subtypes by default
-            this(true);
-        }
-
-        /**
-         * Creates a new HierarchyTraversingSubtypesScanner.
-         *
-         * @param excludeObjectClass excludes direct {@link Object} subtypes in results if {@code true}
-         */
-        public HierarchyTraversingSubtypesScanner(boolean excludeObjectClass) {
-            if (excludeObjectClass) {
-                // exclude direct Object subtypes
-                filterResultsBy(new FilterBuilder().exclude(Object.class.getName()));
-            }
-        }
-
-        /**
-         * @param cls depending on the Reflections configuration, this is either a regular Class or a javassist ClassFile
-         */
-        @SuppressWarnings("unchecked")
-        public void scan(final Object cls) {
-            String className = getMetadataAdapter().getClassName(cls);
-
-            for (String anInterface : (List<String>) getMetadataAdapter().getInterfacesNames(cls)) {
-                if (acceptResult(anInterface)) {
-                    getStore().put(anInterface, className);
-                }
-            }
-
-            // apart from this class' direct supertype and directly declared interfaces, also scan the class
-            // hierarchy up until Object class
-            Class superKlass = ((Class) cls).getSuperclass();
-            while (superKlass != null) {
-                scanClassAndInterfaces(superKlass, className);
-                superKlass = superKlass.getSuperclass();
-            }
-        }
-
-        @SuppressWarnings({"unchecked"})
-        private void scanClassAndInterfaces(Class klass, String className) {
-            if (acceptResult(klass.getName())) {
-                getStore().put(klass.getName(), className);
-                for (String anInterface : (List<String>) getMetadataAdapter().getInterfacesNames(klass)) {
-                    if (acceptResult(anInterface)) {
-                        getStore().put(anInterface, className);
-                    }
-                }
-            }
-        }
+    public static <T> QueryFunction<Store, Class<? extends T>> concreteSubTypesOf(Class<T> type) {
+        return subTypesOf(type)
+                .filter(EXCLUDE_NON_CONCRETE_CLASSES);
     }
 }

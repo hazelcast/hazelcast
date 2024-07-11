@@ -34,19 +34,18 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.reflections.Reflections;
-import org.reflections.scanners.ResourcesScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import static org.reflections.scanners.Scanners.Resources;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -69,9 +68,9 @@ public abstract class AbstractYamlSchemaTest {
     protected static List<Object[]> buildTestcases(String rootDir) {
         ConfigurationBuilder configuration = new ConfigurationBuilder()
                 .setUrls(ClasspathHelper.forJavaClassPath())
-                .setScanners(new ResourcesScanner());
+                .setScanners(Resources);
         Reflections reflections = new Reflections(configuration);
-        return reflections.getResources(Pattern.compile(".*\\.json")).stream()
+        return reflections.getResources(".*\\.json").stream()
                 .filter(e -> e.startsWith(rootDir))
                 .map(path -> buildArgs(rootDir, path))
                 .collect(toList());
