@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
-import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 public class Registration implements EventRegistration, Versioned {
 
@@ -118,13 +117,7 @@ public class Registration implements EventRegistration, Versioned {
         out.writeString(topic);
         out.writeObject(subscriber);
         out.writeObject(filter);
-
-        // Registration is only serialized when it is not localOnly
-        // so this field doesn't need to be written and can
-        // default to false when deserializing
-        // This code is kept only for backwards compatibility
-        // RU_COMPAT_5_3
-        if (out.getVersion().isBetween(V5_3, V5_4)) {
+        if (out.getVersion().isGreaterOrEqual(V5_3)) {
             out.writeBoolean(localOnly);
         }
     }
@@ -136,10 +129,7 @@ public class Registration implements EventRegistration, Versioned {
         topic = in.readString();
         subscriber = in.readObject();
         filter = in.readObject();
-
-        // See comment in writeData()
-        // RU_COMPAT_5_3
-        if (in.getVersion().isBetween(V5_3, V5_4)) {
+        if (in.getVersion().isGreaterOrEqual(V5_3)) {
             localOnly = in.readBoolean();
         }
     }
