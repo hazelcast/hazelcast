@@ -521,8 +521,8 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(32, nativeMemoryConfig.getMinBlockSize());
         assertEquals(24, nativeMemoryConfig.getPageSize());
-        assertEquals(MemoryUnit.BYTES, nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(MemoryUnit.BYTES, nativeMemoryConfig.getCapacity().getUnit());
+        assertEquals(256, nativeMemoryConfig.getCapacity().getValue());
         assertEquals(70, nativeMemoryConfig.getMetadataSpacePercentage(), 10E-6);
     }
 

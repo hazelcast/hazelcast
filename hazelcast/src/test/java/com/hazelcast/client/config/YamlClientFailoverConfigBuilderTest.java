@@ -21,10 +21,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -37,8 +35,6 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void init() throws Exception {
@@ -56,21 +52,23 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
 
     @Test(expected = SchemaViolationConfigurationException.class)
     public void testExpectsAtLeastOneConfig() {
-        String yaml = ""
-                + "hazelcast-client-failover:\n"
-                + "  clients: []";
+        String yaml = """
+              hazelcast-client-failover:
+                clients: []
+              """;
+
         buildConfig(yaml);
     }
 
     @Override
     @Test
     public void testVariableReplacementFromProperties() {
-        String yaml = ""
-                + "hazelcast-client-failover:\n"
-                + "  clients:\n"
-                + "    - hazelcast-client-c1.yaml\n"
-                + "    - hazelcast-client-c2.yaml\n"
-                + "  try-count: ${try-count}";
+        String yaml = """
+                hazelcast-client-failover:
+                  clients:
+                    - hazelcast-client-c1.yaml
+                    - hazelcast-client-c2.yaml
+                  try-count: ${try-count}""";
 
         Properties properties = new Properties();
         properties.setProperty("try-count", "11");
@@ -81,12 +79,12 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
     @Override
     @Test
     public void testVariableReplacementFromSystemProperties() {
-        String yaml = ""
-                + "hazelcast-client-failover:\n"
-                + "  clients:\n"
-                + "    - hazelcast-client-c1.yaml\n"
-                + "    - hazelcast-client-c2.yaml\n"
-                + "  try-count: ${try-count}";
+        String yaml = """
+                hazelcast-client-failover:
+                  clients:
+                    - hazelcast-client-c1.yaml
+                    - hazelcast-client-c2.yaml
+                  try-count: ${try-count}""";
 
         System.setProperty("try-count", "11");
         ClientFailoverConfig config = buildConfig(yaml);

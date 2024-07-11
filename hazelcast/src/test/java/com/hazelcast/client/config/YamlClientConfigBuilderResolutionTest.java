@@ -22,24 +22,20 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES_STRING;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlClientConfigBuilderResolutionTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private final DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
@@ -90,21 +86,19 @@ public class YamlClientConfigBuilderResolutionTest {
     public void testResolveSystemProperty_classpath_nonExistentYaml_throws() {
         System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:idontexist.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("idontexist.yaml");
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("idontexist.yaml");
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYaml_throws() {
         System.setProperty(SYSPROP_CLIENT_CONFIG, "idontexist.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("idontexist.yaml");
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("idontexist.yaml");
     }
 
     @Test
@@ -112,13 +106,12 @@ public class YamlClientConfigBuilderResolutionTest {
         File file = helper.givenYamlClientConfigFileInWorkDir("foo.xml", "irrelevant");
         System.setProperty(SYSPROP_CLIENT_CONFIG, file.getAbsolutePath());
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.xml");
-        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo.xml")
+                .hasMessageContaining(YAML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -126,38 +119,35 @@ public class YamlClientConfigBuilderResolutionTest {
         helper.givenYamlClientConfigFileOnClasspath("foo.xml", "irrelevant");
         System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:foo.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.xml");
-        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo.xml")
+                .hasMessageContaining(YAML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonYaml_throws() {
         System.setProperty(SYSPROP_CLIENT_CONFIG, "foo.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
-        expectedException.expectMessage("foo.xml");
-        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_CONFIG)
+                .hasMessageContaining("foo.xml")
+                .hasMessageContaining(YAML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentNonYaml_throws() {
         System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:idontexist.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("idontexist.xml");
-        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_CONFIG)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("idontexist.xml")
+                .hasMessageContaining(YAML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -165,13 +155,12 @@ public class YamlClientConfigBuilderResolutionTest {
         File file = helper.givenYamlClientConfigFileInWorkDir("foo", "irrelevant");
         System.setProperty(SYSPROP_CLIENT_CONFIG, file.getAbsolutePath());
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo");
-        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo")
+                .hasMessageContaining(YAML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -179,13 +168,12 @@ public class YamlClientConfigBuilderResolutionTest {
         helper.givenYamlClientConfigFileOnClasspath("foo", "irrelevant");
         System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:foo");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo");
-        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
-
-        new YamlClientConfigBuilder().build();
+        assertThatThrownBy(YamlClientConfigBuilder::new)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_CLIENT_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo")
+                .hasMessageContaining(YAML_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
