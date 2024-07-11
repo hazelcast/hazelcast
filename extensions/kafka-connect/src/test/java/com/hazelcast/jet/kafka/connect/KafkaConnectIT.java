@@ -239,25 +239,28 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("tasks.max", "3");
+        randomProperties.setProperty("max.interval", "1000");
         randomProperties.setProperty("kafka.topic", "not-used");
         randomProperties.setProperty("quickstart", "orders");
 
         // Sink for Map<String,List<Order>>
-        Sink<Order> sink = Sinks.<Order, String, List<Order>>mapBuilder("testResults")
-                .toKeyFn(KafkaConnectIT::getTaskId)
-                .toValueFn(List::of)
-                .mergeFn((a, b) -> {
-                    ArrayList<Order> orders = new ArrayList<>(a);
-                    orders.addAll(b);
-                    return orders;
-                })
-                .build();
+        String testResultsMap = "testResults" + System.currentTimeMillis();
+        Sink<Order> sink = Sinks.<Order, String, List<Order>>mapBuilder(testResultsMap)
+                                .toKeyFn(KafkaConnectIT::getTaskId)
+                                .toValueFn(List::of)
+                                .mergeFn((a, b) -> {
+                                    ArrayList<Order> orders = new ArrayList<>(a);
+                                    orders.addAll(b);
+                                    return orders;
+                                })
+                                .build();
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<Order> streamStage = pipeline
                 .readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism);
+                .setLocalParallelism(localParallelism)
+                .peek(o -> "Order from taskId=" + getTaskId(o) + ", order=" + o);
         streamStage.writeTo(sink);
 
         JobConfig jobConfig = new JobConfig();
@@ -266,7 +269,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         Job job = instance().getJet().newJob(pipeline, jobConfig);
 
-        Map<String, List<Order>> ordersByTaskId = instance().getMap("testResults");
+        Map<String, List<Order>> ordersByTaskId = instance().getMap(testResultsMap);
 
         Map<String, Integer> minOrderIdByTaskIdBeforeSuspend = new HashMap<>();
         assertTrueEventually(() -> {
@@ -277,8 +280,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                     assertThat(records).isNotEmpty()
             );
             minOrderIdByTaskIdBeforeSuspend.putAll(getMinOrderIdByTaskId(ordersByTaskId));
-            LOGGER.debug("Min order ids before snapshot = {}", minOrderIdByTaskIdBeforeSuspend);
-            LOGGER.debug("Max order ids before snapshot = {}", getMaxOrderIdByTaskId(ordersByTaskId));
+            LOGGER.debug("Min order ids before suspend = {}", minOrderIdByTaskIdBeforeSuspend);
+            LOGGER.debug("Max order ids before suspend = {}", getMaxOrderIdByTaskId(ordersByTaskId));
         });
 
         waitForNextSnapshot(instance(), job);
@@ -325,7 +328,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
     private static void enableSnapshotting(JobConfig jobConfig) {
         jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
-        jobConfig.setSnapshotIntervalMillis(10);
+        jobConfig.setSnapshotIntervalMillis(200);
     }
 
     private static void enableEventJournal(Config config) {
