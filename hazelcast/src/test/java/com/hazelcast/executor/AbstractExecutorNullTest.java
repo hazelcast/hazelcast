@@ -69,7 +69,7 @@ public abstract class AbstractExecutorNullTest extends HazelcastTestSupport {
             }
         };
 
-        assertThrowsNPE(s -> s.execute((Runnable) null, sampleSelector));
+        assertThrowsNPE(s -> s.execute(null, sampleSelector));
         assertThrowsNPE(s -> s.execute(sampleRunnable, null));
         assertThrowsNPE(s -> s.executeOnKeyOwner(null, ""));
         assertThrowsNPE(s -> s.executeOnKeyOwner(sampleRunnable, null));
@@ -85,13 +85,13 @@ public abstract class AbstractExecutorNullTest extends HazelcastTestSupport {
 
         assertThrowsNPE(s -> s.submit((Callable) null, sampleSelector));
         assertThrowsNPE(s -> s.submit(sampleCallable, (MemberSelector) null));
-        assertThrowsNPE(s -> s.submitToKeyOwner((Callable) null, ""));
+        assertThrowsNPE(s -> s.submitToKeyOwner(null, ""));
         assertThrowsNPE(s -> s.submitToKeyOwner(sampleCallable, null));
-        assertThrowsNPE(s -> s.submitToMember((Callable) null, sampleMember));
+        assertThrowsNPE(s -> s.submitToMember(null, sampleMember));
         assertThrowsNPE(s -> s.submitToMember(sampleCallable, null));
-        assertThrowsNPE(s -> s.submitToMembers((Callable) null, sampleMembers));
+        assertThrowsNPE(s -> s.submitToMembers(null, sampleMembers));
         assertThrowsNPE(s -> s.submitToMembers(sampleCallable, (Collection<Member>) null));
-        assertThrowsNPE(s -> s.submitToMembers((Callable) null, sampleSelector));
+        assertThrowsNPE(s -> s.submitToMembers(null, sampleSelector));
         assertThrowsNPE(s -> s.submitToMembers(sampleCallable, (MemberSelector) null));
         assertThrowsNPE(s -> s.submitToAllMembers(null));
 
@@ -99,29 +99,29 @@ public abstract class AbstractExecutorNullTest extends HazelcastTestSupport {
 
         assertThrowsNPE(s -> s.submit((Runnable) null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submit(sampleRunnable, (ExecutionCallback) null);
+                   .submit(sampleRunnable, null);
 
         assertThrowsNPE(s -> s.submit((Runnable) null, sampleSelector, sampleCallback));
-        assertThrowsNPE(s -> s.submit(sampleRunnable, (MemberSelector) null, sampleCallback));
+        assertThrowsNPE(s -> s.submit(sampleRunnable, null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submit(sampleRunnable, sampleSelector, (ExecutionCallback) null);
+                   .submit(sampleRunnable, sampleSelector, null);
 
         assertThrowsNPE(s -> s.submitToKeyOwner((Runnable) null, "", sampleCallback));
         assertThrowsNPE(s -> s.submitToKeyOwner(sampleRunnable, null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submitToKeyOwner(sampleRunnable, "", (ExecutionCallback) null);
+                   .submitToKeyOwner(sampleRunnable, "", null);
 
         assertThrowsNPE(s -> s.submitToMember((Runnable) null, sampleMember, sampleCallback));
         assertThrowsNPE(s -> s.submitToMember(sampleRunnable, null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submitToMember(sampleRunnable, sampleMember, (ExecutionCallback) null);
+                   .submitToMember(sampleRunnable, sampleMember, null);
         assertThrowsNPE(s -> s.submitToMembers((Runnable) null, sampleMembers, sampleMultiExecutionCallback));
         assertThrowsNPE(s -> s.submitToMembers(sampleRunnable, (Collection) null, sampleMultiExecutionCallback));
-        assertThrowsNPE(s -> s.submitToMembers(sampleRunnable, sampleMembers, (MultiExecutionCallback) null));
+        assertThrowsNPE(s -> s.submitToMembers(sampleRunnable, sampleMembers, null));
 
         assertThrowsNPE(s -> s.submitToMembers((Runnable) null, sampleSelector, sampleMultiExecutionCallback));
         assertThrowsNPE(s -> s.submitToMembers(sampleRunnable, (MemberSelector) null, sampleMultiExecutionCallback));
-        assertThrowsNPE(s -> s.submitToMembers(sampleRunnable, sampleSelector, (MultiExecutionCallback) null));
+        assertThrowsNPE(s -> s.submitToMembers(sampleRunnable, sampleSelector, null));
 
         assertThrowsNPE(s -> s.submitToAllMembers((Runnable) null, sampleMultiExecutionCallback));
         assertThrowsNPE(s -> s.submitToAllMembers(sampleRunnable, null));
@@ -133,26 +133,26 @@ public abstract class AbstractExecutorNullTest extends HazelcastTestSupport {
                    .submit(sampleCallable, (ExecutionCallback) null);
 
         assertThrowsNPE(s -> s.submit((Callable) null, sampleSelector, sampleCallback));
-        assertThrowsNPE(s -> s.submit(sampleCallable, (MemberSelector) null, sampleCallback));
+        assertThrowsNPE(s -> s.submit(sampleCallable, null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submit(sampleCallable, sampleSelector, (ExecutionCallback) null);
+                   .submit(sampleCallable, sampleSelector, null);
 
         assertThrowsNPE(s -> s.submitToKeyOwner((Callable) null, "", sampleCallback));
         assertThrowsNPE(s -> s.submitToKeyOwner(sampleCallable, null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submitToKeyOwner(sampleCallable, "", (ExecutionCallback) null);
+                   .submitToKeyOwner(sampleCallable, "", null);
 
         assertThrowsNPE(s -> s.submitToMember((Callable) null, sampleMember, sampleCallback));
         assertThrowsNPE(s -> s.submitToMember(sampleCallable, null, sampleCallback));
         getDriver().getExecutorService(RANDOM_NAME)
-                   .submitToMember(sampleCallable, sampleMember, (ExecutionCallback) null);
+                   .submitToMember(sampleCallable, sampleMember, null);
         assertThrowsNPE(s -> s.submitToMembers((Callable) null, sampleMembers, sampleMultiExecutionCallback));
         assertThrowsNPE(s -> s.submitToMembers(sampleCallable, (Collection) null, sampleMultiExecutionCallback));
-        assertThrowsNPE(s -> s.submitToMembers(sampleCallable, sampleMembers, (MultiExecutionCallback) null));
+        assertThrowsNPE(s -> s.submitToMembers(sampleCallable, sampleMembers, null));
 
         assertThrowsNPE(s -> s.submitToMembers((Callable) null, sampleSelector, sampleMultiExecutionCallback));
         assertThrowsNPE(s -> s.submitToMembers(sampleCallable, (MemberSelector) null, sampleMultiExecutionCallback));
-        assertThrowsNPE(s -> s.submitToMembers(sampleCallable, sampleSelector, (MultiExecutionCallback) null));
+        assertThrowsNPE(s -> s.submitToMembers(sampleCallable, sampleSelector, null));
 
         assertThrowsNPE(s -> s.submitToAllMembers((Callable) null, sampleMultiExecutionCallback));
         assertThrowsNPE(s -> s.submitToAllMembers(sampleCallable, null));

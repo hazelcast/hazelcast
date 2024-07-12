@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+
 import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.jet.core.TestUtil.createMap;
@@ -251,11 +253,12 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
                         .setProperty("customProperty", "value")
         );
 
+        Map<String, String> map = createMap("customProperty", "value");
         assertThatThrownBy(() -> dataConnectionService.createOrReplaceSqlDataConnection(
                 TEST_DYNAMIC_CONFIG, // same name as in config added above
                 DUMMY_DATA_CONNECTION_TYPE,
                 false,
-                createMap("customProperty", "value")
+                map
         )).isInstanceOf(HazelcastException.class)
                 .hasMessage("Cannot replace a data connection created from configuration");
     }

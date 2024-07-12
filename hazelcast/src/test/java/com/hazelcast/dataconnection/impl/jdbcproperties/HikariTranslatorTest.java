@@ -115,8 +115,9 @@ public class HikariTranslatorTest {
         hzProperties.put("password", "testPassword");
 
         Properties hikariProperties = hikariTranslator.translate(hzProperties);
-        assertThat(hikariProperties).containsEntry("dataSource.user", "testUser");
-        assertThat(hikariProperties).containsEntry("dataSource.password", "testPassword");
+        assertThat(hikariProperties)
+                .containsEntry("dataSource.user", "testUser")
+                .containsEntry("dataSource.password", "testPassword");
     }
 
 }

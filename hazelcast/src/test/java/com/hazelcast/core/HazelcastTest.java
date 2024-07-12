@@ -32,7 +32,6 @@ import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -111,8 +110,8 @@ public class HazelcastTest extends HazelcastTestSupport {
         HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName("test");
         HazelcastInstance hc3 = Hazelcast.getHazelcastInstanceByName(hc1.getName());
 
-        assertTrue(hc1 == hc2);
-        assertTrue(hc1 == hc3);
+        assertSame(hc1, hc2);
+        assertSame(hc1, hc3);
     }
 
     @Test(expected = InvalidConfigurationException.class)

@@ -43,11 +43,12 @@ public class MapListenerAdapterTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = instanceFactory.newHazelcastInstance(cfg);
 
-        IMap map = instance.getMap(mapName);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
 
         final CountDownLatch expirationLatch = new CountDownLatch(1);
-        map.addEntryListener(new MapListenerAdapter() {
-            public void onEntryEvent(EntryEvent event) {
+        map.addEntryListener(new MapListenerAdapter<Integer, Integer>() {
+            @Override
+            public void onEntryEvent(EntryEvent<Integer, Integer> event) {
                 expirationLatch.countDown();
             }
         }, false);

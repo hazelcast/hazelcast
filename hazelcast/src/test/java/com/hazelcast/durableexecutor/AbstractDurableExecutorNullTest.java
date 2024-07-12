@@ -33,16 +33,16 @@ public abstract class AbstractDurableExecutorNullTest extends HazelcastTestSuppo
     public void testNullability() {
         Runnable sampleRunnable = (Runnable & Serializable) () -> {
         };
-        Callable<Object> sampleCallable = (Callable & Serializable) () -> "";
+        Callable<Object> sampleCallable = (Callable<Object> & Serializable) () -> "";
 
-        assertThrowsNPE(s -> s.submit((Callable) null));
-        assertThrowsNPE(s -> s.submit((Runnable) null, ""));
+        assertThrowsNPE(s -> s.submit((Callable<Object>) null));
+        assertThrowsNPE(s -> s.submit(null, ""));
         getDriver().getDurableExecutorService(RANDOM_NAME)
                    .submit(sampleRunnable, null);
         assertThrowsNPE(s -> s.submit((Runnable) null));
-        assertThrowsNPE(s -> s.executeOnKeyOwner((Runnable) null, ""));
+        assertThrowsNPE(s -> s.executeOnKeyOwner(null, ""));
         assertThrowsNPE(s -> s.executeOnKeyOwner(sampleRunnable, null));
-        assertThrowsNPE(s -> s.submitToKeyOwner((Callable) null, ""));
+        assertThrowsNPE(s -> s.submitToKeyOwner((Callable<Object>) null, ""));
         getDriver().getDurableExecutorService(RANDOM_NAME)
                    .submitToKeyOwner(sampleCallable, "");
         assertThrowsNPE(s -> s.submitToKeyOwner((Runnable) null, ""));

@@ -36,8 +36,8 @@ import static org.junit.Assert.assertTrue;
 public class HazelcastMemberStarterTest
         extends HazelcastTestSupport {
 
-    private File parent = new File("ports");
-    private File child = new File(parent, "hz.ports");
+    private final File parent = new File("ports");
+    private final File child = new File(parent, "hz.ports");
 
     @Before
     @SuppressWarnings("ResultOfMethodCallIgnored")
