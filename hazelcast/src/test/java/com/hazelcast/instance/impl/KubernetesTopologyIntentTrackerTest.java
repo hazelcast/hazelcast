@@ -65,15 +65,18 @@ public class KubernetesTopologyIntentTrackerTest {
     @Test
     public void testConstructor_whenClusterAutoStateStrategyActive() {
         properties.setProperty(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName(), "ACTIVE");
+        Node node = setupMockNode();
         assertThrows(InvalidConfigurationException.class,
-                () -> new KubernetesTopologyIntentTracker(setupMockNode()));
+                () -> new KubernetesTopologyIntentTracker(node));
     }
 
     @Test
     public void testConstructor_whenInvalidClusterAutoStateStrategy() {
         properties.setProperty(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName(), "NOT_A_CLUSTER_STATE");
+        Node node = setupMockNode();
+
         assertThrows(IllegalArgumentException.class,
-                () -> new KubernetesTopologyIntentTracker(setupMockNode()));
+                () -> new KubernetesTopologyIntentTracker(node));
     }
 
     @Test
@@ -110,7 +113,7 @@ public class KubernetesTopologyIntentTrackerTest {
         clusterTopologyIntentTracker.update(3, 0,
                 2, 3,
                 2, 2);
-        Future future = spawn(() -> {
+        Future<?> future = spawn(() -> {
             clusterTopologyIntentTracker.waitForMissingMember();
         });
         sleepSeconds(1);

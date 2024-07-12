@@ -163,7 +163,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
         Job job = instances[0].getJet().newJob(dag);
         assertThat(job).eventuallyHasStatus(RUNNING, Duration.ofSeconds(10));
-        Future future = spawn(() -> {
+        Future<?> future = spawn(() -> {
             HazelcastInstance nonParticipatingMember = createHazelcastInstance();
             sleepSeconds(1);
             nonParticipatingMember.shutdown();
@@ -226,7 +226,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         private int counter;
         private int globalIndex;
-        private int numItems;
+        private final int numItems;
 
         EmitIntegersP(int numItems) {
             this.numItems = numItems;
@@ -290,12 +290,12 @@ public class GracefulShutdownTest extends JetTestSupport {
         }
 
         @Override
-        public Map loadAll(Collection keys) {
+        public Map<Object, Object> loadAll(Collection<Object> keys) {
             return null;
         }
 
         @Override
-        public Iterable loadAllKeys() {
+        public Iterable<Object> loadAllKeys() {
             return null;
         }
 

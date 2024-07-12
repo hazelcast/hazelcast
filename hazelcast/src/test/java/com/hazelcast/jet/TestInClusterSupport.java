@@ -108,7 +108,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     @After
     public void after() throws Exception {
-        Future future = spawn(() ->
+        Future<?> future = spawn(() ->
                 cleanUpCluster(allHazelcastInstances()));
         future.get(1, TimeUnit.MINUTES);
     }
