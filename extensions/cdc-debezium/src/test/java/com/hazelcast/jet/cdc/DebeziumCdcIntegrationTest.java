@@ -51,8 +51,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.jet.cdc.MySQLTestUtils.getMySqlConnection;
-import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
 import static com.hazelcast.jet.cdc.MySQLTestUtils.runQuery;
+import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
 import static com.hazelcast.jet.cdc.PostgresTestUtils.getPostgreSqlConnection;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -529,8 +529,10 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     logger.info(String.format("List size: %s", changeRecordList.size()));
                     assertThat(changeRecordList).as(listName).isNotEmpty();
 
-                    assertThat(changeRecordList).anyMatch(r ->
-                            r.value().toJson().contains("CREATE TABLE `tableForSchemaChangesArePassed`"));
+                    assertThat(changeRecordList).anyMatch(r -> {
+                        String json = r.value().toJson();
+                        return json.contains("CREATE TABLE") && json.contains("tableForSchemaChangesArePassed");
+                    });
                 });
             } finally {
                 runQuery(container, "DROP TABLE IF EXISTS inventory.tableForSchemaChangesArePassed");
