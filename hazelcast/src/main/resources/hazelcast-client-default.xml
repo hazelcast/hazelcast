@@ -21,7 +21,7 @@
   This XML file is used when no hazelcast-client.xml is present.
 
   To learn how to configure Hazelcast, please see the schema at
-  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.5.xsd
+  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-6.0.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 

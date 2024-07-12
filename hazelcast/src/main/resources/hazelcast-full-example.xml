@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast member.
 
   To learn how to configure Hazelcast, please see the schema at
-  http://www.hazelcast.com/schema/config/hazelcast-config-5.5.xsd
+  http://www.hazelcast.com/schema/config/hazelcast-config-6.0.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 

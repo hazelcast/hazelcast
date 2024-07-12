@@ -16,7 +16,7 @@
 
 <!--
     The default Hazelcast configuration. This is used when no hazelcast.xml is present.
-    Please see the schema for how to configure Hazelcast at http://www.hazelcast.com/schema/config/hazelcast-config-5.5.xsd
+    Please see the schema for how to configure Hazelcast at http://www.hazelcast.com/schema/config/hazelcast-config-6.0.xsd
     or the documentation at https://hazelcast.org/documentation/
 -->
 <!--suppress XmlDefaultAttributeValue -->
