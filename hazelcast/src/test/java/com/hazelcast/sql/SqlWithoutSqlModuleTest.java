@@ -48,8 +48,7 @@ public class SqlWithoutSqlModuleTest extends JetTestSupport {
         HazelcastInstance inst = createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
 
-        try {
-            client.getSql().execute("SELECT 1");
+        try (SqlResult ignored = client.getSql().execute("SELECT 1")) {
             fail("should have failed");
         } catch (HazelcastSqlException e) {
             assertNotNull(e.getOriginatingMemberId());
