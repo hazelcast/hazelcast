@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
@@ -37,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 import static java.lang.String.format;
@@ -55,7 +55,7 @@ class ClientConnectivityLoggerTest {
     @Mock
     private LoggingService loggingService;
     @Mock
-    private ScheduledExecutorService executor;
+    private TaskScheduler executor;
     @Mock
     private ILogger logger;
 

@@ -29,6 +29,6 @@ public class ClientClusterServiceImplTest extends ClientClusterServiceBaseTest {
 
     @Override
     protected ClientClusterService createClientClusterService() {
-        return new ClientClusterServiceImpl(loggingService);
+        return new ClientClusterServiceImpl(clientMock);
     }
 }

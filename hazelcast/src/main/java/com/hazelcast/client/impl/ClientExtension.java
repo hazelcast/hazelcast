@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
@@ -31,7 +30,6 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetService;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.SocketInterceptor;
@@ -130,12 +128,11 @@ public interface ClientExtension {
     /**
      * Creates the relevant ClientClusterService implementation.
      *
-     * @param hazelcastClientInstance the client instance.
-     * @return the ClientClusterService implementation.
+     * @param clientInstance the client instance.
      * @throws InvalidConfigurationException if the service cannot be created due to an invalid configuration.
+     * @return the ClientClusterService implementation.
      */
-    ClientClusterService createClientClusterService(LoggingService loggingService,
-                                                    ClusterRoutingConfig clusterRoutingConfig);
+    ClientClusterService createClientClusterService(HazelcastClientInstanceImpl clientInstance);
 
     /**
      * Creates the correct implementation of {@link ClientCPGroupViewService}.

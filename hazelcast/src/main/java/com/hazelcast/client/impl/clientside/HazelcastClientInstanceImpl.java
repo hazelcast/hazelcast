@@ -259,8 +259,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
-        clusterService = clientExtension.createClientClusterService(loggingService,
-                config.getNetworkConfig().getClusterRoutingConfig());
+        clusterService = clientExtension.createClientClusterService(this);
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);
@@ -823,6 +822,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         clusterDiscoveryService.shutdown();
         transactionManager.shutdown();
         invocationService.shutdown();
+        clusterService.terminateClientConnectivityLogging();
         executionService.shutdown();
         listenerService.shutdown();
         clientStatisticsService.shutdown();

@@ -15,6 +15,10 @@
  */
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.InitialMembershipEvent;
@@ -26,6 +30,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
@@ -60,12 +65,19 @@ public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport 
 
     protected final LoggingService loggingService = mock(LoggingService.class);
     private final ILogger logger = mock(ILogger.class);
+    protected final HazelcastClientInstanceImpl clientMock = mock(HazelcastClientInstanceImpl.class);
+    private final ClientConnectionManager connectionManager = mock(ClientConnectionManager.class);
 
     protected abstract ClientClusterService createClientClusterService();
 
     @Before
     public void setUp() {
         when(loggingService.getLogger(any(Class.class))).thenReturn(logger);
+        when(connectionManager.getRoutingMode()).thenReturn(RoutingMode.ALL_MEMBERS);
+        when(clientMock.getClientConfig()).thenReturn(new ClientConfig());
+        when(clientMock.getLoggingService()).thenReturn(loggingService);
+        when(clientMock.getProperties()).thenReturn(mock(HazelcastProperties.class));
+        when(clientMock.getConnectionManager()).thenReturn(connectionManager);
     }
 
     @Test

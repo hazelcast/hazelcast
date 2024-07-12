@@ -163,4 +163,10 @@ public interface ClientClusterService {
      * @return the membership version.
      */
     int getMemberListVersion();
+
+    /**
+     * Terminates the {@link com.hazelcast.client.util.ClientConnectivityLogger} task
+     * which may be in progress.
+     */
+    void terminateClientConnectivityLogging();
 }

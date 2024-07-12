@@ -20,12 +20,12 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Collection;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static java.lang.System.lineSeparator;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -54,7 +54,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class ClientConnectivityLogger {
 
     private final ILogger logger;
-    private final ScheduledExecutorService executor;
+    private final TaskScheduler executor;
     private final int delayPeriodSeconds;
     private Future<?> submittedLoggingTask;
 
@@ -66,7 +66,7 @@ public class ClientConnectivityLogger {
      * @param properties the hazelcast properties, providing the
      *                   logPeriodSeconds.
      */
-    public ClientConnectivityLogger(LoggingService loggingService, ScheduledExecutorService executor,
+    public ClientConnectivityLogger(LoggingService loggingService, TaskScheduler executor,
                                     HazelcastProperties properties) {
         this.logger = loggingService.getLogger(ClientConnectivityLogger.class);
         this.executor = executor;
@@ -97,11 +97,10 @@ public class ClientConnectivityLogger {
             submittedLoggingTask.cancel(true);
         }
 
-        if (!executor.isShutdown()) {
-            submittedLoggingTask = executor.schedule(()
-                    -> logger.info(connectivityLog(connectedMembers, allMembers)),
-                    delayPeriodSeconds, SECONDS);
-        }
+        submittedLoggingTask = executor.schedule(()
+                        -> logger.info(connectivityLog(connectedMembers, allMembers)),
+                delayPeriodSeconds, SECONDS);
+
     }
 
     /**
@@ -137,5 +136,14 @@ public class ClientConnectivityLogger {
         }
         sb.append(lineSeparator()).append("}").append(lineSeparator());
         return sb.toString();
+    }
+
+    /**
+     * Terminates a submitted logging task.
+     */
+    public void terminate() {
+        if (submittedLoggingTask != null && !submittedLoggingTask.isDone()) {
+            submittedLoggingTask.cancel(true);
+        }
     }
 }

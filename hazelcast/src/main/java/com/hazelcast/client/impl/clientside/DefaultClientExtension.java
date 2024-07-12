@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.connection.tcp.RoutingMode;
@@ -63,7 +62,6 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -261,13 +259,13 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public ClientClusterService createClientClusterService(LoggingService loggingService,
-                                                           ClusterRoutingConfig clusterRoutingConfig) {
-        if (clusterRoutingConfig.getRoutingMode() == RoutingMode.MULTI_MEMBER) {
+    public ClientClusterService createClientClusterService(HazelcastClientInstanceImpl clientInstance) {
+        if (clientInstance.getClientConfig().getNetworkConfig()
+                .getClusterRoutingConfig().getRoutingMode() == RoutingMode.MULTI_MEMBER) {
             throw new InvalidConfigurationException(String.format("%s routing is an enterprise feature since 5.5. "
                     + "You must use Hazelcast enterprise to enable this feature.", RoutingMode.MULTI_MEMBER));
         }
-        return new ClientClusterServiceImpl(loggingService);
+        return new ClientClusterServiceImpl(clientInstance);
     }
 
     @Override
