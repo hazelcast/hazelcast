@@ -20,26 +20,25 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"springAware-disabled-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestDisabledSpringAwareAnnotation {
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
@@ -49,7 +48,7 @@ public class TestDisabledSpringAwareAnnotation {
     private ApplicationContext context;
 
     @Test
-    public void testDisabledSpringManagedContext() {
+    void testDisabledSpringManagedContext() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertNull(instance.getConfig().getManagedContext());
 

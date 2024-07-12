@@ -20,27 +20,27 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.spring.context.SpringManagedContext;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"springAware-enabled-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestEnabledSpringAwareAnnotation {
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
@@ -50,11 +50,11 @@ public class TestEnabledSpringAwareAnnotation {
     private ApplicationContext context;
 
     @Test
-    public void testSpringManagedContext() {
+    void testSpringManagedContext() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
-        assertTrue(instance.getConfig().getManagedContext() instanceof SpringManagedContext);
+        assertInstanceOf(SpringManagedContext.class, instance.getConfig().getManagedContext());
 
         HazelcastClientProxy client = (HazelcastClientProxy) context.getBean("client");
-        assertTrue(client.getClientConfig().getManagedContext() instanceof SpringManagedContext);
+        assertInstanceOf(SpringManagedContext.class, client.getClientConfig().getManagedContext());
     }
 }
