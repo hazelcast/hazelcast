@@ -59,7 +59,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     @ClassRule
     public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-map.xml");
 
-    private DataStructureLoader mapStore = new IMapMapStore();
+    private final DataStructureLoader mapStore = new IMapMapStore();
 
     private IMap<Integer, String> map;
     private IMap<Integer, String> mapWithLoader;
@@ -350,7 +350,6 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testExecuteOnEntriesWithPredicate() {
         map.put(23, "value-23");
         map.put(42, "value-42");
@@ -396,7 +395,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test(expected = MethodNotAvailableException.class)
     public void testLoadAllWithListener() {
-        adapter.loadAll(Collections.<Integer>emptySet(), true, null);
+        adapter.loadAll(Collections.emptySet(), true, null);
     }
 
     @Test
