@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 public class ExecutorServiceLiteMemberTest
         extends ExecutorServiceTestSupport {
 
-    private Config liteConfig = smallInstanceConfig().setLiteMember(true);
+    private final Config liteConfig = smallInstanceConfig().setLiteMember(true);
 
     @Test(expected = RejectedExecutionException.class)
     public void test_executeRunnable_failsWhenNoLiteMemberExists() {

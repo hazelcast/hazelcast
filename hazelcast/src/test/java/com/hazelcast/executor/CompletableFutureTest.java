@@ -24,10 +24,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
@@ -61,8 +59,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     private AtomicReference<Object> reference1;
     private AtomicReference<Object> reference2;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void setUp() {
@@ -152,21 +148,19 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void get_taskThrowsException() throws Exception {
+    public void get_taskThrowsException() {
         InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
         submitReleasingTask(100);
 
-        expected.expect(ExecutionException.class);
-        f.get();
+        assertThrows(ExecutionException.class, f::get);
     }
 
     @Test(timeout = 60000)
-    public void getWithTimeout_taskThrowsException() throws Exception {
+    public void getWithTimeout_taskThrowsException() {
         InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
         submitReleasingTask(200);
 
-        expected.expect(ExecutionException.class);
-        f.get(30000, TimeUnit.MILLISECONDS);
+        assertThrows(ExecutionException.class, () -> f.get(30000, TimeUnit.MILLISECONDS));
     }
 
     @Test(timeout = 60000)
@@ -179,11 +173,10 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void getWithTimeout_timesOut() throws Exception {
+    public void getWithTimeout_timesOut() {
         InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
 
-        expected.expect(TimeoutException.class);
-        f.get(1, TimeUnit.MILLISECONDS);
+        assertThrows(TimeoutException.class, () -> f.get(1, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -228,7 +221,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void cancelAndGet_taskCancelled_withoutInterruption_logicExecuted() throws Exception {
+    public void cancelAndGet_taskCancelled_withoutInterruption_logicExecuted() {
         InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
 
@@ -240,12 +233,11 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertTrue("Task cancellation should succeed", cancelResult);
         assertTrue("Task should be done", f.isDone());
         assertTrue("Task should be cancelled", f.isCancelled());
-        expected.expect(CancellationException.class);
-        f.get();
+        assertThrows(CancellationException.class, f::get);
     }
 
     @Test(timeout = 60000)
-    public void cancelAndGet_taskCancelled_withInterruption_noLogicExecuted() throws Exception {
+    public void cancelAndGet_taskCancelled_withInterruption_noLogicExecuted() {
         InternalCompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
 
@@ -256,8 +248,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertTrue("Task cancellation should succeed", cancelResult);
         assertTrue("Task should be done", f.isDone());
         assertTrue("Task should be cancelled", f.isCancelled());
-        expected.expect(CancellationException.class);
-        f.get();
+        assertThrows(CancellationException.class, f::get);
     }
 
 
@@ -319,7 +310,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertEquals(1, executedLogic.getCount());
     }
 
-    private void assertTaskFinishedEventually(final CompletableFuture future) {
+    private void assertTaskFinishedEventually(final CompletableFuture<String> future) {
         assertTrueEventually(() -> assertTrue(future.isDone()));
     }
 

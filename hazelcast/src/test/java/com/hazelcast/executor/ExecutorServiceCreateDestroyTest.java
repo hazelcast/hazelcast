@@ -81,7 +81,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
     }
 
     private void test_createUse_thenDestroy(final ExecutorServiceCommand command) throws Exception {
-        Future[] futures = new Future[INSTANCE_COUNT];
+        Future<?>[] futures = new Future[INSTANCE_COUNT];
         for (int i = 0; i < INSTANCE_COUNT; i++) {
             final HazelcastInstance instance = instances[i];
 
@@ -97,7 +97,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
             });
         }
 
-        for (Future future : futures) {
+        for (Future<?> future : futures) {
             try {
                 future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
             } catch (ExecutionException e) {

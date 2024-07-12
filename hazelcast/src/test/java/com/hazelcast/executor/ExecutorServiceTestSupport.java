@@ -177,7 +177,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class SerializationCountingCallable implements Callable<Void>, DataSerializable {
 
-        private AtomicInteger serializationCount = new AtomicInteger();
+        private final AtomicInteger serializationCount = new AtomicInteger();
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
@@ -330,11 +330,6 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         public int getNullResponseCount() {
             return nullResponseCount.get();
-        }
-
-        public boolean awaitResponseLatch(int seconds)
-                throws InterruptedException {
-            return responseLatch.await(seconds, TimeUnit.SECONDS);
         }
 
         public CountDownLatch getResponseLatch() {
