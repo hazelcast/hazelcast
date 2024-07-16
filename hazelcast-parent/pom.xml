@@ -154,6 +154,7 @@
         <awaitility.version>4.2.1</awaitility.version>
         <hikari.version>5.1.0</hikari.version>
         <checkstyle.version>10.17.0</checkstyle.version>
+        <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
