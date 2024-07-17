@@ -1,10 +1,12 @@
-This document lists the enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.7 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
+This document lists the new features, enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.8 release. The numbers in the square brackets refer to issues in Hazelcast's public and internal GitHub repositories.
 
-## Enhancements
+## Fixes
 
-* Improved the time spent on the first partition migration, in case a new member joins a cluster with high partition count. [#1201]
-* Updated the versions of following dependencies:
-  * gRPC to 1.60.0
-  * Jetty to 9.4.53.v20231009
-  * AWS SDK to 1.12.688
-  [#1207], [#1208], [#1209]
+* Fix memory leak with OpenSSL (with newer versions of netty libraries) #13738
+* Fix Jet vulnerabilities
+** Fix CVE-2022-3171 vulnerabilities in protobuf-java 3.19.4 and hadoop-shaded-protobuf_3_7-1.1.1 [#22541]
+** Fix CVE-2023-2976 vulnerability in hadoop-shaded-guava-1.1.1.jar (shaded: com.google.guava:guava:30.1.1-jre) [#24981]
+** Fix CVE-2024-36114 vulnerability in aircompressor-0.21 [#26354]
+* Fix serialization issue with rolling upgrade from 5.2 to 5.3
+* Fix phone home metrics for vCPUs
+
