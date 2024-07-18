@@ -16,11 +16,13 @@
 
 package com.hazelcast.aws;
 
+import com.hazelcast.internal.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -40,11 +42,9 @@ final class XmlNode {
     }
 
     static XmlNode create(String xmlString) {
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            Document doc = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xmlString.getBytes(UTF_8)));
+        try (InputStream stream = new ByteArrayInputStream(xmlString.getBytes(UTF_8))) {
+            DocumentBuilderFactory dbf = XmlUtil.getNsAwareDocumentBuilderFactory();
+            Document doc = dbf.newDocumentBuilder().parse(stream);
             return new XmlNode(doc.getDocumentElement());
         } catch (Exception e) {
             throw new RuntimeException(e);
