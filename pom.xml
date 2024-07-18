@@ -344,22 +344,6 @@
                 </executions>
                 <inherited>false</inherited>
             </plugin>
-            <plugin>
-                <groupId>com.hazelcast.maven</groupId>
-                <artifactId>attribution-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aggregated-attribution-oss</id>
-                        <inherited>false</inherited>
-                        <goals>
-                            <goal>aggregate</goal>
-                        </goals>
-                        <configuration>
-                            <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -730,22 +714,48 @@
         </profile>
 
         <profile>
-            <!--
-            Configures release-specific options when doing a final, production release
-            -->
+            <id>release-devel</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hazelcast.maven</groupId>
+                        <artifactId>attribution-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>aggregated-attribution-oss</id>
+                                <inherited>false</inherited>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>release</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>release-repository</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
+                        <groupId>com.hazelcast.maven</groupId>
+                        <artifactId>attribution-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>aggregated-attribution-oss</id>
+                                <inherited>false</inherited>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

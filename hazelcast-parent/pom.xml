@@ -1051,21 +1051,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>com.hazelcast.maven</groupId>
-                <artifactId>attribution-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>per-jar-attribution</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
                     <execution>
@@ -1187,6 +1172,21 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                     </plugin>
+                    <plugin>
+                        <groupId>com.hazelcast.maven</groupId>
+                        <artifactId>attribution-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>per-jar-attribution</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -1211,6 +1211,21 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.hazelcast.maven</groupId>
+                        <artifactId>attribution-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>per-jar-attribution</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -1265,7 +1280,21 @@
                             </execution>
                         </executions>
                     </plugin>
-
+                    <plugin>
+                        <groupId>com.hazelcast.maven</groupId>
+                        <artifactId>attribution-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>per-jar-attribution</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>

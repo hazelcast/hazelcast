@@ -72,6 +72,11 @@ public final class Versions {
      */
     public static final Version V5_5 = Version.of(5, 5);
 
+    /**
+     * Cluster version 6.0
+     */
+    public static final Version V6_0 = Version.of(6, 0);
+
     @Nonnull
     public static final Version PREVIOUS_CLUSTER_VERSION;
     @Nonnull
