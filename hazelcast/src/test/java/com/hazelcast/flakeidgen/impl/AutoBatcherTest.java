@@ -36,7 +36,7 @@ public class AutoBatcherTest {
 
     private static final int VALIDITY = 10000;
 
-    private AutoBatcher batcher = new AutoBatcher(3, VALIDITY, new AutoBatcher.IdBatchSupplier() {
+    private final AutoBatcher batcher = new AutoBatcher(3, VALIDITY, new AutoBatcher.IdBatchSupplier() {
 
         int base;
 

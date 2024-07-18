@@ -19,10 +19,8 @@ package com.hazelcast.flakeidgen.impl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
@@ -30,14 +28,12 @@ import java.util.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FlakeIdGenerator_IdBatchTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void testIterator() {
@@ -49,8 +45,8 @@ public class FlakeIdGenerator_IdBatchTest {
         assertTrue(it.hasNext());
         assertEquals(Long.valueOf(11), it.next());
         assertFalse(it.hasNext());
-        exception.expect(NoSuchElementException.class);
-        it.next();
+
+        assertThrows(NoSuchElementException.class, it::next);
     }
 
     @Test
@@ -65,8 +61,8 @@ public class FlakeIdGenerator_IdBatchTest {
         assertEquals(Long.valueOf(11), it.next());
         assertFalse(it.hasNext());
         assertFalse(it.hasNext());
-        exception.expect(NoSuchElementException.class);
-        it.next();
+
+        assertThrows(NoSuchElementException.class, it::next);
     }
 
     @Test
@@ -76,8 +72,8 @@ public class FlakeIdGenerator_IdBatchTest {
 
         assertEquals(Long.valueOf(1), it.next());
         assertEquals(Long.valueOf(11), it.next());
-        exception.expect(NoSuchElementException.class);
-        it.next();
+
+        assertThrows(NoSuchElementException.class, it::next);
     }
 
     @Test
@@ -86,7 +82,7 @@ public class FlakeIdGenerator_IdBatchTest {
         Iterator<Long> it = b.iterator();
 
         assertFalse(it.hasNext());
-        exception.expect(NoSuchElementException.class);
-        it.next();
+
+        assertThrows(NoSuchElementException.class, it::next);
     }
 }

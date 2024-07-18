@@ -56,7 +56,7 @@ public final class FlakeIdConcurrencyTestUtil {
             ids.addAll(f.get());
         }
 
-        // if there were duplicate IDs generated, there will be less items in the set than expected
+        // if there were duplicate IDs generated, there will be fewer items in the set than expected
         assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
         return ids;
     }

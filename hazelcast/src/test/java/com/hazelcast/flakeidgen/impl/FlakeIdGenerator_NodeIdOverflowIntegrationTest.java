@@ -27,18 +27,15 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
     private HazelcastInstance instance2;
@@ -75,9 +72,9 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
 
         FlakeIdGenerator gen = instance1.getFlakeIdGenerator("gen");
 
-        exception.expect(HazelcastException.class);
-        exception.expectMessage("All members have node ID out of range");
-        gen.newId();
+        assertThatThrownBy(gen::newId)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("All members have node ID out of range");
     }
 
     private static void assignOutOfRangeNodeId(HazelcastInstance instance) {

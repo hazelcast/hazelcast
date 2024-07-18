@@ -24,10 +24,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -44,6 +42,7 @@ import java.nio.channels.WritableByteChannel;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
@@ -51,12 +50,10 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCachePreloaderLockTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException rule = ExpectedException.none();
 
-    private ILogger logger = mock(ILogger.class);
-    private File preloaderLockFile = new File(randomName());
-    private File lockFile = new File(randomName());
+    private final ILogger logger = mock(ILogger.class);
+    private final File preloaderLockFile = new File(randomName());
+    private final File lockFile = new File(randomName());
 
     private NearCachePreloaderLock preloaderLock;
     private FileChannel channel;
@@ -74,6 +71,7 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
     public void tearDown() {
         closeResource(channel);
         closeResource(anotherChannel);
+        preloaderLock.release();
         deleteQuietly(lockFile);
         deleteQuietly(preloaderLockFile);
     }
@@ -87,10 +85,12 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
      * </pre>
      */
     @Test
-    public void testAcquireLock_whenTryLockReturnsNull_thenThrowHazelcastException() throws Exception {
-        rule.expect(HazelcastException.class);
-        rule.expectMessage("File is already being used by another Hazelcast instance.");
-        preloaderLock.acquireLock(lockFile, new NotLockingDummyFileChannel());
+    public void testAcquireLock_whenTryLockReturnsNull_thenThrowHazelcastException() throws IOException {
+        try (NotLockingDummyFileChannel notLockingDummyFileChannel = new NotLockingDummyFileChannel()) {
+            assertThatThrownBy(() -> preloaderLock.acquireLock(lockFile, notLockingDummyFileChannel))
+                    .isInstanceOf(HazelcastException.class)
+                    .hasMessageContaining("File is already being used by another Hazelcast instance.");
+        }
     }
 
     /**
@@ -106,9 +106,10 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
     public void testAcquireLock_whenTryLockThrowsOverlappingFileLockException_thenThrowHazelcastException() throws Exception {
         try (FileLock anotherLock = anotherChannel.tryLock()) {
             assertThat(anotherLock).isNotNull();
-            rule.expect(HazelcastException.class);
-            rule.expectMessage("File is already being used by this Hazelcast instance.");
-            preloaderLock.acquireLock(lockFile, channel);
+
+            assertThatThrownBy(() -> preloaderLock.acquireLock(lockFile, channel))
+                    .isInstanceOf(HazelcastException.class)
+                    .hasMessageContaining("File is already being used by this Hazelcast instance.");
         }
     }
 
@@ -122,9 +123,9 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
     public void testAcquireLock_whenTryLockThrowsIOException_thenThrowHazelcastException() throws Exception {
         channel.close(); //locking on close channel will result with IOException
 
-        rule.expect(HazelcastException.class);
-        rule.expectMessage("Unknown failure while acquiring lock on " + lockFile.getAbsolutePath());
-        preloaderLock.acquireLock(lockFile, channel);
+        assertThatThrownBy(() -> preloaderLock.acquireLock(lockFile, channel))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Unknown failure while acquiring lock on " + lockFile.getAbsolutePath());
     }
 
     @Test
@@ -140,101 +141,101 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
     private static class NotLockingDummyFileChannel extends FileChannel {
 
         @Override
-        public int read(ByteBuffer dst) throws IOException {
+        public int read(ByteBuffer dst) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-            throw new UnsupportedOperationException();
-
-        }
-
-        @Override
-        public int write(ByteBuffer src) throws IOException {
+        public long read(ByteBuffer[] dsts, int offset, int length) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        public int write(ByteBuffer src) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public long position() throws IOException {
+        public long write(ByteBuffer[] srcs, int offset, int length) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public FileChannel position(long newPosition) throws IOException {
+        public long position() {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public long size() throws IOException {
+        public FileChannel position(long newPosition) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public FileChannel truncate(long size) throws IOException {
+        public long size() {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public void force(boolean metaData) throws IOException {
+        public FileChannel truncate(long size) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+        public void force(boolean metaData) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
+        public long transferTo(long position, long count, WritableByteChannel target) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public int read(ByteBuffer dst, long position) throws IOException {
+        public long transferFrom(ReadableByteChannel src, long position, long count) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public int write(ByteBuffer src, long position) throws IOException {
+        public int read(ByteBuffer dst, long position) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public MappedByteBuffer map(MapMode mode, long position, long size) throws IOException {
+        public int write(ByteBuffer src, long position) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public FileLock lock(long position, long size, boolean shared) throws IOException {
+        public MappedByteBuffer map(MapMode mode, long position, long size) {
             throw new UnsupportedOperationException();
 
         }
 
         @Override
-        public FileLock tryLock(long position, long size, boolean shared) throws IOException {
+        public FileLock lock(long position, long size, boolean shared) {
+            throw new UnsupportedOperationException();
+
+        }
+
+        @Override
+        public FileLock tryLock(long position, long size, boolean shared) {
             return null;
         }
 
         @Override
-        protected void implCloseChannel() throws IOException {
+        protected void implCloseChannel() {
             //no-op to make close() working
         }
     }
