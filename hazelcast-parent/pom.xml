@@ -1121,7 +1121,7 @@
     <profiles>
         <profile>
             <!--
-            Enables faster local builds, by skipping ome validation steps (e.g. Checkstyle)
+            Enables faster local builds, by skipping some validation steps (e.g. Checkstyle)
             -->
             <id>quick</id>
             <activation>
@@ -1140,12 +1140,6 @@
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <!-- https://maven.apache.org/enforcer/maven-enforcer-plugin/enforce-mojo.html#skip -->
                 <enforcer.skip>true</enforcer.skip>
-                <!-- https://github.com/hazelcast/attribution-maven-plugin?tab=readme-ov-file#configuration-properties -->
-                <attribution.skip>true</attribution.skip>
-                <!-- https://www.mojohaus.org/license-maven-plugin/add-third-party-mojo.html#skipAddThirdParty -->
-                <license.skipAddThirdParty>true</license.skipAddThirdParty>
-                <!-- https://www.mojohaus.org/license-maven-plugin/aggregate-add-third-party-mojo.html -->
-                <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
                 <!-- https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#useIncrementalCompilation -->
                 <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
             </properties>
