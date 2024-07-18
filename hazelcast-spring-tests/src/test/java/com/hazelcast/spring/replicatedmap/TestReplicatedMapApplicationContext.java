@@ -21,39 +21,38 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"replicatedMap-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestReplicatedMapApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testReplicatedMapConfig() {
+    void testReplicatedMapConfig() {
         ReplicatedMapConfig replicatedMapConfig = instance.getConfig().getReplicatedMapConfig("replicatedMap");
         assertNotNull(replicatedMapConfig);
         assertEquals("OBJECT", InMemoryFormat.OBJECT.name());

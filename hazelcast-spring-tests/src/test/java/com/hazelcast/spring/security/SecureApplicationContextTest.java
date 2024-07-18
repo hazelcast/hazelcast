@@ -28,28 +28,29 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
 import com.hazelcast.security.SecurityInterceptor;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"secure-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
-public class SecureApplicationContextTest {
+class SecureApplicationContextTest {
 
     @Autowired
     private Config config;
@@ -62,13 +63,13 @@ public class SecureApplicationContextTest {
     @Autowired
     private IPermissionPolicy dummyPermissionPolicy;
 
-    @Before
+    @BeforeEach
     public void init() {
         securityConfig = config.getSecurityConfig();
     }
 
     @Test
-    public void testBasics() {
+    void testBasics() {
         assertNotNull(securityConfig);
         assertTrue(securityConfig.isEnabled());
         assertTrue(securityConfig.getClientBlockUnmappedActions());
@@ -82,7 +83,7 @@ public class SecureApplicationContextTest {
     }
 
     @Test
-    public void testMemberRealm() {
+    void testMemberRealm() {
         RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
         JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
         assertNotNull(jaasAuthenticationConfig);
@@ -99,7 +100,7 @@ public class SecureApplicationContextTest {
     }
 
     @Test
-    public void testClientLoginConfigs() {
+    void testClientLoginConfigs() {
         RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getClientRealm());
         JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
         assertNotNull(jaasAuthenticationConfig);
@@ -116,14 +117,14 @@ public class SecureApplicationContextTest {
     }
 
     @Test
-    public void testPermissionPolicy() {
+    void testPermissionPolicy() {
         assertEquals("com.hazelcast.examples.MyPermissionPolicy", securityConfig.getClientPolicyConfig().getClassName());
         assertFalse(securityConfig.getClientPolicyConfig().getProperties().isEmpty());
         assertEquals(dummyPermissionPolicy, securityConfig.getClientPolicyConfig().getImplementation());
     }
 
     @Test
-    public void testPermissions() {
+    void testPermissions() {
         Set<PermissionConfig> perms = securityConfig.getClientPermissionConfigs();
         assertFalse(perms.isEmpty());
         for (PermissionConfig permConfig : perms) {
@@ -165,13 +166,13 @@ public class SecureApplicationContextTest {
     }
 
     @Test
-    public void testSecurityInterceptors() {
+    void testSecurityInterceptors() {
         List<SecurityInterceptorConfig> interceptorConfigs = securityConfig.getSecurityInterceptorConfigs();
         assertEquals(1, interceptorConfigs.size());
         SecurityInterceptorConfig interceptorConfig = interceptorConfigs.get(0);
         String className = interceptorConfig.getClassName();
         assertEquals(DummySecurityInterceptor.class.getName(), className);
         SecurityInterceptor securityInterceptor = interceptorConfig.getImplementation();
-        assertTrue(securityInterceptor instanceof DummySecurityInterceptor);
+        assertInstanceOf(DummySecurityInterceptor.class, securityInterceptor);
     }
 }

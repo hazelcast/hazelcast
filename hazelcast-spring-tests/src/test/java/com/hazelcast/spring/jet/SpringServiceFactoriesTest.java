@@ -22,13 +22,15 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.concurrent.CompletionException;
 
@@ -36,26 +38,26 @@ import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
 import static com.hazelcast.spring.jet.JetSpringServiceFactories.bean;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"application-context-jet-service.xml"})
 public class SpringServiceFactoriesTest {
 
     @Autowired
     private JetService jet;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testMapBatchUsingSpringBean() {
+    void testMapBatchUsingSpringBean() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(1L, 2L, 3L, 4L, 5L, 6L))
                 .mapUsingService(bean("calculator"), Calculator::multiply)
@@ -65,7 +67,7 @@ public class SpringServiceFactoriesTest {
     }
 
     @Test
-    public void testFilterBatchUsingSpringBean() {
+    void testFilterBatchUsingSpringBean() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(1L, 2L, 3L, 4L, 5L, 6L))
                 .filterUsingService(bean("calculator"), Calculator::filter)
@@ -75,7 +77,7 @@ public class SpringServiceFactoriesTest {
     }
 
     @Test
-    public void testMapStreamUsingSpringBean() {
+    void testMapStreamUsingSpringBean() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.itemStream(100))
                 .withNativeTimestamps(0)
@@ -91,7 +93,7 @@ public class SpringServiceFactoriesTest {
     }
 
     @Test
-    public void testFilterStreamUsingSpringBean() {
+    void testFilterStreamUsingSpringBean() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.itemStream(100))
                 .withNativeTimestamps(0)

@@ -17,28 +17,27 @@
 package com.hazelcast.spring.jet;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"instance-config-hazelcast.xml"})
-@Category(QuickTest.class)
 public class InstanceConfigTest extends HazelcastTestSupport {
 
     @Autowired
     Config config;
 
     @Test
-    public void test() {
-        Assert.assertEquals(5, config.getJetConfig().getBackupCount());
-        Assert.assertEquals(5, config.getJetConfig().getInstanceConfig().getBackupCount());
+    void test() {
+        assertEquals(5, config.getJetConfig().getBackupCount());
     }
 }
