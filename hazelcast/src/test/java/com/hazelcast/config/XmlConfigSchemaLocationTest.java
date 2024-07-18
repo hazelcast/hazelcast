@@ -21,7 +21,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +37,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -77,7 +77,6 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
         validUrlsCache = new HashSet<>();
     }
 
-    @Ignore("This is not passing since the v6 upgrade, but needs to be fixed - but in the meantime, it's breaking the build - https://github.com/hazelcast/hazelcast-mono/pull/2646")
     @Test
     public void testSchemaLocationsExist() throws Exception {
         ConfigurationBuilder configuration = new ConfigurationBuilder()
@@ -87,7 +86,6 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
         Set<String> resources = reflections.getResources(".*\\.xml");
         ClassLoader classLoader = getClass().getClassLoader();
         for (String resource : resources) {
-            System.out.println(resource);
             URL resourceUrl = classLoader.getResource(resource);
             String protocol = resourceUrl.getProtocol();
 
@@ -118,7 +116,8 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
             } catch (Exception e) {
                 throw new IllegalStateException("Error while validating schema location '" + nameSpaceUrl + "' from '" + originalLocation + "'", e);
             }
-            assertEquals("Schema location '" + nameSpaceUrl + "' from '" + originalLocation + "' does not return HTTP 200 ", 200, responseCode);
+            assertEquals("Schema location '" + nameSpaceUrl + "' from '" + originalLocation
+                    + "' returned unexpected HTTP response code", HttpURLConnection.HTTP_OK, responseCode);
             validUrlsCache.add(nameSpaceUrl);
         }
     }
