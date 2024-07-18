@@ -132,7 +132,7 @@
         <assertj.version>3.26.3</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.18</bytebuddy.version>
-        <commons-codec.version>1.17.0</commons-codec.version>
+        <commons-codec.version>1.17.1</commons-codec.version>
         <commons-io.version>2.16.1</commons-io.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <!--
