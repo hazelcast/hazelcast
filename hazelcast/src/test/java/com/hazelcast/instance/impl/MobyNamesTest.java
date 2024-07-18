@@ -65,7 +65,7 @@ public class MobyNamesTest extends HazelcastTestSupport {
         Map<String, AtomicInteger> namesCounts = new HashMap<>();
         for (int i = 0; i < totalCombinations * 2; i++) {
             String randomName = MobyNames.getRandomName(i);
-            namesCounts.computeIfAbsent(randomName, (key) -> new AtomicInteger(0)).incrementAndGet();
+            namesCounts.computeIfAbsent(randomName, key -> new AtomicInteger(0)).incrementAndGet();
         }
         assertEquals(totalCombinations, namesCounts.size());
         assertTrue(namesCounts.keySet().stream().noneMatch(StringUtil::isNullOrEmptyAfterTrim));

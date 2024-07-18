@@ -37,8 +37,8 @@ public class LifecycleServiceImplTest extends JetTestSupport {
         for (int i = 0; i < 3; i++) {
             HazelcastInstance inst = createHazelcastInstance();
 
-            Future f1 = spawn(() -> inst.getLifecycleService().terminate());
-            Future f2 = spawn(() -> inst.getLifecycleService().shutdown());
+            Future<?> f1 = spawn(() -> inst.getLifecycleService().terminate());
+            Future<?> f2 = spawn(() -> inst.getLifecycleService().shutdown());
 
             f1.get(5, TimeUnit.SECONDS);
             f2.get(5, TimeUnit.SECONDS);

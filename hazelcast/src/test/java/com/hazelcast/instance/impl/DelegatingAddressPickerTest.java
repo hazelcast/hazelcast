@@ -83,7 +83,7 @@ public class DelegatingAddressPickerTest {
     }
 
     @Test
-    public void testPickAddress_fromAdvancedNetworkConfig() throws Exception {
+    public void testPickAddress_fromAdvancedNetworkConfig() {
         Config config = createAdvancedNetworkConfig();
         picker = new DelegatingAddressPicker(new AnAddressProvider(), config, logger);
 
@@ -101,7 +101,7 @@ public class DelegatingAddressPickerTest {
     }
 
     @Test
-    public void testPickAddress_fromNetworkConfig() throws Exception {
+    public void testPickAddress_fromNetworkConfig() {
         Config config = createNetworkingConfig();
         picker = new DelegatingAddressPicker(new AnAddressProvider(), config, logger);
 

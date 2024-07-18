@@ -94,7 +94,7 @@ public class LifeCycleListenerTest extends HazelcastTestSupport {
 
     static class MyLifecycleListener implements LifecycleListener {
 
-        private CountDownLatch latch;
+        private final CountDownLatch latch;
 
         MyLifecycleListener(CountDownLatch latch) {
             this.latch = latch;

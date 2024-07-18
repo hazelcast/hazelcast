@@ -51,7 +51,7 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         }
         if (hazelcastInstanceThrowsException != null) {
             Server server = hazelcastInstanceThrowsException.node.getServer();
-            // Failing connection manager throws error, so we should disable this behaviour to shutdown instance properly
+            // Failing connection manager throws error, so we should disable this behaviour to shut down instance properly
             ((FailingServer) server).switchToDummyMode();
             hazelcastInstanceThrowsException.shutdown();
         }
