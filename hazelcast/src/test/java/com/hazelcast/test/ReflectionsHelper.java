@@ -24,9 +24,12 @@ import org.reflections.util.QueryFunction;
 
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
+import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.reflections.scanners.Scanners.SubTypes;
 
 /**
@@ -50,14 +53,27 @@ public final class ReflectionsHelper {
             c -> !(Enum.class.isAssignableFrom(c) || c.isAnonymousClass()
                     || c.isInterface() || Modifier.isAbstract(c.getModifiers()));
 
+    /**
+     * {@link ClassLoader#getResources(String)} returns the latest versioned entry
+     * from multi-release JARs, which has prefix {@code META-INF/versions/{n}/}.
+     *
+     * @see JarFile#getJarEntry
+     * @see <a href="https://openjdk.org/jeps/238"> JEP 238: Multi-Release JAR Files
+     */
+    private static final Pattern VERSIONED_CLASS_PREFIX = Pattern.compile("META-INF/versions/\\d+/$");
+
     static {
         // Obtain all classpath URLs with com.hazelcast package classes.
-        Collection<URL> comHazelcastPackageURLs = ClasspathHelper.forPackage("com.hazelcast");
-        // Exclude hazelcast test artifacts (hazelcast-VERSION-tests.jar, **/target/test-classes/)
-        // and hazelcast-license-extractor artifact from package URLs.
-        comHazelcastPackageURLs.removeIf(url -> url.toString().contains("-tests.jar")
-                || url.toString().contains("target/test-classes")
-                || url.toString().contains("hazelcast-license-extractor"));
+        List<URL> comHazelcastPackageURLs = ClasspathHelper.forPackage("com.hazelcast").stream()
+                .map(URL::toString)
+                // Exclude hazelcast test artifacts (hazelcast-*-tests.jar, **/target/test-classes/)
+                // and hazelcast-license-extractor artifact from package URLs.
+                .filter(url -> !url.contains("-tests.jar") && !url.contains("target/test-classes")
+                        && !url.contains("hazelcast-license-extractor"))
+                // Fix URL for multi-release JARs (hazelcast-*.jar!/META-INF/versions/*/ [com/hazelcast/**]).
+                .map(url -> VERSIONED_CLASS_PREFIX.matcher(url).replaceAll(""))
+                .map(url -> uncheckCall(() -> new URL(url)))
+                .toList();
 
         REFLECTIONS = new Reflections(new ConfigurationBuilder().addUrls(comHazelcastPackageURLs));
     }
