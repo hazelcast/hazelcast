@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
@@ -57,30 +56,30 @@ public final class PredicateTestUtils {
 
     static Predicate createMockVisitablePredicate() {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor) any(), (IndexRegistry) any())).thenReturn((Predicate) visitablePredicate);
+        when(visitablePredicate.accept(any(), any())).thenReturn((Predicate) visitablePredicate);
         return (Predicate) visitablePredicate;
     }
 
     static Predicate createMockVisitablePredicate(Predicate transformed) {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor) any(), (IndexRegistry) any())).thenReturn(transformed);
+        when(visitablePredicate.accept(any(), any())).thenReturn(transformed);
         return (Predicate) visitablePredicate;
     }
 
     static Visitor createPassthroughVisitor() {
         Visitor visitor = mock(Visitor.class);
-        when(visitor.visit((AndPredicate) any(), (IndexRegistry) any())).thenAnswer(new ReturnsArgumentAt(0));
-        when(visitor.visit((OrPredicate) any(), (IndexRegistry) any())).thenAnswer(new ReturnsArgumentAt(0));
-        when(visitor.visit((NotPredicate) any(), (IndexRegistry) any())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((AndPredicate) any(), any())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((OrPredicate) any(), any())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((NotPredicate) any(), any())).thenAnswer(new ReturnsArgumentAt(0));
 
         return visitor;
     }
 
     static Visitor createDelegatingVisitor(Predicate delegate) {
         Visitor visitor = mock(Visitor.class);
-        when(visitor.visit((AndPredicate) any(), (IndexRegistry) any())).thenReturn(delegate);
-        when(visitor.visit((OrPredicate) any(), (IndexRegistry) any())).thenReturn(delegate);
-        when(visitor.visit((NotPredicate) any(), (IndexRegistry) any())).thenReturn(delegate);
+        when(visitor.visit((AndPredicate) any(), any())).thenReturn(delegate);
+        when(visitor.visit((OrPredicate) any(), any())).thenReturn(delegate);
+        when(visitor.visit((NotPredicate) any(), any())).thenReturn(delegate);
 
         return visitor;
     }
