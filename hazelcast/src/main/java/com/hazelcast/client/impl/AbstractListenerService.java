@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -37,8 +38,10 @@ public abstract class AbstractListenerService {
     protected final AtomicBoolean pushScheduled = new AtomicBoolean();
     protected final NodeEngine nodeEngine;
     protected final String executorName;
+    protected final ILogger logger;
 
-    public AbstractListenerService(NodeEngine nodeEngine, String executorName) {
+    public AbstractListenerService(NodeEngine nodeEngine, ILogger logger, String executorName) {
+        this.logger = logger;
         this.nodeEngine = nodeEngine;
         this.executorName = executorName;
     }
@@ -50,6 +53,8 @@ public abstract class AbstractListenerService {
     protected void schedulePeriodicPush() {
         ExecutionService executor = nodeEngine.getExecutionService();
         int pushPeriodInSeconds = nodeEngine.getProperties().getSeconds(PUSH_PERIOD_IN_SECONDS);
+        logger.finest("Scheduling periodic data push, on executor %s with period: %,d",
+                executorName, pushPeriodInSeconds);
         if (executorName != null) {
             executor.scheduleWithRepetition(executorName, this::pushView, pushPeriodInSeconds, pushPeriodInSeconds, SECONDS);
         } else {
@@ -77,6 +82,7 @@ public abstract class AbstractListenerService {
         clientListeningEndpoints.put(clientEndpoint, correlationId);
         Connection connection = clientEndpoint.getConnection();
 
+        logger.finest("Registered listener with endpoint: " + clientEndpoint);
         sendUpdate(clientEndpoint, connection, correlationId);
     }
 
@@ -84,6 +90,7 @@ public abstract class AbstractListenerService {
 
     public void deregisterListener(ClientEndpoint clientEndpoint) {
         clientListeningEndpoints.remove(clientEndpoint);
+        logger.finest("Deregistered listener with endpoint: " + clientEndpoint);
     }
 
     // for test purpose only
