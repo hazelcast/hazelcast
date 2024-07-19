@@ -235,6 +235,15 @@
                                     </excludes>
                                 </relocation>
                                 <relocation>
+                                    <!--
+                                    Relocate multi-release classes (META-INF/versions/{n}/**).
+                                    com/fasterxml/jackson conflicts with com.fasterxml.jackson.
+                                    -->
+                                    <pattern>com/fasterxml/jackson/core</pattern>
+                                    <shadedPattern>${relocation.dir}/com/fasterxml/jackson/core</shadedPattern>
+                                    <rawString>true</rawString>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.apache.calcite</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>

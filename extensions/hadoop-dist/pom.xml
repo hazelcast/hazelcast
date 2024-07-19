@@ -57,20 +57,24 @@
                         -->
                         <relocations>
                             <relocation>
-                                <pattern>com.fasterxml.jackson.jr</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.jr</shadedPattern>
+                                <pattern>com.fasterxml.jackson</pattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
+                                <excludes>
+                                    <!--
+                                    The annotation package is excluded so the relocated classes are
+                                    able to process non-relocated annotations, which are used by the users.
+                                    -->
+                                    <exclude>com.fasterxml.jackson.annotation.*</exclude>
+                                </excludes>
                             </relocation>
                             <relocation>
-                                <pattern>com.fasterxml.jackson.core</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.core</shadedPattern>
-                            </relocation>
-                            <relocation>
-                                <pattern>com.fasterxml.jackson.databind</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.databind</shadedPattern>
-                            </relocation>
-                            <relocation>
-                                <pattern>com.fasterxml.jackson.dataformat</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
+                                <!--
+                                Relocate multi-release classes (META-INF/versions/{n}/**).
+                                com/fasterxml/jackson conflicts with com.fasterxml.jackson.
+                                -->
+                                <pattern>com/fasterxml/jackson/core</pattern>
+                                <shadedPattern>${relocation.dir}/com/fasterxml/jackson/core</shadedPattern>
+                                <rawString>true</rawString>
                             </relocation>
                         </relocations>
                     </configuration>
