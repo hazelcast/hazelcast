@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static com.google.common.collect.ImmutableMap.of;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringEnableSlicingPipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringPipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringZeroRetriesPipeline;
@@ -30,6 +29,7 @@ import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.re
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline;
 import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexWithQueryExtractNamePipeline;
+import static java.util.Map.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

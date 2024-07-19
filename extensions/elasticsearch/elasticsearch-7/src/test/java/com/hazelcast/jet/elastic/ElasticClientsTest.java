@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.elastic;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -26,6 +25,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
+import static java.util.Map.of;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ElasticClientsTest extends BaseElasticTest {
@@ -47,7 +47,7 @@ public class ElasticClientsTest extends BaseElasticTest {
         ElasticsearchContainer container = ElasticSupport.elastic.get();
         String httpHostAddress = container.getHttpHostAddress();
 
-        indexDocument("my-index", ImmutableMap.of("name", "Frantisek"));
+        indexDocument("my-index", of("name", "Frantisek"));
 
         Pipeline p = Pipeline.create();
         p.readFrom(ElasticSources.elastic(

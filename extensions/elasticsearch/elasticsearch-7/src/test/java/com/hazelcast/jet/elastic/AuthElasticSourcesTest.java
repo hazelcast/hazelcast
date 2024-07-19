@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.elastic;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
@@ -39,6 +38,7 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.elastic.ElasticClients.client;
 import static com.hazelcast.jet.elastic.ElasticSupport.PORT;
+import static java.util.Map.of;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Category({NightlyTest.class, SerialTest.class, IgnoreInJenkinsOnWindows.class})
@@ -62,7 +62,7 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
 
     @Test
     public void given_authenticatedClient_whenReadFromElasticSource_thenFinishSuccessfully() {
-        indexDocument("my-index", ImmutableMap.of("name", "Frantisek"));
+        indexDocument("my-index", of("name", "Frantisek"));
 
         Pipeline p = Pipeline.create();
         p.readFrom(elasticSource(elasticClientSupplier()))
