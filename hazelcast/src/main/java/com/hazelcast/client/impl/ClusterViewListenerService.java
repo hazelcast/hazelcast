@@ -69,7 +69,7 @@ public class ClusterViewListenerService extends AbstractListenerService {
     private final AtomicLong latestPartitionStamp = new AtomicLong();
 
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
-        super(nodeEngine, null);
+        super(nodeEngine, nodeEngine.getLogger(ClusterViewListenerService.class), null);
         advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
         delayedPartitionUpdateTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(),
                 PARTITION_UPDATE_DELAY_MS, PARTITION_UPDATE_MAX_DELAY_MS, this::pushPartitionTableView);
@@ -81,19 +81,24 @@ public class ClusterViewListenerService extends AbstractListenerService {
 
         MembersView membersView = getMembersView();
         ClientMessage memberListViewMessage = getMemberListViewMessage(membersView);
+        logger.finest("Sending members view to all listening clients: %s", membersView);
         sendToListeningEndpoints(memberListViewMessage);
 
         Collection<Collection<UUID>> memberGroups = toMemberGroups(membersView);
         ClientMessage memberGroupsViewEvent = ClientAddClusterViewListenerCodec
                 .encodeMemberGroupsViewEvent(membersView.getVersion(), memberGroups);
+        logger.finest("Sending member groups to all listening clients: %s", memberGroups);
         sendToListeningEndpoints(memberGroupsViewEvent);
 
-        sendToListeningEndpoints(getClusterVersionMessage());
+        ClientMessage clusterVersionMessage = getClusterVersionMessage();
+        logger.finest("Sending cluster version to all listening clients: %s", clusterVersionMessage);
+        sendToListeningEndpoints(clusterVersionMessage);
     }
 
     private void pushPartitionTableView() {
         ClientMessage partitionViewMessage = getPartitionViewMessage();
         if (partitionViewMessage != null) {
+            logger.finest("Sending partition table view to all listening clients: %s", partitionViewMessage);
             sendToListeningEndpoints(partitionViewMessage);
         }
     }
@@ -104,11 +109,14 @@ public class ClusterViewListenerService extends AbstractListenerService {
 
     public void onMemberListChange() {
         MembersView membersView = getMembersView();
+        logger.finest("Sending members view to all listening clients: %s", membersView);
         sendToListeningEndpoints(getMemberListViewMessage(membersView));
     }
 
     public void onClusterVersionChange() {
-        sendToListeningEndpoints(getClusterVersionMessage());
+        ClientMessage clusterVersionMessage = getClusterVersionMessage();
+        logger.finest("Sending cluster version to all listening clients: %s", clusterVersionMessage);
+        sendToListeningEndpoints(clusterVersionMessage);
     }
 
     @Override
@@ -133,6 +141,9 @@ public class ClusterViewListenerService extends AbstractListenerService {
         ClientMessage clusterVersionMessage = getClusterVersionMessage();
         clusterVersionMessage.setCorrelationId(correlationId);
         write(clusterVersionMessage, connection);
+        logger.finest("Sent cluster view update to %s: members view: %s, partition table: %s, member groups: %s, "
+                        + "cluster version: %s",
+                connection, processedMembersView, partitionViewMessage, memberGroups, clusterVersionMessage);
     }
 
     public MembersView getMembersView() {

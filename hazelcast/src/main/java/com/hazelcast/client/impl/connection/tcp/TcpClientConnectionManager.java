@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
+import com.hazelcast.client.impl.clientside.SubsetMembersView;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnection;
@@ -1500,51 +1501,52 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 tryCloseConnectionsToMembersNotInSubset();
             }
         }
+    }
 
-        private void tryCloseConnectionsToMembersNotInSubset() {
-            Collection<Member> effectiveMemberList = client.getClientClusterService().getEffectiveMemberList();
-            if (!haveAllEffectiveMembersConnected(effectiveMemberList)) {
-                return;
-            }
-
-            // remove connections to members not part of subset
-            for (Member member : client.getClientClusterService().getMemberList()) {
-                if (effectiveMemberList.contains(member)) {
-                    // the member is part of the subset
-                    continue;
-                }
-
-                TcpClientConnection candidateForClosure = activeConnections.get(member.getUuid());
-                if (candidateForClosure == null) {
-                    // no active connection to the member
-                    continue;
-                }
-
-                if (client.getInvocationService().isConnectionInUse(candidateForClosure)) {
-                    // connection is still in use despite the
-                    // member is not being part of the subset
-                    continue;
-                }
-
-                // connection can be closed
-                candidateForClosure.close("Connection is closed because it is not relevant for the current MULTI_MEMBER "
-                        + "configuration", null);
-            }
+    private void tryCloseConnectionsToMembersNotInSubset() {
+        SubsetMembersView subsetMembersView = client.getClientClusterService().getSubsetMembers().getSubsetMembersView();
+        Set<UUID> subsetMembers = subsetMembersView == null ? Collections.emptySet() : subsetMembersView.members();
+        if (!haveAllSubsetMembersConnected(subsetMembers)) {
+            return;
         }
 
-        private boolean haveAllEffectiveMembersConnected(Collection<Member> effectiveMemberList) {
-            if (effectiveMemberList.isEmpty()) {
+        // remove connections to members not part of subset
+        for (Member member : client.getClientClusterService().getMemberList()) {
+            if (subsetMembers.contains(member.getUuid())) {
+                // the member is part of the subset
+                continue;
+            }
+
+            TcpClientConnection candidateForClosure = activeConnections.get(member.getUuid());
+            if (candidateForClosure == null) {
+                // no active connection to the member
+                continue;
+            }
+
+            if (client.getInvocationService().isConnectionInUse(candidateForClosure)) {
+                // connection is still in use despite the
+                // member is not being part of the subset
+                continue;
+            }
+
+            // connection can be closed
+            candidateForClosure.close("Connection is closed because it is not relevant for the current MULTI_MEMBER "
+                    + "configuration", null);
+        }
+    }
+
+    private boolean haveAllSubsetMembersConnected(Collection<UUID> subsetMembers) {
+        if (subsetMembers.isEmpty()) {
+            return false;
+        }
+
+        for (UUID member : subsetMembers) {
+            if (!activeConnections.containsKey(member)) {
                 return false;
             }
-
-            for (Member member : effectiveMemberList) {
-                if (!activeConnections.containsKey(member.getUuid())) {
-                    return false;
-                }
-            }
-
-            return true;
         }
+
+        return true;
     }
 
     @Override
