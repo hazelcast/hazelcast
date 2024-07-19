@@ -98,10 +98,10 @@ public class SqlPredicateTest {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     // these are used to test compound predicates flattening
-    private Predicate leftOfOr = Predicates.alwaysTrue();
-    private Predicate rightOfOr = Predicates.alwaysTrue();
-    private Predicate leftOfAnd = Predicates.alwaysTrue();
-    private Predicate rightOfAnd = Predicates.alwaysTrue();
+    private final Predicate<Object, Object> leftOfOr = Predicates.alwaysTrue();
+    private final Predicate<Object, Object> rightOfOr = Predicates.alwaysTrue();
+    private final Predicate<Object, Object> leftOfAnd = Predicates.alwaysTrue();
+    private final Predicate<Object, Object> rightOfAnd = Predicates.alwaysTrue();
 
     @Test
     public void testSqlPredicates() {
@@ -392,7 +392,7 @@ public class SqlPredicateTest {
     public void testSql_withUUID() {
         UUID uuid = UuidUtil.newUnsecureUUID();
         ObjectWithUUID value = new ObjectWithUUID(uuid);
-        assertSqlMatching("attribute = '" + uuid.toString() + "'", value);
+        assertSqlMatching("attribute = '" + uuid + "'", value);
         assertSqlNotMatching("attribute = '" + UuidUtil.newUnsecureUuidString() + "'", value);
     }
 
@@ -500,7 +500,7 @@ public class SqlPredicateTest {
     @Test
     public void testOr_whenLeftPredicateOr() {
         OrPredicate predicate1 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
-        Predicate predicate2 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate2 = Predicates.alwaysTrue();
         OrPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, OrPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
         assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[0]);
@@ -510,7 +510,7 @@ public class SqlPredicateTest {
 
     @Test
     public void testOr_whenRightPredicateOr() {
-        Predicate predicate1 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate1 = Predicates.alwaysTrue();
         OrPredicate predicate2 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
         OrPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, OrPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
@@ -521,8 +521,8 @@ public class SqlPredicateTest {
 
     @Test
     public void testOr_whenNoPredicateOr() {
-        Predicate predicate1 = Predicates.alwaysTrue();
-        Predicate predicate2 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate1 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate2 = Predicates.alwaysTrue();
         OrPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, OrPredicate.class);
         assertEquals(2, concatenatedOr.getPredicates().length);
         assertSame(predicate1, concatenatedOr.getPredicates()[0]);
@@ -540,7 +540,7 @@ public class SqlPredicateTest {
     @Test
     public void testAnd_whenLeftPredicateAnd() {
         AndPredicate predicate1 = new AndPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
-        Predicate predicate2 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate2 = Predicates.alwaysTrue();
         AndPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, AndPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
         assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[0]);
@@ -550,7 +550,7 @@ public class SqlPredicateTest {
 
     @Test
     public void testAnd_whenRightPredicateAnd() {
-        Predicate predicate1 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate1 = Predicates.alwaysTrue();
         AndPredicate predicate2 = new AndPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
         AndPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, AndPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
@@ -561,8 +561,8 @@ public class SqlPredicateTest {
 
     @Test
     public void testAnd_whenNoPredicateAnd() {
-        Predicate predicate1 = Predicates.alwaysTrue();
-        Predicate predicate2 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate1 = Predicates.alwaysTrue();
+        Predicate<Object, Object> predicate2 = Predicates.alwaysTrue();
         AndPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, AndPredicate.class);
         assertEquals(2, concatenatedOr.getPredicates().length);
         assertSame(predicate1, concatenatedOr.getPredicates()[0]);
@@ -649,7 +649,7 @@ public class SqlPredicateTest {
     // http://stackoverflow.com/questions/37382505/hazelcast-imap-valuespredicate-miss-data
     public void testAndWithRegex_stackOverflowIssue() {
         String sqlPredicate = "nextExecuteTime < 1463975296703 AND autoIncrementId REGEX '.*[5,6,7,8,9]$'";
-        Predicate predicate = new SqlPredicate(sqlPredicate).predicate;
+        Predicate<Object, Object> predicate = new SqlPredicate(sqlPredicate).predicate;
 
         AndPredicate andPredicate = (AndPredicate) predicate;
         assertEquals(GreaterLessPredicate.class, andPredicate.getPredicates()[0].getClass());
