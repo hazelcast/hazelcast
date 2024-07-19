@@ -17,7 +17,7 @@
         <activation.version>1.1.1</activation.version>
         <hsqldb.version>2.7.3</hsqldb.version>
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hazelcast-hibernate53.version>5.1.0</hazelcast-hibernate53.version>
+        <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
     </properties>
 
     <dependencies>
