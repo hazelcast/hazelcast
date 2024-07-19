@@ -29,7 +29,7 @@ import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public class ScalarTextNodeAdapter implements Node {
-    private YamlScalar scalar;
+    private final YamlScalar scalar;
 
     ScalarTextNodeAdapter(YamlScalar scalar) {
         this.scalar = scalar;

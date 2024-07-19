@@ -613,7 +613,7 @@ public class Node {
         Collection<Future> futures = new ArrayList<>(services.size());
 
         for (final GracefulShutdownAwareService service : services) {
-            Future future = executor.submit(new Runnable() {
+            Future<?> future = executor.submit(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -766,7 +766,7 @@ public class Node {
         return loggingService.getLogger(name);
     }
 
-    public ILogger getLogger(Class clazz) {
+    public ILogger getLogger(Class<?> clazz) {
         return loggingService.getLogger(clazz);
     }
 

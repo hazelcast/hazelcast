@@ -126,7 +126,7 @@ class NodeSecurityBanner {
             checkAuthnConfigured(sb, securityConfig, "client-authentication", securityConfig.getClientRealm());
         }
         // TLS here
-        sb.append(tlsSb.toString());
+        sb.append(tlsSb);
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
         if (persistenceConfig != null && persistenceConfig.isEnabled()) {
             EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
@@ -136,8 +136,11 @@ class NodeSecurityBanner {
         AuditlogConfig auditlogConfig = config.getAuditlogConfig();
         addSecurityFeatureCheck(sb, "Enable auditlog (Enterprise)", auditlogConfig != null && auditlogConfig.isEnabled());
 
-        sb.append("\nCheck the hazelcast-security-hardened.xml/yaml example config file to find why and how to configure"
-                + " these security related settings.\n");
+        sb.append("""
+
+                Check the hazelcast-security-hardened.xml/yaml example config file to find why and how to configure\
+                 these security related settings.
+                """);
         securityLogger.log(logLevel, sb.toString());
     }
 

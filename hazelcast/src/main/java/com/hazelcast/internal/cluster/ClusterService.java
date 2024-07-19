@@ -195,7 +195,7 @@ public interface ClusterService extends CoreService, Cluster {
      * can be assigned to another node in the other sub-cluster(s).
      * <p>
      * When duplicate member list join version is assigned during network split, the returned value can
-     * change to make it unique again. Therefore the caller should call this method repeatedly.
+     * change to make it unique again. Therefore, the caller should call this method repeatedly.
      *
      * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
      *      but local member has not yet learned its join version from the master node.

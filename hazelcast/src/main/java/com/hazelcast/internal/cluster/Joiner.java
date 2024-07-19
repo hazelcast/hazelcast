@@ -66,7 +66,7 @@ public interface Joiner {
 
     /**
      * Checks if an address is blacklisted.
-     *
+     * <p>
      * Method is thread-safe.
      *
      * @param address the address to check.

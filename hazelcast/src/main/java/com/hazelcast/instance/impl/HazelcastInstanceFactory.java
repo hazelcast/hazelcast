@@ -49,7 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Central manager for all Hazelcast members of the JVM.
- *
+ * <p>
  * All creation functionality will be stored here and a particular instance of a member will delegate here.
  */
 @SuppressWarnings("SynchronizationOnStaticField")

@@ -343,11 +343,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof HazelcastInstance)) {
+        if (!(o instanceof HazelcastInstance that)) {
             return false;
         }
 
-        HazelcastInstance that = (HazelcastInstance) o;
         return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
     }
 }

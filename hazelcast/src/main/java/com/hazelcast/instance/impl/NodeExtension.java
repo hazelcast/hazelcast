@@ -244,7 +244,7 @@ public interface NodeExtension {
     /**
      * Creates additional extension services, which will be registered by
      * service manager during start-up.
-     *
+     * <p>
      * By default, returned map will be empty.
      *
      * @return extension services
@@ -265,7 +265,7 @@ public interface NodeExtension {
 
     /**
      * Creates a <tt>InboundHandler</tt> for given <tt>Connection</tt> instance.
-     *
+     * <p>
      * For TLS and other enterprise features, instead of returning the regular protocol decoder, a TLS decoder
      * can be returned. This is the first item in the chain.
      *
