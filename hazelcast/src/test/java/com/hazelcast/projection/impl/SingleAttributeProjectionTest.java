@@ -32,10 +32,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -45,14 +43,12 @@ import java.util.Optional;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SingleAttributeProjectionTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test(expected = IllegalArgumentException.class)
     public void singleAttribute_attributeNull() {
@@ -133,8 +129,8 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
         Projection<Map.Entry<String, Person>, Double> projection = Projections.singleAttribute("age123");
 
-        expected.expect(QueryException.class);
-        map.project(projection);
+        assertThatThrownBy(() -> map.project(projection))
+                .isInstanceOf(QueryException.class);
     }
 
     private <K, V> IMap<K, V> getMapWithNodeCount() {
