@@ -20,14 +20,15 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.client.test.TestAwareClientFactory;
 import com.hazelcast.client.util.ConfigRoutingUtil;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -45,7 +46,7 @@ import java.util.concurrent.Future;
  * Tests in this class intentionally use real network.
  */
 @RunWith(HazelcastParametrizedRunner.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class})
 public class ClientTimeoutTest {
 
@@ -57,10 +58,11 @@ public class ClientTimeoutTest {
         return Arrays.asList(RoutingMode.SINGLE_MEMBER, RoutingMode.ALL_MEMBERS);
     }
 
+    private final TestAwareClientFactory factory = new TestAwareClientFactory();
+
     @After
     public void cleanup() {
-        Hazelcast.shutdownAll();
-        HazelcastClient.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test(timeout = 20000, expected = IllegalStateException.class)
@@ -75,7 +77,7 @@ public class ClientTimeoutTest {
         // Timeout connection-attempt after 1000 millis
         networkConfig.setConnectionTimeout(1000);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         client.getList("test");
     }
 
@@ -93,16 +95,16 @@ public class ClientTimeoutTest {
         //Should work without throwing exception.
         ClientConfig clientConfig = newClientConfig();
         clientConfig.getNetworkConfig().setConnectionTimeout(timeoutInMillis);
-        Hazelcast.newHazelcastInstance();
-        HazelcastClient.newHazelcastClient(clientConfig);
+        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastClient(clientConfig);
     }
 
     @Test(expected = OperationTimeoutException.class)
     public void testInvocationTimeOut() throws Throwable {
         ClientConfig clientConfig = newClientConfig();
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "0");
-        Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        factory.newHazelcastInstance(new Config());
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         IExecutorService executorService = client.getExecutorService("test");
         Future<Boolean> future = executorService.submit(new RetryableExceptionThrowingCallable());
         try {
