@@ -48,25 +48,19 @@ public final class FutureUtil {
     /**
      * Just rethrows <b>all</b> exceptions
      */
-    public static final ExceptionHandler RETHROW_EVERYTHING = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-            throw rethrow(throwable);
-        }
+    public static final ExceptionHandler RETHROW_EVERYTHING = throwable -> {
+        throw rethrow(throwable);
     };
 
     /**
      * Ignores <b>all</b> exceptions
      */
-    public static final ExceptionHandler IGNORE_ALL_EXCEPTIONS = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-        }
+    public static final ExceptionHandler IGNORE_ALL_EXCEPTIONS = throwable -> {
     };
 
     /**
      * Ignores all exceptions but still logs {@link com.hazelcast.core.MemberLeftException} per future and just tries
-     * to finish all of the given ones. This is the default behavior if nothing else is given.
+     * to finish all the given ones. This is the default behavior if nothing else is given.
      */
     public static final ExceptionHandler IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT = new ExceptionHandler() {
         @Override
@@ -134,14 +128,11 @@ public final class FutureUtil {
     /**
      * Handler for transaction specific rethrown of exceptions.
      */
-    public static final ExceptionHandler RETHROW_TRANSACTION_EXCEPTION = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-            if (throwable instanceof TimeoutException) {
-                throw new TransactionTimedOutException(throwable);
-            }
-            throw rethrow(throwable);
+    public static final ExceptionHandler RETHROW_TRANSACTION_EXCEPTION = throwable -> {
+        if (throwable instanceof TimeoutException) {
+            throw new TransactionTimedOutException(throwable);
         }
+        throw rethrow(throwable);
     };
 
     private static final ILogger LOGGER = Logger.getLogger(FutureUtil.class);
@@ -160,12 +151,7 @@ public final class FutureUtil {
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final ILogger logger, final String message, final Level level) {
         if (logger.isLoggable(level)) {
-            return new ExceptionHandler() {
-                @Override
-                public void handleException(Throwable throwable) {
-                    logger.log(level, message, throwable);
-                }
-            };
+            return throwable -> logger.log(level, message, throwable);
         }
         return IGNORE_ALL_EXCEPTIONS;
     }
@@ -180,12 +166,7 @@ public final class FutureUtil {
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final String message, final Level level) {
         if (LOGGER.isLoggable(level)) {
-            return new ExceptionHandler() {
-                @Override
-                public void handleException(Throwable throwable) {
-                    LOGGER.log(level, message, throwable);
-                }
-            };
+            return throwable -> LOGGER.log(level, message, throwable);
         }
         return IGNORE_ALL_EXCEPTIONS;
     }
@@ -200,12 +181,7 @@ public final class FutureUtil {
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final ILogger logger, final Level level) {
         if (logger.isLoggable(level)) {
-            return new ExceptionHandler() {
-                @Override
-                public void handleException(Throwable throwable) {
-                    logger.log(level, "Exception occurred", throwable);
-                }
-            };
+            return throwable -> logger.log(level, "Exception occurred", throwable);
         }
         return IGNORE_ALL_EXCEPTIONS;
     }
@@ -219,12 +195,7 @@ public final class FutureUtil {
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final Level level) {
         if (LOGGER.isLoggable(level)) {
-            return new ExceptionHandler() {
-                @Override
-                public void handleException(Throwable throwable) {
-                    LOGGER.log(level, "Exception occurred", throwable);
-                }
-            };
+            return throwable -> LOGGER.log(level, "Exception occurred", throwable);
         }
         return IGNORE_ALL_EXCEPTIONS;
     }
@@ -309,7 +280,7 @@ public final class FutureUtil {
         CollectAllExceptionHandler collector = new CollectAllExceptionHandler(futures.size());
         waitWithDeadline(futures, timeout, timeUnit, collector);
         final List<Throwable> throwables = collector.getThrowables();
-        // synchronized list does not provide thread-safety guarantee for iteration so we handle it ourselves.
+        // synchronized list does not provide thread-safety guarantee for iteration, so we handle it ourselves.
         synchronized (throwables) {
             for (Throwable t : throwables) {
                 exceptionHandler.handleException(t);
