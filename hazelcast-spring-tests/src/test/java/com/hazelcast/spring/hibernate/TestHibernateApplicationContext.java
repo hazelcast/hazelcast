@@ -21,25 +21,25 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestHibernateApplicationContext {
 
     @Autowired
@@ -54,14 +54,14 @@ public class TestHibernateApplicationContext {
     @Autowired
     private HazelcastLocalCacheRegionFactory localRegionFactory2;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testInstance() {
+    void testInstance() {
         assertNotNull(instance);
         Set<Member> members = instance.getCluster().getMembers();
         assertEquals(1, members.size());
@@ -71,7 +71,7 @@ public class TestHibernateApplicationContext {
     }
 
     @Test
-    public void testRegionFactory() {
+    void testRegionFactory() {
         assertNotNull(regionFactory);
         assertEquals(regionFactory.getHazelcastInstance(), instance);
 

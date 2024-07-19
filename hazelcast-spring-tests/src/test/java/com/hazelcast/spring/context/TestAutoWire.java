@@ -17,18 +17,18 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests if hazelcast instance can be used/injected in a class with an {@code @Autowired}
@@ -39,22 +39,21 @@ import static org.junit.Assert.assertNotNull;
  * {@link org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor}
  * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor}
  */
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"test-application-context.xml"})
-@Category(QuickTest.class)
 public class TestAutoWire {
 
     @Autowired
     private ApplicationContext context;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void tearDown() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void smoke() {
+    void smoke() {
         SomeBeanHazelcastInjected bean = context.getBean(SomeBeanHazelcastInjected.class);
         assertNotNull(bean.getInstance());
     }

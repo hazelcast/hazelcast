@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.util.Map;
 
 @SpringAware
-public class SomeEntryProcessor implements EntryProcessor, ApplicationContextAware {
+public class SomeEntryProcessor implements EntryProcessor<Object, Object, Object>, ApplicationContextAware {
 
     private transient ApplicationContext context;
 
@@ -33,7 +33,7 @@ public class SomeEntryProcessor implements EntryProcessor, ApplicationContextAwa
     private transient SomeBean someBean;
 
     @Override
-    public Object process(Map.Entry entry) {
+    public Object process(Map.Entry<Object, Object> entry) {
         if (someBean == null) {
             return ">null";
         }

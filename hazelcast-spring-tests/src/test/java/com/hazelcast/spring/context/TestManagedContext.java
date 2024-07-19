@@ -20,17 +20,16 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -39,12 +38,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestManagedContext {
 
     @Autowired
@@ -62,25 +62,25 @@ public class TestManagedContext {
     @Autowired
     private SomeBean bean;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testSerialization() {
+    void testSerialization() {
         instance1.getMap("test").put(1L, new SomeValue());
         SomeValue value = (SomeValue) instance1.getMap("test").get(1L);
-        Assert.assertNotNull(value.context);
-        Assert.assertNotNull(value.someBean);
+        assertNotNull(value.context);
+        assertNotNull(value.someBean);
         assertEquals(context, value.context);
         assertEquals(bean, value.someBean);
         assertTrue(value.init);
     }
 
     @Test
-    public void testDistributedTask() throws Exception {
+    void testDistributedTask() throws Exception {
         SomeTask task = (SomeTask) context.getBean("someTask");
         Future<Long> future1 = instance1.getExecutorService("test").submit(task);
         assertEquals(bean.value, future1.get().longValue());
@@ -91,15 +91,15 @@ public class TestManagedContext {
     }
 
     @Test
-    public void testTransactionalTask() throws Exception {
-        Future future = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
+    void testTransactionalTask() throws Exception {
+        Future<?> future = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
                 instance2.getCluster().getLocalMember());
         future.get();
-        assertTrue("transaction manager could not proxy the submitted task.", transactionManager.isCommitted());
+        assertTrue(transactionManager.isCommitted(), "transaction manager could not proxy the submitted task.");
     }
 
     @Test
-    public void testRunnableTask() throws Exception {
+    void testRunnableTask() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -123,35 +123,35 @@ public class TestManagedContext {
     }
 
     @Test
-    public void testRunnableTask_withScheduledExecutor_onLocalMember() throws Exception {
+    void testRunnableTask_withScheduledExecutor_onLocalMember() throws Exception {
         instance1.getScheduledExecutorService("test")
                 .scheduleOnMember(new SomeRunnableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
                 .get();
     }
 
     @Test
-    public void testRunnableTask_withScheduledExecutor_onRemoteMember() throws Exception {
+    void testRunnableTask_withScheduledExecutor_onRemoteMember() throws Exception {
         instance1.getScheduledExecutorService("test")
                 .scheduleOnMember(new SomeRunnableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
                 .get();
     }
 
     @Test
-    public void testCallableTask_withScheduledExecutor_onLocalMember() throws Exception {
+    void testCallableTask_withScheduledExecutor_onLocalMember() throws Exception {
         instance1.getScheduledExecutorService("test")
                 .scheduleOnMember(new SomeCallableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
                 .get();
     }
 
     @Test
-    public void testCallableTask_withScheduledExecutor_onRemoteMember() throws Exception {
+    void testCallableTask_withScheduledExecutor_onRemoteMember() throws Exception {
         instance1.getScheduledExecutorService("test")
                 .scheduleOnMember(new SomeCallableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
                 .get();
     }
 
     @Test
-    public void testTransactionalRunnableTask() throws Exception {
+    void testTransactionalRunnableTask() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         instance1.getExecutorService("test").submitToMember(new SomeTransactionalRunnableTask(),
                 instance2.getCluster().getLocalMember(), new ExecutionCallback<>() {
@@ -163,11 +163,11 @@ public class TestManagedContext {
                     }
                 });
         latch.await(1, TimeUnit.MINUTES);
-        assertTrue("transaction manager could not proxy the submitted task.", transactionManager.isCommitted());
+        assertTrue(transactionManager.isCommitted(), "transaction manager could not proxy the submitted task.");
     }
 
     @Test
-    public void testEntryProcessor() {
+    void testEntryProcessor() {
         IMap<Object, Object> map = instance1.getMap("testEntryProcessor");
         map.put("key1", "value1");
         map.put("key2", "value2");
