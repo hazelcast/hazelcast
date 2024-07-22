@@ -33,7 +33,7 @@
     </parent>
 
     <properties>
-        <main.basedir>${project.basedir}/../../..</main.basedir>
+        <main.basedir>${project.basedir}/../..</main.basedir>
     </properties>
 
     <modules>

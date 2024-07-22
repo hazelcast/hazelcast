@@ -81,7 +81,7 @@
         </argLine>
 
         <!-- needed for CheckStyle -->
-        <main.basedir>${project.basedir}/../..</main.basedir>
+        <main.basedir>${project.parent.basedir}</main.basedir>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
     </properties>
 

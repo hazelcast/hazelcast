@@ -1097,7 +1097,7 @@
                     <execution>
                         <phase>validate</phase>
                         <goals>
-                            <goal>checkstyle</goal>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>

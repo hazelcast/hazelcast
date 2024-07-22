@@ -33,6 +33,11 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <properties>
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.basedir}/../../..</main.basedir>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
