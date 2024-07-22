@@ -175,9 +175,11 @@ public class DistributedScheduledExecutorService
 
         unRegisterPartitionListenerIfExists();
 
-        for (ScheduledExecutorPartition partition : partitions) {
-            if (partition != null) {
-                partition.destroy();
+        if (partitions != null) {
+            for (ScheduledExecutorPartition partition : partitions) {
+                if (partition != null) {
+                    partition.destroy();
+                }
             }
         }
     }
