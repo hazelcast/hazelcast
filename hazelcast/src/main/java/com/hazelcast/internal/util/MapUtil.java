@@ -60,7 +60,7 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> ConcurrentMap<K, V> createConcurrentHashMap(int expectedMapSize) {
-        //concurrent hash map will size itself to accomodate this many elements
+        //concurrent hash map will size itself to accommodate this many elements
         return new ConcurrentHashMap<>(expectedMapSize);
     }
 
@@ -75,7 +75,7 @@ public final class MapUtil {
 
     /**
      * Returns the initial hash map capacity needed for the expected map size.
-     * To avoid resizing the map, the initial capacity should be different than
+     * To avoid resizing the map, the initial capacity should be different from
      * the expected size, depending on the load factor.
      *
      * @param expectedMapSize the expected map size
@@ -91,7 +91,7 @@ public final class MapUtil {
      * @param map the map to test
      * @return    {@code true} if {@code map} is null or empty, otherwise {@code false}.
      */
-    public static boolean isNullOrEmpty(Map map) {
+    public static <K, V> boolean isNullOrEmpty(Map<K, V> map) {
         return map == null || map.isEmpty();
     }
 

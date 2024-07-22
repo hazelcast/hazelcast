@@ -28,7 +28,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 public final class OperatingSystemMXBeanSupport {
 
     static final String COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED = "hazelcast.os.free.physical.memory.disabled";
-    // On AIX it can happen that the getFreePhysicalMemorySize method is very slow.
+    // On AIX, it can happen that the getFreePhysicalMemorySize method is very slow.
     // This flags allows one to prevent executing this method and returns the default.
     // This field is made volatile for testing purposes. Having this field volatile isn't relevant for performance
     // since the logic for obtaining the attribute isn't very efficient.

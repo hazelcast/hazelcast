@@ -58,7 +58,7 @@ public class MutableLong {
 
     @Override
     public int hashCode() {
-        return (int) (value ^ (value >>> 32));
+        return Long.hashCode(value);
     }
 
     @Override

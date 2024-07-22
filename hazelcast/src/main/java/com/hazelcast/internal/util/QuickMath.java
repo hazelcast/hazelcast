@@ -31,7 +31,7 @@ public final class QuickMath {
 
     /**
      * Return true if input argument is power of two.
-     * Input has to be a a positive integer.
+     * Input has to be a positive integer.
      * <p>
      * Result is undefined for zero or negative integers.
      *
@@ -204,13 +204,7 @@ public final class QuickMath {
      * @return +1 if i1 &gt; i2, -1 if i2 &gt; i1, 0 if i1 and i2 are equals
      */
     public static int compareIntegers(int i1, int i2) {
-        if (i1 > i2) {
-            return +1;
-        } else if (i2 > i1) {
-            return -1;
-        } else {
-            return 0;
-        }
+        return Integer.compare(i1, i2);
     }
 
     /**
@@ -221,12 +215,6 @@ public final class QuickMath {
      * @return +1 if l1 &gt; l2, -1 if l2 &gt; l1, 0 if l1 and l2 are equals
      */
     public static int compareLongs(long l1, long l2) {
-        if (l1 > l2) {
-            return +1;
-        } else if (l2 > l1) {
-            return -1;
-        } else {
-            return 0;
-        }
+        return Long.compare(l1, l2);
     }
 }

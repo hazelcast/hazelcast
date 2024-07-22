@@ -56,7 +56,7 @@ public final class ModularJavaUtils {
     }
 
     /**
-     * Prints warning to given {@link ILogger} if Hazelcast is not provided a sufficient access to Java internal packages on
+     * Prints warning to given {@link ILogger} if Hazelcast is not provided sufficient access to Java internal packages on
      * Java 9 and newer.
      */
     public static void checkJavaInternalAccess(ILogger logger) {
