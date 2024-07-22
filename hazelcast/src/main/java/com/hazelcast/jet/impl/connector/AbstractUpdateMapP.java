@@ -70,7 +70,7 @@ public abstract class AbstractUpdateMapP<T, K, V> extends AsyncHazelcastWriterP 
     protected int pendingItemCount;
     protected int currentPartitionId;
 
-    public AbstractUpdateMapP(
+    protected AbstractUpdateMapP(
             @Nonnull HazelcastInstance instance,
             int maxParallelAsyncOps,
             @Nonnull String mapName,
