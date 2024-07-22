@@ -17,9 +17,7 @@
 package classloading;
 
 import com.hazelcast.internal.util.FilteringClassLoader;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -50,8 +48,6 @@ public abstract class AbstractJavaXCacheDependencyTest {
         CLASS_LOADER = new FilteringClassLoader(excludes, "com.hazelcast");
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void createHazelcastInstance() throws Exception {
