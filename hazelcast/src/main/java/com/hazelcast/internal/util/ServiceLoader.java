@@ -39,7 +39,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.lang.Boolean.getBoolean;
@@ -76,8 +75,7 @@ public final class ServiceLoader {
         return new NewInstanceIterator<>(classIterator);
     }
 
-    public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader)
-            throws Exception {
+    public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader) {
         Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
         return new ClassIterator<>(serviceDefinitions, expectedType);
     }
@@ -124,12 +122,12 @@ public final class ServiceLoader {
     private static Set<ServiceDefinition> parse(URLDefinition urlDefinition) {
         try {
             Set<ServiceDefinition> names = new HashSet<>();
-            BufferedReader r = null;
-            try {
-                URL url = urlDefinition.url;
-                r = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
+
+            URL url = urlDefinition.url;
+            try (BufferedReader bufferedReader =
+                         new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
                 while (true) {
-                    String line = r.readLine();
+                    String line = bufferedReader.readLine();
                     if (line == null) {
                         break;
                     }
@@ -138,13 +136,11 @@ public final class ServiceLoader {
                         line = line.substring(0, comment);
                     }
                     String name = line.trim();
-                    if (name.length() == 0) {
+                    if (name.isEmpty()) {
                         continue;
                     }
                     names.add(new ServiceDefinition(name, urlDefinition.classLoader));
                 }
-            } finally {
-                closeResource(r);
             }
             return names;
         } catch (Exception e) {
@@ -215,10 +211,7 @@ public final class ServiceLoader {
             if (!classLoader.equals(that.classLoader)) {
                 return false;
             }
-            if (!className.equals(that.className)) {
-                return false;
-            }
-            return true;
+            return className.equals(that.className);
         }
 
         @Override
@@ -378,7 +371,7 @@ public final class ServiceLoader {
             }
         }
 
-        private void onNonAssignableClass(String className, Class candidate) {
+        private void onNonAssignableClass(String className, Class<?> candidate) {
             if (expectedType.isInterface()) {
                 if (ClassLoaderUtil.implementsInterfaceWithSameName(candidate, expectedType)) {
                     // this can happen in application containers - different Hazelcast JARs are loaded
