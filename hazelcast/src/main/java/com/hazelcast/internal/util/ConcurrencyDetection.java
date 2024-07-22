@@ -73,7 +73,7 @@ public abstract class ConcurrencyDetection {
 
     /**
      * The DisabledConcurrencyDetection indicates that there is always concurrency,
-     * even if there is no concurrency. This prevent write through and therefore lets the
+     * even if there is no concurrency. This prevents write through and therefore lets the
      * system behave as before the write through was added.
      */
     private static final class DisabledConcurrencyDetection extends ConcurrencyDetection {

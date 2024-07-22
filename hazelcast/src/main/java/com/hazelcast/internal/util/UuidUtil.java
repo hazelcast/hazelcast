@@ -40,7 +40,7 @@ public final class UuidUtil {
 
     /**
      * Static factory to retrieve a type 4 (pseudo randomly generated) UUID based string.
-     *
+     * <p>
      * The {@code UUID} string is generated using a cryptographically weak pseudo random number generator.
      *
      * @return A randomly generated {@code UUID} base string
@@ -51,7 +51,7 @@ public final class UuidUtil {
 
     /**
      * Static factory to retrieve a type 4 (pseudo randomly generated) UUID based string.
-     *
+     * <p>
      * The {@code UUID} string is generated using a cryptographically strong pseudo random number generator.
      *
      * @return A randomly generated {@code UUID} base string
@@ -62,7 +62,7 @@ public final class UuidUtil {
 
     /**
      * Static factory to retrieve a type 4 (pseudo randomly generated) UUID.
-     *
+     * <p>
      * The {@code UUID} is generated using a cryptographically weak pseudo random number generator.
      *
      * @return A randomly generated {@code UUID}
@@ -73,7 +73,7 @@ public final class UuidUtil {
 
     /**
      * Static factory to retrieve a type 4 (pseudo randomly generated) UUID.
-     *
+     * <p>
      * The {@code UUID} is generated using a cryptographically strong pseudo random number generator.
      *
      * @return A randomly generated {@code UUID}
@@ -111,7 +111,7 @@ public final class UuidUtil {
     /**
      * Checks if given value is UUID of any type.
      * @param value string to check
-     * @return if the value is an UUID
+     * @return if the value is a UUID
      */
     public static boolean isUUID(String value) {
         try {

@@ -24,7 +24,7 @@ import java.util.Iterator;
 /**
  * Iterates over supplied {@link InternalCompletableFuture} serially.
  * It advances to the next future only when the previous future is completed.
- *
+ * <p>
  * It completes when there is no other future available.
  *
  * @param <T>

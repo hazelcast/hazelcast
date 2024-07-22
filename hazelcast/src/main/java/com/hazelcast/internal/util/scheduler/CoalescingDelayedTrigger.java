@@ -23,13 +23,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Coalescing trigger can be used when you want coalesce multiple execution of {@link java.lang.Runnable}.
+ * Coalescing trigger can be used when you want to coalesce multiple execution of {@link java.lang.Runnable}.
  * Once you call the {@link #executeWithDelay()} it will wait specified amount of time before actually executing
  * the Runnable. If {@link #executeWithDelay()} is invoked again within the interval then the Runnable will
  * be executed only once.
- *
+ * <p>
  * It also guarantees no execution will be delayed more than specified maximum delay.
- *
+ * <p>
  * This class is not thread-safe and external synchronization must be ensured when multiple
  * threads are calling {@link #executeWithDelay()}
  *

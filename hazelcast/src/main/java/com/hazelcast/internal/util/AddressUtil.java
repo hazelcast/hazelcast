@@ -160,14 +160,13 @@ public final class AddressUtil {
 
     public static InetAddress fixScopeIdAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
 
-        if (!(inetAddress instanceof Inet6Address)) {
+        if (!(inetAddress instanceof Inet6Address inet6Address)) {
             return inetAddress;
         }
         if (!inetAddress.isLinkLocalAddress() && !inetAddress.isSiteLocalAddress()) {
             return inetAddress;
         }
 
-        final Inet6Address inet6Address = (Inet6Address) inetAddress;
         if (inet6Address.getScopeId() > 0 || inet6Address.getScopedInterface() != null) {
             return inetAddress;
 

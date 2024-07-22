@@ -97,7 +97,7 @@ public final class SortingUtil {
      * i2 = 2.000.000.000
      * <p>
      * Normally "i1 < i2", but if we use "i1 - i2" for comparison,
-     * i1 - i2 = -500.000.000 - 2.000.000.000 and we may accept the result as "-2.500.000.000".
+     * i1 - i2 = -500.000.000 - 2.000.000.000, and we may accept the result as "-2.500.000.000".
      * But the actual result is "1.794.967.296" because of overflow between
      * positive and negative integer bounds.
      * <p>
@@ -110,7 +110,7 @@ public final class SortingUtil {
      * @return +1 if i1 > i2, -1 if i2 > i1, 0 if i1 and i2 are equals
      */
     private static int compareIntegers(int i1, int i2) {
-        // i1 - i2 is not good way for comparison
+        // i1 - i2 is not a good way for comparison
         if (i1 > i2) {
             return +1;
         } else if (i2 > i1) {

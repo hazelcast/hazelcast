@@ -55,7 +55,7 @@ public final class XmlUtil {
      * This property should only be used as a last
      * resort. Hazelcast uses the XXE protection by setting properties {@link XMLConstants#ACCESS_EXTERNAL_DTD} and
      * {@link XMLConstants#ACCESS_EXTERNAL_SCHEMA}. These properties are supported in modern XML processors (JAXP 1.5+, Java
-     * 8+). Old JAXP implementations on the classpath (e.g. Xerces, Xalan) may miss the support and they throw exception
+     * 8+). Old JAXP implementations on the classpath (e.g. Xerces, Xalan) may miss the support, and they throw exception
      * during enabling the XXE protection. Setting this system property to true suppresses/ignores such Exceptions.
      */
     public static final String SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES = "hazelcast.ignoreXxeProtectionFailures";

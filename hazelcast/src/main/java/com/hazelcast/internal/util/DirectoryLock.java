@@ -94,7 +94,7 @@ public final class DirectoryLock {
      *
      * @param dir    the directory
      * @param logger logger
-     * @throws HazelcastException If lock file cannot be created or it's already locked
+     * @throws HazelcastException If lock file cannot be created, or it's already locked
      */
     public static DirectoryLock lockForDirectory(File dir, ILogger logger) {
         File lockFile = new File(dir, FILE_NAME);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
@@ -31,7 +32,7 @@ public final class ConcurrencyUtil {
     /**
      * The Caller runs executor is an Executor that executes the task on the calling thread.
      * This is useful when an Executor is required, but offloading to a different thread
-     * is very costly and it is faster to run on the calling thread.
+     * is very costly, and it is faster to run on the calling thread.
      */
     public static final Executor CALLER_RUNS = new Executor() {
         @Override
