@@ -36,6 +36,7 @@ public class MembershipServiceEvent extends MembershipEvent {
      *
      * @return member which is removed/added
      */
+    @Override
     public MemberImpl getMember() {
         return (MemberImpl) super.getMember();
     }

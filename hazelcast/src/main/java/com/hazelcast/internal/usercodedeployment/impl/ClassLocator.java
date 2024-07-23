@@ -46,10 +46,10 @@ import static java.security.AccessController.doPrivileged;
 
 /**
  * Provides classes to a local member.
- *
+ * <p>
  * It's called by {@link UserCodeDeploymentClassLoader} when a class
  * is not found on local classpath.
- *
+ * <p>
  * The current implementation can consult the cache and when the class is not found then it consults
  * remote members.
  */

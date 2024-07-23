@@ -80,7 +80,7 @@ public class LocalAddressRegistry {
      * with the current registered addresses, we combine these two address set and
      * update the entry with this combined value. Also, then increment the registration
      * count of the registry entry.
-     *
+     * <p>
      * If the registration to the same uuid includes a completely different
      * address set than the already registered addresses, we call the old
      * registration stale and remove it completely. In this case, we reset the

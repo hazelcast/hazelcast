@@ -32,9 +32,9 @@ import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 
 /**
  * The {@link InboundHandler} for member to member communication.
- *
+ * <p>
  * It reads as many packets from the src {@link ByteBuffer} as possible, and
- * each of the Packets is send to the destination.
+ * each of the Packets is sent to the destination.
  *
  * @see Consumer
  * @see PacketEncoder

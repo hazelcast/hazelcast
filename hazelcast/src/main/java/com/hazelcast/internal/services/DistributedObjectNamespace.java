@@ -85,11 +85,9 @@ public final class DistributedObjectNamespace implements ObjectNamespace, Identi
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DistributedObjectNamespace)) {
+        if (!(o instanceof DistributedObjectNamespace that)) {
             return false;
         }
-
-        DistributedObjectNamespace that = (DistributedObjectNamespace) o;
 
         if (!service.equals(that.service)) {
             return false;

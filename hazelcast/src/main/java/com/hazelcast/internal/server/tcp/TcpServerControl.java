@@ -116,8 +116,8 @@ public final class TcpServerControl {
             }
         }
         // member connections must be registered with their public address in connectionsMap
-        // eg member 192.168.1.1:5701 initiates a connection to 192.168.1.2:5701; the connection
-        // is created from an outbound port (eg 192.168.1.1:54003 --> 192.168.1.2:5701), but
+        // e.g. member 192.168.1.1:5701 initiates a connection to 192.168.1.2:5701; the connection
+        // is created from an outbound port (e.g. 192.168.1.1:54003 --> 192.168.1.2:5701), but
         // in 192.168.1.2:5701's connectionsMap the connection must be registered with
         // key 192.168.1.1:5701.
         assert (connectionManager.getEndpointQualifier() != EndpointQualifier.MEMBER

@@ -27,7 +27,7 @@ import java.util.Map;
 
 /**
  * Carries byte code of a class along with its inner classes.
- *
+ * <p>
  *
  * It's wrapped inside own object as it allows to add additional metadata and maintain compatibility
  * with Hazelcast Rolling Upgrade.

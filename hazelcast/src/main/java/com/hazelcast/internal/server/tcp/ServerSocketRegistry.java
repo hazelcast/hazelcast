@@ -31,8 +31,8 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 /**
  * Registry that holds all initiated ServerSocket when advanced-networking is in-use
  * Or holds a single universal ServerSocket when plain old networking is in-use.
- *
- * An atomic flag is used to determine whether the registry is open and it hasn't been destroyed / released.
+ * <p>
+ * An atomic flag is used to determine whether the registry is open, and it hasn't been destroyed / released.
  */
 public class ServerSocketRegistry
         implements Iterable<ServerSocketRegistry.Pair> {

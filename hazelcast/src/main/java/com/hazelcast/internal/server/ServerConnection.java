@@ -33,7 +33,7 @@ public interface ServerConnection extends Connection {
 
     /**
      * Returns the connection type.
-     *
+     * <p>
      * See  {@link com.hazelcast.internal.nio.ConnectionType} for in-house candidates. Note that a type could be
      * provided by a custom client, and it can be a string outside of {@link com.hazelcast.internal.nio.ConnectionType}
      *

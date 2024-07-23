@@ -60,7 +60,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the logic for accepting {@link TcpServerConnection}s.
- *
+ * <p>
  * The {@link TcpServerAcceptor} and {@link TcpServerConnector} are 2 sides of the same coin. The
  * {@link TcpServerConnector} take care of the 'client' side of a connection and the {@link TcpServerAcceptor}
  * is the 'server' side of a connection (each connection has a client and server-side)
@@ -245,7 +245,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             while (it.hasNext()) {
                 SelectionKey sk = it.next();
                 it.remove();
-                // of course it is acceptable!
+                // of course, it is acceptable!
                 if (sk.isValid() && sk.isAcceptable()) {
                     eventCount.inc();
                     ServerSocketRegistry.Pair attachment = (ServerSocketRegistry.Pair) sk.attachment();

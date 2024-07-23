@@ -41,7 +41,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND_ANY;
 
 /**
- * The TcpServerConnector is responsible to make connections by connecting to a remote serverport. Once completed,
+ * The TcpServerConnector is responsible to make connections by connecting to a remote server port. Once completed,
  * it will send the protocol and a {@link com.hazelcast.internal.cluster.impl.MemberHandshake}.
  */
 class TcpServerConnector {

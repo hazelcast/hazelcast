@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 
 /**
  * The Server is responsible for managing {@link ServerConnection} instances.
- *
+ * <p>
  * Given an {@link EndpointQualifier} an {@link ServerConnectionManager} can be retrieved
  * by {@link #getConnectionManager(EndpointQualifier)} to create or get connections on that end.
  */
@@ -41,7 +41,7 @@ public interface Server extends ConnectionListenable<ServerConnection> {
     /**
      * Returns a {@link ServerConnectionManager} that is able to handle
      * connections for the given qualifier.
-     *
+     * <p>
      * It is important to realize that the returned manager could also
      * manage other connections; so if you ask for a member connection manager
      * it could be that you get a connection manager that also handles client
@@ -57,7 +57,7 @@ public interface Server extends ConnectionListenable<ServerConnection> {
 
     /**
      * Returns all connections.
-     *
+     * <p>
      * This can be a relatively expensive operations the returned collection might be created
      * on every invocation. So if you are just interested in count, have a look at
      * {@link #connectionCount(Predicate)} method.

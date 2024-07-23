@@ -287,7 +287,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 fireConnectionRemovedEvent(connection, remoteAddress);
             } else {
                 // it might be the case that the connection was closed quickly enough
-                // that the planeIndex was not set. Instead look for the connection
+                // that the planeIndex was not set. Instead, look for the connection
                 // by remoteAddress and connectionId over all planes and remove it wherever found.
                 boolean removed = false;
                 for (Plane p : planes) {

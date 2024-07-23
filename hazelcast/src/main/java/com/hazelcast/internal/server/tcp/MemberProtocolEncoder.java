@@ -75,7 +75,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     /**
      * Checks if the protocol bytes have been drained.
-     *
+     * <p>
      * The protocol buffer is in write mode, so if position is 0, the protocol
      * buffer has been drained.
      *

@@ -43,7 +43,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SI
 /**
  * The ProtocolEncoder is responsible for writing the protocol and once the protocol
  * has been written, the ProtocolEncoder is replaced by the appropriate handler.
- *
+ * <p>
  * The ProtocolEncoder and the 'client' side of a member connection, will always
  * write the cluster protocol immediately. The ProtocolEncoder on the 'server' side
  * of the connection will wait till it has received the protocol and then will only
@@ -96,7 +96,7 @@ public class UnifiedProtocolEncoder
             }
 
             if (CLUSTER.equals(inboundProtocol)) {
-                // in case of a member, the cluster protocol needs to be send first before initializing the channel.
+                // in case of a member, the cluster protocol needs to be sent first before initializing the channel.
 
                 if (!clusterProtocolBuffered) {
                     clusterProtocolBuffered = true;
@@ -133,7 +133,7 @@ public class UnifiedProtocolEncoder
 
     /**
      * Checks if the protocol bytes have been drained.
-     *
+     * <p>
      * The protocol buffer is in write mode, so if position is 0, the protocol
      * buffer has been drained.
      *

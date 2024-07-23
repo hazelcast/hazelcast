@@ -17,7 +17,7 @@
 package com.hazelcast.internal.services;
 
 /**
- * An interface that can be implemented by a SPI service that needs to be notified members joining and leaving
+ * An interface that can be implemented by an SPI service that needs to be notified members joining and leaving
  * the cluster.
  *
  * @author mdogan 9/5/12

@@ -39,7 +39,7 @@ public interface ServerConnectionManager
 
     /**
      * Returns all connections managed by this ServerConnectionManager.
-     *
+     * <p>
      * In case of a member connection, it will also return connections that have not yet completed the
      * {@link com.hazelcast.internal.cluster.impl.MemberHandshake}.
      */
