@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WanCacheEntryViewTest extends HazelcastTestSupport {
 
-    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testDeSerialization() {

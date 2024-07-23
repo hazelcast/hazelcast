@@ -122,7 +122,7 @@ public class EventJournalCacheDataStructureAdapter<K, V>
         final HashSet<Entry<K, V>> entries = new HashSet<>(cache.size());
         while (it.hasNext()) {
             final Cache.Entry<K, V> e = it.next();
-            entries.add(new SimpleImmutableEntry<K, V>(e.getKey(), e.getValue()));
+            entries.add(new SimpleImmutableEntry<>(e.getKey(), e.getValue()));
         }
         return entries;
     }

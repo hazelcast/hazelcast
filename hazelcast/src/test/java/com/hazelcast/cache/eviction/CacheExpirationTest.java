@@ -338,7 +338,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     public static class SimpleExpiryListener<K, V> implements CacheEntryExpiredListener<K, V>, Serializable {
 
-        private AtomicInteger expirationCount = new AtomicInteger();
+        private final AtomicInteger expirationCount = new AtomicInteger();
 
         @Override
         public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {

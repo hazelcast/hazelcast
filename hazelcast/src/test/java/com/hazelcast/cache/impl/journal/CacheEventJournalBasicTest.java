@@ -74,9 +74,9 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
         final CacheManager cacheManager = createCacheManager();
 
         return new EventJournalTestContext<>(
-                new EventJournalCacheDataStructureAdapter<K, V>((ICache<K, V>) cacheManager.getCache(NON_EVICTING_CACHE)),
-                new EventJournalCacheDataStructureAdapter<K, V>((ICache<K, V>) cacheManager.getCache(EVICTING_CACHE)),
-                new EventJournalCacheEventAdapter<K, V>()
+                new EventJournalCacheDataStructureAdapter<>((ICache<K, V>) cacheManager.getCache(NON_EVICTING_CACHE)),
+                new EventJournalCacheDataStructureAdapter<>((ICache<K, V>) cacheManager.getCache(EVICTING_CACHE)),
+                new EventJournalCacheEventAdapter<>()
         );
     }
 

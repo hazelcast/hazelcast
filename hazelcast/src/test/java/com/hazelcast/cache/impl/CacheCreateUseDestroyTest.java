@@ -79,7 +79,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
     private static final Capacity NATIVE_MEMORY_SIZE = new Capacity(32, MemoryUnit.MEGABYTES);
 
     @Parameters(name = "{0}")
-    public static Collection parameters() {
+    public static Collection<Object[]> parameters() {
         return asList(
                 new Object[]{OBJECT},
                 new Object[]{BINARY},

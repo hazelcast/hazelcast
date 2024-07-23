@@ -160,8 +160,7 @@ public class CacheConfigPropagationTest extends HazelcastTestSupport {
     }
 
     protected CacheService getCacheService(HazelcastInstance member) {
-        CacheService cacheService = getNodeEngineImpl(member).getService(SERVICE_NAME);
-        return cacheService;
+        return getNodeEngineImpl(member).getService(SERVICE_NAME);
     }
 
     private void assertNoPreJoinCacheConfig(CacheService cacheService) {
