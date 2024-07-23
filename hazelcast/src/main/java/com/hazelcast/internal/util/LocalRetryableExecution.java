@@ -32,7 +32,7 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Class encapsulating local execution with retry logic. The operation must
- * not have an {@link OperationResponseHandler} set and it must return
+ * not have an {@link OperationResponseHandler} set, and it must return
  * response.
  * The retry will use the configured
  * {@link ClusterProperty#INVOCATION_MAX_RETRY_COUNT} and

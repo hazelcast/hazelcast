@@ -101,7 +101,7 @@ public final class InvocationUtil {
 
     /**
      * Constructs a local execution with retry logic. The operation must not
-     * have an {@link OperationResponseHandler}, it must return a response
+     * have an {@link OperationResponseHandler}, it must return a response,
      * and it must not validate the target.
      *
      * @return the local execution

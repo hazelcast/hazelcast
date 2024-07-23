@@ -91,7 +91,7 @@ public final class ExceptionUtil {
     /**
      * Processes {@code Throwable t} so that the returned {@code Throwable}'s type matches {@code allowedType},
      * {@code RuntimeException} or any {@code Throwable} returned by `exceptionWrapper`
-     * Processing may include unwrapping {@code t}'s cause hierarchy, wrapping it in a exception
+     * Processing may include unwrapping {@code t}'s cause hierarchy, wrapping it in an exception
      * created by using exceptionWrapper or just returning the same instance {@code t}
      * if it is already an instance of {@code RuntimeException}.
      *

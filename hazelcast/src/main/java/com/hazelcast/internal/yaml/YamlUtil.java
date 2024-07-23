@@ -28,12 +28,12 @@ public final class YamlUtil {
     }
 
     /**
-     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * Takes a generic {@link YamlNode} instance and returns it cast to
      * {@link YamlMapping} if the type of the node is a descendant of
      * {@link YamlMapping}.
      *
      * @param node The generic node to cast
-     * @return the casted mapping
+     * @return the cast mapping
      * @throws YamlException if the provided node is not a mapping
      */
     public static YamlMapping asMapping(YamlNode node) {
@@ -47,12 +47,12 @@ public final class YamlUtil {
     }
 
     /**
-     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * Takes a generic {@link YamlNode} instance and returns it cast to
      * {@link YamlSequence} if the type of the node is a descendant of
      * {@link YamlSequence}.
      *
      * @param node The generic node to cast
-     * @return the casted sequence
+     * @return the cast sequence
      * @throws YamlException if the provided node is not a sequence
      */
     public static YamlSequence asSequence(YamlNode node) {
@@ -66,12 +66,12 @@ public final class YamlUtil {
     }
 
     /**
-     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * Takes a generic {@link YamlNode} instance and returns it cast to
      * {@link YamlScalar} if the type of the node is a descendant of
      * {@link YamlScalar}.
      *
      * @param node The generic node to cast
-     * @return the casted scalar
+     * @return the cast scalar
      * @throws YamlException if the provided node is not a scalar
      */
     public static YamlScalar asScalar(YamlNode node) {
@@ -84,11 +84,11 @@ public final class YamlUtil {
     }
 
     /**
-     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * Takes a generic {@link YamlNode} instance and returns it cast to
      * the provided {@code type} if the node is an instance of that type.
      *
      * @param node The generic node to cast
-     * @return the casted node
+     * @return the cast node
      * @throws YamlException if the provided node is not the expected type
      */
     @SuppressWarnings("unchecked")

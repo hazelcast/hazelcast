@@ -22,10 +22,10 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * A {@link Counter} that is thread-safe; so can be incremented by multiple threads concurrently.
- *
+ * <p>
  * The MwCounter is not meant for a huge amount of contention. In that case it would be better to create a counter
  * on the {@link java.util.concurrent.atomic.LongAdder}.
- *
+ * <p>
  * This counter does not provide padding to prevent false sharing.
  */
 public final class MwCounter implements Counter {

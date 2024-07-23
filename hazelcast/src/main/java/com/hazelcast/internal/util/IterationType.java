@@ -44,8 +44,8 @@ public enum IterationType {
 
     /**
      * Gets the ID for the given IterationType.
-     *
-     * The reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
+     * <p>
+     * The reason this ID is used instead of the ordinal value is that the ordinal value is more prone to changes due to
      * reordering.
      *
      * @return the ID

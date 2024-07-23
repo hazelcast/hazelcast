@@ -78,7 +78,7 @@ public final class StripedExecutor implements Executor {
         this.workers = new Worker[threadCount];
 
         // `queueCapacity` is the given max capacity for this executor. Each worker in this executor should consume
-        // only a portion of that capacity. Otherwise we will have `threadCount * queueCapacity` instead of
+        // only a portion of that capacity. Otherwise, we will have `threadCount * queueCapacity` instead of
         // `queueCapacity`.
         int perThreadMaxQueueCapacity = (int) ceil(1D * queueCapacity / threadCount);
         for (int i = 0; i < threadCount; i++) {

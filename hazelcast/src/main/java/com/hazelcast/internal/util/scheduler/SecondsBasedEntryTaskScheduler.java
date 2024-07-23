@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Schedule execution of an entry for seconds later.
  * This is similar to a scheduled executor service, but instead of scheduling
- * a execution for a specific millisecond, this service will
+ * an execution for a specific millisecond, this service will
  * schedule it with second proximity. For example, if delayMillis is 600 ms,
  * then the entry will be scheduled to execute in 1 second. If delayMillis is 2400,
  * then the entry will be scheduled to execute in 3 seconds. Therefore, delayMillis is

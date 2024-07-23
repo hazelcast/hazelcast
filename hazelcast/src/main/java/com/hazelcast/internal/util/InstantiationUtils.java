@@ -32,12 +32,12 @@ public final class InstantiationUtils {
     /**
      * Create a new instance of a given class. It will search for a constructor matching passed parameters.
      * If a matching constructor is not found then it returns null.
-     *
+     * <p>
      * Constructor is matching when it can be invoked with given parameters. The order of parameters is significant.
-     *
+     * <p>
      * When a class constructor contains a primitive argument then it's matching if and only if
      * a parameter at the same position is not null.
-     *
+     * <p>
      * It throws {@link AmbiguousInstantiationException} when multiple matching constructors are found.
      *
      * @param clazz class to be instantiated
@@ -53,11 +53,7 @@ public final class InstantiationUtils {
         }
         try {
             return constructor.newInstance(params);
-        } catch (IllegalAccessException e) {
-            return null;
-        } catch (InstantiationException e) {
-            return null;
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
             return null;
         }
     }
