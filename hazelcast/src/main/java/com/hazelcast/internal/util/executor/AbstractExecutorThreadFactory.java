@@ -22,7 +22,7 @@ public abstract class AbstractExecutorThreadFactory implements ThreadFactory {
 
     protected final ClassLoader classLoader;
 
-    public AbstractExecutorThreadFactory(ClassLoader classLoader) {
+    protected AbstractExecutorThreadFactory(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
