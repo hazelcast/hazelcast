@@ -28,10 +28,10 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Simplistic implementation of MultiMap.
  * It's not thread-safe, concurrent access has to be externally synchronized.
- *
+ * <p>
  * It does not allow duplicates: The same value can be associated with the same key once only. Duplicates are
  * eliminated.
- *
+ * <p>
  * The name has a prefix Internal- to avoid confusion with {@link MultiMap}
  *
  * @param <K>

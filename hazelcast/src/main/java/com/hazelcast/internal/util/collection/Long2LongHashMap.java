@@ -237,6 +237,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
         return put(key.longValue(), value.longValue());
     }
 
+    @Override
     public void forEach(final BiConsumer<? super Long, ? super Long> action) {
         longForEach(new UnboxingBiConsumer(action));
     }

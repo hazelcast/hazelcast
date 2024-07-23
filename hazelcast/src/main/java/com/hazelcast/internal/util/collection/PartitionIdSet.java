@@ -228,7 +228,7 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
     }
 
     /**
-     * Mutates this set so it contains its complement with respect to the universe of all partition IDs.
+     * Mutates this set, so it contains its complement with respect to the universe of all partition IDs.
      */
     public void complement() {
         bitSet.flip(0, partitionCount);

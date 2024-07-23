@@ -40,8 +40,8 @@ public final class ArrayUtils {
 
     /**
      * Removes an item from the array.
-     *
-     * If the item has been found, a new array is returned where this item is removed. Otherwise the original array is returned.
+     * <p>
+     * If the item has been found, a new array is returned where this item is removed. Otherwise, the original array is returned.
      *
      * @param src    the src array
      * @param object the object to remove
@@ -79,8 +79,8 @@ public final class ArrayUtils {
 
     /**
      * Replaces the first occurrence of the oldValue by the newValue.
-     *
-     * If the item is found, a new array is returned. Otherwise the original array is returned.
+     * <p>
+     * If the item is found, a new array is returned. Otherwise, the original array is returned.
      *
      * @param src
      * @param oldValue  the value to look for

@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 @SerializableByConvention
 public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
 
+    @Serial
     private static final long serialVersionUID = 0L;
 
     enum State {
@@ -83,7 +85,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
     /**
      * This constructor is intended to be used by {@link com.hazelcast.internal.util.collection.InflatableSet.Builder} and
      * {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet.ImmutableSetBuilder} only.
-     *
+     * <p>
      * The constructor is package-visible to support {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet}
      *
      * @param compactList list of elements for the InflatableSet
@@ -193,7 +195,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
     @SuppressFBWarnings(value = "CN_IDIOM", justification = "Deliberate, documented contract violation")
     @SuppressWarnings({"checkstyle:superclone", "CloneDoesntCallSuperClone"})
     protected Object clone() {
-        return new InflatableSet<T>(this);
+        return new InflatableSet<>(this);
     }
 
     private void inflateIfNeeded() {
@@ -295,6 +297,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
             super(list);
         }
 
+        @Override
         public Builder<T> add(T item) {
             super.add(item);
             return this;

@@ -60,6 +60,7 @@ public class IntIterator implements Iterator<Integer> {
         return nextValue();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("remove");
     }

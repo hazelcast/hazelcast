@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util.collection;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -32,6 +33,7 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 @SerializableByConvention
 public final class ImmutableInflatableSet<T> extends InflatableSet<T> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private ImmutableInflatableSet(List<T> compactList) {
@@ -70,6 +72,7 @@ public final class ImmutableInflatableSet<T> extends InflatableSet<T> {
             super(initialCapacity);
         }
 
+        @Override
         public ImmutableSetBuilder<T> add(T item) {
             super.add(item);
             return this;

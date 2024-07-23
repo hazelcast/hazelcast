@@ -38,7 +38,7 @@ public interface LongCursor {
     long value();
 
     /**
-     * Resets the cursor to the inital state.
+     * Resets the cursor to the initial state.
      */
     void reset();
 }

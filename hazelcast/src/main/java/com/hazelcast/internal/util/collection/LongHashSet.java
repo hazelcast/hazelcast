@@ -106,7 +106,7 @@ public final class LongHashSet implements Set<Long> {
     }
 
     /**
-     * An long specialised version of {this#remove(Object)}.
+     * A long specialised version of {this#remove(Object)}.
      *
      * @param value the value to remove
      * @return true if the value was present, false otherwise

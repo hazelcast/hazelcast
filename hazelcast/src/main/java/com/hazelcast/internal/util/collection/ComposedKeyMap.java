@@ -23,11 +23,11 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Map with a composed key.
- *
- * It's not thread safe and it does not allow nulls.
- *
+ * <p>
+ * It's not thread safe, and it does not allow nulls.
+ * <p>
  * It's biased towards use-cases where you have a smaller set of first keys.
- *
+ * <p>
  * Alternative implementation could avoid map nesting and wrap keys inside
  * a <code>ComposedKey</code> object.
  *

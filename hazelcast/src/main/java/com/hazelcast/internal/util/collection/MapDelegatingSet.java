@@ -50,6 +50,7 @@ public final class MapDelegatingSet<V> extends AbstractSet<V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
@@ -57,6 +58,7 @@ public final class MapDelegatingSet<V> extends AbstractSet<V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     @SuppressWarnings("unchecked")
     public boolean contains(final Object o) {
         return contains.test(o);
@@ -72,6 +74,7 @@ public final class MapDelegatingSet<V> extends AbstractSet<V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void clear() {
         delegate.clear();
     }

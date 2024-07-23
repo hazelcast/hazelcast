@@ -28,9 +28,9 @@ import java.util.Set;
 /**
  * Simplistic implementation of MultiMap.
  * It's not thread-safe, concurrent access has to be externally synchronized.
- *
+ * <p>
  * It allows duplicates: The same value can be associated with the same key multiple times
- *
+ * <p>
  * The name has a prefix Internal- to avoid confusion with {@link MultiMap}
  *
  * @param <K>

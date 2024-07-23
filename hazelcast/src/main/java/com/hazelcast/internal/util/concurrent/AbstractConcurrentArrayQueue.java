@@ -105,7 +105,6 @@ implements QueuedPipe<E> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public E peek() {
         return buffer.get(seqToArrayIndex(head, capacity - 1));
     }

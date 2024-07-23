@@ -25,11 +25,11 @@ import java.util.List;
  * This list keeps the items as long as its size is less than maximum
  * capacity. Once the list size reaches {@code maxSize}, the half of
  * the entries with less weight are evicted.
- *
+ * <p>
  * When a specified number of votes are cast the list is re-organized
  * to bring the items with the most votes in front. Also, every time
  * {@code maxSize} is reached, the list is reorganized.
- *
+ * <p>
  * The list is not thread-safe.
  *
  * @param <T>
@@ -55,7 +55,7 @@ public class WeightedEvictableList<T> {
      *                                      can keep.
      * @param maxVotesBeforeReorganization  How many {@link #voteFor(WeightedItem)}
      *                                      operations are allowed, before items
-     *                                      are re-ordered based on on their
+     *                                      are re-ordered based on their
      *                                      weights.
      */
     public WeightedEvictableList(int maxSize, int maxVotesBeforeReorganization) {
@@ -85,7 +85,7 @@ public class WeightedEvictableList<T> {
      * Adds a new item to the list or votes for the given item if it
      * already exists. If the {@link #maxSize} is reached, half of the
      * list is removed.
-     *
+     * <p>
      * When half of the list is removed, the weights of all the items
      * are reset. The newly added item gets a vote if applicable.
      *

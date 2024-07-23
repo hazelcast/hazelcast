@@ -462,12 +462,10 @@ public class Object2LongHashMap<K>
             return true;
         }
 
-        if (!(o instanceof Map))
+        if (!(o instanceof Map<?, ?> that))
         {
             return false;
         }
-
-        final Map<?, ?> that = (Map<?, ?>)o;
 
         if (size != that.size())
         {
@@ -659,17 +657,20 @@ public class Object2LongHashMap<K>
             return Object2LongHashMap.this.size();
         }
 
+        @Override
         public boolean contains(final Object o)
         {
             return Object2LongHashMap.this.containsKey(o);
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         public boolean remove(final Object o)
         {
             return missingValue != Object2LongHashMap.this.removeKey((K)o);
         }
 
+        @Override
         public void clear()
         {
             Object2LongHashMap.this.clear();
@@ -700,11 +701,13 @@ public class Object2LongHashMap<K>
             return Object2LongHashMap.this.size();
         }
 
+        @Override
         public boolean contains(final Object o)
         {
             return Object2LongHashMap.this.containsValue(o);
         }
 
+        @Override
         public void clear()
         {
             Object2LongHashMap.this.clear();
@@ -735,6 +738,7 @@ public class Object2LongHashMap<K>
             return Object2LongHashMap.this.size();
         }
 
+        @Override
         public void clear()
         {
             Object2LongHashMap.this.clear();
@@ -743,6 +747,7 @@ public class Object2LongHashMap<K>
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean contains(final Object o)
         {
             final Entry entry = (Entry)o;
@@ -801,6 +806,7 @@ public class Object2LongHashMap<K>
 
         public abstract T next();
 
+        @Override
         public void remove()
         {
             if (isPositionValid)
