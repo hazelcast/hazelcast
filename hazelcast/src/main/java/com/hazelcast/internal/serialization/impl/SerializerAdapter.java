@@ -36,7 +36,7 @@ public interface SerializerAdapter {
 
     Serializer getImpl();
 
-    default Object read(ObjectDataInput in, Class aClass) throws IOException {
+    default Object read(ObjectDataInput in, Class<?> aClass) throws IOException {
         throw new HazelcastSerializationException(this + " is not implementing the " + TypedStreamDeserializer.class
                 + " interface. Please implement this interface to deserialize for class " + aClass);
     }

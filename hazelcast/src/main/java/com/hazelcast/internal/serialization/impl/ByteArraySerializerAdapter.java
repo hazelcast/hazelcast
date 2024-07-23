@@ -50,7 +50,7 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
     }
 
     @Override
-    public Object read(ObjectDataInput in, Class aClass) throws IOException {
+    public Object read(ObjectDataInput in, Class<?> aClass) throws IOException {
         byte[] bytes = in.readByteArray();
         if (bytes == null) {
             return null;

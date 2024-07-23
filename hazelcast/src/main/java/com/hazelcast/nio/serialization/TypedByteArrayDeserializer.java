@@ -32,5 +32,5 @@ public interface TypedByteArrayDeserializer<T>  {
      * @return read object
      * @throws IOException in case of failure to read
      */
-    T read(byte[] bytes, Class aClass) throws IOException;
+    T read(byte[] bytes, Class<?> aClass) throws IOException;
 }

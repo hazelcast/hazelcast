@@ -45,7 +45,7 @@ public class StreamSerializerAdapter implements SerializerAdapter {
     }
 
     @Override
-    public Object read(ObjectDataInput in, Class aClass)
+    public Object read(ObjectDataInput in, Class<?> aClass)
             throws IOException {
         if (!(serializer instanceof TypedStreamDeserializer)) {
             throw new HazelcastSerializationException(this + " is not implementing the " + TypedStreamDeserializer.class
