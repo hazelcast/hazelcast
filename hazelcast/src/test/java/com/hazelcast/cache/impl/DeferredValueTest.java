@@ -43,6 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -112,24 +113,24 @@ public class DeferredValueTest {
         assertEquals(v1, v2);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEquals_WithValueAndSerializedValue() {
         DeferredValue<String> v1 = withValue(expected);
         DeferredValue<String> v2 = DeferredValue.withSerializedValue(serializedValue);
-        assertEquals(v1, v2);
+        assertThrows(IllegalArgumentException.class, () -> assertEquals(v1, v2));
     }
 
     @Test
     public void testNullValue_returnsNull() {
-        DeferredValue deferredValue = DeferredValue.withNullValue();
+        DeferredValue<Object> deferredValue = DeferredValue.withNullValue();
         assertNull(deferredValue.getSerializedValue(serializationService));
         assertNull(deferredValue.get(serializationService));
     }
 
     @Test
     public void testCopy_whenNullValue() {
-        DeferredValue nullValue = DeferredValue.withNullValue();
-        DeferredValue copy = nullValue.shallowCopy();
+        DeferredValue<Object> nullValue = DeferredValue.withNullValue();
+        DeferredValue<Object> copy = nullValue.shallowCopy();
         assertNull(copy.getSerializedValue(serializationService));
         assertNull(copy.get(serializationService));
     }

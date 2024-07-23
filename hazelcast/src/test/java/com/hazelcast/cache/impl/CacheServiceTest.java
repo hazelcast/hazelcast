@@ -139,12 +139,7 @@ public class CacheServiceTest {
         }
         latch.countDown();
         final AtomicInteger exceptionCounter = new AtomicInteger();
-        FutureUtil.waitWithDeadline(futures, 10, TimeUnit.SECONDS, new FutureUtil.ExceptionHandler() {
-            @Override
-            public void handleException(Throwable throwable) {
-                exceptionCounter.getAndIncrement();
-            }
-        });
+        FutureUtil.waitWithDeadline(futures, 10, TimeUnit.SECONDS, throwable -> exceptionCounter.getAndIncrement());
 
         assertNull(cacheService.getCacheConfig(PREFIXED_CACHE_NAME));
         // ensure all executions completed exceptionally
