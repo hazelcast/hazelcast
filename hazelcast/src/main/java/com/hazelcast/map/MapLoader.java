@@ -86,7 +86,7 @@ public interface MapLoader<K, V> {
      * Loads given keys. This is batch load operation so that implementation can
      * optimize the multiple loads.
      * <p>
-     * For any key in the input keys, there should be a single mapping in the resulting map. Also the resulting
+     * For any key in the input keys, there should be a single mapping in the resulting map. Also, the resulting
      * map should not have any keys that are not part of the input keys.
      * <p>
      * The given collection should not contain any {@code null} keys.
@@ -101,7 +101,7 @@ public interface MapLoader<K, V> {
     Map<K, V> loadAll(Collection<K> keys);
 
     /**
-     * Loads all of the keys from the store. The returned {@link Iterable} may return the keys lazily
+     * Loads all the keys from the store. The returned {@link Iterable} may return the keys lazily
      * by loading them in batches. The {@link Iterator} of this {@link Iterable} may implement the
      * {@link Closeable} interface in which case it will be closed once iteration is over.
      * This is intended for releasing resources such as closing a JDBC result set.

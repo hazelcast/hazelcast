@@ -131,7 +131,7 @@ import java.util.function.Function;
  * split-brain protection for {@link IMap}</a>.  Using this functionality
  * it is possible to restrict operations in smaller partitioned clusters.
  * It should be noted that there is still an inconsistency window between
- * the time of the split and the actual detection. Therefore using this
+ * the time of the split and the actual detection. Therefore, using this
  * reduces the window of inconsistency but can never completely eliminate
  * it.
  *
@@ -479,7 +479,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p><b>Interactions with the map store</b>
      * <p>
      * If write-through persistence mode is configured, before the value
-     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is removed from the memory, {@link MapStore#delete(Object)}
      * is called to remove the value from the map store. Exceptions
      * thrown by delete fail the operation and are propagated to the
      * caller.
@@ -1130,7 +1130,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p><b>Interactions with the map store</b>
      * <p>
      * If write-through persistence mode is configured, before the value
-     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is removed from the memory, {@link MapStore#delete(Object)}
      * is called to remove the value from the map store. Exceptions
      * thrown by delete fail the operation and are propagated to the
      * caller.
@@ -1208,7 +1208,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p><b>Interactions with the map store</b>
      * <p>
      * If write-through persistence mode is configured, before the value
-     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is removed from the memory, {@link MapStore#delete(Object)}
      * is called to remove the value from the map store. Exceptions
      * thrown by delete fail the operation and are propagated to the
      * caller.
@@ -2118,7 +2118,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * implement a corresponding {@link MapListener} sub-interface for that event.
      * <p>
      * Note that entries in distributed map are partitioned across
-     * the cluster members; each member owns and manages the some portion of the
+     * the cluster members; each member owns and manages some portion of the
      * entries. Owned entries are called local entries. This
      * listener will be listening for the events of local entries. Let's say
      * your cluster has member1 and member2. On member2 you added a local listener and from
@@ -3083,7 +3083,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     QueryCache<K, V> getQueryCache(@Nonnull String name);
 
     /**
-     * Creates an always up to date snapshot of this {@code IMap} according to the supplied parameters.
+     * Creates an always up-to-date snapshot of this {@code IMap} according to the supplied parameters.
      * <p>
      * If there is a previously created {@link QueryCache} with the supplied {@code name}, this method returns that
      * {@link QueryCache} and ignores {@code predicate} and {@code includeValue} parameters. Otherwise it creates and returns
@@ -3109,7 +3109,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
                                    boolean includeValue);
 
     /**
-     * Creates an always up to date snapshot of this {@code IMap} according to
+     * Creates an always up-to-date snapshot of this {@code IMap} according to
      * the supplied parameters.
      * <p>
      * If there is a previously created {@link QueryCache} with the supplied
@@ -3155,7 +3155,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * <p>
      * If there is no entry with key {@code key} or is already expired, this
      * call makes no changes to entries stored in this map.
-     *
+     * <p>
      * <b>Warning:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to
@@ -3193,6 +3193,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @since 4.1
      */
+    @Override
     V computeIfPresent(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
     /**
@@ -3217,6 +3218,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @since 4.1
      */
+    @Override
     V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction);
 
     /**
@@ -3240,6 +3242,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *     When this method is invoked using a hazelcast-client instance, the {@code action} is always executed locally
      * </p>
      */
+    @Override
     default void forEach(@Nonnull BiConsumer<? super K, ? super V> action) {
         ConcurrentMap.super.forEach(action);
     }
@@ -3266,6 +3269,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @since 4.1
      */
+    @Override
     V compute(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
     /**
@@ -3316,13 +3320,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @since 4.1
      */
+    @Override
     default void replaceAll(@Nonnull BiFunction<? super K, ? super V, ? extends V> function) {
         ConcurrentMap.super.replaceAll(function);
     }
 
     /**
      * Returns an iterator over the entries of the map. It sequentially
-     * iterates partitions. It starts to iterate on partition 0 and it
+     * iterates partitions. It starts to iterate on partition 0, and it
      * finishes the iteration with the last partition (n = 271 by default).
      * The keys are fetched in batches for the constant heap utilization.
      *
@@ -3336,7 +3341,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
 
     /**
      * Returns an iterator over the entries of the map. It sequentially
-     * iterates partitions. It starts to iterate on partition 0 and it
+     * iterates partitions. It starts to iterate on partition 0, and it
      * finishes the iteration with the last partition (n = 271 by default).
      * The keys are fetched in batches for the constant heap utilization.
      *

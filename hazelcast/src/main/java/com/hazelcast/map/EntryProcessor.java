@@ -138,8 +138,8 @@ public interface EntryProcessor<K, V, R> extends Serializable {
      * that a key exists but its backup processor may not find it at run time due
      * to an unsent backup of a previous operation (e.g. a previous put). In
      * those situations, Hazelcast internally/eventually will sync those owner
-     * and backup partitions so you will not lose any data.
-     * When coding an backup entry processor, you should take that case into
+     * and backup partitions, so you will not lose any data.
+     * When coding a backup entry processor, you should take that case into
      * account, otherwise {@link java.lang.NullPointerException}s can be seen
      * since {@link java.util.Map.Entry#getValue()} may return null.
      *

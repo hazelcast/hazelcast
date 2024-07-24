@@ -22,7 +22,7 @@ import com.hazelcast.spi.annotation.NamespacesSupported;
 /**
  * This is an extension to {@link MapStore}. Implementing classes can
  * retrieve expiration dates of entries stored if there is any.
- *
+ * <p>
  * See {@link MapStore}.
  *
  * @param <K> type of the EntryStore key

@@ -92,8 +92,8 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeData(out, key);
         out.writeInt(records.size());
-        for (MultiMapRecord record : records) {
-            out.writeObject(record);
+        for (MultiMapRecord multiMapRecord : records) {
+            out.writeObject(multiMapRecord);
         }
         out.writeLong(creationTime);
         out.writeLong(lastAccessTime);
@@ -107,8 +107,8 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
         int size = in.readInt();
         records = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            MultiMapRecord record = in.readObject();
-            records.add(record);
+            MultiMapRecord multiMapRecord = in.readObject();
+            records.add(multiMapRecord);
         }
         creationTime = in.readLong();
         lastAccessTime = in.readLong();

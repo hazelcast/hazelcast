@@ -65,7 +65,7 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
      * one-by-one. In this way a MapStore implementation can handle partial
      * storeAll() cases when some entries were stored successfully before a
      * failure happens. Entries removed from the map will be not passed to
-     * subsequent call to store() method any more.
+     * subsequent call to store() method anymore.
      *
      * @param map map of entries to store
      */
@@ -90,7 +90,7 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
      * one-by-one. In this way a MapStore implementation can handle partial
      * deleteAll() cases when some entries were deleted successfully before a
      * failure happens. Entries removed from the keys will be not passed to
-     * subsequent call to delete() method any more. The intended usage is to
+     * subsequent call to delete() method anymore. The intended usage is to
      * delete items from the provided collection as they are deleted from
      * the store.
      *

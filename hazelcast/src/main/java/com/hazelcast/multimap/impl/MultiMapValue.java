@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The MultiMapValue is the value in a multimap and it contains either a set or a list as collection.
+ * The MultiMapValue is the value in a multimap, and it contains either a set or a list as collection.
  */
 public class MultiMapValue {
 
@@ -64,8 +64,8 @@ public class MultiMapValue {
     }
 
     public boolean containsRecordId(long recordId) {
-        for (MultiMapRecord record : collection) {
-            if (record.getRecordId() == recordId) {
+        for (MultiMapRecord multiMapRecord : collection) {
+            if (multiMapRecord.getRecordId() == recordId) {
                 return true;
             }
         }

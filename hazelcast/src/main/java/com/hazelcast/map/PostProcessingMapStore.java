@@ -18,7 +18,7 @@ package com.hazelcast.map;
 
 /**
  * Implement this interface if you modify the value in MapStore.store(K key, V value) method.
- * Otherwise already serialized form will be used to put into hazelcast map and
+ * Otherwise, already serialized form will be used to put into hazelcast map and
  * modifications made inside store() method will be discarded. Applying changes done in store()
  * is only possible with write-through configured map store.
  */

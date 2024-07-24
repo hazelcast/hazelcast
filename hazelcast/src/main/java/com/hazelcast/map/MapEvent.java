@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.cluster.Member;
 
+import java.io.Serial;
+
 /**
  * Used for map-wide events like {@link com.hazelcast.core.EntryEventType#EVICT_ALL}
  * and {@link  com.hazelcast.core.EntryEventType#CLEAR_ALL}.
@@ -27,6 +29,7 @@ import com.hazelcast.cluster.Member;
  */
 public class MapEvent extends AbstractIMapEvent {
 
+    @Serial
     private static final long serialVersionUID = -4948640313865667023L;
 
     /**

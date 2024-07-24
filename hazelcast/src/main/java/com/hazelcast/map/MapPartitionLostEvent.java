@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.cluster.Member;
 
+import java.io.Serial;
+
 /**
  * Used for providing information about the lost partition for a map
  *
@@ -25,6 +27,7 @@ import com.hazelcast.cluster.Member;
  */
 public class MapPartitionLostEvent extends AbstractIMapEvent {
 
+    @Serial
     private static final long serialVersionUID = -7445734640964238109L;
 
     private final int partitionId;

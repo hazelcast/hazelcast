@@ -72,27 +72,27 @@ public class Capacity {
     }
 
     /**
-     * Returns value of the capacity in kilo-bytes.
+     * Returns value of the capacity in kilobytes.
      *
-     * @return capacity in kilo-bytes
+     * @return capacity in kilobytes
      */
     public long kiloBytes() {
         return unit.toKiloBytes(value);
     }
 
     /**
-     * Returns value of the capacity in mega-bytes.
+     * Returns value of the capacity in megabytes.
      *
-     * @return capacity in mega-bytes
+     * @return capacity in megabytes
      */
     public long megaBytes() {
         return unit.toMegaBytes(value);
     }
 
     /**
-     * Returns value of the capacity in giga-bytes.
+     * Returns value of the capacity in gigabytes.
      *
-     * @return capacity in giga-bytes
+     * @return capacity in gigabytes
      */
     public long gigaBytes() {
         return unit.toGigaBytes(value);
@@ -226,11 +226,9 @@ public class Capacity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Capacity)) {
+        if (!(o instanceof Capacity that)) {
             return false;
         }
-
-        Capacity that = (Capacity) o;
 
         if (value != that.value) {
             return false;

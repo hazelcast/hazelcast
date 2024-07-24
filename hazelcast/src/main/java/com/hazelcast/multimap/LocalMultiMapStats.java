@@ -20,7 +20,7 @@ import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.monitor.MemberState;
 
 /**
- * Local multi map statistics to be used by {@link MemberState} implementations.
+ * Local multimap statistics to be used by {@link MemberState} implementations.
  */
 public interface LocalMultiMapStats extends LocalMapStats {
 }

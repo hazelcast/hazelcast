@@ -69,7 +69,7 @@ public class MultiMapPartitionContainer {
      * @param name     The name of the container to retrieve
      * @param isAccess Indicates whether or not this call should be treated
      *                 as an access
-     * @return the container or {@code null} if doesn't exist
+     * @return the container or {@code null} if it doesn't exist
      */
     public MultiMapContainer getMultiMapContainer(String name, boolean isAccess) {
         MultiMapContainer container = containerMap.get(name);

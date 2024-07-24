@@ -63,7 +63,7 @@ public interface BaseMultiMap<K, V> extends DistributedObject {
      *
      * @param key the key of the entries to remove
      * @return the collection of removed values associated with the given key. The returned collection
-     *         might be modifiable but it has no effect on the multimap.
+     *         might be modifiable, but it has no effect on the multimap.
      */
     Collection<V> remove(Object key);
 

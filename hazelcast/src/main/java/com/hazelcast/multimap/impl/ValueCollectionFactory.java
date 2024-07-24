@@ -110,7 +110,7 @@ public final class ValueCollectionFactory {
     /**
      * Returns corresponding {@link MultiMapConfig.ValueCollectionType} of a {@link java.util.Collection}
      *
-     * @param collection {@link MultiMapConfig.ValueCollectionType} to be find
+     * @param collection {@link MultiMapConfig.ValueCollectionType} to be found
      * @return corresponding {@link MultiMapConfig.ValueCollectionType} of a {@link java.util.Collection}
      * @throws java.lang.IllegalArgumentException if collectionType is unknown
      */
