@@ -26,7 +26,7 @@ import java.util.Collection;
  * A cache for {@link EntryEventData}. Instances of this interface are obtained by {@link FilteringStrategy}s. This provides a
  * chance for filtering strategies to optimize event data caching implementation. This is not a general-purpose cache, rather it
  * is meant to be used within the context of processing a single entry event in single-threaded code. This will
- * allow creating less instances that are shared between listener registrations. The concrete number of created instances
+ * allow creating fewer instances that are shared between listener registrations. The concrete number of created instances
  * depends on the implementation. Every new event will need to obtain a new instance of the {@link EntryEventDataCache}.
  *
  * @see MapEventPublisherImpl#publishEvent(Collection, Address, String, EntryEventType, Data, Object, Object, Object)
@@ -45,7 +45,7 @@ public interface EntryEventDataCache {
      * @param mergingValue    the value used when performing a merge operation in case of a {@link EntryEventType#MERGED} event.
      *                        This value together with the old value produced the new value.
      * @param eventType       the event type
-     * @param includingValues if all of the entry values need to be included in the returned {@link EntryEventData}
+     * @param includingValues if all the entry values need to be included in the returned {@link EntryEventData}
      * @return {@link EntryEventData} already cached in {@code Map eventDataPerEventType} for the given {@code eventType} or
      * if not already cached, a new {@link EntryEventData} object.
      */

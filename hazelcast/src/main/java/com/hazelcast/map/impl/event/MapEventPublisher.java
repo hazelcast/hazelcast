@@ -96,7 +96,7 @@ public interface MapEventPublisher {
      * operation has just been executed on this partition.
      * This method should not publish an event.
      * <p>
-     * Currently a map event is published by the end which calls map#clear
+     * Currently, a map event is published by the end which calls map#clear
      * or map#evictAll and there is not any order guarantee between events
      * fired after map#put and map#clear, as a result of that, we may
      * clear a put after a map#clear, to tackle with that kind of possible

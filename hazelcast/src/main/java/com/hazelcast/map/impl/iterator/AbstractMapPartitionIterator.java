@@ -112,7 +112,7 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
 
     protected List result;
 
-    public AbstractMapPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId, boolean prefetchValues) {
+    protected AbstractMapPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId, boolean prefetchValues) {
         this.map = map;
         this.fetchSize = fetchSize;
         this.partitionId = partitionId;

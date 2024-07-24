@@ -108,7 +108,7 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
 
             // evaluate whether the filter matches the original event type
             originalFilterEventTypeMatches = filter.eval(type);
-            // hold a reference to the original event filter; this may be used later, in case there is a query event filter
+            // hold a reference to the original event filter; this may be used later, in case there is a query event filter,
             // and it alters the event type to be published
             filterAsEventListenerFilter = listenerFilter;
             filter = listenerFilter.getEventFilter();

@@ -37,7 +37,7 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
     protected final InternalSerializationService serializationService;
     protected final MapServiceContext mapServiceContext;
 
-    public AbstractFilteringStrategy(InternalSerializationService serializationService,
+    protected AbstractFilteringStrategy(InternalSerializationService serializationService,
                                      MapServiceContext mapServiceContext) {
         this.serializationService = serializationService;
         this.mapServiceContext = mapServiceContext;

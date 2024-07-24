@@ -62,8 +62,8 @@ public interface Evictor {
      * Evict supplied record-store.
      *
      * @param recordStore the recordStore
-     * @param excludedKey this key has lowest priority
-     *                    to be selected for eviction and it is nullable.
+     * @param excludedKey this key has the lowest priority
+     *                    to be selected for eviction, and it is nullable.
      */
     void evict(RecordStore recordStore, Data excludedKey);
 

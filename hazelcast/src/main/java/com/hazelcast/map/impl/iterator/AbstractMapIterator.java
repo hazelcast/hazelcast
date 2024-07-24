@@ -37,7 +37,7 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
     private Iterator<Map.Entry<K, V>> it;
     private int idx;
 
-    public AbstractMapIterator(ConstructorFunction<Integer, Iterator<Map.Entry<K, V>>> createPartitionIterator,
+    protected AbstractMapIterator(ConstructorFunction<Integer, Iterator<Map.Entry<K, V>>> createPartitionIterator,
                                int partitionCount) {
         this.createPartitionIterator = createPartitionIterator;
         this.partitionCount = partitionCount;

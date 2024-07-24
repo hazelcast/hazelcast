@@ -71,11 +71,10 @@ public class QueryCacheEventPublisher {
             return;
         }
 
-        if (!(eventData instanceof EntryEventData)) {
+        if (!(eventData instanceof EntryEventData entryEvenData)) {
             return;
         }
 
-        EntryEventData entryEvenData = (EntryEventData) eventData;
         Data dataKey = entryEvenData.getDataKey();
         Data dataNewValue = entryEvenData.getDataNewValue();
         Data dataOldValue = entryEvenData.getDataOldValue();
