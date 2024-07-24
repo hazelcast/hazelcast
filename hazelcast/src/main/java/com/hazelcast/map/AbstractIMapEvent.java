@@ -40,7 +40,7 @@ public abstract class AbstractIMapEvent extends EventObject implements IMapEvent
      * @param eventType The event type as an enum {@link EntryEventType} integer.
      * @throws IllegalArgumentException if source is null.
      */
-    public AbstractIMapEvent(Object source, Member member, int eventType) {
+    protected AbstractIMapEvent(Object source, Member member, int eventType) {
         super(source);
         this.name = (String) source;
         this.member = member;

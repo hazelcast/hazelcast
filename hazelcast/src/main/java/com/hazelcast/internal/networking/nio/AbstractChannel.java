@@ -68,7 +68,7 @@ public abstract class AbstractChannel implements Channel {
     @SuppressWarnings("FieldCanBeLocal")
     private volatile int closed = FALSE;
 
-    public AbstractChannel(SocketChannel socketChannel, boolean clientMode) {
+    protected AbstractChannel(SocketChannel socketChannel, boolean clientMode) {
         this.socketChannel = socketChannel;
         this.clientMode = clientMode;
         this.logger = Logger.getLogger(getClass());
@@ -163,7 +163,7 @@ public abstract class AbstractChannel implements Channel {
 
     /**
      * Template method that is called when the Channel is closed.
-     *
+     * <p>
      * It will be called only once.
      */
     protected void close0() throws IOException {

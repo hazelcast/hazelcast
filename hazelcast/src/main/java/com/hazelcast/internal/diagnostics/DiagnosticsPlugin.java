@@ -44,7 +44,7 @@ public abstract class DiagnosticsPlugin {
 
     protected final ILogger logger;
 
-    public DiagnosticsPlugin(ILogger logger) {
+    protected DiagnosticsPlugin(ILogger logger) {
         this.logger = logger;
     }
 
