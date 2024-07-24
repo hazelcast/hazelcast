@@ -71,7 +71,7 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
 
     @Test
     public void writeAll() {
-        Collection c = new LinkedList();
+        Collection<Cache.Entry<? extends Integer, ? extends String>> c = new LinkedList<>();
 
         cacheWriter.writeAll(c);
 
@@ -90,7 +90,7 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
 
     @Test
     public void deleteAll() {
-        Collection c = new LinkedList();
+        Collection<Object> c = new LinkedList<>();
 
         cacheWriter.deleteAll(c);
 
