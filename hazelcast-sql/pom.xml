@@ -224,17 +224,6 @@
                                  -->
 
                                 <relocation>
-                                    <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
-                                    <excludes>
-                                        <!--
-                                        The annotation package is excluded so the relocated classes are
-                                        able to process non-relocated annotations, which are used by the users.
-                                        -->
-                                        <exclude>com.fasterxml.jackson.annotation.*</exclude>
-                                    </excludes>
-                                </relocation>
-                                <relocation>
                                     <pattern>org.apache.calcite</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>

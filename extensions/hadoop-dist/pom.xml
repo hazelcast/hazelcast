@@ -45,38 +45,6 @@
     </modules>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <configuration combine.self="append">
-                        <!--
-                        We actually don't shade these in here in Hadoop module, they are already part of core
-                        But we need to relocate the usage in the Hadoop module
-                        -->
-                        <relocations>
-                            <relocation>
-                                <pattern>com.fasterxml.jackson.jr</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.jr</shadedPattern>
-                            </relocation>
-                            <relocation>
-                                <pattern>com.fasterxml.jackson.core</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.core</shadedPattern>
-                            </relocation>
-                            <relocation>
-                                <pattern>com.fasterxml.jackson.databind</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.databind</shadedPattern>
-                            </relocation>
-                            <relocation>
-                                <pattern>com.fasterxml.jackson.dataformat</pattern>
-                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
-                            </relocation>
-                        </relocations>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

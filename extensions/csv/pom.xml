@@ -71,31 +71,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>jar-with-dependencies</id>
-                        <phase>${shade.jar-with-dependencies.phase}</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration combine.self="append">
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson.core</pattern>
-                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson.core</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson.databind</pattern>
-                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson.databind</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson.dataformat</pattern>
-                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

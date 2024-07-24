@@ -755,6 +755,43 @@
                                 </excludes>
                             </filter>
                         </filters>
+                        <relocations combine.children="append">
+                            <!--
+                            The default value of combine.self and combine.children attributes is "merge", which
+                            merges the configurations of the parent and child modules in an element-wise manner.
+                            For example, if the i-th <relocation> in this module uses <rawString>, the i-th
+                            <relocation> in every submodule that does not override the <configuration>
+                            (by specifying <configuration combine.self="override">) inherits <rawString>. See also:
+                            https://github.com/codehaus-plexus/plexus-utils/blob/plexus-utils-3.5.1/src/main/java/org/codehaus/plexus/util/xml/Xpp3Dom.java#L382-L418
+                            When computing the effective configurations for this module, only the combine.* attributes
+                            declared in this POM are considered. However, combine.* attributes are inherited from
+                            parent to child POMs (but not to nested elements), so that it is enough to specify
+                            <relocations combine.children="append"> in this module instead of in every submodule.
+                            See also: https://maven.apache.org/pom.html#plugins
+                            -->
+                            <relocation>
+                                <!-- Covers non-versioned classes and service providers (META-INF/services/*). -->
+                                <pattern>com.fasterxml.jackson</pattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
+                                <excludes>
+                                    <!--
+                                    The annotation package is excluded so the relocated classes are able
+                                    to process non-relocated annotations, which are used by the users.
+                                    -->
+                                    <exclude>com.fasterxml.jackson.annotation.*</exclude>
+                                </excludes>
+                            </relocation>
+                            <relocation>
+                                <!--
+                                We use rawString to relocate versioned classes (META-INF/versions/{n}/**),
+                                where lookbehind is necessary to avoid matching already relocated classes.
+                                See also: https://issues.apache.org/jira/browse/MSHADE-406
+                                -->
+                                <pattern>(?&lt;=META-INF/versions/\d{1,2}/)com/fasterxml/jackson(?!/annotation)</pattern>
+                                <shadedPattern>${relocation.dir}/com/fasterxml/jackson</shadedPattern>
+                                <rawString>true</rawString>
+                            </relocation>
+                        </relocations>
                     </configuration>
                 </plugin>
                 <plugin>
