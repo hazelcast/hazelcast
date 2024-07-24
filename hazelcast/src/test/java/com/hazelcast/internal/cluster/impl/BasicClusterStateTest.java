@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -44,10 +45,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -64,15 +63,11 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicClusterStateTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void clusterState_isActive_whenInstancesStarted() {
@@ -92,9 +87,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz = instances[instances.length - 1];
         hz.getCluster().changeClusterState(ClusterState.FROZEN);
 
-        expectedException.expect(IllegalStateException.class);
-        factory.newHazelcastInstance();
-        fail("New node should not start when cluster state is: " + ClusterState.FROZEN);
+        Assert.assertThrows(IllegalStateException.class, factory::newHazelcastInstance);
     }
 
     @Test
@@ -108,9 +101,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz = instances[instances.length - 1];
         hz.getCluster().changeClusterState(ClusterState.PASSIVE);
 
-        expectedException.expect(IllegalStateException.class);
-        factory.newHazelcastInstance();
-        fail("New node should not start when cluster state is: " + ClusterState.PASSIVE);
+        Assert.assertThrows(IllegalStateException.class, factory::newHazelcastInstance);
     }
 
     @Test
@@ -179,8 +170,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         warmUpPartitions(hz);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        expectedException.expect(IllegalStateException.class);
-        hz2.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
+        Cluster cluster = hz2.getCluster();
+        Assert.assertThrows(IllegalStateException.class, () -> cluster.changeClusterState(ClusterState.NO_MIGRATION));
     }
 
     @Test
@@ -193,8 +184,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         warmUpPartitions(hz);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        expectedException.expect(IllegalStateException.class);
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+        Cluster cluster = hz2.getCluster();
+        Assert.assertThrows(IllegalStateException.class, () -> cluster.changeClusterState(ClusterState.FROZEN));
     }
 
     @Test
@@ -208,8 +199,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         assertClusterSizeEventually(2, hz);
-        expectedException.expect(IllegalStateException.class);
-        hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
+        Cluster cluster = hz2.getCluster();
+        Assert.assertThrows(IllegalStateException.class, () -> cluster.changeClusterState(ClusterState.PASSIVE));
     }
 
     @Test
@@ -305,8 +296,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         TransactionOptions options = new TransactionOptions().setTransactionType(TransactionType.ONE_PHASE);
 
-        expectedException.expect(IllegalArgumentException.class);
-        hz.getCluster().changeClusterState(ClusterState.FROZEN, options);
+        Cluster cluster = hz.getCluster();
+        Assert.assertThrows(IllegalArgumentException.class, () -> cluster.changeClusterState(ClusterState.FROZEN, options));
     }
 
     @Test
@@ -463,7 +454,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
             implements BackupAwareOperation, AllowedDuringPassiveState {
 
         @Override
-        public void run() throws Exception {
+        public void run() {
         }
 
         @Override
