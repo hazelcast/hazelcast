@@ -19,10 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
@@ -33,9 +31,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractInvocationFuture_CancelTest extends AbstractInvocationFuture_AbstractTest {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void whenCancelCalled_thenFutureCancelled() {
@@ -58,15 +53,12 @@ public class AbstractInvocationFuture_CancelTest extends AbstractInvocationFutur
     }
 
     @Test
-    public void whenCancelled_thenGetThrowsCancelled() throws Exception {
+    public void whenCancelled_thenGetThrowsCancelled() {
         // Given
         future.cancel(true);
 
         // Then
-        exceptionRule.expect(CancellationException.class);
-
-        // When
-        future.get();
+        assertThrows(CancellationException.class, () -> future.get());
     }
 
     @Test
@@ -75,10 +67,7 @@ public class AbstractInvocationFuture_CancelTest extends AbstractInvocationFutur
         future.cancel(true);
 
         // Then
-        exceptionRule.expect(CancellationException.class);
-
-        // When
-        future.join();
+        assertThrows(CancellationException.class, () -> future.join());
     }
 
     @Test
@@ -90,7 +79,6 @@ public class AbstractInvocationFuture_CancelTest extends AbstractInvocationFutur
         future.complete(value);
 
         // Then
-        exceptionRule.expect(CancellationException.class);
-        future.join();
+        assertThrows(CancellationException.class, () -> future.join());
     }
 }
