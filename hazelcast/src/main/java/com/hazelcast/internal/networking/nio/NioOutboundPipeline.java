@@ -350,7 +350,7 @@ public final class NioOutboundPipeline
         }
     }
 
-    private void postProcessBlocked() throws IOException {
+    private void postProcessBlocked() {
         // pipeline is blocked; no point in receiving OP_WRITE events.
         unregisterOp(OP_WRITE);
 
@@ -366,7 +366,7 @@ public final class NioOutboundPipeline
                 // it is already blocked, so we are done.
                 break;
             } else if (state == State.RESCHEDULE) {
-                // rescheduling is requested, so lets do that. Once put to RESCHEDULE,
+                // rescheduling is requested, so let's do that. Once put to RESCHEDULE,
                 // only the thread running the process method will change the state, so we can safely call a set.
                 scheduled.set(State.SCHEDULED);
                 // this will cause the pipeline to be rescheduled.
@@ -378,7 +378,7 @@ public final class NioOutboundPipeline
         }
     }
 
-    private void postProcessDirty() throws IOException {
+    private void postProcessDirty() {
         // pipeline is dirty, so register for an OP_WRITE to write more data.
         registerOp(OP_WRITE);
 
@@ -393,7 +393,7 @@ public final class NioOutboundPipeline
         }
     }
 
-    private void postProcessClean() throws IOException {
+    private void postProcessClean() {
         // There is nothing left to be done; so lets unschedule this pipeline
         // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
         unregisterOp(OP_WRITE);
@@ -402,7 +402,7 @@ public final class NioOutboundPipeline
             State state = scheduled.get();
             if (state == State.RESCHEDULE) {
                 // the pipeline needs to be rescheduled. The current thread is still owner of the pipeline,
-                // so lets remove the reschedule flag and return it to schedule and lets reprocess the pipeline.
+                // so lets remove the reschedule flag and return it to schedule and let's reprocess the pipeline.
                 scheduled.set(State.SCHEDULED);
                 owner().addTaskAndWakeup(this);
                 return;

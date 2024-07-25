@@ -20,10 +20,10 @@ import static java.lang.Thread.currentThread;
 
 /**
  * A {@link Runnable} that gets executed on the {@link NioThread} owning the pipeline.
- *
+ * <p>
  * Normally this is a pretty simple task, just schedule the runnable on the owner
  * using {@link NioThread#addTaskAndWakeup(Runnable)}.
- *
+ * <p>
  * The problem however is that pipeline migration can cause a task to end up at a
  * NioThread that doesn't own the pipeline any longer. Therefore, this task does a
  * check when it is executed if the owner of the pipeline is the same as the

@@ -31,18 +31,18 @@ import java.util.concurrent.ConcurrentMap;
  * Connections use a channel to do the real work; but there is no dependency of the
  * com.hazelcast.internal.networking to a Connection (no cycles). This means that a
  * Channel can be used perfectly without Connection.
- *
+ * <p>
  * The standard channel implementation is the {@link NioChannel} that uses TCP in
  * combination with selectors to transport data. In the future also other channel
  * implementations could be added, e.g. UDP based.
- *
+ * <p>
  * Channel data is read using a {@link InboundHandler}. E.g. data from a socket
  * is received and needs to get processed. The {@link InboundHandler} can convert
  * this to e.g. a Packet.
- *
+ * <p>
  * Channel data is written using a {@link OutboundHandler}. E.g. a packet needs
  * to be converted to bytes.
- *
+ * <p>
  * A Channel gets initialized using the {@link ChannelInitializer}.
  *
  * <h1>Future note</h1>
@@ -81,7 +81,7 @@ public interface Channel extends Closeable {
 
     /**
      * Returns the {@link ChannelOptions} of this Channel.
-     *
+     * <p>
      * Call is thread-safe; but calls to the ChannelOptions are not.
      *
      * @return the config for this channel. Returned value will never be null.
@@ -90,7 +90,7 @@ public interface Channel extends Closeable {
 
     /**
      * Returns the attribute map.
-     *
+     * <p>
      * Attribute map can be used to store data into a socket. For example to find the
      * Connection for a Channel, one can store the Connection in this channel using some
      * well known key.
@@ -101,7 +101,7 @@ public interface Channel extends Closeable {
 
     /**
      * Returns the {@link InboundPipeline} that belongs to this Channel.
-     *
+     * <p>
      * This method is thread-safe, but most methods on the {@link InboundPipeline} are not!
      *
      * @return the InboundPipeline.
@@ -110,7 +110,7 @@ public interface Channel extends Closeable {
 
     /**
      * Returns the {@link OutboundPipeline} that belongs to this Channel.
-     *
+     * <p>
      * This method is thread-safe, but most methods on the {@link OutboundPipeline} are not!
      *
      * @return the OutboundPipeline.
@@ -122,7 +122,7 @@ public interface Channel extends Closeable {
      *
      * This method will be removed from the interface. Only an explicit cast to NioChannel
      * will expose the Socket.
-     *
+     * <p>
      * It is very important that the socket isn't closed directly; but one goes through the
      * {@link #close()} method so that interal administration of the channel is in sync with
      * that of the socket.
@@ -141,7 +141,7 @@ public interface Channel extends Closeable {
 
     /**
      * Returns the last time epoch time in ms a read of the socket was done.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the last time a read from the socket was done.
@@ -149,12 +149,12 @@ public interface Channel extends Closeable {
     long lastReadTimeMillis();
 
     /**
-     * Returns the last time epoch time in ms that a write to the socket was done.
-     *
+     * Returns the last epoch time in ms that a write to the socket was done.
+     * <p>
      * Writing to the socket doesn't mean that data has been sent or received; it means
      * that data was written to the SocketChannel. It could very well be that this data
      * is stuck somewhere in a network-buffer.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the last time something was written to the socket.
@@ -163,15 +163,15 @@ public interface Channel extends Closeable {
 
     /**
      * Starts the Channel.
-     *
+     * <p>
      * In case of a client-mode channel, the {@link #connect(InetSocketAddress, int)}
      * should be called before start is called.
-     *
+     * <p>
      * When the Channel is started, the {@link ChannelInitializer} will be called to
      * initialize the channel and to start with processing inbound and outbound data.
-     *
+     * <p>
      * This method is not thread-safe and should be made only once.
-     *
+     * <p>
      * This method should be called for clientMode and non clientMode channels.
      * Otherwise, the connection will not start to read from or write to the socket.
      */
@@ -179,9 +179,9 @@ public interface Channel extends Closeable {
 
     /**
      * Connects the channel.
-     *
+     * <p>
      * This call should only be made once and is not thread-safe.
-     *
+     * <p>
      * This call blocks until:
      * <ol>
      * <li>the connect succeeds</li>
@@ -200,12 +200,12 @@ public interface Channel extends Closeable {
 
     /**
      * Closes the Channel.
-     *
+     * <p>
      * This method is thread-safe.
-     *
+     * <p>
      * This method can safely be called from an IO thread. Close-listeners will not
      * be executed on an IO thread.
-     *
+     * <p>
      * When the channel already is closed, the call is ignored.
      */
     void close() throws IOException;
@@ -219,7 +219,7 @@ public interface Channel extends Closeable {
 
     /**
      * Adds a ChannelCloseListener.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @param listener the listener to register.
@@ -229,17 +229,17 @@ public interface Channel extends Closeable {
 
     /**
      * Checks if this side is the Channel is in client mode or server mode.
-     *
+     * <p>
      * A channel is in client-mode if it initiated the connection, and in
      * server-mode if it was the one accepting the connection. Client mode isn't related
      * to Hazelcast clients (although a Hazelcast client will always have clientMode=true).
      * A connection from one member to another member can also have clientMode=true if that
      * member connected to the other member.
-     *
+     * <p>
      * One of the reasons this property is valuable is for protocol/handshaking
      * so that it is clear distinction between the side that initiated the connection,
      * or accepted the connection.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return true if this channel is in client-mode, false when in server-mode.
@@ -250,7 +250,7 @@ public interface Channel extends Closeable {
     /**
      * Queues the {@link OutboundFrame} to be written at some point in the future.
      * No guarantee is made that the frame actually is going to be written or received.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @param frame the frame to write.

@@ -27,7 +27,6 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.Arrays;
@@ -278,7 +277,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     public NioInboundPipeline wakeup() {
         ownerAddTaskAndWakeup(new NioPipelineTask(this) {
             @Override
-            protected void run0() throws IOException {
+            protected void run0() {
                 registerOp(OP_READ);
                 NioInboundPipeline.this.run();
             }
