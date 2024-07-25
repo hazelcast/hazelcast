@@ -25,6 +25,8 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.nio.ascii.TextChannelInitializer;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class ChannelInitializerFunction implements Function<EndpointQualifier, ChannelInitializer> {
+    protected static final ILogger LOGGER = Logger.getLogger(ChannelInitializerFunction.class);
 
     protected final ServerContext serverContext;
     private final ChannelInitializer uniChannelInitializer;
@@ -61,6 +64,8 @@ public class ChannelInitializerFunction implements Function<EndpointQualifier, C
         for (EndpointConfig endpointConfig : advancedNetworkConfig.getEndpointConfigs().values()) {
             checkSslConfigAvailability(endpointConfig.getSSLConfig());
 
+            logSSLConfig(endpointConfig);
+
             switch (endpointConfig.getProtocolType()) {
                 case MEMBER:
                     map.put(EndpointQualifier.MEMBER, provideMemberChannelInitializer(endpointConfig));
@@ -79,11 +84,25 @@ public class ChannelInitializerFunction implements Function<EndpointQualifier, C
                     break;
                 default:
                     throw new IllegalStateException("Cannot build channel initializer for protocol type "
-                            + endpointConfig.getProtocolType());
+                                                    + endpointConfig.getProtocolType());
             }
         }
 
         initializerMap = map;
+    }
+
+    private void logSSLConfig(EndpointConfig endpointConfig) {
+        SSLConfig sslConfig = endpointConfig.getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            switch (endpointConfig.getProtocolType()) {
+                case MEMBER -> LOGGER.info("SSL is enabled for member-to-member connections");
+                case CLIENT -> LOGGER.info("SSL is enabled for client-to-member connections");
+                case WAN -> LOGGER.info("SSL is enabled for WAN connections");
+                case REST -> LOGGER.info("SSL is enabled for REST connections");
+                case MEMCACHE -> LOGGER.info("SSL is enabled for MEMCACHE connections");
+                default -> LOGGER.info("Unknown Protocol Type");
+            }
+        }
     }
 
     protected ChannelInitializer provideUnifiedChannelInitializer() {

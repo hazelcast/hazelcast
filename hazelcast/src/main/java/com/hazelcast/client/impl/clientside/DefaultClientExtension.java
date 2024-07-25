@@ -85,7 +85,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_
 @SuppressWarnings({"WeakerAccess", "checkstyle:ClassFanOutComplexity"})
 public class DefaultClientExtension implements ClientExtension {
 
-    protected static final ILogger LOGGER = Logger.getLogger(ClientExtension.class);
+    protected static final ILogger LOGGER = Logger.getLogger(DefaultClientExtension.class);
 
     protected volatile HazelcastClientInstanceImpl client;
     protected JetClientInstanceImpl jetClient;
