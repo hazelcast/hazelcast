@@ -56,7 +56,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
@@ -183,7 +182,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             return;
         }
         command = trim(command);
-        if (command.length() == 0) {
+        if (command.isEmpty()) {
             return;
         }
         if (command.contains("__")) {
@@ -208,7 +207,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             first = args[0];
         }
         if (command.startsWith("help")) {
-            handleHelp(command);
+            handleHelp();
         } else if (first.startsWith("#") && first.length() > 1) {
             int repeat = Integer.parseInt(first.substring(1));
             long started = Clock.currentTimeMillis();
@@ -283,13 +282,13 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         } else if ("q.offer".equals(first)) {
             handleQOffer(args);
         } else if ("q.take".equals(first)) {
-            handleQTake(args);
+            handleQTake();
         } else if ("q.poll".equals(first)) {
             handleQPoll(args);
         } else if ("q.peek".equals(first)) {
-            handleQPeek(args);
+            handleQPeek();
         } else if ("q.capacity".equals(first)) {
-            handleQCapacity(args);
+            handleQCapacity();
         } else if ("q.offermany".equals(first)) {
             handleQOfferMany(args);
         } else if ("q.pollmany".equals(first)) {
@@ -377,17 +376,17 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         } else if (first.equals("l.contains")) {
             handleListContains(args);
         } else if ("a.get".equals(first)) {
-            handleAtomicNumberGet(args);
+            handleAtomicNumberGet();
         } else if ("a.set".equals(first)) {
             handleAtomicNumberSet(args);
         } else if ("a.inc".equals(first)) {
-            handleAtomicNumberInc(args);
+            handleAtomicNumberInc();
         } else if ("a.dec".equals(first)) {
-            handleAtomicNumberDec(args);
+            handleAtomicNumberDec();
         } else if (first.equals("execute")) {
             execute(args);
         } else if (first.equals("partitions")) {
-            handlePartitions(args);
+            handlePartitions();
         } else if (equalsIgnoreCase(first, "executeOnKey")) {
             executeOnKey(args);
         } else if (equalsIgnoreCase(first, "executeOnMember")) {
@@ -395,7 +394,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         } else if (equalsIgnoreCase(first, "executeOnMembers")) {
             executeOnMembers(args);
         } else if (equalsIgnoreCase(first, "instances")) {
-            handleInstances(args);
+            handleInstances();
         } else if (equalsIgnoreCase(first, "quit") || equalsIgnoreCase(first, "exit")) {
             handleExit();
         } else if (first.startsWith("e") && first.endsWith(".simulateLoad")) {
@@ -426,7 +425,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         long startMs = System.currentTimeMillis();
 
         IExecutorService executor = hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + threadCount);
-        List<Future> futures = new LinkedList<>();
+        List<Future<Object>> futures = new LinkedList<>();
         List<Member> members = new LinkedList<>(hazelcast.getCluster().getMembers());
 
         int totalThreadCount = hazelcast.getCluster().getMembers().size() * threadCount;
@@ -544,7 +543,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println(sb.toString());
     }
 
-    private void handleAtomicNumberGet(String[] args) {
+    private void handleAtomicNumberGet() {
         println(getAtomicNumber().get());
     }
 
@@ -557,15 +556,15 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println(getAtomicNumber().get());
     }
 
-    private void handleAtomicNumberInc(String[] args) {
+    private void handleAtomicNumberInc() {
         println(getAtomicNumber().incrementAndGet());
     }
 
-    private void handleAtomicNumberDec(String[] args) {
+    private void handleAtomicNumberDec() {
         println(getAtomicNumber().decrementAndGet());
     }
 
-    protected void handlePartitions(String[] args) {
+    protected void handlePartitions() {
         Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
         Map<Member, Integer> partitionCounts = new HashMap<>();
         for (Partition partition : partitions) {
@@ -586,7 +585,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    protected void handleInstances(String[] args) {
+    protected void handleInstances() {
         Collection<DistributedObject> distributedObjects = hazelcast.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
             println(distributedObject);
@@ -795,8 +794,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleMapLocalKeys() {
-        Set set = getMap().localKeySet();
-        Iterator it = set.iterator();
+        Set<Object> keySet = getMap().localKeySet();
+        Iterator<Object> it = keySet.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
@@ -810,8 +809,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleMapKeys() {
-        Set set = getMap().keySet();
-        Iterator it = set.iterator();
+        Set<Object> keySet = getMap().keySet();
+        Iterator<Object> it = keySet.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
@@ -821,20 +820,20 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleMapEntries() {
-        Set set = getMap().entrySet();
-        Iterator it = set.iterator();
+        Set<Map.Entry<Object, Object>> entrySet = getMap().entrySet();
+        Iterator<Map.Entry<Object, Object>> it = entrySet.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
-            Map.Entry entry = (Entry) it.next();
+            Map.Entry entry = it.next();
             println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
     }
 
     protected void handleMapValues() {
-        Collection set = getMap().values();
-        Iterator it = set.iterator();
+        Collection<Object> values = getMap().values();
+        Iterator<Object> it = values.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
@@ -858,8 +857,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleMultiMapKeys() {
-        Set set = getMultiMap().keySet();
-        Iterator it = set.iterator();
+        Set<Object> keySet = getMultiMap().keySet();
+        Iterator<Object> it = keySet.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
@@ -869,20 +868,20 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleMultiMapEntries() {
-        Set set = getMultiMap().entrySet();
-        Iterator it = set.iterator();
+        Set<Map.Entry<Object, Object>> entrySet = getMultiMap().entrySet();
+        Iterator<Map.Entry<Object, Object>> it = entrySet.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
-            Map.Entry entry = (Entry) it.next();
+            Map.Entry entry = it.next();
             println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
     }
 
     protected void handleMultiMapValues() {
-        Collection set = getMultiMap().values();
-        Iterator it = set.iterator();
+        Collection<Object> values = getMultiMap().values();
+        Iterator<Object> it = values.iterator();
         int count = 0;
         while (it.hasNext()) {
             count++;
@@ -1053,7 +1052,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleIterator(String[] args) {
-        Iterator it = null;
+        Iterator<Object> it = null;
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
             it = getSet().iterator();
@@ -1168,7 +1167,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    protected void handleQTake(String[] args) {
+    protected void handleQTake() {
         try {
             println(getQueue().take());
         } catch (InterruptedException e) {
@@ -1239,11 +1238,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    protected void handleQPeek(String[] args) {
+    protected void handleQPeek() {
         println(getQueue().peek());
     }
 
-    protected void handleQCapacity(String[] args) {
+    protected void handleQCapacity() {
         println(getQueue().remainingCapacity());
     }
 
@@ -1299,7 +1298,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             Echo task = new Echo(args[1]);
             Map<Member, Future<String>> results = executorService.submitToAllMembers(task);
 
-            for (Future f : results.values()) {
+            for (Future<String> f : results.values()) {
                 println(f.get());
             }
         } catch (InterruptedException e) {
@@ -1363,7 +1362,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     /**
      * Handled the help command
      */
-    private void handleHelp(String command) {
+    private void handleHelp() {
         boolean silentBefore = silent;
         silent = false;
         println("Commands:");
