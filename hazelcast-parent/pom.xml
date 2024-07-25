@@ -797,7 +797,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.7.0</version>
+                    <version>3.8.0</version>
                     <configuration>
                         <!-- Allows generation when non-JPMS dependencies (e.g. Groovy) are on classpath -->
                         <legacyMode>true</legacyMode>
