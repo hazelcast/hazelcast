@@ -26,7 +26,7 @@ import java.util.Set;
 
 /**
  * Describes a state of NioThread (im-)balance.
- *
+ * <p>
  * It's used by {@link MigrationStrategy} to decide whether and what
  * {@link NioPipeline} should be migrated.
  */

@@ -22,10 +22,10 @@ import java.util.Set;
 
 /**
  * Default {@link MigrationStrategy} for {@link MigratablePipeline} instances.
- *
+ * <p>
  * It attempts to trigger a migration if a ratio between least busy and most
  * busy IOThreads exceeds {@link #MIN_MAX_RATIO_MIGRATION_THRESHOLD}.
- *
+ * <p>
  * Once a migration is triggered it tries to find the busiest pipeline registered in
  * {@link LoadImbalance#srcOwner} which wouldn't cause overload of the
  * {@link LoadImbalance#dstOwner} after a migration.
@@ -37,7 +37,7 @@ class LoadMigrationStrategy implements MigrationStrategy {
      * at all. The higher the number is the more likely the migration will be
      * attempted. Too higher number will result in unnecessary overhead, too
      * low number will cause performance degradation due selector imbalance.
-     *
+     * <p>
      * Try to schedule a migration if the least busy NioThread receives less loads
      * then (MIN_MAX_RATIO_MIGRATION_THRESHOLD * no. of load received by the busiest
      * NioThread)

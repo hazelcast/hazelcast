@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking;
 
 /**
  * The InboundPipeline is pipeline responsible for inbound traffic.
- *
+ * <p>
  * For example there could be a TLSDecoder followed by a PacketDecoder.
- *
+ * <p>
  * A InboundPipeline contains a sequence of {@link InboundHandler}
  * instances and the pipeline can be dynamically be modified.
  *
@@ -39,10 +39,10 @@ public interface InboundPipeline {
 
     /**
      * Adds the handlers at the end of the pipeline.
-     *
+     * <p>
      * No verification is done if the handler is already added and a handler
      * should only be added once.
-     *
+     * <p>
      * This method should only be made on the thread 'owning' the pipeline.
      *
      * @param handlers the handlers to add
@@ -54,10 +54,10 @@ public interface InboundPipeline {
      * Replaces the old InboundHandler by the new ones. So if there
      * is a sequence of handlers [H1,H2,H3] and H2 gets replaced by [H4,H5]
      * the new pipeline will be [H1,H4,H5,H3].
-     *
+     * <p>
      * No verification is done if any of the handlers is already added and a
      * handler should only be added once.
-     *
+     * <p>
      * This method should only be made on the thread 'owning' the pipeline.
      *
      * @param oldHandler  the handler to replace
@@ -70,7 +70,7 @@ public interface InboundPipeline {
 
     /**
      * Removes the given handler from the pipeline.
-     *
+     * <p>
      * This method should only be made on the thread 'owning' the pipeline.
      *
      * @param handler the handler to remove
@@ -84,16 +84,16 @@ public interface InboundPipeline {
     /**
      * Wakes up the inbound pipeline and lets it start reading again from the
      * network.
-     *
+     * <p>
      * Even if there is no data to be read, it will cause at least one processing
      * of the InboundPipeline. This will force any buffered data to be pushed
      * through the InboundPipeline.
-     *
+     * <p>
      * This method is thread-safe and can safely be called from any thread.
-     *
+     * <p>
      * Calling it while it is already waken up will not do any damage, it will
      * just cause some temporary overhead.
-     *
+     * <p>
      * This method is useful for example to restart the pipeline after a task that
      * has been offloaded, completes.
      *

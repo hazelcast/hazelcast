@@ -42,20 +42,20 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.
- *
+ * <p>
  * By default, Hazelcast uses 3 threads to read data from TCP connections and
  * 3 threads to write data to connections. We have measured significant fluctuations
  * of performance when the threads are not utilized equally.
- *
+ * <p>
  * <code>IOBalancer</code> tries to detect such situations and fix them by moving
  * {@link NioInboundPipeline} and {@link NioOutboundPipeline} between {@link NioThread}
  * instances.
- *
+ * <p>
  * It measures load serviced by each pipeline in a given interval and
  * if imbalance is detected then it schedules pipeline migration to fix the situation.
  * The exact migration strategy can be customized via
  * {@link com.hazelcast.internal.networking.nio.iobalancer.MigrationStrategy}.
- *
+ * <p>
  * Measuring interval can be customized via {@link ClusterProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link ConnectionListener} capability

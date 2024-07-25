@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * IOBalancer Migration Strategy intended to be used by stress tests only. It always tries to
  * select a random {@link MigratablePipeline pipeline} to be migrated.
- *
+ * <p>
  * It stresses the pipeline migration mechanism increasing a chance to reveal possible race-conditions.
  */
 class MonkeyMigrationStrategy implements MigrationStrategy {

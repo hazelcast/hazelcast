@@ -23,7 +23,7 @@ public interface ChannelInitializer {
 
     /**
      * Initializes the channel.
-     *
+     * <p>
      * So it will set up the (initial) pipeline of handlers, configure the
      * underlying transport (socket e.g.).
      *

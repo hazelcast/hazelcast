@@ -27,26 +27,26 @@ import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
 /**
  * The {@link OutboundHandler} is a {@link ChannelHandler} for outbound
  * traffic.
- *
+ * <p>
  * An example is the PacketEncoder that takes packets from the src (Provider) and
  * encodes them to the dst (ByteBuffer).
- *
+ * <p>
  * An {@link OutboundHandler} instances are not expected to be thread-safe;
  * each channel will get its own instance(s).
- *
+ * <p>
  * An {@link OutboundHandler} is constructed through a {@link ChannelInitializer}.
  *
  * <h1>Buffer</h1>
  * The OutboundHandler is responsible for its own destination buffer
  * if it has one. So if the buffer needs to be compacted/flipped etc., it should
  * take care of that.
- *
+ * <p>
  * If OutboundHandler has a destination buffer and the {@link #onWrite()}
  * is called, the first thing it should do is to call
  * {@link IOUtil#compactOrClear(ByteBuffer)} so it flips to
  * writing mode. And at the end of the onWrite method, the destination buffer
  * should be flipped into reading mode.
- *
+ * <p>
  * If the OutboundHandler has a source buffer, it is expected to be
  * in reading mode, and it is the responsibility of the OutboundHandler
  * in front to put that buffer in reading mode.
@@ -66,7 +66,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
     /**
      * A callback to indicate that this OutboundHandler should be
      * processed.
-     *
+     * <p>
      * A OutboundHandler should be able to deal with a spurious wakeup.
      * So it could be for example there is no frame for it to write to.
      *
@@ -79,7 +79,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
 
     /**
      * Initializes the dst ByteBuffer with the value for {@link ChannelOption#SO_SNDBUF}.
-     *
+     * <p>
      * The buffer created is reading mode.
      */
     protected final void initDstBuffer() {
@@ -88,7 +88,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
 
     /**
      * Initializes the dst ByteBuffer with the configured size.
-     *
+     * <p>
      * The buffer created is reading mode.
      *
      * @param sizeBytes the size of the dst ByteBuffer.
@@ -99,7 +99,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
 
     /**
      * Initializes the dst ByteBuffer with the configured size.
-     *
+     * <p>
      * The buffer created is reading mode.
      *
      * @param sizeBytes the size of the dst ByteBuffer.

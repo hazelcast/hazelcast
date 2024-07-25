@@ -19,7 +19,7 @@ package com.hazelcast.internal.networking;
 
 /**
  * ChannelHandler is either responsible for processing inbound or outbound data.
- *
+ * <p>
  * ChannelHandlers are not expected to be thread-safe.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or
@@ -40,7 +40,7 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
     /**
      * Gets the source of this ChannelHandler.
-     *
+     * <p>
      * This method should only be called from the thread that owns this
      * ChannelHandler.
      *
@@ -52,7 +52,7 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
     /**
      * Sets the source of this ChannelHandler.
-     *
+     * <p>
      * This method should only be called from the thread that owns this
      * ChannelHandler.
      *
@@ -64,7 +64,7 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
     /**
      * Gets the destination of this ChannelHandler.
-     *
+     * <p>
      * This method should only be called from the thread that owns this
      * ChannelHandler.
      *
@@ -76,7 +76,7 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
     /**
      * Sets the destination of this ChannelHandler.
-     *
+     * <p>
      * This method should only be called from the thread that owns this
      * ChannelHandler.
      *
@@ -88,7 +88,7 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
     /**
      * Sets the Channel.
-     *
+     * <p>
      * Should only be called by the {@link InboundPipeline}.
      *
      * @param channel the Channel
@@ -101,10 +101,10 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
     /**
      * Gets called when this ChannelHandler is added to the pipeline.
-     *
+     * <p>
      * This method should execute very quickly because it could be executed on
      * an io thread.
-     *
+     * <p>
      * Will be called from a thread owning this handler.
      */
     public void handlerAdded() {
@@ -113,17 +113,17 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
     /**
      * Intercepts an error that is thrown while processing the inbound or
      * outbound pipeline.
-     *
+     * <p>
      * The default implementation doesn't do anything and the original
      * {@link Throwable} is send to the {@link ChannelErrorHandler}.
-     *
+     * <p>
      * However, in some cases like with TLS a more informative exception
      * needs to be thrown. To prevent losing the stacktrace, it is best to
      * include the original Throwable as cause in the new Throwable.
-     *
+     * <p>
      * This method will only be called from the thread owning the pipeline
      * this handler is part of.
-     *
+     * <p>
      * No modifications should be done to the pipeline and no attempts
      * should be made to 'repair' the channel. When a Throwable is thrown,
      * it is the end of the channel.

@@ -21,9 +21,9 @@ public enum HandlerStatus {
     /**
      * The handler has processed all data it could process and there is nothing
      * left for this handler to do.
-     *
+     * <p>
      * For example a Packet was fully written and there is nothing else to write.
-     *
+     * <p>
      * Or when all data from the input buffer has been consumed and there is nothing
      * left to produce.
      */
@@ -32,10 +32,10 @@ public enum HandlerStatus {
     /**
      * There is something left in the handler that could be processed with another
      * call.
-     *
+     * <p>
      * For example a packet larger than the socket buffer needs to be written, so
      * it will require multiple calls for the handler to get this packet written.
-     *
+     * <p>
      * As long as the handler has not fully written the packet, it will keep
      * returning dirty.
      *

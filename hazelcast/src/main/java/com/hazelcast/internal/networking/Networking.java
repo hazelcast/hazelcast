@@ -23,9 +23,9 @@ import java.nio.channels.SocketChannel;
 
 /**
  * The Networking is an abstraction responsible for lower level networking services.
- *
+ * <p>
  * Networking is based on a set of registered channel and
- *
+ * <p>
  * The default implementation of this is {@link NioNetworking} that relies on
  * selectors. But also different implementations can be added like spinning,
  * thread per connection, epoll, UDP based etc.
@@ -36,11 +36,11 @@ public interface Networking {
 
     /**
      * Registers the SocketChannel and returns the created Channel.
-     *
+     * <p>
      * The Channel is not yet started so that modifications can be made to the
      * channel e.g. adding attributes. Once this is done the {@link Channel#start()}
      * needs to be called.
-     *
+     * <p>
      * In the future we need to think about passing the socket channel because
      * it binds Networking to tcp and this is not desirable.
      *
@@ -58,9 +58,9 @@ public interface Networking {
 
     /**
      * Restarts Networking.
-     *
+     * <p>
      * This method can be called when the Networking is started for the first time.
-     *
+     * <p>
      * But can also be called after {@link #shutdown()} has been completed. This is useful if you
      * temporarily want to disable networking (e.g. dealing with merging). You should not call this
      * method when the Networking is still running; first you need to call {@link #shutdown()}.
@@ -71,10 +71,10 @@ public interface Networking {
 
     /**
      * Shuts down Networking and closes all registered channels.
-     *
+     * <p>
      * Shutting down doesn't need to be a permanent state. It could be that for e.g. cluster merge, the
      * networking is temporarily shutdown and later restarted.
-     *
+     * <p>
      * Shutdown can safely be called multiple times. The first time the Networking will be shutdown and the
      * rest of the calls it will be ignored.
      */
