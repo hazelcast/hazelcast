@@ -112,7 +112,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private static final int COLOR = BLUE | BRIGHT;
 
     private String namespace = "default";
-    private String executorNamespace = "Sample Executor";
 
     private boolean silent;
     private boolean echo;
@@ -258,7 +257,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             return;
         }
         command = command.trim();
-        if (command.length() == 0) {
+        if (command.isEmpty()) {
             return;
         }
         String first = command;
@@ -360,7 +359,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if ("q.offer".equals(first)) {
             handleQOffer(args);
         } else if ("q.take".equals(first)) {
-            handleQTake(args);
+            handleQTake();
         } else if ("q.poll".equals(first)) {
             handleQPoll(args);
         } else if ("q.peek".equals(first)) {
@@ -450,17 +449,17 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if (first.equals("l.contains")) {
             handleListContains(args);
         } else if ("a.get".equals(first)) {
-            handleAtomicNumberGet(args);
+            handleAtomicNumberGet();
         } else if ("a.set".equals(first)) {
             handleAtomicNumberSet(args);
         } else if ("a.incrementAndGet".equals(first)) {
-            handleAtomicNumberInc(args);
+            handleAtomicNumberInc();
         } else if ("a.decrementAndGet".equals(first)) {
-            handleAtomicNumberDec(args);
+            handleAtomicNumberDec();
         } else if (first.equals("execute")) {
             execute(args);
         } else if (first.equals("partitions")) {
-            handlePartitions(args);
+            handlePartitions();
         } else if (equalsIgnoreCase(first, "executeOnKey")) {
             executeOnKey(args);
         } else if (equalsIgnoreCase(first, "executeOnMember")) {
@@ -468,7 +467,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if (equalsIgnoreCase(first, "executeOnMembers")) {
             executeOnMembers(args);
         } else if (equalsIgnoreCase(first, "instances")) {
-            handleInstances(args);
+            handleInstances();
         } else if (equalsIgnoreCase(first, "quit") || equalsIgnoreCase(first, "exit")
                 || equalsIgnoreCase(first, "shutdown")) {
             println("Exiting from the client console application.");
@@ -493,8 +492,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
         long startMs = System.currentTimeMillis();
 
+        String executorNamespace = "Sample Executor";
         IExecutorService executor = client.getExecutorService(executorNamespace + ' ' + threadCount);
-        List<Future> futures = new LinkedList<>();
+        List<Future<Object>> futures = new LinkedList<>();
         List<Member> members = new LinkedList<>(client.getCluster().getMembers());
 
         int totalThreadCount = client.getCluster().getMembers().size() * threadCount;
@@ -507,7 +507,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 client.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
-            Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);
+            Future<Object> f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);
             futures.add(f);
         }
 
@@ -542,18 +542,15 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         File f = new File(first.substring(1));
         println("Executing script file " + f.getAbsolutePath());
         if (f.exists()) {
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new FileReader(f));
-                String l = br.readLine();
+
+            try (BufferedReader bufferedReader = new BufferedReader(new FileReader(f))) {
+                String l = bufferedReader.readLine();
                 while (l != null) {
                     handleCommand(l);
-                    l = br.readLine();
+                    l = bufferedReader.readLine();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                IOUtil.closeResource(br);
             }
         } else {
             println("File not found! " + f.getAbsolutePath());
@@ -611,7 +608,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println(sb.toString());
     }
 
-    private void handleAtomicNumberGet(String[] args) {
+    private void handleAtomicNumberGet() {
         println(getAtomicNumber().get());
     }
 
@@ -624,15 +621,15 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println(getAtomicNumber().get());
     }
 
-    private void handleAtomicNumberInc(String[] args) {
+    private void handleAtomicNumberInc() {
         println(getAtomicNumber().incrementAndGet());
     }
 
-    private void handleAtomicNumberDec(String[] args) {
+    private void handleAtomicNumberDec() {
         println(getAtomicNumber().decrementAndGet());
     }
 
-    protected void handlePartitions(String[] args) {
+    protected void handlePartitions() {
         Set<Partition> partitions = client.getPartitionService().getPartitions();
         Map<Member, Integer> partitionCounts = new HashMap<>();
         for (Partition partition : partitions) {
@@ -653,7 +650,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    protected void handleInstances(String[] args) {
+    protected void handleInstances() {
         Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
             println(distributedObject);
@@ -1208,7 +1205,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    protected void handleQTake(String[] args) {
+    protected void handleQTake() {
         try {
             println(getQueue().take());
         } catch (InterruptedException e) {
