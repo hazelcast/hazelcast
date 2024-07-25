@@ -681,11 +681,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof CacheConfig)) {
+        if (!(o instanceof CacheConfig that)) {
             return false;
         }
 
-        final CacheConfig that = (CacheConfig) o;
         if (!Objects.equals(managerPrefix, that.managerPrefix)) {
             return false;
         }

@@ -873,11 +873,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CacheSimpleConfig)) {
+        if (!(o instanceof CacheSimpleConfig that)) {
             return false;
         }
-
-        CacheSimpleConfig that = (CacheSimpleConfig) o;
 
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;

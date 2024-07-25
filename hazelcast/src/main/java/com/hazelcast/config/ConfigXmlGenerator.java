@@ -541,7 +541,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static String classNameOrClass(String className, Class clazz) {
+    private static String classNameOrClass(String className, Class<?> clazz) {
         return !isNullOrEmpty(className) ? className
                 : clazz != null ? clazz.getName()
                 : null;
@@ -1207,7 +1207,7 @@ public class ConfigXmlGenerator {
         if (MapUtil.isNullOrEmpty(factoryMap)) {
             return;
         }
-        for (Map.Entry factory : factoryMap.entrySet()) {
+        for (Map.Entry<Integer, ?> factory : factoryMap.entrySet()) {
             Object value = factory.getValue();
             String className = value instanceof String s ? s : value.getClass().getName();
             gen.node(elementName, className, "factory-id", factory.getKey().toString());
@@ -1392,7 +1392,7 @@ public class ConfigXmlGenerator {
         public XmlGenerator appendProperties(Properties props) {
             if (!props.isEmpty()) {
                 open("properties");
-                Set keys = props.keySet();
+                Set<Object> keys = props.keySet();
                 for (Object key : keys) {
                     node("property", props.getProperty(key.toString()), "name", key.toString());
                 }
@@ -1404,7 +1404,7 @@ public class ConfigXmlGenerator {
         public XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");
-                for (Map.Entry entry : props.entrySet()) {
+                for (Map.Entry<String, ?> entry : props.entrySet()) {
                     node("property", entry.getValue(), "name", entry.getKey());
                 }
                 close();

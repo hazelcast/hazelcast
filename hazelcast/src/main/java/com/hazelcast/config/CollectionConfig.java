@@ -340,11 +340,10 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CollectionConfig)) {
+        if (!(o instanceof CollectionConfig<?> that)) {
             return false;
         }
 
-        CollectionConfig<?> that = (CollectionConfig<?>) o;
         if (backupCount != that.backupCount) {
             return false;
         }
@@ -387,7 +386,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     }
 
     /**
-     * Returns field names with values as concatenated String so it can be used in child classes' toString() methods.
+     * Returns field names with values as concatenated String, so it can be used in child classes' toString() methods.
      */
     protected String fieldsToString() {
         return "name='" + name
