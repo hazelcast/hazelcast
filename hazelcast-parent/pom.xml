@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-parent</artifactId>
     <packaging>pom</packaging>
-    <version>5.5.0-SNAPSHOT</version>
+    <version>5.5.0</version>
 
     <name>Hazelcast Parent POM</name>
     <description>Provides a base configuration for Hazelcast Platform builds</description>
