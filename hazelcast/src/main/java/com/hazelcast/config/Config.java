@@ -235,7 +235,6 @@ public class Config {
     private TpcConfig tpcConfig = new TpcConfig();
 
     // @since 5.4
-    @Beta
     private RestConfig restConfig = new RestConfig();
 
     public Config() {
@@ -3343,7 +3342,6 @@ public class Config {
      *
      * @return the RestConfig.
      */
-    @Beta
     public RestConfig getRestConfig() {
         return restConfig;
     }
@@ -3355,7 +3353,6 @@ public class Config {
      * @return this Config instance
      * @throws NullPointerException if restConfig is null
      */
-    @Beta
     public @Nonnull Config setRestConfig(@Nonnull RestConfig restConfig) {
         this.restConfig = checkNotNull(restConfig, "RestConfig cannot be null!");
         return this;

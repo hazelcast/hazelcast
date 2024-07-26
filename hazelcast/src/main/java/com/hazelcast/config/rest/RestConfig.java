@@ -16,8 +16,6 @@
 
 package com.hazelcast.config.rest;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
@@ -26,7 +24,6 @@ import java.time.temporal.ChronoUnit;
  *
  * @since 5.4
  */
-@Beta
 public class RestConfig {
     public static class Ssl {
 
