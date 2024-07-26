@@ -728,7 +728,7 @@
                                     <goal>aggregate</goal>
                                 </goals>
                                 <configuration>
-                                    <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                                    <outputFile>${project.build.directory}/aggregated-attribution/attribution.txt</outputFile>
                                 </configuration>
                             </execution>
                         </executions>
@@ -742,6 +742,17 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>release-repository</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                    <plugin>
                         <groupId>com.hazelcast.maven</groupId>
                         <artifactId>attribution-maven-plugin</artifactId>
                         <executions>
@@ -752,7 +763,7 @@
                                     <goal>aggregate</goal>
                                 </goals>
                                 <configuration>
-                                    <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                                    <outputFile>${project.build.directory}/aggregated-attribution/attribution.txt</outputFile>
                                 </configuration>
                             </execution>
                         </executions>
