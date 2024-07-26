@@ -100,7 +100,7 @@ public abstract class AbstractSplitBrainMergePolicyTest {
                 fail("Unsupported MergePolicy type");
             }
             when(mergingEntry.getRawValue()).thenReturn(value);
-            when(mergingEntry.getValue()).thenReturn(SERIALIZATION_SERVICE.toObject(value));
+            when(mergingEntry.getDeserializedValue()).thenReturn(SERIALIZATION_SERVICE.toObject(value));
             return mergingEntry;
         } catch (Exception e) {
             throw new RuntimeException(e);

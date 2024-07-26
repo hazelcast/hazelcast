@@ -27,7 +27,7 @@ class TestCustomMapMergePolicy implements SplitBrainMergePolicy<Integer, Merging
 
     @Override
     public Integer merge(MergingValue<Integer> mergingEntry, MergingValue<Integer> existingEntry) {
-        return mergingEntry.getValue();
+        return mergingEntry.getDeserializedValue();
     }
 
     @Override

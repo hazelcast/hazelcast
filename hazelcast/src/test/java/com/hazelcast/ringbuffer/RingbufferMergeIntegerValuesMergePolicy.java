@@ -27,11 +27,11 @@ class RingbufferMergeIntegerValuesMergePolicy
 
     @Override
     public RingbufferMergeData merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {
-        final RingbufferMergeData mergingRingbuffer = mergingValue.getValue();
+        final RingbufferMergeData mergingRingbuffer = mergingValue.getDeserializedValue();
         final RingbufferMergeData result = new RingbufferMergeData(mergingRingbuffer.getCapacity());
         RingbufferMergeData existingRingbuffer;
         if (existingValue != null) {
-            existingRingbuffer = existingValue.getValue();
+            existingRingbuffer = existingValue.getDeserializedValue();
         } else {
             existingRingbuffer = new RingbufferMergeData(mergingRingbuffer.getCapacity());
         }
