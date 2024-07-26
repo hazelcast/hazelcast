@@ -67,11 +67,6 @@
             <destName>THIRD-PARTY.txt</destName>
             <outputDirectory>licenses</outputDirectory>
         </file>
-        <file>
-            <source>${basedir}/../target/aggregated-attribution.txt</source>
-            <destName>attribution.txt</destName>
-            <outputDirectory>licenses</outputDirectory>
-        </file>
 
         <!-- Full Example YAML config files -->
         <file>
@@ -190,6 +185,10 @@
             <excludes>
                 <exclude>**/*</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../target/aggregated-attribution</directory>
+            <outputDirectory>licenses</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
