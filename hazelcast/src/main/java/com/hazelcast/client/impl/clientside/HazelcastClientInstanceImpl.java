@@ -21,6 +21,7 @@ import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientService;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -32,6 +33,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
 import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
@@ -235,6 +237,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         this.loggingService = new ClientLoggingService(config.getClusterName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName, detailsEnabled, shutdownLoggingEnabled);
 
+        // client config validations/overrides
         if (clientConfig != null) {
             MetricsConfigHelper.overrideClientMetricsConfig(clientConfig,
                     getLoggingService().getLogger(MetricsConfigHelper.class));
@@ -244,6 +247,8 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
                         getLoggingService().getLogger(MetricsConfigHelper.class));
             }
         }
+        validateTpcConfiguration(config);
+
         ClassLoader classLoader = config.getClassLoader();
         properties = new HazelcastProperties(config.getProperties());
         concurrencyDetection = initConcurrencyDetection();
@@ -278,6 +283,17 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         sqlService = new SqlClientService(this);
         cpGroupViewService = clientExtension.createClientCPGroupViewService(this,
                 config.isCPDirectToLeaderRoutingEnabled());
+    }
+
+    private void validateTpcConfiguration(ClientConfig config) {
+        // TPC only supports ALL_MEMBERS routing, but we don't want to terminate the client, just adjust and warn
+        if (config.getTpcConfig().isEnabled()
+                && config.getNetworkConfig().getClusterRoutingConfig().getRoutingMode() != RoutingMode.ALL_MEMBERS) {
+            config.getTpcConfig().setEnabled(false);
+            getLoggingService().getLogger(HazelcastClient.class).warning(String.format("TPC has been disabled as it only supports"
+                            + " ALL_MEMBERS routing in this version of Hazelcast and %s routing is currently configured instead.",
+                    config.getNetworkConfig().getClusterRoutingConfig().getRoutingMode()));
+        }
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {

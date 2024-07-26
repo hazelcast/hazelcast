@@ -274,12 +274,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     private static RoutingMode decideRoutingMode(ClientConfig config) {
-        if (config.getTpcConfig().isEnabled()) {
-            return RoutingMode.ALL_MEMBERS;
-        }
-
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        return networkConfig.getClusterRoutingConfig().getRoutingMode();
+        RoutingMode mode = networkConfig.getClusterRoutingConfig().getRoutingMode();
+
+        if (config.getTpcConfig().isEnabled() && mode != RoutingMode.ALL_MEMBERS) {
+            // This should be impossible due to validation in HazelcastClientInstanceImpl, but to catch just in case...
+            throw new IllegalStateException("TPC is enabled but our RoutingMode is " + mode + " instead of ALL_MEMBERS!");
+        }
+        return mode;
     }
 
     private int initConnectionTimeoutMillis() {

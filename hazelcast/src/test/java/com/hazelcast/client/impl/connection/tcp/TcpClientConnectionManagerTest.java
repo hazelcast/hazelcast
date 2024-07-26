@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -93,6 +94,7 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
     }
 
     @Test
+    @Ignore("TPC only supports ALL_MEMBERS routing after the introduction of MULTI_MEMBER routing")
     public void testIsSingleMemberClient_whenTpcEnabledAndAllMembersRoutingDisabled() {
         verifyIsSingleMemberClient(true, false);
     }
