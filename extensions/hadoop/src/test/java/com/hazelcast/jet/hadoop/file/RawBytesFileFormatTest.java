@@ -36,7 +36,7 @@ public class RawBytesFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadEmptyFile() throws Exception {
+    public void shouldReadEmptyFile() {
         FileSourceBuilder<byte[]> source = FileSources.files(currentDir + "/src/test/resources")
                                                       .glob("file-empty.txt")
                                                       .format(FileFormat.bytes());

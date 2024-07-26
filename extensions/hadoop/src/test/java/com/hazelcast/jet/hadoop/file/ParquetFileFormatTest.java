@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({NightlyTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class ParquetFileFormatTest extends BaseFileFormatTest {
 
-    // Parquet has a dependency on Hadoop so it does not make sense to run it without it
+    // Parquet has a dependency on Hadoop, so it does not make sense to run it without it
     @Parameters(name = "{index}: useHadoop={0}")
     public static Iterable<?> parameters() {
         return Collections.singletonList(true);
@@ -79,7 +79,7 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldThrowWhenInvalidFileType() throws Exception {
+    public void shouldThrowWhenInvalidFileType() {
         FileSourceBuilder<SpecificUser> source = FileSources.files(currentDir + "/src/test/resources")
                                                             .glob("invalid-data.png")
                                                             .format(FileFormat.parquet());

@@ -35,7 +35,6 @@ import javassist.bytecode.ClassFile;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
@@ -164,7 +163,7 @@ public class CustomFormatTest extends BaseFileFormatTest {
 
         @Override
         public RecordReader<NullWritable, Object> createRecordReader(InputSplit split, TaskAttemptContext context) {
-            return new RecordReader<NullWritable, Object>() {
+            return new RecordReader<>() {
 
                 private transient ClassFile current;
                 private FileSplit fileSplit;
@@ -182,12 +181,9 @@ public class CustomFormatTest extends BaseFileFormatTest {
                     if (!processed) {
                         org.apache.hadoop.fs.Path file = fileSplit.getPath();
                         FileSystem fs = file.getFileSystem(conf);
-                        FSDataInputStream in = null;
-                        try {
-                            in = fs.open(file);
+
+                        try (FSDataInputStream in = fs.open(file)) {
                             current = new ClassFile(in);
-                        } finally {
-                            IOUtils.closeStream(in);
                         }
                         processed = true;
                         return true;
