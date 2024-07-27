@@ -146,7 +146,7 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest(format("Size of broken sequences=%d", brokenSequences.size()));
+            logger.finest("Size of broken sequences=%d", brokenSequences.size());
         }
     }
 

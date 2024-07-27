@@ -899,10 +899,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         Address endpoint = connection.getRemoteAddress();
         UUID memberUuid = connection.getRemoteUuid();
         if (endpoint == null) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Destroying " + connection + ", but it has end-point set to null "
-                        + "-> not removing it from a connection map");
-            }
+            logger.finest("Destroying %s, but it has end-point set to null -> not removing it from a connection map",
+                    connection);
             return;
         }
 
@@ -920,9 +918,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
 
                 fireConnectionEvent(connection, false);
-            } else if (logger.isFinestEnabled()) {
-                logger.finest("Destroying a connection, but there is no mapping " + endpoint + ":" + memberUuid
-                        + " -> " + connection + " in the connection map.");
+            } else {
+                logger.finest("Destroying a connection, but there is no mapping %s:%s -> %s in the connection map.", endpoint,
+                        memberUuid, connection);
             }
         }
     }

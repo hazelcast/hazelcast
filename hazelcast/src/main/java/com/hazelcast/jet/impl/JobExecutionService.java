@@ -363,11 +363,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
             if (logger.isFineEnabled()) {
                 executionContexts.values().stream()
                                  .filter(e -> e.jobId() == jobId)
-                                 .forEach(e -> logger.fine(String.format(
+                                 .forEach(e -> logger.fine(
                                          "Execution context for job %s for coordinator %s already exists"
                                                  + " with local execution %s for coordinator %s",
                                          idToString(jobId), coordinator, idToString(e.executionId()),
-                                         e.coordinator())));
+                                         e.coordinator()));
             }
 
             throw new RetryableHazelcastException();

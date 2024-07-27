@@ -79,8 +79,8 @@ class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventDat
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest(format("Added to index key=%s, sequence=%d, indexSize=%d",
-                    eventData.getKey(), eventData.getSequence(), index.size()));
+            logger.finest("Added to index key=%s, sequence=%d, indexSize=%d",
+                    eventData.getKey(), eventData.getSequence(), index.size());
         }
     }
 
@@ -129,8 +129,8 @@ class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventDat
             index.remove(dataKey);
 
             if (logger.isFinestEnabled()) {
-                logger.finest(format("Removed from index key=%s, sequence=%d, indexSize=%d",
-                        eventData.getKey(), eventData.getSequence(), index.size()));
+                logger.finest("Removed from index key=%s, sequence=%d, indexSize=%d",
+                        eventData.getKey(), eventData.getSequence(), index.size());
             }
         }
     }

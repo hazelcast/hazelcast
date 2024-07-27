@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static java.lang.String.format;
 
 /**
  * Single record store forced eviction.
@@ -59,8 +58,8 @@ class SingleRecordStoreForcedEviction implements ForcedEviction {
                 if (logger.isFineEnabled()) {
                     String msg = "Single record store forced eviction [attemptNumber: %d, mapName: %s, "
                             + "evictionPercentage:%.2f, partitionId: %d]";
-                    logger.fine(format(msg, (i + 1), mapOperation.getName(),
-                            evictionPercentage, mapOperation.getPartitionId()));
+                    logger.fine(msg, (i + 1), mapOperation.getName(),
+                            evictionPercentage, mapOperation.getPartitionId());
                 }
             }
 

@@ -86,7 +86,7 @@ public class ManagementCenterPublisher implements MetricsPublisher {
         byte[] blob = compressor.getBlobAndReset();
 
         consumer.accept(blob, System.currentTimeMillis());
-        logger.finest(String.format("Collected %,d metrics, %,d bytes", count, blob.length));
+        logger.finest("Collected %,d metrics, %,d bytes", count, blob.length);
     }
 
     public int getCount() {

@@ -135,9 +135,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     connectionManager.blockOnConnect(targetAddress, JOIN_RETRY_WAIT_TIME, 0);
                     continue;
                 }
-                if (logger.isFineEnabled()) {
-                    logger.fine("Sending joinRequest " + targetAddress);
-                }
+                logger.fine("Sending joinRequest %s", targetAddress);
                 clusterJoinManager.sendJoinRequest(targetAddress);
 
                 if (!clusterService.isJoined()) {
@@ -188,13 +186,13 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (logger.isFineEnabled()) {
                     Set<Address> votingEndpoints = new HashSet<>(addresses);
                     votingEndpoints.removeAll(blacklistedAddresses.keySet());
-                    logger.fine("Setting myself as master after consensus! Voting endpoints: " + votingEndpoints);
+                    logger.fine("Setting myself as master after consensus! Voting endpoints: %s", votingEndpoints);
                 }
                 clusterJoinManager.setThisMemberAsMaster();
             } else if (logger.isFineEnabled()) {
                 Set<Address> votingEndpoints = new HashSet<>(addresses);
                 votingEndpoints.removeAll(blacklistedAddresses.keySet());
-                logger.fine("My claim to be master is rejected! Voting endpoints: " + votingEndpoints);
+                logger.fine("My claim to be master is rejected! Voting endpoints: %s", votingEndpoints);
             }
         } else if (logger.isFineEnabled()) {
             logger.fine("Cannot claim myself as master! Will try to connect a possible master...");

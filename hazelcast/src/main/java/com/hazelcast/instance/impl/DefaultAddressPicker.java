@@ -203,7 +203,7 @@ class DefaultAddressPicker
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
+            logger.fine("Prefer IPv4 stack is %s, prefer IPv6 addresses is %s", preferIPv4Stack(), preferIPv6Addresses());
         }
 
         if (!interfaces.isEmpty()) {

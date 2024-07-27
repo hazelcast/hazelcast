@@ -61,9 +61,9 @@ class AwsEcsApi {
     }
 
     List<String> listTaskPrivateAddresses(String cluster, AwsCredentials credentials) {
-        LOGGER.fine(String.format("Listing tasks from cluster: '%s'", cluster));
+        LOGGER.fine("Listing tasks from cluster: '%s'", cluster);
         List<String> taskArns = listTasks(cluster, credentials);
-        LOGGER.fine(String.format("AWS ECS ListTasks found the following tasks: %s", taskArns));
+        LOGGER.fine("AWS ECS ListTasks found the following tasks: %s", taskArns);
         if (!taskArns.isEmpty()) {
             List<Task> tasks = describeTasks(cluster, taskArns, credentials);
             if (!tasks.isEmpty()) {

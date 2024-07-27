@@ -52,12 +52,12 @@ class AwsEcsClient implements AwsClient {
         List<String> taskAddresses = emptyList();
         if (!awsConfig.anyOfEc2PropertiesConfigured()) {
             taskAddresses = awsEcsApi.listTaskPrivateAddresses(cluster, credentials);
-            LOGGER.fine(String.format("AWS ECS DescribeTasks found the following addresses: %s", taskAddresses));
+            LOGGER.fine("AWS ECS DescribeTasks found the following addresses: %s", taskAddresses);
         }
         if (!taskAddresses.isEmpty()) {
             return awsEc2Api.describeNetworkInterfaces(taskAddresses, credentials);
         } else if (DiscoveryMode.Client == awsConfig.getDiscoveryMode() && !awsConfig.anyOfEcsPropertiesConfigured()) {
-            LOGGER.fine(String.format("No tasks found in ECS cluster: '%s'. Trying AWS EC2 Discovery.", cluster));
+            LOGGER.fine("No tasks found in ECS cluster: '%s'. Trying AWS EC2 Discovery.", cluster);
             return awsEc2Api.describeInstances(credentials);
         }
         return emptyMap();

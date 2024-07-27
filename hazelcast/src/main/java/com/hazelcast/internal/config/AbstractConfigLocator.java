@@ -151,7 +151,7 @@ public abstract class AbstractConfigLocator {
             // Config.class classloader is looked up first to maximize backward compatibility
             URL url = resolveResourceUrl(configFileName);
             if (url == null) {
-                LOGGER.finest(String.format("Could not find '%s' in the classpath.", configFileName));
+                LOGGER.finest("Could not find '%s' in the classpath.", configFileName);
                 return false;
             }
 
@@ -187,7 +187,7 @@ public abstract class AbstractConfigLocator {
         try {
             File file = new File(configFilePath);
             if (!file.exists()) {
-                LOGGER.finest(String.format("Could not find '%s' in the working directory.", configFilePath));
+                LOGGER.finest("Could not find '%s' in the working directory.", configFilePath);
                 return false;
             }
 
@@ -237,7 +237,7 @@ public abstract class AbstractConfigLocator {
             String configSystemProperty = System.getProperty(propertyKey);
 
             if (configSystemProperty == null) {
-                LOGGER.finest(String.format("Could not find '%s' System property", propertyKey));
+                LOGGER.finest("Could not find '%s' System property", propertyKey);
                 return false;
             }
 

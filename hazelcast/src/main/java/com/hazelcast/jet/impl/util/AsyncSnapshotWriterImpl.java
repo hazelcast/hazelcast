@@ -306,8 +306,8 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         // we're done
         currentMap = null;
         if (logger.isFineEnabled()) {
-            logger.fine(String.format("Stats for %s: keys=%,d, chunks=%,d, bytes=%,d",
-                    vertexName, totalKeys, totalChunks, totalPayloadBytes));
+            logger.fine("Stats for %s: keys=%,d, chunks=%,d, bytes=%,d",
+                    vertexName, totalKeys, totalChunks, totalPayloadBytes);
         }
         return true;
     }

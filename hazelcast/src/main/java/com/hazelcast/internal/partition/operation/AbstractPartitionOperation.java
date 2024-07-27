@@ -124,8 +124,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                     isRunningOnPartitionThread(), chunkSuppliers, ((ChunkedMigrationAwareService) service));
 
             if (logger.isFineEnabled()) {
-                logger.fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
-                        namespace, event.getPartitionId()));
+                logger.fine("Created chunk supplier:[%s, partitionId:%d]",
+                        namespace, event.getPartitionId());
             }
         }
 
@@ -156,8 +156,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                     isRunningOnPartitionThread(), chunkSuppliers, service);
 
             if (logger.isFineEnabled()) {
-                logger.fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
-                        ns, event.getPartitionId()));
+                logger.fine("Created chunk supplier:[%s, partitionId:%d]",
+                        ns, event.getPartitionId());
             }
         }
 

@@ -90,7 +90,7 @@ class AwsCredentialsProvider {
     }
 
     private AwsCredentials fetchCredentialsFromEc2() {
-        LOGGER.fine(String.format("Fetching AWS Credentials using EC2 IAM Role: %s", ec2IamRole));
+        LOGGER.fine("Fetching AWS Credentials using EC2 IAM Role: %s", ec2IamRole);
 
         try {
             return awsMetadataApi.credentialsEc2(ec2IamRole);

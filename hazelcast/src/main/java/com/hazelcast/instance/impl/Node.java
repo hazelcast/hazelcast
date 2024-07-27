@@ -83,6 +83,7 @@ import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -559,9 +560,7 @@ public class Node {
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
-        if (logger.isFinestEnabled()) {
-            logger.finest("We are being asked to shutdown when state = " + state);
-        }
+        logger.finest("We are being asked to shutdown when state = %s", state);
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown(terminate);
         }
@@ -930,7 +929,7 @@ public class Node {
     public void join() {
         if (clusterService.isJoined()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Calling join on already joined node. ", new Exception("stacktrace"));
+                logger.finest("Calling join on already joined node. ", ReflectionUtils.getStackTrace(Thread.currentThread()));
             } else {
                 logger.warning("Calling join on already joined node. ");
             }

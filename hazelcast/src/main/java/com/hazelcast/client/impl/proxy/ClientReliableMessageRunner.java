@@ -66,10 +66,8 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
     @Override
     protected boolean handleInternalException(Throwable t) {
         if (t instanceof HazelcastClientNotActiveException) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
-                        + " Reason: HazelcastClient is shutting down");
-            }
+            logger.finest("Terminating MessageListener %s on topic: %s. Reason: HazelcastClient is shutting down", listener,
+                    topicName);
             return false;
         } else if (t instanceof HazelcastClientOfflineException) {
             if (logger.isFinestEnabled()) {

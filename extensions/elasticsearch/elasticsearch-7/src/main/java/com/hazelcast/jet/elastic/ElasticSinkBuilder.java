@@ -252,7 +252,7 @@ public final class ElasticSinkBuilder<T> implements Serializable {
                                 throw new JetException(response.buildFailureMessage());
                             }
                             if (logger.isFineEnabled()) {
-                                logger.fine("BulkRequest with " + bulkRequest.requests().size() + " requests succeeded");
+                                logger.fine("BulkRequest with %s requests succeeded", bulkRequest.requests().size());
                             }
                             return response;
                         },

@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
-import static java.lang.String.format;
 
 /**
  * Helper class for serialization and deserialization of chunks.
@@ -121,8 +120,8 @@ public final class ChunkSerDeHelper {
             return;
         }
 
-        logger.finest(String.format("Current chunk [partitionId:%d, %s]",
-                partitionId, chunkSupplier));
+        logger.finest("Current chunk [partitionId:%d, %s]",
+                partitionId, chunkSupplier);
     }
 
     private void logEndOfChunk(BufferObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
@@ -130,10 +129,10 @@ public final class ChunkSerDeHelper {
             return;
         }
 
-        logger.finest(format("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
+        logger.finest("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
                 partitionId,
                 Capacity.toPrettyString(maxTotalChunkedDataInBytes),
-                Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out))));
+                Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out)));
     }
 
     private void logEndOfAllChunks(BufferObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
@@ -150,10 +149,10 @@ public final class ChunkSerDeHelper {
         }
 
         if (allDone) {
-            logger.finest(format("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
+            logger.finest("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
                     partitionId,
                     Capacity.toPrettyString(maxTotalChunkedDataInBytes),
-                    Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out))));
+                    Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out)));
         }
     }
 

@@ -103,8 +103,8 @@ class KubernetesApiEndpointResolver
             discoveredNodes
                     .add(new SimpleDiscoveryNode(privateAddress, publicAddress, endpoint.getAdditionalProperties()));
             if (logger.isFinestEnabled()) {
-                logger.finest(String.format("Found node service with addresses (private, public): %s, %s ", privateAddress,
-                        publicAddress));
+                logger.finest("Found node service with addresses (private, public): %s, %s ", privateAddress,
+                        publicAddress);
             }
         }
     }

@@ -150,7 +150,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
             boolean ignoreFileNotFound = configuration.getBoolean(HadoopSources.IGNORE_FILE_NOT_FOUND, true);
             if (ignoreFileNotFound) {
                 ILogger logger = Logger.getLogger(ReadHadoopNewApiP.class);
-                logger.fine("The directory '" + directory + "' does not exist. This source will emit 0 items.");
+                logger.fine("The directory '%s' does not exist. This source will emit 0 items.", directory);
                 return emptyList();
             } else {
                 throw new JetException("The input " + directory + " matches no files");

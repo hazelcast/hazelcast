@@ -386,8 +386,8 @@ public class ClusterHeartbeatManager {
         }
         long clusterTime = clusterClock.getClusterTime();
         if (logger.isFineEnabled()) {
-            logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
-                    member, timeToString(clusterTime), timeToString(timestamp)));
+            logger.fine("Received heartbeat from %s (now: %s, timestamp: %s)",
+                    member, timeToString(clusterTime), timeToString(timestamp));
         }
 
         if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
@@ -529,8 +529,8 @@ public class ClusterHeartbeatManager {
         }
         if (logger.isFineEnabled() && (now - lastHeartbeat) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
             double suspicionLevel = heartbeatFailureDetector.suspicionLevel(member, now);
-            logger.fine(format("Not receiving any heartbeats from %s since %s, suspicion level: %.2f",
-                    member, timeToString(lastHeartbeat), suspicionLevel));
+            logger.fine("Not receiving any heartbeats from %s since %s, suspicion level: %.2f",
+                    member, timeToString(lastHeartbeat), suspicionLevel);
         }
         return false;
     }
@@ -635,7 +635,7 @@ public class ClusterHeartbeatManager {
             node.nodeEngine.getOperationService().send(op, target.getAddress());
         } catch (Exception e) {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Error while sending heartbeat -> %s[%s]", e.getClass().getName(), e.getMessage()));
+                logger.fine("Error while sending heartbeat -> %s[%s]", e.getClass().getName(), e.getMessage());
             }
         }
     }
@@ -733,7 +733,7 @@ public class ClusterHeartbeatManager {
         @Override
         public void run() {
             Address address = member.getAddress();
-            logger.fine(format("%s will ping %s", node.getThisAddress(), address));
+            logger.fine("%s will ping %s", node.getThisAddress(), address);
             if (doPing(address, Level.FINE)) {
                 boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
                 if (pingRestored) {

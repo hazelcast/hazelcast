@@ -225,9 +225,9 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         final long currentHeadSequence = ringbuffer.headSequence();
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
-                logger.finest(String.format("MessageListener %s on topic %s requested a too large sequence: %s. "
+                logger.finest("MessageListener %s on topic %s requested a too large sequence: %s. "
                                 + ". Jumping from old sequence: %s to sequence: %s",
-                        listener, topicName, t.getMessage(), sequence, currentHeadSequence));
+                        listener, topicName, t.getMessage(), sequence, currentHeadSequence);
             }
             this.sequence = currentHeadSequence;
             return true;

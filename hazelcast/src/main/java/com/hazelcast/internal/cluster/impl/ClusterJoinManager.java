@@ -196,8 +196,8 @@ public class ClusterJoinManager {
 
         if (joinInProgress) {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Join or membership claim is in progress, cannot handle join request from %s at the moment",
-                        target));
+                logger.fine("Join or membership claim is in progress, cannot handle join request from %s at the moment",
+                        target);
             }
             return;
         }
@@ -500,14 +500,14 @@ public class ClusterJoinManager {
         clusterServiceLock.lock();
         try {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddress));
+                logger.fine("Handling master response %s from %s", masterAddress, callerAddress);
             }
 
             if (clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Master address information (%s) came from %s. This node is already joined. "
+                    logger.fine("Master address information (%s) came from %s. This node is already joined. "
                             + "The received master address will be suggested as a temporary member address "
-                            + "in the TCP joiner configuration.", masterAddress, callerAddress));
+                            + "in the TCP joiner configuration.", masterAddress, callerAddress);
                 }
                 suggestAddressToKnownMembers(masterAddress);
                 return;
@@ -603,8 +603,8 @@ public class ClusterJoinManager {
             }
         } else {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Received a master question from %s,"
-                        + " but this node is not master itself or doesn't have a master yet!", joinMessage.getAddress()));
+                logger.fine("Received a master question from %s,"
+                        + " but this node is not master itself or doesn't have a master yet!", joinMessage.getAddress());
             }
         }
     }
@@ -652,7 +652,7 @@ public class ClusterJoinManager {
 
             if (clusterService.isMaster() && !isMastershipClaimInProgress()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Ignoring join request, member already exists: %s", joinMessage));
+                    logger.fine("Ignoring join request, member already exists: %s", joinMessage);
                 }
 
                 // send members update back to node trying to join again...

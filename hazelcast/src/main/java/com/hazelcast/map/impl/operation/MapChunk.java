@@ -112,8 +112,8 @@ public class MapChunk extends Operation
         this.logger = context.getLogger(getClass().getName());
 
         if (logger.isFinestEnabled()) {
-            logger.finest(String.format("mapName:%s, chunkNumber:%d, partitionId:%d",
-                    context.getMapName(), chunkNumber, context.getPartitionId()));
+            logger.finest("mapName:%s, chunkNumber:%d, partitionId:%d",
+                    context.getMapName(), chunkNumber, context.getPartitionId());
         }
     }
 
@@ -179,9 +179,9 @@ public class MapChunk extends Operation
         ILogger logger = recordStore.getMapContainer().getMapServiceContext()
                 .getNodeEngine().getLogger(getClass().getName());
         if (logger.isFinestEnabled()) {
-            logger.finest(String.format("mapName:%s, partitionId:%d,"
+            logger.finest("mapName:%s, partitionId:%d,"
                             + " numberOfEntriesMigrated:%d", mapName,
-                    getPartitionId(), (keyRecordExpiry.size() / 3)));
+                    getPartitionId(), (keyRecordExpiry.size() / 3));
         }
     }
 

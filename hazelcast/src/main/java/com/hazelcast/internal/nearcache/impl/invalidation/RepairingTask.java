@@ -282,8 +282,8 @@ public final class RepairingTask implements Runnable {
 
             if (totalMissCount > maxToleratedMissCount) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest(format("Above tolerated miss count:[map=%s,missCount=%d,maxToleratedMissCount=%d]",
-                            handler.getName(), totalMissCount, maxToleratedMissCount));
+                    logger.finest("Above tolerated miss count:[map=%s,missCount=%d,maxToleratedMissCount=%d]",
+                            handler.getName(), totalMissCount, maxToleratedMissCount);
                 }
                 return true;
             }

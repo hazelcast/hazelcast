@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
-import static java.lang.String.format;
 
 /**
  * mimics functionality when join is delayed and clients are blocked until a
@@ -65,8 +64,8 @@ public class ClusterJoinManagerSyncJoinStrategy {
         long now = Clock.currentTimeMillis();
         if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
-            logger.fine(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
-                    clusterJoinManager.isJoinInProgress(), timeToStart));
+            logger.fine("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
+                    clusterJoinManager.isJoinInProgress(), timeToStart);
         }
 
         if (firstJoinRequest == 0) {

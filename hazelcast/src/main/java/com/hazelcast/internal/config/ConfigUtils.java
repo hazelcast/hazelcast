@@ -59,7 +59,7 @@ public final class ConfigUtils {
             return configPatterns.get(configPatternKey);
         }
         if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
-            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
+            LOGGER.finest("No configuration found for %s, using default config!", itemName);
         }
         return null;
     }

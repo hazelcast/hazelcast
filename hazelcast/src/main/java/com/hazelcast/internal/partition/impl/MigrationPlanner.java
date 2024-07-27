@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.partition.impl.InternalPartitionImpl.getReplicaIndex;
-import static java.lang.String.format;
 
 /**
  * Decides type and order of migrations that will move the state from current replica ownerships
@@ -69,8 +68,8 @@ class MigrationPlanner {
                 + Arrays.toString(oldReplicas) + ", New: " + Arrays.toString(newReplicas);
 
         if (logger.isFinestEnabled()) {
-            logger.finest(format("partitionId=%d, Initial state: %s", partitionId, Arrays.toString(oldReplicas)));
-            logger.finest(format("partitionId=%d, Final state: %s", partitionId, Arrays.toString(newReplicas)));
+            logger.finest("partitionId=%d, Initial state: %s", partitionId, Arrays.toString(oldReplicas));
+            logger.finest("partitionId=%d, Final state: %s", partitionId, Arrays.toString(newReplicas));
         }
 
         initState(oldReplicas);
@@ -79,23 +78,23 @@ class MigrationPlanner {
         // fix cyclic partition replica movements
         if (fixCycle(oldReplicas, newReplicas)) {
             if (logger.isFinestEnabled()) {
-                logger.finest(format("partitionId=%d, Final state (after cycle fix): %s", partitionId,
-                        Arrays.toString(newReplicas)));
+                logger.finest("partitionId=%d, Final state (after cycle fix): %s", partitionId,
+                        Arrays.toString(newReplicas));
             }
         }
 
         int currentIndex = 0;
         while (currentIndex < oldReplicas.length) {
             if (logger.isFinestEnabled()) {
-                logger.finest(format("partitionId=%d, Current index: %d, state: %s", partitionId, currentIndex,
-                        Arrays.toString(state)));
+                logger.finest("partitionId=%d, Current index: %d, state: %s", partitionId, currentIndex,
+                        Arrays.toString(state));
             }
             assertNoDuplicate(partitionId, oldReplicas, newReplicas);
 
             if (newReplicas[currentIndex] == null) {
                 if (state[currentIndex] != null) {
                     // replica owner is removed and no one will own this replica
-                    trace("partitionId=%d, New address is null at index: %d", partitionId, currentIndex);
+                    logger.finest("partitionId=%d, New address is null at index: %d", partitionId, currentIndex);
                     callback.migrate(state[currentIndex], currentIndex, -1, null, -1, -1);
                     state[currentIndex] = null;
                 }
@@ -107,7 +106,7 @@ class MigrationPlanner {
                 int i = getReplicaIndex(state, newReplicas[currentIndex]);
                 if (i == -1) {
                     // fresh replica copy is needed, so COPY replica to newReplicas[currentIndex] from partition owner
-                    trace("partitionId=%d, COPY %s to index: %d", partitionId, newReplicas[currentIndex], currentIndex);
+                    logger.finest("partitionId=%d, COPY %s to index: %d", partitionId, newReplicas[currentIndex], currentIndex);
                     callback.migrate(null, -1, -1, newReplicas[currentIndex], -1, currentIndex);
                     state[currentIndex] = newReplicas[currentIndex];
                     currentIndex++;
@@ -116,7 +115,7 @@ class MigrationPlanner {
 
                 if (i > currentIndex) {
                     // SHIFT UP replica from i to currentIndex, copy data from partition owner
-                    trace("partitionId=%d, SHIFT UP-2 %s from old addresses index: %d to index: %d", partitionId,
+                    logger.finest("partitionId=%d, SHIFT UP-2 %s from old addresses index: %d to index: %d", partitionId,
                             state[i], i, currentIndex);
                     callback.migrate(null, -1, -1, state[i], i, currentIndex);
                     state[currentIndex] = state[i];
@@ -138,7 +137,7 @@ class MigrationPlanner {
             if (getReplicaIndex(newReplicas, state[currentIndex]) == -1
                     && getReplicaIndex(state, newReplicas[currentIndex]) == -1) {
                 // MOVE partition replica from its old owner to new owner
-                trace("partitionId=%d, MOVE %s to index: %d", partitionId, newReplicas[currentIndex], currentIndex);
+                logger.finest("partitionId=%d, MOVE %s to index: %d", partitionId, newReplicas[currentIndex], currentIndex);
                 callback.migrate(state[currentIndex], currentIndex, -1, newReplicas[currentIndex], -1, currentIndex);
                 state[currentIndex] = newReplicas[currentIndex];
                 currentIndex++;
@@ -154,12 +153,12 @@ class MigrationPlanner {
 
                 if (state[newIndex] == null) {
                     // it is a SHIFT DOWN
-                    trace("partitionId=%d, SHIFT DOWN %s to index: %d, COPY %s to index: %d", partitionId, state[currentIndex],
-                            newIndex, newReplicas[currentIndex], currentIndex);
+                    logger.finest("partitionId=%d, SHIFT DOWN %s to index: %d, COPY %s to index: %d", partitionId,
+                            state[currentIndex], newIndex, newReplicas[currentIndex], currentIndex);
                     callback.migrate(state[currentIndex], currentIndex, newIndex, newReplicas[currentIndex], -1, currentIndex);
                     state[newIndex] = state[currentIndex];
                 } else {
-                    trace("partitionId=%d, MOVE-3 %s to index: %d", partitionId, newReplicas[currentIndex], currentIndex);
+                    logger.finest("partitionId=%d, MOVE-3 %s to index: %d", partitionId, newReplicas[currentIndex], currentIndex);
                     callback.migrate(state[currentIndex], currentIndex, -1, newReplicas[currentIndex], -1, currentIndex);
                 }
 
@@ -186,20 +185,20 @@ class MigrationPlanner {
 
             if (newReplicas[targetIndex] == null) {
                 if (state[currentIndex] == null) {
-                    trace("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d", partitionId,
+                    logger.finest("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d", partitionId,
                             state[targetIndex], targetIndex, currentIndex);
                     callback.migrate(state[currentIndex], currentIndex, -1, state[targetIndex], targetIndex, currentIndex);
                     state[currentIndex] = state[targetIndex];
                 } else {
                     int newIndex = getReplicaIndex(newReplicas, state[currentIndex]);
                     if (newIndex == -1) {
-                        trace("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d with source: %s",
+                        logger.finest("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d with source: %s",
                                 partitionId, state[targetIndex], targetIndex, currentIndex, state[currentIndex]);
                         callback.migrate(state[currentIndex], currentIndex, -1, state[targetIndex], targetIndex, currentIndex);
                         state[currentIndex] = state[targetIndex];
                     } else if (state[newIndex] == null) {
                         // SHIFT UP + SHIFT DOWN
-                        trace("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d "
+                        logger.finest("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d "
                                         + "and SHIFT DOWN %s to index: %d",
                                 partitionId, state[targetIndex], targetIndex, currentIndex, state[currentIndex], newIndex);
                         callback.migrate(state[currentIndex], currentIndex, newIndex, state[targetIndex], targetIndex,
@@ -208,9 +207,10 @@ class MigrationPlanner {
                         state[currentIndex] = state[targetIndex];
                     } else {
                         // only SHIFT UP because source will come back with another move migration
-                        trace("partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d with source: %s will get "
-                                        + "another MOVE migration to index: %d", partitionId, state[targetIndex],
-                                targetIndex, currentIndex, state[currentIndex], newIndex);
+                        logger.finest(
+                                "partitionId=%d, SHIFT UP %s from old addresses index: %d to index: %d with source: %s will get "
+                                        + "another MOVE migration to index: %d",
+                                partitionId, state[targetIndex], targetIndex, currentIndex, state[currentIndex], newIndex);
                         callback.migrate(state[currentIndex], currentIndex, -1, state[targetIndex], targetIndex, currentIndex);
                         state[currentIndex] = state[targetIndex];
                     }
@@ -219,7 +219,7 @@ class MigrationPlanner {
                 break;
             } else if (getReplicaIndex(state, newReplicas[targetIndex]) == -1) {
                 // MOVE partition replica from its old owner to new owner
-                trace("partitionId=%d, MOVE-2 %s  to index: %d", partitionId, newReplicas[targetIndex], targetIndex);
+                logger.finest("partitionId=%d, MOVE-2 %s  to index: %d", partitionId, newReplicas[targetIndex], targetIndex);
                 callback.migrate(state[targetIndex], targetIndex, -1, newReplicas[targetIndex], -1, targetIndex);
                 state[targetIndex] = newReplicas[targetIndex];
                 break;
@@ -262,10 +262,10 @@ class MigrationPlanner {
     private void prioritize(List<MigrationInfo> migrations, int i) {
         MigrationInfo migration = migrations.get(i);
 
-        trace("Trying to prioritize migration: %s", migration);
+        logger.finest("Trying to prioritize migration: %s", migration);
 
         if (migration.getSourceCurrentReplicaIndex() != -1) {
-            trace("Skipping non-copy migration: %s", migration);
+            logger.finest("Skipping non-copy migration: %s", migration);
             return;
         }
 
@@ -273,25 +273,25 @@ class MigrationPlanner {
         for (; k >= 0; k--) {
             MigrationInfo other = migrations.get(k);
             if (other.getSourceCurrentReplicaIndex() == -1) {
-                trace("Cannot prioritize against a copy / shift up. other: %s", other);
+                logger.finest("Cannot prioritize against a copy / shift up. other: %s", other);
                 break;
             }
 
             if (migration.getDestination().equals(other.getSource())
                     || migration.getDestination().equals(other.getDestination())) {
-                trace("Cannot prioritize against a conflicting migration. other: %s", other);
+                logger.finest("Cannot prioritize against a conflicting migration. other: %s", other);
                 break;
             }
 
             if (other.getSourceNewReplicaIndex() != -1
                     && other.getSourceNewReplicaIndex() < migration.getDestinationNewReplicaIndex()) {
-                trace("Cannot prioritize against a hotter shift down. other: %s", other);
+                logger.finest("Cannot prioritize against a hotter shift down. other: %s", other);
                 break;
             }
         }
 
         if ((k + 1) != i) {
-            trace("Prioritizing migration %s to: %d", migration, (k + 1));
+            logger.finest("Prioritizing migration %s to: %d", migration, (k + 1));
             migrations.remove(i);
             migrations.add(k + 1, migration);
         }
@@ -395,12 +395,6 @@ class MigrationPlanner {
                 return;
             }
             index = nextIndex;
-        }
-    }
-
-    private void trace(String log, Object... args) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(format(log, args));
         }
     }
 }

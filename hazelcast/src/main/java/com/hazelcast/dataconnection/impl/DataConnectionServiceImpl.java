@@ -163,7 +163,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     }
 
     private DataConnection createDataConnectionInstance(DataConnectionConfig config) {
-        logger.finest("Creating '" + config.getName() + "' data connection");
+        logger.finest("Creating '%s' data connection", config.getName());
         String type = config.getType();
         try {
             Class<? extends DataConnection> dataConnectionClass = typeToDataConnectionClass.get(normalizeTypeName(config));
@@ -250,7 +250,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     @Override
     public void shutdown() {
         for (Map.Entry<String, DataConnectionEntry> entry : dataConnections.entrySet()) {
-            logger.finest("Closing '" + entry.getKey() + "' data connection");
+            logger.finest("Closing '%s' data connection", entry.getKey());
             DataConnectionEntry dataConnection = entry.getValue();
             try {
                 dataConnection.instance.destroy();

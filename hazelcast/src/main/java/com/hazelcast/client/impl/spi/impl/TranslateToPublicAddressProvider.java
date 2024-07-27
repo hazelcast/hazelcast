@@ -135,28 +135,19 @@ public class TranslateToPublicAddressProvider implements InitialMembershipListen
             Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
             Address internalAddress = member.getAddress();
             if (publicAddress == null) {
-                if (logger.isFineEnabled()) {
-                    logger.fine("The public address is not available on the member. The client will use internal addresses");
-                }
+                logger.fine("The public address is not available on the member. The client will use internal addresses");
                 return false;
             }
             if (isReachable(internalAddress, REACHABLE_ADDRESS_TIMEOUT_MILLIS)) {
-                if (logger.isFineEnabled()) {
-                    logger.fine("The internal address is reachable. The client will use the internal addresses");
-                }
+                logger.fine("The internal address is reachable. The client will use the internal addresses");
                 return false;
             }
             if (!isReachable(publicAddress, NON_REACHABLE_ADDRESS_TIMEOUT_MILLIS)) {
-                if (logger.isFineEnabled()) {
-                    logger.fine("Public address + " + publicAddress
-                            + "  is not reachable. The client will use internal addresses");
-                }
+                logger.fine("Public address %s is not reachable. The client will use internal addresses", publicAddress);
                 return false;
             }
         }
-        if (logger.isFineEnabled()) {
-            logger.fine("Members are accessible via only public addresses. The client will use public addresses");
-        }
+        logger.fine("Members are accessible via only public addresses. The client will use public addresses");
         return true;
     }
 

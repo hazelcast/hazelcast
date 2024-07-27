@@ -62,8 +62,8 @@ public final class RetryUtils {
                         throw sneakyThrow(e);
                     }
                     long waitIntervalMs = Math.min(MAX_BACKOFF_MS, MS_IN_SECOND * (1 << retryCount));
-                    LOGGER.fine(String.format("Couldn't connect to Elastic, [%s] retrying in %s seconds...", retryCount,
-                            waitIntervalMs / MS_IN_SECOND));
+                    LOGGER.fine("Couldn't connect to Elastic, [%s] retrying in %s seconds...", retryCount,
+                            waitIntervalMs / MS_IN_SECOND);
                     sleep(waitIntervalMs);
                 } else {
                     throw sneakyThrow(e);

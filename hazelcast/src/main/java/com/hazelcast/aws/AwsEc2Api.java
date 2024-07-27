@@ -120,9 +120,9 @@ class AwsEc2Api {
     }
 
     private static void logInstanceName(XmlNode item) {
-        LOGGER.fine(String.format("Accepting EC2 instance [%s][%s]",
+        LOGGER.fine("Accepting EC2 instance [%s][%s]",
             parseInstanceName(item).orElse("<unknown>"),
-            item.getValue("privateipaddress")));
+            item.getValue("privateipaddress"));
     }
 
     private static Optional<String> parseInstanceName(XmlNode nodeHolder) {

@@ -151,8 +151,8 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         assertRunningOnPartitionThread();
 
         if (logger.isFineEnabled()) {
-            logger.fine(String.format("Destroyed store [mapName:%s, partitionId:%d, partitionSize:%d]",
-                    store.getName(), store.getPartitionId(), store.size()));
+            logger.fine("Destroyed store [mapName:%s, partitionId:%d, partitionSize:%d]",
+                    store.getName(), store.getPartitionId(), store.size());
         }
 
         store.beforeOperation();

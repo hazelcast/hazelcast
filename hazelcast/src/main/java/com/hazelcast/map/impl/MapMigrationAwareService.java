@@ -358,7 +358,7 @@ class MapMigrationAwareService
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest(String.format("Populated indexes at step `%s`:[%s]", stepName, event));
+            logger.finest("Populated indexes at step `%s`:[%s]", stepName, event);
         }
     }
 
@@ -400,7 +400,7 @@ class MapMigrationAwareService
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest(String.format("Depopulated indexes at step `%s`:[%s]", stepName, event));
+            logger.finest("Depopulated indexes at step `%s`:[%s]", stepName, event);
         }
     }
 

@@ -17,10 +17,11 @@
 package com.hazelcast.azure;
 
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import java.util.Collection;
-import java.util.logging.Logger;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
@@ -28,7 +29,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
  * Responsible for fetching the discovery information from Azure APIs.
  */
 class AzureClient {
-    private static final Logger LOGGER = Logger.getLogger(AzureClient.class.getSimpleName());
+    private static final ILogger LOGGER = Logger.getLogger(AzureClient.class.getSimpleName());
 
     private static final int RETRIES = 2;
 
@@ -83,13 +84,13 @@ class AzureClient {
     Collection<AzureAddress> getAddresses() {
         LOGGER.finest("Fetching OAuth Access Token");
         final String accessToken = fetchAccessToken();
-        LOGGER.finest(String.format("Fetching instances for subscription '%s' and resourceGroup '%s'",
-                subscriptionId, resourceGroup));
+        LOGGER.finest("Fetching instances for subscription '%s' and resourceGroup '%s'",
+                subscriptionId, resourceGroup);
         Collection<AzureAddress> addresses = azureComputeApi.instances(subscriptionId, resourceGroup,
                 scaleSet, tag, accessToken);
-        LOGGER.finest(String.format("Found the following instances for project '%s' and zone '%s': %s",
+        LOGGER.finest("Found the following instances for project '%s' and zone '%s': %s",
                 subscriptionId, resourceGroup,
-                addresses));
+                addresses);
         return addresses;
     }
 

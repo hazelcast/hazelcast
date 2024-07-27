@@ -190,10 +190,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     private ClientMessage prepareUnauthenticatedClientMessage() {
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         Connection connection = endpoint.getConnection();
-        if (logger.isFineEnabled()) {
-            logger.fine("Received auth from " + connection + " with clientUuid " + clientUuid + " and clientName " + clientName
-                    + ", authentication failed");
-        }
+        logger.fine("Received auth from %s with clientUuid %s and clientName %s, authentication failed", connection, clientUuid,
+                clientName);
         byte status = CREDENTIALS_FAILED.getId();
 
         return encodeUnauthenticated(status, failoverSupported);

@@ -257,8 +257,8 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
                     name, delta, getBeforeUpdate, observedClock.entrySet(), target.getUuid());
             return invokeOnMember(request, target.getUuid());
         } catch (HazelcastException e) {
-            logger.fine("Unable to provide session guarantees when sending operations to " + target
-                    + ", choosing different target");
+            logger.fine("Unable to provide session guarantees when sending operations to %s, choosing different target",
+                    target);
             if (excludedAddresses == EMPTY_ADDRESS_LIST) {
                 excludedAddresses = new ArrayList<>();
             }

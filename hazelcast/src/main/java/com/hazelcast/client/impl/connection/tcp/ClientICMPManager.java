@@ -99,7 +99,7 @@ public final class ClientICMPManager {
     private static boolean isReachable(ILogger logger, int icmpTtl, int icmpTimeoutMillis, Address address) {
         try {
             if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
-                logger.fine(format("%s is pinged successfully", address));
+                logger.fine("%s is pinged successfully", address);
                 return true;
             }
         } catch (IOException ignored) {
@@ -112,7 +112,7 @@ public final class ClientICMPManager {
     private static void ping(ILogger logger, PingFailureDetector<ClientConnection> failureDetector, ClientConnection connection,
                              int icmpTtl, int icmpTimeoutMillis) {
         Address address = connection.getRemoteAddress();
-        logger.fine(format("will ping %s", address));
+        logger.fine("will ping %s", address);
         if (isReachable(logger, icmpTtl, icmpTimeoutMillis, address)) {
             failureDetector.heartbeat(connection);
             return;

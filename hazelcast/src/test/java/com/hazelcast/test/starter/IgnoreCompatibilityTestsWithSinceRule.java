@@ -25,8 +25,6 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import static java.lang.String.format;
-
 /**
  * Ignores tests annotated with {@code @TestForCompatibilitySince("X.Y")}
  * as long as the current codebase version is less than {@code X.Y}.
@@ -48,9 +46,9 @@ public class IgnoreCompatibilityTestsWithSinceRule implements TestRule {
                 return new Statement() {
                     @Override
                     public void evaluate() {
-                        LOGGER.finest(format(
+                        LOGGER.finest(
                                 "Ignoring `%s` because it is meant for execution since %s while current version is %s",
-                                description.getClassName(), testSinceVersion, currentCodebaseVersion));
+                                description.getClassName(), testSinceVersion, currentCodebaseVersion);
                     }
                 };
             }

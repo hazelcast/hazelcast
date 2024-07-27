@@ -124,8 +124,8 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
             publishers.add(publisher);
             scheduleMetricsCollectorIfNeeded();
         } else {
-            logger.fine(String.format("Custom publisher is not registered with function %s as the metrics system is disabled",
-                    registerFunction));
+            logger.fine("Custom publisher is not registered with function %s as the metrics system is disabled",
+                    registerFunction);
         }
     }
 

@@ -111,9 +111,7 @@ public class FlakeIdGeneratorProxy
                     }
                 });
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("Created FlakeIdGeneratorProxy, name='" + name + "'");
-        }
+        logger.finest("Created FlakeIdGeneratorProxy, name='%s'", name);
     }
 
     @Override
@@ -232,9 +230,7 @@ public class FlakeIdGeneratorProxy
                 // we ignore possible double initialization
                 this.nodeId = localNodeId;
                 this.nextNodeIdUpdate = nanoTime + NODE_ID_UPDATE_INTERVAL_NS;
-                if (logger.isFineEnabled()) {
-                    logger.fine("Node ID assigned to '" + name + "': " + localNodeId);
-                }
+                logger.fine("Node ID assigned to '%s': %s", name, localNodeId);
             }
         }
        return localNodeId;

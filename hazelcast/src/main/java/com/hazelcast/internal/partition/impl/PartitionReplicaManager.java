@@ -474,9 +474,9 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
         if (logger.isFinestEnabled()) {
             int currentAvailable = availableReplicaSyncPermits();
-            logger.finest(format("Released %d replica sync permits. (acquired: %d, available: %d, max: %d)",
+            logger.finest("Released %d replica sync permits. (acquired: %d, available: %d, max: %d)",
                     permits, maxParallelReplications - currentAvailable,
-                    currentAvailable, maxParallelReplications));
+                    currentAvailable, maxParallelReplications);
         }
     }
 
@@ -517,7 +517,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncSemaphore.release(maxParallelReplications);
 
         if (logger.isFinestEnabled()) {
-            logger.finest(format("Reset replica sync permits to %d", maxParallelReplications));
+            logger.finest("Reset replica sync permits to %d", maxParallelReplications);
         }
     }
 

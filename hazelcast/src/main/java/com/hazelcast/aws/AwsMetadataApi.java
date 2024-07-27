@@ -123,7 +123,7 @@ class AwsMetadataApi {
         if (responseCode == HTTP_OK) {
             return Optional.of(response.getBody());
         } else if (responseCode == HTTP_NOT_FOUND) {
-            LOGGER.fine(String.format("No %s information is found.", loggedName));
+            LOGGER.fine("No %s information is found.", loggedName);
             return Optional.empty();
         } else {
             throw new RuntimeException(String.format("Unexpected response code: %d", responseCode));

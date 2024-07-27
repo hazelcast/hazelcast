@@ -112,9 +112,9 @@ public class LongStreamSourceP extends AbstractProcessor {
         lastReportNanos = nowNanoTime;
         long localItemCountSinceLastReport = (valueToEmit - valueAtLastReport) / totalParallelism;
         valueAtLastReport = valueToEmit;
-        logger.fine(String.format("p%d: %,.0f items/second",
+        logger.fine("p%d: %,.0f items/second",
                 globalProcessorIndex,
-                localItemCountSinceLastReport / ((double) nanosSinceLastReport / NANOS_PER_SECOND)));
+                localItemCountSinceLastReport / ((double) nanosSinceLastReport / NANOS_PER_SECOND));
     }
 
     private static long determineTimeOffset() {

@@ -121,7 +121,7 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
         id = context.globalProcessorIndex();
 
         if (logger.isFineEnabled()) {
-            logger.fine("Processor " + id + " handles " + processorHashRange);
+            logger.fine("Processor %s handles %s", id, processorHashRange);
         }
     }
 

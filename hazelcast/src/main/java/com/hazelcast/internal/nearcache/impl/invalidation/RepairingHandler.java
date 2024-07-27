@@ -25,8 +25,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
 
-import static java.lang.String.format;
-
 /**
  * Handler used on Near Cache side. Observes local and remote invalidations and registers relevant
  * data to {@link MetaDataContainer}s.
@@ -139,8 +137,8 @@ public final class RepairingHandler {
         } while (!metaData.casStaleSequence(lastKnownStaleSequence, lastReceivedSequence));
 
         if (logger.isFinestEnabled()) {
-            logger.finest(format("%s:[map=%s,partition=%d,lowerSequencesStaleThan=%d,lastReceivedSequence=%d]",
-                    "Stale sequences updated", name, partition, metaData.getStaleSequence(), metaData.getSequence()));
+            logger.finest("%s:[map=%s,partition=%d,lowerSequencesStaleThan=%d,lastReceivedSequence=%d]",
+                    "Stale sequences updated", name, partition, metaData.getStaleSequence(), metaData.getSequence());
         }
     }
 
@@ -158,8 +156,8 @@ public final class RepairingHandler {
                 metaData.resetSequence();
                 metaData.resetStaleSequence();
                 if (logger.isFinestEnabled()) {
-                    logger.finest(format("%s:[name=%s,partition=%d,prevUuid=%s,newUuid=%s]",
-                            "Invalid UUID, lost remote partition data unexpectedly", name, partition, prevUuid, newUuid));
+                    logger.finest("%s:[name=%s,partition=%d,prevUuid=%s,newUuid=%s]",
+                            "Invalid UUID, lost remote partition data unexpectedly", name, partition, prevUuid, newUuid);
                 }
                 break;
             }
@@ -190,8 +188,8 @@ public final class RepairingHandler {
                     final long totalMissCount = metaData.addAndGetMissedSequenceCount(missCount);
 
                     if (logger.isFinestEnabled()) {
-                        logger.finest(format("%s:[map=%s,partition=%d,currentSequence=%d,nextSequence=%d,totalMissCount=%d]",
-                                "Invalid sequence", name, partition, currentSequence, nextSequence, totalMissCount));
+                        logger.finest("%s:[map=%s,partition=%d,currentSequence=%d,nextSequence=%d,totalMissCount=%d]",
+                                "Invalid sequence", name, partition, currentSequence, nextSequence, totalMissCount);
                     }
                 }
                 break;

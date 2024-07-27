@@ -221,7 +221,7 @@ public class AwsDiscoveryStrategy
             isEmptyAddressListAlreadyLogged = true;
         }
 
-        LOGGER.fine(String.format("Found the following (private => public) addresses: %s", addresses));
+        LOGGER.fine("Found the following (private => public) addresses: %s", addresses);
     }
 
     private String getOrNull(AwsProperties awsProperties) {

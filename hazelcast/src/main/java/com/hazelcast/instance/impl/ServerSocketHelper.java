@@ -67,7 +67,7 @@ final class ServerSocketHelper {
                                                          InetAddress bindAddress,
                                                          int port, int portCount, boolean isPortAutoIncrement,
                                                          boolean isReuseAddress, boolean bindAny) {
-        logger.finest("inet reuseAddress:" + isReuseAddress);
+        logger.finest("inet reuseAddress: %s", isReuseAddress);
 
         if (port == 0) {
             logger.info("No explicit port is given, system will pick up an ephemeral port.");
