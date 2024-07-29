@@ -209,7 +209,6 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
                 .withNativeTimestamps(0)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
                 .setLocalParallelism(1)
                 .groupingKey(changeRecord -> (Integer) changeRecord.key().toMap().get("id"))
                 .mapStateful(

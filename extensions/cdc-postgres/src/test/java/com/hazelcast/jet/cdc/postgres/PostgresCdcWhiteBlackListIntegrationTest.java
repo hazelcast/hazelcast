@@ -261,8 +261,6 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
                 .withNativeTimestamps(0)
                 .filter(t -> t.schema().startsWith(SCHEMA_PREFIX))
                 .setLocalParallelism(1)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
-                .setLocalParallelism(1)
                 .groupingKey(changeRecord -> (Integer) changeRecord.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,

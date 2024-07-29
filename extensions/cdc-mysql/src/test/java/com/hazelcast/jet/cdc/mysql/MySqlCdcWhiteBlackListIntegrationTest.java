@@ -260,8 +260,6 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
                 .withNativeTimestamps(0)
                 .filter(t -> t.database().startsWith(DB_PREFIX))
                 .setLocalParallelism(1)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
-                .setLocalParallelism(1)
                 .groupingKey(record -> (Integer) record.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,

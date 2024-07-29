@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
+@SuppressWarnings("SqlResolve")
 public final class MySQLTestUtils {
     private MySQLTestUtils() {
     }
@@ -47,6 +48,20 @@ public final class MySQLTestUtils {
         properties.setProperty("useSSL", "false");
 
         return DriverManager.getConnection(url, properties);
+    }
+
+    static void insertData(MySQLContainer<?> container) {
+        try (Connection connection = getMySqlConnection(container.withDatabaseName("inventory").getJdbcUrl(),
+                container.getUsername(), container.getPassword());
+             Statement statement = connection.createStatement()
+        ) {
+            statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
+            statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
+            statement.addBatch("DELETE FROM customers WHERE id=1005");
+            statement.executeBatch();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

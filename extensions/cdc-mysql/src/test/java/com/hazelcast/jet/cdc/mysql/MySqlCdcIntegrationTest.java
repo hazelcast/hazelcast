@@ -74,7 +74,6 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source("customers"))
                 .withNativeTimestamps(0)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
                 .groupingKey(record -> (Integer) record.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,
@@ -174,7 +173,6 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source("customers"))
                 .withNativeTimestamps(0)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
                 .groupingKey(record -> (Integer) requireNonNull(record.key()).toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,

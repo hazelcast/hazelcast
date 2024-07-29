@@ -197,7 +197,6 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
                 .withNativeTimestamps(0)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
                 .setLocalParallelism(1)
                 .groupingKey(record -> (Integer) record.key().toMap().get("id"))
                 .mapStateful(

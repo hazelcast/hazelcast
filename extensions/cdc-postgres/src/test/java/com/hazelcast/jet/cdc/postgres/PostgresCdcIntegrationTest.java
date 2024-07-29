@@ -343,7 +343,6 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source("customers", commitPeriod))
                 .withNativeTimestamps(0)
-                .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
                 .groupingKey(changeRecord -> (Integer) changeRecord.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,
