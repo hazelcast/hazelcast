@@ -35,7 +35,7 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
      */
     private final int batchOrderKey;
 
-    public AbstractBaseNearCacheInvalidationListener(UUID localMemberUuid, long correlationId) {
+    protected AbstractBaseNearCacheInvalidationListener(UUID localMemberUuid, long correlationId) {
         this.batchOrderKey = HashUtil.hashCode(localMemberUuid, correlationId);
     }
 

@@ -44,14 +44,14 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
     private UUID partitionUuid;
     private long sequence = NO_SEQUENCE;
 
-    public Invalidation() {
+    protected Invalidation() {
     }
 
-    public Invalidation(String dataStructureName) {
+    protected Invalidation(String dataStructureName) {
         this.dataStructureName = checkNotNull(dataStructureName, "dataStructureName cannot be null");
     }
 
-    public Invalidation(String dataStructureName, UUID sourceUuid, UUID partitionUuid, long sequence) {
+    protected Invalidation(String dataStructureName, UUID sourceUuid, UUID partitionUuid, long sequence) {
         this.dataStructureName = checkNotNull(dataStructureName, "dataStructureName cannot be null");
         // sourceUuid can be null.
         this.sourceUuid = sourceUuid;
