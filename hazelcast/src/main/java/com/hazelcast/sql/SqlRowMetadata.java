@@ -124,7 +124,7 @@ public final class SqlRowMetadata {
     @Override
     public String toString() {
         return columns.stream()
-            .map((column) -> column.getName() + ' ' + column.getType())
+            .map(column -> column.getName() + ' ' + column.getType())
             .collect(Collectors.joining(", ", "[", "]"));
     }
 }

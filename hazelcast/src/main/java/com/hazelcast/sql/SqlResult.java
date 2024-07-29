@@ -117,7 +117,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * <p>
      * The query engine delivers the rows asynchronously. The query may become inactive even before all rows are
      * consumed. The invocation of this command will cancel the execution of the query on all members if the query
-     * is still active. Otherwise it is no-op. For a result with an update count it is always no-op.
+     * is still active. Otherwise, it is no-op. For a result with an update count it is always no-op.
      */
     @Override
     void close();

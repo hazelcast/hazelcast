@@ -47,7 +47,7 @@ public interface ResultIterator<T> extends Iterator<T> {
 
         /**
          * Another item is not available immediately, but might be available later.
-         * The caller should check again later. Also there might not be a next
+         * The caller should check again later. Also, there might not be a next
          * item at all.
          */
         TIMEOUT,

@@ -112,7 +112,7 @@ public final class SqlStatement {
     public SqlStatement setSql(@Nonnull String sql) {
         Preconditions.checkNotNull(sql, "SQL cannot be null");
 
-        if (sql.length() == 0) {
+        if (sql.isEmpty()) {
             throw new IllegalArgumentException("SQL cannot be empty");
         }
 
@@ -138,7 +138,7 @@ public final class SqlStatement {
      * search path will be used, which looks for objects in the predefined schemas {@code "partitioned"}
      * and {@code "public"}.
      * <p>
-     * The schema name is case sensitive. For example, {@code "foo"} and {@code "Foo"} are different schemas.
+     * The schema name is case-sensitive. For example, {@code "foo"} and {@code "Foo"} are different schemas.
      * <p>
      * The default value is {@code null} meaning only the default search path is used.
      *
