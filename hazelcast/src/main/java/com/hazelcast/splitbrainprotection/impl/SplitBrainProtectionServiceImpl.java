@@ -96,7 +96,7 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
 
     public void start() {
         // before starting, no splitBrainProtections are used, just SplitBrainProtectionService dependency is
-        // provided to services which depend on it so it's safe to initialize splitBrainProtections here (and we have
+        // provided to services which depend on it, so it's safe to initialize splitBrainProtections here (and we have
         // ClusterService already constructed)
         this.splitBrainProtections = Collections.unmodifiableMap(initializeSplitBrainProtections());
         scanSplitBrainProtections();

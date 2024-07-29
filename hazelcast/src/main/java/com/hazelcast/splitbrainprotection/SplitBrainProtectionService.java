@@ -40,7 +40,7 @@ public interface SplitBrainProtectionService {
      * Ensures that the split brain protection with the given name is present.
      * Throws a SplitBrainProtectionException if split brain protection not present.
      * Does not throw exception if splitBrainProtectionName null or split brain protection undefined.
-     *
+     * <p>
      * If (requiredSplitBrainProtectionPermissionType == READ)
      *    -&gt; will check for presence of READ or READ_WRITE split brain protection<br>
      * If (requiredSplitBrainProtectionPermissionType == WRITE)

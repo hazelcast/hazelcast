@@ -58,7 +58,7 @@ public class Message<E> extends EventObject {
 
     /**
      * Returns the member that published the message.
-     *
+     * <p>
      * It can be that the member is null if:
      * <ol>
      *     <li>the message was send by a client and not a member</li>

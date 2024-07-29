@@ -43,7 +43,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     private boolean multithreaded;
     private ClassLoader classLoader;
 
-    public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
+    protected TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
         this.name = name;
         this.topicService = service;

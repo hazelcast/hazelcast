@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.EventObject;
 
 /**
- * An Event that is send when a {@link SplitBrainProtection} changes.
+ * An Event that is sent when a {@link SplitBrainProtection} changes.
  * <p>
  * Hold member list, split brain protection threshold and the split brain protection result.
  */

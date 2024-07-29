@@ -97,11 +97,9 @@ public class RecentlyActiveSplitBrainProtectionFunction extends AbstractPingAwar
         if (this == o) {
             return true;
         }
-        if (!(o instanceof RecentlyActiveSplitBrainProtectionFunction)) {
+        if (!(o instanceof RecentlyActiveSplitBrainProtectionFunction that)) {
             return false;
         }
-
-        RecentlyActiveSplitBrainProtectionFunction that = (RecentlyActiveSplitBrainProtectionFunction) o;
 
         if (minimumClusterSize != that.minimumClusterSize) {
             return false;

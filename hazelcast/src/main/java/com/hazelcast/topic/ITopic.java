@@ -36,7 +36,7 @@ import java.util.concurrent.ExecutionException;
  * Messages are ordered, meaning that listeners(subscribers) will process the
  * messages in the order they are actually published. If cluster member M
  * publishes messages m1, m2, m3...mn to a topic T, then Hazelcast makes sure
- * that all of the subscribers of topic T will receive and process m1, m2,
+ * that all the subscribers of topic T will receive and process m1, m2,
  * m3...mn in order.
  * <p>
  * Since Hazelcast 3.5 it is possible to have reliable topics. Normally all

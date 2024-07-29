@@ -28,6 +28,7 @@ import java.io.Serial;
 
 public class DataAwareMessage extends Message<Object> {
 
+    @Serial
     private static final long serialVersionUID = 1;
 
     private final transient Data messageData;

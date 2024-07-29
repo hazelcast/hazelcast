@@ -26,7 +26,7 @@ import java.util.Collection;
  * The split brain protection function is consulted:<br>
  * <ul>
  *     <li>When a cluster membership change occurs (member added or removed)</li>
- *     <li>Whenever a hearbeat is received from a member, in case the {@code SplitBrainProtectionFunction} also
+ *     <li>Whenever a heartbeat is received from a member, in case the {@code SplitBrainProtectionFunction} also
  *     implements {@link HeartbeatAware}</li>
  * </ul>
  *

@@ -34,7 +34,7 @@ package com.hazelcast.topic;
  * <h1>Exception handling</h1>
  * The ReliableMessageListener also gives the ability to deal with exceptions
  * using the {@link #isTerminal(Throwable)} method.
- * If a plain MessageListener is used, then it won't terminate on exceptions
+ * If a plain MessageListener is used, then it won't terminate on exceptions,
  * and it will keep on running. But in some cases it is better to stop running.
  *
  * <h1>Global order</h1>
@@ -61,10 +61,10 @@ public interface ReliableMessageListener<E> extends MessageListener<E> {
      * Retrieves the initial sequence from which this ReliableMessageListener
      * should start.
      * <p>
-     * Return {@code -1} if there is no initial sequence and you want to start
+     * Return {@code -1} if there is no initial sequence, and you want to start
      * from the next published message.
      * <p>
-     * If you intend to create a durable subscriber so you continue from where
+     * If you intend to create a durable subscriber, so you continue from where
      * you stopped the previous time, load the previous sequence and add 1.
      * If you don't add one, then you will be receiving the same message twice.
      *

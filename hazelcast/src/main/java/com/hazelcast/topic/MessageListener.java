@@ -24,7 +24,7 @@ import java.util.EventListener;
  * Message listener for {@link ITopic}.
  * <p>
  * A MessageListener will never be called concurrently (provided that it's not registered twice). So there
- * is no need to synchronize access to the state it reads or writes. Also there is no need to synchronize
+ * is no need to synchronize access to the state it reads or writes. Also, there is no need to synchronize
  * when publishing to the ITopic, the ITopic is responsible for memory consistency effects. In other words,
  * there is no need to make fields of the MessageListener volatile or access them using synchronized blocks.
  *
@@ -36,7 +36,7 @@ public interface MessageListener<E> extends EventListener {
 
     /**
      * Invoked when a message is received for the topic. Note that the topic guarantees message ordering.
-     * Therefore there is only one thread invoking onMessage. The user should not keep the thread busy, but preferably
+     * Therefore, there is only one thread invoking onMessage. The user should not keep the thread busy, but preferably
      * should dispatch it via an Executor. This will increase the performance of the topic.
      *
      * @param message the message that is received for the topic
