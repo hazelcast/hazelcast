@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EmptyLocalReplicatedMapStatsTest {
 
-    private LocalReplicatedMapStats localReplicatedMapStats = new EmptyLocalReplicatedMapStats();
+    private final LocalReplicatedMapStats localReplicatedMapStats = new EmptyLocalReplicatedMapStats();
 
     @Test
     public void testDefaultConstructor() {

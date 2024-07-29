@@ -92,7 +92,7 @@ public class LocalRecordStoreStatsFailoverTest extends HazelcastTestSupport {
 
         // insert entries
         spawn(() -> {
-            IMap map = instance1.getMap(EVICTABLE_MAP_NAME);
+            IMap<Integer, String> map = instance1.getMap(EVICTABLE_MAP_NAME);
             while (!stop.get()) {
                 map.set(putCount.incrementAndGet(), "value", 1, TimeUnit.SECONDS);
             }
@@ -102,13 +102,13 @@ public class LocalRecordStoreStatsFailoverTest extends HazelcastTestSupport {
         stop.set(true);
 
         assertTrueEventually(() -> {
-            IMap map1 = instance1.getMap(EVICTABLE_MAP_NAME);
+            IMap<Integer, String> map1 = instance1.getMap(EVICTABLE_MAP_NAME);
             LocalMapStats localMapStats1 = map1.getLocalMapStats();
             long evictionCount1 = localMapStats1.getEvictionCount();
             long expirationCount1 = localMapStats1.getExpirationCount();
             long ownedEntryCount1 = localMapStats1.getOwnedEntryCount();
 
-            IMap map2 = instance2.getMap(EVICTABLE_MAP_NAME);
+            IMap<Integer, String> map2 = instance2.getMap(EVICTABLE_MAP_NAME);
             LocalMapStats localMapStats2 = map2.getLocalMapStats();
             long evictionCount2 = localMapStats2.getEvictionCount();
             long expirationCount2 = localMapStats2.getExpirationCount();
@@ -131,8 +131,8 @@ public class LocalRecordStoreStatsFailoverTest extends HazelcastTestSupport {
         MetricsRegistry registry1 = getNode(instance1).nodeEngine.getMetricsRegistry();
         MetricsRegistry registry2 = getNode(instance2).nodeEngine.getMetricsRegistry();
 
-        IMap map1 = instance1.getMap(DEFAULT_MAP_NAME);
-        IMap map2 = instance2.getMap(DEFAULT_MAP_NAME);
+        IMap<Integer, String> map1 = instance1.getMap(DEFAULT_MAP_NAME);
+        IMap<Integer, String> map2 = instance2.getMap(DEFAULT_MAP_NAME);
 
         int putCount = 1_000;
         for (int i = 0; i < putCount; i++) {
@@ -166,8 +166,8 @@ public class LocalRecordStoreStatsFailoverTest extends HazelcastTestSupport {
         MetricsRegistry registry1 = getNode(instance1).nodeEngine.getMetricsRegistry();
         MetricsRegistry registry2 = getNode(instance2).nodeEngine.getMetricsRegistry();
 
-        IMap map1 = instance1.getMap(EVICTABLE_MAP_NAME);
-        IMap map2 = instance2.getMap(EVICTABLE_MAP_NAME);
+        IMap<Integer, String> map1 = instance1.getMap(EVICTABLE_MAP_NAME);
+        IMap<Integer, String> map2 = instance2.getMap(EVICTABLE_MAP_NAME);
         for (int i = 0; i < 10_000; i++) {
             map1.set(i, "value");
         }
