@@ -780,7 +780,7 @@ public abstract class HazelcastTestSupport {
             }
         }
 
-        assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
+        assertThat(nonSafeStates).as("Instances not in safe state!").isEmpty();
     }
 
     public static void assertNoRunningInstances() {
@@ -920,8 +920,7 @@ public abstract class HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     public static <E> E assertInstanceOf(Class<E> expected, Object actual) {
         assertNotNull(actual);
-        assertTrue(actual + " is not an instanceof " + expected.getName(),
-                expected.isAssignableFrom(actual.getClass()));
+        assertThat(expected).isAssignableFrom(actual.getClass());
         return (E) actual;
     }
 
@@ -1028,7 +1027,7 @@ public abstract class HazelcastTestSupport {
 
     public static <E> void assertEqualsEventually(final FutureTask<E> task, final E expected) {
         assertTrueEventually(() -> {
-            assertTrue("FutureTask is not complete", task.isDone());
+            assertThat(task).as("FutureTask is not complete").isDone();
             assertEquals(expected, task.get());
         });
     }
@@ -1382,19 +1381,13 @@ public abstract class HazelcastTestSupport {
         assertNotEquals(format(message, expected, actual), expected, actual);
     }
 
-    /**
-     * Assert that {@code actualValue >= lowerBound && actualValue <= upperBound}.
-     */
+    /** @see org.assertj.core.api.AbstractLongAssert#isBetween(Long, Long) */
     public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {
-        assertTrue(format("Expected '%s' to be between %d and %d, but was %d",
-                        label, lowerBound, upperBound, actualValue),
-                actualValue >= lowerBound && actualValue <= upperBound);
+        assertThat(actualValue).as(label).isBetween(lowerBound, upperBound);
     }
 
     public static void assertGreaterOrEquals(String label, long actualValue, long lowerBound) {
-        assertTrue(format("Expected '%s' to be greater than or equal to %d, but was %d",
-                        label, lowerBound, actualValue),
-                actualValue >= lowerBound);
+        assertThat(actualValue).as(label).isGreaterThanOrEqualTo(lowerBound);
     }
 
     public static void assertExactlyOneSuccessfulRun(AssertTask task) {
