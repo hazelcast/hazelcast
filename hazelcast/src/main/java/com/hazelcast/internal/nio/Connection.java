@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Represents a 'connection' between two machines.
- *
+ * <p>
  * There are 2 important sub-interfaces:
  * <ol>
  *     <li>{@link com.hazelcast.internal.server.ServerConnection}</li>
@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * For client or server specific behavior it is best to add the logic to these interfaces instead of in
  * this common interface.
- *
+ * <p>
  * If you need to attach data to a connection, please consider using the attributeMap instead of adding
  * a lot of extra methods.
  */

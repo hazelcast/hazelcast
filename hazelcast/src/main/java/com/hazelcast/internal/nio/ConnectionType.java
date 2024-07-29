@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * An enumeration of in-house Connection types.
- * Note that a type could be provided by a custom client
+ * Note that a type could be provided by a custom client,
  * and it can be a string outside of {@link ConnectionType}
  */
 @SuppressWarnings("MagicNumber")
@@ -58,7 +58,7 @@ public final class ConnectionType {
     public static final String PYTHON_CLIENT = "PYH";
 
     /**
-     * Node.JS client Connection Type
+     * Node.js client Connection Type
      */
     public static final String NODEJS_CLIENT = "NJS";
 

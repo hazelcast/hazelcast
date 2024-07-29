@@ -56,7 +56,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     // 2. Packet type flags, encode up to 7 packet types.
     //
-    // When adding a new packet type, DO NOT ADD MORE TYPE FLAGS. Instead rename one of the
+    // When adding a new packet type, DO NOT ADD MORE TYPE FLAGS. Instead, rename one of the
     // Packet.Type.UNDEFINEDx members to represent the new type.
     //
     // Historically the first three packet types were encoded as separate, mutually exclusive flags.
@@ -232,11 +232,10 @@ public final class Packet extends HeapData implements OutboundFrame {
             return true;
         }
 
-        if (!(o instanceof Packet)) {
+        if (!(o instanceof Packet packet)) {
             return false;
         }
 
-        Packet packet = (Packet) o;
         if (!super.equals(packet)) {
             return false;
         }

@@ -57,9 +57,8 @@ public abstract class AbstractChannel implements Channel {
     protected final SocketChannel socketChannel;
     protected final ILogger logger;
 
-    private final ConcurrentMap<?, ?> attributeMap = new ConcurrentHashMap<Object, Object>();
-    private final Set<ChannelCloseListener> closeListeners
-            = newSetFromMap(new ConcurrentHashMap<ChannelCloseListener, Boolean>());
+    private final ConcurrentMap<?, ?> attributeMap = new ConcurrentHashMap<>();
+    private final Set<ChannelCloseListener> closeListeners = newSetFromMap(new ConcurrentHashMap<>());
     private final boolean clientMode;
     @SuppressWarnings("FieldCanBeLocal")
     private volatile SocketAddress remoteAddress;
