@@ -36,7 +36,7 @@ import static java.util.Collections.unmodifiableList;
 
 /**
  * Contains the metadata for an object with @Probe fields/methods.
- *
+ * <p>
  * This object is effectively immutable after construction.
  */
 final class SourceMetadata {

@@ -66,7 +66,7 @@ import static java.lang.Math.multiplyExact;
  * <p>
  * After both the metrics and the dictionary blob is constructed, they
  * are copied into a final blob in the following structure:
- *
+ * <p>
  * +--------------------------------+--------------------+
  * | Compressor version             |   2 bytes (short)  |
  * +--------------------------------+--------------------+

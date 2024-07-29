@@ -76,11 +76,6 @@ public final class NodeEngineThreadLocalContext {
      * @return This thread's {@link NodeEngine} reference if available, or {@code null}.
      */
     public static NodeEngine getNodeEngineThreadLocalContextOrNull() {
-        NodeEngine tlContext = NE_THREAD_LOCAL.get();
-        if (tlContext == null) {
-            return null;
-        } else {
-            return tlContext;
-        }
+        return NE_THREAD_LOCAL.get();
     }
 }

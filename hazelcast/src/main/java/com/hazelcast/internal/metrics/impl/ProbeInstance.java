@@ -21,7 +21,7 @@ import com.hazelcast.internal.metrics.ProbeFunction;
 
 /**
  * A Probe Instance is an actual instance of a probe.
- *
+ * <p>
  * A probe instance contains:
  * <ol>
  *     <li>A source object, e.g. an OperationService instance</li>
