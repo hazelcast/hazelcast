@@ -50,7 +50,7 @@ public class ClusterJoinManagerSyncJoinStrategy {
     /**
      * Start processing the join request. This method is executed by the master node. In the case that there hasn't been any
      * previous join requests from the {@code memberInfo}'s address the master will first respond by sending the master answer.
-     *
+     * <p>
      * Also, during the first {@link ClusterProperty#MAX_WAIT_SECONDS_BEFORE_JOIN} period since the master received the first
      * join request from any node, the master will always wait for {@link ClusterProperty#WAIT_SECONDS_BEFORE_JOIN} before
      * allowing any join request to proceed. This means that in the initial period from receiving the first ever join request,

@@ -197,13 +197,13 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     /**
      * This method increments a counter to count partition lost events.
-     *
+     * <p>
      * After an ungraceful shutdown, backups can have expired entries.
      * And these entries can remain forever on them. Reason for this is,
      * the lost invalidations on a primary partition. During ungraceful
      * shutdown, these invalidations can be lost before sending them to
      * backups.
-     *
+     * <p>
      * Here, the counter in this method, is used to detect the lost
      * invalidations case. If it is detected, we send expiry operations to
      * remove leftover backup entries. Otherwise, leftover entries can remain on

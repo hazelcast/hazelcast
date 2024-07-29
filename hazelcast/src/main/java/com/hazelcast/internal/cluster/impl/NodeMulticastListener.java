@@ -30,7 +30,7 @@ public class NodeMulticastListener implements MulticastListener {
 
     private final Node node;
     private final ILogger logger;
-    private ConfigCheck ourConfig;
+    private final ConfigCheck ourConfig;
 
     public NodeMulticastListener(Node node) {
         this.node = node;

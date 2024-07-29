@@ -45,8 +45,8 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
     /**
      * Selects the best candidate to be evicted.
      * The definition of the best depends on configured
-     * eviction policy. (LRU, LFU, custom, etc)
-     *
+     * eviction policy. (LRU, LFU, custom, etc.)
+     * <p>
      * It returns <code>null</code> when there the input is empty.
      *
      * @param candidates Multiple {@link

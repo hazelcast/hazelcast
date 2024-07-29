@@ -116,7 +116,7 @@ public class ClusterJoinManager {
      * with a new random UUID). In order to support crashed members recovery
      * with Persistence, partition table validation does not expect an
      * identical partition table.
-     *
+     * <p>
      * Accessed by operation & cluster heartbeat threads
      */
     private final ConcurrentMap<UUID, Long> leftMembersUuids = new ConcurrentHashMap<>();
@@ -414,14 +414,14 @@ public class ClusterJoinManager {
                 passed = Boolean.TRUE;
             } catch (LoginException e) {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",
-                        String.valueOf(credentials), endpoint, e.getMessage()));
+                        credentials, endpoint, e.getMessage()));
             } finally {
-                Address remoteAddr = connection == null ? null : connection.getRemoteAddress();
+                Address remoteAddress = connection == null ? null : connection.getRemoteAddress();
                 nodeEngine.getNode().getNodeExtension().getAuditlogService()
                     .eventBuilder(AuditlogTypeIds.AUTHENTICATION_MEMBER)
                     .message("Member connection authentication.")
                     .addParameter("credentials", credentials)
-                    .addParameter("remoteAddress", remoteAddr)
+                    .addParameter("remoteAddress", remoteAddress)
                     .addParameter("endpoint", endpoint)
                     .addParameter("passed", passed)
                     .log();

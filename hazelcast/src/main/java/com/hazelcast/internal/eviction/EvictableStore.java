@@ -28,7 +28,7 @@ public interface EvictableStore<A, E extends Evictable> {
     /**
      * The evict method is called by the {@link EvictionStrategy} to eventually evict, by the policy, selected
      * candidate from the internal data structures.
-     *
+     * <p>
      * It could be the selected evicted candidate cannot be evicted. For example, it might be gone at the time when
      * the method is executed. In this case it will indicate this condition by returning false.
      *

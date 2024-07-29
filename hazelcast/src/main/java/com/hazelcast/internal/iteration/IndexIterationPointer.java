@@ -268,7 +268,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         // Check non-inf values, do not need to check the other way around because pointers are ordered
         // Thanks to order we do not have to check `right.to`, we only need to check
         // if `right.from` belongs to `left` pointer range.
-        // we must take into account inclusiveness so we do not merge < X and > X ranges
+        // we must take into account inclusiveness, so we do not merge < X and > X ranges
         int rfCmpLt = comparator.compare(right.from, left.to);
         return eqOverlaps ? rfCmpLt <= 0 : rfCmpLt < 0;
     }
