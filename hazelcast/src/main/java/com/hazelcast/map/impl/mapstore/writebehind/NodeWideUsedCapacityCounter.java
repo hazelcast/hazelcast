@@ -29,7 +29,7 @@ import static java.lang.String.format;
  * backup partitions) of all maps on this node. This value is useful
  * to put a higher limit on total number of entries that can exist
  * in all write-behind-queues to prevent OOME.
- *
+ * <p>
  * There is only one counter instance per node.
  */
 public class NodeWideUsedCapacityCounter {

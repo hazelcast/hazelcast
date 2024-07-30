@@ -85,7 +85,7 @@ public interface WriteBehindQueue<E> {
     int size();
 
     /**
-     * Removes all of the elements in this  {@link WriteBehindQueue}
+     * Removes all the elements in this  {@link WriteBehindQueue}
      * Queue will be empty after this method returns.
      */
     void clear();

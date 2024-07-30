@@ -248,7 +248,7 @@ public class StoreWorker implements Runnable {
     }
 
     /**
-     * Process write-behind queues on backup partitions. It is a fake processing and
+     * Process write-behind queues on backup partitions. It is a fake processing, and
      * it only removes entries from queues and does not persist any of them.
      *
      * @param delayedEntries entries to be processed.

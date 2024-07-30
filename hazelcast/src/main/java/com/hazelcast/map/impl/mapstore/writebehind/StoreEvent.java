@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import java.io.Serial;
 import java.util.EventObject;
 
 /**
@@ -25,6 +26,7 @@ import java.util.EventObject;
  */
 public final class StoreEvent<E> extends EventObject {
 
+    @Serial
     private static final long serialVersionUID = -7071512331813330032L;
 
     /**

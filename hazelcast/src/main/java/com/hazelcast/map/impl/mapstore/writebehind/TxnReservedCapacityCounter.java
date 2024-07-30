@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * This interface contains methods to increment/decrement
  * reserved capacity of a write behind queue.
- *
+ * <p>
  * Actual capacity increment happens on {@link NodeWideUsedCapacityCounter}
  * and it is incremented by all record-stores of all maps on a
  * node. The reason that we have this extra counter is to map
@@ -31,11 +31,11 @@ import java.util.UUID;
  * of {@link TxnReservedCapacityCounter} we can know which
  * record-store is incremented {@link NodeWideUsedCapacityCounter}.
  * Thus, we can transfer reserved capacity info with migrations.
- *
+ * <p>
  * Note that this txn-reserved-capacity-counter is
  * only used with transactional-maps which have
  * non-coalescing write-behind store configuration.
- *
+ * <p>
  * Each record-store has its own reserved capacity counter instance.
  */
 public interface TxnReservedCapacityCounter {

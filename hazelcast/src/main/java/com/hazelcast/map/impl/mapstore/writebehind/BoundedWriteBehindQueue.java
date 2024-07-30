@@ -131,7 +131,7 @@ class BoundedWriteBehindQueue<E extends DelayedEntry> implements WriteBehindQueu
     }
 
     /**
-     * Removes all of the elements in this  {@link WriteBehindQueue}
+     * Removes all the elements in this  {@link WriteBehindQueue}
      * Queue will be empty after this method returns.
      */
     @Override

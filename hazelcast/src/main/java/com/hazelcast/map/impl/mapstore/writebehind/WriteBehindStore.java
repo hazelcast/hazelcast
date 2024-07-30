@@ -171,7 +171,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         // they are referencing to the same entry-value. To prevent such a
         // problem, we are taking snapshot of the value by serializing it, this
         // means an extra serialization and additional latency for operations
-        // like map#put but it is needed, otherwise we can lost a state.
+        // like map#put, but it is needed, otherwise we can lose state.
         if (!coalesce && OBJECT == inMemoryFormat) {
             value = toHeapData(value);
         }

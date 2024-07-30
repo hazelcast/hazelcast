@@ -21,6 +21,7 @@ import com.hazelcast.internal.journal.DeserializingEntry;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.map.EventJournalMapEvent;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -49,6 +50,7 @@ public final class MapEventJournalFunctions {
 
     @SerializableByConvention
     private static class MapPutEventsPredicate<K, V> implements Predicate<EventJournalMapEvent<K, V>>, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -60,6 +62,7 @@ public final class MapEventJournalFunctions {
     @SerializableByConvention
     private static class MapEventToEntryProjection<K, V>
             implements Function<EventJournalMapEvent<K, V>, Entry<K, V>>, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -71,6 +74,7 @@ public final class MapEventJournalFunctions {
 
     @SerializableByConvention
     private static class MapEventNewValueProjection implements Function, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
