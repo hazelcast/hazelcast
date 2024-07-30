@@ -22,7 +22,7 @@ import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked upon load of an entry.
- *
+ * <p>
  * EntryLoadedListener is notified upon load of an entry by a {@link
  * MapLoader}. By using this listener and
  * {@link EntryAddedListener}, one can distinguish an application put from

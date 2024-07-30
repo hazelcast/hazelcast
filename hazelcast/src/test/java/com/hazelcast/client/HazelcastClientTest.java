@@ -120,7 +120,7 @@ public class HazelcastClientTest extends HazelcastTestSupport {
 
         int clientCount = 10;
         List<HazelcastInstance> clients = Collections.synchronizedList(new ArrayList<>(clientCount));
-        List<Future> futures = new ArrayList<>(clientCount);
+        List<Future<?>> futures = new ArrayList<>(clientCount);
         for (int i = 0; i < clientCount; i++) {
             futures.add(spawn(() -> {
                 clients.add(HazelcastClient.getOrCreateHazelcastClient(config));

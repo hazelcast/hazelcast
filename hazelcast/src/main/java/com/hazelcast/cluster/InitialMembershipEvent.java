@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serial;
 import java.util.EventObject;
 import java.util.Set;
 
@@ -33,6 +34,7 @@ import java.util.Set;
 @SuppressFBWarnings("SE_BAD_FIELD")
 public class InitialMembershipEvent extends EventObject {
 
+    @Serial
     private static final long serialVersionUID = -2010865371829087371L;
 
     private final Set<Member> members;

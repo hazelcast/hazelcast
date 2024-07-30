@@ -32,9 +32,9 @@ import com.hazelcast.map.listener.MapEvictedListener;
 /**
  * Internal usage only adapter for {@link
  * com.hazelcast.map.listener.MapListener}.
- *
+ * <p>
  * The difference between this adapter and {@link EntryAdapter} is,
- * {@link EntryAdapter} is more limited form of this one and it doesn't
+ * {@link EntryAdapter} is more limited form of this one, and it doesn't
  * implement newly added listener interfaces.
  *
  * @param <K> key of the map entry
