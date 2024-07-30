@@ -138,11 +138,7 @@ final class TransactionContextImpl implements TransactionContext {
             return false;
         }
 
-        if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
-            return false;
-        }
-
-        return true;
+        return !serviceName.equals(MultiMapService.SERVICE_NAME);
     }
 
     private TransactionalService getTransactionalService(String serviceName) {

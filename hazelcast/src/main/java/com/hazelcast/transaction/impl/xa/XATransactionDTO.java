@@ -109,8 +109,8 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         int size = in.readInt();
         records = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            TransactionLogRecord record = in.readObject();
-            records.add(record);
+            TransactionLogRecord transactionLogRecord = in.readObject();
+            records.add(transactionLogRecord);
         }
     }
 

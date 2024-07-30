@@ -91,11 +91,7 @@ public class SerializableXID implements Xid, DataSerializable {
         if (!Arrays.equals(branchQualifier, that.getBranchQualifier())) {
             return false;
         }
-        if (!Arrays.equals(globalTransactionId, that.getGlobalTransactionId())) {
-            return false;
-        }
-
-        return true;
+        return Arrays.equals(globalTransactionId, that.getGlobalTransactionId());
     }
 
     @Override
