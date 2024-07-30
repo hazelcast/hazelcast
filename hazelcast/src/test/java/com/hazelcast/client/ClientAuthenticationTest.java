@@ -32,11 +32,11 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -44,8 +44,6 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @After
     public void cleanup() {
@@ -72,10 +70,9 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         clientConfig.getSecurityConfig().setCredentials(new CustomCredentials());
 
         // custom credentials are not supported when security is disabled on members
-        expectedException.expect(IllegalStateException.class);
-
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
-        hazelcastFactory.newHazelcastClient(clientConfig);
+        assertThatThrownBy(() -> hazelcastFactory.newHazelcastClient(clientConfig))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
