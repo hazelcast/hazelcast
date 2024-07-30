@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
@@ -176,23 +177,23 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         assertOpenEventually(reconnectListener.reconnectedLatch);
 
         connectionToServer.close(null, null);
-        assertEqualsEventually(() -> listener.connectionRemovedCount.get(), 1);
+        assertEqualsEventually(listener.connectionRemovedCount::get, 1);
         sleepMillis(100);
         assertEquals("connection removed should be called only once", 1, listener.connectionRemovedCount.get());
     }
 
-    private class CountingConnectionListener implements ConnectionListener {
+    private static class CountingConnectionListener implements ConnectionListener<ClientConnection> {
 
         final AtomicInteger connectionRemovedCount = new AtomicInteger();
         final AtomicInteger connectionAddedCount = new AtomicInteger();
 
         @Override
-        public void connectionAdded(Connection connection) {
+        public void connectionAdded(ClientConnection connection) {
             connectionAddedCount.incrementAndGet();
         }
 
         @Override
-        public void connectionRemoved(Connection connection) {
+        public void connectionRemoved(ClientConnection connection) {
             connectionRemovedCount.incrementAndGet();
         }
     }
@@ -208,10 +209,10 @@ public class TcpClientConnectionTest extends ClientTestSupport {
 
         assertTrueEventually(() -> assertEquals(2, client.getCluster().getMembers().size()));
 
-        final AtomicReference<Future> atomicReference = new AtomicReference<>();
+        final AtomicReference<Future<Object>> atomicReference = new AtomicReference<>();
         Thread thread = new Thread(() -> {
             Member secondMember = secondInstance.getCluster().getLocalMember();
-            Future future = executorService.submitToMember(new DummySerializableCallable(), secondMember);
+            Future<Object> future = executorService.submitToMember(new DummySerializableCallable(), secondMember);
             atomicReference.set(future);
         });
         thread.start();
@@ -224,7 +225,8 @@ public class TcpClientConnectionTest extends ClientTestSupport {
     }
 
     @Test
-    public void testAddingConnectionListenerTwice_shouldCauseEventDeliveredTwice() {
+    public void
+    testAddingConnectionListenerTwice_shouldCauseEventDeliveredTwice() {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = newClientConfig();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -345,10 +347,10 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    public static class DummySerializableCallable implements Callable, Serializable {
+    private static class DummySerializableCallable implements Callable<Object>, Serializable {
 
         @Override
-        public Object call() throws Exception {
+        public Object call() {
             return null;
         }
     }
