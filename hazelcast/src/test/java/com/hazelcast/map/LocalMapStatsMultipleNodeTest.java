@@ -24,7 +24,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.listener.EntryEvictedListener;
@@ -145,12 +144,7 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap(mapName);
         final CountDownLatch entryEvictedLatch = new CountDownLatch(700);
-        map.addEntryListener(new EntryEvictedListener() {
-            @Override
-            public void entryEvicted(EntryEvent event) {
-                entryEvictedLatch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryEvictedListener<Object, Object>) event -> entryEvictedLatch.countDown(), true);
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
             map.set(i, i);
