@@ -51,6 +51,7 @@ import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -108,7 +109,8 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
                         list -> assertThat(list).hasSize(2 * ITEM_COUNT)));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
+        URL connectorURL = getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip");
+        jobConfig.addJarsInZip(connectorURL);
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
