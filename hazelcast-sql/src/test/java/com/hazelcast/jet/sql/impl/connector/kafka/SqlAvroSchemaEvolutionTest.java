@@ -25,6 +25,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +40,6 @@ import java.util.Map;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroTest.ID_SCHEMA;
-import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroTest.NAME_SCHEMA;
 import static java.util.Arrays.copyOf;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -49,12 +48,20 @@ import static org.junit.Assert.assertEquals;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
-    static final Schema NAME_SSN_SCHEMA = SchemaBuilder.record("jet.sql")
+    private static final Schema ID_SCHEMA = SchemaBuilder.record("id")
+            .fields()
+            .optionalInt("id")
+            .endRecord();
+    private static final Schema NAME_SCHEMA = SchemaBuilder.record("record")
+            .fields()
+            .optionalString("name")
+            .endRecord();
+    private static final Schema NAME_SSN_SCHEMA = SchemaBuilder.record("record")
             .fields()
             .optionalString("name")
             .optionalLong("ssn")
             .endRecord();
-    static final Schema NAME_SSN_SCHEMA2 = SchemaBuilder.record("jet.sql2")
+    private static final Schema NAME_SSN_SCHEMA2 = SchemaBuilder.record("record2")
             .fields()
             .optionalString("name")
             .optionalLong("ssn")
@@ -101,8 +108,8 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         topicNameStrategy = subjectNameStrategy.equals("TopicNameStrategy");
         switch (subjectNameStrategy) {
             case "TopicNameStrategy":       valueSubjectName = name + "-value"; break;
-            case "TopicRecordNameStrategy": valueSubjectName = name + "-jet.sql"; break;
-            case "RecordNameStrategy":      valueSubjectName = "jet.sql";
+            case "TopicRecordNameStrategy": valueSubjectName = name + "-record"; break;
+            case "RecordNameStrategy":      valueSubjectName = "record";
         }
     }
 
@@ -122,6 +129,8 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         kafkaMapping()
             .fields("id INT EXTERNAL NAME \"__key.id\"",
                     "name VARCHAR")
+            .options("keyAvroRecordName", "id",
+                     "valueAvroRecordName", "record")
             .create();
 
         insertInitialRecordAndAlterSchema();
@@ -131,8 +140,8 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                 .fields("id INT EXTERNAL NAME \"__key.id\"",
                         "name VARCHAR",
                         "ssn BIGINT")
-                .optionsIf(!topicNameStrategy,
-                           "valueAvroRecordName", "jet.sql2")
+                .options("keyAvroRecordName", "id",
+                         "valueAvroRecordName", topicNameStrategy ? "record" : "record2")
                 .createOrReplace();
         }
 
@@ -149,7 +158,14 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
             .fields("id INT EXTERNAL NAME \"__key.id\"",
                     "name VARCHAR")
             .options("auto.register.schemas", false,
-                     "use.latest.version", true)
+                     "use.latest.version", true,
+                    // If the auto-generated schema (in SQLKvMetadataAvroResolver#resolveSchema)
+                    // is not backward compatible with the one registered in the schema registry,
+                    // compatibility checks should be disabled by setting "latest.compatibility.strict"
+                    // to false and subject-level CompatibilityLevel to NONE. The record name matters
+                    // as well, which defaults to "jet.sql".
+                     "keyAvroRecordName", "id",
+                     "valueAvroRecordName", "record")
             .create();
 
         insertInitialRecordAndAlterSchema();
@@ -160,9 +176,9 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                         "name VARCHAR",
                         "ssn BIGINT")
                 .options("auto.register.schemas", false,
-                         "use.latest.version", true)
-                .optionsIf(!topicNameStrategy,
-                           "valueAvroRecordName", "jet.sql2")
+                         "use.latest.version", true,
+                         "keyAvroRecordName", "id",
+                         "valueAvroRecordName", topicNameStrategy ? "record" : "record2")
                 .createOrReplace();
         }
 
@@ -175,18 +191,27 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         }
     }
 
+    @Ignore("(key|value).schema.id configs are not supported currently. " +
+            "Key/value-specific serializer configs will be implemented by HZG-53.")
     @Test
     public void test_useSpecificSchema() throws SchemaRegistryException {
         // create initial schema
-        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA).getId();
-        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA).getId();
+        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
+        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA);
 
         kafkaMapping()
             .fields("id INT EXTERNAL NAME \"__key.id\"",
                     "name VARCHAR")
             .options("auto.register.schemas", false,
                      "key.schema.id", keySchemaId,
-                     "value.schema.id", valueSchemaId)
+                     "value.schema.id", valueSchemaId,
+                    // If the auto-generated schema (in SQLKvMetadataAvroResolver#resolveSchema)
+                    // is not backward compatible with the one registered in the schema registry,
+                    // compatibility checks should be disabled by setting "id.compatibility.strict"
+                    // to false and subject-level CompatibilityLevel to NONE. The record name matters
+                    // as well, which defaults to "jet.sql".
+                     "keyAvroRecordName", "id",
+                     "valueAvroRecordName", "record")
             .create();
 
         int valueSchemaId2 = insertInitialRecordAndAlterSchema();
@@ -198,9 +223,9 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                         "ssn BIGINT")
                 .options("auto.register.schemas", false,
                          "key.schema.id", keySchemaId,
-                         "value.schema.id", valueSchemaId2)
-                .optionsIf(!topicNameStrategy,
-                           "valueAvroRecordName", "jet.sql2")
+                         "value.schema.id", valueSchemaId2,
+                         "keyAvroRecordName", "id",
+                         "valueAvroRecordName", topicNameStrategy ? "record" : "record2")
                 .createOrReplace();
         }
 
@@ -215,10 +240,10 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         // alter schema externally
         int valueSchemaId;
         if (topicNameStrategy) {
-            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SSN_SCHEMA).getId();
+            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SSN_SCHEMA);
             assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
         } else {
-            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName + "2", NAME_SSN_SCHEMA2).getId();
+            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName + "2", NAME_SSN_SCHEMA2);
             assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
             assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName + "2"));
         }

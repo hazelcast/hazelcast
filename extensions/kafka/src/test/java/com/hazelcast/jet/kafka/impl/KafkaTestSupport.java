@@ -18,7 +18,9 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
+import io.confluent.kafka.schemaregistry.CompatibilityLevel;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import io.confluent.kafka.schemaregistry.client.rest.entities.Config;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
@@ -265,15 +267,34 @@ public abstract class KafkaTestSupport {
         return schemaRegistryServer.getURI();
     }
 
-    public io.confluent.kafka.schemaregistry.client.rest.entities.Schema registerSchema(String subject, Schema schema)
-            throws SchemaRegistryException {
+    /** Registers the specified {@code schema} and returns its ID. */
+    public int registerSchema(String subject, Schema schema) throws SchemaRegistryException {
         return schemaRegistry.register(subject, new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(
-                subject, -1, -1, AvroSchema.TYPE, emptyList(), schema.toString()));
+                subject, 0, -1, AvroSchema.TYPE, emptyList(), schema.toString())).getId();
     }
 
     public int getLatestSchemaVersion(String subject) throws SchemaRegistryException {
         return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(s -> s.getVersion())
                 .orElseThrow(() -> new SchemaRegistryException("No schema found in subject '" + subject + "'"));
+    }
+
+    /**
+     * Sets the subject-level {@link CompatibilityLevel} on the schema registry.
+     * <p>
+     * If the serializer is configured to use the latest schema version ({@code use.latest.version=true})
+     * or a specific schema version ({@code use.schema.id=<n>}), it checks the record schemas for
+     * backward compatibility by default. You might need to disable this check by setting {@code
+     * latest.compatibility.strict=false} and {@code id.compatibility.strict=false} respectively
+     * on the serializer.
+     *
+     * @see io.confluent.kafka.schemaregistry.ParsedSchema#isCompatible
+     * @see io.confluent.kafka.schemaregistry.ParsedSchema#isBackwardCompatible
+     */
+    public void setCompatibilityLevel(String subject, CompatibilityLevel level)
+            throws SchemaRegistryException {
+        Config config = Optional.ofNullable(schemaRegistry.getConfig(subject)).orElseGet(Config::new);
+        config.setCompatibilityLevel(level.name);
+        schemaRegistry.updateConfig(subject, config);
     }
 
     public void assertTopicContentsEventually(
