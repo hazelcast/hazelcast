@@ -1086,12 +1086,10 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
             ExpiryPolicyFactoryConfig that = (ExpiryPolicyFactoryConfig) o;
 
-            if (className != null ? !className.equals(that.className) : that.className != null) {
+            if (!Objects.equals(className, that.className)) {
                 return false;
             }
-            return timedExpiryPolicyFactoryConfig != null
-                    ? timedExpiryPolicyFactoryConfig.equals(that.timedExpiryPolicyFactoryConfig)
-                    : that.timedExpiryPolicyFactoryConfig == null;
+            return Objects.equals(timedExpiryPolicyFactoryConfig, that.timedExpiryPolicyFactoryConfig);
         }
 
         @Override
@@ -1186,7 +1184,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 private static final int MAX_ID = ETERNAL.id;
                 private static final ExpiryPolicyType[] CACHED_VALUES = values();
 
-                private int id;
+                private final int id;
 
                 ExpiryPolicyType(int id) {
                     this.id = id;
