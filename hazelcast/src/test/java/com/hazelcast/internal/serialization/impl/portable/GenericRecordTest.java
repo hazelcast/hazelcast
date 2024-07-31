@@ -29,23 +29,19 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GenericRecordTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testUnsupportedMethods() {
@@ -56,7 +52,7 @@ public class GenericRecordTest {
         GenericRecordBuilder builder = GenericRecordBuilder.portable(namedPortableClassDefinition)
                 .setString("name", "foo")
                 .setInt32("myint", 123);
-        GenericRecord record = builder.build();
+        GenericRecord genericRecord = builder.build();
 
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableBoolean("name", null));
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt8("name", null));
@@ -73,20 +69,20 @@ public class GenericRecordTest {
         assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableFloat32("name", null));
         assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableFloat64("name", null));
 
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableBoolean("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt8("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt16("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt32("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt64("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableFloat32("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableFloat64("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableBoolean("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt8("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt16("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt32("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt64("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloat32("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloat64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableBoolean("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableInt8("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableInt16("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableInt32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableInt64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableFloat32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getNullableFloat64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableBoolean("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableInt8("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableInt16("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableInt32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableInt64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableFloat32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> genericRecord.getArrayOfNullableFloat64("name"));
     }
 
     @Test
@@ -95,15 +91,15 @@ public class GenericRecordTest {
                 .addStringField("s")
                 .build();
 
-        GenericRecord record = GenericRecordBuilder.portable(classDefinition)
+        GenericRecord genericRecord = GenericRecordBuilder.portable(classDefinition)
                 .setString("s", "s")
                 .build();
 
-        assertEquals(FieldKind.STRING, record.getFieldKind("s"));
-        assertEquals(FieldKind.NOT_AVAILABLE, record.getFieldKind("ss"));
+        assertEquals(FieldKind.STRING, genericRecord.getFieldKind("s"));
+        assertEquals(FieldKind.NOT_AVAILABLE, genericRecord.getFieldKind("ss"));
 
         InternalSerializationService service = new DefaultSerializationServiceBuilder().build();
-        Data data = service.toData(record);
+        Data data = service.toData(genericRecord);
         InternalGenericRecord internalGenericRecord = service.readAsInternalGenericRecord(data);
 
         assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
@@ -122,11 +118,11 @@ public class GenericRecordTest {
 
     @Test
     public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
-        thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use Portable GenericRecords in a Portable");
-
         GenericRecordBuilder portableBuilder = GenericRecordBuilder.portable(new ClassDefinitionBuilder(1, 1).build());
-        portableBuilder.setGenericRecord("f", GenericRecordBuilder.compact("asd1").build());
+        GenericRecord genericRecord = GenericRecordBuilder.compact("asd1").build();
+        assertThatThrownBy(() -> portableBuilder.setGenericRecord("f", genericRecord))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("You can only use Portable GenericRecords in a Portable");
     }
 
     @Test
@@ -143,15 +139,15 @@ public class GenericRecordTest {
 
     @Test
     public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
-        thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use Portable GenericRecords in a Portable");
-
         ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(1, 1);
         ClassDefinition fieldClassDefinition = new ClassDefinitionBuilder(1, 2).build();
         ClassDefinition classDefinition = classDefinitionBuilder.addPortableArrayField("f", fieldClassDefinition).build();
         GenericRecordBuilder portableBuilder = GenericRecordBuilder.portable(classDefinition);
         GenericRecord aPortable = GenericRecordBuilder.portable(new ClassDefinitionBuilder(1, 2).build()).build();
         GenericRecord aCompact = GenericRecordBuilder.compact("asd1").build();
-        portableBuilder.setArrayOfGenericRecord("f", new GenericRecord[]{aPortable, aCompact});
+
+        assertThatThrownBy(() -> portableBuilder.setArrayOfGenericRecord("f", new GenericRecord[]{aPortable, aCompact}))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("You can only use Portable GenericRecords in a Portable");
     }
 }
