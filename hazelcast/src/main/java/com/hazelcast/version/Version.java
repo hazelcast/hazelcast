@@ -152,7 +152,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
     public static Version of(String version) {
         String[] tokens = StringUtil.tokenizeVersionString(version);
         if (tokens != null && tokens.length >= 2) {
-            return Version.of(Byte.valueOf(tokens[0]), Byte.valueOf(tokens[1]));
+            return Version.of(Byte.parseByte(tokens[0]), Byte.parseByte(tokens[1]));
         } else {
             throw new IllegalArgumentException("Cannot parse " + version + " to ClusterVersion.");
         }
