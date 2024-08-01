@@ -31,6 +31,7 @@ import org.h2.util.StringUtils;
 
 import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,6 +44,25 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 public class MavenInterface {
+    /** The path to the {@code mvn} executable */
+    private static final ConcurrentMemoizingSupplier<String> MVN =
+            new ConcurrentMemoizingSupplier<>(() -> {
+                Path path = Paths.get(".")
+                        .toAbsolutePath();
+
+                // Recurse upwards until you find the Maven wrapper
+                while (path != null) {
+                    Path mvnPath = path.resolve(getMvnCommand());
+
+                    if (Files.exists(mvnPath)) {
+                        return mvnPath.toString();
+                    } else {
+                        path = path.getParent();
+                    }
+                }
+
+                throw new UncheckedIOException(new NoSuchFileException("Could not find Maven wrapper"));
+            });
     private static final Path MAVEN_REPOSITORY;
     private static final LocalRepositoryManager REPOSITORY_MANAGER;
 
@@ -88,8 +108,8 @@ public class MavenInterface {
         return localCopy;
     }
 
-    private static String getMvn() {
-        return OS.isWindows() ? "mvn.cmd" : "mvn";
+    private static String getMvnCommand() {
+        return OS.isWindows() ? "mvnw.cmd" : "mvnw";
     }
 
     private static void downloadArtifact(Artifact artifact, String... remoteRepositories) {
@@ -107,7 +127,7 @@ public class MavenInterface {
     private static Stream<String> buildMavenCommand(Artifact artifact, String... remoteRepositories) {
         final Stream.Builder<String> builder = Stream.builder();
 
-        builder.add(getMvn());
+        builder.add(MVN.get());
 
         builder.add("dependency:get");
         builder.add("-DgroupId=" + artifact.getGroupId());
