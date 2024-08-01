@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.PrimitiveIterator;
 
@@ -47,10 +47,20 @@ public class QueryResultSizeLimiter {
 
     /**
      * Defines the minimum value for the result size limit to ensure a sufficient distribution of data in the partitions.
+     * <p>
+     * This value was calculated by the following formula:
+     * <code>
+     * minimum_max_limit = avg_max_heap_bytes * (avg_backup_count + 1) / avg_cluster_size / avg_data_object_size
+     * </code>
+     * <p>
+     * The background of the formula is pretty simple: we want to provide as safe environment as possible,
+     * and we are choosing the most pessimistically evaluations. By using this formula, we don’t want to exceed heap size,
+     * expressed as as avg_max_heap_bytes. The data is distributed less or more equally across the cluster,
+     * and it occupies <code>(avg_backup_count + 1) / avg_cluster_size * 100</code> percent of memory on a single node.
      *
      * @see QueryResultSizeLimiter
      */
-    public static final int MINIMUM_MAX_RESULT_LIMIT = 100000;
+    public static final int MINIMUM_MAX_RESULT_LIMIT = 65_000;
 
     /**
      * Adds a security margin to the configured result size limit to prevent false positives.
