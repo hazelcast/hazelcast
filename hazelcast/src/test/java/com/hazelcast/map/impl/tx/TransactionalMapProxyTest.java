@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TransactionalMapProxyTest extends HazelcastTestSupport {
 
-    private String mapName = randomMapName();
+    private final String mapName = randomMapName();
 
     @Test
     public void whenMapProxyIsCreated_mapContainerIsNotCreated() {

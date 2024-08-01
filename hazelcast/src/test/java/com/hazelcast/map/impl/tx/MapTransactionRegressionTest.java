@@ -58,11 +58,11 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map = h2.getMap("default");
+        final IMap<String, String> map = h2.getMap("default");
         map.put("1", "1");
         map.put("2", "2");
 
-        boolean b = h1.executeTransaction(options, (context) -> {
+        h1.executeTransaction(options, context -> {
             final TransactionalMap<Object, Object> txMap = context.getMap("default");
             txMap.put("3", "3");
 
@@ -88,7 +88,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
         // raise an exception and rollback changes.
         try {
-            boolean b2 = h1.executeTransaction(options, (context) -> {
+            h1.executeTransaction(options, context -> {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
 
                 txMap.put("5", "5");
@@ -114,7 +114,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map = h2.getMap("default");
+        final IMap<Integer, SampleTestObjects.Employee> map = h2.getMap("default");
         final SampleTestObjects.Employee employee1 = new SampleTestObjects.Employee("abc-123-xvz", 34, true, 10D);
         final SampleTestObjects.Employee employee2 = new SampleTestObjects.Employee("abc-1xvz", 4, true, 7D);
         final SampleTestObjects.Employee employee3 = new SampleTestObjects.Employee("abc-1xasda...vz", 7, true, 1D);
@@ -124,14 +124,14 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
 
         try {
-            h1.executeTransaction(options, (context) -> {
+            h1.executeTransaction(options, context -> {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
 
                 assertEquals(0, txMap.keySet(Predicates.sql("age <= 10")).size());
                 //put
                 txMap.put(2, employee2);
-                Set keys = txMap.keySet(Predicates.sql("age <= 10"));
-                Iterator iterator = keys.iterator();
+                Set<Object> keys = txMap.keySet(Predicates.sql("age <= 10"));
+                Iterator<Object> iterator = keys.iterator();
 
                 assertEquals(1, keys.size());
 
@@ -168,7 +168,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map = h2.getMap(MAP_NAME);
+        final IMap<SampleTestObjects.Employee, SampleTestObjects.Employee> map = h2.getMap(MAP_NAME);
         final SampleTestObjects.Employee employee1 = new SampleTestObjects.Employee("abc-123-xvz", 34, true, 10D);
         final SampleTestObjects.Employee employee2 = new SampleTestObjects.Employee("abc-1xvz", 4, true, 7D);
         final SampleTestObjects.Employee employee3 = new SampleTestObjects.Employee("abc-1xasda...vz", 7, true, 1D);
@@ -202,12 +202,12 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map2 = h2.getMap("default");
+        final IMap<String, String> map2 = h2.getMap("default");
         map2.put("1", "1");
         map2.put("2", "2");
 
 
-        boolean b = h1.executeTransaction(options, (context) -> {
+        h1.executeTransaction(options, (context) -> {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
                 assertEquals(3, txMap.values().size());
@@ -235,16 +235,16 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map2 = h2.getMap("default");
+        final IMap<Integer, SampleTestObjects.Employee> map2 = h2.getMap("default");
         final SampleTestObjects.Employee emp1 = new SampleTestObjects.Employee("abc-123-xvz", 34, true, 10D);
         map2.put(1, emp1);
         final SampleTestObjects.Employee emp2 = new SampleTestObjects.Employee("xvz", 4, true, 10D);
 
-        boolean b = h1.executeTransaction(options, (context) -> {
+        h1.executeTransaction(options, context -> {
             final TransactionalMap<Object, Object> txMap = context.getMap("default");
             assertEquals(0, txMap.values(Predicates.sql("age <= 10")).size());
             txMap.put(2, emp2);
-            Collection coll = txMap.values(Predicates.sql("age <= 10"));
+            Collection<Object> coll = txMap.values(Predicates.sql("age <= 10"));
             Iterator<Object> iterator = coll.iterator();
             while (iterator.hasNext()) {
                 final SampleTestObjects.Employee e = (SampleTestObjects.Employee) iterator.next();

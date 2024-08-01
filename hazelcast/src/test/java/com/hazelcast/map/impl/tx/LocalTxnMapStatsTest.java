@@ -49,8 +49,8 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     static final int OPERATION_COUNT = 10;
 
-    private String mapName = "mapName";
-    private String mapWithObjectFormat = "mapWithObjectFormat";
+    private final String mapName = "mapName";
+    private final String mapWithObjectFormat = "mapWithObjectFormat";
     private HazelcastInstance instance;
     private TransactionContext context;
 
@@ -261,7 +261,7 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testOtherOperationCount_containsKey() {
-        TransactionalMap map = getMap();
+        TransactionalMap<Object, Object> map = getMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.containsKey(i);
@@ -275,7 +275,7 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testOtherOperationCount_keySet() {
-        TransactionalMap map = getMap();
+        TransactionalMap<Object, Object> map = getMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.keySet();
@@ -289,7 +289,7 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testOtherOperationCount_values() {
-        TransactionalMap map = getMap();
+        TransactionalMap<Object, Object> map = getMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.values();
@@ -303,7 +303,7 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testOtherOperationCount_valuesWithPredicate() {
-        TransactionalMap map = getMap();
+        TransactionalMap<Object, Object> map = getMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
 
@@ -318,7 +318,7 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testOtherOperationCount_isEmpty() {
-        TransactionalMap map = getMap();
+        TransactionalMap<Object, Object> map = getMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.isEmpty();
@@ -332,7 +332,7 @@ public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testOtherOperationCount_size() {
-        TransactionalMap map = getMap();
+        TransactionalMap<Object, Object> map = getMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.size();

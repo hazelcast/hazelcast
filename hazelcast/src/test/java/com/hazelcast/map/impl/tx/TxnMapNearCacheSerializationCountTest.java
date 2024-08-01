@@ -150,7 +150,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
                 .setDataInstance(dataMember)
-                .setDataAdapter(new TransactionalMapDataStructureAdapter<K, V>(dataMember, DEFAULT_NEAR_CACHE_NAME))
+                .setDataAdapter(new TransactionalMapDataStructureAdapter<>(dataMember, DEFAULT_NEAR_CACHE_NAME))
                 .build();
     }
 
@@ -188,7 +188,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheMember))
                 .setNearCacheInstance(nearCacheMember)
-                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheMember, DEFAULT_NEAR_CACHE_NAME))
+                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<>(nearCacheMember, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager);
     }

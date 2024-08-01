@@ -81,7 +81,7 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
         MapConfig mapConfig = config.getMapConfig("mappy");
         mapConfig.getMapStoreConfig()
                 .setEnabled(true)
-                .setImplementation(new MapStore() {
+                .setImplementation(new MapStore<>() {
                     private final Random random = new Random();
 
                     @Override
@@ -104,12 +104,12 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
                     }
 
                     @Override
-                    public Map loadAll(Collection keys) {
+                    public Map<Object, Object> loadAll(Collection<Object> keys) {
                         return null;
                     }
 
                     @Override
-                    public void storeAll(Map map) {
+                    public void storeAll(Map<Object, Object> map) {
                     }
 
                     @Override
@@ -117,12 +117,12 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
                     }
 
                     @Override
-                    public Iterable loadAllKeys() {
+                    public Iterable<Object> loadAllKeys() {
                         return null;
                     }
 
                     @Override
-                    public void deleteAll(Collection keys) {
+                    public void deleteAll(Collection<Object> keys) {
 
                     }
                 });
