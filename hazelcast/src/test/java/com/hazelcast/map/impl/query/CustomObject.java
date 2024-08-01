@@ -19,13 +19,14 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.internal.util.HashUtil;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.UUID;
 
 public class CustomObject implements Serializable {
 
-    private String name;
-    private UUID uuid;
-    private CustomAttribute attribute;
+    private final String name;
+    private final UUID uuid;
+    private final CustomAttribute attribute;
 
     public CustomObject(String name, UUID uuid, CustomAttribute attribute) {
         this.name = name;
@@ -55,16 +56,13 @@ public class CustomObject implements Serializable {
         }
 
         CustomObject that = (CustomObject) o;
-        if (attribute != null ? !attribute.equals(that.attribute) : that.attribute != null) {
+        if (!Objects.equals(attribute, that.attribute)) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) {
-            return false;
-        }
-        return true;
+        return Objects.equals(uuid, that.uuid);
     }
 
     @Override

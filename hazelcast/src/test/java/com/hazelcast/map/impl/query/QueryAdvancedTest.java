@@ -30,6 +30,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.PortableEmployee;
 import com.hazelcast.query.SampleTestObjects.ValueType;
@@ -85,7 +86,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, fullMember);
 
         IMap<Integer, Integer> map = fullMember.getMap(mapName);
-        DeserializationCountingPredicate predicate = new DeserializationCountingPredicate();
+        DeserializationCountingPredicate<Integer, Integer> predicate = new DeserializationCountingPredicate<>();
 
         // initialize all partitions
         for (int i = 0; i < 5000; i++) {
@@ -96,11 +97,11 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(0, predicate.serializationCount());
     }
 
-    public static class DeserializationCountingPredicate implements Predicate, DataSerializable {
+    public static class DeserializationCountingPredicate<K, V> implements Predicate<K, V>, DataSerializable {
         private static final AtomicInteger counter = new AtomicInteger();
 
         @Override
-        public boolean apply(Map.Entry mapEntry) {
+        public boolean apply(Map.Entry<K, V> mapEntry) {
             return false;
         }
 
@@ -141,7 +142,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         int allEmployees = passiveEmployees + activeEmployees;
 
         final CountDownLatch latch = new CountDownLatch(allEmployees);
-        map.addEntryListener((EntryExpiredListener) event -> latch.countDown(), false);
+        map.addEntryListener((EntryExpiredListener<Object, Object>) event -> latch.countDown(), false);
 
         for (int i = 0; i < activeEmployees; i++) {
             Employee employee = new Employee("activeEmployee" + i, 60, true, i);
@@ -154,7 +155,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
 
         // check the query result before eviction
-        final Collection values = map.values(Predicates.sql("active"));
+        final Collection<SampleTestObjects.Employee> values = map.values(Predicates.sql("active"));
         assertTrueEventually(() -> assertEquals(String.format("Expected %s results but got %s."
                         + " Number of evicted entries: %s.",
                 activeEmployees, values.size(), allEmployees - latch.getCount()),
@@ -467,14 +468,14 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             map.put(i, new ValueType("typex"));
         }
 
-        Collection typexValues = map.values(Predicates.sql("typeName = typex"));
+        Collection<SampleTestObjects.ValueType> typexValues = map.values(Predicates.sql("typeName = typex"));
         assertEquals(sampleSize2, typexValues.size());
 
         instances[1].shutdown();
 
         assertEquals(totalSize, map.size());
         assertTrueEventually(() -> {
-            final Collection values = map.values(Predicates.sql("typeName = typex"));
+            final Collection<SampleTestObjects.ValueType> values = map.values(Predicates.sql("typeName = typex"));
             assertEquals(sampleSize2, values.size());
         });
 
@@ -482,7 +483,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
         assertEquals(totalSize, map.size());
         assertTrueEventually(() -> {
-            final Collection values = map.values(Predicates.sql("typeName = typex"));
+            final Collection<SampleTestObjects.ValueType> values = map.values(Predicates.sql("typeName = typex"));
             assertEquals(sampleSize2, values.size());
         });
     }
@@ -520,9 +521,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         config.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
         configureMap(name, config);
         HazelcastInstance instance = createHazelcastInstance(config);
-        final IMap map = instance.getMap(name);
+        final IMap<Integer, SampleTestObjects.Employee> map = instance.getMap(name);
         assertTrueEventually(() -> {
-            Collection values = map.values(Predicates.sql("active = true"));
+            Collection<SampleTestObjects.Employee> values = map.values(Predicates.sql("active = true"));
             assertEquals(size, values.size());
         });
     }
@@ -541,7 +542,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             map.put(i, new PortableEmployee(i, "name_" + i));
         }
 
-        Collection values = map.values(Predicates.sql("notExist = name_0 OR a > 1"));
+        Collection<SampleTestObjects.PortableEmployee> values = map.values(Predicates.sql("notExist = name_0 OR a > 1"));
         assertEquals(3, values.size());
     }
 
@@ -563,7 +564,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             map.put(i, new PortableEmployee(i, "name_" + i));
         }
 
-        Collection values = map.values(Predicates.sql("n = name_2 OR notExist = name_0"));
+        Collection<SampleTestObjects.PortableEmployee> values = map.values(Predicates.sql("n = name_2 OR notExist = name_0"));
         assertEquals(1, values.size());
     }
 
@@ -576,10 +577,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = hazelcastInstance.getMap("map");
 
         map.put(1, 1);
-        //A remote predicate can throw Error in case of Usercodeployment and missing sub classes
+        //A remote predicate can throw Error in case of Usercodeployment and missing subclasses
         //See the issue for actual problem https://github.com/hazelcast/hazelcast/issues/18052
         //We are throwing error to see if the error is delegated to the caller
-        assertThatThrownBy(() -> map.values(new ErrorThrowingPredicate()))
+        assertThatThrownBy(() -> map.values(new ErrorThrowingPredicate<>()))
                 .isInstanceOf(HazelcastException.class)
                 .cause().has(rootCause(NoClassDefFoundError.class));
     }

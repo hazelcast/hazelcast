@@ -77,13 +77,13 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
         populateMap(map);
 
         // this predicate queries the index
-        Predicate lastPredicate = equal("last", "last");
+        Predicate<Object, Object> lastPredicate = equal("last", "last");
 
         // this predicate is not indexed and acts on the entries returned from
         // the index which must support extractors otherwise this test will fail
-        Predicate alwaysFirst = equal("generated", "first");
+        Predicate<Object, Object> alwaysFirst = equal("generated", "first");
 
-        Predicate composed = Predicates.and(lastPredicate, alwaysFirst);
+        Predicate<Integer, ExtractorsAndIndexesTest.Person> composed = Predicates.and(lastPredicate, alwaysFirst);
 
         Collection<Person> values = map.values(composed);
         assertEquals(100, values.size());
@@ -95,9 +95,8 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
     }
 
     public static class Extractor implements ValueExtractor<Person, Void> {
-        @SuppressWarnings("unchecked")
         @Override
-        public void extract(Person person, Void aVoid, ValueCollector valueCollector) {
+        public void extract(Person person, Void aVoid, ValueCollector<Object> valueCollector) {
             valueCollector.addObject("first");
         }
     }
@@ -110,5 +109,4 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
             map.put(i, p);
         }
     }
-
 }
