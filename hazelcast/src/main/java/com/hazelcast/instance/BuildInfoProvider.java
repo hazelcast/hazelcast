@@ -26,7 +26,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Provides information about current Hazelcast build.
- * @author Omer Celik
  */
 public final class BuildInfoProvider {
 
