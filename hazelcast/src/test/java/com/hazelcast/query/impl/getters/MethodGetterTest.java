@@ -229,7 +229,7 @@ public class MethodGetterTest {
     @Test
     public void getReturnType_whenSetExplicitly_thenReturnIt() {
         MethodGetter getter = new MethodGetter(null, limbCollectionMethod, "[any]", Limb.class);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
     }
@@ -237,7 +237,7 @@ public class MethodGetterTest {
     @Test
     public void getReturnType_whenModifierIsPositionAndMethodReturnTypeeIsArray_thenInferReturnTypeFromTheArray() {
         MethodGetter getter = new MethodGetter(null, limbArrayMethod, "[0]", null);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
     }
@@ -245,7 +245,7 @@ public class MethodGetterTest {
     @Test
     public void getReturnType_whenModifierIsStarAndMethodReturnIsArray_thenInferReturnTypeFromTheArray() {
         MethodGetter getter = new MethodGetter(null, limbArrayMethod, "[any]", null);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
     }
@@ -253,7 +253,7 @@ public class MethodGetterTest {
     @Test
     public void getReturnType_whenNoModifierAndMethodReturnIsArray_thenReturnTheArrayType() {
         MethodGetter getter = new MethodGetter(null, limbArrayMethod, null, null);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb[].class, returnType);
     }

@@ -42,7 +42,7 @@ public class ReflectionHelperTest {
         } catch (QueryException e) {
             // createGetter() method is catching everything throwable and wraps it in QueryException
             // I don't think it's the right thing to do, but I don't want to change this behaviour.
-            // Hence I have to use try/catch in this test instead of just declaring
+            // Hence, I have to use try/catch in this test instead of just declaring
             // IllegalArgumentException as expected exception.
             assertEquals(IllegalArgumentException.class, e.getCause().getClass());
         }

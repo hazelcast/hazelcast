@@ -39,7 +39,7 @@ public class NullGetterTest {
 
     @Test
     public void test_getReturnType() {
-        Class returnType = NullGetter.NULL_GETTER.getReturnType();
+        Class<?> returnType = NullGetter.NULL_GETTER.getReturnType();
 
         assertNull(returnType);
     }

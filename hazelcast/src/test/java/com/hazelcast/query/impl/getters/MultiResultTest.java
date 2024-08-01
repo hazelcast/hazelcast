@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiResultTest extends HazelcastTestSupport {
 
-    private MultiResult<Object> result = new MultiResult<>();
+    private final MultiResult<Object> result = new MultiResult<>();
 
     @Test
     public void addNull() {
@@ -70,8 +70,8 @@ public class MultiResultTest extends HazelcastTestSupport {
     public void noLitter() {
         List<String> strings = asList("James", "Bond", "007");
 
-        MultiResult<String> result = new MultiResult<>(strings);
+        MultiResult<String> stringMultiResult = new MultiResult<>(strings);
 
-        assertSame(strings, result.getResults());
+        assertSame(strings, stringMultiResult.getResults());
     }
 }

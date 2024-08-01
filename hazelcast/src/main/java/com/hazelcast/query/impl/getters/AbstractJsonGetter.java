@@ -201,7 +201,7 @@ public abstract class AbstractJsonGetter extends Getter {
      * attribute when this method returns. If given path does not exist
      * in the current level, then parser points to matching
      * {@code JsonToken.END_OBJECT} of the current object.
-     *
+     * <p>
      * Assumes the parser points to a {@code JsonToken.START_OBJECT}
      *
      * @param parser
@@ -237,7 +237,7 @@ public abstract class AbstractJsonGetter extends Getter {
      * array to the result. Otherwise, it traverses all objects in
      * given array and adds their scalar values named
      * {@code pathCursor#getNext()} to the result.
-     *
+     * <p>
      * Assumes the parser points to an array.
      *
      * @param parser

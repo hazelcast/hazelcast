@@ -58,7 +58,7 @@ public class ExtractorsTest {
     @Parameter
     public boolean useClassloader;
 
-    private Bond bond = new Bond();
+    private final Bond bond = new Bond();
 
     private InternalSerializationService ss;
 
@@ -78,8 +78,9 @@ public class ExtractorsTest {
         Getter getterSecondInvocation = extractors.getGetter(bond, "car.power", true);
 
         // THEN
-        assertThat(getterFirstInvocation).isSameAs(getterSecondInvocation);
-        assertThat(getterFirstInvocation).isInstanceOf(FieldGetter.class);
+        assertThat(getterFirstInvocation)
+                .isInstanceOf(FieldGetter.class)
+                .isSameAs(getterSecondInvocation);
     }
 
     @Test

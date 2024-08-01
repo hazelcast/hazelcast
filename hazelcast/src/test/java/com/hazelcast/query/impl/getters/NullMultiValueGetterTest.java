@@ -34,7 +34,7 @@ public class NullMultiValueGetterTest {
 
     @Test
     public void test_getReturnType() {
-        Class returnType = NullMultiValueGetter.NULL_MULTIVALUE_GETTER.getReturnType();
+        Class<?> returnType = NullMultiValueGetter.NULL_MULTIVALUE_GETTER.getReturnType();
 
         assertNull(returnType);
     }

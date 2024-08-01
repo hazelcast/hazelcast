@@ -33,10 +33,9 @@ public final class SingleValueDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Person)) {
+            if (!(o instanceof Person other)) {
                 return false;
             }
-            Person other = (Person) o;
             return Objects.equals(this.brain, other.brain);
         }
 
@@ -53,10 +52,9 @@ public final class SingleValueDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Brain)) {
+            if (!(o instanceof Brain other)) {
                 return false;
             }
-            Brain other = (Brain) o;
             return Objects.equals(this.iq, other.iq);
         }
 

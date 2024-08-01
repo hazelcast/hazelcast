@@ -50,8 +50,8 @@ import static junit.framework.TestCase.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractJsonGetterTest {
 
-    private AbstractJsonGetter getter = new JsonGetter();
-    private JsonFactory factory = new JsonFactory();
+    private final AbstractJsonGetter getter = new JsonGetter();
+    private final JsonFactory factory = new JsonFactory();
 
     @Test
     public void testRepeatQueriesUseTheCachedContext() throws Exception {
@@ -141,20 +141,12 @@ public class AbstractJsonGetterTest {
 
     private class GetterRunner implements Runnable {
 
-        private AtomicBoolean running;
+        private final AtomicBoolean running;
         private boolean isFailed;
         private Throwable exception;
 
         GetterRunner(AtomicBoolean running) {
             this.running = running;
-        }
-
-        public boolean isFailed() {
-            return isFailed;
-        }
-
-        public Throwable getThrowable() {
-            return exception;
         }
 
         public String getStackTrace() {

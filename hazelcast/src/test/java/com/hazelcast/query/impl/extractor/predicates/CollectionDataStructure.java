@@ -39,10 +39,9 @@ public final class CollectionDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Person)) {
+            if (!(o instanceof Person other)) {
                 return false;
             }
-            final Person other = (Person) o;
             return Objects.equals(this.limbs_list, other.limbs_list);
         }
 
@@ -59,10 +58,9 @@ public final class CollectionDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Limb)) {
+            if (!(o instanceof Limb other)) {
                 return false;
             }
-            final Limb other = (Limb) o;
             return Objects.equals(this.name, other.name) && Objects.equals(this.power, other.power);
         }
 

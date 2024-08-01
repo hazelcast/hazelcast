@@ -350,7 +350,7 @@ public class FieldGetterTest {
     @Test
     public void getReturnType_whenSetExplicitly_thenReturnIt() {
         FieldGetter getter = new FieldGetter(null, limbCollectionField, "[any]", Limb.class);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
     }
@@ -358,7 +358,7 @@ public class FieldGetterTest {
     @Test
     public void getReturnType_whenModifierIsPositionAndFieldIsArray_thenInferReturnTypeFromTheArray() {
         FieldGetter getter = new FieldGetter(null, limbArrayField, "[0]", null);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
     }
@@ -366,7 +366,7 @@ public class FieldGetterTest {
     @Test
     public void getReturnType_whenModifierIsStarAndFieldIsArray_thenInferReturnTypeFromTheArray() {
         FieldGetter getter = new FieldGetter(null, limbArrayField, "[any]", null);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
     }
@@ -374,7 +374,7 @@ public class FieldGetterTest {
     @Test
     public void getReturnType_whenNoModifierAndFieldIsArray_thenReturnTheArrayType() {
         FieldGetter getter = new FieldGetter(null, limbArrayField, null, null);
-        Class returnType = getter.getReturnType();
+        Class<?> returnType = getter.getReturnType();
 
         assertEquals(Limb[].class, returnType);
     }

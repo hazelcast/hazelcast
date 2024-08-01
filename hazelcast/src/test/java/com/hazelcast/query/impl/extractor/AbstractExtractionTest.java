@@ -44,8 +44,8 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
 
     // three parametrisation axes
     protected Multivalue mv;
-    private InMemoryFormat inMemoryFormat;
-    private Index index;
+    private final InMemoryFormat inMemoryFormat;
+    private final Index index;
 
     // constructor required by JUnit for parametrisation purposes
     public AbstractExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {

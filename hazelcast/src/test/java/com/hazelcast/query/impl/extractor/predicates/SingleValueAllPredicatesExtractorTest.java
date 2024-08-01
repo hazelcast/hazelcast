@@ -78,14 +78,14 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
 
     public static class IqExtractor implements ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, Object arguments, ValueCollector collector) {
+        public void extract(Person target, Object arguments, ValueCollector<Object> collector) {
             collector.addObject(target.brain.iq);
         }
     }
 
     public static class NameExtractor implements ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, Object arguments, ValueCollector collector) {
+        public void extract(Person target, Object arguments, ValueCollector<Object> collector) {
             collector.addObject(target.brain.name);
         }
     }
