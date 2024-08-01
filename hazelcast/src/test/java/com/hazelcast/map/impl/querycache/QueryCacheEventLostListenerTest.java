@@ -21,7 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
@@ -78,14 +77,8 @@ public class QueryCacheEventLostListenerTest extends HazelcastTestSupport {
 
         // expecting one lost event per partition
         final CountDownLatch lossCount = new CountDownLatch(1);
-        final QueryCache queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
-        queryCache.addEntryListener(new EventLostListener() {
-            @Override
-            public void eventLost(EventLostEvent event) {
-                lossCount.countDown();
-
-            }
-        }, false);
+        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
+        queryCache.addEntryListener((EventLostListener) event -> lossCount.countDown(), false);
 
         for (int i = 0; i < count; i++) {
             map.put(i, i);

@@ -55,7 +55,7 @@ public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
     }
 
     @Override
-    protected RecordFactory newRecordFactory() {
+    protected DataRecordFactory newRecordFactory() {
         MapContainer mapContainer = createMapContainer(perEntryStatsEnabled,
                 evictionPolicy, cacheDeserializedValues);
         return new DataRecordFactory(mapContainer, serializationService);

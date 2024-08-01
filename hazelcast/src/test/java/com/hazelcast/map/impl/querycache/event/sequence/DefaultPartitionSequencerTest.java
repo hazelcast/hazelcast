@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultPartitionSequencerTest {
 
-    private DefaultPartitionSequencer sequencer = new DefaultPartitionSequencer();
+    private final DefaultPartitionSequencer sequencer = new DefaultPartitionSequencer();
 
     @Test
     public void testNextSequence() {

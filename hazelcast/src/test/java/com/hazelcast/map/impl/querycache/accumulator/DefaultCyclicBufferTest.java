@@ -35,18 +35,18 @@ public class DefaultCyclicBufferTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testBufferCapacity_whenZero() {
-        new DefaultCyclicBuffer(0);
+        new DefaultCyclicBuffer<TestSequenced>(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBufferCapacity_whenNegative() {
-        new DefaultCyclicBuffer(-1);
+        new DefaultCyclicBuffer<TestSequenced>(-1);
     }
 
     @Test
     public void testBufferSize_whenEmpty() {
         int maxCapacity = nextPowerOfTwo(10);
-        CyclicBuffer buffer = new DefaultCyclicBuffer(maxCapacity);
+        CyclicBuffer<TestSequenced> buffer = new DefaultCyclicBuffer<>(maxCapacity);
 
         assertEquals("item count should be = " + 0, 0, buffer.size());
     }
@@ -181,7 +181,7 @@ public class DefaultCyclicBufferTest {
     }
 
     @Test
-    public void test_size() throws Exception {
+    public void test_size() {
         int maxCapacity = nextPowerOfTwo(10);
         CyclicBuffer<TestSequenced> buffer = new DefaultCyclicBuffer<>(maxCapacity);
 

@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadOnlyIteratorTest {
 
-    private Sequenced sequenced = new DefaultQueryCacheEventData();
+    private final Sequenced sequenced = new DefaultQueryCacheEventData();
 
     private ReadOnlyIterator<Sequenced> iterator;
 

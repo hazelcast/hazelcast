@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -60,11 +59,8 @@ public class NodeQueryCacheEventServiceTest extends HazelcastTestSupport {
         for (int i = 0; i < 5; i++) {
             Thread thread = new Thread(() -> {
                 while (!stop.get()) {
-                    nodeQueryCacheEventService.addListener(mapName, "a", new EntryAddedListener() {
-                        @Override
-                        public void entryAdded(EntryEvent event) {
+                    nodeQueryCacheEventService.addListener(mapName, "a", (EntryAddedListener<Object, Object>) event -> {
 
-                        }
                     });
 
                     nodeQueryCacheEventService.removeAllListeners(mapName, "a");

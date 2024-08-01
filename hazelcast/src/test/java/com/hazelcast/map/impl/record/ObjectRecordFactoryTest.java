@@ -54,7 +54,7 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
     }
 
     @Override
-    protected RecordFactory newRecordFactory() {
+    protected ObjectRecordFactory newRecordFactory() {
         MapContainer mapContainer = createMapContainer(perEntryStatsEnabled,
                 evictionPolicy, cacheDeserializedValues);
         return new ObjectRecordFactory(mapContainer, serializationService);

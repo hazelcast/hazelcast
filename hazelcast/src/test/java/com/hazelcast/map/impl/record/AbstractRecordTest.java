@@ -36,13 +36,13 @@ public class AbstractRecordTest {
 
     private static final Object VALUE = new Object();
 
-    private Record record;
-    private Record recordSameAttributes;
-    private Record recordOtherVersion;
-    private Record recordOtherCreationTime;
-    private Record recordOtherHits;
-    private Record recordOtherLastAccessTime;
-    private Record recordOtherLastUpdateTime;
+    private ObjectRecordWithStats record;
+    private ObjectRecordWithStats recordSameAttributes;
+    private ObjectRecordWithStats recordOtherVersion;
+    private ObjectRecordWithStats recordOtherCreationTime;
+    private ObjectRecordWithStats recordOtherHits;
+    private ObjectRecordWithStats recordOtherLastAccessTime;
+    private ObjectRecordWithStats recordOtherLastUpdateTime;
 
     @Before
     public void setUp() throws Exception {

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
@@ -76,20 +75,20 @@ public class TestSubscriberContext extends NodeSubscriberContext {
         }
 
         @Override
-        public Accumulator createAccumulator(AccumulatorInfo info) {
+        public TestSubscriberAccumulator createAccumulator(AccumulatorInfo info) {
             return new TestSubscriberAccumulator(getContext(), info);
         }
     }
 
     private class TestSubscriberAccumulator extends SubscriberAccumulator {
 
-        private final Set<Long> lostSequenceNumber = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+        private final Set<Long> lostSequenceNumber = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
         TestSubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
             super(context, info);
 
             if (enableEventLoss) {
-                // just pick a sequence number to mimic out of order events
+                // just pick a sequence number to mimic out-of-order events
                 lostSequenceNumber.add(new Random().nextInt(eventCount) + 1L);
             }
         }
@@ -98,7 +97,7 @@ public class TestSubscriberContext extends NodeSubscriberContext {
         protected boolean isNextEvent(Sequenced event) {
             DefaultQueryCacheEventData eventData = (DefaultQueryCacheEventData) event;
             if (lostSequenceNumber.remove(event.getSequence())) {
-                // create an out of order event by changing actual sequence
+                // create an out-of-order event by changing actual sequence
                 DefaultQueryCacheEventData copy = new DefaultQueryCacheEventData(eventData);
                 copy.setSequence(eventData.getSequence() * 2);
 

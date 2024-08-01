@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Person implements Serializable {
 
@@ -35,12 +36,11 @@ public class Person implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Person)) {
+        if (!(o instanceof Person person)) {
             return false;
         }
 
-        Person person = (Person) o;
-        return name != null ? name.equals(person.name) : person.name == null;
+        return Objects.equals(name, person.name);
     }
 
     @Override
