@@ -101,8 +101,8 @@ public class LoggerStressTest extends HazelcastTestSupport {
                 while (System.currentTimeMillis() < deadLine) {
                     Logger.getLogger(randomName());
                 }
-            } catch (Exception e) {
-                this.e = e;
+            } catch (Exception exception) {
+                this.e = exception;
             }
         }
     }

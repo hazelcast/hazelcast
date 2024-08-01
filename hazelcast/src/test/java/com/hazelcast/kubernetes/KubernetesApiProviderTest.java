@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class KubernetesApiProviderTest {
 
-    private KubernetesApiProvider provider;
+    private final KubernetesApiProvider provider;
 
     KubernetesApiProviderTest(KubernetesApiProvider provider) {
         this.provider = provider;

@@ -28,7 +28,7 @@ public class TestJsonValues {
 
     static {
         // arrays
-        LIST.add(Json.array(new int[]{1, 2, 3, 4, 5}));
+        LIST.add(Json.array(1, 2, 3, 4, 5));
         LIST.add(Json.array()
                 .add(Json.object())
                 .add(1)
@@ -55,37 +55,37 @@ public class TestJsonValues {
                 .add(Json.array(new int[]{1, 2, 3, 4})
                         .add(Json.array(new int[]{1, 2, 3, 4})
                                 .add(Json.array(new int[]{1, 2, 3, 4})
-                                        .add(Json.array(new int[]{1, 2, 3, 4}))))));
+                                        .add(Json.array(1, 2, 3, 4))))));
         LIST.add(Json.array()
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103})));
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103)));
         LIST.add(Json.array()
                 .add(Json.array())
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103})));
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103)));
         LIST.add(Json.array()
-                .add(Json.array(new int[]{101}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103})));
+                .add(Json.array(101))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103)));
         LIST.add(Json.array()
-                .add(Json.array(new int[]{101, 102, 103}))
+                .add(Json.array(101, 102, 103))
                 .add(Json.array())
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103})));
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103)));
         LIST.add(Json.array()
                 .add(Json.TRUE)
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103}))
-                .add(Json.array(new int[]{101, 102, 103})));
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103))
+                .add(Json.array(101, 102, 103)));
 
         // object
         LIST.add(Json.object());
@@ -97,42 +97,43 @@ public class TestJsonValues {
                                 .add("b", Json.object()
                                         .add("b", Json.object()
                                                 .add("b", 34))))));
-        LIST.add(Json.object().add("arr", Json.array(new int[]{1, 2, 3, 4, 5})));
+        LIST.add(Json.object().add("arr", Json.array(
+                1, 2, 3, 4, 5)));
         LIST.add(Json.object()
-                .add("arr6", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr5", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr4", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr3", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr2", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr1", Json.array(new int[]{1, 2, 3, 4, 5})));
+                .add("arr6", Json.array(1, 2, 3, 4, 5))
+                .add("arr5", Json.array(1, 2, 3, 4, 5))
+                .add("arr4", Json.array(1, 2, 3, 4, 5))
+                .add("arr3", Json.array(1, 2, 3, 4, 5))
+                .add("arr2", Json.array(1, 2, 3, 4, 5))
+                .add("arr1", Json.array(1, 2, 3, 4, 5)));
         LIST.add(Json.object()
-                .add("arr6", Json.array(new int[]{1, 5}))
-                .add("arr5", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr4", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr3", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr2", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr1", Json.array(new int[]{1, 2, 3, 4, 5})));
+                .add("arr6", Json.array(1, 5))
+                .add("arr5", Json.array(1, 2, 3, 4, 5))
+                .add("arr4", Json.array(1, 2, 3, 4, 5))
+                .add("arr3", Json.array(1, 2, 3, 4, 5))
+                .add("arr2", Json.array(1, 2, 3, 4, 5))
+                .add("arr1", Json.array(1, 2, 3, 4, 5)));
         LIST.add(Json.object()
                 .add("arr6", Json.array())
-                .add("arr5", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr4", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr3", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr2", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr1", Json.array(new int[]{1, 2, 3, 4, 5})));
+                .add("arr5", Json.array(1, 2, 3, 4, 5))
+                .add("arr4", Json.array(1, 2, 3, 4, 5))
+                .add("arr3", Json.array(1, 2, 3, 4, 5))
+                .add("arr2", Json.array(1, 2, 3, 4, 5))
+                .add("arr1", Json.array(1, 2, 3, 4, 5)));
         LIST.add(Json.object()
-                .add("arr6", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr5", Json.array(new int[]{1, 5}))
-                .add("arr4", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr3", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr2", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr1", Json.array(new int[]{1, 2, 3, 4, 5})));
+                .add("arr6", Json.array(1, 2, 3, 4, 5))
+                .add("arr5", Json.array(1, 5))
+                .add("arr4", Json.array(1, 2, 3, 4, 5))
+                .add("arr3", Json.array(1, 2, 3, 4, 5))
+                .add("arr2", Json.array(1, 2, 3, 4, 5))
+                .add("arr1", Json.array(1, 2, 3, 4, 5)));
         LIST.add(Json.object()
-                .add("arr6", Json.array(new int[]{34}))
-                .add("arr5", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr4", Json.array(new int[]{1, 2, 3, 4, 5}))
+                .add("arr6", Json.array(34))
+                .add("arr5", Json.array(1, 2, 3, 4, 5))
+                .add("arr4", Json.array(1, 2, 3, 4, 5))
                 .add("arr3", Json.array())
-                .add("arr2", Json.array(new int[]{1, 2, 3, 4, 5}))
-                .add("arr1", Json.array(new int[]{1, 2, 3, 4, 5})));
+                .add("arr2", Json.array(1, 2, 3, 4, 5))
+                .add("arr1", Json.array(1, 2, 3, 4, 5)));
         LIST.add(Json.object()
                 .add("firstObject", Json.object()
                         .add("firstAttribute", Json.object()

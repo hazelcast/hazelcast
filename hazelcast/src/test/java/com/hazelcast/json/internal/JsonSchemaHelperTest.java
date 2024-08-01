@@ -50,12 +50,12 @@ import static org.junit.Assert.assertNull;
  * and
  * {@link JsonSchemaHelper#findValueWithPattern(NavigableJsonInputAdapter, JsonSchemaNode, JsonPattern, JsonPathCursor)}
  * methods.
- *
+ * <p>
  * It runs the mentioned methods on pre-determined {@code JsonValue}s.
  * The tests use all valid attribute paths to extract {@code JsonValue}s
  * and compare extracted values with the ones that are available from
  * JsonValue tree.
- *
+ * <p>
  * This suite include simple test cases along with automated test cases.
  * These are just there to demonstrate what kind of testing is done and
  * additional peace of mind. They are already covered by the automated

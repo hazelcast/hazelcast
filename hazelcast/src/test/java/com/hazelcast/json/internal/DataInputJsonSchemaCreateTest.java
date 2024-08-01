@@ -37,8 +37,8 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.conver
 @RunWith(HazelcastParallelClassRunner.class)
 public class DataInputJsonSchemaCreateTest extends AbstractJsonSchemaCreateTest {
 
-    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-    private JsonFactory factory = new JsonFactory();
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final JsonFactory factory = new JsonFactory();
 
     protected JsonParser createParserFromString(String jsonString) throws IOException {
         return factory.createParser(convertToInputStream(serializationService.createObjectDataInput(serializationService.toBytes(new HazelcastJsonValue(jsonString))), 12));

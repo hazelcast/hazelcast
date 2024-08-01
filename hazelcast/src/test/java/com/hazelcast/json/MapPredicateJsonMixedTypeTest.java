@@ -25,7 +25,6 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicates;
@@ -78,14 +77,11 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
     protected Config getConfig() {
         Config config = super.getConfig();
         config.getMapConfig("default").setInMemoryFormat(inMemoryFormat);
-        config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                if (classId == 1) {
-                    return new Person();
-                }
-                return null;
-            };
+        config.getSerializationConfig().addPortableFactory(1, classId -> {
+            if (classId == 1) {
+                return new Person();
+            }
+            return null;
         });
         return config;
     }
@@ -100,7 +96,7 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
 
     @Test
     public void testPutGet() {
-        IMap map = instance.getMap(randomMapName());
+        IMap<String, Object> map = instance.getMap(randomMapName());
 
         map.put("k_int", 5);
         map.put("k_json", new HazelcastJsonValue("10"));
@@ -113,13 +109,13 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
 
     @Test
     public void testThisPredicate() {
-        IMap map = instance.getMap(randomMapName());
+        IMap<String, Object> map = instance.getMap(randomMapName());
 
         map.put("k_int", 5);
         map.put("k_json", new HazelcastJsonValue("10"));
         map.put("k_int_2", 11);
 
-        Collection vals = map.values(Predicates.greaterEqual("this", 8));
+        Collection<Object> vals = map.values(Predicates.greaterEqual("this", 8));
         assertEquals(2, vals.size());
         assertContains(vals, new HazelcastJsonValue("10"));
         assertContains(vals, 11);
@@ -127,14 +123,14 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
 
     @Test
     public void testPortableWithSamePath() {
-        IMap map = instance.getMap(randomMapName());
+        IMap<String, Object> map = instance.getMap(randomMapName());
 
         map.put("k_1", new Person("a", 15, false));
         map.put("k_2", new Person("b", 27, true));
         map.put("k_3", createNameAgeOnDuty("c", 4, false));
         map.put("k_4", createNameAgeOnDuty("d", 77, false));
 
-        Collection vals = map.keySet(Predicates.greaterEqual("age", 20));
+        Collection<String> vals = map.keySet(Predicates.greaterEqual("age", 20));
         assertEquals(2, vals.size());
         assertContains(vals, "k_2");
         assertContains(vals, "k_4");

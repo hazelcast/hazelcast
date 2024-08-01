@@ -123,8 +123,8 @@ public class CustomLoggerFactorySingularityTest extends HazelcastTestSupport {
                     Logger.getLogger(randomName());
                     assertInstanceOf(CustomLoggerFactory.class, Logger.newLoggerFactory("irrelevant"));
                 }
-            } catch (Exception e) {
-                this.e = e;
+            } catch (Exception exception) {
+                this.e = exception;
             }
         }
     }

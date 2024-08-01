@@ -61,7 +61,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMetadataIsCreatedWhenRecordsAreMigrated() throws InterruptedException {
+    public void testMetadataIsCreatedWhenRecordsAreMigrated() {
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
 
         final IMap<HazelcastJsonValue, HazelcastJsonValue> map = instance.getMap(randomMapName());

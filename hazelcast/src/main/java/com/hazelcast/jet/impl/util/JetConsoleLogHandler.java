@@ -86,8 +86,8 @@ public class JetConsoleLogHandler extends StreamHandler {
             return name.replaceAll("\\B\\w+\\.", ".");
         }
 
-        private static String getExceptionString(LogRecord record) {
-            return System.lineSeparator() + ANSI_RED + ExceptionUtil.toString(record.getThrown()) + ANSI_RESET;
+        private static String getExceptionString(LogRecord logRecord) {
+            return System.lineSeparator() + ANSI_RED + ExceptionUtil.toString(logRecord.getThrown()) + ANSI_RESET;
         }
 
         private static String getLevelColor(Level level) {
