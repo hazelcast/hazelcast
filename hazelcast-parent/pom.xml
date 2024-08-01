@@ -99,7 +99,7 @@
         Confluent depends on Kafka, and consideration should be given when upgrading
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
-        <kafka.version>3.6.1</kafka.version>
+        <kafka.version>3.7.1</kafka.version>
         <kotlin.version>2.0.0</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.8.0.jre11</mssql.version>
@@ -139,7 +139,7 @@
         Confluent depends on Kafka, and consideration should be given when upgrading
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
-        <confluent.version>7.6.2</confluent.version>
+        <confluent.version>7.7.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <http.core.version>4.4.16</http.core.version>
         <http.client.version>4.5.14</http.client.version>
