@@ -55,9 +55,9 @@ public interface CacheEntryView<K, V> extends EvictableEntryView<K, V> {
     long getLastAccessTime();
 
     /**
-     * Gets the count of how many time this cache entry has been accessed.
+     * Gets the number of times this cache entry has been accessed.
      *
-     * @return the count of how many time this cache entry has been accessed
+     * @return the number of times this cache entry has been accessed.
      */
     long getHits();
 

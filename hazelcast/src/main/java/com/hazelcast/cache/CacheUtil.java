@@ -50,7 +50,7 @@ public final class CacheUtil {
                 sb.append(uri.toASCIIString()).append('/');
             }
             if (classLoader != null) {
-                sb.append(classLoader.toString()).append('/');
+                sb.append(classLoader).append('/');
             }
             return sb.toString();
         }

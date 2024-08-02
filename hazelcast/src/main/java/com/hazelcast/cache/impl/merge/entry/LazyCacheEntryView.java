@@ -29,11 +29,11 @@ public class LazyCacheEntryView<K, V>
     private Object key;
     private Object value;
     private Object expiryPolicy;
-    private long creationTime;
-    private long expirationTime;
-    private long lastAccessTime;
-    private long accessHit;
-    private SerializationService serializationService;
+    private final long creationTime;
+    private final long expirationTime;
+    private final long lastAccessTime;
+    private final long accessHit;
+    private final SerializationService serializationService;
 
     public LazyCacheEntryView(Object key, Object value, long creationTime,
                               long expirationTime, long lastAccessTime, long accessHit, Object expiryPolicy) {

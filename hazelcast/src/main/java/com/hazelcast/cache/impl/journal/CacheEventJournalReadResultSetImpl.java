@@ -38,7 +38,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
             final Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
         super(minSize, maxSize, serializationService,
-                predicate == null ? null : new Predicate<InternalEventJournalCacheEvent>() {
+                predicate == null ? null : new Predicate<>() {
                     @Override
                     @SuppressWarnings("unchecked")
                     @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
@@ -46,7 +46,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
                         return predicate.test((DeserializingEventJournalCacheEvent<K, V>) e);
                     }
                 },
-                projection == null ? null : new ProjectionAdapter<K, V, T>(projection));
+                projection == null ? null : new ProjectionAdapter<>(projection));
     }
 
     @Override

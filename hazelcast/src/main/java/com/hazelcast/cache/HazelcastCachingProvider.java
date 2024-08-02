@@ -191,7 +191,7 @@ public final class HazelcastCachingProvider implements CachingProvider {
     private final CachingProvider delegate;
 
     public HazelcastCachingProvider() {
-        CachingProvider cp = null;
+        CachingProvider cp;
         String providerType = ClusterProperty.JCACHE_PROVIDER_TYPE.getSystemProperty();
         if (providerType != null) {
             if (PROVIDER_TYPE_CLIENT.equals(providerType)) {

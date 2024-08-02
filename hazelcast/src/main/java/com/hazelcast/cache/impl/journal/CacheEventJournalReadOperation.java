@@ -31,10 +31,10 @@ import java.util.function.Predicate;
 
 /**
  * Reads from the cache event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
+ * the minimum required number of items in the response, the maximum number of items
  * in the response, a predicate that the events should pass and a projection to
  * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
+ * If the event journal currently contains fewer events than the required minimum, the
  * call will wait until it has sufficient items.
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
@@ -99,7 +99,7 @@ public class CacheEventJournalReadOperation<K, V, T>
 
     @Override
     protected ReadResultSetImpl<InternalEventJournalCacheEvent, T> createResultSet() {
-        return new CacheEventJournalReadResultSetImpl<K, V, T>(
+        return new CacheEventJournalReadResultSetImpl<>(
                 minSize, maxSize, getNodeEngine().getSerializationService(), predicate, projection);
     }
 }

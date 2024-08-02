@@ -194,10 +194,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
         if (!Objects.equals(access, that.access)) {
             return false;
         }
-        if (!Objects.equals(update, that.update)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(update, that.update);
 
     }
 

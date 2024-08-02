@@ -25,7 +25,7 @@ package com.hazelcast.cache;
  *     <li>the cache has been already destroyed.</li>
  * </ul><br>
  * For the first option, the caller can decide to just retry the operation a couple of times since
- * distribution is executed in a asynchronous way.
+ * distribution is executed in an asynchronous way.
  */
 public class CacheNotExistsException extends IllegalStateException {
 

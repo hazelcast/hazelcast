@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
@@ -34,7 +35,7 @@ import java.util.logging.Level;
 public class CacheClearExpiredOperation extends AbstractLocalOperation
         implements PartitionAwareOperation, MutatingOperation {
 
-    private int expirationPercentage;
+    private final int expirationPercentage;
 
     public CacheClearExpiredOperation(int expirationPercentage) {
         this.expirationPercentage = expirationPercentage;
@@ -42,7 +43,7 @@ public class CacheClearExpiredOperation extends AbstractLocalOperation
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

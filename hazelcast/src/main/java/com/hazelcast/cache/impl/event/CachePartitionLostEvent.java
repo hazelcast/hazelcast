@@ -18,6 +18,8 @@ package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.cluster.Member;
 
+import java.io.Serial;
+
 /**
  * Used to provide information about the lost partition of a cache.
  *
@@ -26,6 +28,7 @@ import com.hazelcast.cluster.Member;
  */
 public class CachePartitionLostEvent extends AbstractICacheEvent {
 
+    @Serial
     private static final long serialVersionUID = -7445714640964238109L;
 
     private final int partitionId;

@@ -21,7 +21,7 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 /**
  * {@link ICache} specific {@link EvictionPolicyComparator}
  * for comparing {@link CacheEntryView}s to be evicted.
- *
+ * <p>
  * Implementors of the comparator have to implement {@code equals} and {@code hashCode} methods
  * to support correct config comparison.
  *

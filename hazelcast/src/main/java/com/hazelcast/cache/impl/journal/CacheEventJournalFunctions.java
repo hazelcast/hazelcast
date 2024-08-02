@@ -21,6 +21,7 @@ import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.internal.journal.DeserializingEntry;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -35,11 +36,11 @@ public final class CacheEventJournalFunctions {
     private CacheEventJournalFunctions() { }
 
     public static <K, V> Predicate<EventJournalCacheEvent<K, V>> cachePutEvents() {
-        return new CachePutEventsPredicate<K, V>();
+        return new CachePutEventsPredicate<>();
     }
 
     public static <K, V> Function<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
-        return new CacheEventToEntryProjection<K, V>();
+        return new CacheEventToEntryProjection<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -49,6 +50,7 @@ public final class CacheEventJournalFunctions {
 
     @SerializableByConvention
     private static class CachePutEventsPredicate<K, V> implements Predicate<EventJournalCacheEvent<K, V>>, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -60,6 +62,7 @@ public final class CacheEventJournalFunctions {
     @SerializableByConvention
     private static class CacheEventToEntryProjection<K, V>
             implements Function<EventJournalCacheEvent<K, V>, Entry<K, V>>, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -71,6 +74,7 @@ public final class CacheEventJournalFunctions {
 
     @SerializableByConvention
     private static class CacheEventNewValueProjection implements Function, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
