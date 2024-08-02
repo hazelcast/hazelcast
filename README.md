@@ -73,7 +73,7 @@ which has a rich set of features, including:
 * Indexing and querying through
   [SQL](https://docs.hazelcast.com/hazelcast/latest/query/sql-overview.html)
 * Processing entries in place for [atomic
-  updates](https://docs.hazelcast.com/hazelcast/latest/computing/entry-processor.html)
+  updates](https://docs.hazelcast.com/hazelcast/latest/data-structures/entry-processor)
 * [Expiring
   items](https://docs.hazelcast.com/hazelcast/latest/data-structures/map.html#map-eviction)
   automatically based on certain criteria like TTL or last access time
