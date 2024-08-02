@@ -51,7 +51,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void whenNullResponse() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
         future.get();
 
         assertTrue(future.isDone());
@@ -61,7 +61,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void whenInterruptedResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
+        InvocationFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
         future.complete(InvocationConstant.INTERRUPTED);
 
         assertTrue(future.isDone());
@@ -71,7 +71,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void whenTimeoutResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
-        InvocationFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InvocationFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
         future.complete(InvocationConstant.CALL_TIMEOUT);
 
         assertTrue(future.isDone());
@@ -81,7 +81,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void isDone_whenNoResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         assertFalse(future.isDone());
     }
@@ -90,7 +90,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void isDone_whenObjectResponse() {
         DummyOperation op = new DummyOperation("foobar");
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         assertTrue(future.isDone());
     }

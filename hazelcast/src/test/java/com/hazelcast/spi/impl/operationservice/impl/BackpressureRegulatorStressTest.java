@@ -264,7 +264,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         private void syncInvoke(DummyOperation operation) {
             final Long expectedResult = operation.result;
 
-            InternalCompletableFuture f = localOperationService.invokeOnPartition(null, operation, partitionId);
+            InternalCompletableFuture<Object> f = localOperationService.invokeOnPartition(null, operation, partitionId);
             completedCall.incrementAndGet();
 
             try {

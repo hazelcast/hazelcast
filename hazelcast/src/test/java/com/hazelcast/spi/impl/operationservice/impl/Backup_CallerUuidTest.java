@@ -59,7 +59,7 @@ public class Backup_CallerUuidTest extends HazelcastTestSupport {
 
     @Test
     public void test() {
-        InternalCompletableFuture f = getOperationService(hz).invokeOnPartition(new DummyUpdateOperation()
+        InternalCompletableFuture<Object> f = getOperationService(hz).invokeOnPartition(new DummyUpdateOperation()
                 .setPartitionId(getPartitionId(hz)));
         assertCompletesEventually(f);
 
@@ -88,13 +88,13 @@ public class Backup_CallerUuidTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
         }
     }
 
     private static class DummyBackupOperation extends Operation implements BackupOperation {
         @Override
-        public void run() throws Exception {
+        public void run() {
             CALLER_UUID.set(getCallerUuid());
         }
     }

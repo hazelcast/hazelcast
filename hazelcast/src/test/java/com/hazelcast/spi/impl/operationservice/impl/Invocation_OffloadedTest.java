@@ -58,7 +58,7 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void whenStartThrowsException_thenExceptionPropagated() {
-        InternalCompletableFuture f = localOperationService.invokeOnPartition(new OffloadingOperation(op -> new Offload(op) {
+        InternalCompletableFuture<Object> f = localOperationService.invokeOnPartition(new OffloadingOperation(op -> new Offload(op) {
             @Override
             public void start() {
                 throw new ExpectedRuntimeException();

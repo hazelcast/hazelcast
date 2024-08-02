@@ -60,7 +60,7 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
         public void run() throws Exception {
             int partitionId = innerOperation.getPartitionId();
             OperationService operationService = getNodeEngine().getOperationService();
-            InternalCompletableFuture f;
+            InternalCompletableFuture<Object> f;
             if (partitionId >= 0) {
                 f = operationService.invokeOnPartition(null, innerOperation, partitionId);
             } else {
