@@ -24,7 +24,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.YamlConfigBuilderTest.buildConfig;
@@ -38,9 +37,6 @@ import static org.junit.Assert.assertThrows;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class YamlRootAdditionalPropertiesTest {
-
-    @Rule
-    public ExpectedException expExc = ExpectedException.none();
 
     @Rule
     public OverridePropertyRule indentationCheckEnabled = clear("hazelcast.yaml.config.indentation.check.enabled");
