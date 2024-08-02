@@ -22,26 +22,23 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.ALL_ACCEPTED_SUFFIXES_STRING;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ConfigResolutionTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
-    private DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
+    private final DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
     @Before
     public void setUp() {
@@ -119,13 +116,12 @@ public class ConfigResolutionTest {
         File file = helper.givenXmlConfigFileInWorkDir("foo.bar", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
-        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_MEMBER_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo.bar")
+                .hasMessageContaining(ALL_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -133,97 +129,88 @@ public class ConfigResolutionTest {
         helper.givenXmlConfigFileOnClasspath("foo.bar", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.bar");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("classpath:foo.bar");
-        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_MEMBER_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("classpath:foo.bar")
+                .hasMessageContaining(ALL_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.xml");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("foo.xml");
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("foo.xml");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("foo.xml");
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYaml_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.yaml");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("foo.yaml");
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYaml_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("foo.yaml");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("foo.yaml");
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYml_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.yml");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("foo.yml");
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYml_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("foo.yml");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("foo.yml");
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentBar_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.bar");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.bar");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("foo.bar");
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentBar_throws() {
         System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.bar");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("classpath");
-        expectedException.expectMessage("foo.bar");
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("classpath")
+                .hasMessageContaining("foo.bar");
     }
 
     @Test
@@ -231,13 +218,12 @@ public class ConfigResolutionTest {
         File file = helper.givenXmlConfigFileInWorkDir("foo", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo");
-        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_MEMBER_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("foo")
+                .hasMessageContaining(ALL_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
@@ -245,13 +231,12 @@ public class ConfigResolutionTest {
         helper.givenXmlConfigFileOnClasspath("foo", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
 
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
-        expectedException.expectMessage("suffix");
-        expectedException.expectMessage("classpath:foo");
-        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
-
-        Config.load();
+        assertThatThrownBy(Config::load)
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining(SYSPROP_MEMBER_CONFIG)
+                .hasMessageContaining("suffix")
+                .hasMessageContaining("classpath:foo")
+                .hasMessageContaining(ALL_ACCEPTED_SUFFIXES_STRING);
     }
 
     @Test
