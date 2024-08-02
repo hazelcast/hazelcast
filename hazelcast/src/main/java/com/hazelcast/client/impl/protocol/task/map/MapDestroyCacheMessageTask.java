@@ -54,7 +54,7 @@ public class MapDestroyCacheMessageTask
 
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
-        return !map.values().contains(Boolean.FALSE);
+        return !map.containsValue(Boolean.FALSE);
     }
 
     @Override
