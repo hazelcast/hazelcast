@@ -28,7 +28,7 @@ import java.util.Set;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
- * Tracks the load of of NioThread(s) and creates a mapping between NioThread -> NioPipeline.
+ * Tracks the load of NioThread(s) and creates a mapping between NioThread -> NioPipeline.
  * <p>
  * This class is not thread-safe with the exception of
  * {@link #addPipeline(MigratablePipeline)}   and
