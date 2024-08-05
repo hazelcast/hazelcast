@@ -75,7 +75,7 @@ public class CachePutAllOperation extends CacheOperation
 
             CacheRecord backupRecord = recordStore.put(key, value, expiryPolicy, callerUuid, completionId);
 
-            // backupRecord may be null (eg expired on put)
+            // backupRecord may be null (e.g. expired on put)
             if (backupRecord != null) {
                 publishWanUpdate(key, backupRecord);
 
@@ -122,7 +122,7 @@ public class CachePutAllOperation extends CacheOperation
         for (int i = 0; i < size; i++) {
             Data key = IOUtil.readData(in);
             Data value = IOUtil.readData(in);
-            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
+            entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
         }
     }
 

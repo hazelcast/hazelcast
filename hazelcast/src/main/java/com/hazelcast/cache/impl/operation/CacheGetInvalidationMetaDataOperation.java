@@ -130,7 +130,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
                 for (int j = 0; j < size2; j++) {
                     int partition = in.readInt();
                     long seq = in.readLong();
-                    innerList.add(new AbstractMap.SimpleEntry<Integer, Long>(partition, seq));
+                    innerList.add(new AbstractMap.SimpleEntry<>(partition, seq));
                 }
                 namePartitionSequenceList.put(name, innerList);
             }
@@ -172,7 +172,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
             for (Integer partitionId : ownedPartitionIds) {
                 long partitionSequence = metaDataGenerator.currentSequence(name, partitionId);
                 if (partitionSequence != 0) {
-                    mapSequences.add(new AbstractMap.SimpleEntry<Integer, Long>(partitionId, partitionSequence));
+                    mapSequences.add(new AbstractMap.SimpleEntry<>(partitionId, partitionSequence));
                 }
             }
             sequences.put(name, mapSequences);

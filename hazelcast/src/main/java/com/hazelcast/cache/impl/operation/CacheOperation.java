@@ -109,7 +109,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     /**
      * If a backup operation wants to get a deleted cache, swallows
      * exception by only logging it.
-     *
+     * <p>
      * If it is not a backup operation, just rethrows exception.
      */
     private void rethrowOrSwallowIfBackup(CacheNotExistsException e) throws Exception {
@@ -214,15 +214,15 @@ public abstract class CacheOperation extends AbstractNamedOperation
         publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
     }
 
-    protected final void publishWanUpdate(Data dataKey, Data dataValue, Data dataExpiryPolicy, CacheRecord record) {
+    protected final void publishWanUpdate(Data dataKey, Data dataValue, Data dataExpiryPolicy, CacheRecord cacheRecord) {
         assert dataValue != null;
 
-        if (!recordStore.isWanReplicationEnabled() || record == null) {
+        if (!recordStore.isWanReplicationEnabled() || cacheRecord == null) {
             return;
         }
 
         CacheEntryView<Data, Data> entryView = createDefaultEntryView(toHeapData(dataKey),
-                toHeapData(dataValue), toHeapData(dataExpiryPolicy), record);
+                toHeapData(dataValue), toHeapData(dataExpiryPolicy), cacheRecord);
         wanEventPublisher.publishWanUpdate(name, entryView);
     }
 

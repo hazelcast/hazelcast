@@ -62,7 +62,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         int partitionId = segment.getPartitionId();
         partitionUuid = metaData.getOrCreateUuid(partitionId);
 
-        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList(namespaces.size()));
+        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList<>(namespaces.size()));
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace ns = (ObjectNamespace) namespace;
             String cacheName = ns.getObjectName();
@@ -116,7 +116,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
         int size = in.readInt();
-        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList(size));
+        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList<>(size));
         for (int i = 0; i < size; i++) {
             cacheNameSequencePairs.add(in.readObject());
         }

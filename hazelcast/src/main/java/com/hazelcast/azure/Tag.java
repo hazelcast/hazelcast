@@ -19,7 +19,7 @@ package com.hazelcast.azure;
 import com.hazelcast.config.InvalidConfigurationException;
 
 /**
- * Represents a Azure Tag (key and value).
+ * Represents an Azure Tag (key and value).
  */
 final class Tag {
     private final String key;

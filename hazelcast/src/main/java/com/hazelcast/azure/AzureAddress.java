@@ -16,6 +16,8 @@
 
 package com.hazelcast.azure;
 
+import java.util.Objects;
+
 /**
  * Structure that represents the discovery output information. It is used to store public and private IP Addresses that
  * is returned from Azure API.
@@ -48,10 +50,10 @@ final class AzureAddress {
 
         AzureAddress that = (AzureAddress) o;
 
-        if (privateAddress != null ? !privateAddress.equals(that.privateAddress) : that.privateAddress != null) {
+        if (!Objects.equals(privateAddress, that.privateAddress)) {
             return false;
         }
-        return publicAddress != null ? publicAddress.equals(that.publicAddress) : that.publicAddress == null;
+        return Objects.equals(publicAddress, that.publicAddress);
     }
 
     @Override

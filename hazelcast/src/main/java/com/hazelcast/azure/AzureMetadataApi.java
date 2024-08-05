@@ -34,7 +34,6 @@ class AzureMetadataApi {
     static final String API_VERSION = "2018-02-01";
     static final String RESOURCE = "https://management.azure.com";
     private static final String METADATA_ENDPOINT = "http://169.254.169.254";
-    private static final int HTTP_BAD_REQUEST = 400;
 
     private final String endpoint;
     private final Map<String, String> metadata;

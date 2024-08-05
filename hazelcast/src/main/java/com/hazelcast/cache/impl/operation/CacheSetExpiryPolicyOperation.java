@@ -60,8 +60,8 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
         super.afterRun();
         if (recordStore.isWanReplicationEnabled()) {
             for (Data key : keys) {
-                CacheRecord record = recordStore.getRecord(key);
-                publishWanUpdate(key, record);
+                CacheRecord cacheRecord = recordStore.getRecord(key);
+                publishWanUpdate(key, cacheRecord);
             }
         }
     }

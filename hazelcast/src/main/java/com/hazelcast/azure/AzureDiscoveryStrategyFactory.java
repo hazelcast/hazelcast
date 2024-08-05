@@ -18,7 +18,6 @@ package com.hazelcast.azure;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
@@ -37,8 +36,6 @@ import java.util.Map;
  * Factory class which returns {@link AzureDiscoveryStrategy} to Discovery SPI
  */
 public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
-
-    private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategyFactory.class);
 
     @Override
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
