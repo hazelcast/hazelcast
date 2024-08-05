@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,22 +29,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotEquals;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTestBase {
+
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringPreparationPhase() {
-        doThrow(new RetryableHazelcastException())
-                .when(stubbedSchemaService)
-                .onSchemaPreparationRequest(SCHEMA);
+        StubMemberSchemaService stubMemberSchemaService = (StubMemberSchemaService) stubbedSchemaService;
+        stubMemberSchemaService.setThrowOnSchemaPreparationRequest(true);
 
-        // First member will always throw retryable exception
+        // member at index 0 will always throw retryable exception
         // in the preparation phase, others will work fine.
         int stubbedMemberIndex = 0;
         setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : createSpiedMemberSchemaService());
@@ -53,10 +51,12 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
+            StubMemberSchemaService stubService = (StubMemberSchemaService) service;
 
             if (instance == stubbed) {
                 // For stubbed member, it must fail all the time
-                verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaPreparationRequest(SCHEMA);
+                assertThat(stubService.schemaPreparationRequestCounter)
+                        .isGreaterThanOrEqualTo(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS);
             }
 
             // No-one should call onSchemaAckRequest
@@ -66,11 +66,10 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringAcknowledgmentPhase() {
-        doThrow(new RetryableHazelcastException())
-                .when(stubbedSchemaService)
-                .onSchemaAckRequest(SCHEMA.getSchemaId());
+        StubMemberSchemaService stubMemberSchemaService = (StubMemberSchemaService) stubbedSchemaService;
+        stubMemberSchemaService.setThrowOnSchemaAckRequest(true);
 
-        // Fourth member will always throw retryable exception
+        // member at index 3 will always throw retryable exception
         // in the acknowledgment phase, others will work fine.
         int stubbedMemberIndex = 3;
         setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : createSpiedMemberSchemaService());
@@ -81,15 +80,18 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
+            StubMemberSchemaService stubService = (StubMemberSchemaService) service;
 
             // Everyone should call onSchemaPreparationRequest, apart from the initiator
             if (instance != initiator) {
-                verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+                assertThat(stubService.getSchemaPreparationRequestCounter())
+                        .isPositive();
             }
 
             if (instance == stubbed) {
                 // For stubbed member, it must fail all the time
-                verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaAckRequest(SCHEMA.getSchemaId());
+                assertThat(stubService.getSchemaAckRequestCounter())
+                        .isGreaterThanOrEqualTo(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS);
             }
         }
     }
@@ -99,5 +101,66 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
         Config config = super.getConfig();
         config.getProperties().setProperty(INVOCATION_RETRY_PAUSE.getName(), String.valueOf(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS));
         return config;
+    }
+
+    // Mockito.spy() call fails on Zing. So create a test stub
+    @Override
+    protected StubMemberSchemaService createSpiedMemberSchemaService() {
+        return new StubMemberSchemaService();
+    }
+
+    // Test stub for Zing
+    protected static class StubMemberSchemaService extends MemberSchemaService {
+        // Flag that indicates whether exception should be thrown
+        private boolean throwOnSchemaPreparationRequest;
+
+        // Counts number of onSchemaPreparationRequest() calls
+        private int schemaPreparationRequestCounter;
+
+        // Flag that indicates whether exception should be thrown
+        private boolean throwOnSchemaAckRequest;
+
+        // Counts number of onSchemaAckRequest() calls
+        private int schemaAckRequestCounter;
+
+        public void setThrowOnSchemaPreparationRequest(boolean throwOnSchemaPreparationRequest) {
+            this.throwOnSchemaPreparationRequest = throwOnSchemaPreparationRequest;
+        }
+
+        public void setThrowOnSchemaAckRequest(boolean throwOnSchemaAckRequest) {
+            this.throwOnSchemaAckRequest = throwOnSchemaAckRequest;
+        }
+
+        public int getSchemaAckRequestCounter() {
+            return schemaAckRequestCounter;
+        }
+
+        public int getSchemaPreparationRequestCounter() {
+            return schemaPreparationRequestCounter;
+        }
+
+        @Override
+        public void onSchemaPreparationRequest(Schema schema) {
+            if (schema.equals(SCHEMA)) {
+                schemaPreparationRequestCounter++;
+            }
+
+            if (throwOnSchemaPreparationRequest) {
+                throw new RetryableHazelcastException();
+            }
+            super.onSchemaPreparationRequest(schema);
+        }
+
+        @Override
+        public void onSchemaAckRequest(long schemaId) {
+            if (schemaId == SCHEMA.getSchemaId()) {
+                schemaAckRequestCounter++;
+            }
+
+            if (throwOnSchemaAckRequest) {
+                throw new RetryableHazelcastException();
+            }
+            super.onSchemaAckRequest(schemaId);
+        }
     }
 }

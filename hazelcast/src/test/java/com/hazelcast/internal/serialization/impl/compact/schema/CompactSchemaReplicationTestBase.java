@@ -42,8 +42,6 @@ import java.util.function.IntFunction;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.getSchemasFor;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.spy;
 
 public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
@@ -94,7 +92,6 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
 
     private static class CustomTestInstanceFactory extends TestHazelcastInstanceFactory {
         public HazelcastInstance newHazelcastInstance(Config config, MemberSchemaService schemaService) {
-            assertTrue(mockingDetails(schemaService).isSpy());
 
             String instanceName = config != null ? config.getInstanceName() : null;
             NodeContext nodeContext;
@@ -109,7 +106,7 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
         }
     }
 
-    protected static MemberSchemaService createSpiedMemberSchemaService() {
+    protected MemberSchemaService createSpiedMemberSchemaService() {
         return spy(new MemberSchemaService());
     }
 
