@@ -31,7 +31,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
@@ -438,7 +437,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 hazelcast.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
-            Future f = executor.submitToMember(new SimulateLoadTask(durationSec, i + 1, "latch" + latchId), member);
+            Future<Object> f = executor.submitToMember(new SimulateLoadTask(durationSec, i + 1, "latch" + latchId), member);
             futures.add(f);
         }
 
@@ -472,9 +471,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         File f = new File(first.substring(1));
         println("Executing script file " + f.getAbsolutePath());
         if (f.exists()) {
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8));
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8))) {
                 String l = br.readLine();
                 while (l != null) {
                     handleCommand(l);
@@ -482,8 +479,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                IOUtil.closeResource(br);
             }
         } else {
             println("File not found! " + f.getAbsolutePath());
@@ -825,7 +820,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         int count = 0;
         while (it.hasNext()) {
             count++;
-            Map.Entry entry = it.next();
+            Map.Entry<Object, Object> entry = it.next();
             println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
@@ -873,7 +868,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         int count = 0;
         while (it.hasNext()) {
             count++;
-            Map.Entry entry = it.next();
+            Map.Entry<Object, Object> entry = it.next();
             println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
@@ -1310,22 +1305,22 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     @Override
-    public void entryAdded(EntryEvent event) {
+    public void entryAdded(EntryEvent<Object, Object> event) {
         println(event);
     }
 
     @Override
-    public void entryRemoved(EntryEvent event) {
+    public void entryRemoved(EntryEvent<Object, Object> event) {
         println(event);
     }
 
     @Override
-    public void entryUpdated(EntryEvent event) {
+    public void entryUpdated(EntryEvent<Object, Object> event) {
         println(event);
     }
 
     @Override
-    public void entryEvicted(EntryEvent event) {
+    public void entryEvicted(EntryEvent<Object, Object> event) {
         println(event);
     }
 
