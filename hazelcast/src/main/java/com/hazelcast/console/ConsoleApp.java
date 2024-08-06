@@ -44,9 +44,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
@@ -471,7 +470,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         File f = new File(first.substring(1));
         println("Executing script file " + f.getAbsolutePath());
         if (f.exists()) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8))) {
+            try (BufferedReader br = new BufferedReader(new FileReader(f, UTF_8))) {
                 String l = br.readLine();
                 while (l != null) {
                     handleCommand(l);
