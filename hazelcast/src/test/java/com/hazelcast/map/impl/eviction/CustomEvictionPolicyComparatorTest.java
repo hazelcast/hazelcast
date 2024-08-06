@@ -38,15 +38,12 @@ import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.impl.eviction.Evictor.SAMPLE_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.String.format;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
-
-    private final String mapName = "default";
 
     @Test
     public void custom_eviction_policy_removes_correct_entries() {
@@ -54,6 +51,8 @@ public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
 
         Config config = getConfig();
         config.setProperty(PARTITION_COUNT.getName(), "1");
+        String mapName = "default";
+
         config.getMapConfig(mapName)
                 .getEvictionConfig()
                 .setComparator(new OddEvictor())
@@ -77,7 +76,8 @@ public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
         assertOpenEventually("No eviction occurred", eventLatch);
 
         for (Integer key : evictedKeys) {
-            assertTrue(format("Evicted key should be an odd number, but found %d", key), key % 2 != 0);
+            String message = format("Evicted key should be an odd number, but found %d", key);
+            assertNotEquals(message, 0, key % 2);
         }
     }
 
@@ -89,10 +89,10 @@ public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
             assertNotNull(e1);
             assertNotNull(e2);
 
-            assertFalse(e1.equals(e2));
+            assertNotEquals(e1, e2);
 
-            assertTrue(e1.hashCode() != 0);
-            assertTrue(e2.hashCode() != 0);
+            assertNotEquals("Hash code of e1 should not be zero", 0, e1.hashCode());
+            assertNotEquals("Hash code of e2 should not be zero", 0, e2.hashCode());
 
             assertNotNull(e1.toString());
             assertNotNull(e2.toString());
@@ -110,5 +110,4 @@ public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
             return 0;
         }
     }
-
 }
