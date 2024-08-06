@@ -135,9 +135,9 @@ public abstract class Eventloop {
             if (task == null) {
                 // there are no more tasks.
                 return false;
-            } else if (task instanceof Runnable) {
+            } else if (task instanceof Runnable runnable) {
                 try {
-                    ((Runnable) task).run();
+                    runnable.run();
                 } catch (Exception e) {
                     logger.warning(e);
                 }
@@ -162,9 +162,9 @@ public abstract class Eventloop {
             if (task == null) {
                 // there are no more tasks
                 return false;
-            } else if (task instanceof Runnable) {
+            } else if (task instanceof Runnable runnable) {
                 try {
-                    ((Runnable) task).run();
+                    runnable.run();
                 } catch (Exception e) {
                     logger.warning(e);
                 }
