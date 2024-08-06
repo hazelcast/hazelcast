@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 
 import static java.util.Objects.requireNonNull;
@@ -35,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressFBWarnings("EI_EXPOSE_REP2")
 public class SimpleTokenCredentials implements TokenCredentials, IdentifiedDataSerializable {
 
+    @Serial
     private static final long serialVersionUID = -1508314631354255039L;
 
     private byte[] token;

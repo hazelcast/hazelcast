@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
@@ -61,6 +62,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
         implements Serializable, IdentifiedDataSerializable, ExtendedMapEntry<K, V> {
 
+    @Serial
     private static final long serialVersionUID = 0L;
 
     private transient long newTtl = UNSET;

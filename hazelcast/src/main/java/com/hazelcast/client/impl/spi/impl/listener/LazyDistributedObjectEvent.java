@@ -21,10 +21,12 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serial;
 import java.util.UUID;
 
 @SuppressFBWarnings("SE_BAD_FIELD")
 public final class LazyDistributedObjectEvent extends DistributedObjectEvent {
+    @Serial
     private static final long serialVersionUID = 6564764769334087775L;
     private ProxyManager proxyManager;
 

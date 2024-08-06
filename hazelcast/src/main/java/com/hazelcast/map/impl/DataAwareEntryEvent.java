@@ -28,6 +28,7 @@ import java.io.Serial;
 
 public class DataAwareEntryEvent<K, V> extends EntryEvent<K, V> {
 
+    @Serial
     private static final long serialVersionUID = 1;
 
     private final transient Data dataKey;

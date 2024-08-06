@@ -16,7 +16,10 @@
 
 package com.hazelcast.security.permission;
 
+import java.io.Serial;
+
 public class UserCodeNamespacePermission extends InstancePermission {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final int USE = 4;

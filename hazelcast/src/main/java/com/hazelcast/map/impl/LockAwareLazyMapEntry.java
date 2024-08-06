@@ -21,6 +21,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.LockAware;
 import com.hazelcast.query.impl.getters.Extractors;
 
+import java.io.Serial;
+
 /**
  * Specialization of the LazyMapEntry that is LockAware. Used in
  * EntryProcessor. If serialized the locked property will be nullified,
@@ -28,6 +30,7 @@ import com.hazelcast.query.impl.getters.Extractors;
  */
 public class LockAwareLazyMapEntry extends LazyMapEntry implements LockAware {
 
+    @Serial
     private static final long serialVersionUID = 0L;
 
     // not to be serialized, if serialized should return null

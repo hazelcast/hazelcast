@@ -30,6 +30,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 import javax.cache.expiry.ExpiryPolicy;
+
+import java.io.Serial;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,7 @@ public class CacheRecordHashMap
         extends SampleableConcurrentHashMap<Data, CacheRecord>
         implements SampleableCacheRecordMap<Data, CacheRecord> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final transient SerializationService serializationService;

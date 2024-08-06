@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.exception;
 
+import java.io.Serial;
+
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates operation was sent to a
  * machine that isn't member of the cluster.
@@ -23,6 +25,7 @@ package com.hazelcast.spi.exception;
 public class TargetNotMemberException extends RetryableHazelcastException {
 
     // RU_COMPAT
+    @Serial
     private static final long serialVersionUID = -3791433456807089118L;
 
     public TargetNotMemberException(String message) {

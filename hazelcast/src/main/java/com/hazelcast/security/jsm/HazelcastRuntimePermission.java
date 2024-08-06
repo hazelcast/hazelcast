@@ -16,6 +16,7 @@
 
 package com.hazelcast.security.jsm;
 
+import java.io.Serial;
 import java.security.BasicPermission;
 
 /**
@@ -33,6 +34,7 @@ import java.security.BasicPermission;
  */
 public class HazelcastRuntimePermission extends BasicPermission {
 
+    @Serial
     private static final long serialVersionUID = -8927678876656102420L;
 
     /**

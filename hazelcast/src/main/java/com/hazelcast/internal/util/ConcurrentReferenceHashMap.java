@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -239,6 +240,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      */
     static final int RETRIES_BEFORE_LOCK = 2;
 
+    @Serial
     private static final long serialVersionUID = 7249069246763182397L;
 
     /* ---------------- Fields -------------- */
@@ -510,6 +512,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
          * count field are marked in code comments.
          */
 
+        @Serial
         private static final long serialVersionUID = 2249069246763182397L;
 
         /**
@@ -1767,6 +1770,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      */
     @SerializableByConvention
     protected class WriteThroughEntry extends SimpleEntry<K, V> {
+        @Serial
         private static final long serialVersionUID = -7900634345345313646L;
 
         protected WriteThroughEntry(K k, V v) {

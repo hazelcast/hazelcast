@@ -44,6 +44,7 @@ import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVar
 public class LikeFunction extends TriExpression<Boolean> {
     private static final int PATTERN_CACHE_SIZE = 100;
 
+    @Serial
     private static final long serialVersionUID = 2L;
 
     /** Single-symbol wildcard in SQL. */

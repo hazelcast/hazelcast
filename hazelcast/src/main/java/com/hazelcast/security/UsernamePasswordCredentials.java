@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * Simple implementation of {@link PasswordCredentials} using
@@ -31,6 +32,7 @@ import java.io.IOException;
 @BinaryInterface
 public class UsernamePasswordCredentials implements PasswordCredentials, IdentifiedDataSerializable {
 
+    @Serial
     private static final long serialVersionUID = -1508314631354255039L;
 
     private String name;

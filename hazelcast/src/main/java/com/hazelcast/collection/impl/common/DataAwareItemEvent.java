@@ -32,6 +32,7 @@ import java.io.Serial;
  */
 public class DataAwareItemEvent<E> extends ItemEvent<E> {
 
+    @Serial
     private static final long serialVersionUID = 1;
 
     private final transient Data dataItem;

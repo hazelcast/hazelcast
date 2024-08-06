@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serial;
 import java.util.EventObject;
 import java.util.Set;
 
@@ -43,6 +44,7 @@ public class MembershipEvent extends EventObject {
      */
     public static final int MEMBER_REMOVED = 2;
 
+    @Serial
     private static final long serialVersionUID = -2010865371829087371L;
 
     protected Member member;
