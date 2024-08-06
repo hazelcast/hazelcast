@@ -74,7 +74,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         instances = createInstances();
         partitionId = 1;
         warmUpPartitions(instances);

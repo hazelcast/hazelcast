@@ -79,7 +79,7 @@ import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -134,7 +134,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
-    protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<>();
+    protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new EnumMap<>(CacheEventType.class);
     protected final CompositeCacheRSMutationObserver compositeCacheRSMutationObserver;
 
     protected boolean primary;
@@ -884,8 +884,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 inMemoryExpiryPolicy = toValue(expiryPolicy);
                 dataOldExpiryPolicy = toData(getExpiryPolicyOrNull(record));
                 break;
-            case BINARY:
-            case NATIVE:
+            case BINARY, NATIVE:
                 inMemoryExpiryPolicy = toData(expiryPolicy);
                 dataOldExpiryPolicy = toData(getExpiryPolicyOrNull(record));
                 break;
@@ -907,8 +906,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             return null;
         }
         switch (cacheConfig.getInMemoryFormat()) {
-            case NATIVE:
-            case BINARY:
+            case NATIVE, BINARY:
                 return policyData;
             case OBJECT:
                 return toValue(policyData);

@@ -309,7 +309,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 connectionManager.newConnection(channel, null, true);
             } catch (Exception e) {
                 exceptionCount.inc();
-                logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
+                logger.warning(e.getClass().getName() + "%s: " + e.getMessage(), e);
                 closeResource(channel);
             }
         }

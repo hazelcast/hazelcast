@@ -125,7 +125,6 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     public void whenRemoveInvoked_entryIsRemovedFromCache() {
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
         cfg.setPartitioningStrategyClass("com.hazelcast.partition.strategy.StringPartitioningStrategy");
-        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg, null);
         partitioningStrategyFactory.removePartitioningStrategyFromCache(mapName);
         assertFalse(partitioningStrategyFactory.cache.containsKey(mapName));
     }

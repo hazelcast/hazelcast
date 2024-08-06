@@ -45,7 +45,7 @@ public class AbstractRecordTest {
     private ObjectRecordWithStats recordOtherLastUpdateTime;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         record = new ObjectRecordWithStats(VALUE);
 
         recordSameAttributes = new ObjectRecordWithStats();

@@ -49,7 +49,7 @@ public class ClientMapQueryStressTest extends HazelcastTestSupport {
     private IMap map;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         for (int i = 0; i < 3; i++) {
             factory.newHazelcastInstance();
         }
@@ -60,7 +60,7 @@ public class ClientMapQueryStressTest extends HazelcastTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

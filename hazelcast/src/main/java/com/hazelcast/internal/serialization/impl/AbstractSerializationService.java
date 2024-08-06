@@ -191,7 +191,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
@@ -724,7 +723,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
     }
 
-    @SuppressWarnings("rawtypes")
     public abstract static class Builder<T extends Builder<T>> {
         private InputOutputFactory inputOutputFactory;
         private byte version;

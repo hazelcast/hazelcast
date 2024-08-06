@@ -37,7 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Set;
@@ -49,7 +48,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 

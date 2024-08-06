@@ -93,7 +93,7 @@ public class CountingMigrationAwareServiceTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         // setup the counting migration aware service and execute 1 prepareReplicationOperation (which does not
         // affect the counter)
         countingMigrationAwareService = new CountingMigrationAwareService(wrappedMigrationAwareService);

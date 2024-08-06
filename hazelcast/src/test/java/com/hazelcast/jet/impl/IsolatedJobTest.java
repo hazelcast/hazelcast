@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class IsolatedJobTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         initializeWithClient(1, null, null);
     }
 

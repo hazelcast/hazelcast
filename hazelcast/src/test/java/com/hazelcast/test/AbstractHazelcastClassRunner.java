@@ -165,7 +165,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
         long timeout = getTimeout(method.getAnnotation(Test.class));
         return new FailOnTimeoutStatement(method.getName(), next, timeout);

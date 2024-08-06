@@ -63,7 +63,7 @@ public class ExtractorsTest {
     private InternalSerializationService ss;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         DefaultSerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
         ss = builder.setVersion(InternalSerializationService.VERSION_1).build();
     }

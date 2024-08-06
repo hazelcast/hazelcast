@@ -40,7 +40,7 @@ public abstract class AbstractCacheMessageTask<P>
     }
 
     protected CacheOperationProvider getOperationProvider(String name) {
-        ICacheService service = getService(CacheService.SERVICE_NAME);
+        ICacheService service = getService(ICacheService.SERVICE_NAME);
         final CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
@@ -52,7 +52,7 @@ public abstract class AbstractCacheMessageTask<P>
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

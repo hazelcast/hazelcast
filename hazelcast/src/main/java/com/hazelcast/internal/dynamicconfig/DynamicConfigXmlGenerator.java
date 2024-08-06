@@ -97,7 +97,7 @@ public final class DynamicConfigXmlGenerator {
         Collection<MapConfig> mapConfigs = config.getMapConfigs().values();
         for (MapConfig m : mapConfigs) {
             String cacheDeserializedVal = m.getCacheDeserializedValues() != null
-                    ? m.getCacheDeserializedValues().name().replaceAll("_", "-") : null;
+                    ? m.getCacheDeserializedValues().name().replace('_', '-') : null;
             MergePolicyConfig mergePolicyConfig = m.getMergePolicyConfig();
             gen.open("map", "name", m.getName())
                     .node("in-memory-format", m.getInMemoryFormat())

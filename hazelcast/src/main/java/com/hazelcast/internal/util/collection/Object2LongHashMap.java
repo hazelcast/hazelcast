@@ -804,8 +804,6 @@ public class Object2LongHashMap<K>
             throw new IllegalStateException();
         }
 
-        public abstract T next();
-
         @Override
         public void remove()
         {

@@ -26,7 +26,6 @@ import com.hazelcast.query.extractor.ValueReadingException;
 import com.hazelcast.query.impl.getters.ExtractorHelper;
 import com.hazelcast.query.impl.getters.MultiResult;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.function.Consumer;
@@ -89,15 +88,13 @@ public final class GenericRecordQueryReader implements ValueReader {
             } else {
                 consumer.accept(result);
             }
-        } catch (IOException e) {
-            throw new ValueReadingException(e.getMessage(), e);
         } catch (RuntimeException e) {
             throw new ValueReadingException(e.getMessage(), e);
         }
     }
 
     @SuppressWarnings({"CyclomaticComplexity", "MethodLength", "NPathComplexity"})
-    public Object read(String fieldPath) throws IOException {
+    public Object read(String fieldPath) {
         if (fieldPath == null) {
             throw new IllegalArgumentException("field path can not be null");
         }

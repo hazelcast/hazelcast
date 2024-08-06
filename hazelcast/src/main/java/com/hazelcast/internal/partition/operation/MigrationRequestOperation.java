@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -167,7 +168,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
         Address target = migrationInfo.getDestinationAddress();
         nodeEngine.getOperationService()
-                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, target)
+                .createInvocationBuilder(IPartitionService.SERVICE_NAME, operation, target)
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .invoke()

@@ -64,7 +64,7 @@ public class ClientMapInvalidationMetadataDistortionTest extends NearCacheTestSu
     private final AtomicBoolean stopTest = new AtomicBoolean();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

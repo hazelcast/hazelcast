@@ -62,11 +62,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return extractAttributeValue(attributeName);
     }
 
-    public abstract K getKey();
-
     public abstract Data getKeyData();
-
-    public abstract V getValue();
 
     public abstract Data getValueData();
 

@@ -80,7 +80,7 @@ public class ClientQueryCacheDestroyResourcesTest extends ClientTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

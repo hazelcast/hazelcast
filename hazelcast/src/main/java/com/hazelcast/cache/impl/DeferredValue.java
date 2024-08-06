@@ -20,8 +20,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
@@ -202,14 +200,6 @@ public class DeferredValue<V> {
         @Override
         public void clear() {
             delegate.clear();
-        }
-
-        private Collection<DeferredValue<?>> asDeferredValues(Collection<?> collection) {
-            Collection<DeferredValue<?>> deferredValues = new ArrayList<>();
-            for (Object object : collection) {
-                deferredValues.add(DeferredValue.withValue(object));
-            }
-            return deferredValues;
         }
     }
 

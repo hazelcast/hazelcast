@@ -2110,16 +2110,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             checkNotNull(entryEventType, "Unknown eventType: " + eventType);
             switch (entryEventType) {
-                case ADDED:
-                case REMOVED:
-                case UPDATED:
-                case EVICTED:
-                case EXPIRED:
-                case MERGED:
-                case LOADED:
+                case ADDED, REMOVED, UPDATED, EVICTED, EXPIRED, MERGED, LOADED:
                     return createEntryEvent(key, value, oldValue, mergingValue, eventType, member);
-                case EVICT_ALL:
-                case CLEAR_ALL:
+                case EVICT_ALL, CLEAR_ALL:
                     return createMapEvent(eventType, numberOfAffectedEntries, member);
                 default:
                     throw new IllegalArgumentException("Not a known event type: " + entryEventType);

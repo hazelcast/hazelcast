@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec;
@@ -65,9 +65,10 @@ public class CacheEventJournalSubscribeTask
 
     @Override
     public final String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new CachePermission(parameters, ActionConstants.ACTION_LISTEN);
     }

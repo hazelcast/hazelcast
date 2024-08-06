@@ -260,6 +260,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
         FileOffset offset = fileOffsets.getOrDefault(currentFile, FileOffset.ZERO);
         getLogger().fine("Processing file %s, previous offset: %s", currentFile, offset);
         try {
+            @SuppressWarnings("squid:S2095")
             FileInputStream fis = new FileInputStream(currentFile.toFile());
             fis.getChannel().position(offset.positiveOffset());
             BufferedReader r = new BufferedReader(new InputStreamReader(fis, charset));

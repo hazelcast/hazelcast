@@ -166,7 +166,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    public void test(StressThreadFactory stressThreadFactory) throws Exception {
+    public void test(StressThreadFactory stressThreadFactory) {
         StressThread stressThread = stressThreadFactory.create();
 
         stressThread.start();

@@ -403,22 +403,10 @@ public final class SqlConsole {
             SqlColumnMetadata colMetadata = metadata.getColumn(i);
             SqlColumnType type = colMetadata.getType();
             switch (type) {
-                case BIGINT:
-                case DECIMAL:
-                case DOUBLE:
-                case INTEGER:
-                case REAL:
-                case SMALLINT:
-                case TINYINT:
+                case BIGINT, DECIMAL, DOUBLE, INTEGER, REAL, SMALLINT, TINYINT:
                     alignments[i] = Alignment.RIGHT;
                     break;
-                case BOOLEAN:
-                case DATE:
-                case NULL:
-                case OBJECT:
-                case TIMESTAMP:
-                case VARCHAR:
-                case TIMESTAMP_WITH_TIME_ZONE:
+                case BOOLEAN, DATE, NULL, OBJECT, TIMESTAMP, VARCHAR, TIMESTAMP_WITH_TIME_ZONE:
                 default:
                     alignments[i] = Alignment.LEFT;
             }

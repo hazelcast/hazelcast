@@ -26,6 +26,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationEndpoint;
@@ -1162,7 +1163,7 @@ public class MigrationManagerImpl implements MigrationManager {
                     break;
                 }
 
-                if (failed | aborted) {
+                if (failed || aborted) {
                     break;
                 }
 
@@ -1261,7 +1262,7 @@ public class MigrationManagerImpl implements MigrationManager {
                     }
                 }
 
-                if (failed | aborted) {
+                if (failed || aborted) {
                     break;
                 }
             }
@@ -1837,7 +1838,7 @@ public class MigrationManagerImpl implements MigrationManager {
             if (partition.getOwnerReplicaOrNull() == null) {
                 logger.warning("partitionId=" + partitionId + " is completely lost!");
                 PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
-                partitionEventManager.sendPartitionLostEvent(partitionId, InternalPartition.MAX_BACKUP_COUNT);
+                partitionEventManager.sendPartitionLostEvent(partitionId, IPartition.MAX_BACKUP_COUNT);
             }
             return null;
         }

@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -231,7 +230,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove() throws IOException {
+    public void testRemove()  {
         IQueue<Integer> q = client.getQueue(randomString());
 
         q.offer(1);

@@ -39,7 +39,7 @@ abstract class AbstractCacheAllPartitionsTask<P>
     }
 
     protected CacheOperationProvider getOperationProvider(String name) {
-        ICacheService service = getService(CacheService.SERVICE_NAME);
+        ICacheService service = getService(ICacheService.SERVICE_NAME);
         CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache config for cache " + name + " has not been created yet!");
@@ -49,7 +49,7 @@ abstract class AbstractCacheAllPartitionsTask<P>
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 public class GetResultOperation<V>
         extends AbstractSchedulerOperation
         implements BlockingOperation, ReadonlyOperation {

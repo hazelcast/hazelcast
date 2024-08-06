@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.AbstractInternalPartition;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -370,7 +371,7 @@ class MigrationPlanner {
         int firstIndex = index;
 
         while (true) {
-            int nextIndex = InternalPartitionImpl.getReplicaIndex(newReplicas, oldReplicas[firstIndex]);
+            int nextIndex = AbstractInternalPartition.getReplicaIndex(newReplicas, oldReplicas[firstIndex]);
             if (nextIndex == -1) {
                 return false;
             }
@@ -389,7 +390,7 @@ class MigrationPlanner {
 
     private void fixCycle(PartitionReplica[] oldReplicas, PartitionReplica[] newReplicas, int index) {
         while (true) {
-            int nextIndex = InternalPartitionImpl.getReplicaIndex(newReplicas, oldReplicas[index]);
+            int nextIndex = AbstractInternalPartition.getReplicaIndex(newReplicas, oldReplicas[index]);
             newReplicas[index] = oldReplicas[index];
             if (nextIndex == -1) {
                 return;

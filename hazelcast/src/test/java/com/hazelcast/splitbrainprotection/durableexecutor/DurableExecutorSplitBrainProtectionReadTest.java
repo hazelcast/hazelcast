@@ -106,7 +106,7 @@ public class DurableExecutorSplitBrainProtectionReadTest extends AbstractSplitBr
     }
 
     @Test
-    public void retrieveResult_noSplitBrainProtection() throws Exception {
+    public void retrieveResult_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).retrieveResult(125L).get())
                 .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }

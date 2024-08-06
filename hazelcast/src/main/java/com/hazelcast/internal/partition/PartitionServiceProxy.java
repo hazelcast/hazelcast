@@ -123,7 +123,7 @@ public class PartitionServiceProxy implements PartitionService {
             final Address target = member.getAddress();
             final Operation operation = new SafeStateCheckOperation();
             final Future<Boolean> future = nodeEngine.getOperationService()
-                    .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+                    .invokeOnTarget(IPartitionService.SERVICE_NAME, operation, target);
             futures.add(future);
         }
 
@@ -155,7 +155,7 @@ public class PartitionServiceProxy implements PartitionService {
         final Address target = member.getAddress();
         final Operation operation = new SafeStateCheckOperation();
         final InvocationFuture future = nodeEngine.getOperationService()
-                                                  .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+                                                  .invokeOnTarget(IPartitionService.SERVICE_NAME, operation, target);
         boolean safe;
         try {
             final Object result = future.get(10, TimeUnit.SECONDS);

@@ -71,7 +71,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Category(QuickTest.class)
-public class AuthenticationKeyValuePairConstantsTest {
+class AuthenticationKeyValuePairConstantsTest {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final UUID DUMMY_LEADER_UUID = UUID.randomUUID();

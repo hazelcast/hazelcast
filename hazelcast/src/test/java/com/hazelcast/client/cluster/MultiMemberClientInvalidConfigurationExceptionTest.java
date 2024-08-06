@@ -30,8 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -43,7 +41,7 @@ public class MultiMemberClientInvalidConfigurationExceptionTest extends ClientTe
             +  "You must use Hazelcast enterprise to enable this feature.";
 
     @Before
-    public void before() throws IOException {
+    public void before() {
         factory = new TestHazelcastFactory();
     }
 

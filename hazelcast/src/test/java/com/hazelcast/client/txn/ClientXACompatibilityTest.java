@@ -79,7 +79,7 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         instance = hazelcastFactory.newHazelcastInstance();
         instanceXaResource = instance.getXAResource();
 //        secondInstance = Hazelcast.newHazelcastInstance();

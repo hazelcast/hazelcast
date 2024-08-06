@@ -142,6 +142,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
     }
 
+    @Override
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength"})
     protected void handleSecurityPermissions(Node node) {
         String onJoinOp = getAttribute(node, "on-join-operation");

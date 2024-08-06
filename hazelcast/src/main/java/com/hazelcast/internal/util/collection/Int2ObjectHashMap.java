@@ -531,9 +531,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         }
 
         @Override
-        public abstract T next();
-
-        @Override
         public void remove() {
             if (isPositionValid) {
                 final int position = getPosition();

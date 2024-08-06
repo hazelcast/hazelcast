@@ -583,15 +583,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             IMapEvent iMapEvent;
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {
-                case ADDED:
-                case REMOVED:
-                case UPDATED:
-                case EVICTED:
-                case MERGED:
+                case ADDED, REMOVED, UPDATED, EVICTED, MERGED:
                     iMapEvent = createEntryEvent(key, value, oldValue, mergingValue, eventType, member);
                     break;
-                case EVICT_ALL:
-                case CLEAR_ALL:
+                case EVICT_ALL, CLEAR_ALL:
                     iMapEvent = createMapEvent(eventType, numberOfAffectedEntries, member);
                     break;
                 default:

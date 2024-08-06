@@ -94,8 +94,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
                 contexts.add(context);
                 threadContextMap.put(threadId, context);
                 break;
-            case TMRESUME:
-            case TMJOIN:
+            case TMRESUME, TMJOIN:
                 List<TransactionContext> contextList = xidContextMap.get(xid);
                 if (contextList == null) {
                     throw new XAException("There is no TransactionContexts for the given xid: " + xid);

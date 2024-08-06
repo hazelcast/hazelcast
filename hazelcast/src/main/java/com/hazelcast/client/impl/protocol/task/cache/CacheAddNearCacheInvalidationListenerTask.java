@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
@@ -46,7 +47,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     protected CompletableFuture<UUID> processInternal() {
-        CacheService cacheService = getService(CacheService.SERVICE_NAME);
+        CacheService cacheService = getService(ICacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
         NearCacheInvalidationListener listener
                 = new NearCacheInvalidationListener(endpoint, cacheContext,
@@ -116,7 +117,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

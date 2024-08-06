@@ -49,7 +49,7 @@ public class SerializationConcurrencyTest {
     public static final short FACTORY_ID = 1;
 
     @Test
-    public void test() throws IOException, InterruptedException {
+    public void test() throws InterruptedException {
         PortableFactory portableFactory = new PortableFactory() {
             @Override
             public Portable create(int classId) {

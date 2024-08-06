@@ -101,7 +101,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         try {
             hazelcastFactory.shutdownAll();
         } finally {

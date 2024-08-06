@@ -383,9 +383,7 @@ public class ProcessorTasklet implements Tasklet {
                 }
                 return;
 
-            case SNAPSHOT_COMMIT_FINISH__PROCESS:
-            case SNAPSHOT_COMMIT_FINISH__COMPLETE:
-            case SNAPSHOT_COMMIT_FINISH__FINAL:
+            case SNAPSHOT_COMMIT_FINISH__PROCESS, SNAPSHOT_COMMIT_FINISH__COMPLETE, SNAPSHOT_COMMIT_FINISH__FINAL:
                 if (ssContext.isExportOnly() ||
                         doWithClassLoader(context.classLoader(),
                                 () -> processor.snapshotCommitFinish(ssContext.isLastPhase1Successful()))) {

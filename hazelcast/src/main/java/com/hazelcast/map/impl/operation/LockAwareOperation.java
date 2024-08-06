@@ -40,9 +40,6 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
     }
 
     @Override
-    public abstract void onWaitExpire();
-
-    @Override
     public final WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
     }

@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -58,7 +57,7 @@ public class TcpMetricValuesTest {
 
     @Before
     @After
-    public void after() throws IOException {
+    public void after() {
         HazelcastInstanceFactory.terminateAll();
     }
 

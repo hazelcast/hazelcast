@@ -55,14 +55,14 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
     private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         factory.shutdownAll();
     }
 

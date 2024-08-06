@@ -72,7 +72,6 @@ public final class ReadIListP extends AbstractProcessor {
         traverser = createTraverser(instance, name).map(serializationService::toObject);
     }
 
-    @SuppressWarnings("rawtypes")
     private Traverser<Data> createTraverser(HazelcastInstance instance, String name) {
         IList<Data> list = instance.getList(name);
         int size = list.size();

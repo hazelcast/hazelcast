@@ -86,6 +86,7 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
         MapStore() {
         }
 
+        @Override
         public void storeAll(final Map<K, V> map) {
             latch1.countDown();
             for (Map.Entry<K, V> entry : map.entrySet()) {

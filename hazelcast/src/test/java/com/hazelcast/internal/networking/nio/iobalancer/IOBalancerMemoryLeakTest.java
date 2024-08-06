@@ -49,7 +49,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 

@@ -34,7 +34,7 @@ public class AggregateOperationTest extends HazelcastTestSupport {
     private AggregateOperation operation;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         operation = new AggregateOperation("testName", 1984127);
     }
 

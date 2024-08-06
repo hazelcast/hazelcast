@@ -681,10 +681,6 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             return getPartitions(index).add(partitionId);
         }
 
-        boolean contains(int index, Integer partitionId) {
-            return getPartitions(index).contains(partitionId);
-        }
-
         boolean contains(Integer partitionId) {
             for (Set<Integer> set : partitions) {
                 if (set != null && set.contains(partitionId)) {
@@ -710,7 +706,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
         }
 
-        private void check(int index) {
+        private static void check(int index) {
             if (index < 0 || index >= InternalPartition.MAX_REPLICA_COUNT) {
                 throw new ArrayIndexOutOfBoundsException(index);
             }

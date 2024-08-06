@@ -218,7 +218,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
                 justification = "The thread.start method is the one we want to call")
         private void ensureStarted() {
             if (!started.get() && started.compareAndSet(false, true)) {
-                start();
+                super.start();
             }
         }
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -53,7 +53,7 @@ public final class HasOngoingMigration extends AbstractPartitionOperation
 
     @Override
     public String getServiceName() {
-        return InternalPartitionService.SERVICE_NAME;
+        return IPartitionService.SERVICE_NAME;
     }
 
     @Override

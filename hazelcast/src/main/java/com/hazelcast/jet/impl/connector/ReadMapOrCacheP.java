@@ -72,7 +72,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
-import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -292,9 +291,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public int preferredLocalParallelism() {
             return 1;
         }
-
-        @Override
-        public abstract Permission getRequiredPermission();
 
         @Override
         public boolean isReusable() {

@@ -88,10 +88,6 @@ public class LRUEvictionPolicyComparatorTest {
             return lastAccessTime;
         }
 
-        public long getId() {
-            return id;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) {

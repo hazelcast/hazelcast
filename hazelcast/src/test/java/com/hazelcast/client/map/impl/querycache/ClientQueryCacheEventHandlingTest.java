@@ -65,7 +65,7 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

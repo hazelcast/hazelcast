@@ -61,6 +61,7 @@ public class UnmodifiableLazySet extends AbstractSet<Object> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean retainAll(Collection<?> coll) {
         throw new UnsupportedOperationException();
     }

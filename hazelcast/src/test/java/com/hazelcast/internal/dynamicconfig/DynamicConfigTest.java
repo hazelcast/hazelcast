@@ -843,12 +843,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setEvictionPolicy(EvictionPolicy.RANDOM);
     }
 
-    private EvictionConfig getEvictionConfigByClassName() {
-        return new EvictionConfig().setSize(39)
-                .setMaxSizePolicy(ENTRY_COUNT)
-                .setComparatorClassName("com.hazelcast.Comparator");
-    }
-
     private EvictionConfig getEvictionConfigByImplementation() {
         return new EvictionConfig().setSize(39)
                 .setMaxSizePolicy(ENTRY_COUNT)

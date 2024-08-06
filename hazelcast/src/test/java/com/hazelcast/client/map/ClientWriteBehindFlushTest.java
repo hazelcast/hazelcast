@@ -50,7 +50,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         hazelcastFactory.shutdownAll();
     }
 

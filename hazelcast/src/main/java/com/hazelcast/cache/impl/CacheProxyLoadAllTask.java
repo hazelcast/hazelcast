@@ -97,14 +97,10 @@ final class CacheProxyLoadAllTask implements Runnable {
             if (completionListener != null) {
                 completionListener.onException(e);
             }
+        } catch (OutOfMemoryError t) {
+            throw rethrow(t);
         } catch (Throwable t) {
-            if (t instanceof OutOfMemoryError) {
-                throw rethrow(t);
-            } else {
-                if (completionListener != null) {
-                    completionListener.onException(new CacheException(t));
-                }
-            }
+            completionListener.onException(new CacheException(t));
         }
     }
 

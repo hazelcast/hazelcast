@@ -53,7 +53,7 @@ public class ByteArraySerializerAdapterTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         adapter.destroy();
     }
 
@@ -74,7 +74,7 @@ public class ByteArraySerializerAdapterTest {
     }
 
     @Test
-    public void testAdaptorEqualAndHashCode() throws Exception {
+    public void testAdaptorEqualAndHashCode() {
         ByteArraySerializerAdapter theOther = new ByteArraySerializerAdapter(serializer);
         ByteArraySerializerAdapter theEmptyOne = new ByteArraySerializerAdapter(null);
 
@@ -90,7 +90,7 @@ public class ByteArraySerializerAdapterTest {
     }
 
     @Test
-    public void testString() throws Exception {
+    public void testString() {
         assertNotNull(adapter.toString());
     }
 }

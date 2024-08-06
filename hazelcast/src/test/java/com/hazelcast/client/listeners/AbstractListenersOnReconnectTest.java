@@ -79,7 +79,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     protected HazelcastInstance client;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         clientConfig = createClientConfig();
     }
 

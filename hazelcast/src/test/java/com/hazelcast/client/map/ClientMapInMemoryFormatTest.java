@@ -39,12 +39,12 @@ public class ClientMapInMemoryFormatTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory = new TestHazelcastFactory();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

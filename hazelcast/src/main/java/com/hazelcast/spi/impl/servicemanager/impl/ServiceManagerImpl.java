@@ -40,7 +40,7 @@ import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.ConfigurableService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.util.ServiceLoader;
@@ -121,7 +121,7 @@ public final class ServiceManagerImpl implements ServiceManager {
 
         Node node = nodeEngine.getNode();
         registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
-        registerService(InternalPartitionService.SERVICE_NAME, node.getPartitionService());
+        registerService(IPartitionService.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);

@@ -27,7 +27,6 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.JsonGetter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 @SerializableByConvention
 public final class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
@@ -85,13 +84,9 @@ public final class AttributePartitioningStrategy implements PartitioningStrategy
         final GenericRecordQueryReader reader = new GenericRecordQueryReader(key);
         for (int i = 0; i < attributes.length; i++) {
             final String attribute = attributes[i];
-            try {
-                final Object value = reader.read(attribute);
-                checkNull(value, attributes[i]);
-                values[i] = value;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            final Object value = reader.read(attribute);
+            checkNull(value, attributes[i]);
+            values[i] = value;
         }
 
         return values;

@@ -110,6 +110,7 @@ public final class CustomClassLoadedObject {
         @Override
         // explicit cast to InputStream and intentionally omitting to close ObjectInputStream
         @SuppressFBWarnings({"BC_UNCONFIRMED_CAST", "OS_OPEN_STREAM"})
+        @SuppressWarnings("squid:S2095")
         public CustomClassLoadedObject read(com.hazelcast.nio.ObjectDataInput in) throws IOException {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             boolean isJavaSerialized = in.readBoolean();

@@ -126,7 +126,7 @@ public class InvalidEndpointTest {
         return config;
     }
 
-    protected Object doHttpGet(String url) throws IOException {
+    protected Object doHttpGet() throws IOException {
         return null;
     }
 

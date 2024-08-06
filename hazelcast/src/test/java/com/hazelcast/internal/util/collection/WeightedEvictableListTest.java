@@ -79,7 +79,7 @@ public class WeightedEvictableListTest {
     @Test
     public void testListReorganizesAfterEnoughVotes_viaWeightedItem() {
         WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
-        WeightedItem<String> weightedC = list.addOrVote("c");
+        list.addOrVote("c");
         WeightedItem<String> weightedB = list.addOrVote("b");
         WeightedItem<String> weightedA = list.addOrVote("a");
 

@@ -87,7 +87,6 @@ public final class Tuple4<E0, E1, E2, E3> {
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

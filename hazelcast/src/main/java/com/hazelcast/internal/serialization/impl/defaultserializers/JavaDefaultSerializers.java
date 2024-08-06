@@ -90,6 +90,7 @@ public final class JavaDefaultSerializers {
 
         private Object read(InputStream in, ClassLoader classLoader) throws IOException {
             try {
+                @SuppressWarnings("squid:S2095")
                 ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
                 if (shared) {
                     return objectInputStream.readObject();
@@ -100,6 +101,7 @@ public final class JavaDefaultSerializers {
             }
         }
 
+        @SuppressWarnings("squid:S2093")
         private Object readGzipped(InputStream in, ClassLoader classLoader) throws IOException {
             ExtendedGZipInputStream gzip = new ExtendedGZipInputStream(in);
             try {

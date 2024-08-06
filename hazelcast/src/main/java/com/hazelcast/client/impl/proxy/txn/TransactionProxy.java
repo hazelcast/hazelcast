@@ -90,7 +90,7 @@ final class TransactionProxy {
             txnId = TransactionCreateCodec.decodeResponse(response);
             state = ACTIVE;
         } catch (Exception e) {
-            TRANSACTION_EXISTS.set(null);
+            TRANSACTION_EXISTS.remove();
             throw rethrow(e);
         }
     }
@@ -110,7 +110,7 @@ final class TransactionProxy {
             state = COMMIT_FAILED;
             throw rethrow(e);
         } finally {
-            TRANSACTION_EXISTS.set(null);
+            TRANSACTION_EXISTS.remove();
         }
     }
 
@@ -129,7 +129,7 @@ final class TransactionProxy {
             }
             state = ROLLED_BACK;
         } finally {
-            TRANSACTION_EXISTS.set(null);
+            TRANSACTION_EXISTS.remove();
         }
     }
 

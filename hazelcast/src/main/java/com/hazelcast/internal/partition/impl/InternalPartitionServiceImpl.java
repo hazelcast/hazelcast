@@ -355,7 +355,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Probe(name = PARTITIONS_METRIC_PARTITION_SERVICE_MAX_BACKUP_COUNT)
     @Override
     public int getMaxAllowedBackupCount() {
-        return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
+        return max(min(getMemberGroupsSize() - 1, IPartition.MAX_BACKUP_COUNT), 0);
     }
 
     public void updateMemberGroupSize() {

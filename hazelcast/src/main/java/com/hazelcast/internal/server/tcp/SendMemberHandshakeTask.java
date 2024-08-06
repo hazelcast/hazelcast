@@ -26,7 +26,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_COUNT;
@@ -85,7 +85,7 @@ public class SendMemberHandshakeTask implements Runnable {
         EndpointQualifier qualifier = connection.getConnectionManager().getEndpointQualifier();
         boolean isWanHandshake = qualifier != null && qualifier.getType().equals(ProtocolType.WAN);
 
-        Map<ProtocolType, Collection<Address>> addressMap = new HashMap<>();
+        Map<ProtocolType, Collection<Address>> addressMap = new EnumMap<>(ProtocolType.class);
         populateAddressMap(addressMap, isWanHandshake);
 
         // If this is a WAN handshake and no WAN-specific interfaces are available, fallback to the standard address map

@@ -143,9 +143,6 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return getNodeEngine().getOperationService();
     }
 
-    @Override
-    public abstract String getServiceName();
-
     public final void invalidate() {
         nodeEngine = null;
         service = null;

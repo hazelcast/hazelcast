@@ -63,7 +63,7 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void addMembershipListener() throws Exception {
+    public void addMembershipListener() {
         UUID regId = client().getCluster().addMembershipListener(new MembershipAdapter());
         assertNotNull(regId);
     }
@@ -76,32 +76,32 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getMembers() throws Exception {
+    public void getMembers() {
         assertEquals(1, client().getCluster().getMembers().size());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void getLocalMember() throws Exception {
+    public void getLocalMember() {
         client().getCluster().getLocalMember();
     }
 
     @Test
-    public void getClusterTime() throws Exception {
+    public void getClusterTime() {
         assertTrue(client().getCluster().getClusterTime() > 0);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void getClusterState() throws Exception {
+    public void getClusterState() {
         client().getCluster().getClusterState();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void changeClusterState() throws Exception {
+    public void changeClusterState() {
         client().getCluster().changeClusterState(ClusterState.FROZEN);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void getClusterVersion() throws Exception {
+    public void getClusterVersion() {
         client().getCluster().getClusterVersion();
     }
 
@@ -111,7 +111,7 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void shutdown() throws Exception {
+    public void shutdown() {
         client().getCluster().shutdown();
     }
 

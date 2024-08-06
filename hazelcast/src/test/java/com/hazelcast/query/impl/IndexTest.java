@@ -259,10 +259,6 @@ public class IndexTest {
                     return null;
             }
         }
-
-        public int getFactoryId() {
-            return FACTORY_ID;
-        }
     }
 
     private static final class SerializableWithEnum implements DataSerializable {

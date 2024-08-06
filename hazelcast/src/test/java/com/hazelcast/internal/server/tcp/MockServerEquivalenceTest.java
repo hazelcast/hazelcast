@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Checks whether the mock network is compatible with the real network behavior.
  * @implNote This test cannot be ParallelJVMTest because it uses the real network.
  */
-public class MockServerEquivalenceTest {
+class MockServerEquivalenceTest {
 
     private TestHazelcastInstanceFactory factory;
 

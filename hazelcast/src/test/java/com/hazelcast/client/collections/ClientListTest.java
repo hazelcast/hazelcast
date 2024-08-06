@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +54,7 @@ public class ClientListTest extends HazelcastTestSupport {
     private IList<String> list;
 
     @Before
-    public void setup() throws IOException {
+    public void setup() {
         hazelcastFactory = new TestHazelcastFactory();
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();

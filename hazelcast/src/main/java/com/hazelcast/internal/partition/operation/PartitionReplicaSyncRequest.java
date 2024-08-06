@@ -18,8 +18,8 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.ChunkSupplier;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
@@ -80,9 +80,9 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
     @Override
     public void beforeRun() {
         int syncReplicaIndex = getReplicaIndex();
-        if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
+        if (syncReplicaIndex < 1 || syncReplicaIndex > IPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Replica index " + syncReplicaIndex
-                    + " should be in the range [1-" + InternalPartition.MAX_BACKUP_COUNT + "]");
+                    + " should be in the range [1-" + IPartition.MAX_BACKUP_COUNT + "]");
         }
     }
 
@@ -327,7 +327,7 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
 
     @Override
     public String getServiceName() {
-        return InternalPartitionService.SERVICE_NAME;
+        return IPartitionService.SERVICE_NAME;
     }
 
     @Override

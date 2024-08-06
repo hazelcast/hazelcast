@@ -107,7 +107,6 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1>, Serializable {
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

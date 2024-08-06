@@ -84,7 +84,7 @@ public class CacheIterator<K, V>
 
     private <T> T invoke(OperationService operationService, Operation operation) {
         InternalCompletableFuture<T> f = operationService
-                .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
+                .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionIndex);
         return f.joinInternal();
     }
 

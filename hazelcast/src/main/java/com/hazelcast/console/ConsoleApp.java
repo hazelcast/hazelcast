@@ -1527,7 +1527,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         return running;
     }
 
-    protected static ConsoleApp create() throws Exception {
+    protected static ConsoleApp create() {
         Config config = Config.load();
         for (int i = 1; i <= LOAD_EXECUTORS_COUNT; i++) {
             config.addExecutorConfig(new ExecutorConfig(EXECUTOR_NAMESPACE + " " + i).setPoolSize(i));

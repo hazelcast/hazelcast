@@ -202,7 +202,7 @@ public class DynamicConfigYamlGenerator {
             Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
 
             String cacheDeserializedValues = subConfigAsObject.getCacheDeserializedValues() != null
-                    ? subConfigAsObject.getCacheDeserializedValues().name().replaceAll("_", "-")
+                    ? subConfigAsObject.getCacheDeserializedValues().name().replace('_', '-')
                     : null;
 
             addNonNullToMap(subConfigAsMap, "in-memory-format",

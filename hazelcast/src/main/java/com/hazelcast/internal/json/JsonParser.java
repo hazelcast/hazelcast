@@ -322,9 +322,7 @@ public class JsonParser {
   private void readEscape() throws IOException {
     read();
     switch (current) {
-      case '"':
-      case '/':
-      case '\\':
+      case '"', '/', '\\':
         captureBuffer.append((char)current);
         break;
       case 'b':

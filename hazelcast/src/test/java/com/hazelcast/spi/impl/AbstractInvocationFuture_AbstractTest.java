@@ -48,7 +48,7 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         executor.shutdownNow();
     }
 

@@ -209,7 +209,7 @@ class SqlParser {
             final int indexOpen = paramIn.indexOf('(', indexIn);
             final int indexClose = paramIn.indexOf(')', indexOpen);
             String sub = paramIn.substring(indexOpen, indexClose + 1);
-            sub = sub.replaceAll(" ", "");
+            sub = sub.replace(" ", "");
             sql = paramIn.substring(0, indexOpen) + sub
                     + alignINClause(paramIn.substring(indexClose + 1));
 

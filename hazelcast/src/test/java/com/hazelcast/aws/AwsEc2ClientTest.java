@@ -52,7 +52,7 @@ public class AwsEc2ClientTest {
     private AutoCloseable closeable;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
         AwsConfig awsConfig = AwsConfig.builder()
                 .setDiscoveryMode(DiscoveryMode.Member)

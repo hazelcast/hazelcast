@@ -43,7 +43,7 @@ public class ClassAndFieldDefinitionTest {
     private static String[] fieldNames = new String[]{"f1", "f2", "f3"};
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         ClassDefinitionBuilder builder = new ClassDefinitionBuilder(1, 2, 3);
         for (String fieldName : fieldNames) {
             builder.addByteField(fieldName);

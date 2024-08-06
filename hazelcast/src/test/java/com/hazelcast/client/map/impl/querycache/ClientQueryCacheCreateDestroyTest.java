@@ -43,7 +43,7 @@ public class ClientQueryCacheCreateDestroyTest extends HazelcastTestSupport {
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

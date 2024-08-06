@@ -236,7 +236,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     }
 
     @Test
-    public void testQueryCacheFullConfig() throws Exception {
+    public void testQueryCacheFullConfig() {
         QueryCacheConfig queryCacheClassPredicateConfig = fullClientConfig.getQueryCacheConfigs().get("map-name")
                 .get("query-cache-class-name-predicate");
         QueryCacheConfig queryCacheSqlPredicateConfig = fullClientConfig.getQueryCacheConfigs().get("map-name")

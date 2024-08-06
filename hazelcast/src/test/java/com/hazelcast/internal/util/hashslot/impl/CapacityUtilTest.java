@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 public class CapacityUtilTest extends HazelcastTestSupport {
 
     @Test
-    public void testConstructor() throws Exception {
+    public void testConstructor() {
         assertUtilityConstructor(CapacityUtil.class);
     }
 

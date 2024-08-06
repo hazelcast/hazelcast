@@ -158,8 +158,8 @@ final class SparseArray<E> {
         @Override
         public long advance() {
             long current = index;
-            if (current == Iterator.END) {
-                return Iterator.END;
+            if (current == AscendingLongIterator.END) {
+                return AscendingLongIterator.END;
             }
 
             // Try to advance the current storage.
@@ -193,8 +193,8 @@ final class SparseArray<E> {
         public long advanceAtLeastTo(long member) {
             assert member >= 0;
             long current = index;
-            if (current == Iterator.END) {
-                return Iterator.END;
+            if (current == AscendingLongIterator.END) {
+                return AscendingLongIterator.END;
             }
 
             if (current >= member) {

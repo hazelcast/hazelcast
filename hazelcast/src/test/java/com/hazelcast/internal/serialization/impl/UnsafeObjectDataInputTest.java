@@ -45,6 +45,7 @@ public class UnsafeObjectDataInputTest extends ByteArrayObjectDataInputTest {
         return new UnsafeObjectDataInput(INIT_DATA, 0, mockSerializationService);
     }
 
+    @Override
     @Test
     public void testGetByteOrder() {
         assertEquals(ByteOrder.nativeOrder(), in.getByteOrder());

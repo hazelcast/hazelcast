@@ -19,8 +19,6 @@ package com.hazelcast.client.serialization;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import org.junit.AfterClass;
@@ -61,7 +59,7 @@ public class ExternalizableDeserializationProtectionTest extends HazelcastTestSu
     }
 
     @Before
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         hazelcastFactory.terminateAll();
         TestExternalizableDeserialized.isDeserialized = false;
     }

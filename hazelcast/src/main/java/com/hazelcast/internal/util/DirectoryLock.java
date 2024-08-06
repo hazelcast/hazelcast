@@ -106,6 +106,7 @@ public final class DirectoryLock {
         return new DirectoryLock(dir, channel, lock, logger);
     }
 
+    @SuppressWarnings("resource")
     private static FileChannel openChannel(File lockFile) {
         try {
             return new RandomAccessFile(lockFile, "rw").getChannel();

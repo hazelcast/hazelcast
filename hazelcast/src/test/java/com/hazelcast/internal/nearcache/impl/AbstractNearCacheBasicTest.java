@@ -888,14 +888,10 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case SET_EXPIRY_POLICY:
                     assertTrue(adapter.setExpiryPolicy(i, expiryPolicy));
                     break;
-                case EXECUTE_ON_KEYS:
-                case PUT_ALL:
-                case INVOKE_ALL:
-                case SET_EXPIRY_POLICY_MULTI_KEY:
+                case EXECUTE_ON_KEYS, PUT_ALL, INVOKE_ALL, SET_EXPIRY_POLICY_MULTI_KEY:
                     invalidationMap.put(i, newValue);
                     break;
-                case EXECUTE_ON_ENTRIES:
-                case EXECUTE_ON_ENTRIES_WITH_PREDICATE:
+                case EXECUTE_ON_ENTRIES, EXECUTE_ON_ENTRIES_WITH_PREDICATE:
                     break;
                 case SET_TTL:
                     adapter.setTtl(i, 1, TimeUnit.DAYS);
@@ -1283,8 +1279,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     case REMOVE_ALL_WITH_KEYS:
                         removeKeys.add(i);
                         break;
-                    case CLEAR:
-                    case DESTROY:
+                    case CLEAR, DESTROY:
                         break;
                     default:
                         throw new IllegalArgumentException("Unexpected method: " + method);

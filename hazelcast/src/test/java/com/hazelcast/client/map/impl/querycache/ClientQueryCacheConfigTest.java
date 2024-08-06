@@ -36,12 +36,12 @@ public class ClientQueryCacheConfigTest extends QueryCacheConfigTest {
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory.newHazelcastInstance();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

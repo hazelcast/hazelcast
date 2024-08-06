@@ -26,6 +26,7 @@ import com.hazelcast.topic.MessageListener;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
@@ -56,7 +57,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     public CompletionStage<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         publishInternal(message);
-        return InternalCompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Nonnull

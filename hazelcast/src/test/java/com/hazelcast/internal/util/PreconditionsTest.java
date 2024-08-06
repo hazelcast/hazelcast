@@ -53,7 +53,6 @@ public class PreconditionsTest {
 
     // =====================================================
 
-    @SuppressWarnings("deprecation")
     @Test
     public void checkNotNull_whenNull() {
         String msg = "Can't be null";
@@ -62,7 +61,6 @@ public class PreconditionsTest {
         assertEquals(msg, exception.getMessage());
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void checkNotNull_whenNotNull() {
         Object o = "foobar";

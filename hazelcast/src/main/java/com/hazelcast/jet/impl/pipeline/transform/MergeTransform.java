@@ -30,6 +30,7 @@ import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static java.util.Arrays.asList;
 
+@SuppressWarnings("unused")
 public class MergeTransform<T> extends AbstractTransform {
 
     @Serial

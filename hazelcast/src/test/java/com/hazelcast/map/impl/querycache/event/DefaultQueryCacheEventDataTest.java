@@ -68,7 +68,7 @@ public class DefaultQueryCacheEventDataTest {
     private DefaultQueryCacheEventData queryCacheEventDataOtherMapName;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         serializationService = mock(SerializationService.class);
         when(serializationService.toObject(DATA_KEY)).thenReturn(DESERIALIZED_KEY);
         when(serializationService.toObject(DATA_NEW_VALUE)).thenReturn(DESERIALIZED_VALUE);

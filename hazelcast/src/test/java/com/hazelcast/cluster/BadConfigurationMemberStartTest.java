@@ -29,15 +29,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class BadConfigurationMemberStartTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         Hazelcast.shutdownAll();
     }
 

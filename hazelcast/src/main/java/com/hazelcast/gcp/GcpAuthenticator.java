@@ -123,8 +123,8 @@ class GcpAuthenticator {
     }
 
     private static String clear(String privateKey) {
-        return privateKey.replaceAll("-----END PRIVATE KEY-----", "")
-                         .replaceAll("-----BEGIN PRIVATE KEY-----", "")
+        return privateKey.replace("-----END PRIVATE KEY-----", "")
+                         .replace("-----BEGIN PRIVATE KEY-----", "")
                          .replaceAll("\\\\n", "");
     }
 

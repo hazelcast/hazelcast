@@ -78,10 +78,7 @@ public class CacheEventHandler {
         final Object eventData;
         final CacheEventType eventType = cacheEventContext.getEventType();
         switch (eventType) {
-            case CREATED:
-            case UPDATED:
-            case REMOVED:
-            case EXPIRED:
+            case CREATED, UPDATED, REMOVED, EXPIRED:
                 final CacheEventData cacheEventData =
                         new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
                                 cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
@@ -90,8 +87,7 @@ public class CacheEventHandler {
                 eventSet.addEventData(cacheEventData);
                 eventData = eventSet;
                 break;
-            case EVICTED:
-            case INVALIDATED:
+            case EVICTED, INVALIDATED:
                 eventData = new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
                         null, null, false);
                 break;

@@ -154,8 +154,7 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
                 }
             } else {
                 switch (eventType) {
-                    case ADDED:
-                    case UPDATED:
+                    case ADDED, UPDATED:
                         toStore.add(singleKeyState);
                         break;
                     case REMOVED:

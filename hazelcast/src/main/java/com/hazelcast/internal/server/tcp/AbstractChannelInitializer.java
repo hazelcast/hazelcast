@@ -28,10 +28,8 @@ import com.hazelcast.internal.server.ServerContext;
 public abstract class AbstractChannelInitializer implements ChannelInitializer {
 
     protected final ServerContext serverContext;
-    private final EndpointConfig config;
 
     protected AbstractChannelInitializer(ServerContext serverContext, EndpointConfig config) {
-        this.config = config;
         this.serverContext = serverContext;
     }
 }

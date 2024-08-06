@@ -318,17 +318,10 @@ public final class EndiannessUtil {
     public static char readUtf8CharCompatibility(DataInput in, byte firstByte) throws IOException {
         int b = firstByte & 0xFF;
         switch (b >> 4) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
+            case 0, 1, 2, 3, 4, 5, 6:
             case 7:
                 return (char) b;
-            case 12:
-            case 13:
+            case 12, 13:
                 int first = (b & 0x1F) << 6;
                 int second = in.readByte() & 0x3F;
                 return (char) (first | second);
