@@ -34,10 +34,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assume;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -51,15 +49,13 @@ import java.util.Set;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkIntegrationTest {
-
-    @Rule
-    public ExpectedException expect = ExpectedException.none();
 
     int firstMemberPort = 6000;
     int firstClientPort = 7000;
@@ -166,7 +162,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
         // Mis-configured to point to Client port of 1st member
-        Objects.requireNonNull(cfgTuple.f1())
+        Config config = cfgTuple.f1();
+        Objects.requireNonNull(config)
                 .getAdvancedNetworkConfig()
                 .getJoin()
                 .getTcpIpConfig()
@@ -175,10 +172,9 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
         newHazelcastInstance(cfgTuple.f0());
 
-        expect.expect(IllegalStateException.class);
-        expect.expectMessage("Node failed to start!");
-
-        newHazelcastInstance(cfgTuple.f1());
+        assertThatThrownBy(() -> newHazelcastInstance(config))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Node failed to start!");
     }
 
     @Test
@@ -187,7 +183,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
         // Mis-configured to point to Client port of 1st member
-        Objects.requireNonNull(cfgTuple.f1())
+        Config config = cfgTuple.f1();
+        Objects.requireNonNull(config)
                 .getAdvancedNetworkConfig()
                 .getJoin()
                 .getTcpIpConfig()
@@ -196,10 +193,9 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
         newHazelcastInstance(cfgTuple.f0());
 
-        expect.expect(IllegalStateException.class);
-        expect.expectMessage("Node failed to start!");
-
-        newHazelcastInstance(cfgTuple.f1());
+        assertThatThrownBy(() -> newHazelcastInstance(config))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Node failed to start!");
     }
 
     @Test
@@ -228,7 +224,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
         // Mis-configured to point to Client port of 1st member
         // However member port also added to the config
-        Objects.requireNonNull(cfgTuple.f1())
+        Config config = cfgTuple.f1();
+        Objects.requireNonNull(config)
                 .getAdvancedNetworkConfig()
                 .getJoin()
                 .getTcpIpConfig()
@@ -238,10 +235,9 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
         newHazelcastInstance(cfgTuple.f0());
 
-        expect.expect(IllegalStateException.class);
-        expect.expectMessage("Node failed to start!");
-
-        newHazelcastInstance(cfgTuple.f1());
+        assertThatThrownBy(() -> newHazelcastInstance(config))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Node failed to start!");
     }
 
     private void assertLocalPortsOpen(int... ports) {
