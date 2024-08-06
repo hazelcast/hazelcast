@@ -46,9 +46,9 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -273,11 +273,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private void sendJobMultipart(JobUploadCall jobUploadCall, Path jarPath)
             throws IOException, NoSuchAlgorithmException {
-        File file = jarPath.toFile();
-
         byte[] partBuffer = jobUploadCall.allocatePartBuffer();
 
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+        try (InputStream fileInputStream = Files.newInputStream(jarPath)) {
 
             // Start from part #1
             for (int currentPartNumber = 1; currentPartNumber <= jobUploadCall.getTotalParts(); currentPartNumber++) {

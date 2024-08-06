@@ -22,11 +22,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
@@ -138,7 +139,7 @@ public class JobUploadStatus {
         Path jarPath = jobMetaDataParameterObject.getJarPath();
 
         // Append data to file
-        try (FileOutputStream outputStream = new FileOutputStream(jarPath.toFile(), true)) {
+        try (OutputStream outputStream = Files.newOutputStream(jarPath, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             outputStream.write(parameterObject.getPartData(), 0, parameterObject.getPartSize());
         }
 

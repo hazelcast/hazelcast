@@ -31,10 +31,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,7 +93,7 @@ public class LocalFileSourceFactory implements FileSourceFactory {
         public <T> FunctionEx<Path, Stream<T>> createReadFileFn(@Nonnull FileFormat<T> format) {
             FunctionEx<InputStream, Stream<T>> mapInputStreamFn = mapInputStreamFn(format);
             return path -> {
-                FileInputStream fis = new FileInputStream(path.toFile());
+                InputStream fis = Files.newInputStream(path);
                 return mapInputStreamFn.apply(fis).onClose(() -> uncheckRun(fis::close));
             };
         }
@@ -113,7 +113,7 @@ public class LocalFileSourceFactory implements FileSourceFactory {
 
             return path -> {
                 // Jackson doesn't handle empty files
-                if (path.toFile().length() == 0) {
+                if (Files.size(path) == 0) {
                     return Stream.empty();
                 }
 

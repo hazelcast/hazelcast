@@ -38,7 +38,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -49,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -293,7 +293,7 @@ public final class WriteFileP<T> implements Processor {
     private Writer createWriter(Path file) {
         try {
             context.logger().fine("creating %s", file);
-            FileOutputStream fos = new FileOutputStream(file.toFile(), true);
+            OutputStream fos = Files.newOutputStream(file, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             BufferedOutputStream bos = new BufferedOutputStream(fos);
             sizeTrackingStream = new SizeTrackingStream(bos);
             return new OutputStreamWriter(sizeTrackingStream, charset);

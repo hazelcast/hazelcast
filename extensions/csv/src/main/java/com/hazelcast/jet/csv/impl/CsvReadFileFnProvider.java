@@ -30,7 +30,8 @@ import com.hazelcast.jet.pipeline.file.impl.ReadFileFnProvider;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Spliterators;
@@ -62,7 +63,7 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
         Class<?> formatClazz = csvFileFormat.clazz(); // Format is not Serializable
 
         return path -> {
-            FileInputStream fis = new FileInputStream(path.toFile());
+            InputStream inputStream = Files.newInputStream(path);
 
             MappingIterator<T> iterator;
             Function<T, T> projection = identity();
@@ -72,7 +73,7 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
                                                      .with(SKIP_EMPTY_LINES)
                                                      .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
 
-                iterator = reader.readValues(fis);
+                iterator = reader.readValues(inputStream);
                 if (!iterator.hasNext()) {
                     throw new JetException("Header row missing in " + path);
                 }
@@ -86,11 +87,11 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
                                           .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                                           .with(SKIP_EMPTY_LINES)
                                           .with(CsvSchema.emptySchema().withHeader())
-                                          .readValues(fis);
+                                          .readValues(inputStream);
             }
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, ORDERED), false)
                     .map(projection)
-                    .onClose(() -> uncheckRun(fis::close));
+                    .onClose(() -> uncheckRun(inputStream::close));
         };
     }
 

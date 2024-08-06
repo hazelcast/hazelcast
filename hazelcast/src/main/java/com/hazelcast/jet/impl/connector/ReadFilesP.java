@@ -32,7 +32,6 @@ import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.io.IOException;
 import java.io.Serial;
 import java.nio.file.DirectoryStream;
@@ -247,11 +246,10 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         }
 
         private Iterator<Path> paths() throws IOException {
-            File file = directory.toFile();
-            if (!file.exists()) {
+            if (!Files.exists(directory)) {
                 throw new JetException("The directory '" + directory + "' does not exist.");
             }
-            if (!file.isDirectory()) {
+            if (!Files.isDirectory(directory)) {
                 throw new JetException("The given path (" + directory + ") must point to a directory, not a file.");
             }
 

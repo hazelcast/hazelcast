@@ -48,8 +48,9 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -123,8 +124,8 @@ public class CustomFormatTest extends BaseFileFormatTest {
         @SuppressWarnings("unchecked")
         public <T> FunctionEx<Path, Stream<T>> createReadFileFn(@Nonnull FileFormat<T> format) {
             return path -> {
-                try (FileInputStream fin = new FileInputStream(path.toFile())) {
-                    ClassFile classFile = new ClassFile(new DataInputStream(fin));
+                try (InputStream inputStream = Files.newInputStream(path)) {
+                    ClassFile classFile = new ClassFile(new DataInputStream(inputStream));
                     return (Stream<T>) Stream.of(classFile);
                 } catch (IOException e) {
                     throw new JetException(e);
