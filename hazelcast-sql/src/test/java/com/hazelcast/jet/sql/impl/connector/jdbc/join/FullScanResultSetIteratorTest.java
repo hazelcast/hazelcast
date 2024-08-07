@@ -42,12 +42,12 @@ class FullScanResultSetIteratorTest {
     private static String dbConnectionUrl;
 
     @BeforeAll
-    public static void beforeAll() {
+    static void beforeAll() {
         dbConnectionUrl = h2DatabaseProvider.createDatabase(FullScanResultSetIteratorTest.class.getName());
     }
 
     @AfterAll
-    public static void afterAll() {
+    static void afterAll() {
         h2DatabaseProvider.shutdown();
     }
 

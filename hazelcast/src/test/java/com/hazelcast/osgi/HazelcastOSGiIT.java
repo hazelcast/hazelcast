@@ -66,7 +66,7 @@ class HazelcastOSGiIT {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         for (Bundle bundle : bundleContext.getBundles()) {
             if ("com.hazelcast".equals(bundle.getSymbolicName())) {
                 bundle.uninstall();

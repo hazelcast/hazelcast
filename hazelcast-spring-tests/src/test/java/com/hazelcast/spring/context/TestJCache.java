@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"test-jcache-application-context.xml"})
-public class TestJCache {
+class TestJCache {
 
     @Autowired
     private ApplicationContext context;
@@ -64,7 +64,7 @@ public class TestJCache {
 
     @BeforeAll
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         Hazelcast.shutdownAll();
     }
 

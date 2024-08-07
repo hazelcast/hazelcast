@@ -36,14 +36,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"test-issue-2676-application-context.xml"})
-public class TestIssue2676 {
+class TestIssue2676 {
 
     @Autowired
     private ApplicationContext context;
 
     @BeforeAll
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         Hazelcast.shutdownAll();
     }
 

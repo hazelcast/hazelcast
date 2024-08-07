@@ -35,11 +35,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"springAware-disabled-applicationContext-hazelcast.xml"})
-public class TestDisabledSpringAwareAnnotation {
+class TestDisabledSpringAwareAnnotation {
 
     @BeforeAll
     @AfterAll
-    public static void cleanup() {
+    static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

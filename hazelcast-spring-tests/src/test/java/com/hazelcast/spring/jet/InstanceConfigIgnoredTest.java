@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"instance-config-ignored-hazelcast.xml"})
-public class InstanceConfigIgnoredTest extends HazelcastTestSupport {
+class InstanceConfigIgnoredTest extends HazelcastTestSupport {
 
     @Autowired
     Config config;

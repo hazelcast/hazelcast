@@ -40,7 +40,7 @@ class MySQLUpsertQueryBuilderTest {
     SqlDialect dialect = MysqlSqlDialect.DEFAULT;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
     }

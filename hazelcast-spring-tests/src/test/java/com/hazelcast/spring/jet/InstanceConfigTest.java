@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"instance-config-hazelcast.xml"})
-public class InstanceConfigTest extends HazelcastTestSupport {
+class InstanceConfigTest extends HazelcastTestSupport {
 
     @Autowired
     Config config;

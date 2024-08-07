@@ -45,12 +45,12 @@ import java.util.stream.Stream;
  *      exercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
  */
 @Tag("com.hazelcast.test.annotation.NightlyTest")
-public class HazelcastVersionLocatorTest {
+class HazelcastVersionLocatorTest {
     private static HashFunction hashFunction;
     private static Map<HazelcastVersionLocator.Artifact, File> files;
 
     @BeforeAll
-    public static void setUp() {
+    static void setUp() {
         hashFunction = Hashing.crc32c();
         files = HazelcastVersionLocator.locateVersion("4.0", true);
     }

@@ -64,7 +64,7 @@ class SecureApplicationContextTest {
     private IPermissionPolicy dummyPermissionPolicy;
 
     @BeforeEach
-    public void init() {
+    void init() {
         securityConfig = config.getSecurityConfig();
     }
 

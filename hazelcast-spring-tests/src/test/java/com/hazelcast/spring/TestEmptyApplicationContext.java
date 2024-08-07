@@ -33,14 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"withoutconfig-applicationContext-hazelcast.xml"})
-public class TestEmptyApplicationContext {
+class TestEmptyApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         Hazelcast.shutdownAll();
     }
 

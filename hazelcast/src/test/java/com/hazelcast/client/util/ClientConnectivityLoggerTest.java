@@ -60,7 +60,7 @@ class ClientConnectivityLoggerTest {
     private ILogger logger;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         when(loggingService.getLogger(ClientConnectivityLogger.class)).thenReturn(logger);
     }
 

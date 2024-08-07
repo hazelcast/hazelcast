@@ -100,7 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
-public class TestClientApplicationContext {
+class TestClientApplicationContext {
 
     @Autowired
     @Qualifier(value = "client")
@@ -243,7 +243,7 @@ public class TestClientApplicationContext {
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

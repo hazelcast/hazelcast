@@ -35,7 +35,7 @@ class LazyCollectionTest {
     private static LazyCollection<?, ?> collection;
 
     @BeforeAll
-    public static void setUp() {
+    static void setUp() {
         collection = new LazyCollection<>(mock(), new InternalReplicatedMapStorage<>());
     }
 

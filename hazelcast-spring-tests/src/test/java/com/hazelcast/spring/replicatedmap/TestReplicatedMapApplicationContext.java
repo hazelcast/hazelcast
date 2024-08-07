@@ -40,14 +40,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"replicatedMap-applicationContext-hazelcast.xml"})
-public class TestReplicatedMapApplicationContext {
+class TestReplicatedMapApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         Hazelcast.shutdownAll();
     }
 

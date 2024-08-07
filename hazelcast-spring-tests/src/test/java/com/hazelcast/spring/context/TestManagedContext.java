@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
-public class TestManagedContext {
+class TestManagedContext {
 
     @Autowired
     private HazelcastInstance instance1;
@@ -64,7 +64,7 @@ public class TestManagedContext {
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         Hazelcast.shutdownAll();
     }
 

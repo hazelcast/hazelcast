@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
-public class TestHibernateApplicationContext {
+class TestHibernateApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
@@ -56,7 +56,7 @@ public class TestHibernateApplicationContext {
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         Hazelcast.shutdownAll();
     }
 

@@ -41,7 +41,7 @@ class PostgresUpsertQueryBuilderTest {
 
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         when(jdbcTable.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));

@@ -45,14 +45,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"application-context-jet-service.xml"})
-public class SpringServiceFactoriesTest {
+class SpringServiceFactoriesTest {
 
     @Autowired
     private JetService jet;
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         Hazelcast.shutdownAll();
     }
 

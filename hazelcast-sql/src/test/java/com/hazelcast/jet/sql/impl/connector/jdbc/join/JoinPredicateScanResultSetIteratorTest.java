@@ -42,12 +42,12 @@ class JoinPredicateScanResultSetIteratorTest {
     private static final List<String> EXPECTED_TABLES = List.of("VIEWS", "TABLES", "ROLES", "USERS");
 
     @BeforeAll
-    public static void beforeAll() {
+    static void beforeAll() {
         dbConnectionUrl = h2DatabaseProvider.createDatabase(JoinPredicateScanResultSetIteratorTest.class.getName());
     }
 
     @AfterAll
-    public static void afterAll() {
+    static void afterAll() {
         h2DatabaseProvider.shutdown();
     }
 

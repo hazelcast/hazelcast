@@ -40,7 +40,7 @@ class H2UpsertQueryBuilderTest {
     SqlDialect dialect = H2SqlDialect.DEFAULT;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         when(table.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
         when(table.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(table.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));

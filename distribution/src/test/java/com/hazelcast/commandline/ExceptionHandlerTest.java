@@ -49,7 +49,7 @@ class ExceptionHandlerTest {
     private CommandLine.Help.ColorScheme colorScheme;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         when(commandLine.getErr()).thenReturn(errorWriter);
         when(commandLine.getColorScheme()).thenReturn(colorScheme);
     }

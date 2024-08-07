@@ -54,14 +54,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"advancedNetworkConfig-applicationContext-hazelcast.xml"})
-public class TestAdvancedNetworkApplicationContext {
+class TestAdvancedNetworkApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
 
     @BeforeAll
     @AfterAll
-    public static void start() {
+    static void start() {
         HazelcastInstanceFactory.terminateAll();
     }
 

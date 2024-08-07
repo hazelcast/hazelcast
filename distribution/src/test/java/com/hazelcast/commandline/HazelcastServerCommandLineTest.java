@@ -44,7 +44,7 @@ class HazelcastServerCommandLineTest {
     private RunnableEx start;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         hazelcastServerCommandLine = new HazelcastServerCommandLine(start);
     }
 

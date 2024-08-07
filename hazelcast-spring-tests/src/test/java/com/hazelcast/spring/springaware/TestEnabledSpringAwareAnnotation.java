@@ -37,11 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"springAware-enabled-applicationContext-hazelcast.xml"})
-public class TestEnabledSpringAwareAnnotation {
+class TestEnabledSpringAwareAnnotation {
 
     @BeforeAll
     @AfterAll
-    public static void cleanup() {
+    static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
