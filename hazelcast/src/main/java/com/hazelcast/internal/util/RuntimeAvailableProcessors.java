@@ -59,8 +59,6 @@ public final class RuntimeAvailableProcessors {
      * Overrides the number of available processors that are set by the method {@link #override(int)}
      * <p>
      * This is to be used only for testing.
-     *
-     * @param availableProcessors
      */
     public static void overrideDefault(int availableProcessors) {
         defaultAvailableProcessors = availableProcessors;

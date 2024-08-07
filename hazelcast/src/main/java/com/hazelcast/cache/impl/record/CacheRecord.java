@@ -69,15 +69,11 @@ public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
 
     /**
      * Sets the expiry policy for this record.
-     *
-     * @param expiryPolicy
      */
     void setExpiryPolicy(E expiryPolicy);
 
     /**
      * Gets the expiryPolicy associated with this record.
-     *
-     * @return
      */
     E getExpiryPolicy();
 

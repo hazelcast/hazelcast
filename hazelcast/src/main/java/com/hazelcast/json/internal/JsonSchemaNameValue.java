@@ -73,8 +73,6 @@ public class JsonSchemaNameValue implements IdentifiedDataSerializable {
 
     /**
      * Returns the description of the value stored in here
-     *
-     * @return
      */
     public JsonSchemaNode getValue() {
         return value;

@@ -92,9 +92,6 @@ public final class Records {
      * Use it instead of raw {@link Record#getCachedValueUnsafe()} See
      * {@link #getValueOrCachedValue(Record, SerializationService)}
      * for details.
-     *
-     * @param record
-     * @return
      */
     public static Object getCachedValue(Record record) {
         for (; ; ) {
@@ -132,10 +129,6 @@ public final class Records {
      * returned to the outside world. Use {@link #getCachedValue(Record)}
      * instead of raw {@link Record#getCachedValueUnsafe()} to
      * protect from accidental mutex exposure to the user-code.
-     *
-     * @param record
-     * @param serializationService
-     * @return
      */
     public static Object getValueOrCachedValue(Record record, SerializationService serializationService) {
         Object cachedValue = record.getCachedValueUnsafe();

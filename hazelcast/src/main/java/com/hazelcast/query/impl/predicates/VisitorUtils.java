@@ -31,10 +31,6 @@ public final class VisitorUtils {
      *
      * It's Copy-On-Write: If at least one predicate returns a different instance
      * then this method returns a copy of the passed arrays.
-     *
-     * @param predicates
-     * @param visitor
-     * @return
      */
     public static Predicate[] acceptVisitor(Predicate[] predicates, Visitor visitor, IndexRegistry indexes) {
         Predicate[] target = predicates;

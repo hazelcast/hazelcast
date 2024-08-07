@@ -138,7 +138,6 @@ public interface RecordStore<R extends Record> {
      * <p>
      * An implementation is not supposed to be thread safe.
      *
-     * @param dataKey
      * @param record  the accessed record
      * @param now     the current time
      */
@@ -450,7 +449,6 @@ public interface RecordStore<R extends Record> {
      * Does post eviction operations like sending events
      *
      * @param dataValue    record to process
-     * @param expiryReason
      */
     void doPostEvictionOperations(@Nonnull Data dataKey, @Nonnull Object dataValue,
                                   @Nonnull ExpiryReason expiryReason);

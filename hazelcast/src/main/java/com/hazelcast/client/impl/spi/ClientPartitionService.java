@@ -46,7 +46,6 @@ public interface ClientPartitionService {
                                    int partitionStateVersion);
 
     /**
-     * @param partitionId
      * @return the owner of the partition or null if a partition is not assigned yet
      */
     UUID getPartitionOwner(int partitionId);

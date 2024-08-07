@@ -43,8 +43,6 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
     /**
      * Adds a child node to this Json node. It is added as the last item
      * in order.
-     *
-     * @param description
      */
     public void addChild(JsonSchemaNameValue description) {
         inners.add(description);

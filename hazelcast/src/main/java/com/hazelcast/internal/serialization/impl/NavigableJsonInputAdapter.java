@@ -32,7 +32,6 @@ public abstract class NavigableJsonInputAdapter {
 
     /**
      * Sets the position of underlying data input.
-     * @param position
      */
     public abstract void position(int position);
 
@@ -58,7 +57,6 @@ public abstract class NavigableJsonInputAdapter {
      * any position further forward than where it was prior to this
      * method.
      *
-     * @param cursor
      * @return {@code true} if the given attributeName matches the one
      *          in underlying data input
      */
@@ -68,8 +66,6 @@ public abstract class NavigableJsonInputAdapter {
      * Tries to parse a single JsonValue from the input. The {@code offset}
      * must be pointing to the beginning of a scalar Json value.
      *
-     * @param parser
-     * @param offset
      * @return either null or a scalar JsonValue.
      * @throws IOException if offset is pointing to a non-scalar
      *                      or invalid Json input
@@ -79,7 +75,6 @@ public abstract class NavigableJsonInputAdapter {
     /**
      * Creates a parser from given factory
      *
-     * @param factory
      * @return the parser
      * @throws IOException
      */

@@ -70,8 +70,6 @@ public interface PartitionStateManager {
      * {@link PartitionReplicaInterceptor#replicaChanged(int, int, PartitionReplica, PartitionReplica)}, which should apply
      * the same logic per partition.
      * </b></p>
-     *
-     * @param partitionIdSet
      */
     void partitionOwnersChanged(PartitionIdSet partitionIdSet);
 

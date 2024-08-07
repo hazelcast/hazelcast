@@ -70,9 +70,6 @@ public abstract class AbstractJsonGetter extends Getter {
      *         {@code long} or {@code double}
      *     </li>
      * </ul>
-     *
-     * @param value
-     * @return
      */
     public static Object convertFromJsonValue(JsonValue value) {
         if (value == null) {
@@ -204,8 +201,6 @@ public abstract class AbstractJsonGetter extends Getter {
      * <p>
      * Assumes the parser points to a {@code JsonToken.START_OBJECT}
      *
-     * @param parser
-     * @param pathCursor
      * @return {@code true} if given attribute name exists in the current object
      * @throws IOException
      */
@@ -240,8 +235,6 @@ public abstract class AbstractJsonGetter extends Getter {
      * <p>
      * Assumes the parser points to an array.
      *
-     * @param parser
-     * @param pathCursor
      * @return All matches in the current array that conform to
      * [any].lastPath search
      * @throws IOException

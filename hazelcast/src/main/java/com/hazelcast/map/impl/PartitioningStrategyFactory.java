@@ -57,7 +57,6 @@ public final class PartitioningStrategyFactory {
      * @param mapName          Map for which this partitioning strategy is being created
      * @param config           The partitioning strategy configuration
      * @param attributeConfigs The partitioning attributes
-     * @return
      */
     @SuppressWarnings("checkstyle:NestedIfDepth")
     @Nullable

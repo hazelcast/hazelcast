@@ -929,8 +929,6 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     }
 
     /**
-     * @param sql
-     * @param expectedCount
      * @param stopEarly     if entire result should be fetched first
      *                      or fail as soon as there are more rows than expected
      *                      (useful if the query might loop infinitely).

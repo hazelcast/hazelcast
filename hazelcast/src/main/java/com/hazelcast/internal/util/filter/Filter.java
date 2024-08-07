@@ -26,7 +26,6 @@ public interface Filter<T> {
     /**
      * Return {{@code true}} when object matches a condition
      *
-     * @param object
      * @return {{true}} when object matches a condition
      */
     boolean accept(T object);

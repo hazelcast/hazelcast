@@ -53,7 +53,6 @@ class LoadMigrationStrategy implements MigrationStrategy {
     /**
      * Checks if an imbalance was detected in the system
      *
-     * @param imbalance
      * @return <code>true</code> if imbalance threshold has been reached and migration
      * should be attempted
      */

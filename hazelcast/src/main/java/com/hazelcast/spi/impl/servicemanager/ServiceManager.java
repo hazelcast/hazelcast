@@ -45,7 +45,6 @@ public interface ServiceManager {
      * Gets a Service by serviceName.
      *
      * @param serviceName the name of the service.
-     * @param <T>
      * @return the found service or null if nothing is found.
      */
     <T> T getService(@Nonnull String serviceName);
@@ -56,7 +55,6 @@ public interface ServiceManager {
      * <b>CoreServices will be placed at the beginning of the list.</b>
      *
      * @param serviceClass the class/interface to check for.
-     * @param <S>
      * @return the found services.
      */
     <S> List<S> getServices(Class<S> serviceClass);

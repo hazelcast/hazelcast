@@ -136,8 +136,6 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
     /**
      * Follows the same behavior of @link javax.script.ScriptEngineManager#setBindings(Bindings)
      * This means that the same bindings are applied to all the underlying managers.
-     *
-     * @param bindings
      */
     @Override
     public void setBindings(Bindings bindings) {

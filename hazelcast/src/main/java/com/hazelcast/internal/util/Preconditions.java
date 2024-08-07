@@ -329,8 +329,6 @@ public final class Preconditions {
     /**
      * Check if iterator has next element. If not throw NoSuchElementException
      *
-     * @param iterator
-     * @param message
      * @return the iterator itself
      * @throws java.util.NoSuchElementException if iterator.hasNext returns false
      */
@@ -344,8 +342,6 @@ public final class Preconditions {
     /**
      * Check the state of a condition
      *
-     * @param condition
-     * @param message
      * @throws IllegalStateException if condition is false
      */
     public static void checkState(boolean condition, String message) throws IllegalStateException {

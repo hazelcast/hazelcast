@@ -25,23 +25,10 @@ public interface SecurityInterceptor {
 
     /**
      *
-     * @param credentials
-     * @param objectType
-     * @param objectName
-     * @param methodName
-     * @param parameters
      * @throws AccessControlException if access is denied
      */
     void before(Credentials credentials, String objectType, String objectName, String methodName,
                 Parameters parameters) throws AccessControlException;
 
-    /**
-     *
-     * @param credentials
-     * @param objectType
-     * @param objectName
-     * @param methodName
-     * @param parameters
-     */
     void after(Credentials credentials, String objectType, String objectName, String methodName, Parameters parameters);
 }

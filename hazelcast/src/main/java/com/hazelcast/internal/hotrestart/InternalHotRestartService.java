@@ -56,7 +56,6 @@ public interface InternalHotRestartService {
      * stores the given {@code newClusterState} and applies it after recovery is complete,
      * returning {@code true}. Otherwise, does nothing and returns {@code false}.
      *
-     * @param newClusterState
      * @return {@code true} if recovery is in progress, indicating that the new cluster
      * state will be applied once recovery is complete, otherwise {@code false}.
      */
@@ -150,14 +149,11 @@ public interface InternalHotRestartService {
 
     /**
      * Apply given {@link PartitionRuntimeState} after recovery is successfully completed.
-     *
-     * @param partitionRuntimeState
      */
     void deferApplyPartitionState(PartitionRuntimeState partitionRuntimeState);
 
     /**
      * Apply given {@link OnJoinOp} after recovery is successfully completed.
-     * @param postJoinOp
      */
     void deferPostJoinOps(OnJoinOp postJoinOp);
 

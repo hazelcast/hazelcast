@@ -218,8 +218,6 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * <p>
      * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
      * the count is updated accordingly, however the rejection is not enforced.
-     *
-     * @param capacityPolicy
      */
     public ScheduledExecutorConfig setCapacityPolicy(@Nonnull CapacityPolicy capacityPolicy) {
         checkNotNull(capacityPolicy);

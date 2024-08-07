@@ -50,7 +50,6 @@ public interface BufferPool {
      * The reason that Data is passed as argument, is that for HazelcastEnterprise different
      * BufferObjectDataInput can be returned based on the type of Data.
      *
-     * @param data
      * @return the taken BufferObjectDataInput
      */
     BufferObjectDataInput takeInputBuffer(Data data);

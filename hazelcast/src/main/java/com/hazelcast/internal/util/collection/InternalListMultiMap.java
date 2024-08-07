@@ -45,9 +45,6 @@ public class InternalListMultiMap<K, V> {
 
     /**
      * Put value to a given key. It allows duplicates under the same key
-     *
-     * @param key
-     * @param value
      */
     public void put(K key, V value) {
         List<V> values = backingMap.computeIfAbsent(key, x -> new ArrayList<>());
@@ -56,9 +53,6 @@ public class InternalListMultiMap<K, V> {
 
     /**
      * Return collection of values associated with a given key
-     *
-     * @param key
-     * @return
      */
     public Collection<V> get(K key) {
         return backingMap.get(key);

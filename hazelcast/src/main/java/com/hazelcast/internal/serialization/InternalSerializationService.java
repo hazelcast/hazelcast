@@ -122,7 +122,6 @@ public interface InternalSerializationService extends SerializationService, Disp
      * It will only be used with {@link com.hazelcast.internal.serialization.impl.GenericRecordQueryReader} for
      * query purposes
      *
-     * @param data
      * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
      * IllegalArgumentException
      * @throws IOException

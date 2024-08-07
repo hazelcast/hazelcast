@@ -251,8 +251,6 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      * pipeline.onError(t);
      * }
      * </code>
-     *
-     * @param error
      */
     public void onError(Throwable error) {
         if (error instanceof InterruptedException) {

@@ -55,7 +55,6 @@ public interface ICredentialsFactory {
      * Creates new {@link Credentials} object for given target {@link Address}.
      *
      * @param address Target {@link Address} (may be {@code null})
-     * @return
      */
     default Credentials newCredentials(Address address) {
         return newCredentials();

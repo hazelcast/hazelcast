@@ -32,7 +32,6 @@ public interface Expirable {
 
     /**
      * Sets the expiration time in milliseconds.
-     * @param expirationTime
      * @see System#currentTimeMillis()
      */
     void setExpirationTime(long expirationTime);

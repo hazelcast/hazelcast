@@ -75,7 +75,6 @@ public final class SimpleMapTest {
     /**
      * Expects the Management Center to be running.
      *
-     * @param input
      * @throws InterruptedException
      */
     public static void main(String[] input) throws InterruptedException {

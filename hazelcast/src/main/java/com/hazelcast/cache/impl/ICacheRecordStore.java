@@ -538,7 +538,6 @@ public interface ICacheRecordStore {
      *
      * @param mergingEntry     the {@link CacheMergeTypes} instance to merge
      * @param mergePolicy      the {@link SplitBrainMergePolicy} instance to apply
-     * @param callerProvenance
      * @return {@link CacheMergeResponse} indicating the result of the merge
      */
     CacheMergeResponse merge(CacheMergeTypes<Object, Object> mergingEntry,

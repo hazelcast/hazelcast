@@ -114,13 +114,11 @@ public interface ClusterTopologyIntentTracker {
 
     /**
      * Initialize explicitly the cluster topology intent.
-     * @param clusterTopologyIntent
      */
     void initializeClusterTopologyIntent(ClusterTopologyIntent clusterTopologyIntent);
 
     /**
      * Handle Hazelcast node shutdown with the given cluster topology intent.
-     * @param clusterTopologyIntent
      */
     void shutdownWithIntent(ClusterTopologyIntent clusterTopologyIntent);
 

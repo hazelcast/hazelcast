@@ -169,8 +169,6 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
 
     /**
      * Asserts that given substring in in standard output buffer. Calling this method resets the buffer.
-     *
-     * @param substring
      */
     private void assertTextInSystemOut(String substring) {
         assertThat(resetSystemOut()).contains(substring);

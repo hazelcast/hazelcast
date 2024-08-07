@@ -49,8 +49,6 @@ public final class StepResponseUtil {
      * <li>Sends backup operation if there is backup</li>
      * <li>Notifies parked operations</li>
      * </lu>
-     *
-     * @param state
      */
     public static void sendResponse(State state) {
         assert isRunningOnPartitionThread();

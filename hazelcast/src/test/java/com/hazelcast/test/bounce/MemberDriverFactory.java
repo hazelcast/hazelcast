@@ -66,8 +66,6 @@ public class MemberDriverFactory implements DriverFactory {
      * <p>
      * When you return <code>null</code> then drivers will use the same
      * configuration as other (non-driver) members.
-     *
-     * @return
      */
     protected Config getConfig() {
         return null;

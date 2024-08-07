@@ -32,8 +32,6 @@ public interface EventHandler<E> {
      *
      * Note that this method will also be called while first registered node is dead
      * and re-registering to a second node.
-     *
-     * @param connection
      */
     default void beforeListenerRegister(Connection connection) {
     }
@@ -43,8 +41,6 @@ public interface EventHandler<E> {
      *
      * Note that this method will also be called while first registered node is dead
      * and re-registering to a second node.
-     *
-     * @param connection
      */
     default void onListenerRegister(Connection connection) {
     }

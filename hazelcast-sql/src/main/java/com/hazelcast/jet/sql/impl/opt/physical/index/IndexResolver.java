@@ -1231,7 +1231,6 @@ public final class IndexResolver {
      *
      * @param filters         all per-column filters
      * @param lastFilter      the last filter (range)
-     * @param indexType
      * @param componentsCount number of components in the filter
      * @return range filter
      */

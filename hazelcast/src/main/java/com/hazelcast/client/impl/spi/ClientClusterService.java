@@ -135,8 +135,6 @@ public interface ClientClusterService {
 
     /**
      * Starts the configured MembershipListeners.
-     *
-     * @param configuredListeners
      */
     void start(Collection<EventListener> configuredListeners);
 

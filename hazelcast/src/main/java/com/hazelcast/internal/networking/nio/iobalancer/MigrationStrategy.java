@@ -31,7 +31,6 @@ interface MigrationStrategy {
      * Looks for imbalance in {@link MigratablePipeline pipeline} to {@link NioThread ioThread}
      * mapping.
      *
-     * @param imbalance
      * @return <code>true</code> when imbalance is detected
      */
     boolean imbalanceDetected(LoadImbalance imbalance);
@@ -39,7 +38,6 @@ interface MigrationStrategy {
     /**
      * Finds a {@link MigratablePipeline pipeline} to migrate
      *
-     * @param imbalance
      * @return Handler to migrate or <code>null</code> if no suitable candidate is found
      */
     MigratablePipeline findPipelineToMigrate(LoadImbalance imbalance);

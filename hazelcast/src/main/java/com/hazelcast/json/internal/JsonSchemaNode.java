@@ -49,8 +49,6 @@ public abstract class JsonSchemaNode implements IdentifiedDataSerializable {
 
     /**
      * Sets the parent of this node. May be null for top element.
-     *
-     * @param parent
      */
     public void setParent(JsonSchemaStructNode parent) {
         this.parent = parent;

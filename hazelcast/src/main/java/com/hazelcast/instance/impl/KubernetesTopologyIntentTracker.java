@@ -444,8 +444,6 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
      * Change cluster state, if current state is not already the desired one.
      * Retries up to 3 times. The cluster state change is transient, so if persistence
      * is enabled, the new cluster state is not persisted to disk.
-     *
-     * @param newClusterState
      */
     private void changeClusterState(ClusterState newClusterState) {
         RetryUtils.retry(

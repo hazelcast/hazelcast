@@ -76,8 +76,6 @@ public class UnifiedProtocolEncoder
     /**
      * Signals the ProtocolEncoder that the protocol is known. This call will be
      * made by the ProtocolDecoder as soon as it knows the inbound protocol.
-     *
-     * @param inboundProtocol
      */
     void signalProtocolEstablished(String inboundProtocol) {
         assert !channel.isClientMode() : "Signal protocol should only be made on channel in serverMode";

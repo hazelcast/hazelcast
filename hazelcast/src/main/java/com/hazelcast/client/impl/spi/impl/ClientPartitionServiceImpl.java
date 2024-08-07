@@ -176,7 +176,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     /**
-     * @param newPartitionCount
      * @return true if partition count can be set for the first time, or it is equal to one that is already available,
      * returns false otherwise
      */

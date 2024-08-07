@@ -43,8 +43,6 @@ public class JsonSchemaTerminalNode extends JsonSchemaNode {
      * Points to the location where this object starts in underlying
      * input. The returned value is offset from the start of the
      * object. The unit of the offset depends on the context.
-     *
-     * @return
      */
     public int getValueStartLocation() {
         return valueStartLocation;
@@ -52,8 +50,6 @@ public class JsonSchemaTerminalNode extends JsonSchemaNode {
 
     /**
      * Sets the location of the value in the underlying input.
-     *
-     * @param valueStartLocation
      */
     public void setValueStartLocation(int valueStartLocation) {
         this.valueStartLocation = valueStartLocation;

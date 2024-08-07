@@ -229,9 +229,6 @@ public final class StringUtil {
      * (4) patch version, eg "0"
      * (5) 1st -qualifier, if exists
      * (6) -SNAPSHOT qualifier, if exists
-     *
-     * @param version
-     * @return
      */
     public static String[] tokenizeVersionString(String version) {
         Matcher matcher = VERSION_PATTERN.matcher(version);
@@ -324,7 +321,6 @@ public final class StringUtil {
     /**
      * Strips the trailing slash from the input string, if it is present
      *
-     * @param str
      * @return the string with trailing slash removed
      */
     public static String stripTrailingSlash(String str) {

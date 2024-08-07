@@ -30,8 +30,6 @@ public final class ArrayUtils {
     /**
      * Create copy of the src array.
      *
-     * @param src
-     * @param <T>
      * @return copy of the original array
      */
     public static <T> T[] createCopy(T[] src) {
@@ -82,11 +80,9 @@ public final class ArrayUtils {
      * <p>
      * If the item is found, a new array is returned. Otherwise, the original array is returned.
      *
-     * @param src
      * @param oldValue  the value to look for
      * @param newValues the value that is inserted.
      * @param <T>       the type of the array
-     * @return
      */
     public static <T> T[] replaceFirst(T[] src, T oldValue, T[] newValues) {
         int index = indexOf(src, oldValue);
@@ -141,11 +137,6 @@ public final class ArrayUtils {
 
     /**
      * Copies in order {@code sourceFirst} and {@code sourceSecond} into {@code dest}.
-     *
-     * @param sourceFirst
-     * @param sourceSecond
-     * @param dest
-     * @param <T>
      */
     public static <T> void concat(T[] sourceFirst, T[] sourceSecond, T[] dest) {
         System.arraycopy(sourceFirst, 0, dest, 0, sourceFirst.length);

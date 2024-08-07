@@ -240,8 +240,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     /**
      * Checks if two pointers overlap or are adjacent which means that they can be combined into a single pointer.
      * Requires that {@code left <= right} regardless of descending flags - leads to simpler checks
-     * @param left
-     * @param right
      * @param comparator from/to value comparator, must be able to handle special values (NULL, null).
      * @return if the pointers overlap or are adjacent
      */
@@ -278,10 +276,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
      * overlapping it will contain also everything between them. Pointers can
      * be passed in any order.
      *
-     * @param left
-     * @param right
      * @param comparator from/to value comparator, must be able to handle special values (NULL, null).
-     * @return
      * @see #overlapsOrdered
      */
     public static IndexIterationPointer union(IndexIterationPointer left, IndexIterationPointer right, Comparator comparator) {
@@ -344,7 +339,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
      * Converts list of {@link IndexIterationPointer}s to ordered list of non-overlapping pointers.
      *
      * @param result List to be normalized. It may be modified in place
-     * @param descending
      * @return Normalized list. It may be the same object as passed as argument or different.
      */
     @Nonnull

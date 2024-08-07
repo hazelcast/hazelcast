@@ -107,8 +107,6 @@ public class IOBuffer {
 
     /**
      * Returns the number of bytes remaining in this buffer for reading or writing
-     *
-     * @return
      */
     public int remaining() {
         return buff.remaining();

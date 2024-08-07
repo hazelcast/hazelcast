@@ -104,11 +104,6 @@ public interface SecurityContext {
     /**
      * intercepts a request before process if any {@link SecurityInterceptor} configured
      *
-     * @param credentials
-     * @param serviceName
-     * @param objectName
-     * @param methodName
-     * @param parameters
      * @throws AccessControlException if access is denied
      */
     void interceptBefore(Credentials credentials, String serviceName, String objectName,
@@ -117,11 +112,6 @@ public interface SecurityContext {
     /**
      * intercepts a request after process if any {@link SecurityInterceptor} configured
      * Any exception thrown during interception will be ignored
-     *
-     * @param credentials
-     * @param serviceName
-     * @param objectName
-     * @param methodName
      */
     void interceptAfter(Credentials credentials, String serviceName, String objectName, String methodName);
 
@@ -129,8 +119,6 @@ public interface SecurityContext {
      * Creates secure callable that runs in a sandbox.
      *
      * @param <V>      return type of callable
-     * @param subject
-     * @param callable
      * @return result of callable
      */
     <V> SecureCallable<V> createSecureCallable(Subject subject, Callable<V> callable);
@@ -139,8 +127,6 @@ public interface SecurityContext {
      * Creates secure callable that runs in a sandbox.
      *
      * @param <V>      return type of callable
-     * @param subject
-     * @param runnable
      * @return Will always return null after {@link Runnable} finishes running.
      */
     <V> SecureCallable<?> createSecureCallable(Subject subject, Runnable runnable);

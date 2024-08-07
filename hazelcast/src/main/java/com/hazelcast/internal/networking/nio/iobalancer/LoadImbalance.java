@@ -50,7 +50,6 @@ class LoadImbalance {
     }
 
     /**
-     * @param owner
      * @return A set of Pipelines owned by the owner
      */
     Set<MigratablePipeline> getPipelinesOwnedBy(NioThread owner) {
@@ -58,7 +57,6 @@ class LoadImbalance {
     }
 
     /**
-     * @param pipeline
      * @return load recorded by the pipeline
      */
     long getLoad(MigratablePipeline pipeline) {

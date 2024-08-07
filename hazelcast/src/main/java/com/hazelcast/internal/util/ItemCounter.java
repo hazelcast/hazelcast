@@ -82,7 +82,6 @@ public final class ItemCounter<T> {
     /**
      * Get current counter for an item
      *
-     * @param item
      * @return current state of a counter for item
      */
     public long get(T item) {
@@ -111,8 +110,6 @@ public final class ItemCounter<T> {
 
     /**
      * Increases the count by one for the given item.
-     *
-     * @param item
      */
     public void inc(T item) {
         add(item, 1);
@@ -120,9 +117,6 @@ public final class ItemCounter<T> {
 
     /**
      * Add delta to the item
-     *
-     * @param item
-     * @param delta
      */
     public void add(T item, long delta) {
         MutableLong entry = map.get(item);
@@ -158,10 +152,6 @@ public final class ItemCounter<T> {
 
     /**
      * Set counter for item and return previous value
-     *
-     * @param item
-     * @param value
-     * @return
      */
     public long getAndSet(T item, long value) {
         MutableLong entry = map.get(item);

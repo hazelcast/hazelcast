@@ -157,8 +157,6 @@ public final class JsonSchemaHelper {
      * Creates a description out of a JsonValue. The parser must be
      * pointing to the start of the input.
      *
-     * @param parser
-     * @return
      * @throws IOException
      */
     public static JsonSchemaNode createSchema(JsonParser parser) throws IOException {

@@ -30,7 +30,6 @@ public interface MetadataInitializer {
      * Returns metadata for given binary data. Implementing class decides
      * the type of the metadata returned.
      *
-     * @param keyData
      * @return metadata created from given binary data
      * @throws IOException
      */
@@ -43,7 +42,6 @@ public interface MetadataInitializer {
      * It is up to the implementating class to verify the type of the
      * argument.
      *
-     * @param object
      * @return metadata created from given object
      * @throws IOException
      */

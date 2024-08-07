@@ -88,8 +88,6 @@ public class ScheduledExecutorTaskGetResultFromPartitionMessageTask
     /**
      * Exceptions may be wrapped in ExecutionExceptionDecorator, the wrapped ExecutionException should be sent to
      * the client.
-     *
-     * @param throwable
      */
     @Override
     protected Throwable peelIfNeeded(Throwable throwable) {

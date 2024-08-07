@@ -83,9 +83,6 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
      * Returns expiration time offset in terms of JVM clock. HZ view vs
      * JVM view of expiration time may differ in case of a custom clock
      * implementation.
-     *
-     * @param hzExpirationTime
-     * @return
      */
     protected static long getUserExpirationTime(long hzExpirationTime) {
         if (hzExpirationTime == Long.MAX_VALUE) {

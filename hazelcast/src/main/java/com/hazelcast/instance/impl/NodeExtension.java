@@ -286,9 +286,6 @@ public interface NodeExtension {
 
     /**
      * Creates the channel initializer function.
-     *
-     * @param serverContext
-     * @return
      */
     Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(ServerContext serverContext);
 

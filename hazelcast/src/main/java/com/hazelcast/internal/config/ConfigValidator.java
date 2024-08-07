@@ -122,7 +122,6 @@ public final class ConfigValidator {
     /**
      * Validates the given {@link MapConfig}.
      *
-     * @param config
      * @param mapConfig the {@link MapConfig}
      */
     public static void checkMapConfig(Config config, MapConfig mapConfig,

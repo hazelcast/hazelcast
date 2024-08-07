@@ -37,9 +37,6 @@ public final class SuffixModifierUtils {
 
     /**
      * Remove modifier suffix from given fullName.
-     *
-     * @param fullName
-     * @return
      */
     public static String removeModifierSuffix(String fullName) {
         int indexOfFirstOpeningToken = fullName.indexOf(MODIFIER_OPENING_TOKEN);
@@ -67,7 +64,6 @@ public final class SuffixModifierUtils {
      * In contains no validation of input parameters as it assumes the validation
      * has been already done by {@link #removeModifierSuffix(String)}
      *
-     * @param fullName
      * @param baseName as returned by {@link #removeModifierSuffix(String)}
      * @return modifier suffix or null if no suffix is present
      */

@@ -45,7 +45,6 @@ public class CoalescingDelayedTrigger {
     private ScheduledFuture<?> future;
 
     /**
-     * @param executionService
      * @param delay execution delay in ms
      * @param maxDelay maximum delay in ms. No action will be delayed more specified number of ms.
      * @param runnable action to be executed

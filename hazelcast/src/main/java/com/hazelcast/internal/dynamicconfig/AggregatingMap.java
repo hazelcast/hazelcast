@@ -51,12 +51,6 @@ public final class AggregatingMap<K, V> implements Map<K, V> {
 
     /**
      * Creates new aggregating maps.
-     *
-     * @param map1
-     * @param map2
-     * @param <K>
-     * @param <V>
-     * @return
      */
     public static <K, V> Map<K, V> aggregate(Map<K, V> map1, Map<K, V> map2) {
         return new AggregatingMap<>(map1, map2);

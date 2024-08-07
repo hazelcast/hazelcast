@@ -44,8 +44,6 @@ public class UndefinedErrorCodeException extends HazelcastException
     /**
      * Construct a new {@code UndefinedErrorCodeException} with {@code other} as its
      * cause and {@code other}'s message.
-     *
-     * @param other
      */
     private UndefinedErrorCodeException(UndefinedErrorCodeException other) {
         super(other.getMessage(), other);

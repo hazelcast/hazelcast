@@ -72,9 +72,6 @@ public class PartitionTableView {
     }
 
     /**
-     * @param replicas
-     * @param excludedReplicas
-     *
      * @return {@code true} when this {@code PartitionTableView}
      * references the given {@code replicas UUID}s
      * and not any of the {@code excludedReplicas UUID}s, otherwise
@@ -94,8 +91,6 @@ public class PartitionTableView {
     }
 
     /**
-     * @param partitionTableView
-     *
      * @return a measure of the difference of this
      * versus given {@code partitionTableView}.
      */

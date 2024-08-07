@@ -103,11 +103,6 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     /**
      * This method is used to extend the already locked resource in the prepare phase of the transactions.
      * It also marks the resource true to block reads.
-     *
-     * @param caller
-     * @param threadId
-     * @param leaseTime
-     * @return
      */
     boolean extendLeaseTime(UUID caller, long threadId, long leaseTime) {
         if (!isLockedBy(caller, threadId)) {

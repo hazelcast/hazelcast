@@ -28,7 +28,6 @@ public final class ReflectionUtil {
      *
      * @param clazz     the class containing the static field.
      * @param fieldName the name of the static field.
-     * @param <E>
      * @return the value of the static field. If the field doesn't exist, null is returned.
      */
     public static <E> E findStaticFieldValue(Class clazz, String fieldName) {
@@ -45,7 +44,6 @@ public final class ReflectionUtil {
      *
      * @param className name of the class.
      * @param fieldName the name of the static field.
-     * @param <E>
      * @return the value of the static field. If the field doesn't exist, null is returned.
      */
     public static <E> E findStaticFieldValue(String className, String fieldName) {

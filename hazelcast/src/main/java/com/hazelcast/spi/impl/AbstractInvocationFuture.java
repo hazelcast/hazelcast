@@ -1425,8 +1425,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
          *         while the remote stack trace is reported in its cause exception.
          *     </li>
          * </ul>
-         *
-         * @return
          */
         public Throwable wrapForJoinInternal() {
             return wrapOrPeel(cause);

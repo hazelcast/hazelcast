@@ -29,8 +29,6 @@ public final class LocalMapStatsUtil {
 
     /**
      * Increments other operations count statistic in local map statistics.
-     * @param service
-     * @param mapName
      */
     public static void incrementOtherOperationsCount(MapService service, String mapName) {
         MapServiceContext mapServiceContext = service.getMapServiceContext();

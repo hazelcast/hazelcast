@@ -63,9 +63,6 @@ public class HttpPostCommand extends HttpCommand {
      * &lt;next_line&gt;
      * byte[45]
      * &lt;next_line&gt;
-     *
-     * @param src
-     * @return
      */
     @Override
     public boolean readFrom(ByteBuffer src) {

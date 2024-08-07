@@ -64,8 +64,6 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation impleme
     /**
      * This operation runs on both primary and backup
      * If it is running on backup we should not send a backup operation
-     *
-     * @return
      */
     @Override
     public boolean shouldBackup() {

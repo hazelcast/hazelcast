@@ -59,7 +59,6 @@ public class JsonPattern {
 
     /**
      * Creates a deep copy of a JsonPattern
-     * @param other
      */
     public JsonPattern(JsonPattern other) {
         this(new ArrayList<>(other.pattern));

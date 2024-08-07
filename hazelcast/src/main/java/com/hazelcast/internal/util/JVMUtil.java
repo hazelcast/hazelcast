@@ -86,7 +86,6 @@ public final class JVMUtil {
      * It attempts to correct atomicity issues (i.e. when totalMemory expands) and reported usedMemory
      * results in negative values
      *
-     * @param runtime
      * @return an approximation to the total amount of memory currently
      * used, measured in bytes.
      */

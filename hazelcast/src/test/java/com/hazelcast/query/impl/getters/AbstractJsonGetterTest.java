@@ -175,9 +175,6 @@ public class AbstractJsonGetterTest {
      * Creates a one level json object from given names and values. Each
      * value is associated with the respective name in given order. However,
      * the order of name-value pairs within object are random
-     * @param names
-     * @param values
-     * @return
      */
     private HazelcastJsonValue createJsonValueWithRandomStructure(String[] names, String[] values) {
         Random random = new Random();

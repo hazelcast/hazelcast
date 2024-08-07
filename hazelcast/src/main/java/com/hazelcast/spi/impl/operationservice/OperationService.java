@@ -264,15 +264,12 @@ public interface OperationService {
      * Should be called when an asynchronous operations not running on a operation thread is running.
      *
      * Primary purpose is to provide heartbeats
-     *
-     * @param op
      */
     void onStartAsyncOperation(Operation op);
 
     /**
      * Should be called when the asynchronous operation has completed.
      *
-     * @param op
      * @see #onStartAsyncOperation(Operation)
      */
     void onCompletionAsyncOperation(Operation op);

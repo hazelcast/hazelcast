@@ -70,7 +70,6 @@ public class WeightedEvictableList<T> {
     /**
      * Casts a vote for given list node. This vote is added to the item's
      * weight.
-     * @param weightedItem
      */
     public void voteFor(WeightedItem<T> weightedItem) {
         reorganizationCounter++;
@@ -89,7 +88,6 @@ public class WeightedEvictableList<T> {
      * When half of the list is removed, the weights of all the items
      * are reset. The newly added item gets a vote if applicable.
      *
-     * @param item
      * @return The node that can be used to vote for
      */
     public WeightedItem<T> addOrVote(T item) {

@@ -62,9 +62,6 @@ public interface PartitionReplicaVersionManager {
      * when syncing primary to backup replicas (anti-entropy, migration etc), otherwise there is
      * risk of perpetual attempts to sync partition data which may be already in sync.
      *
-     * @param partitionId
-     * @param namespace
-     * @return
      * @see     com.hazelcast.internal.partition.impl.PartitionReplicaManager#REQUIRES_SYNC
      */
     long[] getPartitionReplicaVersionsForSync(int partitionId, ServiceNamespace namespace);

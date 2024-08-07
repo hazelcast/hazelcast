@@ -48,8 +48,6 @@ public class JsonPathCursor {
 
     /**
      * Creates a shallow copy of this object
-     *
-     * @param other
      */
     JsonPathCursor(JsonPathCursor other) {
         this.attributePath = other.attributePath;
@@ -58,8 +56,6 @@ public class JsonPathCursor {
 
     /**
      * Creates a new cursor from given attribute path.
-     *
-     * @param attributePath
      */
     public static JsonPathCursor createCursor(String attributePath) {
         ArrayList<Triple> triples = new ArrayList<>(DEFAULT_PATH_ELEMENT_COUNT);
@@ -131,8 +127,6 @@ public class JsonPathCursor {
      * efficient to call repeatedly.
      *
      * The returned byte array must not be modified!
-     *
-     * @return
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Making a copy reverses the benefit of this method")
     public byte[] getCurrentAsUTF8() {

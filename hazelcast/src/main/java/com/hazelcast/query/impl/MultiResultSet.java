@@ -29,8 +29,6 @@ public interface MultiResultSet extends Set<QueryableEntry> {
 
     /**
      * TODO
-     *
-     * @param resultSet
      */
     void addResultSet(Map<Data, QueryableEntry> resultSet);
 }

@@ -1658,8 +1658,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
      * <p>
      * The expiration task runs on only primary replicas. Expiration on backup replicas are dictated by primary replicas. However,
      * it is still important to mark a backup replica as expirable because it might be promoted to be the primary in a later time.
-     *
-     * @param expiryTime
      */
     protected void markExpirable(long expiryTime) {
         if (expiryTime > 0 && expiryTime < Long.MAX_VALUE) {

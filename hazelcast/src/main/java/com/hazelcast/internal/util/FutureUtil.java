@@ -406,7 +406,6 @@ public final class FutureUtil {
     /**
      * Rethrow exception of the fist future that completed with an exception
      *
-     * @param futures
      * @throws Exception
      */
     public static void checkAllDone(Collection<Future<?>> futures) throws Exception {
