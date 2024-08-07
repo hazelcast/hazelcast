@@ -43,7 +43,7 @@ public abstract class AbstractCursor<T> implements IdentifiedDataSerializable {
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
-    public AbstractCursor(List<T> entries, IterationPointer[] pointers) {
+    protected AbstractCursor(List<T> entries, IterationPointer[] pointers) {
         this.objects = entries;
         this.pointers = pointers;
     }
