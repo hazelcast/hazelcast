@@ -45,15 +45,13 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
-    private static final long INCREASED_TIMEOUT_SECONDS = 10 * 60L;
-
     @Before
     @After
     public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    @Test(timeout = 12 * 60 * 1000)
+    @Test
     public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
         config.setClusterName(randomName());
@@ -65,13 +63,15 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; i++) {
             communicator.getClusterInfo();
         }
+        System.gc();
+
         final IOBalancer ioBalancer = getIoBalancer(instance);
         assertTrueEventually(() -> {
             int inPipelineSize = ioBalancer.getInLoadTracker().getPipelines().size();
             int outPipelineSize = ioBalancer.getOutLoadTracker().getPipelines().size();
             assertEquals(0, inPipelineSize);
             assertEquals(0, outPipelineSize);
-        }, INCREASED_TIMEOUT_SECONDS);
+        });
     }
 
     @Test
