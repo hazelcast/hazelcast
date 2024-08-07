@@ -2421,9 +2421,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
-     * This method is always executed by a distributed query,
-     * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * This method performs a distributed query to collect all keys, which may
+     * throw a {@link QueryResultSizeExceededException} if the
+     * {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured and exceeded.
+     * <b>Warning:</b>
+     * <p>
+     * Using this method is not recommended unless the entire set of keys
+     * can fit in a single member's memory. Fetching the entire distributed collection
+     * into one machine can lead to significant memory issues and is typically discouraged
+     * in distributed system design. If you must use this method, it is advisable to configure
+     * the {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} property to avoid potential
+     * {@link OutOfMemoryError}.
      *
      * @return an immutable set clone of the keys contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
@@ -2441,9 +2449,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection.
      * <p>
-     * This method is always executed by a distributed query,
-     * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * This method performs a distributed query to collect all values, which may
+     * throw a {@link QueryResultSizeExceededException} if the
+     * {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured and exceeded.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * Using this method is not recommended unless the entire set of values
+     * can fit in a single member's memory. Fetching the entire distributed collection
+     * into one machine can lead to significant memory issues and is typically discouraged
+     * in distributed system design. If you must use this method, it is advisable to configure
+     * the {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} property to avoid potential
+     * {@link OutOfMemoryError}.
      *
      * @return an immutable collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
@@ -2461,9 +2478,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
-     * This method is always executed by a distributed query,
-     * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * This method performs a distributed query to collect all entries, which may
+     * throw a {@link QueryResultSizeExceededException} if the
+     * {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured and exceeded.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * Using this method is not recommended unless the entire set of entries
+     * can fit in a single member's memory. Fetching the entire distributed collection
+     * into one machine can lead to significant memory issues and is typically discouraged
+     * in distributed system design. If you must use this method, it is advisable to configure
+     * the {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} property to avoid potential
+     * {@link OutOfMemoryError}.
      *
      * @return an immutable set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
