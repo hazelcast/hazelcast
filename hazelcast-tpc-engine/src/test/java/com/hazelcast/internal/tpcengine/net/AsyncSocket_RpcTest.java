@@ -249,21 +249,21 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     public void test(int threadCount, int payloadSize) throws InterruptedException {
-        AsyncServerSocket serverSocket = newServer();
+        try (AsyncServerSocket serverSocket = newServer();
+             AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress())) {
 
-        AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress());
+            AtomicLong callIdGenerator = new AtomicLong();
+            LoadGeneratorThread[] threads = new LoadGeneratorThread[threadCount];
+            byte[] payload = new byte[payloadSize];
+            ThreadLocalRandom.current().nextBytes(payload);
+            for (int k = 0; k < threadCount; k++) {
+                LoadGeneratorThread thread = new LoadGeneratorThread(payload, callIdGenerator, clientSocket);
+                threads[k] = thread;
+                thread.start();
+            }
 
-        AtomicLong callIdGenerator = new AtomicLong();
-        LoadGeneratorThread[] threads = new LoadGeneratorThread[threadCount];
-        byte[] payload = new byte[payloadSize];
-        ThreadLocalRandom.current().nextBytes(payload);
-        for (int k = 0; k < threadCount; k++) {
-            LoadGeneratorThread thread = new LoadGeneratorThread(payload, callIdGenerator, clientSocket);
-            threads[k] = thread;
-            thread.start();
+            assertJoinable(testTimeoutMs, threads);
         }
-
-        assertJoinable(testTimeoutMs, threads);
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
@@ -271,7 +271,7 @@ public abstract class AsyncSocket_RpcTest {
                 .set(TCP_NODELAY, tcpNoDelay)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new RpcReader(true));
+                .setReader(new RpcClientReader());
         customizeClientSocketBuilder(clientSocketBuilder);
         AsyncSocket clientSocket = clientSocketBuilder.build();
 
@@ -288,10 +288,10 @@ public abstract class AsyncSocket_RpcTest {
                             .set(TCP_NODELAY, tcpNoDelay)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new RpcReader(false));
+                            .setReader(new RpcServerReader());
                     customizeServerSocketBuilder(socketBuilder);
-                    socketBuilder.build()
-                            .start();
+                    AsyncSocket asyncSocket = socketBuilder.build();
+                    asyncSocket.start();
                 })
                 .build();
 
@@ -300,7 +300,7 @@ public abstract class AsyncSocket_RpcTest {
         return serverSocket;
     }
 
-    public class LoadGeneratorThread extends Thread {
+    private class LoadGeneratorThread extends Thread {
         private final byte[] payload;
         private final AtomicLong callIdGenerator;
         private final AsyncSocket clientSocket;
@@ -329,22 +329,17 @@ public abstract class AsyncSocket_RpcTest {
                 buf.flip();
 
                 if (!clientSocket.writeAndFlush(buf)) {
-                    throw new RuntimeException();
+                    throw new RuntimeException("clientSocket.writeAndFlush failed");
                 }
-
                 future.join();
             }
         }
     }
 
-    private class RpcReader extends AsyncSocketReader {
+    // Base class with common functionality
+    private abstract static class BaseRpcReader extends AsyncSocketReader {
         private IOBuffer response;
-        private final boolean clientSide;
-        private long callId;
-
-        private RpcReader(boolean clientSide) {
-            this.clientSide = clientSide;
-        }
+        protected long callId;
 
         @Override
         public void onRead(ByteBuffer src) {
@@ -356,7 +351,7 @@ public abstract class AsyncSocket_RpcTest {
                     int payloadSize = src.getInt();
                     callId = src.getLong();
 
-                    response = new IOBuffer(SIZEOF_HEADER + payloadSize, true);
+                    response = new IOBuffer(SIZEOF_HEADER + payloadSize, false);
                     response.byteBuffer().limit(SIZEOF_HEADER + payloadSize);
                     response.writeInt(payloadSize);
                     response.writeLong(callId);
@@ -370,24 +365,41 @@ public abstract class AsyncSocket_RpcTest {
                 }
                 response.flip();
 
-                if (clientSide) {
-                    counter.incrementAndGet();
-                    CompletableFuture<IOBuffer> future = futures.remove(callId);
-                    if (future == null) {
-                        throw new IllegalStateException("Can't find future for callId:" + callId);
-                    }
-                    future.complete(response);
-                } else {
-                    boolean offered = localWrite
-                            ? socket.unsafeWriteAndFlush(response)
-                            : socket.writeAndFlush(response);
+                handleComplete(response);
 
-                    if (!offered) {
-                        throw new RuntimeException("Socket has no space");
-                    }
-                }
                 response = null;
             }
+        }
+
+        // Abstract method to be implemented by subclasses
+        protected abstract void handleComplete(IOBuffer response);
+    }
+
+    // Server-specific implementation
+    private class RpcServerReader extends BaseRpcReader {
+        @Override
+        protected void handleComplete(IOBuffer response) {
+            boolean offered = localWrite
+                    ? socket.unsafeWriteAndFlush(response)
+                    : socket.writeAndFlush(response);
+
+            if (!offered) {
+                throw new RuntimeException("Socket has no space");
+            }
+        }
+    }
+
+    // Client-specific implementation
+    private class RpcClientReader extends BaseRpcReader {
+        @Override
+        protected void handleComplete(IOBuffer response) {
+            counter.incrementAndGet();
+
+            CompletableFuture<IOBuffer> future = futures.remove(callId);
+            if (future == null) {
+                throw new IllegalStateException("Can't find future for callId:" + callId);
+            }
+            future.complete(response);
         }
     }
 }
