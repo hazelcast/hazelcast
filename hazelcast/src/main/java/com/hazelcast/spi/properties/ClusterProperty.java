@@ -552,6 +552,8 @@ public final class ClusterProperty {
      * introduce any more waiting and join requests will be processed as they arrive.
      * The only exception to this is if the master state is reset, which may happen
      * in some cases like split-brain healing.
+     * <p>
+     * See {@link #ASYNC_JOIN_STRATEGY_ENABLED} for how this behaviour can change.
      */
     public static final HazelcastProperty WAIT_SECONDS_BEFORE_JOIN
             = new HazelcastProperty("hazelcast.wait.seconds.before.join", 5, SECONDS);
@@ -577,6 +579,8 @@ public final class ClusterProperty {
      * introduce any more waiting and join requests will be processed as they arrive.
      * The only exception to this is if the master state is reset, which may happen
      * in some cases like split-brain healing.
+     * <p>
+     * See {@link #ASYNC_JOIN_STRATEGY_ENABLED} for how this behaviour can change.
      */
     public static final HazelcastProperty MAX_WAIT_SECONDS_BEFORE_JOIN
             = new HazelcastProperty("hazelcast.max.wait.seconds.before.join", 20, SECONDS);

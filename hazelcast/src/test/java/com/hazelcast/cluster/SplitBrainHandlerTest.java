@@ -369,6 +369,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config1.getNetworkConfig().setPort(5901);
         config1.setClusterName(clusterName);
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
+        config1.setProperty(ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED.getName(), "false");
         config1.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "0");
         config1.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "0");
         config1.addListenerConfig(mergeListenerConfig);
@@ -380,6 +381,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config2.setClusterName(clusterName);
         config2.getNetworkConfig().setPort(5701);
         config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
+        config2.setProperty(ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED.getName(), "false");
         config2.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "0");
         config2.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "0");
         config2.addListenerConfig(mergeListenerConfig);

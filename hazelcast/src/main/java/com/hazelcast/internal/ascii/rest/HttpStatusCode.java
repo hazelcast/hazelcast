@@ -28,6 +28,7 @@ public enum HttpStatusCode {
     SC_400(HttpURLConnection.HTTP_BAD_REQUEST, "Bad Request"),
     SC_403(HttpURLConnection.HTTP_FORBIDDEN, "Forbidden"),
     SC_404(HttpURLConnection.HTTP_NOT_FOUND, "Not Found"),
+    SC_409(HttpURLConnection.HTTP_CONFLICT, "Conflict"),
     SC_500(HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Server Error"),
     SC_503(HttpURLConnection.HTTP_UNAVAILABLE, "Service Unavailable")
     ;
