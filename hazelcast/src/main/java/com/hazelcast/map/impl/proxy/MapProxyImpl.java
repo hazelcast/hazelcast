@@ -759,6 +759,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
+        incrementEntrySetCallCount();
         return entrySet(Predicates.alwaysTrue());
     }
 
@@ -788,6 +789,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Collection<V> values() {
+        incrementValuesCallCount();
         return values(Predicates.alwaysTrue());
     }
 

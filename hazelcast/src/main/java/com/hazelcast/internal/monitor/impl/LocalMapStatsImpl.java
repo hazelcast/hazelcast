@@ -33,6 +33,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_BACKUP_ENTRY_MEMORY_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_DIRTY_ENTRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_ENTRYSET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_EVICTION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_EXPIRATION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_GET_COUNT;
@@ -59,6 +60,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_PUT_LATENCY;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_REMOVE_LATENCY;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_SET_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_VALUES_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
@@ -87,6 +89,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "setCount");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalMapStatsImpl.class, "removeCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> VALUES_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "valuesCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> ENTRYSET_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "entrySetCount");
 
     // The resolution is in nanoseconds for the following latencies
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_GET_LATENCIES =
@@ -134,6 +140,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long evictionCount;
     @Probe(name = MAP_METRIC_EXPIRATION_COUNT)
     private volatile long expirationCount;
+
+    @Probe(name = MAP_METRIC_VALUES_COUNT)
+    private volatile long valuesCount;
+    @Probe(name = MAP_METRIC_ENTRYSET_COUNT)
+    private volatile long entrySetCount;
 
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
@@ -327,6 +338,16 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return removeCount;
     }
 
+    @Override
+    public long getValuesCallsCount() {
+        return valuesCount;
+    }
+
+    @Override
+    public long getEntrySetCallsCount() {
+        return entrySetCount;
+    }
+
     @Probe(name = MAP_METRIC_TOTAL_PUT_LATENCY, unit = MS)
     @Override
     public long getTotalPutLatency() {
@@ -498,6 +519,14 @@ public class LocalMapStatsImpl implements LocalMapStats {
         REMOVE_COUNT.incrementAndGet(this);
         TOTAL_REMOVE_LATENCIES.addAndGet(this, latencyNanos);
         setMax(this, MAX_REMOVE_LATENCY, latencyNanos);
+    }
+
+    public void incrementValuesCallCount() {
+        VALUES_COUNT.incrementAndGet(this);
+    }
+
+    public void incrementEntrySetCallCount() {
+        ENTRYSET_COUNT.incrementAndGet(this);
     }
 
     public void incrementOtherOperations() {

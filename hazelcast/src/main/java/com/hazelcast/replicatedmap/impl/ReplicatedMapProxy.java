@@ -447,6 +447,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(true));
         }
+        service.getLocalReplicatedMapStats(name).incrementValuesCallCount();
         return values;
     }
 
@@ -473,6 +474,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         for (ReplicatedRecordStore store : stores) {
             entries.addAll(store.entrySet(true));
         }
+        service.getLocalReplicatedMapStats(name).incrementEntrySetCallCount();
         return (Set) new ResultSet(entries, IterationType.ENTRY);
     }
 

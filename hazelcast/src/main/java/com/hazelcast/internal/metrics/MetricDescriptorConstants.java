@@ -213,6 +213,8 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_REMOVE_COUNT = "removeCount";
     public static final String MAP_METRIC_EVICTION_COUNT = "evictionCount";
     public static final String MAP_METRIC_EXPIRATION_COUNT = "expirationCount";
+    public static final String MAP_METRIC_VALUES_COUNT = "valuesCount";
+    public static final String MAP_METRIC_ENTRYSET_COUNT = "entrySetCount";
     public static final String MAP_METRIC_CREATION_TIME = "creationTime";
     public static final String MAP_METRIC_OWNED_ENTRY_COUNT = "ownedEntryCount";
     public static final String MAP_METRIC_BACKUP_ENTRY_COUNT = "backupEntryCount";
@@ -502,6 +504,8 @@ public final class MetricDescriptorConstants {
     public static final String REPLICATED_MAP_METRIC_GET_COUNT = "getCount";
     public static final String REPLICATED_MAP_METRIC_PUT_COUNT = "putCount";
     public static final String REPLICATED_MAP_METRIC_REMOVE_COUNT = "removeCount";
+    public static final String REPLICATED_MAP_METRIC_VALUES_COUNT = "valuesCount";
+    public static final String REPLICATED_MAP_METRIC_ENTRYSET_COUNT = "entrySetCount";
     public static final String REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES = "totalGetLatencies";
     public static final String REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES = "totalPutLatencies";
     public static final String REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES = "totalRemoveLatencies";

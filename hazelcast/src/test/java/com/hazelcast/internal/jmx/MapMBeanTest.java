@@ -79,6 +79,8 @@ public class MapMBeanTest extends HazelcastTestSupport {
         map.put("secondKey", "secondValue");
         map.remove("secondKey");
         map.set("thirdKey", "thirdValue");
+        map.values();
+        map.entrySet();
         map.remove("thirdKey");
         map.size();
         String value = map.get("firstKey");
@@ -100,6 +102,8 @@ public class MapMBeanTest extends HazelcastTestSupport {
         long localSetOperationCount = getLongAttribute("localSetOperationCount");
         long localGetOperationCount = getLongAttribute("localGetOperationCount");
         long localRemoveOperationCount = getLongAttribute("localRemoveOperationCount");
+        long localValuesOperationCount = getLongAttribute("localValuesOperationCount");
+        long localEntrySetOperationCount = getLongAttribute("localEntrySetOperationCount");
 
         long localTotalPutLatency = getLongAttribute("localTotalPutLatency");
         long localTotalSetLatency = getLongAttribute("localTotalSetLatency");
@@ -115,6 +119,7 @@ public class MapMBeanTest extends HazelcastTestSupport {
         long localTotal = getLongAttribute("localTotal");
         long localTotalHeapCost = getLongAttribute("localHeapCost");
         int size = getIntegerAttribute("size");
+
 
         assertEquals("firstValue", value);
 
@@ -143,6 +148,8 @@ public class MapMBeanTest extends HazelcastTestSupport {
         assertEquals(1, localSetOperationCount);
         assertEquals(1, localGetOperationCount);
         assertEquals(2, localRemoveOperationCount);
+        assertEquals(1, localValuesOperationCount);
+        assertEquals(1, localEntrySetOperationCount);
 
         assertTrue("localTotalPutLatency should be >= 0", localTotalPutLatency >= 0);
         assertTrue("localTotalSetLatency should be >= 0", localTotalSetLatency >= 0);

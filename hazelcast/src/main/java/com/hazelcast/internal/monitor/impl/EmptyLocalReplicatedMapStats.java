@@ -116,6 +116,16 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
     }
 
     @Override
+    public long getValuesCallsCount() {
+        return 0;
+    }
+
+    @Override
+    public long getEntrySetCallsCount() {
+        return 0;
+    }
+
+    @Override
     public long getTotalPutLatency() {
         return 0;
     }

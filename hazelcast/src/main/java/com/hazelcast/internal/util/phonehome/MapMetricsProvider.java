@@ -45,6 +45,8 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_W
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_ENTRYSET_CALLS;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_VALUES_CALLS;
 
 /**
  * Collects information about IMap
@@ -78,6 +80,8 @@ class MapMetricsProvider implements MetricsProvider {
         context.collect(AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
                 mapOperationLatency(node, IS_MAP_STORE_ENABLED.negate(),
                         LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount));
+        context.collect(TOTAL_MAP_VALUES_CALLS, mapCallAggregator(node, LocalMapStats::getValuesCallsCount));
+        context.collect(TOTAL_MAP_ENTRYSET_CALLS, mapCallAggregator(node, LocalMapStats::getEntrySetCallsCount));
     }
 
     private void initMapConfigs(Node node) {
@@ -169,5 +173,13 @@ class MapMetricsProvider implements MetricsProvider {
                 .forEach(mapStats -> latencyInfo.add(totalLatencyProvider.applyAsLong(mapStats),
                         operationCountProvider.applyAsLong(mapStats)));
         return latencyInfo.calculateAverage();
+    }
+
+    private long mapCallAggregator(Node node,
+                                   ToLongFunction<LocalMapStats> mapStatProvider) {
+        return mapConfigs.keySet().stream()
+                .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig).getLocalMapStats())
+                .map(mapStatProvider::applyAsLong)
+                .reduce(0L, Long::sum);
     }
 }

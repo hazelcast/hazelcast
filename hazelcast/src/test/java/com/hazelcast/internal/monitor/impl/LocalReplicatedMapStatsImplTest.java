@@ -56,6 +56,8 @@ public class LocalReplicatedMapStatsImplTest {
         localReplicatedMapStats.incrementGetsNanos(convertMillisToNanos(5));
         localReplicatedMapStats.incrementGetsNanos(convertMillisToNanos(9));
         localReplicatedMapStats.incrementRemovesNanos(convertMillisToNanos(1238));
+        localReplicatedMapStats.incrementValuesCallCount();
+        localReplicatedMapStats.incrementEntrySetCallCount();
         localReplicatedMapStats.incrementOtherOperations();
         localReplicatedMapStats.incrementOtherOperations();
         localReplicatedMapStats.incrementOtherOperations();
@@ -86,6 +88,8 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(2, localReplicatedMapStats.getPutOperationCount());
         assertEquals(3, localReplicatedMapStats.getGetOperationCount());
         assertEquals(1, localReplicatedMapStats.getRemoveOperationCount());
+        assertEquals(1, localReplicatedMapStats.getValuesCallsCount());
+        assertEquals(1, localReplicatedMapStats.getEntrySetCallsCount());
         assertEquals(5632, localReplicatedMapStats.getTotalPutLatency());
         assertEquals(1247, localReplicatedMapStats.getTotalGetLatency());
         assertEquals(1238, localReplicatedMapStats.getTotalRemoveLatency());

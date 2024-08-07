@@ -83,6 +83,18 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
         return statsDelegate.getLocalStats().getRemoveOperationCount();
     }
 
+    @ManagedAnnotation("localValuesOperationCount")
+    @ManagedDescription("number of values() calls on this member")
+    public long getLocalValuesOperationCount() {
+        return statsDelegate.getLocalStats().getValuesCallsCount();
+    }
+
+    @ManagedAnnotation("localEntrySetOperationCount")
+    @ManagedDescription("number of entrySet() calls on this member")
+    public long getLocalEntrySetOperationCount() {
+        return statsDelegate.getLocalStats().getEntrySetCallsCount();
+    }
+
     @ManagedAnnotation("localTotalPutLatency")
     @ManagedDescription("the total latency of put operations. To get the average latency, divide to number of puts")
     public long getLocalTotalPutLatency() {

@@ -1456,6 +1456,13 @@ abstract class MapProxySupport<K, V>
         return queryEngine.execute(query, target);
     }
 
+    protected void incrementValuesCallCount() {
+        localMapStats.incrementValuesCallCount();
+    }
+    protected void incrementEntrySetCallCount() {
+        localMapStats.incrementEntrySetCallCount();
+    }
+
     protected void handleHazelcastInstanceAwareParams(Object... objects) {
         for (Object object : objects) {
             if (object instanceof HazelcastInstanceAware aware) {

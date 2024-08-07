@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -46,6 +47,7 @@ public class MapEntrySetMessageTask
     protected Object reduce(Collection<QueryResultRow> result) {
         List<Map.Entry<Data, Data>> entries = new ArrayList<>(result);
         incrementOtherOperationsCount(getService(MapService.SERVICE_NAME), parameters);
+        incrementMapMetric((MapService) getService(MapService.SERVICE_NAME), parameters);
         return entries;
     }
 
@@ -82,5 +84,14 @@ public class MapEntrySetMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private void incrementMapMetric(MapService service, String mapName) {
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        if (mapServiceContext.getMapContainer(mapName).getMapConfig().isStatisticsEnabled()) {
+            mapServiceContext.getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(mapName)
+                    .incrementEntrySetCallCount();
+        }
     }
 }

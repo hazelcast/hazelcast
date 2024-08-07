@@ -24,4 +24,16 @@ import com.hazelcast.map.LocalMapStats;
  * implementations.
  */
 public interface LocalReplicatedMapStats extends LocalMapStats {
+
+    /**
+     * Increments the number of {@link ReplicatedMap#values()} calls.
+     */
+    default void incrementValuesCallCount() {
+    }
+
+    /**
+     * Increments the number of {@link ReplicatedMap#entrySet()} calls.
+     */
+    default void incrementEntrySetCallCount() {
+    }
 }

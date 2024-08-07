@@ -59,6 +59,7 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ACTIVE_GO_C
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ACTIVE_JAVA_CLIENTS_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ACTIVE_NODEJS_CLIENTS_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ACTIVE_PYTHON_CLIENTS_COUNT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ALL_MEMBERS_CLIENTS_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE;
@@ -97,6 +98,7 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_W
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MULTI_MEMBER_CLIENTS_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.NODEJS_CLIENT_VERSIONS;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.OPENED_CPP_CLIENT_CONNECTIONS_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.OPENED_CSHARP_CLIENT_CONNECTIONS_COUNT;
@@ -110,11 +112,14 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.OPERATING_S
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.PARTITION_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SINGLE_MEMBER_CLIENTS_COUNT;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_CPP_CLIENT_CONNECTION_DURATION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_CSHARP_CLIENT_CONNECTION_DURATION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_GO_CLIENT_CONNECTION_DURATION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_JAVA_CLIENT_CONNECTION_DURATION;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_ENTRYSET_CALLS;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_VALUES_CALLS;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_NODEJS_CLIENT_CONNECTION_DURATION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_PYTHON_CLIENT_CONNECTION_DURATION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UCN_ENABLED;
@@ -122,9 +127,6 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UPTIME_OF_R
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UUID_OF_CLUSTER;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.VIRIDIAN;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.V_CPU_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.ALL_MEMBERS_CLIENTS_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MULTI_MEMBER_CLIENTS_COUNT;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SINGLE_MEMBER_CLIENTS_COUNT;
 import static com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry.INTERNAL_OBJECTS_PREFIXES;
 import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.Long.parseLong;
@@ -571,6 +573,30 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
         return iMap;
     }
+
+    @Test
+    public void testMapValuesCalls() {
+        refreshMetrics();
+
+        instance.getMap(randomMapName()).values();
+        instance.getMap(randomMapName()).values();
+
+        refreshMetrics();
+        assertEquals(2L, parseLong(get(TOTAL_MAP_VALUES_CALLS)));
+    }
+
+    @Test
+    public void testMapEntrySetCalls() {
+        refreshMetrics();
+
+        instance.getMap(randomMapName()).entrySet();
+        instance.getMap(randomMapName()).entrySet();
+        instance.getMap(randomMapName()).entrySet();
+
+        refreshMetrics();
+        assertEquals(3L, parseLong(get(TOTAL_MAP_ENTRYSET_CALLS)));
+    }
+
 
     @Test
     public void testMapPutLatencyWithMapStore() {

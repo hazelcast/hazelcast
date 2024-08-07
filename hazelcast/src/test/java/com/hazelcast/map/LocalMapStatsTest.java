@@ -250,6 +250,18 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testValues() {
+        getMap().values();
+        assertEquals(1, getMapStats().getValuesCallsCount());
+    }
+
+    @Test
+    public void testEntrySet() {
+        getMap().entrySet();
+        assertEquals(1, getMapStats().getEntrySetCallsCount());
+    }
+
+    @Test
     public void testSetAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
