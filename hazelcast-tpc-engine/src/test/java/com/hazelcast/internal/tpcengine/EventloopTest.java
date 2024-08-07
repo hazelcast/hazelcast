@@ -68,8 +68,11 @@ public abstract class EventloopTest {
     public void test_sleep() {
         AtomicInteger executedCount = new AtomicInteger();
         long startMs = System.currentTimeMillis();
-        reactor.offer(() -> reactor.eventloop().sleep(1, SECONDS)
-                .then((o, ex) -> executedCount.incrementAndGet()));
+        reactor.offer(() -> {
+            Eventloop eventloop = reactor.eventloop();
+            Promise<?> sleep = eventloop.sleep(1, SECONDS);
+            sleep.then((o, ex) -> executedCount.incrementAndGet());
+        });
 
         assertEqualsEventually(1, executedCount);
         long duration = System.currentTimeMillis() - startMs;

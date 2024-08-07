@@ -335,7 +335,7 @@ public abstract class Reactor implements Executor {
      * @return the CompletableFuture that is linked to the callable.
      */
     public final <E> CompletableFuture<E> submit(Callable<E> callable) {
-        CompletableFuture future = new CompletableFuture();
+        CompletableFuture<E> future = new CompletableFuture<>();
         Runnable task = () -> {
             try {
                 future.complete(callable.call());
