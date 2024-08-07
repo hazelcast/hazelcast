@@ -401,7 +401,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put("2", toto2);
         // works well
         Set<Map.Entry<String, Employee>> entries = map.entrySet(Predicates.sql("name='toto-super+hero'"));
-        assertTrue(entries.size() > 0);
+        assertFalse(entries.isEmpty());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee e = entry.getValue();
             assertEquals(e, toto2);

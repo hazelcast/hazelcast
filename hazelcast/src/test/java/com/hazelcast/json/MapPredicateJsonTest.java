@@ -857,7 +857,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         PagingPredicate<Integer, HazelcastJsonValue> pagingPredicate = Predicates.pagingPredicate(Predicates.alwaysTrue(), 10);
         Collection<HazelcastJsonValue> values = map.values(pagingPredicate);
         int totalSize = values.size();
-        while (values.size() > 0) {
+        while (!values.isEmpty()) {
             int size = values.size();
             assertEquals(10, size);
             pagingPredicate.nextPage();

@@ -776,7 +776,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
      * @param vertex The vertex for {@code rel}
      */
     private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {
-        boolean preserveCollation = rel.getTraitSet().getCollation().getFieldCollations().size() > 0;
+        boolean preserveCollation = !rel.getTraitSet().getCollation().getFieldCollations().isEmpty();
         Vertex inputVertex = connectInput(rel.getInput(), vertex,
                 preserveCollation ? Edge::isolated : null);
 

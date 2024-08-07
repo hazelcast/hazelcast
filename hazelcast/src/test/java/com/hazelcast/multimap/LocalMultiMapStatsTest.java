@@ -39,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -118,8 +119,8 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 100; i++) {
             int index = i;
-            assertTrueEventually(() -> assertTrue(mmap1.get(index).size() > 0));
-            assertTrueEventually(() -> assertTrue(mmap2.get(index).size() > 0));
+            assertTrueEventually(() -> assertFalse(mmap1.get(index).isEmpty()));
+            assertTrueEventually(() -> assertFalse(mmap2.get(index).isEmpty()));
         }
         testPutAllAndHitsGeneratedTemplateVerify();
     }

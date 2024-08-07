@@ -93,7 +93,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
         SqlNodeList thenList = sqlCall.getThenOperands();
         SqlNode elseOperand = sqlCall.getElseOperand();
 
-        assert whenList.size() > 0 : "no WHEN clause";
+        assert !whenList.isEmpty() : "no WHEN clause";
         assert whenList.size() == thenList.size();
 
         SqlValidatorScope scope = callBinding.getScope();

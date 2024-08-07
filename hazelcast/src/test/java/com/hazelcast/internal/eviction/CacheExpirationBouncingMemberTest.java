@@ -84,7 +84,7 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
                     ICacheRecordStore recordStore = iterator.next();
                     boolean expirable = recordStore.isExpirable();
 
-                    if (recordStore.size() > 0 || recordStore.getExpiredKeysQueue().size() > 0) {
+                    if (recordStore.size() > 0 || !recordStore.getExpiredKeysQueue().isEmpty()) {
                         unexpiredMsg.add(recordStore.getPartitionId());
                         unexpiredMsg.add(recordStore.size());
                         unexpiredMsg.add(recordStore.getExpiredKeysQueue().size());

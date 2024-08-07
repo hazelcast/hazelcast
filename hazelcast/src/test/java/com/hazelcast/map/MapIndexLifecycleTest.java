@@ -63,6 +63,7 @@ import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Arrays.copyOfRange;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -178,13 +179,13 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
                 mapContainer.getGlobalIndexRegistry().getIndex("year"));
         final String authorOwned = findAuthorOwnedBy(instance);
         final Integer yearOwned = findYearOwnedBy(instance);
-        assertTrueEventually(() -> assertTrue("Author index should contain records.",
+        assertTrueEventually(() -> assertFalse("Author index should contain records.",
                 mapContainer.getGlobalIndexRegistry()
                         .getIndex("author")
-                        .getRecords(authorOwned).size() > 0));
+                        .getRecords(authorOwned).isEmpty()));
 
-        assertTrueEventually(() -> assertTrue("Year index should contain records",
-                mapContainer.getGlobalIndexRegistry().getIndex("year").getRecords(yearOwned).size() > 0));
+        assertTrueEventually(() -> assertFalse("Year index should contain records",
+                mapContainer.getGlobalIndexRegistry().getIndex("year").getRecords(yearOwned).isEmpty()));
     }
 
     private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {

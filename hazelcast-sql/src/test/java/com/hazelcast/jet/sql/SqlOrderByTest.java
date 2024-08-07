@@ -849,7 +849,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
         }
-        if (indexAttrs.size() > 0) {
+        if (!indexAttrs.isEmpty()) {
             map.addIndex(indexConfig);
         }
 

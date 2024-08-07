@@ -54,7 +54,7 @@ public final class UnparseUtil {
     }
 
     public static void unparseOptions(SqlWriter writer, String prefix, SqlNodeList options) {
-        if (options != null && options.size() > 0) {
+        if (options != null && !options.isEmpty()) {
             writer.newlineAndIndent();
             writer.keyword(prefix);
             SqlWriter.Frame withFrame = writer.startList("(", ")");

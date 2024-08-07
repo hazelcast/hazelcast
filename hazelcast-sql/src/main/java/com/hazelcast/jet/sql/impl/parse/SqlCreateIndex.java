@@ -138,7 +138,7 @@ public class SqlCreateIndex extends SqlCreate {
 
         mapName.unparse(writer, leftPrec, rightPrec);
 
-        if (columns.size() > 0) {
+        if (!columns.isEmpty()) {
             SqlWriter.Frame frame = writer.startList("(", ")");
             for (SqlNode column : columns) {
                 printIndent(writer);

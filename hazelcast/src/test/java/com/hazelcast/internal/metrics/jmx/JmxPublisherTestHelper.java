@@ -68,7 +68,7 @@ public class JmxPublisherTestHelper {
 
     public void assertNoMBeans() {
         Set<ObjectInstance> instances = queryOurInstances();
-        if (instances.size() > 0) {
+        if (!instances.isEmpty()) {
             String jvmName = ManagementFactory.getRuntimeMXBean().getName();
             logger.info("Dangling metrics MBeans created by " + jvmName + ": " + instances);
         }

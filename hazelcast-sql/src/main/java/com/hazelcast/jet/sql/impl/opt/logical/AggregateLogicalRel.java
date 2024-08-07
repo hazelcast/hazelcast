@@ -51,6 +51,6 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
     }
 
     public final boolean hasCollation() {
-        return getAggCallList().stream().anyMatch(agg -> agg.getCollation().getFieldCollations().size() > 0);
+        return getAggCallList().stream().anyMatch(agg -> !agg.getCollation().getFieldCollations().isEmpty());
     }
 }

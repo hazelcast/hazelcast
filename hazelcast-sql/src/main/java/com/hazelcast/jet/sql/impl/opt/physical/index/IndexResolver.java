@@ -205,7 +205,7 @@ public final class IndexResolver {
 
                 rels.add(relAscending);
 
-                if (relAscCollation.getFieldCollations().size() > 0) {
+                if (!relAscCollation.getFieldCollations().isEmpty()) {
                     RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
                     rels.add(relDescending);
 

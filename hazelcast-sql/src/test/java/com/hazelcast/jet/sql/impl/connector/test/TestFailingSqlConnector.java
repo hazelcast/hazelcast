@@ -70,7 +70,7 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
-        if (userFields.size() > 0) {
+        if (!userFields.isEmpty()) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
         return FIELD_LIST;

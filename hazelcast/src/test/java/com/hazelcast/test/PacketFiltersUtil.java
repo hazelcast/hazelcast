@@ -141,7 +141,7 @@ public final class PacketFiltersUtil {
                 List<Integer> typeIds, Action action) {
             super(serializationService);
             this.action = Preconditions.checkNotNull(action);
-            assert typeIds.size() > 0 : "At least one operation type must be defined!";
+            assert !typeIds.isEmpty() : "At least one operation type must be defined!";
             this.factory = factory;
             types.addAll(typeIds);
         }

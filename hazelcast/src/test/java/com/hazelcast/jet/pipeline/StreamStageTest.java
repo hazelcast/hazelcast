@@ -449,7 +449,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<String> mapped = streamStageFromList(input).mapUsingServiceAsyncBatched(
                 serviceFactory, batchSize, (executor, list) -> {
                     CompletableFuture<List<String>> f = new CompletableFuture<>();
-                    assertTrue("list size", list.size() <= batchSize && list.size() > 0);
+                    assertTrue("list size", list.size() <= batchSize && !list.isEmpty());
                     executor.schedule(() -> {
                         List<String> result = list.stream().map(i -> formatFn.apply(suffix, i)).collect(toList());
                         f.complete(result);
@@ -482,7 +482,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<String> mapped = streamStageFromList(input).mapUsingServiceAsyncBatched(serviceFactory, batchSize,
                 (executor, list) -> {
                     CompletableFuture<List<String>> f = new CompletableFuture<>();
-                    assertTrue("list size", list.size() <= batchSize && list.size() > 0);
+                    assertTrue("list size", list.size() <= batchSize && !list.isEmpty());
                     executor.schedule(() -> {
                         List<String> result = list.stream()
                                 .map(i -> i % 13 == 0 ? null : formatFn.apply(suffix, i))
@@ -578,7 +578,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                         batchSize,
                         (executor, keys, items) -> {
                             CompletableFuture<List<String>> f = new CompletableFuture<>();
-                            assertTrue("list size", items.size() <= batchSize && items.size() > 0);
+                            assertTrue("list size", items.size() <= batchSize && !items.isEmpty());
                             assertEquals("lists size equality", items.size(), keys.size());
                             executor.schedule(() -> {
                                 List<String> result = items.stream()
@@ -618,7 +618,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                         batchSize,
                         (executor, items) -> {
                             CompletableFuture<List<String>> f = new CompletableFuture<>();
-                            assertTrue("list size", items.size() <= batchSize && items.size() > 0);
+                            assertTrue("list size", items.size() <= batchSize && !items.isEmpty());
                             executor.schedule(() -> {
                                 List<String> result = items.stream()
                                         .map(i -> formatFn.apply(suffix, i))
@@ -657,7 +657,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                         batchSize,
                         (executor, keys, items) -> {
                             CompletableFuture<List<String>> f = new CompletableFuture<>();
-                            assertTrue("list size", items.size() <= batchSize && items.size() > 0);
+                            assertTrue("list size", items.size() <= batchSize && !items.isEmpty());
                             assertEquals("lists size equality", items.size(), keys.size());
                             executor.schedule(() -> {
                                 List<String> results = items.isEmpty() ? Collections.emptyList() : new ArrayList<>();

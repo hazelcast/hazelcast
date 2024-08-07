@@ -224,7 +224,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
     }
 
     private void invalidateIterators() {
-        if (compactList.size() == 0) {
+        if (compactList.isEmpty()) {
             compactList.clear();
         } else {
             compactList.remove(0);
