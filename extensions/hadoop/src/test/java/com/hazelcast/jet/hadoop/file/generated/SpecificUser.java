@@ -20,10 +20,10 @@ public class SpecificUser extends org.apache.avro.specific.SpecificRecordBase im
   private static SpecificData MODEL$ = new SpecificData();
 
   private static final BinaryMessageEncoder<SpecificUser> ENCODER =
-      new BinaryMessageEncoder<SpecificUser>(MODEL$, SCHEMA$);
+      new BinaryMessageEncoder<>(MODEL$, SCHEMA$);
 
   private static final BinaryMessageDecoder<SpecificUser> DECODER =
-      new BinaryMessageDecoder<SpecificUser>(MODEL$, SCHEMA$);
+      new BinaryMessageDecoder<>(MODEL$, SCHEMA$);
 
   /**
    * Return the BinaryMessageDecoder instance used by this class.
@@ -37,7 +37,7 @@ public class SpecificUser extends org.apache.avro.specific.SpecificRecordBase im
    * @param resolver a {@link SchemaStore} used to find schemas by fingerprint
    */
   public static BinaryMessageDecoder<SpecificUser> createDecoder(SchemaStore resolver) {
-    return new BinaryMessageDecoder<SpecificUser>(MODEL$, SCHEMA$, resolver);
+    return new BinaryMessageDecoder<>(MODEL$, SCHEMA$, resolver);
   }
 
   /** Serializes this SpecificUser to a ByteBuffer. */

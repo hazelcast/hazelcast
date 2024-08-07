@@ -99,7 +99,7 @@ public final class WindowUtils {
         long slideStep = windowPolicy.frameSize();
         long firstWindowStart = windowPolicy.floorFrameTs(millis - windowPolicy.windowSize() + slideStep);
 
-        return new Traverser<JetSqlRow>() {
+        return new Traverser<>() {
             long currentStart = firstWindowStart;
 
             @Override

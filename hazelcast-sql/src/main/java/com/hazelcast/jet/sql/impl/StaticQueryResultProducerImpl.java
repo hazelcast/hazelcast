@@ -47,7 +47,7 @@ public class StaticQueryResultProducerImpl implements QueryResultProducer {
         }
         iteratorRequested = true;
 
-        return new ResultIterator<JetSqlRow>() {
+        return new ResultIterator<>() {
             @Override
             public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
                 return iterator.hasNext() ? HasNextResult.YES : HasNextResult.DONE;

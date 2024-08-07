@@ -58,7 +58,7 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
     @SuppressWarnings("AnonInnerLength")
     public RecordReader<NullWritable, Object> createRecordReader(InputSplit split, TaskAttemptContext context) {
 
-        return new RecordReader<NullWritable, Object>() {
+        return new RecordReader<>() {
 
             private Class<?> formatClazz;
             private final LineRecordReader reader = new LineRecordReader();

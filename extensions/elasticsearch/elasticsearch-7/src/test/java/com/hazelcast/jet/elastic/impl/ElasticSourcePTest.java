@@ -106,7 +106,7 @@ public class ElasticSourcePTest {
             throws Exception {
 
         RestHighLevelClient client = mockClient;
-        ElasticSourceConfiguration<String> configuration = new ElasticSourceConfiguration<String>(
+        ElasticSourceConfiguration<String> configuration = new ElasticSourceConfiguration<>(
                 () -> client,
                 () -> new SearchRequest("*"),
                 optionsFn,

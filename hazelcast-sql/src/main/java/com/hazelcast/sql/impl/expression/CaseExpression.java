@@ -48,7 +48,7 @@ public class CaseExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     public static <T> CaseExpression<T> nullif(Expression<?> left, Expression<?> right) {
-        return new CaseExpression<T>(
+        return new CaseExpression<>(
                 new Expression[]{ComparisonPredicate.create(left, right, ComparisonMode.EQUALS)},
                 new Expression[]{ConstantExpression.create(null, left.getType())},
                 left

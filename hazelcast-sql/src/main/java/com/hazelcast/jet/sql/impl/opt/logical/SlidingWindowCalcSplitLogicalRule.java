@@ -73,7 +73,7 @@ public class SlidingWindowCalcSplitLogicalRule extends RelRule<Config> implement
         final boolean[] mustNotExecute = {false};
 
         RexProgram program = calc.getProgram();
-        RexVisitorImpl<Void> visitor = new RexVisitorImpl<Void>(true) {
+        RexVisitorImpl<Void> visitor = new RexVisitorImpl<>(true) {
             @Override
             public Void visitInputRef(RexInputRef ref) {
                 int index = ref.getIndex();

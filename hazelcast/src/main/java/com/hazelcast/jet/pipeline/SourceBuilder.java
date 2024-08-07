@@ -200,7 +200,7 @@ public final class SourceBuilder<C> {
             @Nonnull String name,
             @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
     ) {
-        return new SourceBuilder<C>(name, createFn).new Batch<Void>();
+        return new SourceBuilder<C>(name, createFn).new Batch<>();
     }
 
     /**
@@ -261,7 +261,7 @@ public final class SourceBuilder<C> {
             @Nonnull String name,
             @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
     ) {
-        return new SourceBuilder<C>(name, createFn).new Stream<Void>();
+        return new SourceBuilder<C>(name, createFn).new Stream<>();
     }
 
     /**
@@ -345,7 +345,7 @@ public final class SourceBuilder<C> {
             @Nonnull String name,
             @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
     ) {
-        return new SourceBuilder<C>(name, createFn).new TimestampedStream<Void>();
+        return new SourceBuilder<C>(name, createFn).new TimestampedStream<>();
     }
 
     private abstract class Base<T> {
