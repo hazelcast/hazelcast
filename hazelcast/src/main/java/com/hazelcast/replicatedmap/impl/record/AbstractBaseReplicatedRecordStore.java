@@ -73,6 +73,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
                         new ReplicatedMapEvictionProcessor(this, nodeEngine, partitionId), ScheduleType.POSTPONE);
     }
 
+    @Override
     public InternalReplicatedMapStorage<K, V> getStorage() {
         return storageRef.get();
     }

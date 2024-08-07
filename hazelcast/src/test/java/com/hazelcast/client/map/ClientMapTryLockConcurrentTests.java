@@ -100,6 +100,7 @@ public class ClientMapTryLockConcurrentTests {
             super(map, upKey, downKey);
         }
 
+        @Override
         public void doRun() throws Exception {
             if (map.tryLock(upKey)) {
                 try {
@@ -123,6 +124,7 @@ public class ClientMapTryLockConcurrentTests {
             super(map, upKey, downKey);
         }
 
+        @Override
         public void doRun() throws Exception {
             if (map.tryLock(upKey, 1, TimeUnit.MILLISECONDS)) {
                 try {
@@ -155,6 +157,7 @@ public class ClientMapTryLockConcurrentTests {
             this.downKey = downKey;
         }
 
+        @Override
         public void run() {
             try {
                 for (int i = 0; i < ITERATIONS; i++) {

@@ -56,6 +56,7 @@ public final class ClusterFailureTestSupport {
             factory.terminateAll();
         }
 
+        @Override
         public String toString() {
             return this.getClass().getSimpleName();
         }
@@ -192,6 +193,7 @@ public final class ClusterFailureTestSupport {
             factory.terminateAll();
         }
 
+        @Override
         public String toString() {
             return this.getClass().getSimpleName();
         }

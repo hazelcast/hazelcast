@@ -53,6 +53,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
     public CountDownLatch deleteLatch;
     public CountDownLatch loadAllLatch;
 
+    @Override
     public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
         this.hazelcastInstance = hazelcastInstance;
         this.properties = properties;
@@ -64,6 +65,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         return events;
     }
 
+    @Override
     public void destroy() {
     }
 
@@ -104,6 +106,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         return this;
     }
 
+    @Override
     public void store(K key, V value) {
         store.put(key, value);
         callCount.incrementAndGet();
@@ -114,6 +117,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         events.offer(STORE_EVENTS.STORE);
     }
 
+    @Override
     public V load(K key) {
         callCount.incrementAndGet();
         loadCount.incrementAndGet();
@@ -121,6 +125,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         return store.get(key);
     }
 
+    @Override
     public void storeAll(Map<K, V> map) {
         store.putAll(map);
         callCount.incrementAndGet();
@@ -134,6 +139,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         events.offer(STORE_EVENTS.STORE_ALL);
     }
 
+    @Override
     public void delete(K key) {
         store.remove(key);
         callCount.incrementAndGet();
@@ -143,6 +149,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         events.offer(STORE_EVENTS.DELETE);
     }
 
+    @Override
     public Set<K> loadAllKeys() {
         if (loadAllLatch != null) {
             loadAllLatch.countDown();
@@ -155,6 +162,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         return store.keySet();
     }
 
+    @Override
     public Map<K, V> loadAll(Collection<K> keys) {
         Map<K, V> map = new HashMap<>(keys.size());
         for (K key : keys) {
@@ -168,6 +176,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         return map;
     }
 
+    @Override
     public void deleteAll(Collection<K> keys) {
         for (K key : keys) {
             store.remove(key);

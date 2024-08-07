@@ -74,10 +74,12 @@ public class PartitionLostListenerStressTest extends AbstractPartitionLostListen
     @Parameter(3)
     public boolean shouldExpectPartitionLostEvents;
 
+    @Override
     protected int getNodeCount() {
         return 5;
     }
 
+    @Override
     protected int getMapEntryCount() {
         return 5000;
     }

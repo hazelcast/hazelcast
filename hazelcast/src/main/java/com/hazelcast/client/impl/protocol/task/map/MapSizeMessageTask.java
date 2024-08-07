@@ -72,6 +72,7 @@ public class MapSizeMessageTask
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }

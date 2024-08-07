@@ -121,6 +121,7 @@ public class ProbabilisticSplitBrainProtectionConfigBuilder extends SplitBrainPr
         return this;
     }
 
+    @Override
     public SplitBrainProtectionConfig build() {
         ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction
                 = new ProbabilisticSplitBrainProtectionFunction(minimumClusterSize, heartbeatIntervalMillis,

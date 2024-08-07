@@ -53,6 +53,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
         return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
     }
 
+    @Override
     public boolean shouldWait() {
         return recordStore.isTransactionallyLocked(dataKey)
                 && !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());

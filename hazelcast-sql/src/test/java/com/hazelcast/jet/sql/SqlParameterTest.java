@@ -78,6 +78,7 @@ public class SqlParameterTest extends SqlTestSupport {
     }
 
     @After
+    @Override
     public void tearDown() {
         member = null;
         client = null;

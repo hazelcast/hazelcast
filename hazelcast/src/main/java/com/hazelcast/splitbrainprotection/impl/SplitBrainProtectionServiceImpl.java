@@ -240,6 +240,7 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
         splitBrainProtection.ensureNoSplitBrain(op);
     }
 
+    @Override
     public void ensureNoSplitBrain(@Nullable String splitBrainProtectionName,
                                    @Nonnull SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
         checkNotNull(requiredSplitBrainProtectionPermissionType,

@@ -228,6 +228,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return new UnmodifiableLazyList(MultiMapRemoveCodec.decodeResponse(response), getSerializationService());
     }
 
+    @Override
     public void delete(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);

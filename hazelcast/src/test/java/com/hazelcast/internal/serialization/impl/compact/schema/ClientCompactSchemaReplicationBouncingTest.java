@@ -30,11 +30,13 @@ import org.junit.runner.RunWith;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class ClientCompactSchemaReplicationBouncingTest extends CompactSchemaReplicationBouncingTest {
 
+    @Override
     protected DriverFactory getDriverFactory() {
         ClientConfig config = new ClientConfig();
         return new MultiSocketClientDriverFactory(config);
     }
 
+    @Override
     protected BounceTestConfiguration.DriverType getDriverType() {
         return BounceTestConfiguration.DriverType.CLIENT;
     }

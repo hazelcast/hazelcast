@@ -168,6 +168,7 @@ public class MultiMapProxyImpl<K, V>
         return result.getObjectCollection(nodeEngine);
     }
 
+    @Override
     public void delete(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         NodeEngine nodeEngine = getNodeEngine();

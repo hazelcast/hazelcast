@@ -77,6 +77,7 @@ public class ClientReliableTopicConfig implements NamedConfig {
      *
      * @return the name of the reliable topic.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -85,6 +86,7 @@ public class ClientReliableTopicConfig implements NamedConfig {
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link ClientConfig}.
      */
+    @Override
     public ClientReliableTopicConfig setName(String name) {
         this.name = name;
         return this;

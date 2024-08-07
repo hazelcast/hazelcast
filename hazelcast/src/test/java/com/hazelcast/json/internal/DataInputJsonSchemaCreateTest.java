@@ -40,6 +40,7 @@ public class DataInputJsonSchemaCreateTest extends AbstractJsonSchemaCreateTest 
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final JsonFactory factory = new JsonFactory();
 
+    @Override
     protected JsonParser createParserFromString(String jsonString) throws IOException {
         return factory.createParser(convertToInputStream(serializationService.createObjectDataInput(serializationService.toBytes(new HazelcastJsonValue(jsonString))), 12));
     }

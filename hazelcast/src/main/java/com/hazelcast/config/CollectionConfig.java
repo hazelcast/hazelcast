@@ -86,6 +86,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      *
      * @return the name of this collection
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -96,6 +97,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * @param name the name of this collection
      * @return the updated collection configuration
      */
+    @Override
     public T setName(String name) {
         this.name = name;
         return (T) this;
@@ -290,6 +292,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * @return the updated {@link CollectionConfig} instance
      * @since 5.4
      */
+    @Override
     public T setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return (T) this;

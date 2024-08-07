@@ -248,6 +248,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     /**
      * @return the name of this queue
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -258,6 +259,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      * @param name the name to set for this queue
      * @return this queue configuration
      */
+    @Override
     public QueueConfig setName(String name) {
         this.name = name;
         return this;
@@ -394,6 +396,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      * @return the updated {@link QueueConfig} instance
      * @since 5.4
      */
+    @Override
     public QueueConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

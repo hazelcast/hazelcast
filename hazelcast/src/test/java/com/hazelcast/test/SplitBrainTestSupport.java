@@ -139,6 +139,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
                 .setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
 
+    @Override
     protected final Config getConfig() {
         return super.getConfig();
     }

@@ -25,6 +25,7 @@ import picocli.CommandLine;
 class VersionProvider
         implements CommandLine.IVersionProvider {
 
+    @Override
     public String[] getVersion() {
         return new String[]{"Version: " + BuildInfoProvider.getBuildInfo().getVersion()};
     }

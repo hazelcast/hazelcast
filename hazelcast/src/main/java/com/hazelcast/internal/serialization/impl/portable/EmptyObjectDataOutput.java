@@ -149,6 +149,7 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void close() {
     }
 

@@ -66,6 +66,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
     private GenericMapStore<Integer, String> mapStoreSingleColAsValue;
 
     @After
+    @Override
     public void after() {
         if (mapStore != null && mapStore.initHasFinished()) {
             mapStore.destroy();

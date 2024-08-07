@@ -165,10 +165,12 @@ public class TcpServerConnection implements ServerConnection {
     }
 
 
+    @Override
     public long getStartTime() {
         return startTime;
     }
 
+    @Override
     public TcpServerConnectionManager getConnectionManager() {
         return connectionManager;
     }

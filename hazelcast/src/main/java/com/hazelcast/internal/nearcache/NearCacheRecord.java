@@ -130,6 +130,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     void setCachedAsNull(boolean valueCachedAsNull);
 
+    @Override
     default boolean isExpiredAt(long now) {
         long expirationTime = getExpirationTime();
         return (expirationTime > 0L) && (expirationTime <= now);

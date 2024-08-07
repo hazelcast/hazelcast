@@ -205,6 +205,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         init();
     }
 
+    @Override
     public SerializationService getSerializationService() {
         return ss;
     }
@@ -1233,6 +1234,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
+    @Override
     public void evictExpiredEntries(int expirationPercentage) {
         long now = Clock.currentTimeMillis();
         int maxIterationCount = getMaxIterationCount(size(), expirationPercentage);

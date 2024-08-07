@@ -588,6 +588,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
             return "response";
         }
 
+        @Override
         public void run() {
         }
 

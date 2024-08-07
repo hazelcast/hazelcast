@@ -28,6 +28,7 @@ public class PropertyReplacer implements ConfigReplacer {
 
     private Properties properties;
 
+    @Override
     public void init(Properties properties) {
         this.properties = properties;
     }

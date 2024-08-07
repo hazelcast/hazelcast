@@ -110,6 +110,7 @@ public class S3SinkTest extends S3TestBase {
         testSink(BUCKET, prefix + "non-ascii-file-", 10, "测试");
     }
 
+    @Override
     SupplierEx<S3Client> clientSupplier() {
         return S3SinkTest::client;
     }

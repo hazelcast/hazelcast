@@ -120,6 +120,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * @return the updated ReliableTopicConfig
      * @throws IllegalArgumentException if name is {@code null}
      */
+    @Override
     public ReliableTopicConfig setName(String name) {
         this.name = isNotNull(name, "name");
         return this;
@@ -130,6 +131,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      *
      * @return the name of the reliable topic
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -317,6 +319,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * @return the updated {@link ReliableTopicConfig} instance
      * @since 5.4
      */
+    @Override
     public ReliableTopicConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

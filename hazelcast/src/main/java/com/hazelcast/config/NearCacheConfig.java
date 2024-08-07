@@ -123,6 +123,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      *
      * @return the name of the Near Cache
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -133,6 +134,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * @param name the name of the Near Cache
      * @return this Near Cache config instance
      */
+    @Override
     public NearCacheConfig setName(String name) {
         this.name = isNotNull(name, "name");
         return this;

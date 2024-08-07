@@ -34,6 +34,7 @@ public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter {
         this.predicate = predicate;
     }
 
+    @Override
     public boolean eval(Object arg) {
         QueryableEntry entry = (QueryableEntry) arg;
         Data keyData = entry.getKeyData();

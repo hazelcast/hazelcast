@@ -238,6 +238,7 @@ public class MemberStateImpl implements MemberState {
         wanStats.put(name, localWanStats);
     }
 
+    @Override
     public Collection<ClientEndPointDTO> getClients() {
         return clients;
     }

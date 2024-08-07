@@ -29,6 +29,7 @@ public interface LocalTopicStats extends LocalInstanceStats {
      *
      * @return creation time of this topic on this member
      */
+    @Override
     long getCreationTime();
 
     /**

@@ -236,6 +236,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      * @return the updated {@link TopicConfig} instance
      * @since 5.4
      */
+    @Override
     public TopicConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

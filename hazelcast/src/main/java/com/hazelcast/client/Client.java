@@ -35,6 +35,7 @@ public interface Client extends Endpoint {
      *
      * @return a unique UUID for this client
      */
+    @Override
     UUID getUuid();
 
     /**
@@ -42,6 +43,7 @@ public interface Client extends Endpoint {
      *
      * @return the socket address of this client
      */
+    @Override
     InetSocketAddress getSocketAddress();
 
     /**

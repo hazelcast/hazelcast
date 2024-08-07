@@ -39,6 +39,7 @@ public class ReflectionClassNameFilter implements ClassNameFilter {
         }
     }
 
+    @Override
     public void filter(String className) throws SecurityException {
         if (blacklist.isListed(className)) {
             throw new SecurityException(format(LOAD_CLASS_ERROR, className));

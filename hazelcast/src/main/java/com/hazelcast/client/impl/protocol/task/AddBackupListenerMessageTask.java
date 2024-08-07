@@ -95,6 +95,7 @@ public class AddBackupListenerMessageTask
         return null;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return null;
     }

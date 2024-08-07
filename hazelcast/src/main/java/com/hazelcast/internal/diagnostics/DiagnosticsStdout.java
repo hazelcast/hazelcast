@@ -45,6 +45,7 @@ final class DiagnosticsStdout implements DiagnosticsLog {
         logger.info("Sending diagnostics logs to the stdout");
     }
 
+    @Override
     public void write(DiagnosticsPlugin plugin) {
         try {
             if (!staticPluginsRendered) {

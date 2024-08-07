@@ -230,6 +230,7 @@ public class ClientScheduledFutureProxy<V>
         return this.get0(timeout, unit);
     }
 
+    @Override
     public void dispose() {
         checkAccessibleHandler();
         UUID uuid = handler.getUuid();

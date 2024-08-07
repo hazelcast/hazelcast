@@ -41,14 +41,17 @@ public class JavaXCacheDependencyClientTest extends AbstractJavaXCacheDependency
         hazelcast.getLifecycleService().terminate();
     }
 
+    @Override
     protected String getConfigClass() {
         return "com.hazelcast.client.config.ClientConfig";
     }
 
+    @Override
     protected String getHazelcastClass() {
         return "com.hazelcast.client.HazelcastClient";
     }
 
+    @Override
     protected String getNewInstanceMethod() {
         return "newHazelcastClient";
     }

@@ -208,6 +208,7 @@ public interface Channel extends Closeable {
      * <p>
      * When the channel already is closed, the call is ignored.
      */
+    @Override
     void close() throws IOException;
 
     /**

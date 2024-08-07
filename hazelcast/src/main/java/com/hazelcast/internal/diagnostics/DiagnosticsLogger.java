@@ -42,6 +42,7 @@ final class DiagnosticsLogger implements DiagnosticsLog {
         logger.info("Sending diagnostics to the 'com.hazelcast.diagnostics' logger");
     }
 
+    @Override
     public void write(DiagnosticsPlugin plugin) {
         try {
             if (!staticPluginsRendered) {

@@ -146,6 +146,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             }
         }
 
+        @Override
         public void stateChanged(LifecycleEvent event) {
             counter.get(event.getState()).incrementAndGet();
             eventQueue.offer(event.getState());
@@ -803,6 +804,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             this.mergeLatch = mergeLatch;
         }
 
+        @Override
         public void stateChanged(LifecycleEvent event) {
             if (event.getState() == LifecycleState.MERGED) {
                 mergeLatch.countDown();

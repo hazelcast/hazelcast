@@ -34,6 +34,7 @@ class StaticAddressPicker implements AddressPicker {
         this.thisAddress = thisAddress;
     }
 
+    @Override
     public void pickAddress() {
     }
 

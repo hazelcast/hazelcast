@@ -238,6 +238,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                     ^ (value == null ? 0 : value.hashCode());
         }
 
+        @Override
         public String toString() {
             return key + "=" + value;
         }

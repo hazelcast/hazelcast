@@ -221,6 +221,7 @@ public class TextProtocolClient implements Closeable {
             this.is = is;
         }
 
+        @Override
         public void run() {
             try {
                 IOUtil.drainTo(is, os);

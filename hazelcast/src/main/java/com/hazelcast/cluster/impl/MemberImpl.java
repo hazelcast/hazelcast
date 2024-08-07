@@ -134,6 +134,7 @@ public final class MemberImpl
         attributes.put(key, value);
     }
 
+    @Override
     public int getFactoryId() {
         return ClusterDataSerializerHook.F_ID;
     }

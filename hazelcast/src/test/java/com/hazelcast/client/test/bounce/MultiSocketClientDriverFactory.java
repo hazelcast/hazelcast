@@ -35,6 +35,7 @@ public class MultiSocketClientDriverFactory extends AbstractClientDriverFactory 
     /**
      * Creates client config for {@link RoutingMode#ALL_MEMBERS} routing client
      */
+    @Override
     protected ClientConfig getClientConfig(HazelcastInstance member) {
         ClientConfig config = clientConfig == null ? new ClientConfig() : clientConfig;
         config.getNetworkConfig().setRedoOperation(true);

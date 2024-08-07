@@ -95,6 +95,7 @@ public class MapLoaderUnexpectedLoadedItemsTest extends HazelcastTestSupport {
             this.useProvidedKeys = useProvidedKeys;
         }
 
+        @Override
         public String load(Integer key) {
             return key.toString();
         }
@@ -116,6 +117,7 @@ public class MapLoaderUnexpectedLoadedItemsTest extends HazelcastTestSupport {
             return loadAllKeys();
         }
 
+        @Override
         public Iterable<Integer> loadAllKeys() {
             return Lists.newArrayList(KEYS_TO_LOAD);
         }

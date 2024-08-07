@@ -64,6 +64,7 @@ public class NotEqualPredicate extends AbstractPredicate implements NegatablePre
         return !super.apply(mapEntry);
     }
 
+    @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         // XXX: The code below performs equality check, instead of inequality.
         // The result of this check is negated in NotEqualPredicate.apply method.

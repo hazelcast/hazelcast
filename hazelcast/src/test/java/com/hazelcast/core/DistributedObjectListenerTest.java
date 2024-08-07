@@ -64,10 +64,12 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         public static AtomicInteger createdCount = new AtomicInteger();
         public static AtomicInteger destroyedCount = new AtomicInteger();
 
+        @Override
         public void distributedObjectCreated(DistributedObjectEvent event) {
             createdCount.incrementAndGet();
         }
 
+        @Override
         public void distributedObjectDestroyed(DistributedObjectEvent event) {
             destroyedCount.incrementAndGet();
         }

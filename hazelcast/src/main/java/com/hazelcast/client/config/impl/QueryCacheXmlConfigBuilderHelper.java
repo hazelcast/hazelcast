@@ -56,6 +56,7 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
         return getTextContent(getNamedItemNode(attrs, "mapName"));
     }
 
+    @Override
     protected void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {
         for (Node listenerNode : childElements(childNode)) {
             if (matches("entry-listener", cleanNodeName(listenerNode))) {
@@ -64,6 +65,7 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
         }
     }
 
+    @Override
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
         String predicateType = getTextContent(getNamedItemNode(childNode, "type"));
         String textContent = getTextContent(childNode);
@@ -76,6 +78,7 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
         queryCacheConfig.setPredicateConfig(predicateConfig);
     }
 
+    @Override
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if (matches("index", cleanNodeName(indexNode))) {

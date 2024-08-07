@@ -57,6 +57,7 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         shrinkIfNeeded();
     }
 
+    @Override
     public void invalidate(SqlPlan plan) {
         remove(plan);
     }

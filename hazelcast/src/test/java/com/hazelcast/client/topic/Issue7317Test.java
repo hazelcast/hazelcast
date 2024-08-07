@@ -93,18 +93,22 @@ public class Issue7317Test extends HazelcastTestSupport {
             cdl.countDown();
         }
 
+        @Override
         public long retrieveInitialSequence() {
             return 0;
         }
 
+        @Override
         public void storeSequence(long sequence) {
             seq = sequence;
         }
 
+        @Override
         public boolean isLossTolerant() {
             return true;
         }
 
+        @Override
         public boolean isTerminal(Throwable failure) {
             return true;
         }

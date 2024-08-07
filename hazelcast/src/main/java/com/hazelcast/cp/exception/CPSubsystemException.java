@@ -59,6 +59,7 @@ public class CPSubsystemException extends HazelcastException implements Wrappabl
         return leaderUuid;
     }
 
+    @Override
     public CPSubsystemException wrap() {
         return new CPSubsystemException(getMessage(), this, leaderUuid);
     }

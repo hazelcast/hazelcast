@@ -205,6 +205,7 @@ public class SamplingNodeExtension implements NodeExtension {
         nodeExtension.beforeClusterStateChange(currState, requestedState, isTransient);
     }
 
+    @Override
     public void onInitialClusterState(ClusterState initialState) {
         nodeExtension.onInitialClusterState(initialState);
     }
@@ -303,6 +304,7 @@ public class SamplingNodeExtension implements NodeExtension {
         return NoOpAuditlogService.INSTANCE;
     }
 
+    @Override
     public CPPersistenceService getCPPersistenceService() {
         return nodeExtension.getCPPersistenceService();
     }

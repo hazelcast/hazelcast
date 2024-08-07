@@ -158,14 +158,17 @@ public class APortable implements Portable {
     public APortable() {
     }
 
+    @Override
     public int getClassId() {
         return ReferenceObjects.PORTABLE_CLASS_ID;
     }
 
+    @Override
     public int getFactoryId() {
         return ReferenceObjects.PORTABLE_FACTORY_ID;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeBoolean("bool", bool);
         writer.writeByte("b", b);
@@ -262,6 +265,7 @@ public class APortable implements Portable {
         writeData(dataOutput, data);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         bool = reader.readBoolean("bool");
         b = reader.readByte("b");

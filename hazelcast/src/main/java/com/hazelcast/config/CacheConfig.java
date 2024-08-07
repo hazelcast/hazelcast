@@ -538,6 +538,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * @return the updated {@link ExecutorConfig} instance
      * @since 5.4
      */
+    @Override
     public CacheConfig<K, V> setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

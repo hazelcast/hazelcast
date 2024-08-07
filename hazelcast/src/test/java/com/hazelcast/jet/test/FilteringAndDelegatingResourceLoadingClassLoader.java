@@ -32,6 +32,7 @@ public class FilteringAndDelegatingResourceLoadingClassLoader extends FilteringC
         this.delegate = delegate;
     }
 
+    @Override
     public URL getResource(String name) {
         URL resource = this.delegate.getResource(name);
         if (resource == null) {
@@ -40,6 +41,7 @@ public class FilteringAndDelegatingResourceLoadingClassLoader extends FilteringC
         return resource;
     }
 
+    @Override
     public InputStream getResourceAsStream(String name) {
         InputStream stream = this.delegate.getResourceAsStream(name);
         if (stream == null) {

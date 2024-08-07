@@ -325,6 +325,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         queryCacheEventPublisher.hintMapEvent(caller, mapName, eventType, numberOfEntriesAffected, partitionId);
     }
 
+    @Override
     public void addEventToQueryCache(Object eventData) {
         queryCacheEventPublisher.addEventToQueryCache(eventData);
     }

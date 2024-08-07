@@ -211,6 +211,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return lockService.createLockStore(partitionId, MapService.getObjectNamespace(name));
     }
 
+    @Override
     public int getLockedEntryCount() {
         return lockStore.getLockedEntryCount();
     }
@@ -239,6 +240,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         storage.disposeDeferredBlocks();
     }
 
+    @Override
     public Storage<Data, ? extends Record> getStorage() {
         return storage;
     }

@@ -52,6 +52,7 @@ public class AggregateOperation1Impl<T0, A, R>
     }
 
     @Nonnull
+    @Override
     @SuppressWarnings("unchecked")
     public BiConsumerEx<? super A, ? super T0> accumulateFn() {
         return (BiConsumerEx<? super A, ? super T0>) accumulateFns[0];

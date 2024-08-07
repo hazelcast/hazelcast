@@ -61,10 +61,12 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
         public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
+        @Override
         public void memberAdded(MembershipEvent event) {
             events.addLast(event);
         }
 
+        @Override
         public void memberRemoved(MembershipEvent event) {
             events.addLast(event);
         }
@@ -75,10 +77,12 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
         public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
+        @Override
         public void memberAdded(MembershipEvent event) {
             events.addLast(event);
         }
 
+        @Override
         public void memberRemoved(MembershipEvent event) {
             events.addLast(event);
         }

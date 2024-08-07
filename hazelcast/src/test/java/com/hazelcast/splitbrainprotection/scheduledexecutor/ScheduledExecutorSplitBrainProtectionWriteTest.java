@@ -247,6 +247,7 @@ public class ScheduledExecutorSplitBrainProtectionWriteTest extends AbstractSpli
             return "response";
         }
 
+        @Override
         public void run() {
         }
 

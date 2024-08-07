@@ -43,6 +43,7 @@ public class ClientMapAggregateTest
         factory.shutdownAll();
     }
 
+    @Override
     public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");

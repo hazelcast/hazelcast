@@ -64,6 +64,7 @@ public class JdbcJoinPredicateScanProcessorSupplier
         super(dataConnectionName, query, converters, joinInfo, projections);
     }
 
+    @Override
     protected AutoCloseableTraverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
         List<JetSqlRow> leftRowsList = convertIterableToArrayList(leftRows);
         String unionAllSql = generateSql(leftRowsList);

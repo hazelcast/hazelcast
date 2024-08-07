@@ -68,6 +68,7 @@ public class HazelcastCache implements Cache {
         return value != null ? new SimpleValueWrapper(fromStoreValue(value)) : null;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T get(Object key, Class<T> type) {
         Object value = fromStoreValue(lookup(key));
@@ -77,6 +78,7 @@ public class HazelcastCache implements Cache {
         return (T) value;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T get(Object key, Callable<T> valueLoader) {
         Object value = lookup(key);
@@ -141,6 +143,7 @@ public class HazelcastCache implements Cache {
         map.clear();
     }
 
+    @Override
     public ValueWrapper putIfAbsent(Object key, Object value) {
         Object result = map.putIfAbsent(key, toStoreValue(value));
         return result != null ? new SimpleValueWrapper(fromStoreValue(result)) : null;

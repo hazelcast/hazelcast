@@ -387,13 +387,14 @@ public class JsonArray extends JsonValue implements Iterable<JsonValue> {
     return Collections.unmodifiableList(values);
   }
 
-  /**
-   * Returns an iterator over the values of this array in document order. The returned iterator
-   * cannot be used to modify this array.
-   *
-   * @return an iterator over the values of this array
-   */
-  public Iterator<JsonValue> iterator() {
+    /**
+     * Returns an iterator over the values of this array in document order. The returned iterator
+     * cannot be used to modify this array.
+     *
+     * @return an iterator over the values of this array
+     */
+    @Override
+    public Iterator<JsonValue> iterator() {
     final Iterator<JsonValue> iterator = values.iterator();
     return new Iterator<>() {
 

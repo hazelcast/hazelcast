@@ -40,6 +40,7 @@ public final class JsonDataGetter extends AbstractJsonGetter {
         this.ss = ss;
     }
 
+    @Override
     protected JsonParser createParser(Object obj) throws IOException {
         Data data = (Data) obj;
         return factory.createParser(data.toByteArray(),

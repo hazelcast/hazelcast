@@ -77,10 +77,12 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
         this.tokenPath = tokenPath;
     }
 
+    @Override
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
         return HazelcastKubernetesDiscoveryStrategy.class;
     }
 
+    @Override
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                   Map<String, Comparable> properties) {
         ClusterTopologyIntentTracker tracker = null;
@@ -91,6 +93,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
         return new HazelcastKubernetesDiscoveryStrategy(logger, properties, tracker);
     }
 
+    @Override
     public Collection<PropertyDefinition> getConfigurationProperties() {
         return PROPERTY_DEFINITIONS;
     }

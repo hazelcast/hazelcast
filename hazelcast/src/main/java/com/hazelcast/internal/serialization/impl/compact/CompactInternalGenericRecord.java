@@ -898,10 +898,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
+    @Override
     public Byte getInt8FromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_INT8, ObjectDataInput::readByte, index);
     }
 
+    @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         FieldDescriptor fd = getFieldDescriptor(fieldName, ARRAY_OF_BOOLEAN);
         int position = readVariableSizeFieldPosition(fd);
@@ -924,26 +926,32 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
+    @Override
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException("Compact format does not support reading from an array of chars field");
     }
 
+    @Override
     public Integer getInt32FromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_INT32, ObjectDataInput::readInt, index);
     }
 
+    @Override
     public Long getInt64FromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_INT64, ObjectDataInput::readLong, index);
     }
 
+    @Override
     public Double getFloat64FromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_FLOAT64, ObjectDataInput::readDouble, index);
     }
 
+    @Override
     public Float getFloat32FromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_FLOAT32, ObjectDataInput::readFloat, index);
     }
 
+    @Override
     public Short getInt16FromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_INT16, ObjectDataInput::readShort, index);
     }

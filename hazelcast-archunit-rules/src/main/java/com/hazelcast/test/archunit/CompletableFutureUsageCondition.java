@@ -84,6 +84,7 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
         return new CompletableFutureUsageCondition();
     }
 
+    @Override
     public void check(JavaClass item, ConditionEvents events) {
         for (JavaMethodCall methodCalled : item.getMethodCallsFromSelf()) {
             String calledMethodName = methodCalled.getTarget().getName();

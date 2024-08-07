@@ -38,6 +38,7 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
     public FastMultiResultSet() {
     }
 
+    @Override
     public void addResultSet(Map<Data, QueryableEntry> resultSet) {
         resultSets.add(resultSet);
     }

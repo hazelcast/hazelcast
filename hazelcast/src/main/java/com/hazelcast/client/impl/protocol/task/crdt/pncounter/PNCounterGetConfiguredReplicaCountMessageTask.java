@@ -60,6 +60,7 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
         return SecurityInterceptorConstants.PN_COUNTER_SERVICE;
     }
 
+    @Override
     public Object[] getParameters() {
         return null;
     }

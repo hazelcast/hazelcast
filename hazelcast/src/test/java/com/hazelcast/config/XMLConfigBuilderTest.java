@@ -4768,6 +4768,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
     }
 
+    @Override
     @Test
     public void testTpcSocketConfigAdvanced() {
         String xml = HAZELCAST_START_TAG

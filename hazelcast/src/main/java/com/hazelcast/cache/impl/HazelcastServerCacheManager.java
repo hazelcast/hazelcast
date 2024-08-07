@@ -189,6 +189,7 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
         throw new IllegalArgumentException();
     }
 
+    @Override
     protected void postClose() {
         if (properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION) != null) {
             hazelcastInstance.shutdown();

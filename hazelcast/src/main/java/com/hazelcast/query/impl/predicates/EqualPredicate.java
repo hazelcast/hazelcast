@@ -71,6 +71,7 @@ public class EqualPredicate extends AbstractIndexAwarePredicate
         return index.getRecords(value);
     }
 
+    @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return isNull(value);

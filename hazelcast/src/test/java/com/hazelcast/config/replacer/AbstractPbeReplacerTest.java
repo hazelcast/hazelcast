@@ -155,6 +155,7 @@ public class AbstractPbeReplacerTest {
             this.password = password;
         }
 
+        @Override
         public String getPrefix() {
             return "TEST";
         }

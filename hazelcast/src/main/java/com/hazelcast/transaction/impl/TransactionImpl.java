@@ -159,6 +159,7 @@ public class TransactionImpl implements Transaction {
         return txOwnerUuid;
     }
 
+    @Override
     public boolean isOriginatedFromClient() {
         return originatedFromClient;
     }

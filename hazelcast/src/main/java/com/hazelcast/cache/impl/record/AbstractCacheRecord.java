@@ -47,6 +47,7 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
         this.expirationTime = expirationTime;
     }
 
+    @Override
     public long getExpirationTime() {
         return expirationTime;
     }

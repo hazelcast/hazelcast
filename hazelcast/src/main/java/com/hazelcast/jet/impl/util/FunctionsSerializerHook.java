@@ -37,6 +37,7 @@ public class FunctionsSerializerHook implements DataSerializerHook {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {

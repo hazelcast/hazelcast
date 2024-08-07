@@ -40,6 +40,7 @@ public final class AddressCheckerImpl implements AddressChecker {
         this.logger = logger;
     }
 
+    @Override
     public boolean isTrusted(Address address) {
         if (address == null) {
             return false;

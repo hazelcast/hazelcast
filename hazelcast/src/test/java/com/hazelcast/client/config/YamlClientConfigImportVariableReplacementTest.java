@@ -109,6 +109,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
 
+    @Override
     @Test
     public void testImportResourceWithNestedImports() throws IOException {
         String configReplacer = "hazelcast-client:\n"

@@ -24,6 +24,7 @@ package com.hazelcast.internal.util.concurrent;
 public class BusySpinIdleStrategy implements IdleStrategy {
     private int dummyCounter;
 
+    @Override
     public boolean idle(final long n) {
         final int dummyValue = 64;
         // Trick speculative execution into not progressing

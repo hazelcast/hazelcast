@@ -78,6 +78,7 @@ public abstract class AbstractChannel implements Channel {
         return clientMode;
     }
 
+    @Override
     public ConcurrentMap attributeMap() {
         return attributeMap;
     }

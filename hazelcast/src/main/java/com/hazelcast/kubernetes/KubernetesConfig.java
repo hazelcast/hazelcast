@@ -182,6 +182,7 @@ final class KubernetesConfig {
     }
 
     static class DefaultFileContentsReader implements FileContentsReader {
+        @Override
         public String readFileContents(String fileName) {
             try {
                 return Files.readString(Paths.get(fileName));

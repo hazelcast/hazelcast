@@ -526,6 +526,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals(70, nativeMemoryConfig.getMetadataSpacePercentage(), 10E-6);
     }
 
+    @Override
     @Test
     public void testPersistentMemoryDirectoryConfiguration() {
         String yaml = """
@@ -551,6 +552,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals(1, dir1Config.getNumaNode());
     }
 
+    @Override
     @Test
     public void testPersistentMemoryDirectoryConfigurationSimple() {
         String yaml = """

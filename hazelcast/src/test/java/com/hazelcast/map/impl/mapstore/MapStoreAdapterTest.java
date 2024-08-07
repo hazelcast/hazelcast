@@ -90,10 +90,12 @@ public class MapStoreAdapterTest extends HazelcastTestSupport {
             loaded = new LinkedList<>();
         }
 
+        @Override
         public void delete(Integer key) {
             deleted.add(key);
         }
 
+        @Override
         public void store(Integer key, Integer value) {
             stored.add(new Object[]{key, value});
         }
@@ -102,6 +104,7 @@ public class MapStoreAdapterTest extends HazelcastTestSupport {
             loaded.add(new Object[]{key, value});
         }
 
+        @Override
         public Iterable<Integer> loadAllKeys() {
             return super.loadAllKeys();
         }

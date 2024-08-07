@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 public class SelectNow_TcpIpConnectionManager_ConnectMemberTest extends TcpServerConnectionManager_AbstractConnectMemberTest {
 
     @Before
+    @Override
     public void setup() throws Exception {
         networkingFactory = new SelectNow_NioNetworkingFactory();
         super.setup();

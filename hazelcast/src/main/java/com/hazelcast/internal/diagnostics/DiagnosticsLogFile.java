@@ -72,6 +72,7 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
     }
 
+    @Override
     public void write(DiagnosticsPlugin plugin) {
         try {
             if (file == null) {

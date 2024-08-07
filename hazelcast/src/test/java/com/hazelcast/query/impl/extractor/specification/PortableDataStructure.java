@@ -58,14 +58,17 @@ public class PortableDataStructure {
         CarPortable() {
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeString("name", name);
             writer.writePortable("engine", engine);
@@ -73,6 +76,7 @@ public class PortableDataStructure {
             writer.writeStringArray("model", model);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             name = reader.readString("name");
             engine = reader.readPortable("engine");
@@ -120,19 +124,23 @@ public class PortableDataStructure {
             this.chip = new ChipPortable();
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("power", power);
             writer.writePortable("chip", chip);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             power = reader.readInt("power");
             chip = reader.readPortable("chip");
@@ -177,18 +185,22 @@ public class PortableDataStructure {
             this.power = 15;
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("power", power);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             power = reader.readInt("power");
         }
@@ -236,14 +248,17 @@ public class PortableDataStructure {
         WheelPortable() {
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeString("name", name);
             writer.writePortable("chip", chip);
@@ -251,6 +266,7 @@ public class PortableDataStructure {
             writer.writeIntArray("serial", serial);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             name = reader.readString("name");
             chip = reader.readPortable("chip");
@@ -296,18 +312,22 @@ public class PortableDataStructure {
             this.chips = new Portable[]{new YPortable()};
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writePortableArray("chips", chips);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             chips = reader.readPortableArray("chips");
         }
@@ -339,18 +359,22 @@ public class PortableDataStructure {
             this.serial = new int[]{41};
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeIntArray("serial", serial);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             serial = reader.readIntArray("serial");
         }

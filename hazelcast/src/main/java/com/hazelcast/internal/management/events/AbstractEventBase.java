@@ -25,6 +25,7 @@ public abstract class AbstractEventBase implements Event {
         this.timestamp = Clock.currentTimeMillis();
     }
 
+    @Override
     public long getTimestamp() {
         return timestamp;
     }

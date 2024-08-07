@@ -132,6 +132,7 @@ public class MongoSqlConnectorIT extends MongoSqlIT {
     }
 
 
+    @Override
     protected void execute(String sql, Object... arguments) {
         sqlService.execute(sql, arguments).close();
     }

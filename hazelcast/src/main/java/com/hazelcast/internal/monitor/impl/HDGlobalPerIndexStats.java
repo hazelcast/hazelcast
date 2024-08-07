@@ -49,10 +49,12 @@ public final class HDGlobalPerIndexStats extends GlobalPerIndexStats {
         return new MemoryAllocatorWithStats(memoryAllocator);
     }
 
+    @Override
     public void updateMemoryCost(long delta) {
         MEMORY_COST.addAndGet(HDGlobalPerIndexStats.this, delta);
     }
 
+    @Override
     public void onDispose() {
         memoryCost = 0;
     }

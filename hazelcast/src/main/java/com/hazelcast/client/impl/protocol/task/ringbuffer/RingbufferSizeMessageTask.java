@@ -50,6 +50,7 @@ public class RingbufferSizeMessageTask
         return RingbufferSizeCodec.encodeResponse((Long) response);
     }
 
+    @Override
     public Object[] getParameters() {
         return null;
     }

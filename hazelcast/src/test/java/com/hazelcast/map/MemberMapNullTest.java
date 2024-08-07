@@ -54,6 +54,7 @@ public class MemberMapNullTest extends AbstractMapNullTest {
         return instance;
     }
 
+    @Override
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void testNullability() {

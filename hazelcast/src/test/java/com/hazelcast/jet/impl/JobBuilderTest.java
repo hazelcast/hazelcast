@@ -230,20 +230,53 @@ public class JobBuilderTest {
                     : ((PipelineImpl) jobDefinition).memberSelector();
         }
 
-        @Nonnull public CompletableFuture<Void> getFuture() { throw uoe(); }
+        @Nonnull
+        @Override
+        public CompletableFuture<Void> getFuture() { throw uoe(); }
+
+        @Override
         public void cancel() { throw uoe(); }
+
+        @Override
         public long getSubmissionTime() { throw uoe(); }
-        @Nonnull public JobStatus getStatus() { throw uoe(); }
+
+        @Nonnull
+        @Override
+        public JobStatus getStatus() { throw uoe(); }
+
+        @Override
         public boolean isUserCancelled() { throw uoe(); }
+
+        @Override
         public UUID addStatusListener(@Nonnull JobStatusListener listener) { throw uoe(); }
+
+        @Override
         public boolean removeStatusListener(@Nonnull UUID id) { throw uoe(); }
+
+        @Override
         public JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig) { throw uoe(); }
-        @Nonnull public JobSuspensionCause getSuspensionCause() { throw uoe(); }
-        @Nonnull public JobMetrics getMetrics() { throw uoe(); }
+
+        @Nonnull
+        @Override
+        public JobSuspensionCause getSuspensionCause() { throw uoe(); }
+
+        @Nonnull
+        @Override
+        public JobMetrics getMetrics() { throw uoe(); }
+
+        @Override
         public void restart() { throw uoe(); }
+
+        @Override
         public void suspend() { throw uoe(); }
+
+        @Override
         public void resume() { throw uoe(); }
+
+        @Override
         public JobStateSnapshot cancelAndExportSnapshot(String name) { throw uoe(); }
+
+        @Override
         public JobStateSnapshot exportSnapshot(String name) { throw uoe(); }
     }
 
@@ -267,10 +300,21 @@ public class JobBuilderTest {
         }
 
         public Job newJobProxy(long jobId, Object lightJobCoordinator) { throw uoe(); }
+
+        @Override
         public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) { throw uoe(); }
+
+        @Override
         public ILogger getLogger() { throw uoe(); }
+
+        @Override
         public Map getJobsInt(String onlyName, Long onlyJobId) { throw uoe(); }
+
+        @Override
         public Object getMasterId() { throw uoe(); }
-        @Nonnull public JetConfig getConfig() { throw uoe(); }
+
+        @Nonnull
+        @Override
+        public JetConfig getConfig() { throw uoe(); }
     }
 }

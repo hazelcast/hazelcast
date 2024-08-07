@@ -47,6 +47,7 @@ public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
     }
 
     @After
+    @Override
     public void tear() {
         factory.shutdownAll();
     }

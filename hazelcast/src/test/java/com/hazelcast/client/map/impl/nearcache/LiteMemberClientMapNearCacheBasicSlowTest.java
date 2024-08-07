@@ -55,6 +55,7 @@ public class LiteMemberClientMapNearCacheBasicSlowTest extends LiteMemberClientM
     public boolean serializeKeys;
 
     @Before
+    @Override
     public void setUp() {
         nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys);
     }

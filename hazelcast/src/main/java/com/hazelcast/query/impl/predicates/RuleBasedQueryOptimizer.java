@@ -30,6 +30,7 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
     private final Visitor compositeIndexVisitor = new CompositeIndexVisitor();
     private final Visitor evaluateVisitor = new EvaluateVisitor();
 
+    @Override
     @SuppressWarnings("unchecked")
     public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes) {
         Predicate optimized = predicate;

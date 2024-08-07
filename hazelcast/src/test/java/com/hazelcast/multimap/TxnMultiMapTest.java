@@ -266,10 +266,12 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         private final AtomicInteger addedCount = new AtomicInteger();
         private final AtomicInteger removedCount = new AtomicInteger();
 
+        @Override
         public void entryAdded(EntryEvent<K, V> event) {
             addedCount.incrementAndGet();
         }
 
+        @Override
         public void entryRemoved(EntryEvent<K, V> event) {
             removedCount.incrementAndGet();
         }

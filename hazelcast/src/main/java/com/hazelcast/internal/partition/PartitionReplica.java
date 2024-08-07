@@ -115,6 +115,7 @@ public final class PartitionReplica implements IdentifiedDataSerializable {
         UUIDSerializationUtil.writeUUID(out, uuid);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = in.readObject();
         uuid = UUIDSerializationUtil.readUUID(in);

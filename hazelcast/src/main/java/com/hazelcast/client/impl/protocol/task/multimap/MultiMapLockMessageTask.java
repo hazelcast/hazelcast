@@ -87,6 +87,7 @@ public class MultiMapLockMessageTask
         return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }

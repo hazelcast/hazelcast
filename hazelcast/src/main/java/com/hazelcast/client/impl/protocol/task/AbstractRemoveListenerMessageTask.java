@@ -37,6 +37,7 @@ public abstract class AbstractRemoveListenerMessageTask<P>
         super(clientMessage, node, connection);
     }
 
+    @Override
     public final CompletableFuture<Boolean> processInternal() {
         endpoint.removeDestroyAction(getRegistrationId());
         return (CompletableFuture<Boolean>) deRegisterListener();

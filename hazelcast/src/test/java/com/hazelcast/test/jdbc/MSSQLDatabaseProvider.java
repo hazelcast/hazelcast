@@ -28,6 +28,7 @@ import static com.hazelcast.jet.TestedVersions.TEST_MSSQLSERVER_VERSION;
 
 public class MSSQLDatabaseProvider extends JdbcDatabaseProvider<MSSQLServerContainer<?>> {
 
+    @Override
     MSSQLServerContainer<?> createContainer(String dbName) {
         MSSQLServerContainer<?> mssqlServerContainer;
         if (isArmArchitecture()) {

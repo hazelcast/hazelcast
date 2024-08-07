@@ -59,6 +59,7 @@ public class ReplicatedMapValuesMessageTask
         return ReplicatedMapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(parameters, ActionConstants.ACTION_READ);
     }

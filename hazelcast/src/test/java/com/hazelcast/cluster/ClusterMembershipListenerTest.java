@@ -268,10 +268,12 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
     static class MembershipListenerImpl implements MembershipListener {
         final List<EventObject> events = Collections.synchronizedList(new ArrayList<>());
 
+        @Override
         public void memberAdded(MembershipEvent e) {
             events.add(e);
         }
 
+        @Override
         public void memberRemoved(MembershipEvent e) {
             events.add(e);
         }
@@ -283,6 +285,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
 
     private static class InitialMembershipListenerImpl extends MembershipListenerImpl implements InitialMembershipListener {
 
+        @Override
         public void init(InitialMembershipEvent e) {
             events.add(e);
         }

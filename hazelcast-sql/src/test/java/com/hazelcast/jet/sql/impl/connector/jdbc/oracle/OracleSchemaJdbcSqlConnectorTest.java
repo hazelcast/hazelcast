@@ -35,6 +35,7 @@ public class OracleSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
     }
 
     @Before
+    @Override
     public void setUp() throws Exception {
         assumeThat(schema)
                 .describedAs("Name with double quotes not supported on Oracle")

@@ -330,6 +330,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         return c;
     }
 
+    @Override
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_COUNT, level = MANDATORY)
     public int connectionCount() {
         int c = 0;

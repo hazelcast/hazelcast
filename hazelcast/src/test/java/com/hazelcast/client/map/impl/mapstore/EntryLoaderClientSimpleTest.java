@@ -37,6 +37,7 @@ public class EntryLoaderClientSimpleTest extends EntryLoaderSimpleTest {
     private TestHazelcastFactory factory;
 
     @Before
+    @Override
     public void setup() {
         factory = new TestHazelcastFactory(1);
         instances = factory.newInstances(getConfig());

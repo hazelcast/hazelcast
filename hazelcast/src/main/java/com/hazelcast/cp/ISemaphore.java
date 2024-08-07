@@ -124,6 +124,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @return name of this instance
      */
+    @Override
     String getName();
 
     /**

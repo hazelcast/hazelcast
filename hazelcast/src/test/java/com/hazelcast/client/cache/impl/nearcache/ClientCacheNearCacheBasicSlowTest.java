@@ -63,6 +63,7 @@ public class ClientCacheNearCacheBasicSlowTest extends ClientCacheNearCacheBasic
     public LocalUpdatePolicy localUpdatePolicy;
 
     @Before
+    @Override
     public void setUp() {
         nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
                 .setLocalUpdatePolicy(localUpdatePolicy);

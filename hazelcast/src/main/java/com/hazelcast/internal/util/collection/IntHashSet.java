@@ -344,6 +344,7 @@ public final class IntHashSet implements Set<Integer> {
         return (T[]) ret;
     }
 
+    @Override
     public boolean equals(final Object other) {
         if (other == this) {
             return true;
@@ -356,6 +357,7 @@ public final class IntHashSet implements Set<Integer> {
         return false;
     }
 
+    @Override
     public int hashCode() {
         final IntIterator iterator = iterator();
         int total = 0;

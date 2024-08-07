@@ -74,12 +74,14 @@ public class ClientLoggingService implements LoggingService {
     }
 
     @Nonnull
+    @Override
     public ILogger getLogger(@Nonnull String name) {
         checkNotNull(name, "name must not be null");
         return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
     @Nonnull
+    @Override
     public ILogger getLogger(@Nonnull Class<?> clazz) {
         checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);

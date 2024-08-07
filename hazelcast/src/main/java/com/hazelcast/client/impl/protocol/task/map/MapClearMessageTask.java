@@ -85,10 +85,12 @@ public class MapClearMessageTask
         return MapClearCodec.encodeResponse();
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters, ActionConstants.ACTION_REMOVE);
     }

@@ -45,6 +45,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
+    @Override
     public void tearDown() {
         factory.terminateAll();
     }

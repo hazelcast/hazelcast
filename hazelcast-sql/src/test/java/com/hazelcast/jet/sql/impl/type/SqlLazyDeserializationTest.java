@@ -163,6 +163,7 @@ public class SqlLazyDeserializationTest {
     }
 
     private static class SqlLazyDeserializationTestInstanceFactory extends TestHazelcastFactory {
+        @Override
         public HazelcastInstance newHazelcastInstance(Config config) {
             String instanceName = config != null ? config.getInstanceName() : null;
             NodeContext nodeContext;

@@ -23,6 +23,7 @@ import java.io.Serializable;
 @SpringAware
 public class SomeTransactionalRunnableTask implements Runnable, Serializable {
 
+    @Override
     @Transactional
     public void run() {
     }

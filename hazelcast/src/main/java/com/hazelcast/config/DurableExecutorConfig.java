@@ -99,6 +99,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
      *
      * @return the name of the executor task
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -109,6 +110,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
      * @param name the name of the executor task
      * @return this executor config instance
      */
+    @Override
     public DurableExecutorConfig setName(String name) {
         this.name = name;
         return this;
@@ -234,6 +236,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
      * @return the updated {@link DurableExecutorConfig} instance
      * @since 5.4
      */
+    @Override
     public DurableExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

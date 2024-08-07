@@ -119,6 +119,7 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
          * Returns a logger for the associated {@code ProcessorSupplier}.
          */
         @Nonnull
+        @Override
         ILogger logger();
 
         /**

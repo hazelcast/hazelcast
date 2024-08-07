@@ -274,6 +274,7 @@ public final class ClientMessage implements OutboundFrame {
         return connection;
     }
 
+    @Override
     public int getFrameLength() {
         int frameLength = 0;
         Frame currentFrame = startFrame;
@@ -294,6 +295,8 @@ public final class ClientMessage implements OutboundFrame {
         }
         return length;
     }
+
+    @Override
     public boolean isUrgent() {
         return false;
     }

@@ -54,6 +54,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
      *
      * @return the name of this data structure
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -64,6 +65,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
      * @param name the name of this data structure
      * @return the updated configuration
      */
+    @Override
     public T setName(String name) {
         this.name = checkNotNull(name, "name cannot be null");
         //noinspection unchecked

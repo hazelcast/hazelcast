@@ -345,11 +345,13 @@ public class TopicTest extends HazelcastTestSupport {
             this.data = data;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             publisher.writeData(out);
             out.writeString(data);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             publisher = new MemberImpl();
             publisher.readData(in);

@@ -39,10 +39,12 @@ public abstract class AbstractMapPartitionIterableTest extends AbstractMapPartit
         return getIterable(map, 1);
     }
 
+    @Override
     protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map, int partitionId) {
         return getIterable(map, partitionId).iterator();
     }
 
+    @Override
     protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map) {
         return getIterator(map, 1);
     }

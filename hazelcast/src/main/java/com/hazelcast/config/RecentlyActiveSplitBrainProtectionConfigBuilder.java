@@ -46,6 +46,7 @@ public class RecentlyActiveSplitBrainProtectionConfigBuilder extends SplitBrainP
         this.heartbeatToleranceMillis = heartbeatToleranceMillis;
     }
 
+    @Override
     public SplitBrainProtectionConfig build() {
         RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction
                 = new RecentlyActiveSplitBrainProtectionFunction(size, heartbeatToleranceMillis);

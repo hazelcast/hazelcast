@@ -124,6 +124,7 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    @Override
     public String toString() {
         return "RingbufferStoreConfig{"
                 + "enabled=" + enabled

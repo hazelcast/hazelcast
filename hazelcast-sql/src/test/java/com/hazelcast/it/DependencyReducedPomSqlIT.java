@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 public class DependencyReducedPomSqlIT  extends DependencyReducedPomIT {
 
     // The com.hazelcast:hazelcast dependency is expected.
+    @Override
     protected int expectedDependencies() {
         return 1;
     }

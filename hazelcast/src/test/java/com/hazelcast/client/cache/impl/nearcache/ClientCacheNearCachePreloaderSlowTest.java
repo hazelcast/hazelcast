@@ -62,6 +62,7 @@ public class ClientCacheNearCachePreloaderSlowTest extends ClientCacheNearCacheP
     public boolean serializeKeys;
 
     @Before
+    @Override
     public void setUp() {
         nearCacheConfig = getNearCacheConfig(inMemoryFormat, serializeKeys, invalidationOnChange, KEY_COUNT,
                 storeFile.getParent());

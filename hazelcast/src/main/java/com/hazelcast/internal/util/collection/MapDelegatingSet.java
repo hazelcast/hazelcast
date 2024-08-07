@@ -43,6 +43,7 @@ public final class MapDelegatingSet<V> extends AbstractSet<V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int size() {
         return delegate.size();
     }
@@ -67,6 +68,7 @@ public final class MapDelegatingSet<V> extends AbstractSet<V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Iterator<V> iterator() {
         return iterator.get();
     }

@@ -141,6 +141,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
         return oldRecord;
     }
 
+    @Override
     public Object toQueryCacheKey(Object key) {
         return serializeKeys ? ss.toData(key) : ss.toObject(key);
     }

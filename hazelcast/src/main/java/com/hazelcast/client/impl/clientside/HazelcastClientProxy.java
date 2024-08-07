@@ -306,6 +306,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
         return c;
     }
 
+    @Override
     public String toString() {
         final HazelcastClientInstanceImpl hazelcastInstance = client;
         if (hazelcastInstance != null) {

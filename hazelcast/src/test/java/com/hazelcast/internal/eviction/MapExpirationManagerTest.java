@@ -291,6 +291,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
         }, 5);
     }
 
+    @Override
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
         return new ExpirationManager(new MapClearExpiredRecordsTask(getPartitionContainers(node),
                 getNodeEngineImpl(node)), getNodeEngineImpl(node));

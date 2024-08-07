@@ -172,6 +172,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      *
      * @return the name of the {@link com.hazelcast.cache.ICache}
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -182,6 +183,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      * @param name the name to set for this {@link com.hazelcast.cache.ICache}
      * @return the current cache config instance
      */
+    @Override
     public CacheSimpleConfig setName(String name) {
         this.name = name;
         return this;
@@ -780,6 +782,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      * @return the updated {@link CacheSimpleConfig} instance
      * @since 5.4
      */
+    @Override
     public CacheSimpleConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

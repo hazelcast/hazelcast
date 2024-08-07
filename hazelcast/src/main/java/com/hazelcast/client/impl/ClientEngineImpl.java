@@ -244,6 +244,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     //PETER:
+    @Override
     public void accept(ClientMessage clientMessage) {
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);

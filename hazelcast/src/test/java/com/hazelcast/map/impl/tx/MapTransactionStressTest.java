@@ -242,6 +242,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
             this.dummyServiceName = dummyServiceName;
         }
 
+        @Override
         public void run() {
             while (!isInterrupted()) {
                 TransactionContext tx = hz.newTransactionContext();

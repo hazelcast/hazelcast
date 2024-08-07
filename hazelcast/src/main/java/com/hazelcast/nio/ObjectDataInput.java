@@ -31,6 +31,7 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      */
     @Deprecated
     @Nullable
+    @Override
     String readUTF() throws IOException;
 
     /**

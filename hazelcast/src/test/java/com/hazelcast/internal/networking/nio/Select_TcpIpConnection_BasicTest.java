@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 public class Select_TcpIpConnection_BasicTest extends TcpServerConnection_AbstractBasicTest {
 
     @Before
+    @Override
     public void setup() throws Exception {
         networkingFactory = new Select_NioNetworkingFactory();
         super.setup();

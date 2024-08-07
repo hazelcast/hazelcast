@@ -33,6 +33,7 @@ public class ClientAddListenerWithNullParameterTests extends AddListenerWithNull
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Before
+    @Override
     public void setup() {
         hazelcastFactory.newHazelcastInstance();
         instance = hazelcastFactory.newHazelcastClient();

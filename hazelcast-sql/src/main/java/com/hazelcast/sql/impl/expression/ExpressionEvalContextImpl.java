@@ -72,6 +72,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
      * @param index argument index
      * @return the query argument
      */
+    @Override
     public Object getArgument(int index) {
         return arguments.get(index);
     }
@@ -79,6 +80,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     /**
      * Return all the arguments.
      */
+    @Override
     public List<Object> getArguments() {
         return arguments;
     }
@@ -86,6 +88,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     /**
      * @return serialization service
      */
+    @Override
     public InternalSerializationService getSerializationService() {
         return serializationService;
     }
@@ -105,6 +108,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     /**
      * @return node engine
      */
+    @Override
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }

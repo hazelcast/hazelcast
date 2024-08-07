@@ -119,6 +119,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         clear(isDuringShutdown);
     }
 
+    @Override
     public EntryCostEstimator getEntryCostEstimator() {
         return entryCostEstimator;
     }
@@ -139,6 +140,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         entryCostEstimator.adjustEstimateBy(entrySize);
     }
 
+    @Override
     public void setEntryCostEstimator(EntryCostEstimator entryCostEstimator) {
         this.entryCostEstimator = entryCostEstimator;
     }

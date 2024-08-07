@@ -52,6 +52,7 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
     private DummyPayload[] payloads;
 
     @Before
+    @Override
     public void setup() throws Exception {
         super.setup();
         startAllTcpServers();

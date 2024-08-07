@@ -33,6 +33,7 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
      * Returns the name of this collection.
      */
     @Nonnull
+    @Override
     String getName();
 
     /**

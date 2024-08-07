@@ -66,6 +66,7 @@ public class CacheIterator<K, V>
         advance();
     }
 
+    @Override
     protected List fetch() {
         final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
         if (prefetchValues) {

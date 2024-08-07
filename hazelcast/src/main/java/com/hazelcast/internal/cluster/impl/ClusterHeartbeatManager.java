@@ -688,6 +688,7 @@ public class ClusterHeartbeatManager {
             this.member = member;
         }
 
+        @Override
         public void run() {
             Address address = member.getAddress();
             logger.warning(format("%s will ping %s", node.getThisAddress(), address));

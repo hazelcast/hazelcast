@@ -55,6 +55,7 @@ public interface IMapOpStep extends Step<State> {
      *     </li>
      * </ul>
      */
+    @Override
     default boolean isOffloadStep(State state) {
         if (state.getRecordStore()
                 .getMapDataStore().isNullImpl()) {
@@ -102,6 +103,7 @@ public interface IMapOpStep extends Step<State> {
     /**
      * @return name of the executor to execute this map operation step
      */
+    @Override
     default String getExecutorName(State state) {
         return MAP_STORE_OFFLOADABLE_EXECUTOR;
     }

@@ -39,6 +39,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
     private HazelcastInstance member;
 
     @Before
+    @Override
     public void setUp() {
         member = factory.newHazelcastInstance(createMemberConfig());
         client = factory.newHazelcastClient();

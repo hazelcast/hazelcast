@@ -61,10 +61,12 @@ public class MapAddIndexMessageTask
         return MapAddIndexCodec.encodeResponse();
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_INDEX);
     }

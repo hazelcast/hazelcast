@@ -28,6 +28,7 @@ public class SimpleCommand extends AbstractTextCommand {
         super(type);
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }
@@ -36,6 +37,7 @@ public class SimpleCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         while (dst.hasRemaining() && response.hasRemaining()) {
             dst.put(response.get());

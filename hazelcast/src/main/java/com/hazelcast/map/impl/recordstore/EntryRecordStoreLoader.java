@@ -37,6 +37,7 @@ class EntryRecordStoreLoader extends BasicRecordStoreLoader {
      * @param entries the map to be transformed
      * @return the list of serialised alternating key-value pairs
      */
+    @Override
     protected List<Data> getLoadingSequence(Map<?, ?> entries) {
         List<Data> keyValueSequence = new ArrayList<>(entries.size() * 2);
         for (Map.Entry<?, ?> entry : entries.entrySet()) {
@@ -54,6 +55,7 @@ class EntryRecordStoreLoader extends BasicRecordStoreLoader {
         return keyValueSequence;
     }
 
+    @Override
     protected Operation createOperation(List<Data> loadingSequence) {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
         return operationProvider.createPutFromLoadAllOperation(name, loadingSequence, true);

@@ -69,6 +69,7 @@ public interface IAtomicLong extends DistributedObject {
      *
      * @return the name of this IAtomicLong instance
      */
+    @Override
     String getName();
 
     /**

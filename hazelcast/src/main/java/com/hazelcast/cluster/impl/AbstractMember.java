@@ -82,10 +82,12 @@ public abstract class AbstractMember implements Member {
         this.liteMember = member.liteMember;
     }
 
+    @Override
     public Address getAddress() {
         return address;
     }
 
+    @Override
     public Map<EndpointQualifier, Address> getAddressMap() {
         return addressMap;
     }

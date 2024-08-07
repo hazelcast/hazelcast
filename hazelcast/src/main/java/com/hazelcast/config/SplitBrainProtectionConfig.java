@@ -105,10 +105,12 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
         this.protectOn = splitBrainProtectionConfig.protectOn;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public SplitBrainProtectionConfig setName(String name) {
         this.name = name;
         return this;

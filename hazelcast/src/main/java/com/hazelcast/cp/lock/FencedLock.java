@@ -170,6 +170,7 @@ public interface FencedLock extends Lock, DistributedObject {
      * @throws LockAcquireLimitReachedException if the lock call is reentrant
      *         and the configured lock acquire limit is already reached.
      */
+    @Override
     void lock();
 
     /**
@@ -223,6 +224,7 @@ public interface FencedLock extends Lock, DistributedObject {
      * @throws LockAcquireLimitReachedException if the lock call is reentrant
      *         and the configured lock acquire limit is already reached.
      */
+    @Override
     void lockInterruptibly() throws InterruptedException;
 
     /**
@@ -330,6 +332,7 @@ public interface FencedLock extends Lock, DistributedObject {
      * @throws LockOwnershipLostException if the underlying CP session is
      *         closed while locking reentrantly
      */
+    @Override
     boolean tryLock();
 
     /**
@@ -437,6 +440,7 @@ public interface FencedLock extends Lock, DistributedObject {
      * @throws LockOwnershipLostException if the underlying CP session is
      *         closed while locking reentrantly
      */
+    @Override
     boolean tryLock(long time, TimeUnit unit);
 
     /**
@@ -533,6 +537,7 @@ public interface FencedLock extends Lock, DistributedObject {
      * @throws LockOwnershipLostException if the underlying CP session is
      *         closed before the current thread releases the lock
      */
+    @Override
     void unlock();
 
     /**
@@ -603,5 +608,6 @@ public interface FencedLock extends Lock, DistributedObject {
      *
      * @throws UnsupportedOperationException for now
      */
+    @Override
     Condition newCondition();
 }

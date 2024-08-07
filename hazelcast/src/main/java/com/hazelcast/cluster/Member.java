@@ -67,6 +67,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @return the socket address of this member for member to member communications or unified depending on config.
      */
+    @Override
     InetSocketAddress getSocketAddress();
 
     /**
@@ -82,6 +83,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @return the UUID of this member.
      */
+    @Override
     UUID getUuid();
 
     /**

@@ -249,6 +249,7 @@ public class S3MockTest extends S3TestBase {
         testSink(SINK_BUCKET_NONASCII, "fileWithNonAsciiSymbol", 10, "测试");
     }
 
+    @Override
     SupplierEx<S3Client> clientSupplier() {
         return () -> s3Client(s3MockContainer.getHttpEndpoint());
     }

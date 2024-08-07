@@ -1506,9 +1506,11 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         public void entryEvicted(EntryEvent<String, String> event) {
         }
 
+        @Override
         public void mapEvicted(MapEvent event) {
         }
 
+        @Override
         public void mapCleared(MapEvent event) {
         }
 

@@ -39,6 +39,7 @@ public class ClientReplicatedMapStatisticsTest extends ReplicatedMapStatsTest {
     private HazelcastInstance member;
 
     @Before
+    @Override
     public void setUp() {
         member = factory.newHazelcastInstance();
         client = factory.newHazelcastClient();

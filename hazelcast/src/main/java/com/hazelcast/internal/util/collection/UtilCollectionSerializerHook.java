@@ -35,6 +35,7 @@ public class UtilCollectionSerializerHook implements DataSerializerHook {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         return typeId -> switch (typeId) {
             case PARTITION_ID_SET -> new PartitionIdSet();

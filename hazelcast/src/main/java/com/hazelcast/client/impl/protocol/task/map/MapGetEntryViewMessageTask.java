@@ -58,6 +58,7 @@ public class MapGetEntryViewMessageTask
         return MapGetEntryViewCodec.encodeResponse(dataEntryView, dataEntryView != null ? dataEntryView.getMaxIdle() : 0);
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
     }

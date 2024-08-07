@@ -46,6 +46,7 @@ public final class ClientBwListEntryDTO implements JsonSerializable {
         return value;
     }
 
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("type", type.toString());

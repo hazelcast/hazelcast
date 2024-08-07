@@ -67,6 +67,7 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, I
     }
 
     @Nonnull
+    @Override
     public SupplierEx<A> createFn() {
         return createFn;
     }
@@ -82,16 +83,19 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, I
     }
 
     @Nullable
+    @Override
     public BiConsumerEx<? super A, ? super A> combineFn() {
         return combineFn;
     }
 
     @Nullable
+    @Override
     public BiConsumerEx<? super A, ? super A> deductFn() {
         return deductFn;
     }
 
     @Nonnull
+    @Override
     public FunctionEx<? super A, ? extends R> exportFn() {
         return exportFn;
     }

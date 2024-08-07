@@ -239,6 +239,7 @@ public final class DomConfigHelper {
             private int index;
             private Node next;
 
+            @Override
             public boolean hasNext() {
                 next = null;
                 for (; index < maximum; index++) {
@@ -258,6 +259,7 @@ public final class DomConfigHelper {
                   : ConfigUtils.matches(nodeName, cleanNodeName(item));
             }
 
+            @Override
             public Node next() {
                 if (hasNext()) {
                     index++;

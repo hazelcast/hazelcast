@@ -580,6 +580,7 @@ public interface Processor {
          * Return a logger for the processor
          */
         @Nonnull
+        @Override
         ILogger logger();
 
         /**

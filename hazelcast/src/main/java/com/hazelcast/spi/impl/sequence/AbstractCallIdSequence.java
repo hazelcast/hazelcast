@@ -82,6 +82,7 @@ public abstract class AbstractCallIdSequence implements CallIdSequence {
         assert newTail <= longs.get(INDEX_HEAD);
     }
 
+    @Override
     public long forceNext() {
         long l = longs.incrementAndGet(INDEX_HEAD);
         // we don't want to check for every call, so we'll check 1 in 8 calls. If there is sufficient concurrency

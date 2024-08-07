@@ -69,6 +69,7 @@ class BinaryMapEntryCostEstimator
         return value.getCost();
     }
 
+    @Override
     public long calculateEntryCost(Data key, Record value) {
         long totalMapEntryCost = 0L;
 

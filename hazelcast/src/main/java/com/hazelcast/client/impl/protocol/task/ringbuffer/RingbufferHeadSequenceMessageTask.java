@@ -50,6 +50,7 @@ public class RingbufferHeadSequenceMessageTask
         return RingbufferHeadSequenceCodec.encodeResponse((Long) response);
     }
 
+    @Override
     public Object[] getParameters() {
         return null;
     }

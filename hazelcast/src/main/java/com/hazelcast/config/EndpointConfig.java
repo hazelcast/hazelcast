@@ -117,10 +117,12 @@ public class EndpointConfig implements NamedConfig {
         return protocolType;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public EndpointConfig setName(String name) {
         this.name = name;
         return this;

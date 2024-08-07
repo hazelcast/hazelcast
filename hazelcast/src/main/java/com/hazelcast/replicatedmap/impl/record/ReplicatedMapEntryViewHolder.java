@@ -117,6 +117,7 @@ public class ReplicatedMapEntryViewHolder implements IdentifiedDataSerializable 
         return this;
     }
 
+    @Override
     public int getFactoryId() {
         return ReplicatedMapDataSerializerHook.F_ID;
     }

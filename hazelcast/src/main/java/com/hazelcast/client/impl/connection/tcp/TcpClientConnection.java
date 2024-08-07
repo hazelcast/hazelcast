@@ -151,6 +151,7 @@ public class TcpClientConnection implements ClientConnection {
         return remoteUuid;
     }
 
+    @Override
     public void setRemoteUuid(UUID remoteUuid) {
         this.remoteUuid = remoteUuid;
     }
@@ -266,6 +267,7 @@ public class TcpClientConnection implements ClientConnection {
         }
     }
 
+    @Override
     public long getStartTime() {
         return startTime;
     }

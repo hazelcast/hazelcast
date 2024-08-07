@@ -460,16 +460,19 @@ public class MapStoreTest extends AbstractMapStoreTest {
                 super(store);
             }
 
+            @Override
             public Long load(String key) {
                 loadCount.incrementAndGet();
                 return super.load(key);
             }
 
+            @Override
             public void store(String key, Long value) {
                 storeCount.incrementAndGet();
                 super.store(key, value);
             }
 
+            @Override
             public void delete(String key) {
                 deleteCount.incrementAndGet();
                 super.delete(key);
@@ -1237,6 +1240,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
             latchLoadAllKeys = new CountDownLatch(expectedLoadAllKeys);
         }
 
+        @Override
         public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
             this.hazelcastInstance = hazelcastInstance;
             this.properties = properties;
@@ -1252,6 +1256,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
             this.loadAllKeys = loadAllKeys;
         }
 
+        @Override
         public void destroy() {
             destroyCount.incrementAndGet();
         }
@@ -1313,6 +1318,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
             }
         }
 
+        @Override
         public Set loadAllKeys() {
             callCount.incrementAndGet();
             latchLoadAllKeys.countDown();
@@ -1407,6 +1413,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
             store.put(key, value);
         }
 
+        @Override
         public Set<K> loadAllKeys() {
             if (loadAllKeys) {
                 return store.keySet();

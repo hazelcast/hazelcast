@@ -36,6 +36,7 @@ public class KubernetesApiEndpointProviderTest
         super(new KubernetesApiEndpointProvider());
     }
 
+    @Override
     public String getEndpointsResponseWithServices() throws JsonProcessingException {
         return WRITER.writeValueAsString(endpointsList(
                 endpoints("my-release-hazelcast", 5701,
@@ -50,25 +51,30 @@ public class KubernetesApiEndpointProviderTest
                 endpoints("kubernetes", "192.168.49.2", 443)));
     }
 
+    @Override
     public String getEndpointsResponse() throws JsonProcessingException {
         return WRITER.writeValueAsString(
                 endpoints(Map.of("192.168.0.25", "hazelcast-0", "172.17.0.5", "hazelcast-1"), 5701));
     }
 
+    @Override
     public String getEndpointsListResponse() throws JsonProcessingException {
         return WRITER.writeValueAsString(endpointsList(
                 endpoints(Map.of("172.17.0.5", "hazelcast-0", "192.168.0.25", "hazelcast-1"),
                         Map.of("172.17.0.6", "hazelcast-2"), Map.of("5701", 5701, "hazelcast", 5702))));
     }
 
+    @Override
     public String getEndpointsUrlString() {
         return "%s/api/v1/namespaces/%s/endpoints";
     }
 
+    @Override
     public String getEndpointsByNameUrlString() {
         return "%s/api/v1/namespaces/%s/endpoints/%s";
     }
 
+    @Override
     public String getEndpointsByServiceLabelUrlString() {
         return "%s/api/v1/namespaces/%s/endpoints?%s";
     }

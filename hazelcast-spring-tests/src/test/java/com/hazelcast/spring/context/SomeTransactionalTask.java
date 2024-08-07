@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 @SpringAware
 public class SomeTransactionalTask implements Callable<Void>, Serializable {
 
+    @Override
     @Transactional
     public Void call() {
         return null;

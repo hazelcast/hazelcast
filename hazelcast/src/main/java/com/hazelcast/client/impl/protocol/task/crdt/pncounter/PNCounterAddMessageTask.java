@@ -84,6 +84,7 @@ public class PNCounterAddMessageTask extends AbstractTargetMessageTask<RequestPa
         return SecurityInterceptorConstants.PN_COUNTER_SERVICE;
     }
 
+    @Override
     public Object[] getParameters() {
         return new Object[]{parameters.delta, parameters.getBeforeUpdate};
     }

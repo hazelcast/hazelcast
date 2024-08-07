@@ -54,6 +54,7 @@ public class ReplicatedMapListenerTest extends AbstractReplicatedMapListenerTest
         }, 10);
     }
 
+    @Override
     protected <K, V> ReplicatedMap<K, V> createClusterAndGetRandomReplicatedMap() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();

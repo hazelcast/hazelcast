@@ -70,6 +70,7 @@ public interface IScheduledFuture<V>
      * @return {@code false} if the task could not be cancelled, typically because it has already completed normally;
      * {@code true} otherwise
      */
+    @Override
     boolean cancel(boolean mayInterruptIfRunning);
 
 }

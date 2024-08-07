@@ -69,6 +69,7 @@ public class EvictOperation extends LockAwareOperation
         sendResponse(false);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new EvictBackupOperation(name, dataKey);
     }

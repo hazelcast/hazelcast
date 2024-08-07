@@ -141,6 +141,7 @@ public interface ClusterService extends CoreService, Cluster {
      * @return the local member instance (the returned value will never be {@code null})
      */
     @Nonnull
+    @Override
     Member getLocalMember();
 
     /**

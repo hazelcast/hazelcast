@@ -141,6 +141,7 @@ public class MemcacheEntry implements IdentifiedDataSerializable {
         return result;
     }
 
+    @Override
     public String toString() {
         return "MemcacheEntry{"
                 + "bytes="

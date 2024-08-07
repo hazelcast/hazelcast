@@ -29,6 +29,7 @@ public interface VersionedIdentifiedDataSerializable extends IdentifiedDataSeria
 
     int getClassId(Version clusterVersion);
 
+    @Override
     default int getClassId() {
         throw new UnsupportedOperationException();
     }

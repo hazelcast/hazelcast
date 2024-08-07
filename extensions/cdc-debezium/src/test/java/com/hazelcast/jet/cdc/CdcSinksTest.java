@@ -73,6 +73,7 @@ public class CdcSinksTest extends PipelineTestSupport {
     private List<HazelcastInstance> remoteCluster;
 
     @After
+    @Override
     public void after() {
         if (remoteCluster != null) {
             for (HazelcastInstance instance : remoteCluster) {

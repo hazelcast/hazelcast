@@ -115,6 +115,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
      * @return the trusted interfaces
      * @see #setTrustedInterfaces(java.util.Set)
      */
+    @Override
     public Set<String> getTrustedInterfaces() {
         return trustedInterfaces;
     }
@@ -128,6 +129,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
      * @return the updated MulticastConfig
      * @see IllegalArgumentException if interfaces is {@code null}
      */
+    @Override
     public ManagementCenterConfig setTrustedInterfaces(Set<String> interfaces) {
         isNotNull(interfaces, "interfaces");
 
@@ -143,6 +145,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
      * @throws IllegalArgumentException if IP is {@code null}
      * @see #setTrustedInterfaces(java.util.Set)
      */
+    @Override
     public ManagementCenterConfig addTrustedInterface(final String ip) {
         trustedInterfaces.add(isNotNull(ip, "ip"));
         return this;

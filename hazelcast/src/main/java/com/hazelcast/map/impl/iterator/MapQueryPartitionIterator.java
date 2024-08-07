@@ -60,6 +60,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
         advance();
     }
 
+    @Override
     protected List<Data> fetch() {
         final MapOperation op = mapProxy.getOperationProvider()
                                         .createFetchWithQueryOperation(mapProxy.getName(), pointers, fetchSize, query);

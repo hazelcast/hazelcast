@@ -51,17 +51,20 @@ public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E
     /**
      * {@inheritDoc}
      */
+    @Override
     E poll();
 
     /**
      * {@inheritDoc}
      */
+    @Override
     E poll(long timeout, @Nonnull TimeUnit unit) throws InterruptedException;
 
     /**
      * {@inheritDoc}
      */
     @Nonnull
+    @Override
     E take() throws InterruptedException;
 
     /**

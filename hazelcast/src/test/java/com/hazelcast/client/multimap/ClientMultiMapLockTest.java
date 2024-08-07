@@ -134,6 +134,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
             this.key = key;
         }
 
+        @Override
         public void run() {
             try {
                 mm.unlock(key);

@@ -69,6 +69,7 @@ public class LocalKafkaConnectStatsImpl implements LocalKafkaConnectStats {
         sourceRecordPollAvgTime = times / count;
     }
 
+    @Override
     public long getSourceRecordPollTotal() {
         return sourceRecordPollTotal;
     }

@@ -44,6 +44,7 @@ public class SlowOperationInvocationDTO implements JsonSerializable {
         this.durationMs = durationMs;
     }
 
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("id", id);

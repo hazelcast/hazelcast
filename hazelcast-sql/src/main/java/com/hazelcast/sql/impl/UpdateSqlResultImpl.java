@@ -43,6 +43,7 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
     }
 
     @Nullable
+    @Override
     public QueryId getQueryId() {
         throw new IllegalStateException("This result contains only update count");
     }

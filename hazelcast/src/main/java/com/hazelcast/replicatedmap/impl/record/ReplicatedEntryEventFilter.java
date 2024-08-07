@@ -30,6 +30,7 @@ public class ReplicatedEntryEventFilter implements EventFilter {
         this.key = key;
     }
 
+    @Override
     public boolean eval(Object arg) {
         return key == null || key.equals(arg);
     }

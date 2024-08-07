@@ -948,6 +948,7 @@ class MapServiceContextImpl implements MapServiceContext {
         return nodeWideLoadedKeyLimiter;
     }
 
+    @Override
     public NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter() {
         return nodeWideUsedCapacityCounter;
     }

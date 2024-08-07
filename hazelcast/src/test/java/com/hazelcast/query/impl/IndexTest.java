@@ -251,6 +251,7 @@ public class IndexTest {
 
     private class TestPortableFactory implements PortableFactory {
 
+        @Override
         public Portable create(int classId) {
             switch (classId) {
                 case MainPortable.CLASS_ID:
@@ -325,10 +326,12 @@ public class IndexTest {
             this.str = str;
         }
 
+        @Override
         public int getClassId() {
             return CLASS_ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeByte("b", b);
             writer.writeBoolean("bool", bool);
@@ -341,6 +344,7 @@ public class IndexTest {
             writer.writeString("str", str);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             b = reader.readByte("b");
             bool = reader.readBoolean("bool");
@@ -421,6 +425,7 @@ public class IndexTest {
                     + '}';
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }

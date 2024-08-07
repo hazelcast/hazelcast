@@ -56,6 +56,7 @@ public class HazelcastJsonArrayAggFunction extends HazelcastAggFunction {
         return true;
     }
 
+    @Override
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.from(1);
     }

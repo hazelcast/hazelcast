@@ -30,6 +30,7 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
      * @deprecated for the sake of better naming. Use {@link #writeString(String)} instead
      */
     @Deprecated
+    @Override
     void writeUTF(@Nullable String string) throws IOException;
 
     /**

@@ -906,6 +906,7 @@ public interface ICache<K, V>
      *
      * @see javax.cache.CacheManager#destroyCache(String)
      */
+    @Override
     void destroy();
 
     /**

@@ -178,6 +178,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             this.key = key;
         }
 
+        @Override
         boolean schedule(ScheduledEntry<K, V> newEntry, ScheduledGroup newGroup) {
             if (newGroup == group) {
                 // no reschedule if in the same second
@@ -193,16 +194,19 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             return true;
         }
 
+        @Override
         ScheduledEntry<K, V> get() {
             return group.getEntry(id);
         }
 
+        @Override
         ScheduledEntry<K, V> cancel() {
             ScheduledEntry<K, V> entry = group.removeEntry(id);
             keys.remove(key);
             return entry;
         }
 
+        @Override
         int cancelIfExists(V value) {
             ScheduledEntry<K, V> entry = group.getEntry(id);
             if (Objects.equals(entry.getValue(), value)) {
@@ -213,6 +217,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             return 0;
         }
 
+        @Override
         void executed(ScheduledEntry<K, V> entry) {
             assert entry.getScheduleId() == id;
             // no need to remove entry from group, whole group is being executed and will be removed
@@ -232,6 +237,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             this.key = key;
         }
 
+        @Override
         boolean schedule(ScheduledEntry<K, V> entry, ScheduledGroup group) {
             Long id = entry.getScheduleId();
             idToGroupMap.put(id, group);
@@ -239,6 +245,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             return true;
         }
 
+        @Override
         ScheduledEntry<K, V> get() {
             ScheduledEntry<K, V> entry = null;
             for (Map.Entry<Long, ScheduledGroup> idToGroup : idToGroupMap.entrySet()) {
@@ -250,6 +257,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             return entry;
         }
 
+        @Override
         ScheduledEntry<K, V> cancel() {
             ScheduledEntry<K, V> entry = null;
             for (Map.Entry<Long, ScheduledGroup> idToGroup : idToGroupMap.entrySet()) {
@@ -262,6 +270,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             return entry;
         }
 
+        @Override
         int cancelIfExists(V value) {
             int cancelled = 0;
             Iterator<Map.Entry<Long, ScheduledGroup>> iterator = idToGroupMap.entrySet().iterator();
@@ -282,6 +291,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             return cancelled;
         }
 
+        @Override
         void executed(ScheduledEntry<K, V> entry) {
             idToGroupMap.remove(entry.getScheduleId());
             // no need to remove entry from group, whole group is being executed and will be removed

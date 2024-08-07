@@ -61,6 +61,7 @@ public abstract class CollectionOperation extends Operation
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }

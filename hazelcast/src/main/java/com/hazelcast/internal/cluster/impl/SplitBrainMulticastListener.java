@@ -36,6 +36,7 @@ public class SplitBrainMulticastListener implements MulticastListener {
         this.deque = deque;
     }
 
+    @Override
     public void onMessage(Object msg) {
         if (msg instanceof SplitBrainJoinMessage joinRequest) {
             Address thisAddress = node.getThisAddress();

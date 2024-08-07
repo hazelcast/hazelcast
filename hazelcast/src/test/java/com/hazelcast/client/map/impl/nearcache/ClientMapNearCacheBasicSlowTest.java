@@ -55,6 +55,7 @@ public class ClientMapNearCacheBasicSlowTest extends ClientMapNearCacheBasicTest
     public boolean serializeKeys;
 
     @Before
+    @Override
     public void setUp() {
         nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys);
     }

@@ -231,6 +231,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     //public for tests on enterprise
+    @Override
     public int getMemberListVersion() {
         return memberListSnapshot.get().version();
     }
@@ -406,6 +407,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 getMemberList());
     }
 
+    @Override
     public void terminateClientConnectivityLogging() {
         connectivityLogger.terminate();
     }

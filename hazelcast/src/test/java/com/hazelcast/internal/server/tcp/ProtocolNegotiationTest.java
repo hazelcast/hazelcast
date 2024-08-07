@@ -147,6 +147,7 @@ public class ProtocolNegotiationTest {
             LOGGER.info("The server will be listening on port " + serverSocket.getLocalPort());
         }
 
+        @Override
         public void run() {
             try {
                 while (!shutdownRequested) {

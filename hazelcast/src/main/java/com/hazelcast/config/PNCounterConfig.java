@@ -66,6 +66,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     /** Gets the name of the PN counter. */
+    @Override
     public String getName() {
         return name;
     }
@@ -76,6 +77,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
      * @param name the name of the PN counter
      * @return the updated PN counter config
      */
+    @Override
     public PNCounterConfig setName(String name) {
         checkNotNull(name);
         this.name = name;

@@ -63,10 +63,12 @@ public final class NioChannel extends AbstractChannel {
         this.outboundPipeline = outboundPipeline;
     }
 
+    @Override
     public NioOutboundPipeline outboundPipeline() {
         return outboundPipeline;
     }
 
+    @Override
     public NioInboundPipeline inboundPipeline() {
         return inboundPipeline;
     }

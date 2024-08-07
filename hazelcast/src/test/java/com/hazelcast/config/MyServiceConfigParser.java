@@ -26,6 +26,7 @@ import static org.ops4j.util.xml.XmlUtils.getTextContent;
 
 public class MyServiceConfigParser extends AbstractXmlConfigHelper implements ServiceConfigurationParser<MyServiceConfig> {
 
+    @Override
     public MyServiceConfig parse(Element element) {
         MyServiceConfig config = new MyServiceConfig();
         for (Node configNode : childElements(element)) {

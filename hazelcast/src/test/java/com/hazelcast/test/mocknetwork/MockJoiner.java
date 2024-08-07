@@ -51,6 +51,7 @@ class MockJoiner extends AbstractJoiner {
         maxTryCount = node.getProperties().getInteger(MOCK_JOIN_PORT_TRY_COUNT);
     }
 
+    @Override
     public void doJoin() {
         registry.registerNode(node);
 
@@ -184,6 +185,7 @@ class MockJoiner extends AbstractJoiner {
                 || rangeStartPort > foundNodePort;
     }
 
+    @Override
     public void searchForOtherClusters() {
         Collection<Address> possibleAddresses = new ArrayList<>(registry.getJoinAddresses());
         possibleAddresses.remove(node.getThisAddress());

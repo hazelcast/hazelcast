@@ -73,6 +73,7 @@ public class MapContainsValueMessageTask
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
     }

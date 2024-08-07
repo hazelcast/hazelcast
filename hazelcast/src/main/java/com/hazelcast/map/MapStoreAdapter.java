@@ -33,18 +33,21 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void delete(final K key) {
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void store(final K key, final V value) {
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void storeAll(final Map<K, V> map) {
         for (Map.Entry<K, V> entry : map.entrySet()) {
             store(entry.getKey(), entry.getValue());
@@ -54,6 +57,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void deleteAll(final Collection<K> keys) {
         for (K key : keys) {
             delete(key);
@@ -63,6 +67,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public V load(final K key) {
         return null;
     }
@@ -70,6 +75,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Map<K, V> loadAll(final Collection<K> keys) {
         Map<K, V> result = createHashMap(keys.size());
         for (K key : keys) {
@@ -84,6 +90,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Iterable<K> loadAllKeys() {
         return null;
     }

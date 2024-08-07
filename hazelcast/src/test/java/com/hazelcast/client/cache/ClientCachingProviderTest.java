@@ -54,6 +54,7 @@ public class ClientCachingProviderTest extends CachingProviderTest {
     }
 
     @Before
+    @Override
     public void setup() {
         // start a member
         Config config = new Config();

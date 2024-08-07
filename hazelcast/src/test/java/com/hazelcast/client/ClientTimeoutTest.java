@@ -117,6 +117,7 @@ public class ClientTimeoutTest {
     }
 
     private static class RetryableExceptionThrowingCallable implements Callable<Boolean>, Serializable {
+        @Override
         public Boolean call() {
             throw new RetryableHazelcastException();
         }

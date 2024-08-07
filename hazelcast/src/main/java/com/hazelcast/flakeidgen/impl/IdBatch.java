@@ -79,6 +79,7 @@ public class IdBatch implements Iterable<Long> {
      * {@code remove()} is not supported.
      */
     @Nonnull
+    @Override
     public Iterator<Long> iterator() {
         return new Iterator<>() {
             private long base2 = base;

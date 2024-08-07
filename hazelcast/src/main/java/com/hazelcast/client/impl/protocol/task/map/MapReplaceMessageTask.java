@@ -60,6 +60,7 @@ public class MapReplaceMessageTask
         return SecurityInterceptorConstants.REPLACE;
     }
 
+    @Override
     public Object[] getParameters() {
         return new Object[]{parameters.key, parameters.value};
     }

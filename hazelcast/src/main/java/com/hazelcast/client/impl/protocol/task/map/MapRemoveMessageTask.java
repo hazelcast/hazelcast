@@ -80,6 +80,7 @@ public class MapRemoveMessageTask
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
     }

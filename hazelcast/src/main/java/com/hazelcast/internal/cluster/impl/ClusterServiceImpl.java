@@ -754,6 +754,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Nonnull
+    @Override
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "listener cannot be null");
 
@@ -774,6 +775,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return registration.getId();
     }
 
+    @Override
     public boolean removeMembershipListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId cannot be null");
 

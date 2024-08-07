@@ -32,6 +32,7 @@ public class Log4j2Factory extends LoggerFactorySupport {
 
     private static final String FQCN = Log4j2Logger.class.getName();
 
+    @Override
     protected ILogger createLogger(String name) {
         return new Log4j2Logger(LogManager.getContext(false).getLogger(name));
     }

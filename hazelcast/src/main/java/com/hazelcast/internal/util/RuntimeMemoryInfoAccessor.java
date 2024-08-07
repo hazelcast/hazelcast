@@ -21,14 +21,17 @@ package com.hazelcast.internal.util;
  */
 public class RuntimeMemoryInfoAccessor implements MemoryInfoAccessor {
 
+    @Override
     public long getTotalMemory() {
         return Runtime.getRuntime().totalMemory();
     }
 
+    @Override
     public long getFreeMemory() {
         return Runtime.getRuntime().freeMemory();
     }
 
+    @Override
     public long getMaxMemory() {
         return Runtime.getRuntime().maxMemory();
     }

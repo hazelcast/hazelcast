@@ -65,6 +65,7 @@ public class MapUnlockMessageTask
     }
 
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }

@@ -35,6 +35,7 @@ public abstract class AbstractMapIterableTest extends AbstractMapIteratorTest {
 
     protected abstract <K, V> Iterable<Map.Entry<K, V>> getIterable(IMap<K, V> map);
 
+    @Override
     protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map) {
         return getIterable(map).iterator();
     }

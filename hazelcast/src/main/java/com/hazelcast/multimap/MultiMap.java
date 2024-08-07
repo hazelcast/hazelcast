@@ -113,6 +113,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if size of the multimap is increased,
      * {@code false} if the multimap already contains the key-value pair and doesn't allow duplicates
      */
+    @Override
     boolean put(@Nonnull K key, @Nonnull V value);
 
     /**
@@ -130,6 +131,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return the collection of the values associated with the key
      */
     @Nonnull
+    @Override
     Collection<V> get(@Nonnull K key);
 
     /**
@@ -144,6 +146,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the size of the multimap changed after the remove operation,
      * {@code false} otherwise
      */
+    @Override
     boolean remove(@Nonnull Object key, @Nonnull Object value);
 
     /**
@@ -162,6 +165,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * The returned collection might be modifiable, but it has no effect on the multimap.
      */
     @Nonnull
+    @Override
     Collection<V> remove(@Nonnull Object key);
 
     /**
@@ -275,6 +279,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @return the number of key-value pairs in the multimap
      */
+    @Override
     int size();
 
     /**
@@ -292,6 +297,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key the key whose values count is to be returned
      * @return the number of values that match the given key in the multimap
      */
+    @Override
     int valueCount(@Nonnull K key);
 
     /**

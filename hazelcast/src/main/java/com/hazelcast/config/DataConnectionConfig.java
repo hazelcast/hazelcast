@@ -86,6 +86,7 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
      *
      * @return the name of this data connection
      */
+    @Override
     public String getName() {
         return name;
     }

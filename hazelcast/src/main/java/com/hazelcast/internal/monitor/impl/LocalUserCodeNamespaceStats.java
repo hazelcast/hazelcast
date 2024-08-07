@@ -33,6 +33,7 @@ public interface LocalUserCodeNamespaceStats extends LocalInstanceStats {
      *
      * @return the creation time of the stats object.
      */
+    @Override
     long getCreationTime();
 
     /**

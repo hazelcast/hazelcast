@@ -52,6 +52,7 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
     }
 
 
+    @Override
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
         if (this.built) {
             throw new UnsupportedOperationException("Cannot modify the GenericRecordBuilder after building");

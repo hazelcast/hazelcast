@@ -27,6 +27,8 @@ import java.util.Map;
  */
 public class JavaDeserializer implements Deserializer<Object> {
     public void configure(Map map, boolean b) { }
+
+    @Override
     public void close() { }
 
     @Override

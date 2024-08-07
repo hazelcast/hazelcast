@@ -194,6 +194,7 @@ public interface HeapMemoryAccessor extends ByteAccessStrategy<Object> {
      * @param base   the object whose base address to use for the operation
      * @param offset offset from object's base to the accessed location
      */
+    @Override
     byte getByte(Object base, long offset);
 
     /**
@@ -203,6 +204,7 @@ public interface HeapMemoryAccessor extends ByteAccessStrategy<Object> {
      * @param offset offset from object's base to the accessed location
      * @param x      the referenced object to be written
      */
+    @Override
     void putByte(Object base, long offset, byte x);
 
     /**

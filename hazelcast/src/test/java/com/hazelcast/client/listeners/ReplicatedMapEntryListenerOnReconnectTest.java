@@ -79,6 +79,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
         return replicatedMap.removeEntryListener(registrationId);
     }
 
+    @Override
     protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory, int expected) {
         assertTrueEventually(() -> {
             boolean found = false;

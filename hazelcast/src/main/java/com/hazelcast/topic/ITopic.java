@@ -55,6 +55,7 @@ public interface ITopic<E> extends DistributedObject {
      *
      * @return name of this ITopic instance
      */
+    @Override
     String getName();
 
     /**

@@ -35,6 +35,7 @@ abstract class StreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
 
     public abstract void add(JetSqlRow row);
 
+    @Override
     public abstract Iterator<JetSqlRow> iterator();
 
     public abstract int size();

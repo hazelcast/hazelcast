@@ -36,6 +36,7 @@ public class EntryStoreClientSimpleTest extends EntryStoreSimpleTest {
     private TestHazelcastFactory factory;
 
     @Before
+    @Override
     public void setup() {
         factory = new TestHazelcastFactory(1);
         instances = factory.newInstances(getConfig());

@@ -115,10 +115,12 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
             return this.id;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeString(this.id);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             this.id = in.readString();
         }

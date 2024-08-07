@@ -26,6 +26,7 @@ public class FlatCompositeIterator<E> extends AbstractCompositeIterator<E> {
         this.iterators = iterators;
     }
 
+    @Override
     protected Iterator<E> nextIterator() {
         while (iterators.hasNext()) {
             Iterator<E> iterator = iterators.next();

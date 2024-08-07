@@ -246,6 +246,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         return future;
     }
 
+    @Override
     protected boolean shouldFailOnIndeterminateOperationState() {
         return false;
     }
@@ -502,6 +503,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         return TIMEOUT;
     }
 
+    @Override
     protected boolean shouldCompleteWithoutBackups() {
         boolean targetDead = context.clusterService.getMember(targetAddress) == null;
         if (targetDead) {

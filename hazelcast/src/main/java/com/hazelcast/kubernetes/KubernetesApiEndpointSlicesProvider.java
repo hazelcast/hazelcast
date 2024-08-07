@@ -35,18 +35,22 @@ import static com.hazelcast.kubernetes.KubernetesClient.EndpointAddress;
 public class KubernetesApiEndpointSlicesProvider
         implements KubernetesApiProvider {
 
+    @Override
     public String getEndpointsByServiceLabelUrlString() {
         return "%s/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices?%s";
     }
 
+    @Override
     public String getEndpointsByNameUrlString() {
         return "%s/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices?labelSelector=kubernetes.io/service-name=%s";
     }
 
+    @Override
     public String getEndpointsUrlString() {
         return "%s/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices";
     }
 
+    @Override
     public List<Endpoint> parseEndpointsList(JsonObject jsonObject) {
         List<Endpoint> endpoints = new ArrayList<>();
         for (JsonValue item : toJsonArray(jsonObject.get("items"))) {
@@ -55,10 +59,12 @@ public class KubernetesApiEndpointSlicesProvider
         return endpoints;
     }
 
+    @Override
     public List<Endpoint> parseEndpoints(JsonValue jsonValue) {
         return parseEndpointsList(jsonValue.asObject());
     }
 
+    @Override
     public Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
                                                         List<String> privateAddresses) {
         Map<EndpointAddress, String> result = new HashMap<>();

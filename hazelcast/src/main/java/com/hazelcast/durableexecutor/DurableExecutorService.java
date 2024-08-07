@@ -59,6 +59,7 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * @throws NullPointerException       if the task is null
      */
     @Nonnull
+    @Override
     <T> DurableExecutorServiceFuture<T> submit(@Nonnull Callable<T> task);
 
     /**
@@ -75,6 +76,7 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * @throws NullPointerException       if the task is null
      */
     @Nonnull
+    @Override
     <T> DurableExecutorServiceFuture<T> submit(@Nonnull Runnable task, T result);
 
     /**

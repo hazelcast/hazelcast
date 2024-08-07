@@ -125,5 +125,6 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
      * @param namespace the object namespace
      * @return {@code true} if the object has a configured and enabled event journal, {@code false} otherwise
      */
+    @Override
     boolean hasEventJournal(ObjectNamespace namespace);
 }

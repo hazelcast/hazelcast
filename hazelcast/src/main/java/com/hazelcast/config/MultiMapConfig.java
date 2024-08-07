@@ -106,6 +106,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
      *
      * @return the name of this MultiMap
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -116,6 +117,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
      * @param name the name to set for this MultiMap
      * @return this updated MultiMap configuration
      */
+    @Override
     public MultiMapConfig setName(String name) {
         this.name = name;
         return this;
@@ -339,11 +341,13 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
      * @return the updated {@link MultiMapConfig} instance
      * @since 5.4
      */
+    @Override
     public MultiMapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
+    @Override
     public String toString() {
         return "MultiMapConfig{"
                 + "name='" + name + '\''

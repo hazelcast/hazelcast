@@ -122,6 +122,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      *
      * @return the name of the executor task
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -132,6 +133,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * @param name the name of the executor task
      * @return this executor config instance
      */
+    @Override
     public ScheduledExecutorConfig setName(String name) {
         this.name = name;
         return this;
@@ -304,6 +306,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * @return the updated {@link ScheduledExecutorConfig} instance
      * @since 5.4
      */
+    @Override
     public ScheduledExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

@@ -25,14 +25,17 @@ import org.junit.runner.RunWith;
 @Category(NightlyTest.class)
 public class JavaXCacheDependencyTest extends AbstractJavaXCacheDependencyTest {
 
+    @Override
     protected String getConfigClass() {
         return "com.hazelcast.config.Config";
     }
 
+    @Override
     protected String getHazelcastClass() {
         return "com.hazelcast.core.Hazelcast";
     }
 
+    @Override
     protected String getNewInstanceMethod() {
         return "newHazelcastInstance";
     }

@@ -694,6 +694,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             this.random = random;
         }
 
+        @Override
         public void run() {
             Cluster cluster = instance.getCluster();
             ClusterState newState = flipState(cluster.getClusterState());

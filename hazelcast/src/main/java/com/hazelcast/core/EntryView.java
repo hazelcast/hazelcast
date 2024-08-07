@@ -32,6 +32,7 @@ public interface EntryView<K, V> extends EvictableEntryView<K, V> {
      *
      * @return the key of the entry
      */
+    @Override
     K getKey();
 
     /**
@@ -39,6 +40,7 @@ public interface EntryView<K, V> extends EvictableEntryView<K, V> {
      *
      * @return the value of the entry
      */
+    @Override
     V getValue();
 
     /**
@@ -57,6 +59,7 @@ public interface EntryView<K, V> extends EvictableEntryView<K, V> {
      *
      * @return the creation time of the entry
      */
+    @Override
     long getCreationTime();
 
     /**
@@ -73,6 +76,7 @@ public interface EntryView<K, V> extends EvictableEntryView<K, V> {
      *
      * @return number of hits of the entry
      */
+    @Override
     long getHits();
 
     /**
@@ -82,6 +86,7 @@ public interface EntryView<K, V> extends EvictableEntryView<K, V> {
      *
      * @return the last access time for the entry
      */
+    @Override
     long getLastAccessTime();
 
     /**

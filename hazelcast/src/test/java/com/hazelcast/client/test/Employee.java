@@ -63,14 +63,17 @@ public class Employee implements Portable {
         this.name = name;
     }
 
+    @Override
     public int getFactoryId() {
         return PortableFactory.FACTORY_ID;
     }
 
+    @Override
     public int getClassId() {
         return CLASS_ID;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeString("n", name);
         writer.writeInt("a", age);
@@ -106,6 +109,7 @@ public class Employee implements Portable {
         out.writeObject(utfStr);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readString("n");
         age = reader.readInt("a");

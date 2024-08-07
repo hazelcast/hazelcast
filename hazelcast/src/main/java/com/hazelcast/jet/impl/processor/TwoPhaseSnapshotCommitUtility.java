@@ -196,6 +196,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
      * - the job might have failed between after snapshot phase 1 and 2. The
      * pending transactions might be recovered after the restart.
      */
+    @Override
     public abstract void close() throws Exception;
 
     public boolean usesTransactionLifecycle() {

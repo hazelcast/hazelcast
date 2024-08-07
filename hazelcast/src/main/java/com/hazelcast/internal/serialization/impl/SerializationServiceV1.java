@@ -208,6 +208,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return (B) data;
     }
 
+    @Override
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         if (data.isPortable()) {
             BufferObjectDataInput in = createObjectDataInput(data);
@@ -235,6 +236,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return compactStreamSerializer.extractSchema(object);
     }
 
+    @Override
     public PortableContext getPortableContext() {
         return portableContext;
     }

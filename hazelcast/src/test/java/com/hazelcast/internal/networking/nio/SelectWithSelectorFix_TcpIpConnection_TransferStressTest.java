@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 public class SelectWithSelectorFix_TcpIpConnection_TransferStressTest extends TcpServerConnection_AbstractTransferStressTest {
 
     @Before
+    @Override
     public void setup() throws Exception {
         networkingFactory = new SelectWithSelectorFix_NioNetworkingFactory();
         super.setup();

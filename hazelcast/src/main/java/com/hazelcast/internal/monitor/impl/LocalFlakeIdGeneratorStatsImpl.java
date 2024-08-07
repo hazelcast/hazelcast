@@ -56,6 +56,7 @@ public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStat
         return batchCount;
     }
 
+    @Override
     public long getIdCount() {
         return idCount;
     }

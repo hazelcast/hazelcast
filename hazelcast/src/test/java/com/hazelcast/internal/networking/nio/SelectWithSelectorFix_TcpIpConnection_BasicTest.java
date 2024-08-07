@@ -29,6 +29,7 @@ public class SelectWithSelectorFix_TcpIpConnection_BasicTest
         extends TcpServerConnection_AbstractBasicTest {
 
     @Before
+    @Override
     public void setup() throws Exception {
         networkingFactory = new SelectWithSelectorFix_NioNetworkingFactory();
         super.setup();

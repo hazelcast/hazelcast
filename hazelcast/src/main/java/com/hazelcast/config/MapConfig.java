@@ -197,6 +197,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      *
      * @return the name of the {@link IMap}
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -206,6 +207,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      *
      * @param name the name to set for this {@link IMap}
      */
+    @Override
     public MapConfig setName(String name) {
         this.name = checkNotNull(name, "Name must not be null");
         return this;
@@ -860,6 +862,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      * @return the updated {@link MapConfig} instance
      * @since 5.4
      */
+    @Override
     public MapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         this.userCodeNamespace = userCodeNamespace;
         return this;

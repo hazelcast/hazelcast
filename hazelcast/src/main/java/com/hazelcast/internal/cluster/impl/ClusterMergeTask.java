@@ -54,6 +54,7 @@ class ClusterMergeTask implements Runnable {
         this.lifecycleService = node.hazelcastInstance.getLifecycleService();
     }
 
+    @Override
     public void run() {
         lifecycleService.fireLifecycleEvent(MERGING);
 

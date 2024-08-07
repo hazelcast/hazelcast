@@ -44,6 +44,7 @@ public class ClientMultiMapStatsTest extends LocalMultiMapStatsTest {
     private HazelcastInstance member;
 
     @Before
+    @Override
     public void setUp() {
         member = factory.newHazelcastInstance();
         client = factory.newHazelcastClient();

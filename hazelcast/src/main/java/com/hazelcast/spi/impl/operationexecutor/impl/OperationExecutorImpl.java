@@ -365,6 +365,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return genericQueue.prioritySize();
     }
 
+    @Override
     @Probe(name = OPERATION_METRIC_EXECUTOR_COMPLETED_COUNT, level = MANDATORY)
     public long getExecutedOperationCount() {
         long result = adHocOperationRunner.executedOperationsCount();
@@ -560,6 +561,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     }
 
     // public for testing purposes
+    @Override
     public int toPartitionThreadIndex(int partitionId) {
         return partitionId % partitionThreads.length;
     }

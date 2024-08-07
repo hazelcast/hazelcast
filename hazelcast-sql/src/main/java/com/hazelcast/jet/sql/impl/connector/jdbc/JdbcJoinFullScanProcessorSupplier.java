@@ -56,6 +56,7 @@ public class JdbcJoinFullScanProcessorSupplier
         super(dataConnectionName, query, converters, joinInfo, projections);
     }
 
+    @Override
     protected AutoCloseableTraverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
         return AutoCloseableTraversers.traverseAutoCloseableIterator(leftRows.iterator())
                   .flatMapAutoCloseable(jetSqlRow -> AutoCloseableTraversers.traverseAutoCloseableIterator(joinRow(jetSqlRow)));

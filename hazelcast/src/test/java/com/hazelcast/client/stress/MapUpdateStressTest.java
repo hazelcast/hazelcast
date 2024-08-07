@@ -51,6 +51,7 @@ public class MapUpdateStressTest extends StressTestSupport {
     private StressThread[] stressThreads;
 
     @Before
+    @Override
     public void setUp() {
         super.setUp();
 
@@ -67,6 +68,7 @@ public class MapUpdateStressTest extends StressTestSupport {
     }
 
     @After
+    @Override
     public void tearDown() {
         if (client != null) {
             client.shutdown();

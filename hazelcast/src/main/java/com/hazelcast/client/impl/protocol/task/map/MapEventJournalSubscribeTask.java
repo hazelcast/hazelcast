@@ -67,6 +67,7 @@ public class MapEventJournalSubscribeTask
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters, ActionConstants.ACTION_LISTEN);
     }

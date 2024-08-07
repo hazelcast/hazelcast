@@ -258,6 +258,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
+    @Override
     void putAll(@Nonnull Map<? extends K, ? extends V> m);
 
     /**
@@ -278,6 +279,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if the specified key is {@code null}
      */
+    @Override
     boolean containsKey(@Nonnull Object key);
 
     /**
@@ -285,6 +287,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if the specified value is {@code null}
      */
+    @Override
     boolean containsValue(@Nonnull Object value);
 
     /**
@@ -316,6 +319,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if the specified key is {@code null}
      */
+    @Override
     V get(@Nonnull Object key);
 
     /**
@@ -355,6 +359,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if the specified key or value is null
      */
+    @Override
     V put(@Nonnull K key, @Nonnull V value);
 
     /**
@@ -396,6 +401,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws NullPointerException if the specified key is null
      * @see #delete(Object)
      */
+    @Override
     V remove(@Nonnull Object key);
 
     /**
@@ -427,6 +433,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if the specified key or value is null
      */
+    @Override
     boolean remove(@Nonnull Object key, @Nonnull Object value);
 
     /**
@@ -495,6 +502,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws NullPointerException if the specified key is null
      * @see #remove(Object)
      */
+    @Override
     void delete(@Nonnull Object key);
 
     /**
@@ -1321,6 +1329,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws UnsupportedOperationException if the underlying map storage doesn't
      *         support TTL-based expiration (all in-memory storages support it).
      */
+    @Override
     V put(@Nonnull K key, @Nonnull V value,
           long ttl, @Nonnull TimeUnit ttlUnit);
 
@@ -1504,6 +1513,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws NullPointerException if the specified {@code key} or {@code value}
      *                              is {@code null}
      */
+    @Override
     V putIfAbsent(@Nonnull K key, @Nonnull V value);
 
     /**
@@ -1666,6 +1676,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if any of the specified parameters are {@code null}
      */
+    @Override
     boolean replace(@Nonnull K key, @Nonnull V oldValue, @Nonnull V newValue);
 
     /**
@@ -1701,6 +1712,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @throws NullPointerException if the specified key or value is {@code null}
      */
+    @Override
     V replace(@Nonnull K key, @Nonnull V value);
 
     /**
@@ -1735,6 +1747,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param value value of the entry
      * @throws NullPointerException if the specified key or value is {@code null}
      */
+    @Override
     void set(@Nonnull K key, @Nonnull V value);
 
     /**
@@ -2417,6 +2430,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
+    @Override
     Set<K> keySet();
 
     /**
@@ -2436,6 +2450,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
+    @Override
     Collection<V> values();
 
     /**
@@ -2455,6 +2470,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
+    @Override
     Set<Map.Entry<K, V>> entrySet();
 
     /**
@@ -2478,6 +2494,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws NullPointerException             if the predicate is {@code null}
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
+    @Override
     Set<K> keySet(@Nonnull Predicate<K, V> predicate);
 
     /**
@@ -2523,6 +2540,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws NullPointerException             if the predicate is {@code null}
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
+    @Override
     Collection<V> values(@Nonnull Predicate<K, V> predicate);
 
     /**

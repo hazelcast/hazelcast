@@ -292,6 +292,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return i;
     }
 
+    @Override
     public int readInt(int position) throws EOFException {
         checkAvailable(position, INT_SIZE_IN_BYTES);
         return Bits.readInt(data, position, bigEndian);
@@ -332,6 +333,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return l;
     }
 
+    @Override
     public long readLong(int position) throws EOFException {
         checkAvailable(position, LONG_SIZE_IN_BYTES);
         return Bits.readLong(data, position, bigEndian);
@@ -711,6 +713,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return service;
     }
 
+    @Override
     public ByteOrder getByteOrder() {
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
     }

@@ -59,6 +59,7 @@ public class SetSizeMessageTask
         return SetService.SERVICE_NAME;
     }
 
+    @Override
     public Object[] getParameters() {
         return null;
     }

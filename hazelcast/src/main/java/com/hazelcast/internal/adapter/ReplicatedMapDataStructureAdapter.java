@@ -140,6 +140,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
         throw new MethodNotAvailableException();
     }
 
+    @Override
     public V remove(K key) {
         return map.remove(key);
     }

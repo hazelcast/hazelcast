@@ -75,6 +75,7 @@ public class NodeStateImpl implements NodeState {
         return clusterVersion;
     }
 
+    @Override
     public MemberVersion getMemberVersion() {
         return memberVersion;
     }

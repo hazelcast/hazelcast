@@ -41,6 +41,7 @@ public class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGeneric
         this.schema = schema;
     }
 
+    @Override
     public @Nonnull
     GenericRecord build() {
         Set<String> fieldNames = schema.getFieldNames();

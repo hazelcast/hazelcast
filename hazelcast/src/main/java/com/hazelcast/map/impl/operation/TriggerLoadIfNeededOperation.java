@@ -50,6 +50,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation
         return isLoaded;
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }

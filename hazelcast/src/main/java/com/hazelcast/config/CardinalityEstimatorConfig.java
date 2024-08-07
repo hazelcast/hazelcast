@@ -110,6 +110,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
      *
      * @return the name of the estimator
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -120,6 +121,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
      * @param name the name of the estimator
      * @return the cardinality estimator config instance
      */
+    @Override
     public CardinalityEstimatorConfig setName(String name) {
         checkNotNull(name);
         this.name = name;

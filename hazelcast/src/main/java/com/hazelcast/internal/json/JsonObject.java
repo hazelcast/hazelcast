@@ -662,13 +662,14 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
     return Collections.unmodifiableList(names);
   }
 
-  /**
-   * Returns an iterator over the members of this object in document order. The returned iterator
-   * cannot be used to modify this object.
-   *
-   * @return an iterator over the members of this object
-   */
-  public Iterator<Member> iterator() {
+    /**
+     * Returns an iterator over the members of this object in document order. The returned iterator
+     * cannot be used to modify this object.
+     *
+     * @return an iterator over the members of this object
+     */
+    @Override
+    public Iterator<Member> iterator() {
     final Iterator<String> namesIterator = names.iterator();
     final Iterator<JsonValue> valuesIterator = values.iterator();
     return new Iterator<>() {

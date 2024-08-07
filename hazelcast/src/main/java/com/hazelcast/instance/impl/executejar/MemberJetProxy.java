@@ -38,6 +38,7 @@ public class MemberJetProxy<M> extends BootstrappedJetProxy<M> {
         super(jetService);
     }
 
+    @Override
     public boolean hasExecuteJobParameters() {
         return getExecuteJobParameters() != null;
     }

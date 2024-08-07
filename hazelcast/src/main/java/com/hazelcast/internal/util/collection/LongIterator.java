@@ -42,6 +42,7 @@ public class LongIterator implements Iterator<Long> {
         this.values = values;
     }
 
+    @Override
     public boolean hasNext() {
         final long[] values = this.values;
         while (position < values.length) {
@@ -55,10 +56,12 @@ public class LongIterator implements Iterator<Long> {
         return false;
     }
 
+    @Override
     public Long next() {
         return nextValue();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("remove");
     }

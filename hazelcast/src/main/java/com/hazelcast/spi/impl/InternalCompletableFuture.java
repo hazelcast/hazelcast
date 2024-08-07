@@ -53,6 +53,7 @@ import static com.hazelcast.spi.impl.AbstractInvocationFuture.wrapOrPeel;
 @SuppressWarnings("checkstyle:methodcount")
 public class InternalCompletableFuture<V> extends CompletableFuture<V> {
 
+    @Override
     public Executor defaultExecutor() {
         return ConcurrencyUtil.getDefaultAsyncExecutor();
     }

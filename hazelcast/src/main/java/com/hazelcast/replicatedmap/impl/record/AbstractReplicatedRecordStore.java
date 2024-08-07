@@ -315,6 +315,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         return oldRecord;
     }
 
+    @Override
     public void putRecords(Collection<RecordMigrationInfo> records, long version) {
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         for (RecordMigrationInfo record : records) {

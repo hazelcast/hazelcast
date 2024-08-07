@@ -71,6 +71,7 @@ public class ComplexTestDataStructure {
             return Objects.hash(name, limbs_list);
         }
 
+        @Override
         public PersonPortable getPortable() {
             return portable;
         }
@@ -155,6 +156,7 @@ public class ComplexTestDataStructure {
             return Objects.hash(name, fingers_list, tattoos_list);
         }
 
+        @Override
         public LimbPortable getPortable() {
             return portable;
         }
@@ -243,6 +245,7 @@ public class ComplexTestDataStructure {
             return this.name.compareTo(o.name);
         }
 
+        @Override
         public FingerPortable getPortable() {
             return portable;
         }

@@ -28,8 +28,11 @@ import java.util.Map;
  */
 public class JavaSerializer implements Serializer<Object> {
     public void configure(Map map, boolean b) { }
+
+    @Override
     public void close() { }
 
+    @Override
     public byte[] serialize(String s, Object o) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

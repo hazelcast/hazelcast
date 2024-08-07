@@ -136,6 +136,7 @@ public class BiInt2ObjectMapTest {
             this.value = value;
         }
 
+        @Override
         public boolean equals(final Object o) {
             if (this == o) {
                 return true;
@@ -151,6 +152,7 @@ public class BiInt2ObjectMapTest {
 
         }
 
+        @Override
         public int hashCode() {
             int result = keyPartA;
             result = 31 * result + keyPartB;

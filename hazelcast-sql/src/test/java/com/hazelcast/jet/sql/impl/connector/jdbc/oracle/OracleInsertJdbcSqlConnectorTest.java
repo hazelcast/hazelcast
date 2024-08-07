@@ -32,6 +32,7 @@ public class OracleInsertJdbcSqlConnectorTest extends InsertJdbcSqlConnectorTest
     }
 
     @Before
+    @Override
     public void setUp() throws Exception {
         tableName = randomTableName();
     }

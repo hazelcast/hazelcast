@@ -35,18 +35,22 @@ import static com.hazelcast.kubernetes.KubernetesClient.EndpointAddress;
 class KubernetesApiEndpointProvider
         implements KubernetesApiProvider {
 
+    @Override
     public String getEndpointsByServiceLabelUrlString() {
         return "%s/api/v1/namespaces/%s/endpoints?%s";
     }
 
+    @Override
     public String getEndpointsByNameUrlString() {
         return "%s/api/v1/namespaces/%s/endpoints/%s";
     }
 
+    @Override
     public String getEndpointsUrlString() {
         return "%s/api/v1/namespaces/%s/endpoints";
     }
 
+    @Override
     public List<Endpoint> parseEndpointsList(JsonObject endpointsListJson) {
         List<Endpoint> endpoints = new ArrayList<>();
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
@@ -55,6 +59,7 @@ class KubernetesApiEndpointProvider
         return endpoints;
     }
 
+    @Override
     public List<Endpoint> parseEndpoints(JsonValue endpointItemJson) {
         List<Endpoint> addresses = new ArrayList<>();
 
@@ -77,6 +82,7 @@ class KubernetesApiEndpointProvider
         return new Endpoint(new EndpointAddress(ip, endpointPort, targetRefName), isReady, additionalProperties);
     }
 
+    @Override
     public Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
                                                         List<String> privateAddresses) {
         Map<EndpointAddress, String> result = new HashMap<>();
@@ -108,6 +114,7 @@ class KubernetesApiEndpointProvider
         return result;
     }
 
+    @Override
     public Map<EndpointAddress, String> extractNodes(JsonObject endpointsListJson,
                                                      List<String> privateAddresses) {
         Map<EndpointAddress, String> result = new HashMap<>();

@@ -28,6 +28,7 @@ public abstract class AbstractWanConfigurationEventBase extends AbstractWanEvent
         this.wanConfigName = wanConfigName;
     }
 
+    @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
         json.add("wanConfigName", wanConfigName);

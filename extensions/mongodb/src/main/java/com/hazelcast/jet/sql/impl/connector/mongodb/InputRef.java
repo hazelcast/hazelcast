@@ -38,6 +38,7 @@ public class InputRef implements DynamicallyReplacedPlaceholder {
     }
 
     @Nonnull
+    @Override
     public String asString() {
         return "<!InputRef(" + inputIndex + ")!>";
     }

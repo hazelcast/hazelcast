@@ -80,6 +80,7 @@ public class MultiMapForceUnlockMessageTask
         return new Object[]{parameters.key};
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }

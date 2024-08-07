@@ -173,6 +173,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * @return the trusted interfaces
      * @see #setTrustedInterfaces(java.util.Set)
      */
+    @Override
     public Set<String> getTrustedInterfaces() {
         return trustedInterfaces;
     }
@@ -190,6 +191,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * @return the updated MulticastConfig
      * @see IllegalArgumentException if interfaces is {@code null}
      */
+    @Override
     public MulticastConfig setTrustedInterfaces(Set<String> interfaces) {
         isNotNull(interfaces, "interfaces");
 
@@ -206,6 +208,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * @throws IllegalArgumentException if IP is {@code null}
      * @see #setTrustedInterfaces(java.util.Set)
      */
+    @Override
     public MulticastConfig addTrustedInterface(final String ip) {
         trustedInterfaces.add(isNotNull(ip, "ip"));
         return this;

@@ -55,6 +55,7 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
         return traverser;
     }
 
+    @Override
     public final boolean isEmpty() {
         return buffer.isEmpty();
     }

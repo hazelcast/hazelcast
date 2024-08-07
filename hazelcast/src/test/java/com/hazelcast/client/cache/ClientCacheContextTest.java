@@ -53,16 +53,19 @@ public class ClientCacheContextTest extends CacheContextTest {
         hazelcastInstance2.shutdown();
     }
 
+    @Override
     @Test
     public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterDeregister() {
         cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.DEREGISTER);
     }
 
+    @Override
     @Test
     public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterShutdown() {
         cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.SHUTDOWN);
     }
 
+    @Override
     @Test
     public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterTerminate() {
         cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.TERMINATE);

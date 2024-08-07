@@ -76,6 +76,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         super(planKey);
     }
 
+    @Override
     public boolean isPlanValid(PlanCheckContext context) {
         throw new UnsupportedOperationException(isCacheable()
                 ? "override this method"

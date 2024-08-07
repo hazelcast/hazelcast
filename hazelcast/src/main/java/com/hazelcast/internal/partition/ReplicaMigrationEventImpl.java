@@ -95,6 +95,7 @@ public class ReplicaMigrationEventImpl implements ReplicaMigrationEvent, Identif
         return elapsedTime;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(state);
         out.writeInt(partitionId);
@@ -105,6 +106,7 @@ public class ReplicaMigrationEventImpl implements ReplicaMigrationEvent, Identif
         out.writeLong(elapsedTime);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         state = in.readObject();
         partitionId = in.readInt();

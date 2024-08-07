@@ -506,6 +506,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         return vertex;
     }
 
+    @Override
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof HazelcastPhysicalScan : rel.getRight().getClass();
 

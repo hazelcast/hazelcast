@@ -289,6 +289,7 @@ public class RestClientTest {
             return serverSocket.getLocalPort();
         }
 
+        @Override
         public void run() {
             while (!(shutdownRequested || tls13CipherFound.get())) {
                 try {
@@ -314,6 +315,7 @@ public class RestClientTest {
             }
         }
 
+        @Override
         public void close() {
             shutdownRequested = true;
             try {

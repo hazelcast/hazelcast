@@ -155,6 +155,7 @@ public class MemberPruningTest extends SqlEndToEndTestSupport {
     }
 
     @After
+    @Override
     public void teardown() {
         instance().getMap(mapName).destroy();
     }

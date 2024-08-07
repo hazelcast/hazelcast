@@ -35,6 +35,7 @@ public class JsonMetadataInitializer implements MetadataInitializer {
 
     private static final JsonFactory FACTORY = new JsonFactory();
 
+    @Override
     public Object createFromData(Data data) throws IOException {
         if (data.isJson()) {
             try (JsonParser parser = FACTORY.createParser(new ByteArrayInputStream(data.toByteArray(),
@@ -45,6 +46,7 @@ public class JsonMetadataInitializer implements MetadataInitializer {
         return null;
     }
 
+    @Override
     public Object createFromObject(Object obj) throws IOException {
         if (obj instanceof HazelcastJsonValue) {
             String str = obj.toString();

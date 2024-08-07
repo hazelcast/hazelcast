@@ -41,6 +41,7 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CachedQueryEntryTest extends QueryEntryTest {
 
+    @Override
     @Test
     public void getKey_caching() {
         QueryableEntry entry = createEntry("key", "value");
@@ -48,6 +49,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         assertSame(entry.getKey(), entry.getKey());
     }
 
+    @Override
     @Test
     public void getValue_caching() {
         QueryableEntry entry = createEntry("key", "value");
@@ -55,6 +57,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         assertSame(entry.getValue(), entry.getValue());
     }
 
+    @Override
     @Test
     public void getKeyData_caching() {
         QueryableEntry entry = createEntry("key", "value");
@@ -62,6 +65,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         assertSame(entry.getKeyData(), entry.getKeyData());
     }
 
+    @Override
     @Test
     public void getValueData_caching() {
         QueryableEntry entry = createEntry("key", "value");
@@ -69,6 +73,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         assertSame(entry.getValueData(), entry.getValueData());
     }
 
+    @Override
     @Test(expected = IllegalArgumentException.class)
     public void testInit_whenKeyIsNull_thenThrowIllegalArgumentException() {
         createEntry(null, new Object(), newExtractor());

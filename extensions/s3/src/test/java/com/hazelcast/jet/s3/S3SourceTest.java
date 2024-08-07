@@ -90,6 +90,7 @@ public class S3SourceTest extends S3TestBase {
         testSource(buckets, "file-999", 2, LINE_COUNT);
     }
 
+    @Override
     SupplierEx<S3Client> clientSupplier() {
         return () -> S3Client.builder()
                              .region(Region.US_EAST_1)

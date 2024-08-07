@@ -48,6 +48,7 @@ public class MapPartitionIterator<K, V> extends AbstractMapPartitionIterator<K, 
         advance();
     }
 
+    @Override
     protected List fetch() {
         String name = mapProxy.getName();
         MapOperationProvider operationProvider = mapProxy.getOperationProvider();
