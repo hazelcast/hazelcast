@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,13 @@ import static java.util.Collections.emptyMap;
 class AwsEcsApi {
 
     private static final ILogger LOGGER = Logger.getLogger(AwsEcsApi.class);
+
+    // AWS defaults maxResults to 100 on its ECS listTasks() call
+    private static final int ECS_LIST_TASKS_DEFAULT_MAX_RESULTS_PER_REQUEST = 100;
+
+    // AWS limits the number of task arns per describeTasks() call to 100
+    private static final int ECS_DESCRIBE_TASKS_TASK_ARNS_MAX_LENGTH_PER_REQUEST = 100;
+
     private final String endpoint;
     private final AwsConfig awsConfig;
     private final AwsRequestSigner requestSigner;
@@ -74,13 +82,27 @@ class AwsEcsApi {
     }
 
     private List<String> listTasks(String cluster, AwsCredentials credentials) {
-        String body = createBodyListTasks(cluster);
-        Map<String, String> headers = createHeadersListTasks(body, credentials);
-        String response = callAwsService(body, headers);
-        return parseListTasks(response);
+
+        List<String> taskArns = new ArrayList<String>();
+
+        String nextToken = null;
+        do {
+            String body = createBodyListTasks(cluster, ECS_LIST_TASKS_DEFAULT_MAX_RESULTS_PER_REQUEST, nextToken);
+            Map<String, String> headers = createHeadersListTasks(body, credentials);
+            String response = callAwsService(body, headers);
+
+            // add in the task arns from this response
+            JsonObject responseJson = toJson(response);
+            taskArns.addAll(parseListTasks(responseJson));
+
+            // if the response included "nextToken", go back and get more task arns
+            nextToken = responseJson.getString("nextToken", null);
+        } while (nextToken != null);
+
+        return taskArns;
     }
 
-    private String createBodyListTasks(String cluster) {
+    private String createBodyListTasks(String cluster, int maxResults, String nextToken) {
         JsonObject body = new JsonObject();
         body.add("cluster", cluster);
         if (!StringUtil.isNullOrEmptyAfterTrim(awsConfig.getFamily())) {
@@ -89,6 +111,12 @@ class AwsEcsApi {
         if (!StringUtil.isNullOrEmptyAfterTrim(awsConfig.getServiceName())) {
             body.add("serviceName", awsConfig.getServiceName());
         }
+        if (nextToken != null) {
+            body.add("nextToken", nextToken);
+        }
+        if (maxResults > -1) {
+            body.add("maxResults", maxResults);
+        }
         return body.toString();
     }
 
@@ -96,17 +124,35 @@ class AwsEcsApi {
         return createHeaders(body, credentials, "ListTasks");
     }
 
-    private List<String> parseListTasks(String response) {
-        return toStream(toJson(response).get("taskArns"))
+    private List<String> parseListTasks(JsonObject responseJson) {
+        return toStream(responseJson.get("taskArns"))
                 .map(JsonValue::asString)
                 .collect(Collectors.toList());
     }
 
-    List<Task> describeTasks(String clusterArn, List<String> taskArns, AwsCredentials credentials) {
-        String body = createBodyDescribeTasks(clusterArn, taskArns);
-        Map<String, String> headers = createHeadersDescribeTasks(body, credentials);
-        String response = callAwsService(body, headers);
-        return parseDescribeTasks(response);
+    List<Task> describeTasks(String clusterArn, List<String> taskArns, AwsCredentials credentials)
+    {
+        List<Task> results = new ArrayList<Task>();
+        if (taskArns.size() == 0) {
+            return results;
+        }
+
+        // split up task arns into sub lists with a max size of ECS_DESCRIBE_TASKS_TASK_ARNS_PER_REQUEST
+        List<List<String>> partitionedTaskArnsList = new ArrayList<List<String>>();
+        for (int i = 0; i < taskArns.size(); i += ECS_DESCRIBE_TASKS_TASK_ARNS_MAX_LENGTH_PER_REQUEST) {
+            partitionedTaskArnsList.add(taskArns.subList(i, Math.min(i + ECS_DESCRIBE_TASKS_TASK_ARNS_MAX_LENGTH_PER_REQUEST, taskArns.size())));
+        }
+
+        // make separate requests for each partitioned task arn list
+        for (int i = 0; i < partitionedTaskArnsList.size(); i++) {
+            List<String> partitionedTaskArns = partitionedTaskArnsList.get(i);
+            String body = createBodyDescribeTasks(clusterArn, partitionedTaskArns);
+            Map<String, String> headers = createHeadersDescribeTasks(body, credentials);
+            String response = callAwsService(body, headers);
+            results.addAll(parseDescribeTasks(response));
+        }
+
+        return results;
     }
 
     private String createBodyDescribeTasks(String cluster, List<String> taskArns) {
