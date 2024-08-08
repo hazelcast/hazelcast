@@ -1,0 +1,14 @@
+[
+  {
+    "condition": {
+      "typeReachable": "com.hazelcast.internal.networking.nio.NioNetworking"
+    },
+    "name": "com.hazelcast.internal.networking.nio.NioOutboundPipeline",
+    "methods": [
+      {
+        "name": "idleTimeMillis",
+        "parameterTypes": []
+      }
+    ]
+  }
+]
