@@ -17,7 +17,6 @@
 package com.hazelcast.config.replacer;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -185,11 +184,8 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
     private File createFileWithString(String string) throws IOException {
         File file = tempFolder.newFile();
         if (string != null && !string.isEmpty()) {
-            PrintWriter out = new PrintWriter(file);
-            try {
+            try (PrintWriter out = new PrintWriter(file)) {
                 out.print(string);
-            } finally {
-                IOUtil.closeResource(out);
             }
         }
         return file;
