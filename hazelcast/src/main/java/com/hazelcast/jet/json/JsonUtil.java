@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.Sources;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -160,7 +161,7 @@ public final class JsonUtil {
      */
     @Nonnull
     public static <T> Stream<T> beanSequenceFrom(Path path, @Nonnull Class<T> type) throws IOException {
-        Reader reader = Files.newBufferedReader(path, UTF_8);
+        Reader reader = new InputStreamReader(Files.newInputStream(path), UTF_8);
         Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(JsonUtil.beanSequenceFrom(reader, type),
                 Spliterator.ORDERED | Spliterator.NONNULL);
         return StreamSupport.stream(spliterator, false);
@@ -177,7 +178,7 @@ public final class JsonUtil {
      */
     @Nonnull
     public static Stream<Map<String, Object>> mapSequenceFrom(Path path) throws IOException {
-        Reader reader = Files.newBufferedReader(path, UTF_8);
+        Reader reader = new InputStreamReader(Files.newInputStream(path), UTF_8);
         Spliterator<Map<String, Object>> spliterator =
                 Spliterators.spliteratorUnknownSize(JsonUtil.mapSequenceFrom(reader),
                 Spliterator.ORDERED | Spliterator.NONNULL);
