@@ -32,16 +32,14 @@ building real-time applications.
 
 ## Key Features
 
-* Stateful and fault-tolerant data processing and querying over data streams
-  and data at rest using SQL or dataflow API
-* A comprehensive library of connectors such as Kafka, Hadoop, S3, RDBMS, JMS
-  and many more
-* Distributed messaging using pub-sub and queues
-* Distributed, partitioned, queryable key-value store with event listeners,
+* [Stateful and fault-tolerant data processing and querying over data streams
+  and data](#stateful-data-Processing) at rest using [SQL](https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview) or dataflow API
+* [A comprehensive library of connectors such as Kafka, Hadoop, S3, RDBMS, JMS
+  and many more](https://docs.hazelcast.com/hazelcast/latest/integrate/connectors)
+* Distributed messaging using [pub-sub](https://docs.hazelcast.com/hazelcast/latest/data-structures/topic.html) and [queues](https://docs.hazelcast.com/hazelcast/latest/data-structures/queue.html)
+* [Distributed, partitioned, queryable key-value store with event listeners,
   which can also be used to store contextual data for enriching event streams
-  with low latency
-* A production-ready Raft-implementation which allows lineralizable (CP)
-  concurrency primitives such as distributed locks.
+  with low latency](https://docs.hazelcast.com/hazelcast/latest/data-structures/map)
 * Tight integration for deploying machine learning models with Python to a data
   processing pipeline
 * Cloud-native, run everywhere architecture
@@ -55,216 +53,15 @@ building real-time applications.
 * Client libraries in [Java](https://github.com/hazelcast/hazelcast),
  [Python](https://github.com/hazelcast/hazelcast-python-client), [Node.js](https://github.com/hazelcast/hazelcast-nodejs-client), [.NET](https://github.com/hazelcast/hazelcast-csharp-client), [C++](https://github.com/hazelcast/hazelcast-cpp-client) and [Go](https://github.com/hazelcast/hazelcast-go-client)
 
-### Operational Data Store
-
-Hazelcast provides distributed in-memory data structures which are partitioned,
-replicated and queryable. One of the main use cases for Hazelcast is for storing
-a _working set_ of data for fast querying and access. 
-
-The main data structure underlying Hazelcast, called `IMap`, is a key-value store
-which has a rich set of features, including:
-
-* Integration with [data
-  sources](https://docs.hazelcast.com/hazelcast/latest/pipelines/sources-sinks.htm)
-  for one time or continuous ingestion
-* [Read-through and
-  write-through](https://docs.hazelcast.com/hazelcast/latest/data-structures/map.html#loading-and-storing-persistent-data)
-  caching patterns
-* Indexing and querying through
-  [SQL](https://docs.hazelcast.com/hazelcast/latest/query/sql-overview.html)
-* Processing entries in place for [atomic
-  updates](https://docs.hazelcast.com/hazelcast/latest/data-structures/entry-processor)
-* [Expiring
-  items](https://docs.hazelcast.com/hazelcast/latest/data-structures/map.html#map-eviction)
-  automatically based on certain criteria like TTL or last access time
-* [Near
-  cache](https://docs.hazelcast.com/hazelcast/latest/performance/near-cache.html)
-  for caching entries on the client
-* [Listeners](https://docs.hazelcast.com/hazelcast/latest/events/object-events.html)
-  for pushing changes to clients
-* [Data Replication](https://docs.hazelcast.com/hazelcast/latest/wan/wan.html)
-  between datacenters (Enterprise version only)
-* [Persistence](https://docs.hazelcast.com/hazelcast/latest/storage/persistence.html)
-  of data on disk (Enterprise version only)
-
-Hazelcast stores data in
-[partitions](https://docs.hazelcast.com/hazelcast/latest/consistency-and-replication/replication-algorithm.html),
-which are distributed to all the nodes. You can increase the storage capacity
-by adding additional nodes, and if one of the nodes go down, the data is
-restored automatically from the backup replicas.
-
-<img src="images/replication.png"/>
-
-You can interact with maps using SQL or a programming language client of your
-choice. You can create and interact with a map as follows:
-
-```sql
-CREATE MAPPING myMap (name varchar EXTERNAL NAME "__key", age INT EXTERNAL NAME "this") 
-TYPE IMap
-OPTIONS ('keyFormat'='varchar','valueFormat'='int');
-INSERT INTO myMap VALUES('Jake', 29);
-SELECT * FROM myMap;
-```
-
-The same can be done programmatically as follows using one of the [supported
-programming
-languages](https://docs.hazelcast.com/hazelcast/latest/clients/hazelcast-clients.html).
-Here are some exmaples in Java and Python:
-
-```java
-var hz = HazelcastClient.newHazelcastClient();
-IMap<String, Integer> map = hz.getMap("myMap");
-map.set(Alice, 25);
-```
-
-```python
-import hazelcast
-
-client = hazelcast.HazelcastClient()
-my_map = client.get_map("myMap")
-age = my_map.get("Alice").result()
-```
-
-Other programming languages supported are
-[C#](https://docs.hazelcast.com/hazelcast/latest/clients/dotnet.html),
-[C++](https://docs.hazelcast.com/hazelcast/latest/clients/cplusplus.html),
-[Node.js](https://docs.hazelcast.com/hazelcast/latest/clients/nodejs.html) and
-[Go](https://docs.hazelcast.com/hazelcast/latest/clients/go.html).
-
-Alternatively, you can ingest data directly from the many [sources supported](https://docs.hazelcast.com/hazelcast/latest/pipelines/sources-sinks.html)
-using SQL:
-
-```sql
-CREATE MAPPING csv_ages (name VARCHAR, age INT)
-TYPE File
-OPTIONS ('format'='csv',
-    'path'='/data', 'glob'='data.csv');
-SINK INTO myMap
-SELECT name, age FROM csv_ages;
-```
-
-Hazelcast also provides additional data structures such as ReplicatedMap, Set,
-MultiMap and List. For a full list, refer to the [distributed data
-structures](https://docs.hazelcast.com/hazelcast/latest/data-structures/distributed-data-structures.html)
-section of the docs.
-
 ### Stateful Data Processing
 
 Hazelcast has a built-in data processing engine called
-[Jet](https://arxiv.org/abs/2103.10169). Jet can be used to build both streaming
-and batch data pipelines that are elastic. You can use it to process large
-volumes of real-time events or huge batches of static datasets. To give a sense
-of scale, a single node of Hazelcast has been proven to [aggregate 10 million
-events per second](https://jet-start.sh/blog/2020/08/05/gc-tuning-for-jet) with
+[Jet](https://docs.hazelcast.com/hazelcast/latest/pipelines/overview#what-is-the-jet-engine), which can be used to build both streaming/real-time
+and batch/static data pipelines that are elastic. A single node of Hazelcast has been proven to [aggregate 10 million
+events per second](https://foojay.io/today/sub-10-ms-latency-in-java-concurrent-gc-with-green-threads/) with
 latency under 10 milliseconds. A cluster of Hazelcast nodes can process [billion
 events per
 second](https://hazelcast.com/blog/billion-events-per-second-with-millisecond-latency-streaming-analytics-at-giga-scale/).
-
-<img src="images/latency.png"/>
-
-An application which aggregates millions of sensor readings per
-second with 10-millisecond resolution from Kafka looks like the
-following:
-
-```java
-var hz = Hazelcast.bootstrappedInstance();
-
-var p = Pipeline.create();
-
-p.readFrom(KafkaSources.<String, Reading>kafka(kafkaProperties, "sensors"))
- .withTimestamps(event -> event.getValue().timestamp(), 10) // use event timestamp, allowed lag in ms
- .groupingKey(reading -> reading.sensorId())
- .window(sliding(1_000, 10)) // sliding window of 1s by 10ms
- .aggregate(averagingDouble(reading -> reading.temperature()))
- .writeTo(Sinks.logger());
-
-hz.getJet().newJob(p).join();
-```
-
-Use the following command to deploy the application to the server:
-
-```bash
-bin/hazelcast submit analyze-sensors.jar
-```
-
-Jet supports advanced streaming features such as [exactly-once processing](https://docs.hazelcast.com/hazelcast/latest/fault-tolerance/fault-tolerance.html) and
-[watermarks](https://docs.hazelcast.com/hazelcast/latest/architecture/event-time-processing.html).
-
-#### Data Processing using SQL
-
-Jet also powers the [SQL engine](https://docs.hazelcast.com/hazelcast/latest/query/sql-overview.html)
-in Hazelcast which can execute both streaming and batch queries. Internally, all SQL queries
-are converted to Jet jobs.
-
-```sql
-CREATE MAPPING trades (
-    id BIGINT,
-    ticker VARCHAR,
-    price DECIMAL,
-    amount BIGINT)
-TYPE Kafka
-OPTIONS (
-    'valueFormat' = 'json',
-    'bootstrap.servers' = 'kafka:9092'
-);
-SELECT ticker, ROUND(price * 100) AS price_cents, amount
-  FROM trades
-  WHERE price * amount > 100;
-+------------+----------------------+-------------------+
-|ticker      |           price_cents|             amount|
-+------------+----------------------+-------------------+
-|EFGH        |                  1400|                 20|
-```
-
-### Messaging
-
-Hazelcast provides lightweight options for adding messaging to your application.
-The two main constructs for messaging are topics and queues.
-
-#### Topics
-
-Topics provide a publish-subscribe pattern where each message is fanned out to
-multiple subscribers. See the examples below in Java and Python:
-
-```java
-var hz = Hazelcast.bootstrappedInstance();
-ITopic<String> topic = hz.getTopic("my_topic");
-topic.addMessageListener(msg -> System.out.println(msg));
-topic.publish("message");
-```
-
-```python
-topic = client.get_topic("my_topic")
-
-def handle_message(msg):
-    print("Received message %s"  % msg.message)
-topic.add_listener(on_message=handle_message)
-topic.publish("my-message")
-```
-
-For examples in other languages, please refer to the [docs](https://docs.hazelcast.com/hazelcast/latest/data-structures/topic.html).
-
-#### Queues
-
-Queues provide FIFO-semantics and you can add items from one client and remove
-from another. See the examples below in Java and Python:
-
-```java
-var client = Hazelcast.newHazelcastClient();
-IQueue<String> queue = client.getQueue("my_queue");
-queue.put("new-item")
-```
-
-```python
-import hazelcast
-
-client = hazelcast.HazelcastClient()
-q = client.get_queue("my_queue")
-my_item = q.take().result()
-print("Received item %s" % my_item)
-```
-
-For examples in other languages, please refer to the [docs](https://docs.hazelcast.com/hazelcast/latest/data-structures/queue.html).
 
 ## Get Started
 
@@ -386,8 +183,8 @@ in case you've made other changes than in `.md`, `.adoc` or `.txt` files.
 
 Source code in this repository is covered by one of two licenses:
 
- 1. [Apache License 2.0](https://docs.hazelcast.com/hazelcast/latest/index.html#licenses-and-support)
- 2. [Hazelcast Community
+ * [Apache License 2.0](https://docs.hazelcast.com/hazelcast/latest/index.html#licenses-and-support)
+ * [Hazelcast Community
     License](http://hazelcast.com/hazelcast-community-license)
 
 The default license throughout the repository is Apache License 2.0 unless the
