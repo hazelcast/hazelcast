@@ -39,14 +39,13 @@ import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -61,9 +60,8 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
-import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
-import static java.util.stream.Collectors.toList;
 
 public class TestHazelcastInstanceFactory {
     private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
@@ -84,8 +82,8 @@ public class TestHazelcastInstanceFactory {
 
     public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
         fillAddressMap(initialPort, addresses);
-        this.count = addresses.length;
-        this.registry = isMockNetwork ? createRegistry() : null;
+        count = addresses.length;
+        registry = isMockNetwork ? createRegistry() : null;
     }
 
     public TestHazelcastInstanceFactory(String... addresses) {
@@ -95,7 +93,7 @@ public class TestHazelcastInstanceFactory {
     public TestHazelcastInstanceFactory(int count) {
         fillAddressMap(count);
         this.count = count;
-        this.registry = isMockNetwork ? createRegistry() : null;
+        registry = isMockNetwork ? createRegistry() : null;
     }
 
     public TestHazelcastInstanceFactory withMetricsRule(MetricsRule metricsRule) {
@@ -103,7 +101,7 @@ public class TestHazelcastInstanceFactory {
         return this;
     }
 
-    protected TestNodeRegistry createRegistry() {
+    private TestNodeRegistry createRegistry() {
         return new TestNodeRegistry(getKnownAddresses(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
@@ -112,30 +110,14 @@ public class TestHazelcastInstanceFactory {
     }
 
     /**
-     * Delegates to {@link #newHazelcastInstance(Config) {@code newHazelcastInstance(null)}}.
+     * Equivalent to {@link #newHazelcastInstance(Config) newHazelcastInstance(null)}.
      */
     public HazelcastInstance newHazelcastInstance() {
         return newHazelcastInstance((Config) null);
     }
 
     /**
-     * Returns the address with the given {@code host} and {@code port}.
-     * This method may return {@code null} if no IP address for the {@code host}
-     * could be found.
-     */
-    public static Address createAddressOrNull(String host, int port) {
-        try {
-            return new Address(host, port);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Creates a new test Hazelcast instance.
-     *
-     * @param address the address to use as Member's address instead of picking the next address
+     * Equivalent to {@link #newHazelcastInstance(Address, Config) newHazelcastInstance(address, null)}.
      */
     public HazelcastInstance newHazelcastInstance(Address address) {
         return newHazelcastInstance(address, null);
@@ -144,8 +126,8 @@ public class TestHazelcastInstanceFactory {
     /**
      * Creates a new test Hazelcast instance.
      *
-     * @param address the address to use as Member's address instead of picking the next address
-     * @param config  the config to use; use {@code null} to get the default config
+     * @param address if {@code null}, {@linkplain #nextAddress() the next address} is used.
+     * @param config  if {@code null}, the default config is used.
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
         final String instanceName = config != null ? config.getInstanceName() : null;
@@ -162,33 +144,31 @@ public class TestHazelcastInstanceFactory {
     }
 
     /**
-     * Creates a new test Hazelcast instance which is only allowed to connect to specified addresses:
-     * <ul>
-     * <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
-     * <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
-     * </ul>
-     * This is handy in split-brain tests, when a new instance should be started on a specific network partition
-     * of the split brain.
+     * Creates a new test Hazelcast instance which is not allowed to connect to
+     * the specified addresses: {@code blockedAddresses} are blacklisted in {@code
+     * MockJoiner} and connections to them are blocked by {@code FirewallingServer}.
+     * <p>
+     * This is handy in split-brain tests, when a new instance should be
+     * started on a specific network partition of the split brain.
      *
-     * @param config           the config to use; use {@code null} to get the default config
-     * @param blockedAddresses addresses to which the new instance is allowed to communicate
+     * @param config           if {@code null}, the default config is used.
+     * @param blockedAddresses the addresses to which the new instance is disallowed to communicate.
      */
     public HazelcastInstance newHazelcastInstance(Config config, Address[] blockedAddresses) {
         return newHazelcastInstance(null, config, blockedAddresses);
     }
 
     /**
-     * Creates a new test Hazelcast instance which is only allowed to connect to specified addresses:
-     * <ul>
-     * <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
-     * <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
-     * </ul>
-     * This is handy in split-brain tests, when a new instance should be started on a specific network partition
-     * of the split brain.
+     * Creates a new test Hazelcast instance which is not allowed to connect to
+     * the specified addresses: {@code blockedAddresses} are blacklisted in {@code
+     * MockJoiner} and connections to them are blocked by {@code FirewallingServer}.
+     * <p>
+     * This is handy in split-brain tests, when a new instance should be
+     * started on a specific network partition of the split brain.
      *
-     * @param address          the address to use as Member's address; if {@code null}, then uses the next address
-     * @param config           the config to use; use {@code null} to get the default config
-     * @param blockedAddresses addresses to which the new instance is allowed to communicate
+     * @param address          if {@code null}, {@linkplain #nextAddress() the next address} is used.
+     * @param config           if {@code null}, the default config is used.
+     * @param blockedAddresses the addresses to which the new instance is disallowed to communicate.
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config, Address[] blockedAddresses) {
         final String instanceName = config != null ? config.getInstanceName() : null;
@@ -196,9 +176,7 @@ public class TestHazelcastInstanceFactory {
             config = initOrCreateConfig(config);
             Address thisAddress = address != null ? address : nextAddress(config.getNetworkConfig().getPort());
             NodeContext nodeContext = registry.createNodeContext(thisAddress,
-                    blockedAddresses == null
-                            ? Collections.emptySet()
-                            : new HashSet<>(asList(blockedAddresses)));
+                    blockedAddresses == null ? emptySet() : Set.of(blockedAddresses));
             HazelcastInstance hazelcastInstance =
                     HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
             registerTestMetricsPublisher(hazelcastInstance);
@@ -209,23 +187,9 @@ public class TestHazelcastInstanceFactory {
     }
 
     /**
-     * Asserts that the array and all of its elements are non-null.
-     *
-     * @param array the array
-     * @param <T>   the type of the array elements
-     * @throws NullPointerException if the array or any of its elements are {@code null}.
-     */
-    private static <T> void checkElementsNotNull(T[] array) {
-        checkNotNull(array, "Array should not be null");
-        for (Object element : array) {
-            checkNotNull(element, "Array element should not be null");
-        }
-    }
-
-    /**
      * Creates a new test Hazelcast instance.
      *
-     * @param config the config to use; use {@code null} to get the default config
+     * @param config if {@code null}, the default config is used.
      */
     public HazelcastInstance newHazelcastInstance(Config config) {
         String instanceName = config != null ? config.getInstanceName() : null;
@@ -263,9 +227,13 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Supplier<Config> configSupplier, int nodeCount) {
+        return newInstances(nodeCount, i -> configSupplier.get());
+    }
+
+    public HazelcastInstance[] newInstances(int nodeCount, IntFunction<Config> configFn) {
         HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            instances[i] = newHazelcastInstance(configSupplier.get());
+            instances[i] = newHazelcastInstance(configFn.apply(i));
         }
         return instances;
     }
@@ -275,21 +243,45 @@ public class TestHazelcastInstanceFactory {
     }
 
     /**
-     * Creates the given number of Hazelcast instances in parallel. The first one is
-     * always master.
+     * Creates the given number of Hazelcast instances in parallel.
+     * The first member in the returned array is always the master.
+     * <p>
+     * Spawns a separate thread to start each instance. This is required when
+     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
+     * call blocks until the whole cluster is re-formed.
+     * <p>
+     * This can only be used with mock network since it uses explicit addresses.
+     * For an alternative that can be used with real network, see
+     * {@link #newInstancesParallel(int, IntFunction)}.
+     *
+     * @param configFn a function that must return a separate config instance for each address
+     */
+    public HazelcastInstance[] newInstancesParallel(int nodeCount, Function<Address, Config> configFn) {
+        return newInstancesParallel0(nodeCount, (int i) -> {
+            Address address = nextAddress();
+            return newHazelcastInstance(address, configFn.apply(address));
+        });
+    }
+
+    /**
+     * Creates the given number of Hazelcast instances in parallel.
+     * The first member in the returned array is always the master.
      * <p>
      * Spawns a separate thread to start each instance. This is required when
      * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
      * call blocks until the whole cluster is re-formed.
      *
-     * @param configFn a function that must return a separate config instance for each address
+     * @param configFn a function that must return a separate config instance for each invocation
      */
-    public HazelcastInstance[] newInstancesParallel(int nodeCount, Function<Address, Config> configFn) {
+    public HazelcastInstance[] newInstancesParallel(int nodeCount, IntFunction<Config> configFn) {
+        return newInstancesParallel0(nodeCount, (int i) -> newHazelcastInstance(configFn.apply(i)));
+    }
+
+    private HazelcastInstance[] newInstancesParallel0(int nodeCount, IntFunction<HazelcastInstance> instanceFn) {
         HazelcastInstance[] hzInstances = IntStream.range(0, nodeCount)
-                .mapToObj(i -> this.nextAddress())
-                .map(address -> spawn(() -> newHazelcastInstance(address, configFn.apply(address))))
+                .mapToObj(i -> spawn(() -> instanceFn.apply(i)))
                 // we need to collect here to ensure that all threads are spawned before we call future.get()
-                .collect(toList()).stream()
+                .toList().stream()
                 .map(f -> uncheckCall(f::get))
                 .toArray(HazelcastInstance[]::new);
         assertClusterSizeEventually(nodeCount, this.getAllHazelcastInstances());
@@ -410,6 +402,20 @@ public class TestHazelcastInstanceFactory {
     }
 
     /**
+     * Returns the address with the given {@code host} and {@code port}.
+     * This method may return {@code null} if no IP address for the {@code host}
+     * could be found.
+     */
+    public static Address createAddressOrNull(String host, int port) {
+        try {
+            return new Address(host, port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
      * Returns a list of addresses with the {@code 127.0.0.1} host and starting
      * with the {@value DEFAULT_INITIAL_PORT} port or an empty list in case mock
      * network is not used or the requested count is {@code 0}.
@@ -442,6 +448,20 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
+    /**
+     * Asserts that the array and all of its elements are non-null.
+     *
+     * @param array the array
+     * @param <T>   the type of the array elements
+     * @throws NullPointerException if the array or any of its elements are {@code null}.
+     */
+    private static <T> void checkElementsNotNull(T[] array) {
+        checkNotNull(array, "Array should not be null");
+        for (Object element : array) {
+            checkNotNull(element, "Array element should not be null");
+        }
+    }
+
     public static Config initOrCreateConfig(Config config) {
         if (config == null) {
             if (System.getProperty(SYSPROP_MEMBER_CONFIG) != null
@@ -471,7 +491,6 @@ public class TestHazelcastInstanceFactory {
         if (!isMockNetwork) {
             return;
         }
-        final TestNodeRegistry registry = getRegistry();
         synchronized (addressMap) {
             addressMap.entrySet().removeIf(entry -> registry.getInstance(entry.getValue()) == null);
         }
