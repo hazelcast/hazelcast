@@ -1285,7 +1285,8 @@ public class ConfigXmlGenerator {
         gen.open("rest", "enabled", restConfig.isEnabled())
                 .node("port", restConfig.getPort())
                 .node("security-realm", restConfig.getSecurityRealm())
-                .node("token-validity-seconds", restConfig.getTokenValidityDuration().toSeconds());
+                .node("token-validity-seconds", restConfig.getTokenValidityDuration().toSeconds())
+                .node("request-timeout-seconds", restConfig.getRequestTimeoutDuration().toSeconds());
         restServerSslConfiguration(gen, restConfig.getSsl());
         gen.close();
     }

@@ -6712,6 +6712,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="request-timeout-seconds" type="xs:int" minOccurs="0" default="120">
+                <xs:annotation>
+                    <xs:documentation>
+                        Request timeout of underlying HTTP server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="ssl" type="ssl-type" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

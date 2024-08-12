@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util;
 
 import javax.annotation.Nonnull;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -108,6 +109,15 @@ public final class Preconditions {
             throw new IllegalArgumentException(errorMessage);
         }
         return value;
+    }
+
+    public static Duration checkNotNegative(Duration duration, String errorMessage) {
+        isNotNull(duration, "duration");
+
+        if (duration.isNegative()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return duration;
     }
 
     /**

@@ -3674,6 +3674,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         final String portName = "port";
         final String securityRealmName = "security-realm";
         final String tokenValiditySecondsName = "token-validity-seconds";
+        final String requestTimeoutSecondsName = "request-timeout-seconds";
 
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
@@ -3686,7 +3687,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 restConfig.setTokenValidityDuration(Duration.of(durationSeconds, SECONDS));
             } else if (matches("ssl", childName)) {
                 handleRestSsl(restConfig.getSsl(), child);
+            } else if (matches(requestTimeoutSecondsName, childName)) {
+                restConfig.setRequestTimeoutDuration(Duration
+                        .ofSeconds(getIntegerValue(requestTimeoutSecondsName, getTextContent(child))));
             }
+
         }
     }
 

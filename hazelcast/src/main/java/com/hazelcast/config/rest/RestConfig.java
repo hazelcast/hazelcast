@@ -16,8 +16,12 @@
 
 package com.hazelcast.config.rest;
 
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.properties.ClusterProperty;
+
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class allows controlling the Hazelcast REST API feature.
@@ -64,6 +68,7 @@ public class RestConfig {
         private String trustCertificatePrivateKey;
 
         private String protocol = "TLS";
+
 
         /**
          * Return whether to enable SSL support.
@@ -495,7 +500,13 @@ public class RestConfig {
     private static final int DEFAULT_PORT = 8443;
     private static final int DEFAULT_DURATION_MINUTES = 15;
     private static final Duration DEFAULT_DURATION = Duration.of(DEFAULT_DURATION_MINUTES, ChronoUnit.MINUTES);
-
+    private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.ofSeconds(TimeUnit.MILLISECONDS
+            .toSeconds(Long.parseLong(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getDefaultValue())));
+    ;
+    /**
+     * The HTTP request timeout. It sets the underlying server http request timeout.
+     */
+    private Duration requestTimeoutDuration = DEFAULT_TIMEOUT_SECONDS;
     /**
      * Indicates whether the RestConfig is enabled.
      */
@@ -525,6 +536,26 @@ public class RestConfig {
      * Default constructor for RestConfig.
      */
     public RestConfig() {
+    }
+
+    /**
+     * Return the HTTP request timeout.
+     *
+     * @return
+     */
+    public Duration getRequestTimeoutDuration() {
+        return requestTimeoutDuration;
+    }
+
+    /**
+     * Set the HTTP request timeout. Default is 120 seconds.
+     * <b>WARNING:</b> The resolution for requestTimeoutDuration can not be more than a second.
+     * @param requestTimeoutDuration
+     * @throws IllegalArgumentException if requestTimeoutDuration is negative
+     */
+    public void setRequestTimeoutDuration(Duration requestTimeoutDuration) {
+        this.requestTimeoutDuration = Preconditions.checkNotNegative(requestTimeoutDuration,
+                "requestTimeoutDuration cannot be negative.");
     }
 
     /**
@@ -602,7 +633,8 @@ public class RestConfig {
      * @param tokenValidityDuration the duration for which the token should be valid.
      */
     public RestConfig setTokenValidityDuration(Duration tokenValidityDuration) {
-        this.tokenValidityDuration = tokenValidityDuration;
+        this.tokenValidityDuration = Preconditions.checkNotNegative(tokenValidityDuration,
+                "tokenValidityDuration cannot be negative.");
         return this;
     }
 
@@ -634,6 +666,7 @@ public class RestConfig {
     @Override
     public String toString() {
         return "RestConfig{enabled=" + enabled + ", port=" + port + ", securityRealm='" + securityRealm + '\''
-                + ", tokenValidityDuration=" + tokenValidityDuration + ", ssl=" + ssl + '}';
+                + ", tokenValidityDuration=" + tokenValidityDuration + ", ssl=" + ssl + ","
+                + " requestTimeoutDuration=" + requestTimeoutDuration + "}";
     }
 }
