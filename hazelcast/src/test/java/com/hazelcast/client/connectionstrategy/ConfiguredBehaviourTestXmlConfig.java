@@ -44,7 +44,7 @@ public class ConfiguredBehaviourTestXmlConfig extends ClientTestSupport {
     private static class AsyncStartListener implements LifecycleListener {
         @Override
         public void stateChanged(LifecycleEvent event) {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 asyncStartFromXmlLatch.countDown();
             }
         }

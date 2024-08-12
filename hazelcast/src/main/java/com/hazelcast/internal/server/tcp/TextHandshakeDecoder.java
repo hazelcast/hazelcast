@@ -34,7 +34,7 @@ public class TextHandshakeDecoder
     protected boolean verifyProtocol(String incomingProtocol) {
         super.verifyProtocolCalled = true;
         handleUnexpectedProtocol(incomingProtocol);
-        if (ProtocolType.REST.equals(supportedProtocol)) {
+        if (ProtocolType.REST == supportedProtocol) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
                 encoder.signalWrongProtocol(
                         "Unsupported protocol exchange detected, expected protocol: REST"

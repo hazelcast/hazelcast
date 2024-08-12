@@ -124,7 +124,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         log(logger, name, "retry strategy", retryStrategy);
         this.reconnectTracker = new RetryTracker(retryStrategy);
 
-        snapshotting = !NONE.equals(context.processingGuarantee());
+        snapshotting = NONE != context.processingGuarantee();
         if (!snapshotting) {
             this.commitPeriod = getCommitPeriod(properties);
             log(logger, name, "commit period", commitPeriod);

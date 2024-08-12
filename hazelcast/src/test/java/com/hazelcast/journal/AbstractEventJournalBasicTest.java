@@ -557,9 +557,9 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
             final HashMap<String, Integer> added = new HashMap<>();
             final HashMap<String, Integer> evicted = new HashMap<>();
             for (EJ_TYPE e : set) {
-                if (ADDED.equals(journalAdapter.getType(e))) {
+                if (ADDED == journalAdapter.getType(e)) {
                     added.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
-                } else if (EVICTED.equals(journalAdapter.getType(e))) {
+                } else if (EVICTED == journalAdapter.getType(e)) {
                     evicted.put(journalAdapter.getKey(e), journalAdapter.getOldValue(e));
                 }
             }

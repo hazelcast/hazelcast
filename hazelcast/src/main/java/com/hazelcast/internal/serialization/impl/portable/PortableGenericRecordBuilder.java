@@ -373,7 +373,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
                     + "' for ClassDefinition {id: " + classDefinition.getClassId()
                     + ", version: " + classDefinition.getVersion() + "}");
         }
-        if (!fd.getType().equals(fieldType)) {
+        if (fd.getType() != fieldType) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName
                     + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: "
                     + classDefinition.getVersion() + "}" + ", expected : " + fd.getType() + ", given : " + fieldType);

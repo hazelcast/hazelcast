@@ -84,13 +84,13 @@ public class ResourceConfigTest extends JetTestSupport {
                 .stream()
                 .anyMatch(resourceConfig ->
                         resourceConfig.getId().equals(ReflectionUtils.toClassResourceId(this.getClass())) &&
-                                resourceConfig.getResourceType().equals(ResourceType.CLASS)
+                                resourceConfig.getResourceType() == ResourceType.CLASS
                 ));
         assertTrue(resourceConfigs
                 .stream()
                 .anyMatch(resourceConfig ->
                         resourceConfig.getId().contains("package.properties") &&
-                                resourceConfig.getResourceType().equals(ResourceType.CLASSPATH_RESOURCE)
+                                resourceConfig.getResourceType() == ResourceType.CLASSPATH_RESOURCE
                 ));
     }
 

@@ -69,7 +69,7 @@ public class UserCodeNamespaceConfigTest {
         String classResourceId = toClassResourceId(clazz.getName());
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                                              .filter(rc -> rc.type().equals(ResourceType.CLASS))
+                                              .filter(rc -> rc.type() == ResourceType.CLASS)
                                               .filter(rc -> rc.id().equals(classResourceId))
                                               .filter(rc -> rc.url().equals(cl.getResource(classResourceId).toString()))
                                               .count();
@@ -90,7 +90,7 @@ public class UserCodeNamespaceConfigTest {
         String classResourceId = toClassResourceId(clazz.getName());
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                .filter(rc -> rc.type().equals(ResourceType.CLASS))
+                .filter(rc -> rc.type() == ResourceType.CLASS)
                 .filter(rc -> rc.id().equals(id))
                 .filter(rc -> rc.url().equals(classLoader.getResource(classResourceId).toString()))
                 .count();
@@ -111,7 +111,7 @@ public class UserCodeNamespaceConfigTest {
         String classResourceId = toClassResourceId(clazz.getName());
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                .filter(rc -> rc.type().equals(ResourceType.CLASS))
+                .filter(rc -> rc.type() == ResourceType.CLASS)
                 .filter(rc -> rc.id().equals("Person.class"))
                 .filter(rc -> rc.url().equals(classLoader.getResource(classResourceId).toString()))
                 .count();
@@ -125,7 +125,7 @@ public class UserCodeNamespaceConfigTest {
         userCodeNamespaceConfig.addJar(fakeUrl, null);
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                                              .filter(rc -> rc.type().equals(ResourceType.JAR))
+                                              .filter(rc -> rc.type() == ResourceType.JAR)
                                               .filter(rc -> rc.id().equals("ExampleJar.jar"))
                                               .filter(rc -> rc.url().equals(fakeUrl.toString()))
                                               .count();
@@ -139,7 +139,7 @@ public class UserCodeNamespaceConfigTest {
         userCodeNamespaceConfig.addJar(fakeUrl, "MyCustomID");
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                                              .filter(rc -> rc.type().equals(ResourceType.JAR))
+                                              .filter(rc -> rc.type() == ResourceType.JAR)
                                               .filter(rc -> rc.id().equals("MyCustomID"))
                                               .filter(rc -> rc.url().equals(fakeUrl.toString()))
                                               .count();
@@ -153,7 +153,7 @@ public class UserCodeNamespaceConfigTest {
         userCodeNamespaceConfig.addJarsInZip(fakeUrl, null);
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                                              .filter(rc -> rc.type().equals(ResourceType.JARS_IN_ZIP))
+                                              .filter(rc -> rc.type() == ResourceType.JARS_IN_ZIP)
                                               .filter(rc -> rc.id().equals("ExampleZip.zip"))
                                               .filter(rc -> rc.url().equals(fakeUrl.toString()))
                                               .count();
@@ -167,7 +167,7 @@ public class UserCodeNamespaceConfigTest {
         userCodeNamespaceConfig.addJarsInZip(fakeUrl, "MyZipID");
 
         long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
-                                              .filter(rc -> rc.type().equals(ResourceType.JARS_IN_ZIP))
+                                              .filter(rc -> rc.type() == ResourceType.JARS_IN_ZIP)
                                               .filter(rc -> rc.id().equals("MyZipID"))
                                               .filter(rc -> rc.url().equals(fakeUrl.toString()))
                                               .count();

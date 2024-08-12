@@ -218,7 +218,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     }
 
     private boolean isBinaryFormat() {
-        return inMemoryFormat.equals(BINARY) || inMemoryFormat.equals(NATIVE);
+        return inMemoryFormat == BINARY || inMemoryFormat == NATIVE;
     }
 
     @Override

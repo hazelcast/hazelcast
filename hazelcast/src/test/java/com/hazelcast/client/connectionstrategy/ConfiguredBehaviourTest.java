@@ -95,7 +95,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         // trying 8.8.8.8 address will delay the initial connection since no such server exist
         clientConfig.getNetworkConfig().addAddress("8.8.8.8", memberAddress.getHost() + ":" + memberAddress.getPort());
         clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 connectedLatch.countDown();
             }
         }));
@@ -137,7 +137,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         CountDownLatch connectedLatch = new CountDownLatch(1);
         clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 connectedLatch.countDown();
             }
         }));
@@ -174,7 +174,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
+            if (LifecycleEvent.LifecycleState.SHUTDOWN == event.getState()) {
                 shutdownLatch.countDown();
             }
         });
@@ -200,7 +200,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
+            if (LifecycleEvent.LifecycleState.SHUTDOWN == event.getState()) {
                 shutdownLatch.countDown();
             }
         });
@@ -226,7 +226,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         CountDownLatch disconnectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
+            if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
                 disconnectedLatch.countDown();
             }
         });
@@ -244,7 +244,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 connectedLatch.countDown();
             }
         }));
@@ -292,7 +292,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 initialConnectionLatch.countDown();
             }
         }));
@@ -304,7 +304,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         hazelcastInstance.shutdown();
 
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 reconnectedLatch.countDown();
             }
         });
@@ -325,7 +325,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (event.getState() == CLIENT_CONNECTED) {
                 connectedLatch.countDown();
             }
         }));

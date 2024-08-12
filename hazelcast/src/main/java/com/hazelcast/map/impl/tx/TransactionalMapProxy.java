@@ -424,8 +424,8 @@ public class TransactionalMapProxy
         CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
         // iterate over the txMap and see if the values are updated or removed
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
-            boolean isRemoved = Type.REMOVED.equals(entry.getValue().type);
-            boolean isUpdated = Type.UPDATED.equals(entry.getValue().type);
+            boolean isRemoved = Type.REMOVED == entry.getValue().type;
+            boolean isUpdated = Type.UPDATED == entry.getValue().type;
 
             if (isRemoved) {
                 keyWontBeIncluded.add(entry.getKey());

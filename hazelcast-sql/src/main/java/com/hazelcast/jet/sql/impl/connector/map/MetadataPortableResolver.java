@@ -158,7 +158,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             return fieldsByPath.values().stream()
                     .peek(mappingField -> {
                         QueryDataType type = mappingField.type();
-                        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                        if (type.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
                             throw QueryException.error("Cannot derive Portable type for '" + type.getTypeFamily() + "'");
                         }
                     });
@@ -169,7 +169,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             final QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
 
             MappingField userField = fieldsByPath.get(path);
-            if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+            if (userField != null && type.getTypeFamily() != userField.type().getTypeFamily()) {
                 throw QueryException.error("Mismatch between declared and resolved type: " + userField.name());
             }
         }

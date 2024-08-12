@@ -59,7 +59,7 @@ public final class RexToMongo {
             case NOT:
                 if (operands[0] instanceof String) {
                     // simple column, meaning it's boolean
-                    assert call.getOperands().get(0).getType().getSqlTypeName().equals(SqlTypeName.BOOLEAN);
+                    assert call.getOperands().get(0).getType().getSqlTypeName() == SqlTypeName.BOOLEAN;
                     return Filters.ne((String) operands[0], true);
                 } else {
                     return Filters.not((Bson) operands[0]);

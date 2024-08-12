@@ -140,7 +140,7 @@ public final class EndpointQualifier
      * @return resolved endpoint qualifier when it is passed from the user via configuration
      */
     public static EndpointQualifier resolveForConfig(ProtocolType protocolType, String identifier) {
-        if (ProtocolType.CLIENT.equals(protocolType)) {
+        if (ProtocolType.CLIENT == protocolType) {
             return CLIENT;
         }
         return resolve(protocolType, identifier);

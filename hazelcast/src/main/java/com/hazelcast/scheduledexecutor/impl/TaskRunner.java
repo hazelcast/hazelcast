@@ -78,7 +78,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
         try {
             NamespaceUtil.setupNamespace(container.getNodeEngine(), container.getUserCodeNamespace());
             V result = original.call();
-            if (SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+            if (SINGLE_RUN == descriptor.getDefinition().getType()) {
                 resolution = new ScheduledTaskResult(result);
             }
             return result;
@@ -92,7 +92,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
             if (statisticsEnabled) {
                 executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
 
-                if (type.equals(AT_FIXED_RATE)) {
+                if (type == AT_FIXED_RATE) {
                     executorStats.startPending(name);
                     creationTime = Clock.currentTimeMillis();
                 }

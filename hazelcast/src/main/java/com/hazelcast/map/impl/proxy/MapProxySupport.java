@@ -357,7 +357,7 @@ abstract class MapProxySupport<K, V>
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
-            if (MapStoreConfig.InitialLoadMode.EAGER.equals(initialLoadMode)) {
+            if (MapStoreConfig.InitialLoadMode.EAGER == initialLoadMode) {
                 waitUntilLoaded();
             }
         }

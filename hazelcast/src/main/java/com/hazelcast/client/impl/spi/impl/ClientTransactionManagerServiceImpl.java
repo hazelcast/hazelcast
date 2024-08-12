@@ -148,7 +148,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         ClientConfig clientConfig = client.getClientConfig();
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ClientConnectionStrategyConfig.ReconnectMode reconnectMode = connectionStrategyConfig.getReconnectMode();
-        if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
+        if (reconnectMode == ClientConnectionStrategyConfig.ReconnectMode.ASYNC) {
             throw new HazelcastClientOfflineException();
         }
         String msg = getExceptionMsgByRoutingMode();

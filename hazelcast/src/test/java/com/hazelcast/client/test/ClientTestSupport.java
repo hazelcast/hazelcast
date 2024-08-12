@@ -124,10 +124,10 @@ public class ClientTestSupport extends HazelcastTestSupport {
         @Override
         public void stateChanged(LifecycleEvent event) {
             LifecycleEvent.LifecycleState state = event.getState();
-            if (state.equals(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED)) {
+            if (state == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED) {
                 disconnected.set(true);
                 disconnectedLatch.countDown();
-            } else if (state.equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
+            } else if (state == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
                 if (disconnected.get()) {
                     reconnectedLatch.countDown();
                 }

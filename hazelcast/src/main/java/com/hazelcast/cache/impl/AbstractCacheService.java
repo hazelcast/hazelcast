@@ -707,7 +707,7 @@ public abstract class AbstractCacheService implements ICacheService,
 
     @Override
     public CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat inMemoryFormat) {
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (InMemoryFormat.NATIVE == inMemoryFormat) {
             throw new IllegalArgumentException("Native memory is available only in Hazelcast Enterprise."
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }

@@ -87,9 +87,9 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
                     continue;
                 }
 
-                if (prev.equals(EntryEventType.ADDED)) {
+                if (prev == EntryEventType.ADDED) {
                     assertEquals(EntryEventType.EVICTED, eventType);
-                } else if (prev.equals(EntryEventType.EVICTED)) {
+                } else if (prev == EntryEventType.EVICTED) {
                     assertEquals(EntryEventType.ADDED, eventType);
                 }
 

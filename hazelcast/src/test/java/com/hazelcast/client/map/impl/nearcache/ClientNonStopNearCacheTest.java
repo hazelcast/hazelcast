@@ -59,7 +59,7 @@ public class ClientNonStopNearCacheTest extends ClientTestSupport {
 
         CountDownLatch disconnectedLatch = new CountDownLatch(1);
         config.addListenerConfig(new ListenerConfig().setImplementation((LifecycleListener) event -> {
-            if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
+            if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
                 disconnectedLatch.countDown();
             }
         }));

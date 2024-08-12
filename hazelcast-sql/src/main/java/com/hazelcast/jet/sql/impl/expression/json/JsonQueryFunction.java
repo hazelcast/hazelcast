@@ -237,7 +237,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> {
 
         JsonQueryFunction that = (JsonQueryFunction) o;
 
-        return this.onEmpty.equals(that.onEmpty) && this.onError.equals(that.onError);
+        return this.onEmpty == that.onEmpty && this.onError == that.onError;
     }
 
     @Override

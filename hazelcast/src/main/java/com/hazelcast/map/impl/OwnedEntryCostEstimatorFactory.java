@@ -34,7 +34,7 @@ public final class OwnedEntryCostEstimatorFactory {
     }
 
     public static <K, V> EntryCostEstimator<K, V> createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
-        if (BINARY.equals(inMemoryFormat)) {
+        if (BINARY == inMemoryFormat) {
             return (EntryCostEstimator<K, V>) new BinaryMapEntryCostEstimator();
         }
         return ZERO_SIZE_ESTIMATOR;

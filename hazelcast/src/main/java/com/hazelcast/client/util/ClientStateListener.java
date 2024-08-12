@@ -46,7 +46,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * ClientConfig which was used to instantiate this helper.
  */
 public class ClientStateListener implements LifecycleListener {
-    private LifecycleEvent.LifecycleState currentState = STARTING;
+    private volatile LifecycleEvent.LifecycleState currentState = STARTING;
 
     private final Lock lock = new ReentrantLock();
     private final Condition connectedCondition = lock.newCondition();
@@ -95,15 +95,14 @@ public class ClientStateListener implements LifecycleListener {
     public void stateChanged(LifecycleEvent event) {
         lock.lock();
         try {
-            if (event.getState().equals(CLIENT_CHANGED_CLUSTER)) {
+            if (event.getState() == CLIENT_CHANGED_CLUSTER) {
                 return;
             }
             currentState = event.getState();
-            if (currentState.equals(CLIENT_CONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
+            if (currentState == CLIENT_CONNECTED || currentState == SHUTTING_DOWN || currentState == SHUTDOWN) {
                 connectedCondition.signalAll();
             }
-            if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState
-                    .equals(SHUTDOWN)) {
+            if (currentState == CLIENT_DISCONNECTED || currentState == SHUTTING_DOWN || currentState == SHUTDOWN) {
                 disconnectedCondition.signalAll();
             }
         } finally {
@@ -118,18 +117,18 @@ public class ClientStateListener implements LifecycleListener {
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
      * @return true if the client is connected to the cluster. On returning false,
-     * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
+     * you can check if timeout occurred or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */
     public boolean awaitConnected(long timeout, TimeUnit unit)
             throws InterruptedException {
         lock.lock();
         try {
-            if (currentState.equals(CLIENT_CONNECTED)) {
+            if (currentState == CLIENT_CONNECTED) {
                 return true;
             }
 
-            if (currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
+            if (currentState == SHUTTING_DOWN || currentState == SHUTDOWN) {
                 return false;
             }
 
@@ -137,7 +136,7 @@ public class ClientStateListener implements LifecycleListener {
             while (duration > 0) {
                 duration = connectedCondition.awaitNanos(duration);
 
-                if (currentState.equals(CLIENT_CONNECTED)) {
+                if (currentState == CLIENT_CONNECTED) {
                     return true;
                 }
             }
@@ -167,14 +166,14 @@ public class ClientStateListener implements LifecycleListener {
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
      * @return true if the client is disconnected from the cluster. On returning false,
-     * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
+     * you can check if timeout occurred or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */
     public boolean awaitDisconnected(long timeout, TimeUnit unit)
             throws InterruptedException {
         lock.lock();
         try {
-            if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
+            if (currentState == CLIENT_DISCONNECTED || currentState == SHUTTING_DOWN || currentState == SHUTDOWN) {
                 return true;
             }
 
@@ -182,8 +181,7 @@ public class ClientStateListener implements LifecycleListener {
             while (duration > 0) {
                 duration = disconnectedCondition.awaitNanos(duration);
 
-                if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState
-                        .equals(SHUTDOWN)) {
+                if (currentState == CLIENT_DISCONNECTED || currentState == SHUTTING_DOWN || currentState == SHUTDOWN) {
                     return true;
                 }
             }
@@ -212,7 +210,7 @@ public class ClientStateListener implements LifecycleListener {
     public boolean isConnected() {
         lock.lock();
         try {
-            return currentState.equals(CLIENT_CONNECTED);
+            return currentState == CLIENT_CONNECTED;
         } finally {
             lock.unlock();
         }
@@ -224,7 +222,7 @@ public class ClientStateListener implements LifecycleListener {
     public boolean isShutdown() {
         lock.lock();
         try {
-            return currentState.equals(SHUTDOWN);
+            return currentState == SHUTDOWN;
         } finally {
             lock.unlock();
         }
@@ -236,8 +234,7 @@ public class ClientStateListener implements LifecycleListener {
     public boolean isStarted() {
         lock.lock();
         try {
-            return currentState.equals(STARTED) || currentState.equals(CLIENT_CONNECTED) || currentState
-                    .equals(CLIENT_DISCONNECTED);
+            return currentState == STARTED || currentState == CLIENT_CONNECTED || currentState == CLIENT_DISCONNECTED;
         } finally {
             lock.unlock();
         }

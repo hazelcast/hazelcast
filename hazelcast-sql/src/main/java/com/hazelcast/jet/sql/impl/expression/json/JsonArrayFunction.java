@@ -72,7 +72,7 @@ public class JsonArrayFunction extends VariExpression<HazelcastJsonValue> {
     }
 
     private boolean keepNulls() {
-        return !nullClause.equals(SqlJsonConstructorNullClause.ABSENT_ON_NULL);
+        return nullClause != SqlJsonConstructorNullClause.ABSENT_ON_NULL;
     }
 
     @Override

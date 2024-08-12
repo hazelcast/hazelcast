@@ -108,7 +108,7 @@ public class HyperLogLogImpl
     }
 
     private void convertToDenseIfNeeded() {
-        boolean shouldConvertToDense = SPARSE.equals(encoder.getEncodingType()) && encoder.getMemoryFootprint() >= m;
+        boolean shouldConvertToDense = SPARSE == encoder.getEncodingType() && encoder.getMemoryFootprint() >= m;
         if (shouldConvertToDense) {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
         }

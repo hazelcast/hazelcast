@@ -113,7 +113,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             } else {
                 operationType = StoreOperationType.WRITE;
             }
-            if (previousOperationType != null && !previousOperationType.equals(operationType)) {
+            if (previousOperationType != null && previousOperationType != operationType) {
                 final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType);
                 addFailsTo(failuresByPartition, failures);
                 entriesToProcess.clear();

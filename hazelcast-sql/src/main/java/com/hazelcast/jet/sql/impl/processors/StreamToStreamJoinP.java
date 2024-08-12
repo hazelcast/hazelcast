@@ -442,13 +442,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             BroadcastKey<?> broadcastKey = (BroadcastKey<?>) key;
             WatermarkStateValue wmValue = (WatermarkStateValue) value;
             // We pick minimal available watermark (both emitted/received) among all processors
-            if (WM_STATE_KEY.equals(broadcastKey.key())) {
+            if (WM_STATE_KEY == broadcastKey.key()) {
                 Long stateWm = wmState.get(wmValue.key());
                 boolean shouldUpdateReceived = stateWm <= OBJECT_2_LONG_MAP_MIN_VALUE || stateWm > wmValue.timestamp();
                 if (shouldUpdateReceived) {
                     wmState.put(wmValue.key(), wmValue.timestamp());
                 }
-            } else if (LAST_RECEIVED_WM_KEY.equals(broadcastKey.key())) {
+            } else if (LAST_RECEIVED_WM_KEY == broadcastKey.key()) {
                 Long stateWm = lastReceivedWm.get(wmValue.key());
                 boolean shouldUpdateReceived = stateWm <= OBJECT_2_LONG_MAP_MIN_VALUE || stateWm > wmValue.timestamp();
                 if (shouldUpdateReceived) {

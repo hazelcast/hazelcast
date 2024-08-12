@@ -89,7 +89,7 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     @Override
     public HyperLogLogEncoder merge(HyperLogLogEncoder encoder) {
         DenseHyperLogLogEncoder otherDense;
-        if (SPARSE.equals(encoder.getEncodingType())) {
+        if (SPARSE == encoder.getEncodingType()) {
             otherDense = (DenseHyperLogLogEncoder) ((SparseHyperLogLogEncoder) encoder).asDense();
         } else {
             otherDense = (DenseHyperLogLogEncoder) encoder;

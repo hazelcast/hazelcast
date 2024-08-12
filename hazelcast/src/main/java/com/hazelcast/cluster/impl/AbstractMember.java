@@ -117,7 +117,7 @@ public abstract class AbstractMember implements Member {
     @Override
     public InetSocketAddress getSocketAddress(EndpointQualifier qualifier) {
         Address addr = addressMap.get(qualifier);
-        if (addr == null && !qualifier.getType().equals(ProtocolType.MEMBER)) {
+        if (addr == null && qualifier.getType() != ProtocolType.MEMBER) {
             addr = addressMap.get(MEMBER);
         }
 

@@ -92,19 +92,19 @@ public final class FixedSizeTypesCodec {
     @SuppressWarnings("MagicNumber")
     public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {
         int timeUnitId;
-        if (TimeUnit.NANOSECONDS.equals(timeUnit)) {
+        if (TimeUnit.NANOSECONDS == timeUnit) {
             timeUnitId = 0;
-        } else if (TimeUnit.MICROSECONDS.equals(timeUnit)) {
+        } else if (TimeUnit.MICROSECONDS == timeUnit) {
             timeUnitId = 1;
-        } else if (TimeUnit.MILLISECONDS.equals(timeUnit)) {
+        } else if (TimeUnit.MILLISECONDS == timeUnit) {
             timeUnitId = 2;
-        } else if (TimeUnit.SECONDS.equals(timeUnit)) {
+        } else if (TimeUnit.SECONDS == timeUnit) {
             timeUnitId = 3;
-        } else if (TimeUnit.MINUTES.equals(timeUnit)) {
+        } else if (TimeUnit.MINUTES == timeUnit) {
             timeUnitId = 4;
-        } else if (TimeUnit.HOURS.equals(timeUnit)) {
+        } else if (TimeUnit.HOURS == timeUnit) {
             timeUnitId = 5;
-        } else if (TimeUnit.DAYS.equals(timeUnit)) {
+        } else if (TimeUnit.DAYS == timeUnit) {
             timeUnitId = 6;
         } else {
             timeUnitId = -1;

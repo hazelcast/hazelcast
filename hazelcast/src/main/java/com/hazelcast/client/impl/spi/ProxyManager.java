@@ -391,9 +391,9 @@ public final class ProxyManager {
             DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
             LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name, proxy, source,
                     proxyManager);
-            if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
+            if (DistributedObjectEvent.EventType.CREATED == eventType) {
                 listener.distributedObjectCreated(event);
-            } else if (DistributedObjectEvent.EventType.DESTROYED.equals(eventType)) {
+            } else if (DistributedObjectEvent.EventType.DESTROYED == eventType) {
                 listener.distributedObjectDestroyed(event);
             }
         }

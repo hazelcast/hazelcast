@@ -201,7 +201,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return true;
         }
 
-        if (targetHzType.isCustomType() && (sourceHzType.getTypeFamily().equals(QueryDataTypeFamily.ROW) ||
+        if (targetHzType.isCustomType() && (sourceHzType.getTypeFamily() == QueryDataTypeFamily.ROW ||
                 sourceHzType.isCustomType())) {
             return customTypesCoercion(sourceType, targetType, rowElement, scope);
         }
@@ -247,7 +247,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         assert rowElement instanceof SqlCall : "Row Element must be an SqlCall";
-        assert rowElement.getKind().equals(SqlKind.ROW);
+        assert rowElement.getKind() == SqlKind.ROW;
         final SqlCall sourceCall = (SqlCall) rowElement;
 
         for (int i = 0; i < source.getFieldList().size(); i++) {

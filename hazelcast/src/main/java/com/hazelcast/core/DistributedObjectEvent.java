@@ -92,7 +92,7 @@ public class DistributedObjectEvent extends EventObject {
      * @throws DistributedObjectDestroyedException if distributed object is destroyed.
      */
     public DistributedObject getDistributedObject() {
-        if (EventType.DESTROYED.equals(eventType)) {
+        if (EventType.DESTROYED == eventType) {
             throw new DistributedObjectDestroyedException(objectName + " destroyed!");
         }
         return distributedObject;

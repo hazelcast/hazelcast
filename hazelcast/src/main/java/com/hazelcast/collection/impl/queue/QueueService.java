@@ -273,7 +273,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         NamespaceUtil.runWithNamespace(nodeEngine, lookupNamespace(event.getName()), () -> {
-            if (event.eventType.equals(ItemEventType.ADDED)) {
+            if (event.eventType == ItemEventType.ADDED) {
                 listener.itemAdded(itemEvent);
             } else {
                 listener.itemRemoved(itemEvent);

@@ -163,7 +163,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String[] params = decodeParamsAndAuthenticate(cmd, 3);
         ClusterService clusterService = getNode().getClusterService();
         ClusterState state = ClusterState.valueOf(upperCaseInternal(params[2]));
-        if (!state.equals(clusterService.getClusterState())) {
+        if (state != clusterService.getClusterState()) {
             clusterService.changeClusterState(state);
             JsonObject res = response(SUCCESS,
                     "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));

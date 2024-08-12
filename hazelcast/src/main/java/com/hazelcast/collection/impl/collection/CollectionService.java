@@ -119,7 +119,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
         String namespace = lookupNamespace(event.getName());
         NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> {
-            if (event.getEventType().equals(ItemEventType.ADDED)) {
+            if (event.getEventType() == ItemEventType.ADDED) {
                 listener.itemAdded(itemEvent);
             } else {
                 listener.itemRemoved(itemEvent);

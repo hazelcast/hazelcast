@@ -78,7 +78,7 @@ public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> {
     }
 
     private boolean keepNulls() {
-        return nullClause.equals(SqlJsonConstructorNullClause.NULL_ON_NULL);
+        return nullClause == SqlJsonConstructorNullClause.NULL_ON_NULL;
     }
 
     @Override

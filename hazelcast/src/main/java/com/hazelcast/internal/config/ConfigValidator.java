@@ -180,7 +180,7 @@ public final class ConfigValidator {
         }
 
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
-        if (!EvictionPolicy.NONE.equals(evictionConfig.getEvictionPolicy())) {
+        if (EvictionPolicy.NONE != evictionConfig.getEvictionPolicy()) {
             throw new InvalidConfigurationException(format("Eviction is not supported "
                     + "for Tiered-Store map [%s]", mapConfig.getName()));
         }

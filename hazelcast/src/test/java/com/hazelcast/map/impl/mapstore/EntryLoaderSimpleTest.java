@@ -425,7 +425,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testLoadEntryAtCurrentTime() {
         Assumptions.assumeThat(getConfig().getMapConfig(map.getName())
-                .getInMemoryFormat().equals(InMemoryFormat.NATIVE)).isEqualTo(false);
+                .getInMemoryFormat() == InMemoryFormat.NATIVE).isEqualTo(false);
 
         testEntryLoader.putExternally("key", "value", 42);
 

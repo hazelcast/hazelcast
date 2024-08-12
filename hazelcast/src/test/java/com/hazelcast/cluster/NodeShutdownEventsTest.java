@@ -58,8 +58,8 @@ public class NodeShutdownEventsTest extends HazelcastTestSupport {
         final ListenerConfig listenerConfig = new ListenerConfig();
         listenerConfig.setImplementation((LifecycleListener) event -> {
             // Only expecting SHUTTING_DOWN & SHUTDOWN.
-            if (LifecycleEvent.LifecycleState.SHUTTING_DOWN.equals(event.getState())
-                    || LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
+            if (LifecycleEvent.LifecycleState.SHUTTING_DOWN == event.getState()
+                    || LifecycleEvent.LifecycleState.SHUTDOWN == event.getState()) {
                 shutdownEventCount.countDown();
             }
         });

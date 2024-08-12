@@ -240,7 +240,7 @@ public final class MapTableUtils {
     }
 
     public static boolean isCompatibleForIndexRequest(QueryDataType columnType, QueryDataType indexConverterType) {
-        if (columnType.getTypeFamily().equals(indexConverterType.getTypeFamily())) {
+        if (columnType.getTypeFamily() == indexConverterType.getTypeFamily()) {
             return true;
         }
 

@@ -124,7 +124,7 @@ public class MapWanContext {
                 .stream()
                 .anyMatch(c -> {
                     WanSyncConfig syncConfig = c.getSyncConfig();
-                    return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
+                    return syncConfig != null && MERKLE_TREES == syncConfig.getConsistencyCheckStrategy();
                 });
     }
 

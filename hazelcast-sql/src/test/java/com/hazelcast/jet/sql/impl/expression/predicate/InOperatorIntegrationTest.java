@@ -242,7 +242,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
             Object... params
     ) {
         List<SqlRow> rows = execute(sql, params);
-        assertTrue(rows.stream().allMatch(row -> row.getMetadata().getColumn(0).getType().equals(expectedType)));
+        assertTrue(rows.stream().allMatch(row -> row.getMetadata().getColumn(0).getType() == expectedType));
         List<Object> rowValues = rows.stream().map(row -> row.getObject(0)).collect(Collectors.toList());
         assertThat(rowValues).containsExactlyInAnyOrderElementsOf(asList(expectedResults));
     }

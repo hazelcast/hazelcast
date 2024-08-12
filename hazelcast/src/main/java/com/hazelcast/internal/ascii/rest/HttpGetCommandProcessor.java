@@ -146,7 +146,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
         String healthParameter = uri.substring(URI_HEALTH_URL.length());
         if (healthParameter.equals(HEALTH_PATH_PARAM_NODE_STATE)) {
-            if (NodeState.SHUT_DOWN.equals(nodeState)) {
+            if (NodeState.SHUT_DOWN == nodeState) {
                 command.send503();
             } else {
                 prepareResponse(command, Json.value(nodeState.toString()));

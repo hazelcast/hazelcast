@@ -589,7 +589,7 @@ public class IndexRegistry {
                                             boolean statisticsEnabled) {
         if (statisticsEnabled) {
             if (global) {
-                return inMemoryFormat.equals(NATIVE) ? new HDGlobalIndexesStats() : new GlobalIndexesStats();
+                return inMemoryFormat == NATIVE ? new HDGlobalIndexesStats() : new GlobalIndexesStats();
             } else {
                 return new PartitionIndexesStats();
             }

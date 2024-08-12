@@ -43,7 +43,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         KubernetesConfig config = new KubernetesConfig(properties);
         logger.info(config.toString());
 
-        if (DiscoveryMode.DNS_LOOKUP.equals(config.getMode())) {
+        if (DiscoveryMode.DNS_LOOKUP == config.getMode()) {
             endpointResolver = new DnsEndpointResolver(logger, config);
         } else {
             endpointResolver = new KubernetesApiEndpointResolver(logger, config, clusterTopologyIntentTracker);

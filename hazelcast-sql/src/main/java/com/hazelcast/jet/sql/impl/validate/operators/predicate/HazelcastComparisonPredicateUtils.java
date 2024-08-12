@@ -132,7 +132,7 @@ public final class HazelcastComparisonPredicateUtils {
             if (!highHZType.getObjectTypeName().equals(lowHZType.getObjectTypeName())) {
                 valid = false;
             }
-            assert highHZType.getObjectTypeKind().equals(lowHZType.getObjectTypeKind());
+            assert highHZType.getObjectTypeKind() == lowHZType.getObjectTypeKind();
         }
 
         // Types cannot be converted to each other.

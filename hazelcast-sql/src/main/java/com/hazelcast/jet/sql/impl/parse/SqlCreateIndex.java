@@ -170,7 +170,7 @@ public class SqlCreateIndex extends SqlCreate {
         }
 
         IndexType indexType = getIndexType();
-        if (!indexType.equals(IndexType.BITMAP) && !options.getList().isEmpty()) {
+        if (indexType != IndexType.BITMAP && !options.getList().isEmpty()) {
             throw validator.newValidationError(options, RESOURCE.unsupportedIndexType(indexType.name(),
                     options().keySet().iterator().next()));
         }

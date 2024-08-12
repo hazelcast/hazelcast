@@ -1026,7 +1026,7 @@ public class DynamicConfigYamlGenerator {
     private static void endpointConfigYamlGenerator(Map<String, Object> parent, EndpointConfig endpointConfig) {
         Map<String, Object> child = new LinkedHashMap<>();
 
-        if (endpointConfig.getName() != null && !endpointConfig.getProtocolType().equals(ProtocolType.WAN)) {
+        if (endpointConfig.getName() != null && endpointConfig.getProtocolType() != ProtocolType.WAN) {
             child.put("name", endpointConfig.getName());
         }
 
@@ -1072,7 +1072,7 @@ public class DynamicConfigYamlGenerator {
             addNonNullToMap(child, "reuse-address", serverSocketEndpointConfig.isReuseAddress());
             addNonNullToMap(child, "port", portCfg);
         }
-        if (endpointConfig.getName() != null && endpointConfig.getProtocolType().equals(ProtocolType.WAN)) {
+        if (endpointConfig.getName() != null && endpointConfig.getProtocolType() == ProtocolType.WAN) {
             parent.put(endpointConfigElementName(endpointConfig), wrapObjectWithMap(endpointConfig.getName(), child));
         } else {
             parent.put(endpointConfigElementName(endpointConfig), child);

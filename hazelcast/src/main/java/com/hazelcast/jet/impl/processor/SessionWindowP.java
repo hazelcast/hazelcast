@@ -257,7 +257,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey bcastKey) {
-            if (!Keys.CURRENT_WATERMARK.equals(bcastKey.key())) {
+            if (Keys.CURRENT_WATERMARK != bcastKey.key()) {
                 throw new JetException("Unexpected broadcast key: " + bcastKey.key());
             }
             long newCurrentWatermark = (long) value;

@@ -73,11 +73,11 @@ class MergeBarrier {
         @Override
         public void stateChanged(LifecycleEvent event) {
             LifecycleEvent.LifecycleState state = event.getState();
-            if (state.equals(MERGING)) {
+            if (state == MERGING) {
                 mergedInProgress.incrementAndGet();
-            } else if (state.equals(MERGED)) {
+            } else if (state == MERGED) {
                 mergedInProgress.decrementAndGet();
-            } else if (state.equals(MERGE_FAILED)) {
+            } else if (state == MERGE_FAILED) {
                 mergedInProgress.decrementAndGet();
             }
         }

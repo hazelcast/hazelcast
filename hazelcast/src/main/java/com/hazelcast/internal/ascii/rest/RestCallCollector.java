@@ -48,7 +48,7 @@ public class RestCallCollector {
                 return false;
             }
             RequestIdentifier that = (RequestIdentifier) o;
-            return method.equals(that.method) && path.equals(that.path);
+            return method == that.method && path.equals(that.path);
         }
 
         @Override

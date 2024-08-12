@@ -248,7 +248,7 @@ public class PlanExecutor {
         IndexConfig indexConfig = new IndexConfig(plan.indexType(), plan.attributes())
                 .setName(plan.indexName());
 
-        if (plan.indexType().equals(IndexType.BITMAP)) {
+        if (plan.indexType() == IndexType.BITMAP) {
             Map<String, String> options = plan.options();
 
             String uniqueKey = options.get(UNIQUE_KEY);

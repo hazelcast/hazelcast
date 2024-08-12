@@ -91,7 +91,7 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
         for (int i = 0; i < NUM_OF_KEYS; i++) {
             icacheOnClient.put(i, i);
 
-            if (localUpdatePolicy.equals(INVALIDATE)) {
+            if (localUpdatePolicy == INVALIDATE) {
                 // populate near-cache here for invalidate policy.
                 icacheOnClient.get(i);
             }

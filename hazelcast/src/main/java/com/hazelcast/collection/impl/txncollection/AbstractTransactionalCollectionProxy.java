@@ -157,7 +157,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
     }
 
     protected void checkTransactionActive() {
-        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
+        if (tx.getState() != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }

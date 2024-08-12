@@ -41,7 +41,7 @@ public final class Target {
     private Target(TargetMode mode, PartitionIdSet partitions) {
         this.mode = checkNotNull(mode);
         this.partitions = partitions;
-        if (mode.equals(PARTITION_OWNER) ^ partitions != null) {
+        if (mode == PARTITION_OWNER ^ partitions != null) {
             throw new IllegalArgumentException("partitions must be used only with PARTITION_OWNER mode and not otherwise");
         }
     }

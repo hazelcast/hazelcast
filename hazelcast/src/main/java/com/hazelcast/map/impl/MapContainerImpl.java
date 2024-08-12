@@ -475,7 +475,7 @@ public class MapContainerImpl implements MapContainer {
     @Override
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
         return getOrCreateIndexRegistry(partitionId).haveAtLeastOneIndex()
-                && OBJECT.equals(mapConfig.getInMemoryFormat());
+                && OBJECT == mapConfig.getInMemoryFormat();
     }
 
     @Override

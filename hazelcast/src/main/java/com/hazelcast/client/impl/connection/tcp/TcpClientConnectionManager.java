@@ -645,7 +645,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             } else {
                 throw new IOException("No connection found to cluster since the client is starting.");
             }
-        } else if (ReconnectMode.ASYNC.equals(reconnectMode)) {
+        } else if (ReconnectMode.ASYNC == reconnectMode) {
             throw new HazelcastClientOfflineException();
         } else {
             throw new IOException("No connection found to cluster.");
@@ -1175,7 +1175,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } else {
             // If there are no key-value pairs, we have connected to a member that is older than 5_5
             // this is unsupported for clients operating with MULTI_MEMBER routing mode.
-            if (routingMode.equals(RoutingMode.MULTI_MEMBER)) {
+            if (routingMode == RoutingMode.MULTI_MEMBER) {
                 throw new UnsupportedClusterVersionException(ROUTING_MODE_NOT_SUPPORTED_MESSAGE);
             }
         }

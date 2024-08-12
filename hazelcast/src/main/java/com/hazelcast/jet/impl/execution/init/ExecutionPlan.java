@@ -725,7 +725,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * list of partitions.
      */
     private int[][] getLocalPartitionDistribution(EdgeDef edge, int downstreamParallelism) {
-        if (!edge.routingPolicy().equals(RoutingPolicy.PARTITIONED)) {
+        if (edge.routingPolicy() != RoutingPolicy.PARTITIONED) {
             // the edge is not partitioned, use `null` for each processor
             return new int[downstreamParallelism][];
         }

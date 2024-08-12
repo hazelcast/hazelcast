@@ -256,17 +256,17 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
         SplitBrainProtectionOn definedSplitBrainProtectionOn = definedSplitBrainProtection.getConfig().getProtectOn();
         switch (requiredSplitBrainProtectionPermissionType) {
             case WRITE:
-                if (definedSplitBrainProtectionOn.equals(WRITE) || definedSplitBrainProtectionOn.equals(READ_WRITE)) {
+                if (definedSplitBrainProtectionOn == WRITE || definedSplitBrainProtectionOn == READ_WRITE) {
                     definedSplitBrainProtection.ensureNoSplitBrain();
                 }
                 break;
             case READ:
-                if (definedSplitBrainProtectionOn.equals(READ) || definedSplitBrainProtectionOn.equals(READ_WRITE)) {
+                if (definedSplitBrainProtectionOn == READ || definedSplitBrainProtectionOn == READ_WRITE) {
                     definedSplitBrainProtection.ensureNoSplitBrain();
                 }
                 break;
             case READ_WRITE:
-                if (definedSplitBrainProtectionOn.equals(READ_WRITE)) {
+                if (definedSplitBrainProtectionOn == READ_WRITE) {
                     definedSplitBrainProtection.ensureNoSplitBrain();
                 }
                 break;

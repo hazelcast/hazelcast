@@ -77,7 +77,7 @@ public final class UpsertTargetUtils {
                     throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + setter);
                 }
                 try {
-                    if (typeField.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                    if (typeField.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
                         setter.invoke(result, fieldValue);
                     } else {
                         setter.invoke(result, toConverter.convert(fieldValue));
@@ -97,7 +97,7 @@ public final class UpsertTargetUtils {
                 if (fieldValue == null && field.getType().isPrimitive()) {
                     throw QueryException.error("Cannot set NULL to a primitive field: " + field);
                 }
-                if (typeField.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                if (typeField.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
                     field.set(result, fieldValue);
                 } else {
                     field.set(result, toConverter.convert(fieldValue));

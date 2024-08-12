@@ -222,7 +222,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     @Override
     public void removeDataConnection(String name) {
         dataConnections.computeIfPresent(name, (k, v) -> {
-            if (CONFIG.equals(v.source)) {
+            if (CONFIG == v.source) {
                 throw new HazelcastException("Data connection '" + name + "' is configured via Config "
                         + "and can't be removed");
             }

@@ -235,7 +235,7 @@ public final class CdcSinks {
             @Nonnull FunctionEx<? super ChangeRecord, ? extends V> valueFn
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
-                changeRecord -> DELETE.equals(changeRecord.operation()) ? null : valueFn.apply(changeRecord);
+                changeRecord -> DELETE == changeRecord.operation() ? null : valueFn.apply(changeRecord);
         String clientXml = asXmlString(clientConfig);
         ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(clientXml,
                 procFn(name, map, clientXml, keyFn, toValueFn));

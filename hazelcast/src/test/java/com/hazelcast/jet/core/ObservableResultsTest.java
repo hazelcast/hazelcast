@@ -598,8 +598,8 @@ public class ObservableResultsTest extends TestInClusterSupport {
     }
 
     private void assertExecutionStarted(Job job) {
-        assertTrueEventually(() -> assertTrue(JobStatus.RUNNING.equals(job.getStatus())
-                || JobStatus.COMPLETED.equals(job.getStatus())));
+        assertTrueEventually(() -> assertTrue(JobStatus.RUNNING == job.getStatus()
+                || JobStatus.COMPLETED == job.getStatus()));
     }
 
     private static void assertSortedValues(TestObserver observer, Long... values) {

@@ -1330,11 +1330,11 @@ public class ConfigXmlGenerator {
     }
 
     private static String translateResourceType(ResourceType type) {
-        if (ResourceType.JAR.equals(type)) {
+        if (ResourceType.JAR == type) {
             return "jar";
-        } else if (ResourceType.JARS_IN_ZIP.equals(type)) {
+        } else if (ResourceType.JARS_IN_ZIP == type) {
             return "jars-in-zip";
-        } else if (ResourceType.CLASS.equals(type)) {
+        } else if (ResourceType.CLASS == type) {
             return "class";
         } else {
             throw new IllegalArgumentException("Unknown resource type: " + type);
