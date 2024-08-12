@@ -76,14 +76,12 @@ in-depth details about how to install Hazelcast and an overview of the features.
 
 ## Get Help
 
-You can use [Slack](https://slack.hazelcast.com/) for getting help with Hazelcast
+You can use [Slack](https://slack.hazelcast.com/) for getting help with Hazelcast.
 
 ## How to Contribute
 
 Thanks for your interest in contributing! The easiest way is to just send a pull
-request. Have a look at the
-[issues](https://github.com/hazelcast/hazelcast-jet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
-marked as good first issue for some guidance.
+request.
 
 ### Building From Source
 
@@ -133,51 +131,6 @@ Some tests require Docker to run. Set `-Dhazelcast.disable.docker.tests` system 
 When developing a PR it is sufficient to run your new tests and some 
 related subset of tests locally. Our PR builder will take care of running
 the full test suite.
-
-## Trigger Phrases in the Pull Request Conversation
-
-When you create a pull request (PR), it must pass a build-and-test
-procedure. Maintainers will be notified about your PR, and they can
-trigger the build using special comments. These are the phrases you may
-see used in the comments on your PR:
-
-* `run-lab-run` - run the default PR builder
-* `run-lts-compilers` - compiles the sources with JDK 17 and JDK 21 (without running tests)
-* `run-ee-compile` - compile hazelcast-enterprise with this PR
-* `run-ee-tests` - run tests from hazelcast-enterprise with this PR
-* `run-windows` - run the EE and OS tests on a Windows machine (HighFive is not supported here)
-  * `run-windows-os` - run the OS tests
-  * `run-windows-ee` - run the EE tests
-* `run-cdc-debezium-tests` - run all tests in the
-  `extensions/cdc-debezium` module
-* `run-cdc-mysql-tests` - run all tests in the `extensions/cdc-mysql`
-  module
-* `run-cdc-postgres-tests` - run all tests in the
-  `extensions/cdc-postgres` module
-* `run-mongodb-tests` - run all tests in the `extensions/mongodb` module
-* `run-s3-tests` - run all tests in the `extensions/s3` module
-* *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
-* *`run-ee-nightly-tests` - run nightly (slow) tests from hazelcast-enterprise. WARNING: Use with care as this is a resource consuming task.*
-* `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
-* `run-docs-only` - do not run any tests, check that only files with `.md`, `.adoc` or `.txt` suffix are added in the PR
-* `run-sonar` - run SonarCloud analysis
-* `run-arm64` - run the tests on arm64 machine
-
-Where not indicated, the builds run on a Linux machine with Oracle JDK 17.
-
-### Creating PRs for Hazelcast SQL
-
-When creating a PR with changes located in the `hazelcast-sql` module and nowhere else,
-you can label your PR with `SQL-only`. This will change the standard PR builder to one that
-will only run tests related to SQL (see `run-sql-only` above), which will significantly shorten
-the build time vs. the default PR builder. **NOTE**: this job will fail if you've made changes
-anywhere other than `hazelcast-sql`.
-
-### Creating PRs which contain only documentation
-
-When creating a PR which changes only documentation (files with suffix `.md` or `.adoc`) it 
-makes no sense to run tests. For that case the label `docs-only` can be used. The job will fail 
-in case you've made other changes than in `.md`, `.adoc` or `.txt` files.
 
 ## License
 
