@@ -144,11 +144,6 @@ The default license throughout the repository is Apache License 2.0 unless the
 header specifies another license.
 
 ## Acknowledgments
-[![](https://www.yourkit.com/images/yklogo.png)](http://www.yourkit.com/)
-
-Thanks to [YourKit](http://www.yourkit.com/) for supporting open source software
-by providing us a free license for their Java profiler.
-
 We owe (the good parts of) our CLI tool's user experience to
 [picocli](https://picocli.info/).
 
