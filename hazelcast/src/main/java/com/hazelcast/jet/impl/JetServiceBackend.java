@@ -279,12 +279,22 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     @Override
     public void shutdown(boolean forceful) {
         // Cancel timer
-        jobUploadStoreCheckerFuture.cancel(true);
+        if (jobUploadStoreCheckerFuture != null) {
+            jobUploadStoreCheckerFuture.cancel(true);
+        }
 
-        jobExecutionService.shutdown();
-        taskletExecutionService.shutdown();
-        taskletExecutionService.awaitWorkerTermination();
-        networking.shutdown();
+        if (jobExecutionService != null) {
+            jobExecutionService.shutdown();
+        }
+
+        if (taskletExecutionService != null) {
+            taskletExecutionService.shutdown();
+            taskletExecutionService.awaitWorkerTermination();
+        }
+
+        if (networking != null) {
+            networking.shutdown();
+        }
     }
 
     @Override
