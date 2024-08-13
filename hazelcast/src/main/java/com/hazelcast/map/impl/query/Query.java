@@ -117,12 +117,14 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         return partitionIdSet;
     }
 
-    public Result createResult(SerializationService serializationService, long limit) {
+    public Result createResult(SerializationService serializationService, QueryResultSizeLimiter qrsl, int partitions) {
         if (isAggregationQuery()) {
             Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
             return new AggregationResult(aggregatorClone, serializationService);
         } else {
-            return new QueryResult(iterationType, projection, serializationService, limit, predicate instanceof PagingPredicate);
+            return new QueryResult(iterationType, projection, serializationService, qrsl.getNodeResultLimit(partitions),
+                    predicate instanceof PagingPredicate,
+                    qrsl.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(getMapName()));
         }
     }
 

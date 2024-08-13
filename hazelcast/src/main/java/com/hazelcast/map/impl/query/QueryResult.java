@@ -16,19 +16,21 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.QueryableEntry;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -69,10 +71,11 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
     private PartitionIdSet partitionIds;
     private IterationType iterationType;
 
-    private final transient SerializationService serializationService;
+    private final transient SerializationService ss;
     private final transient long resultLimit;
     private final transient boolean orderAndLimitExpected;
     private final transient Projection projection;
+    private final transient LocalMapStats mapStats;
 
     private transient long resultSize;
 
@@ -80,10 +83,11 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
      * Constructs an empty result for the purposes of deserialization.
      */
     public QueryResult() {
-        serializationService = null;
+        ss = null;
         orderAndLimitExpected = false;
         resultLimit = Long.MAX_VALUE;
         projection = null;
+        mapStats = null;
     }
 
     /**
@@ -106,9 +110,38 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
                        long resultLimit, boolean orderAndLimitExpected) {
         this.iterationType = iterationType;
         this.projection = projection;
-        this.serializationService = serializationService;
+        this.ss = serializationService;
         this.resultLimit = resultLimit;
         this.orderAndLimitExpected = orderAndLimitExpected;
+        this.mapStats = null;
+    }
+
+    /**
+     * Constructs an empty result.
+     *
+     * @param iterationType         the iteration type of the query for which
+     *                              this result is constructed for.
+     * @param projection            the projection of the query for which this
+     *                              result is constructed for.
+     * @param serializationService  the serialization service associated with
+     *                              the query for which this result is
+     *                              constructed for.
+     * @param resultLimit           the upper limit on the number of items that
+     *                              can be {@link #add added} to this result.
+     * @param orderAndLimitExpected the flag to signal that the call to the
+     *                              {@link #orderAndLimit} method is expected,
+     *                              see the class javadoc for more details.
+     * @param mapStats              reference to map stats object, in use
+     *                              to account query size limit hits
+     */
+    public QueryResult(IterationType iterationType, Projection projection, SerializationService serializationService,
+                       long resultLimit, boolean orderAndLimitExpected, @Nullable LocalMapStats mapStats) {
+        this.iterationType = iterationType;
+        this.projection = projection;
+        this.ss = serializationService;
+        this.resultLimit = resultLimit;
+        this.orderAndLimitExpected = orderAndLimitExpected;
+        this.mapStats = mapStats;
     }
 
     // for testing
@@ -153,6 +186,9 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
     @Override
     public void add(QueryableEntry entry) {
         if (++resultSize > resultLimit) {
+            if (mapStats != null) {
+                mapStats.incrementQueryResultSizeExceededCount();
+            }
             throw new QueryResultSizeExceededException();
         }
 
@@ -161,7 +197,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
 
     @Override
     public QueryResult createSubResult() {
-        return new QueryResult(iterationType, projection, serializationService, resultLimit, orderAndLimitExpected);
+        return new QueryResult(iterationType, projection, ss, resultLimit, orderAndLimitExpected, mapStats);
     }
 
     @Override
@@ -181,7 +217,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
 
     private Data getValueData(QueryableEntry entry) {
         if (projection != null) {
-            return serializationService.toData(projection.transform(entry));
+            return ss.toData(projection.transform(entry));
         } else {
             return entry.getValueData();
         }

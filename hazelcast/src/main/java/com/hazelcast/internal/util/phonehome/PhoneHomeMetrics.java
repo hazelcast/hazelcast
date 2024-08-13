@@ -105,6 +105,7 @@ public enum PhoneHomeMetrics implements Metric {
     AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE("mpgtla"),
     TOTAL_MAP_VALUES_CALLS("mpvaluesct"),
     TOTAL_MAP_ENTRYSET_CALLS("mpentriesct"),
+    TOTAL_MAP_QUERY_SIZE_LIMITER_HITS("mpqslh"),
 
     //CACHE METRICS
     COUNT_OF_CACHES("cact"),

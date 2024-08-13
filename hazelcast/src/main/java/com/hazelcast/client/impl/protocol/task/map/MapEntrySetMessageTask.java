@@ -48,6 +48,8 @@ public class MapEntrySetMessageTask
         List<Map.Entry<Data, Data>> entries = new ArrayList<>(result);
         incrementOtherOperationsCount(getService(MapService.SERVICE_NAME), parameters);
         incrementMapMetric((MapService) getService(MapService.SERVICE_NAME), parameters);
+        logger.info("Client " + endpoint.getUuid() + " invoked entrySet() on map " + parameters
+                + " with " + result.size() + " returned values.");
         return entries;
     }
 

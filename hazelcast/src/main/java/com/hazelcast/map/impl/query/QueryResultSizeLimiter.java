@@ -121,6 +121,10 @@ public class QueryResultSizeLimiter {
         return isPreCheckEnabled;
     }
 
+    MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
+    }
+
     long getNodeResultLimit(int ownedPartitions) {
         return isQueryResultLimitEnabled ? (long) ceil(resultLimitPerPartition * ownedPartitions) : Long.MAX_VALUE;
     }
@@ -147,6 +151,10 @@ public class QueryResultSizeLimiter {
         // check local result size
         long localResultLimit = getNodeResultLimit(partitionsToCheck);
         if (localPartitionSize > localResultLimit * MAX_RESULT_LIMIT_FACTOR_FOR_PRECHECK) {
+            var localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            if (localMapStatsProvider != null && localMapStatsProvider.hasLocalMapStatsImpl(mapName)) {
+                localMapStatsProvider.getLocalMapStatsImpl(mapName).incrementQueryResultSizeExceededCount();
+            }
             throw new QueryResultSizeExceededException(maxResultLimit, " Result size exceeded in local pre-check.");
         }
     }

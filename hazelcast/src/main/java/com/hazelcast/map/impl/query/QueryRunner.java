@@ -246,7 +246,7 @@ public class QueryRunner {
     }
 
     private Result createResult(Query query, Collection<Integer> partitions) {
-        return query.createResult(serializationService, queryResultSizeLimiter.getNodeResultLimit(partitions.size()));
+        return query.createResult(serializationService, queryResultSizeLimiter, partitions.size());
     }
 
     protected Result populateEmptyResult(Query query, Collection<Integer> initialPartitions) {

@@ -50,6 +50,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_OWNED_ENTRY_MEMORY_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_PUT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_QUERY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_QUERY_LIMITER_HIT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_REMOVE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_SET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_GET_LATENCY;
@@ -72,7 +73,6 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class LocalMapStatsImpl implements LocalMapStats {
-
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_UPDATE_TIME =
@@ -93,6 +93,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "valuesCount");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> ENTRYSET_COUNT =
             newUpdater(LocalMapStatsImpl.class, "entrySetCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> QUERY_LIMITER_HIT_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "queryLimiterHitCount");
 
     // The resolution is in nanoseconds for the following latencies
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_GET_LATENCIES =
@@ -145,6 +147,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long valuesCount;
     @Probe(name = MAP_METRIC_ENTRYSET_COUNT)
     private volatile long entrySetCount;
+    @Probe(name = MAP_METRIC_QUERY_LIMITER_HIT_COUNT)
+    private volatile long queryLimiterHitCount;
 
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
@@ -535,6 +539,16 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public void incrementReceivedEvents() {
         NUMBER_OF_EVENTS.incrementAndGet(this);
+    }
+
+    @Override
+    public void incrementQueryResultSizeExceededCount() {
+        QUERY_LIMITER_HIT_COUNT.incrementAndGet(this);
+    }
+
+    @Override
+    public long getQueryResultSizeExceededCount() {
+        return queryLimiterHitCount;
     }
 
     public void updateIndexStats(Map<String, OnDemandIndexStats> freshIndexStats) {

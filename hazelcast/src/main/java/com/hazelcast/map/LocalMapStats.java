@@ -299,6 +299,24 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getIndexedQueryCount();
 
     /**
+     * Increments throw count of {@link QueryResultSizeExceededException}
+     *
+     * @since 5.5
+     */
+    default void incrementQueryResultSizeExceededCount() {
+        // no-op for most classes, except IMap
+    }
+
+    /**
+     * Get throw count of {@link QueryResultSizeExceededException}
+     *
+     * @since 5.5
+     */
+    default long getQueryResultSizeExceededCount() {
+        return 0L;
+    }
+
+    /**
      * Returns the per-index statistics map keyed by the index name.
      */
     Map<String, LocalIndexStats> getIndexStats();

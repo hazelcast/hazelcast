@@ -46,6 +46,7 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_W
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_ENTRYSET_CALLS;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_QUERY_SIZE_LIMITER_HITS;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TOTAL_MAP_VALUES_CALLS;
 
 /**
@@ -82,6 +83,8 @@ class MapMetricsProvider implements MetricsProvider {
                         LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount));
         context.collect(TOTAL_MAP_VALUES_CALLS, mapCallAggregator(node, LocalMapStats::getValuesCallsCount));
         context.collect(TOTAL_MAP_ENTRYSET_CALLS, mapCallAggregator(node, LocalMapStats::getEntrySetCallsCount));
+        context.collect(TOTAL_MAP_QUERY_SIZE_LIMITER_HITS,
+                mapCallAggregator(node, LocalMapStats::getQueryResultSizeExceededCount));
     }
 
     private void initMapConfigs(Node node) {

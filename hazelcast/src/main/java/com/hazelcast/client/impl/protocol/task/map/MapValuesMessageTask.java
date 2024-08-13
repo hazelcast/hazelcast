@@ -51,6 +51,8 @@ public class MapValuesMessageTask
         MapService mapService = (MapService) getService(MapService.SERVICE_NAME);
         incrementOtherOperationsCount(mapService, parameters);
         incrementMapMetric(mapService, parameters);
+        logger.info("Client " + endpoint.getUuid() + " invoked values() on map " + parameters
+                + " with " + values.size() + " returned values.");
         return values;
     }
 
