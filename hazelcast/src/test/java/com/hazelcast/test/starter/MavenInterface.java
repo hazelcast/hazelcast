@@ -147,7 +147,7 @@ public class MavenInterface {
     public static String evaluateExpression(String expression) throws IOException {
         // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
         // https://stackoverflow.com/q/76866880
-        final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=" + expression, "--quiet",
+        final Process process = new ProcessBuilder(MVN.get(), "help:evaluate", "-Dexpression=" + expression, "--quiet",
                 "--batch-mode", "-DforceStdout").start();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
