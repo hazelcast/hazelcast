@@ -71,6 +71,8 @@
 
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
 
+        <hazelcast.previous.version>5.5.0</hazelcast.previous.version>
+
         <!--used also as a dependency version in hazelcast-build-utils module-->
         <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
 

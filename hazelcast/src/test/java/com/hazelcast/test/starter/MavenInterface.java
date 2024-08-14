@@ -33,7 +33,9 @@ import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -71,12 +73,7 @@ public class MavenInterface {
             final DefaultLocalRepositoryProvider repositoryProvider = new DefaultLocalRepositoryProvider(
                     Collections.singleton(new SimpleLocalRepositoryManagerFactory(new DefaultLocalPathComposer())));
 
-            // You can query this dynamically with the command:
-            // mvn help:evaluate -Dexpression=settings.localRepository --quiet --batch-mode -DforceStdout
-            //
-            // But can be problematic to parse when additional VM arguments print logging information to stdout as well
-            // https://github.com/hazelcast/hazelcast/issues/25451
-            MAVEN_REPOSITORY = Paths.get(System.getProperty("user.home")).resolve(".m2").resolve("repository");
+            MAVEN_REPOSITORY = Paths.get(evaluateExpression("settings.localRepository"));
 
             if (Files.exists(MAVEN_REPOSITORY)) {
                 final LocalRepository localRepo = new LocalRepository(MAVEN_REPOSITORY.toFile());
@@ -145,5 +142,21 @@ public class MavenInterface {
         }
 
         return builder.build();
+    }
+
+    public static String evaluateExpression(String expression) throws IOException {
+        // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
+        // https://stackoverflow.com/q/76866880
+        final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=" + expression, "--quiet",
+                "--batch-mode", "-DforceStdout").start();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            // Skip "[gc]" debug output
+            // https://github.com/hazelcast/hazelcast/issues/25451#issuecomment-1720248676
+            return reader.lines()
+                    .filter(line -> !line.contains("[gc]"))
+                    .findFirst()
+                    .orElseThrow();
+        }
     }
 }

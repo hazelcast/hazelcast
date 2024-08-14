@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.cluster.VersionsTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,7 +29,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
-import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -69,12 +69,12 @@ public class AbstractDistributedObjectTest extends HazelcastTestSupport {
 
     @Test
     public void testClusterVersion_isGreaterThan_previousVersion() {
-        assertTrue(object.isClusterVersionGreaterThan(PREVIOUS_CLUSTER_VERSION));
+        assertTrue(object.isClusterVersionGreaterThan(VersionsTest.getPreviousClusterVersion()));
     }
 
     @Test
     public void testClusterVersion_isUnknownGreaterThan_previousVersion() {
-        assertTrue(object.isClusterVersionUnknownOrGreaterThan(PREVIOUS_CLUSTER_VERSION));
+        assertTrue(object.isClusterVersionUnknownOrGreaterThan(VersionsTest.getPreviousClusterVersion()));
     }
 
     @Test
