@@ -25,11 +25,9 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.util.AddressUtil;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 
@@ -45,15 +46,13 @@ public final class TestNodeRegistry {
 
     private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<>(10);
     private final Collection<Address> joinAddresses;
-    private final List<String> nodeExtensionPriorityList;
 
-    public TestNodeRegistry(Collection<Address> addresses, List<String> nodeExtensionPriorityList) {
-        this.joinAddresses = addresses;
-        this.nodeExtensionPriorityList = nodeExtensionPriorityList;
+    public TestNodeRegistry(Collection<Address> addresses) {
+        joinAddresses = addresses;
     }
 
     public NodeContext createNodeContext(Address address) {
-        return createNodeContext(address, Collections.emptySet());
+        return createNodeContext(address, emptySet());
     }
 
     public NodeContext createNodeContext(final Address address, Set<Address> initiallyBlockedAddresses) {
@@ -64,7 +63,7 @@ public final class TestNodeRegistry {
                     () -> assertThat(node.getState()).isEqualTo(NodeState.SHUT_DOWN));
             nodes.remove(address, node);
         }
-        return new MockNodeContext(this, address, initiallyBlockedAddresses, nodeExtensionPriorityList);
+        return new MockNodeContext(this, address, initiallyBlockedAddresses);
     }
 
     public HazelcastInstance getInstance(Address address) {
@@ -93,7 +92,7 @@ public final class TestNodeRegistry {
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
-        Collection<HazelcastInstance> all = new LinkedList<>();
+        Collection<HazelcastInstance> all = new ArrayList<>();
         for (Node node : nodes.values()) {
             if (node.isRunning()) {
                 all.add(node.hazelcastInstance);
@@ -140,7 +139,7 @@ public final class TestNodeRegistry {
     }
 
     Map<Address, Node> getNodes() {
-        return Collections.unmodifiableMap(nodes);
+        return unmodifiableMap(nodes);
     }
 
     Node getNode(Address address) {
@@ -148,7 +147,7 @@ public final class TestNodeRegistry {
     }
 
     Collection<Address> getJoinAddresses() {
-        return Collections.unmodifiableCollection(joinAddresses);
+        return unmodifiableCollection(joinAddresses);
     }
 
     void registerNode(Node node) {
@@ -160,7 +159,7 @@ public final class TestNodeRegistry {
     }
 
     Collection<Address> getAddresses() {
-        return Collections.unmodifiableCollection(nodes.keySet());
+        return unmodifiableCollection(nodes.keySet());
     }
 
     private static void verifyInvariant(boolean check, String msg) {

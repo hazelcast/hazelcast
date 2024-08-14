@@ -24,7 +24,6 @@ import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -102,7 +101,7 @@ public class TestHazelcastInstanceFactory {
     }
 
     private TestNodeRegistry createRegistry() {
-        return new TestNodeRegistry(getKnownAddresses(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
+        return new TestNodeRegistry(getKnownAddresses());
     }
 
     public int getCount() {
