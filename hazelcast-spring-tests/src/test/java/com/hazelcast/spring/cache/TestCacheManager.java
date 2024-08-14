@@ -23,30 +23,31 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
-public class TestCacheManager extends HazelcastTestSupport {
+class TestCacheManager {
 
     @Autowired
     private HazelcastInstance instance;
@@ -57,14 +58,14 @@ public class TestCacheManager extends HazelcastTestSupport {
     @Autowired
     private CacheManager cacheManager;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testBean_withValue() {
+    void testBean_withValue() {
         for (int i = 0; i < 100; i++) {
             assertEquals("name:" + i, bean.getName(i));
             assertEquals("city:" + i, bean.getCity(i));
@@ -72,27 +73,27 @@ public class TestCacheManager extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBean_withNull() {
+    void testBean_withNull() {
         for (int i = 0; i < 100; i++) {
             assertNull(bean.getNull());
         }
     }
 
     @Test
-    public void testBean_withTTL() {
+    void testBean_withTTL() {
         String name = bean.getNameWithTTL();
         assertEquals("ali", name);
         String nameFromCache = bean.getNameWithTTL();
         assertEquals("ali", nameFromCache);
 
-        sleepSeconds(3);
+        HazelcastTestSupport.sleepSeconds(3);
 
         String nameFromCacheAfterTTL = bean.getNameWithTTL();
         assertNull(nameFromCacheAfterTTL);
     }
 
     @Test
-    public void testCacheNames() {
+    void testCacheNames() {
         // create a test instance, to reproduce the behavior described in the GitHub issue
         // https://github.com/hazelcast/hazelcast/issues/492
         final String testMap = "test-map";

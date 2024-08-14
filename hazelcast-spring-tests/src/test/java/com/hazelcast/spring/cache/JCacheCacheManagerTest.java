@@ -19,28 +19,28 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.cache.CacheManager;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"jCacheCacheManager-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class JCacheCacheManagerTest {
 
     @Autowired
@@ -55,14 +55,14 @@ public class JCacheCacheManagerTest {
     @Autowired
     private CacheManager cacheManager2;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
-    @Before
+    @BeforeEach
     public void reset() {
         Iterable<String> cacheNames = springCacheManager.getCacheManager().getCacheNames();
         for (String cacheName : cacheNames) {
@@ -85,19 +85,19 @@ public class JCacheCacheManagerTest {
     }
 
     @Test
-    public void testURI() {
+    void testURI() {
         assertEquals("hazelcast", springCacheManager.getCacheManager().getURI().toString());
         assertEquals("testURI", cacheManager2.getURI().toString());
     }
 
     @Test
-    public void testProperties() {
+    void testProperties() {
         assertEquals("testValue", cacheManager2.getProperties().getProperty("testProperty"));
         assertEquals("named-spring-hz-instance", cacheManager2.getProperties().getProperty("hazelcast.instance.name"));
     }
 
     @Test
-    public void testCacheNames() {
+    void testCacheNames() {
         assertNotNull(springCacheManager.getCacheManager().getCache("name"));
         assertNotNull(springCacheManager.getCacheManager().getCache("city"));
     }

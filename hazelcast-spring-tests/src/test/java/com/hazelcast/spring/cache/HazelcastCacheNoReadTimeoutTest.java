@@ -19,36 +19,35 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptorAdaptor;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.Serial;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 /**
  * Tests for {@link HazelcastCache} for timeout.
  *
  * @author Gokhan Oner
  */
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"no-readtimeout-config.xml"})
-@Category(QuickTest.class)
-public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
+class HazelcastCacheNoReadTimeoutTest {
 
     @Autowired
     private CacheManager cacheManager;
@@ -58,13 +57,13 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
 
     private Cache delayNo;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.delayNo = cacheManager.getCache("delayNo");
 
@@ -73,12 +72,12 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCache_TimeoutConfig() {
+    void testCache_TimeoutConfig() {
         assertEquals(0, ((HazelcastCache) delayNo).getReadTimeout());
     }
 
     @Test
-    public void testBean_delayNo() {
+    void testBean_delayNo() {
         String key = createRandomKey();
         long start = System.nanoTime();
         dummyTimeoutBean.getDelayNo(key);
@@ -98,7 +97,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptGet(Object value) {
-            sleepMillis(delay);
+            HazelcastTestSupport.sleepMillis(delay);
             return super.interceptGet(value);
         }
     }

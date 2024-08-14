@@ -20,8 +20,9 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -30,15 +31,17 @@ import java.io.Serial;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 /**
  * Tests for {@link HazelcastCache} for timeout.
  *
  * @author Gokhan Oner
  */
-public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTestSupport {
+abstract class AbstractHazelcastCacheReadTimeoutTest {
 
     @Autowired
     private CacheManager cacheManager;
@@ -51,7 +54,7 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
     private Cache delayNo;
     private Cache delay100;
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.delay150 = cacheManager.getCache("delay150");
         this.delay50 = cacheManager.getCache("delay50");
@@ -74,9 +77,10 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         assertEquals(100, ((HazelcastCache) delay100).getReadTimeout());
     }
 
-    @Test(expected = OperationTimeoutException.class)
+    @Test
     public void testCache_delay150() {
-        delay150.get(createRandomKey());
+        String randomKey = createRandomKey();
+        assertThrows(OperationTimeoutException.class, () -> delay150.get(randomKey));
     }
 
     @Test
@@ -106,9 +110,10 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         assertTrue(time >= 300L);
     }
 
-    @Test(expected = OperationTimeoutException.class)
+    @Test
     public void testBean_delay150() {
-        dummyTimeoutBean.getDelay150(createRandomKey());
+        String randomKey = createRandomKey();
+        assertThrows(OperationTimeoutException.class, () -> dummyTimeoutBean.getDelay150(randomKey));
     }
 
     @Test
@@ -144,13 +149,13 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
 
         private final int delay;
 
-        public DelayIMapGetInterceptor(int delay) {
+        DelayIMapGetInterceptor(int delay) {
             this.delay = delay;
         }
 
         @Override
         public Object interceptGet(Object value) {
-            sleepMillis(delay);
+            HazelcastTestSupport.sleepMillis(delay);
             return super.interceptGet(value);
         }
     }
