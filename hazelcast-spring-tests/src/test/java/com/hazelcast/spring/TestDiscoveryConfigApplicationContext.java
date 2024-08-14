@@ -24,52 +24,52 @@ import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"discoveryConfig-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 @SuppressWarnings("unused")
-public class TestDiscoveryConfigApplicationContext {
+class TestDiscoveryConfigApplicationContext {
 
     private Config config;
 
     @Autowired
     private HazelcastInstance instance;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         config = instance.getConfig();
     }
 
     @Test
-    public void testNetworkDiscoveryConfig() {
+    void testNetworkDiscoveryConfig() {
         NetworkConfig networkConfig = config.getNetworkConfig();
 
         assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
     }
 
     @Test
-    public void testWanDiscoveryConfig() {
+    void testWanDiscoveryConfig() {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         WanBatchPublisherConfig publisherConfig = wcfg.getBatchPublisherConfigs().get(0);
 
@@ -77,13 +77,13 @@ public class TestDiscoveryConfigApplicationContext {
     }
 
     private void assertDiscoveryConfig(DiscoveryConfig discoveryConfig) {
-        assertTrue(discoveryConfig.getDiscoveryServiceProvider() instanceof DummyDiscoveryServiceProvider);
-        assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
+        assertInstanceOf(DummyDiscoveryServiceProvider.class, discoveryConfig.getDiscoveryServiceProvider());
+        assertInstanceOf(DummyNodeFilter.class, discoveryConfig.getNodeFilter());
         List<DiscoveryStrategyConfig> discoveryStrategyConfigs
                 = (List<DiscoveryStrategyConfig>) discoveryConfig.getDiscoveryStrategyConfigs();
         assertEquals(1, discoveryStrategyConfigs.size());
         DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.get(0);
-        assertTrue(discoveryStrategyConfig.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
+        assertInstanceOf(DummyDiscoveryStrategyFactory.class, discoveryStrategyConfig.getDiscoveryStrategyFactory());
         assertEquals(3, discoveryStrategyConfig.getProperties().size());
         assertEquals("foo", discoveryStrategyConfig.getProperties().get("key-string"));
         assertEquals("123", discoveryStrategyConfig.getProperties().get("key-int"));

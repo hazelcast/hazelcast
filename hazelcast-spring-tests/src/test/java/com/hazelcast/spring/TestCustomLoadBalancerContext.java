@@ -23,21 +23,24 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"customLoadBalancer-applicationContext.xml"})
 @Category(QuickTest.class)
-public class TestCustomLoadBalancerContext {
+class TestCustomLoadBalancerContext {
 
     @Autowired
     private HazelcastClientProxy client1;
@@ -45,23 +48,23 @@ public class TestCustomLoadBalancerContext {
     @Autowired
     private HazelcastClientProxy client2;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testCustomLoadBalancer() {
+    void testCustomLoadBalancer() {
         ClientConfig config1 = client1.getClientConfig();
         LoadBalancer loadBalancer1 = config1.getLoadBalancer();
-        assertTrue(loadBalancer1 instanceof CustomLoadBalancer);
+        assertInstanceOf(CustomLoadBalancer.class, loadBalancer1);
         assertEquals("default-name", ((CustomLoadBalancer) loadBalancer1).getName());
 
         ClientConfig config2 = client2.getClientConfig();
         LoadBalancer loadBalancer2 = config2.getLoadBalancer();
-        assertTrue(loadBalancer2 instanceof CustomLoadBalancer);
+        assertInstanceOf(CustomLoadBalancer.class, loadBalancer2);
         assertEquals("custom-balancer-name", ((CustomLoadBalancer) loadBalancer2).getName());
     }
 }

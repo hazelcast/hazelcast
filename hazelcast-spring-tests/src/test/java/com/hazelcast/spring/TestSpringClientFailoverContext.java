@@ -22,35 +22,35 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"node-client-applicationContext-failover-hazelcast.xml"})
-@Category(QuickTest.class)
-public class TestSpringClientFailoverContext {
+class TestSpringClientFailoverContext {
 
     @Autowired
     private ApplicationContext applicationContext;
 
-    @After
-    public void teardown() {
+    @AfterEach
+    public void afterEach() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testBlueGreenClient() {
+    void testBlueGreenClient() {
         HazelcastClientProxy blueGreenClient = applicationContext.getBean("blueGreenClient", HazelcastClientProxy.class);
         ClientFailoverConfig failoverConfig = blueGreenClient.client.getFailoverConfig();
         List<ClientConfig> clientConfigs = failoverConfig.getClientConfigs();

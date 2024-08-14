@@ -28,31 +28,31 @@ import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"clientNetworkConfig-applicationContext.xml"})
-@Category(QuickTest.class)
-public class TestClientNetworkConfig {
+class TestClientNetworkConfig {
 
     @Autowired
     private HazelcastClientProxy client;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         System.setProperty("test.keyStore", "private.jks");
         System.setProperty("test.trustStore", "trust.jks");
@@ -62,21 +62,21 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeMember() {
+    void smokeMember() {
         int memberCountInConfigurationXml = 10;
         ClientConfig config = client.getClientConfig();
         assertEquals(memberCountInConfigurationXml, config.getNetworkConfig().getAddresses().size());
     }
 
     @Test
-    public void smokeSocketOptions() {
+    void smokeSocketOptions() {
         int bufferSizeInConfigurationXml = 32;
         ClientConfig config = client.getClientConfig();
         assertEquals(bufferSizeInConfigurationXml, config.getNetworkConfig().getSocketOptions().getBufferSize());
     }
 
     @Test
-    public void smokeSocketInterceptor() {
+    void smokeSocketInterceptor() {
         ClientConfig config = client.getClientConfig();
         SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
         assertFalse(socketInterceptorConfig.isEnabled());
@@ -84,14 +84,14 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeSSLConfig() {
+    void smokeSSLConfig() {
         ClientConfig config = client.getClientConfig();
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
                 config.getNetworkConfig().getSSLConfig().getFactoryClassName());
     }
 
     @Test
-    public void smokeClusterRoutingConfig() {
+    void smokeClusterRoutingConfig() {
         ClientConfig config = client.getClientConfig();
         assertEquals(RoutingMode.ALL_MEMBERS, config.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
         assertEquals(RoutingStrategy.PARTITION_GROUPS,
@@ -99,7 +99,7 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeAwsConfig() {
+    void smokeAwsConfig() {
         AwsConfig aws = client.getClientConfig().getNetworkConfig().getAwsConfig();
         assertFalse(aws.isEnabled());
         assertEquals("sample-access-key", aws.getProperty("access-key"));
@@ -113,14 +113,14 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeGcpConfig() {
+    void smokeGcpConfig() {
         GcpConfig gcp = client.getClientConfig().getNetworkConfig().getGcpConfig();
         assertFalse(gcp.isEnabled());
         assertEquals("us-east1-b,us-east1-c", gcp.getProperty("zones"));
     }
 
     @Test
-    public void smokeAzureConfig() {
+    void smokeAzureConfig() {
         AzureConfig azure = client.getClientConfig().getNetworkConfig().getAzureConfig();
         assertFalse(azure.isEnabled());
         assertEquals("false", azure.getProperty("instance-metadata-available"));
@@ -134,7 +134,7 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeKubernetesConfig() {
+    void smokeKubernetesConfig() {
         KubernetesConfig kubernetes = client.getClientConfig().getNetworkConfig().getKubernetesConfig();
         assertFalse(kubernetes.isEnabled());
         assertEquals("MY-KUBERNETES-NAMESPACE", kubernetes.getProperty("namespace"));
@@ -144,7 +144,7 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeEurekaConfig() {
+    void smokeEurekaConfig() {
         EurekaConfig eureka = client.getClientConfig().getNetworkConfig().getEurekaConfig();
         assertFalse(eureka.isEnabled());
         assertEquals("true", eureka.getProperty("self-registration"));
@@ -152,7 +152,7 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeOutboundPorts() {
+    void smokeOutboundPorts() {
         Collection<String> allowedPorts = client.getClientConfig().getNetworkConfig().getOutboundPortDefinitions();
         assertEquals(2, allowedPorts.size());
         assertTrue(allowedPorts.contains("34600"));

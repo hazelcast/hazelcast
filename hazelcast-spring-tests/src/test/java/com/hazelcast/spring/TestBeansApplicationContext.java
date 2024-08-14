@@ -25,33 +25,33 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
-public class TestBeansApplicationContext extends HazelcastTestSupport {
+class TestBeansApplicationContext extends HazelcastTestSupport {
 
     public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
@@ -61,7 +61,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
     private ApplicationContext context;
 
     @Test
-    public void testApplicationContext() {
+    void testApplicationContext() {
         assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
 
         context.getBean("map2");
@@ -92,7 +92,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPlaceholderInEviction() {
+    void testPlaceholderInEviction() {
         assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
@@ -107,7 +107,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPlaceHolder() {
+    void testPlaceHolder() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         waitInstanceForSafeState(instance);
         Config config = instance.getConfig();
