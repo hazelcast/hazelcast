@@ -72,6 +72,10 @@
                     <groupId>io.opencensus</groupId>
                     <artifactId>opencensus-contrib-grpc-metrics</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>animal-sniffer-annotations</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <!-- Declared to resolve dependency version clash -->
