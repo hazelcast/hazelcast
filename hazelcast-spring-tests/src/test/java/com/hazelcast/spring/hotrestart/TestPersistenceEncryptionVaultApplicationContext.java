@@ -23,28 +23,27 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"persistence-encryption-vault-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
-public class TestPersistenceEncryptionVaultApplicationContext {
+class TestPersistenceEncryptionVaultApplicationContext {
 
     @Autowired
     private Config config;
@@ -52,14 +51,14 @@ public class TestPersistenceEncryptionVaultApplicationContext {
     @Autowired
     private SSLContextFactory sslContextFactory;
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void start() {
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testPersistence() {
+    void testPersistence() {
         File dir = new File("/mnt/persistence/");
         File hotBackupDir = new File("/mnt/persistence-backup/");
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
@@ -77,7 +76,7 @@ public class TestPersistenceEncryptionVaultApplicationContext {
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());
         assertEquals("sugar", encryptionAtRestConfig.getSalt());
         assertEquals(16, encryptionAtRestConfig.getKeySize());
-        assertTrue(encryptionAtRestConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
+        assertInstanceOf(VaultSecureStoreConfig.class, encryptionAtRestConfig.getSecureStoreConfig());
         VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig();
         assertEquals("http://localhost:1234", vaultConfig.getAddress());
         assertEquals("secret/path", vaultConfig.getSecretPath());

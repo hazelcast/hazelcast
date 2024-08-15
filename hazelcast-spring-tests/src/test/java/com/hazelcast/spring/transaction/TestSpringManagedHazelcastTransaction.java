@@ -19,19 +19,19 @@ package com.hazelcast.spring.transaction;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.TransactionSuspensionNotSupportedException;
 import org.springframework.transaction.TransactionSystemException;
@@ -39,24 +39,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static com.hazelcast.spring.transaction.ServiceBeanWithTransactionalContext.TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.annotation.DirtiesContext.MethodMode.AFTER_METHOD;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"transaction-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
-public class TestSpringManagedHazelcastTransaction {
+class TestSpringManagedHazelcastTransaction {
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // clear all items from the dummyObjectMap used to test transactional object insertion
         instance.getMap("dummyObjectMap").clear();
@@ -79,7 +79,7 @@ public class TestSpringManagedHazelcastTransaction {
      * Tests that transactionalContext cannot be accessed when there is no transaction.
      */
     @Test
-    public void noTransactionContextWhenNoTransaction() {
+    void noTransactionContextWhenNoTransaction() {
         assertThrows(NoTransactionException.class, () -> transactionalContext.getMap("magic"));
     }
 
@@ -88,7 +88,7 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     @Transactional
-    public void noExceptionWhenTransaction() {
+    void noExceptionWhenTransaction() {
         // when
         TransactionalMap<Object, Object> magic = transactionalContext.getMap("magic");
 
@@ -101,7 +101,7 @@ public class TestSpringManagedHazelcastTransaction {
      * neither for the transaction nor in the transaction manager
      */
     @Test
-    public void noExceptionWithoutTimeoutValue() {
+    void noExceptionWithoutTimeoutValue() {
         // when
         service.putWithDelay(new DummyObject(1L, "magic"), TIMEOUT + 1);
 
@@ -113,7 +113,7 @@ public class TestSpringManagedHazelcastTransaction {
      * Tests that transaction times out when its duration exceeds the value configured for the transaction
      */
     @Test
-    public void transactionTimedOutExceptionWhenTimeoutValueIsSetForTransaction() {
+    void transactionTimedOutExceptionWhenTimeoutValueIsSetForTransaction() {
         DummyObject dummyObject = new DummyObject(1L, "magic");
         TransactionSystemException exception = assertThrows(TransactionSystemException.class,
                 () -> service.putWithDelay_transactionTimeoutValue(dummyObject, TIMEOUT + 1));
@@ -126,7 +126,7 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     @DirtiesContext(methodMode = AFTER_METHOD)
-    public void transactionTimedOutExceptionWhenTimeoutValueIsSetInTransactionManager() {
+    void transactionTimedOutExceptionWhenTimeoutValueIsSetInTransactionManager() {
         // given
         transactionManager.setDefaultTimeout(TIMEOUT);
         DummyObject dummyObject = new DummyObject(1L, "magic");
@@ -140,7 +140,7 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     @DirtiesContext(methodMode = AFTER_METHOD)
-    public void transactionTimeoutTakesPrecedenceOverTransactionManagerDefaultTimeout() {
+    void transactionTimeoutTakesPrecedenceOverTransactionManagerDefaultTimeout() {
         // given
         transactionManager.setDefaultTimeout(TIMEOUT + 2);
 
@@ -156,7 +156,7 @@ public class TestSpringManagedHazelcastTransaction {
      * Tests that transaction will be committed if everything works fine.
      */
     @Test
-    public void transactionalServiceBeanInvocation_commit() {
+    void transactionalServiceBeanInvocation_commit() {
         // when
         service.put(new DummyObject(1L, "magic"));
 
@@ -165,10 +165,10 @@ public class TestSpringManagedHazelcastTransaction {
     }
 
     /**
-     * Tests that transaction will be rollbacked if there is an exception.
+     * Tests that transaction will be rolled back if there is an exception.
      */
     @Test
-    public void transactionalServiceBeanInvocation_rollback() {
+    void transactionalServiceBeanInvocation_rollback() {
         // when
         RuntimeException expectedEx = null;
 
@@ -184,12 +184,12 @@ public class TestSpringManagedHazelcastTransaction {
     }
 
     /**
-     * Tests that transaction will be rollbacked when putting one object each
+     * Tests that transaction will be rolled back when putting one object each
      * via two beans, one nested within the other,
      * if there is an exception in the nested bean, but no exception in our own bean.
      */
     @Test
-    public void transactionalServiceBeanInvocation_withNestedBeanThrowingException_rollback() {
+    void transactionalServiceBeanInvocation_withNestedBeanThrowingException_rollback() {
         // when
         RuntimeException expectedEx = null;
 
@@ -206,12 +206,12 @@ public class TestSpringManagedHazelcastTransaction {
     }
 
     /**
-     * Tests that transaction will be rollbacked when putting one object each
+     * Tests that transaction will be rolled back when putting one object each
      * via two beans, one nested within the other,
      * if there is an exception in our own bean, but no exception in the other bean.
      */
     @Test
-    public void transactionalServiceBeanInvocation_withOwnBeanThrowingException_rollback() {
+    void transactionalServiceBeanInvocation_withOwnBeanThrowingException_rollback() {
         // when
         RuntimeException expectedEx = null;
 
@@ -232,7 +232,7 @@ public class TestSpringManagedHazelcastTransaction {
      * then the same transaction will be used.
      */
     @Test
-    public void transactionalServiceBeanInvocation_nestedWithPropagationRequired() {
+    void transactionalServiceBeanInvocation_nestedWithPropagationRequired() {
         // when
         service.putUsingOtherBean_sameTransaction(new DummyObject(1L, "magic"));
 
@@ -246,7 +246,7 @@ public class TestSpringManagedHazelcastTransaction {
      * doesn't support transaction suspension.
      */
     @Test
-    public void transactionalServiceBeanInvocation_nestedWithPropagationRequiresNew() {
+    void transactionalServiceBeanInvocation_nestedWithPropagationRequiresNew() {
         DummyObject dummyObject = new DummyObject(1L, "magic");
         assertThrows(TransactionSuspensionNotSupportedException.class,
                 () -> service.putUsingOtherBean_newTransaction(dummyObject));

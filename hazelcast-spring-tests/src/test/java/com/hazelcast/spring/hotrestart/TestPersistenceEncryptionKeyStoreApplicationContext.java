@@ -20,32 +20,32 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.PersistenceConfig;
-import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.spring.CustomSpringExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(CustomSpringJUnit4ClassRunner.class)
+
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(locations = {"persistence-encryption-keystore-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
-public class TestPersistenceEncryptionKeyStoreApplicationContext {
+class TestPersistenceEncryptionKeyStoreApplicationContext {
 
     @Autowired
     private Config config;
 
     @Test
-    public void testPersistence() {
+    void testPersistence() {
         File dir = new File("/mnt/persistence/");
         File hotBackupDir = new File("/mnt/persistence-backup/");
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
@@ -63,7 +63,7 @@ public class TestPersistenceEncryptionKeyStoreApplicationContext {
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());
         assertEquals("sugar", encryptionAtRestConfig.getSalt());
         assertEquals(16, encryptionAtRestConfig.getKeySize());
-        assertTrue(encryptionAtRestConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
+        assertInstanceOf(JavaKeyStoreSecureStoreConfig.class, encryptionAtRestConfig.getSecureStoreConfig());
         JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) encryptionAtRestConfig
                 .getSecureStoreConfig();
         assertEquals(new File("/mnt/hot-restart/keystore.p12").getAbsolutePath(), keyStoreConfig.getPath().getAbsolutePath());
