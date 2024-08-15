@@ -105,7 +105,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <org.springframework.version>6.1.11</org.springframework.version>
+                <org.springframework.version>6.1.12</org.springframework.version>
             </properties>
         </profile>
         <profile>
