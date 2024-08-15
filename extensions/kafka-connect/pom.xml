@@ -36,7 +36,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -53,6 +53,11 @@
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
+
+                    <!-- Cancel the relocation of jackson-core defined in hazelcast-parent pom.
+                    Because Kafka Connect connectors need jackson-core -->
+                    <relocations combine.self="override">
+                    </relocations>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
@@ -179,6 +184,20 @@
             <version>${kafka.version}</version>
         </dependency>
 
+        <!-- Kafka Connect connectors use Jackson Core --> 
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- Neo4J connector uses Guava dependency -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.2.1-jre</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -259,16 +278,5 @@
             <artifactId>commons-codec</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- Neo4J connector uses Guava dependency, but we don't have Guava dependency in HZ classpath.
-             Add guava to test environment, so that Neo4J connectors can use this library
-        -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>33.2.1-jre</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 </project>
