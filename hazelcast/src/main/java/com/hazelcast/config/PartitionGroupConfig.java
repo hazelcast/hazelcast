@@ -336,14 +336,6 @@ public class PartitionGroupConfig {
         return memberGroupConfigs.equals(that.memberGroupConfigs);
     }
 
-    private boolean isEqual(MemberGroupFactory input, MemberGroupFactory other) {
-        if (input == null) {
-            return other == null;
-        }
-
-        return input.equals(other);
-    }
-
     @Override
     public final int hashCode() {
         int result = (enabled ? 1 : 0);
@@ -361,5 +353,13 @@ public class PartitionGroupConfig {
                 + ", memberGroupConfigs=" + memberGroupConfigs
                 + ", memberGroupFactory=" + memberGroupFactory
                 + '}';
+    }
+
+    private boolean isEqual(MemberGroupFactory input, MemberGroupFactory other) {
+        if (input == null) {
+            return other == null;
+        }
+
+        return input.equals(other);
     }
 }
