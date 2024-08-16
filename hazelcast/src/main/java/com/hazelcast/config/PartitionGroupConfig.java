@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -148,6 +150,8 @@ public class PartitionGroupConfig {
 
     private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<>();
 
+    private MemberGroupFactory memberGroupFactory;
+
     /**
      * Type of member groups.
      */
@@ -160,6 +164,10 @@ public class PartitionGroupConfig {
          * Custom.
          */
         CUSTOM,
+        /**
+         * Custom factory.
+         */
+        CUSTOM_FACTORY,
         /**
          * Per member.
          */
@@ -253,6 +261,28 @@ public class PartitionGroupConfig {
     }
 
     /**
+     * Returns the MemberGroupFactory configured. Could be {@code null} if no MemberGroupFactory has been configured.
+     *
+     * @return the MemberGroupFactory
+     */
+    public MemberGroupFactory getMemberGroupFactory() {
+        return memberGroupFactory;
+    }
+
+    /**
+     * Sets the {@link MemberGroupFactory}
+     *
+     * @param memberGroupFactory the MemberGroupFactory to set
+     * @return the updated PartitionGroupConfig
+     * @throws IllegalArgumentException if memberGroupFactory is {@code null}
+     * @see #getMemberGroupFactory()
+     */
+    public PartitionGroupConfig setMemberGroupFactory(MemberGroupFactory memberGroupFactory) {
+        this.memberGroupFactory = isNotNull(memberGroupFactory, "memberGroupFactory");;
+        return this;
+    }
+
+    /**
      * Removes all the {@link MemberGroupType} instances.
      *
      * @return the updated PartitionGroupConfig
@@ -298,7 +328,20 @@ public class PartitionGroupConfig {
         if (groupType != that.groupType) {
             return false;
         }
+
+        if (areDifferent(memberGroupFactory, that.memberGroupFactory)) {
+            return false;
+        }
+
         return memberGroupConfigs.equals(that.memberGroupConfigs);
+    }
+
+    private boolean areDifferent(MemberGroupFactory input, MemberGroupFactory other) {
+        if (input == null) {
+            return other != null;
+        }
+
+        return !input.equals(other);
     }
 
     @Override
@@ -306,6 +349,7 @@ public class PartitionGroupConfig {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (groupType != null ? groupType.hashCode() : 0);
         result = 31 * result + memberGroupConfigs.hashCode();
+        result = 31 * result + (memberGroupFactory != null ? memberGroupFactory.hashCode() : 0);
         return result;
     }
 
@@ -315,6 +359,7 @@ public class PartitionGroupConfig {
                 + "enabled=" + enabled
                 + ", groupType=" + groupType
                 + ", memberGroupConfigs=" + memberGroupConfigs
+                + ", memberGroupFactory=" + memberGroupFactory
                 + '}';
     }
 }

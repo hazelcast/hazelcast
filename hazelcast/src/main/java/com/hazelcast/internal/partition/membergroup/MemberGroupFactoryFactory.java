@@ -39,6 +39,8 @@ public final class MemberGroupFactoryFactory {
                 return new HostAwareMemberGroupFactory();
             case CUSTOM:
                 return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
+            case CUSTOM_FACTORY:
+                return partitionGroupConfig.getMemberGroupFactory();
             case PER_MEMBER:
                 return new SingleMemberGroupFactory();
             case ZONE_AWARE:

@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.kubernetes.KubernetesProperties;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -34,7 +35,10 @@ import org.junit.runner.RunWith;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
@@ -261,5 +265,51 @@ public class MemberGroupFactoryTest {
             groupConfigs.add(group4);
         }
         return groupConfigs;
+    }
+
+    @Test
+    public void testCustomFactoryMemberGroupFactoryCreateMemberGroups() {
+        MemberGroupFactory groupFactory = new CustomMemberGroupFactory();
+        Collection<Member> members = createMembersWithCustomMetadata();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + memberGroups, 2, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + memberGroup, 2, memberGroup.size());
+        }
+    }
+
+    static class CustomMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
+        @Override
+        protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
+            Map<String, MemberGroup> groups = createHashMap(allMembers.size());
+            for (Member member : allMembers) {
+                final String serviceName = member.getAttribute(KubernetesProperties.SERVICE_NAME.key());
+                MemberGroup group = groups.computeIfAbsent(serviceName, x -> new DefaultMemberGroup());
+                group.addMember(member);
+            }
+            return new HashSet<>(groups.values());
+        }
+    }
+
+    private Collection<Member> createMembersWithCustomMetadata() {
+        Collection<Member> members = new HashSet<>();
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
+        member1.setAttribute(KubernetesProperties.SERVICE_NAME.key(), "service-1");
+
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
+        member2.setAttribute(KubernetesProperties.SERVICE_NAME.key(), "service-1");
+
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
+        member3.setAttribute(KubernetesProperties.SERVICE_NAME.key(), "service-2");
+
+        MemberImpl member4 = new MemberImpl(new Address("192.192.0.4", fakeAddress, 5701), VERSION, true);
+        member3.setAttribute(KubernetesProperties.SERVICE_NAME.key(), "service-2");
+
+        members.add(member1);
+        members.add(member2);
+        members.add(member3);
+        members.add(member4);
+        return members;
     }
 }
