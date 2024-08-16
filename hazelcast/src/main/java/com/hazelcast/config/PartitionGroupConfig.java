@@ -329,19 +329,19 @@ public class PartitionGroupConfig {
             return false;
         }
 
-        if (areDifferent(memberGroupFactory, that.memberGroupFactory)) {
+        if (!isEqual(memberGroupFactory, that.memberGroupFactory)) {
             return false;
         }
 
         return memberGroupConfigs.equals(that.memberGroupConfigs);
     }
 
-    private boolean areDifferent(MemberGroupFactory input, MemberGroupFactory other) {
+    private boolean isEqual(MemberGroupFactory input, MemberGroupFactory other) {
         if (input == null) {
-            return other != null;
+            return other == null;
         }
 
-        return !input.equals(other);
+        return input.equals(other);
     }
 
     @Override
