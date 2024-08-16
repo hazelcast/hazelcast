@@ -87,9 +87,9 @@ public enum PutOpSteps implements IMapOpStep {
             if (!staticParams.isPutVanilla()) {
                 if (staticParams.isPutIfAbsent()) {
                     Record record = recordStore.getRecord(state.getKey());
-                    if (record == null && state.getLoadedOldValueWithExpiry() != null) {
+                    if (record == null && state.getLoadedOldValueWithTtl() != null) {
                         record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                                state.getLoadedOldValueWithExpiry(), false, state.getCallerAddress(), state.getNow());
+                                state.getLoadedOldValueWithTtl(), false, state.getCallerAddress(), state.getNow());
                     }
 
                     if (record != null) {
@@ -99,9 +99,9 @@ public enum PutOpSteps implements IMapOpStep {
                     }
                 } else if (staticParams.isPutIfExists()) {
                     Record record = recordStore.getRecord(state.getKey());
-                    if (record == null && state.getLoadedOldValueWithExpiry() != null) {
+                    if (record == null && state.getLoadedOldValueWithTtl() != null) {
                         record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                                state.getLoadedOldValueWithExpiry(), false, state.getCallerAddress(), state.getNow());
+                                state.getLoadedOldValueWithTtl(), false, state.getCallerAddress(), state.getNow());
                     }
 
                     if (record == null) {

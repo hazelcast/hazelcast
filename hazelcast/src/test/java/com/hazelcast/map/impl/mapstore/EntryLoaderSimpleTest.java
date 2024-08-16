@@ -66,6 +66,7 @@ import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
@@ -111,7 +112,30 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         config.getMapConfig("default")
                 .setMapStoreConfig(mapStoreConfig)
                 .setInMemoryFormat(inMemoryFormat);
+
         return config;
+    }
+
+    @Test
+    public void testEntryLoadedWithLongExpirationTimeOverridesMapConfig() {
+        assumeNoTieredStorageConfigured();
+
+        instances[0].getConfig().getMapConfig("default").setTimeToLiveSeconds(1);
+        testEntryLoader.putExternally("key", "val", Long.MAX_VALUE);
+        assertEquals("val", map.get("key"));
+        sleepAtLeastMillis(3000);
+        assertNotNull(map.get("key"));
+    }
+
+    @Test
+    public void testEntryLoadedWithShortExpirationTimeOverridesMapConfig() {
+        assumeNoTieredStorageConfigured();
+
+        instances[0].getConfig().getMapConfig("default").setTimeToLiveSeconds(10);
+        testEntryLoader.putExternally("key", "val", System.currentTimeMillis() + 2000);
+        assertEquals("val", map.get("key"));
+        sleepAtLeastMillis(2000);
+        assertNull(map.get("key"));
     }
 
     @Test

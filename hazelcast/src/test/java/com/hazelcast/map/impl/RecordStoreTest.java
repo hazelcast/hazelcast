@@ -20,10 +20,16 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.map.EntryLoader;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.mapstore.TestEntryStore;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
@@ -39,6 +45,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
+import static com.hazelcast.test.TimeConstants.MINUTE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -71,6 +80,121 @@ public class RecordStoreTest extends HazelcastTestSupport {
         // indexes consistency check (before using them for query), we don't use incomplete indexes
         // for query. Thus, the below query ignores the indexes and uses record store to run the query.
         assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testGetOldValueReturnsCorrectTtl_givenEntryStoreWithExpiration() {
+        String mapName = randomName();
+        TestEntryStore<String, String> store = new TestEntryStore<>();
+        IMap<Object, Object> map = setupMapWithConfig(mapName, store);
+
+        long now = System.currentTimeMillis();
+        int ttl = 5000;
+        long expirationTime = now + ttl;
+        Object loaderEntry = new EntryLoader.MetadataAwareValue<>("value", expirationTime);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(loaderEntry, now);
+
+        assertNotNull(oldValueWithTtl);
+        assertEquals("value", oldValueWithTtl.element1);
+        assertEquals(ttl, (long) oldValueWithTtl.element2);
+    }
+
+    @Test
+    public void testGetOldValueReturnsMaxLongWhenNoExpirySet_givenEntryStoreWithExpiration() {
+        String mapName = randomName();
+        TestEntryStore<String, String> store = new TestEntryStore<>();
+        IMap<Object, Object> map = setupMapWithConfig(mapName, store);
+
+        long now = System.currentTimeMillis();
+        long expiry = Long.MAX_VALUE;
+        Object loaderEntry = new EntryLoader.MetadataAwareValue<>("value", expiry);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(loaderEntry, now);
+
+        assertNotNull(oldValueWithTtl);
+        assertEquals("value", oldValueWithTtl.element1);
+        assertEquals(Long.MAX_VALUE, (long) oldValueWithTtl.element2);
+    }
+
+    @Test
+    public void testGetOldValueReturnsNullWhenEntryExpired_givenEntryStoreWithExpiration() {
+        String mapName = randomName();
+        TestEntryStore<String, String> store = new TestEntryStore<>();
+        IMap<Object, Object> map = setupMapWithConfig(mapName, store);
+
+        long now = System.currentTimeMillis();
+        long expiredAt = now - 5000;
+        Object loaderEntry = new EntryLoader.MetadataAwareValue<>("value", expiredAt);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(loaderEntry, now);
+
+        assertNull(oldValueWithTtl);
+    }
+
+    @Test
+    public void testGetOldValueReturnsNullWhenLoadedValueNull_givenEntryStoreWithExpiration() {
+        String mapName = randomName();
+        TestEntryStore<String, String> store = new TestEntryStore<>();
+        IMap<Object, Object> map = setupMapWithConfig(mapName, store);
+
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(null, 1L);
+
+        assertNull(oldValueWithTtl);
+    }
+
+    @Test
+    public void testGetOldValueReturnsUnsetTtl_givenEntryStoreWithNoExpiration() {
+        String mapName = randomName();
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        config.addMapConfig(mapConfig);
+        int expectedTtl = -1;
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
+
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull("value", 1L);
+
+        assertNotNull(oldValueWithTtl);
+        assertEquals("value", oldValueWithTtl.element1);
+        assertEquals(expectedTtl, (long) oldValueWithTtl.element2);
+    }
+
+    @Test(timeout = 2 * MINUTE)
+    public void testOnLoad() {
+        String mapName = randomName();
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        config.addMapConfig(mapConfig);
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
+
+        MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
+        Data key = mapServiceContext.toData(1);
+
+        DefaultRecordStore recordStore = getRecordStore(map, 1);
+        long now = System.currentTimeMillis();
+        Object val = "value";
+        Record record = recordStore.onLoadRecord(key, getValueWithTtl(val, 5000), false, null, now);
+
+        assertNotNull(record);
+        assertEquals(val, map.get(1));
+        assertTrueEventually(() -> assertEquals(0, map.size()));
+    }
+
+    private BiTuple<Object, Long> getValueWithTtl(Object value, long ttl) {
+        return BiTuple.of(value, ttl);
+    }
+
+    private IMap<Object, Object> setupMapWithConfig(String mapName, TestEntryStore<String, String> store) {
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(1);
+        mapStoreConfig.setImplementation(store);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        return hazelcastInstance.getMap(mapName);
     }
 
     private IMap<Object, Object> testRecordStoreReset() {

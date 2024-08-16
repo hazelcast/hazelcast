@@ -73,9 +73,9 @@ public enum GetAllOpSteps implements IMapOpStep {
 
             MapEntries mapEntries = state.getMapEntries();
 
-            List loadedKeyAndOldValueWithExpiryPairs = state.loadedKeyAndOldValueWithExpiryPairs();
-            Map loaded = recordStore.putAndGetLoadedEntries(loadedKeyAndOldValueWithExpiryPairs,
-                    state.getCallerAddress(), state.getNow());
+            List loadedKeyAndOldValueWithTtlPairs = state.loadedKeyAndOldValueWithTtlPairs();
+            Map loaded = recordStore.putAndGetLoadedEntries(loadedKeyAndOldValueWithTtlPairs,
+                    state.getCallerAddress());
 
             recordStore.addToMapEntrySet(mapEntries, loaded);
 

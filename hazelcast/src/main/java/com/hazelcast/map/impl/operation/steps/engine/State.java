@@ -82,11 +82,11 @@ public class State {
     private volatile boolean changeExpiryOnUpdate = true;
     private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
-    private volatile BiTuple<Object, Long> loadedOldValueWithExpiry;
+    private volatile BiTuple<Object, Long> loadedOldValueWithTtl;
     private volatile Object newValue;
     private volatile Object result;
     private volatile Collection<Data> keysToLoad = Collections.emptyList();
-    private volatile List loadedKeyAndOldValueWithExpiryPairs = Collections.emptyList();
+    private volatile List loadedKeyAndOldValueWithTtlPairs = Collections.emptyList();
     private volatile Collection<Data> keys;
     private volatile List<Record> records;
     private volatile EntryProcessor entryProcessor;
@@ -169,12 +169,12 @@ public class State {
         return this;
     }
 
-    public BiTuple<Object, Long> getLoadedOldValueWithExpiry() {
-        return loadedOldValueWithExpiry;
+    public BiTuple<Object, Long> getLoadedOldValueWithTtl() {
+        return loadedOldValueWithTtl;
     }
 
-    public void setLoadedOldValueWithExpiry(BiTuple<Object, Long> loadedOldValueWithExpiry) {
-        this.loadedOldValueWithExpiry = loadedOldValueWithExpiry;
+    public void setLoadedOldValueWithTtl(BiTuple<Object, Long> loadedOldValueWithTtl) {
+        this.loadedOldValueWithTtl = loadedOldValueWithTtl;
     }
 
     public State setRecordExistsInMemory(boolean recordExistsInMemory) {
@@ -361,15 +361,15 @@ public class State {
         return this;
     }
 
-    // list of key+bituple(oldValue, expiry)
-    public State setLoadedKeyAndOldValueWithExpiryPairs(List loadedKeyAndOldValueWithExpiryPairs) {
-        this.loadedKeyAndOldValueWithExpiryPairs = loadedKeyAndOldValueWithExpiryPairs;
+    // list of key+bituple(oldValue, ttl)
+    public State setLoadedKeyAndOldValueWithTtlPairs(List loadedKeyAndOldValueWithTtlPairs) {
+        this.loadedKeyAndOldValueWithTtlPairs = loadedKeyAndOldValueWithTtlPairs;
         return this;
     }
 
-    // list of loaded key + bituple(oldValue, expiry)
-    public List loadedKeyAndOldValueWithExpiryPairs() {
-        return loadedKeyAndOldValueWithExpiryPairs;
+    // list of loaded key + bituple(oldValue, ttl)
+    public List loadedKeyAndOldValueWithTtlPairs() {
+        return loadedKeyAndOldValueWithTtlPairs;
     }
 
     public List<Record> getRecords() {

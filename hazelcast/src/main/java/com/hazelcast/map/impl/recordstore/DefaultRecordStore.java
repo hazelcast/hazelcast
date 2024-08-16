@@ -488,21 +488,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      *
      * @return loaded value from map-store as a BiTuple which
      * holds value and expirationTime together, when no value or expirationTime is
-     * found, associated fields in BiTuple is set to null.
+     * found, associated fields in BiTuple is set to {@link Record#UNSET}
      */
-    public BiTuple<Object, Long> loadValueWithExpiry(Data key, long now) {
+    public BiTuple<Object, Long> loadValueWithTtl(Data key, long now) {
         Object value = mapDataStore.load(key);
-        return getOldValueWithExpiryTupleOrNull(value, now);
+        return getOldValueWithTtlTupleOrNull(value, now);
     }
 
     public Object loadValueOfKey(Data key, long now) {
         Object value = mapDataStore.load(key);
-        BiTuple<Object, Long> valueWithExpiry = getOldValueWithExpiryTupleOrNull(value, now);
-        return valueWithExpiry == null ? null : valueWithExpiry.element1;
+        BiTuple<Object, Long> valueWithTtl = getOldValueWithTtlTupleOrNull(value, now);
+        return valueWithTtl == null ? null : valueWithTtl.element1;
     }
 
     @Nullable
-    public BiTuple<Object, Long> getOldValueWithExpiryTupleOrNull(Object loadedValue, long now) {
+    public BiTuple<Object, Long> getOldValueWithTtlTupleOrNull(Object loadedValue, long now) {
         Object value = loadedValue;
         if (value == null) {
             return null;
@@ -511,22 +511,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (mapDataStore.isWithExpirationTime()) {
             MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
             long expirationTime = loaderEntry.getExpirationTime();
-            if (toTtlFromExpiryTime(expirationTime, now) <= 0) {
+            long ttlFromExpiryTime = toTtlFromExpiryTime(expirationTime, now);
+            if (ttlFromExpiryTime <= 0) {
                 return null;
             }
             value = loaderEntry.getValue();
             if (value == null) {
                 return null;
             }
-            return BiTuple.of(value, expirationTime);
+            return BiTuple.of(value, ttlFromExpiryTime);
         }
 
-        return BiTuple.of(value, MetadataAwareValue.NO_TIME_SET);
+        return BiTuple.of(value, (long) UNSET);
     }
 
     @Override
     public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress, long now) {
-        BiTuple<Object, Long> biTuple = loadValueWithExpiry(key, now);
+        BiTuple<Object, Long> biTuple = loadValueWithTtl(key, now);
         if (biTuple == null) {
             return null;
         }
@@ -534,17 +535,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return onLoadRecord(key, biTuple, backup, callerAddress, now);
     }
 
-    public Record onLoadRecord(Data key, BiTuple<Object, Long> valueWithExpiry,
+    public Record onLoadRecord(Data key, BiTuple<Object, Long> valueWithTtl,
                                boolean backup, Address callerAddress, long now) {
         assert key != null;
-        assert valueWithExpiry != null;
+        assert valueWithTtl != null;
 
-        Object loadedValue = valueWithExpiry.element1;
-        Long expiryTime = valueWithExpiry.element2;
-
-        long ttl = toTtlFromExpiryTime(expiryTime, now);
-
-        assert ttl >= 0;
+        Object loadedValue = valueWithTtl.element1;
+        Long ttl = valueWithTtl.element2;
 
         Record record = putNewRecord(key, null, loadedValue, ttl, UNSET, UNSET, now,
                 null, LOADED, false, backup);
@@ -786,7 +783,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         // then try to load missing keys from map-store
         if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
             List keyBiTupleList = loadMultipleKeys(keys);
-            Map<Data, Object> loadedEntries = putAndGetLoadedEntries(keyBiTupleList, callerAddress, now);
+            Map<Data, Object> loadedEntries = putAndGetLoadedEntries(keyBiTupleList, callerAddress);
             addToMapEntrySet(mapEntries, loadedEntries);
         }
 
@@ -832,7 +829,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 continue;
             }
 
-            BiTuple<Object, Long> biTuple = getOldValueWithExpiryTupleOrNull(loadedValue, now);
+            BiTuple<Object, Long> biTuple = getOldValueWithTtlTupleOrNull(loadedValue, now);
             if (biTuple != null) {
                 if (biTuple.element1 == null) {
                     // EntryLoader#MetadataAwareValue can hold value as null,
@@ -847,28 +844,26 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return keyBiTupleList;
     }
 
-    public Map<Data, Object> putAndGetLoadedEntries(List loadedKeyAndOldValueWithExpiryPairs,
-                                                    Address callerAddress, long now) {
-        if (CollectionUtil.isEmpty(loadedKeyAndOldValueWithExpiryPairs)) {
+    public Map<Data, Object> putAndGetLoadedEntries(List loadedKeyAndOldValueWithTtlPairs,
+                                                    Address callerAddress) {
+        if (CollectionUtil.isEmpty(loadedKeyAndOldValueWithTtlPairs)) {
             return Collections.emptyMap();
         }
 
         // holds serialized keys and if values are
         // serialized, also holds them in serialized format.
-        Map<Data, Object> resultMap = createHashMap(loadedKeyAndOldValueWithExpiryPairs.size() / 2);
+        Map<Data, Object> resultMap = createHashMap(loadedKeyAndOldValueWithTtlPairs.size() / 2);
 
         // add loaded key-value pairs to this record-store.
-        for (int i = 0; i < loadedKeyAndOldValueWithExpiryPairs.size(); i += 2) {
-            Object loadedKey = loadedKeyAndOldValueWithExpiryPairs.get(i);
-            BiTuple<Object, Long> valueAndExpiryTime = (BiTuple<Object, Long>) loadedKeyAndOldValueWithExpiryPairs.get(i + 1);
+        for (int i = 0; i < loadedKeyAndOldValueWithTtlPairs.size(); i += 2) {
+            Object loadedKey = loadedKeyAndOldValueWithTtlPairs.get(i);
+            BiTuple<Object, Long> valueAndTtl = (BiTuple<Object, Long>) loadedKeyAndOldValueWithTtlPairs.get(i + 1);
             Data key = toData(loadedKey);
-            Object value = valueAndExpiryTime.element1;
-            Long expirationTime = valueAndExpiryTime.element2;
-            putFromLoad(key, value, expirationTime, callerAddress, now);
+            Object value = valueAndTtl.element1;
+            Long ttl = valueAndTtl.element2;
+            putFromLoadInternal(key, value, ttl, UNSET, callerAddress, StaticParams.PUT_FROM_LOAD_PARAMS);
 
-            if (toTtlFromExpiryTime(expirationTime, now) > 0) {
-                resultMap.put(key, value);
-            }
+            resultMap.put(key, value);
         }
 
         if (hasQueryCache()) {
@@ -1239,9 +1234,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress, long now) {
-        if (expirationTime == MetadataAwareValue.NO_TIME_SET) {
-            return putFromLoad(key, value, callerAddress);
-        }
         long ttl = toTtlFromExpiryTime(expirationTime, now);
         if (ttl <= 0) {
             return null;
@@ -1257,9 +1249,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putFromLoadBackup(Data key, Object value, long expirationTime, long now) {
-        if (expirationTime == MetadataAwareValue.NO_TIME_SET) {
-            return putFromLoadBackup(key, value);
-        }
         long ttl = toTtlFromExpiryTime(expirationTime, now);
         if (ttl <= 0) {
             return null;

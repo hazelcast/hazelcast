@@ -145,12 +145,12 @@ public enum PutAllOpSteps implements IMapOpStep {
 
             boolean loadOldValue = triggerMapLoader
                     && ((PutAllOperation) state.getOperation()).isHasMapListener();
-            List loadedKeyAndOldValueWithExpiryPairs = state.loadedKeyAndOldValueWithExpiryPairs();
+            List loadedKeyAndOldValueWithTtlPairs = state.loadedKeyAndOldValueWithTtlPairs();
             Map<Object, Object> loadedOldValuesPerKey = new HashMap<>();
-            for (int i = 0; i < loadedKeyAndOldValueWithExpiryPairs.size(); i += 2) {
-                Data key = (Data) loadedKeyAndOldValueWithExpiryPairs.get(i);
+            for (int i = 0; i < loadedKeyAndOldValueWithTtlPairs.size(); i += 2) {
+                Data key = (Data) loadedKeyAndOldValueWithTtlPairs.get(i);
                 BiTuple<Object, Long> biTuple
-                        = (BiTuple<Object, Long>) loadedKeyAndOldValueWithExpiryPairs.get(i + 1);
+                        = (BiTuple<Object, Long>) loadedKeyAndOldValueWithTtlPairs.get(i + 1);
                 loadedOldValuesPerKey.put(key, biTuple.element1);
             }
 
