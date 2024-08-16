@@ -19,6 +19,8 @@ package com.hazelcast.internal.partition.membergroup;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
+
 public final class MemberGroupFactoryFactory {
 
     private MemberGroupFactoryFactory() {
@@ -40,6 +42,7 @@ public final class MemberGroupFactoryFactory {
             case CUSTOM:
                 return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
             case CUSTOM_FACTORY:
+                isNotNull(partitionGroupConfig, "partitionGroupConfig");
                 return partitionGroupConfig.getMemberGroupFactory();
             case PER_MEMBER:
                 return new SingleMemberGroupFactory();
