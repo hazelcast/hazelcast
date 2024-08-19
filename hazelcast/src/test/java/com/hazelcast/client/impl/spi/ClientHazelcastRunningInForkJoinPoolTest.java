@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
@@ -36,9 +37,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -53,6 +52,7 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
     private IMap clientMap;
     private String slowLoadingMapName = "slowLoadingMap";
     private String defaultMapName = "default";
+    private CountDownLatch loadCompletedLatch = new CountDownLatch(1);
 
     @After
     public void tearDown() {
@@ -67,6 +67,7 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
             @Override
             public Object load(Object key) {
                 sleepSeconds(1000);
+                loadCompletedLatch.countDown();
                 return super.load(key);
             }
         });
@@ -85,50 +86,34 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
 
     @Test
     public void slow_data_loading_does_not_block_entry_listener_addition() throws ExecutionException, InterruptedException {
-        CountDownLatch tasksSubmitted = new CountDownLatch(1);
-        ForkJoinPool commonPool = ForkJoinPool.commonPool();
-
-        // 1. Let's simulate some parallel tasks
-        // contend on loading 1 item from a database.
+        // 1. Simulate some parallel tasks contending on loading 1 item from a database.
         int count = 2 * Runtime.getRuntime().availableProcessors();
+        CountDownLatch tasksSubmitted = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
-            commonPool.submit(() -> {
-                // Before calling map#get and expand the pool
-                // we need to wait for all tasks to be submitted
-                // because if there is a delay between running
-                // task-X and submission of task-X+1, in Java-8
-                // the FJP could try to terminate the spare thread
-                // created while running task-X, thinking that the
-                // pool is now quiescent. It might cause task-X+1
-                // and any further submissions to FJP not run because
-                // there is now no spare threads.
-                assertOpenEventually(tasksSubmitted);
+            ForkJoinPool.commonPool().submit(() -> {
+                tasksSubmitted.countDown();
                 clientMap.get(1);
             });
         }
 
-        // Wait until all the initial FJP threads got a map#get task,
-        // and the rest of the tasks are waiting in the queue, so that
-        // the assertions below make sense.
-        assertTrueEventually(() -> assertEquals(count - commonPool.getParallelism(), commonPool.getQueuedSubmissionCount()));
+        // Wait until all our tasks have been submitted
+        tasksSubmitted.await();
 
-        Future addListenerFuture = spawn(() -> {
-            // 2. In parallel, adding a listener to a different
-            // map must not be affected by loading phase at step 1.
-            serverMap.addEntryListener(new EntryAdapter<>(), true);
-        });
+        // 2. In parallel, outside FJP, adding a listener to a different map must not be affected by loading at step 1.
+        CountDownLatch listenerLatch = new CountDownLatch(1);
+        EntryAdapter<Object, Object> adapter = new EntryAdapter<>() {
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                listenerLatch.countDown();
+            }
+        };
+        spawn(() -> serverMap.addEntryListener(adapter, true)).get();
 
-        // The task for add listener call above would eventually be
-        // queued and that would guarantee that the spare FJP thread
-        // created for the last map#get call above wouldn't terminate
-        // before completing it.
-        assertTrueEventually(() -> assertTrue(commonPool.getQueuedSubmissionCount() > count - commonPool.getParallelism()));
+        // Validate that client map loading is still blocked
+        assertTrue(loadCompletedLatch.getCount() > 0);
 
-        // All tasks are submitted, if the ManagedBlocker is implemented
-        // properly for the client futures, the FJP would expand and run
-        // the task for listener addition as well.
-        tasksSubmitted.countDown();
-
-        addListenerFuture.get();
+        // Validate that our entry listener was registered successfully
+        serverMap.put("key", "value");
+        listenerLatch.await();
     }
 }
