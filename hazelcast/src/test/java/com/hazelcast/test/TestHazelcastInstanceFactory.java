@@ -35,6 +35,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
+import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,7 +69,7 @@ public class TestHazelcastInstanceFactory {
 
     protected final TestNodeRegistry registry;
 
-    private final boolean isMockNetwork = TestEnvironment.isMockNetwork();
+    protected final boolean isMockNetwork = TestEnvironment.isMockNetwork();
     private final ConcurrentMap<Integer, Address> addressMap = new ConcurrentHashMap<>();
     private final AtomicInteger nodeIndex = new AtomicInteger();
     private final int count;
@@ -102,6 +103,11 @@ public class TestHazelcastInstanceFactory {
 
     private TestNodeRegistry createRegistry() {
         return new TestNodeRegistry(getKnownAddresses());
+    }
+
+    @Nullable
+    public TestNodeRegistry getRegistry() {
+        return registry;
     }
 
     public int getCount() {
@@ -217,6 +223,18 @@ public class TestHazelcastInstanceFactory {
         return nextAddress(DEFAULT_INITIAL_PORT);
     }
 
+    protected Address nextAddress(int initialPort) {
+        if (isMockNetwork) {
+            int id = nodeIndex.getAndIncrement();
+            Address currentAddress = addressMap.get(id);
+            if (currentAddress != null) {
+                return currentAddress;
+            }
+            return addNewAddressToAddressMap(id, "127.0.0.1", initialPort);
+        }
+        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
+    }
+
     public HazelcastInstance[] newInstances() {
         return newInstances(new Config());
     }
@@ -310,21 +328,7 @@ public class TestHazelcastInstanceFactory {
         return unmodifiableCollection(addressMap.values());
     }
 
-    public Address nextAddress(int initialPort) {
-        int id = nodeIndex.getAndIncrement();
-
-        Address currentAddress = addressMap.get(id);
-        if (currentAddress != null) {
-            return currentAddress;
-        }
-
-        return addNewAddressToAddressMap(id, "127.0.0.1", initialPort);
-    }
-
-    public TestNodeRegistry getRegistry() {
-        return registry;
-    }
-
+    @Nullable
     public HazelcastInstance getInstance(Address address) {
         if (isMockNetwork) {
             return registry.getInstance(address);
