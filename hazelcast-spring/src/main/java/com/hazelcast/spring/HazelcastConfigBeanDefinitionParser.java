@@ -240,13 +240,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         ICMP_FAILURE_DETECTOR_CONFIG_PROPERTIES = Collections.unmodifiableMap(map);
     }
 
+    @Override
     public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
         springXmlConfigBuilder.handleConfig(element);
         return springXmlConfigBuilder.getBeanDefinition();
     }
 
-    private class SpringXmlConfigBuilder extends SpringXmlBuilderHelper {
+    private static class SpringXmlConfigBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
 

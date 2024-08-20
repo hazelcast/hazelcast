@@ -60,7 +60,7 @@ public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelc
         return springXmlBuilder.handleMultipleClusterAwareClient(element);
     }
 
-    class SpringXmlBuilder extends SpringXmlBuilderHelper {
+    private static class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
