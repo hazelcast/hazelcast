@@ -120,7 +120,7 @@ class TestBundleContext implements BundleContext {
 
     @Override
     public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException {
-        // we simply ignore filter since we don't use filer in our tests
+        // we simply ignore filter since we dona't use filer in our tests
         synchronized (mutex) {
             List<ServiceReference> serviceReferences = serviceReferenceMap.get(clazz);
             if (serviceReferences != null && !serviceReferences.isEmpty()) {
