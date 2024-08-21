@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.eviction;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.IMap;
@@ -31,10 +32,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -95,5 +98,39 @@ public class ExpiryAndLockTest extends HazelcastTestSupport {
             int entrySetSize = CollectionUtil.isEmpty(entries) ? 0 : entries.size();
             assertEquals(keyCount, entrySetSize);
         }, 5);
+    }
+
+    @Test
+    public void key_size_map_size_zero_after_eviction() {
+        Config config = new Config();
+
+        String mapName = "discrepancy-map";
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setMaxIdleSeconds(10);
+
+        // Add an incorrect index that uses a non-existing field
+        IndexConfig indexConfig = new IndexConfig(IndexConfig.DEFAULT_TYPE, "d");
+        mapConfig.addIndexConfig(indexConfig);
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        try {
+
+            IMap<Integer, Session> sessionMap = hazelcastInstance.getMap(mapName);
+            Session session = new Session("a", "b");
+            sessionMap.putAsync(1, session);
+
+            // Even though the index is incorrect, after eviction map and keySet sizes must be 0
+            assertTrueEventually(() -> {
+                assertThat(sessionMap.size()).isZero();
+                assertThat(sessionMap.keySet().size()).isZero();
+            });
+
+        } finally {
+            hazelcastInstance.shutdown();
+        }
+    }
+
+    private record Session(String a, String b) implements Serializable {
     }
 }

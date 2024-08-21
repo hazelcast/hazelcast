@@ -84,6 +84,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -602,12 +603,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object evict(Data key, boolean backup) {
+        Throwable throwable = null;
         Record record = storage.get(key);
         Object value = null;
         if (record != null) {
             value = copyToHeapWhenNeeded(record.getValue());
             mapDataStore.flush(key, value, backup);
-            mutationObserver.onEvictRecord(key, record, backup);
+            try {
+                mutationObserver.onEvictRecord(key, record, backup);
+            } catch (Throwable t) {
+                throwable = t;
+            }
             removeKeyFromExpirySystem(key);
             storage.removeRecord(key, record);
             if (!backup) {
@@ -616,6 +622,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (wanReplicateEvictions) {
                 mapEventPublisher.publishWanRemove(name, toHeapData(key));
             }
+        }
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
         return value;
     }

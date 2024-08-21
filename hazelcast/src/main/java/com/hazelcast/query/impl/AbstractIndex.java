@@ -67,7 +67,7 @@ public abstract class AbstractIndex implements InternalIndex {
     private volatile TypeConverter converter;
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public AbstractIndex(
+    protected AbstractIndex(
             Node node,
             IndexConfig config,
             InternalSerializationService ss,
@@ -428,10 +428,9 @@ public abstract class AbstractIndex implements InternalIndex {
             return true;
         }
 
-        if (!(converter instanceof CompositeConverter)) {
+        if (!(converter instanceof CompositeConverter compositeConverter)) {
             return false;
         }
-        CompositeConverter compositeConverter = (CompositeConverter) converter;
         return compositeConverter.isTransient();
     }
 
