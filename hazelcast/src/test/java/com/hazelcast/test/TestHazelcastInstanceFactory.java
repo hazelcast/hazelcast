@@ -63,6 +63,10 @@ import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
 
+/**
+ * @implNote This instance factory is not truly thread-safe due to {@link #metricsRule}, so the
+ * {@link MetricsRule} set by a thread might not be effective for instances created by another thread.
+ */
 public class TestHazelcastInstanceFactory {
     private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
     private static final int MAX_PORT_NUMBER = (1 << 16) - 1;
@@ -317,6 +321,11 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
+    /**
+     * Returns all running Hazelcast instances. In mock network, the instances
+     * that are not yet started are included. In real network, the method is
+     * blocked until all instances are started.
+     */
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
         if (isMockNetwork) {
             return registry.getAllHazelcastInstances();
@@ -324,23 +333,42 @@ public class TestHazelcastInstanceFactory {
         return Hazelcast.getAllHazelcastInstances();
     }
 
+    /**
+     * Returns all known addresses. In mock network: <ol>
+     * <li> The addresses corresponding to instances that are not yet created, which
+     *      can be specified via {@link #TestHazelcastInstanceFactory(int, String...)},
+     *      {@link #TestHazelcastInstanceFactory(String...)}, or
+     *      {@link #TestHazelcastInstanceFactory(int)}, are included.
+     * <li> The addresses of instances that are not yet started are included.
+     * <li> The addresses of shut down instances are included unless they are cleaned
+     *      up via {@link #cleanup()}.
+     * </ol>
+     * In real network: <ol>
+     * <li> Only the addresses of running instances are returned.
+     * <li> The method is blocked until all created instances are started.
+     */
     public Collection<Address> getKnownAddresses() {
-        return unmodifiableCollection(addressMap.values());
+        if (isMockNetwork) {
+            return unmodifiableCollection(addressMap.values());
+        }
+        return Hazelcast.getAllHazelcastInstances().stream()
+                .map(Accessors::getAddress).toList();
     }
 
+    /**
+     * Returns the Hazelcast instance that has the specified address if any;
+     * otherwise, returns null. In mock network, the instances that are not yet
+     * started are considered. In real network, the method is blocked until all
+     * instances are started.
+     */
     @Nullable
     public HazelcastInstance getInstance(Address address) {
         if (isMockNetwork) {
             return registry.getInstance(address);
         }
-
-        Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
-        for (HazelcastInstance instance : instances) {
-            if (address.equals(getAddress(instance))) {
-                return instance;
-            }
-        }
-        return null;
+        return Hazelcast.getAllHazelcastInstances().stream()
+                .filter(instance -> getAddress(instance).equals(address))
+                .findAny().orElse(null);
     }
 
     /**
