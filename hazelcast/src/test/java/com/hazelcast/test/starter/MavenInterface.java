@@ -19,6 +19,7 @@ package com.hazelcast.test.starter;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.internal.impl.DefaultLocalPathComposer;
@@ -33,16 +34,17 @@ import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class MavenInterface {
@@ -113,6 +115,8 @@ public class MavenInterface {
         // It's also possible to download this via Aether but I was unable to get this working
         final ProcessBuilder builder = new ProcessBuilder(
                 buildMavenCommand(artifact, remoteRepositories).toArray(String[]::new)).inheritIO();
+        configureMavenEnvironment(builder);
+
         try {
             int exitValue = builder.start().waitFor();
             checkState(exitValue == 0, MessageFormat.format("Maven dependency:get failed with code {0}", exitValue));
@@ -130,8 +134,6 @@ public class MavenInterface {
         builder.add("-DgroupId=" + artifact.getGroupId());
         builder.add("-DartifactId=" + artifact.getArtifactId());
         builder.add("-Dversion=" + artifact.getVersion());
-        builder.add("--quiet");
-        builder.add("--batch-mode");
 
         if (!StringUtil.isNullOrEmpty(artifact.getClassifier())) {
             builder.add("-Dclassifier=" + artifact.getClassifier());
@@ -144,19 +146,37 @@ public class MavenInterface {
         return builder.build();
     }
 
+    private static void configureMavenEnvironment(ProcessBuilder processBuilder) {
+        // Overrides any existing "MAVEN_OPTS" environment configuration
+        //
+        // This is to ignore any custom configuration of the parent Maven invocation that will interfere with this simple query
+        //
+        // https://github.com/hazelcast/hazelcast/issues/25451#issuecomment-1720248676/
+        // https://github.com/hazelcast/hazelcast-mono/issues/3017#issuecomment-2301777642
+        processBuilder.environment()
+                .remove("MAVEN_OPTS");
+        processBuilder.environment()
+                .put("MAVEN_ARGS", "--quiet --batch-mode");
+    }
+
+    /** @return a {@link String} output of {@code mvn help:evaluate -Dexpression=EXPRESSION} */
     public static String evaluateExpression(String expression) throws IOException {
         // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
         // https://stackoverflow.com/q/76866880
-        final Process process = new ProcessBuilder(MVN.get(), "help:evaluate", "-Dexpression=" + expression, "--quiet",
-                "--batch-mode", "-DforceStdout").start();
+        ProcessBuilder processBuilder =
+                new ProcessBuilder(MVN.get(), "help:evaluate", "-Dexpression=" + expression, "-DforceStdout");
+        configureMavenEnvironment(processBuilder);
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            // Skip "[gc]" debug output
-            // https://github.com/hazelcast/hazelcast/issues/25451#issuecomment-1720248676
-            return reader.lines()
-                    .filter(line -> !line.contains("[gc]"))
-                    .findFirst()
-                    .orElseThrow();
+        try (InputStream stream = processBuilder.start()
+                .getInputStream()) {
+            List<String> output = IOUtils.readLines(stream, StandardCharsets.UTF_8);
+
+            if (output.size() == 1) {
+                return output.get(0);
+            } else {
+                throw new IOException("Maven expression (\"%s\") returned unexpected response:%n%s".formatted(expression,
+                        String.join(System.lineSeparator(), output)));
+            }
         }
     }
 }
