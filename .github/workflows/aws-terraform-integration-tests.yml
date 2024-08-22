@@ -78,7 +78,7 @@ jobs:
           path: aws-discovery-suite/terraform/tools/client
 
       - name: Set-up Terraform
-        uses: hashicorp/setup-terraform@v3.1.1
+        uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: 1.5.4
           terraform_wrapper: false
