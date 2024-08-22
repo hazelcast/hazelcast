@@ -70,6 +70,7 @@ public class AwsEc2ApiTest {
 
     @Before
     public void setUp() {
+        // Dummy change
         given(requestSigner.authHeader(any(), any(), any(), any(), any(), any())).willReturn(AUTHORIZATION_HEADER);
         awsEc2Api = defaultAwsEc2Api();
     }
