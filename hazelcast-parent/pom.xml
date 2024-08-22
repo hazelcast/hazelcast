@@ -83,7 +83,7 @@
         <aws.sdk.version>1.12.770</aws.sdk.version>
         <aws.sdk2.version>2.27.10</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
-        <classgraph.version>4.8.174</classgraph.version>
+        <classgraph.version>4.8.175</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <new.debezium.version>2.6.0.Final</new.debezium.version>
         <grpc.version>1.60.0</grpc.version>
