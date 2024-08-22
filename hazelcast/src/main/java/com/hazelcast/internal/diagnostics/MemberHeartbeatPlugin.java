@@ -41,7 +41,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
      * <p>
      * This plugin will only output if there is the max deviation is exceeded.
      * <p>
-     * Setting the value high will lead to not seeing smaller deviations. E.g
+     * Setting the value high will lead to not seeing smaller deviations. E.g.
      * if this plugin runs every minute, then it will not see a lot of small
      * deviations. The default of 10 seconds is ok since it will not generate
      * too much overhead and noise and in most cases it is the big outliers
@@ -91,7 +91,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         ClusterService cs = nodeEngine.getClusterService();
         if (!(cs instanceof ClusterServiceImpl)) {
-            // lets be lenient for testing etc if some kind of mocked cluster service is encountered;
+            // Let's be lenient during testing if a mocked cluster service is encountered.
             // we don't want to cause problems
             return;
         }

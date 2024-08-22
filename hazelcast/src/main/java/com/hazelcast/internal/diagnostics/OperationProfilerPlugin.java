@@ -29,7 +29,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link DiagnosticsPlugin} that displays operation latency information.
- *
+ * <p>
  * This plugin measure the time an operation runs on an operation thread; if the operation is a blocking
  * operation or being offloaded, only the time on the operation thread is measured.
  */
@@ -37,7 +37,7 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds the OperationProfilerPlugin runs.
-     *
+     * <p>
      * This plugin is very cheap to use.
      * <p>
      * If set to 0, the plugin is disabled.

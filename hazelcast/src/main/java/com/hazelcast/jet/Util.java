@@ -131,7 +131,7 @@ public final class Util {
 
     /**
      * Converts a {@code long} job or execution ID to a string representation.
-     * Currently it is an unsigned 16-digit hex number.
+     * Currently, it is an unsigned 16-digit hex number.
      */
     @SuppressWarnings("checkstyle:magicnumber")
     @Nonnull

@@ -73,7 +73,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.systemlog.partitions", "false");
 
     /**
-     * Currently the Diagnostic is scheduler based, so each task gets to run as often at is has been configured. This works
+     * Currently, the Diagnostic is scheduler-based, so each task runs as frequently as it has been configured. This works
      * fine for most plugins, but if there are outside events triggering the need to write, this scheduler based model is
      * not the right fit. In the future the Diagnostics need to be improved.
      */

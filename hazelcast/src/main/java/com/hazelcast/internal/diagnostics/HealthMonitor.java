@@ -325,10 +325,7 @@ public class HealthMonitor {
             if (operationServicePendingInvocationsPercentage0 > THRESHOLD_PERCENTAGE_INVOCATIONS) {
                 return true;
             }
-            if (operationServicePendingInvocationsCount0 > THRESHOLD_INVOCATIONS) {
-                return true;
-            }
-            return false;
+            return operationServicePendingInvocationsCount0 > THRESHOLD_INVOCATIONS;
         }
 
         public String render() {

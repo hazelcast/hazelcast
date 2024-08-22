@@ -20,7 +20,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 /**
  * Health monitor can be configured with system properties.
- *
+ * <p>
  * {@link ClusterProperty#HEALTH_MONITORING_LEVEL}
  */
 public enum HealthMonitorLevel {

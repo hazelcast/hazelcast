@@ -35,7 +35,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * operations threads and checks with operations/tasks are running. We have
  * the slow operation detector; which is very useful for very slow operations.
  * But it isn't useful for high volumes of not too slow operations.
- *
+ * <p>
  * With the operation sampler we have a lot better understanding which operations
  * are actually running.
  */
@@ -43,7 +43,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
 
     /**
      * The sample period in seconds.
-     *
+     * <p>
      * This is the frequency it will dump content to file. It isn't the frequency
      * that the operations are being sampled.
      *
@@ -55,7 +55,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in milliseconds between taking samples.
-     *
+     * <p>
      * The lower the period, the higher the overhead, but also the higher the
      * precision.
      */
@@ -64,12 +64,12 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
 
     /**
      * If the name the data-structure the operation operates on should be included.
-     *
+     * <p>
      * WARNING: This feature should not be used in production because it can lead to
-     * quite a lot of litter and it can lead to uncontrolled memory growth because the
+     * quite a lot of litter, and it can lead to uncontrolled memory growth because the
      * samples of old data-structures will not be removed.
-     *
-     * Also each time the samples are taken, quite a lot of litter can be generated. So
+     * <p>
+     * Also, each time the samples are taken, quite a lot of litter can be generated. So
      * probably you do not want to have a too low SAMPLER_PERIOD_MILLIS because the lower
      * it gets, the more litter is created.
      */
@@ -90,7 +90,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         super(nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
         this.nodeEngine = nodeEngine;
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.executor = ((OperationServiceImpl) operationService).getOperationExecutor();
+        this.executor = operationService.getOperationExecutor();
         HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);
         this.samplerPeriodMillis = props.getMillis(SAMPLER_PERIOD_MILLIS);

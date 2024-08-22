@@ -55,8 +55,8 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
 
     private int index;
     private PrintWriter printWriter;
-    private int maxRollingFileCount;
-    private int maxRollingFileSizeBytes;
+    private final int maxRollingFileCount;
+    private final int maxRollingFileSizeBytes;
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
@@ -65,7 +65,7 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
 
         this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);
-        // we accept a float so it becomes easier to testing to create a small file
+        // we accept a float, so it becomes easier to testing to create a small file
         this.maxRollingFileSizeBytes = round(
                 ONE_MB * diagnostics.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB));
 

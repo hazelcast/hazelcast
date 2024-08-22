@@ -64,7 +64,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
      * The period in second the statistics should be reset. Normally the statistics are not reset and if the system
      * is running for an extended time, it isn't possible to see that happened in e.g. the last hour.
      * <p>
-     * Currently there is no sliding window functionality to deal with this correctly. But for the time being this
+     * Currently, there is no sliding window functionality to deal with this correctly. But for the time being this
      * setting will periodically reset the statistics.
      */
     public static final HazelcastProperty RESET_PERIOD_SECONDS

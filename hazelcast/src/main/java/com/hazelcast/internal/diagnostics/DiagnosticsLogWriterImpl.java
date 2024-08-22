@@ -67,10 +67,10 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     private final Date date = new Date();
 
     // used for encoding primitives
-    private char[] chars = new char[CHARS_LENGTH];
+    private final char[] chars = new char[CHARS_LENGTH];
 
     // used to write primitives without causing litter
-    private StringBuilder stringBuilder = new StringBuilder();
+    private final StringBuilder stringBuilder = new StringBuilder();
 
     public DiagnosticsLogWriterImpl() {
         this(false, null);

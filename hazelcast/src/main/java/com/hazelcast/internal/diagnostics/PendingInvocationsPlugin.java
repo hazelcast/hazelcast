@@ -60,7 +60,7 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
     public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
+        this.invocationRegistry = operationService.getInvocationRegistry();
         HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);
         this.threshold = props.getInteger(THRESHOLD);

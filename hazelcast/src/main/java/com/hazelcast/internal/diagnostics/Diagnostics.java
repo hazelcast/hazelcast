@@ -186,7 +186,7 @@ public class Diagnostics {
         if (periodMillis < -1) {
             throw new IllegalArgumentException(plugin + " can't return a periodMillis smaller than -1");
         }
-        logger.finest(plugin.getClass().toString() + " is " + (periodMillis == DISABLED ? "disabled" : "enabled"));
+        logger.finest(plugin.getClass() + " is " + (periodMillis == DISABLED ? "disabled" : "enabled"));
         if (periodMillis == DISABLED) {
             return;
         }

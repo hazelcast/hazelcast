@@ -45,7 +45,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * This is very useful to figure out when huge amount of memory is consumed due to pending packets.
  * <p>
- * Currently the sampling has a lot of overhead since the value needs to be deserialized.
+ * Currently, the sampling has a lot of overhead since the value needs to be deserialized.
  * That is why this plugin is disabled by default.
  */
 public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {

@@ -119,7 +119,7 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
             // it is a slow invocation
             count++;
             if (count < maxCount) {
-                writer.writeEntry(invocation.toString() + " duration=" + durationMs + " ms");
+                writer.writeEntry(invocation + " duration=" + durationMs + " ms");
             } else if (!maxPrinted) {
                 maxPrinted = true;
                 writer.writeEntry("max number of invocations to print reached.");

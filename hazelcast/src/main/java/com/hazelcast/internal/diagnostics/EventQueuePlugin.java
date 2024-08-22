@@ -174,7 +174,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
      * Samples the queue.
      *
      * @param queue the queue to sample
-     * @return the number of samples, or -1 if there were not sufficient samples
+     * @return The number of samples, or -1 if there were insufficient samples.
      */
     private int sample(BlockingQueue<Runnable> queue) {
         ArrayList<Runnable> events = new ArrayList<>(queue);

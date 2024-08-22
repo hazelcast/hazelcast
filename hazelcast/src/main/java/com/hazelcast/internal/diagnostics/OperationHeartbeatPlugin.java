@@ -19,7 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -72,7 +71,7 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     public OperationHeartbeatPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(OperationHeartbeatPlugin.class));
-        InvocationMonitor invocationMonitor = ((OperationServiceImpl) nodeEngine.getOperationService()).getInvocationMonitor();
+        InvocationMonitor invocationMonitor = nodeEngine.getOperationService().getInvocationMonitor();
         HazelcastProperties properties = nodeEngine.getProperties();
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
         this.maxDeviationPercentage = properties.getInteger(MAX_DEVIATION_PERCENTAGE);
