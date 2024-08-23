@@ -941,11 +941,8 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     // Note: use only for small files (e.g. up to a couple of hundred KBs). See below.
     private static boolean isEqualsContents(File f1, File f2) {
-        InputStream is1 = null;
-        InputStream is2 = null;
-        try {
-            is1 = new FileInputStream(f1);
-            is2 = new FileInputStream(f2);
+        try (InputStream is1 = new FileInputStream(f1);
+             InputStream is2 = new FileInputStream(f2)) {
             // compare byte-by-byte since InputStream.read() possibly doesn't return the requested number of bytes
             // this is why this method should be used for smallFiles
             int data;
@@ -958,9 +955,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            closeResource(is1);
-            closeResource(is2);
         }
     }
 
