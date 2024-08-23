@@ -38,25 +38,21 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestJavaSerializationUtils;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -472,13 +468,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
 
         MemberLeftException exception = new MemberLeftException(member);
 
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bout);
-        out.writeObject(exception);
-
-        ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bin);
-        MemberLeftException exception2 = (MemberLeftException) in.readObject();
+        MemberLeftException exception2 = TestJavaSerializationUtils.serializeAndDeserialize(exception);
         MemberImpl member2 = (MemberImpl) exception2.getMember();
 
         assertEquals(uuid, member2.getUuid());

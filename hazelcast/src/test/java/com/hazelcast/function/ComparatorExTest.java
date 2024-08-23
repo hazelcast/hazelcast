@@ -20,15 +20,13 @@ import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.commons.lang3.SerializationUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import static com.hazelcast.function.ComparatorEx.nullsFirst;
 import static com.hazelcast.function.ComparatorEx.nullsLast;
@@ -190,30 +188,21 @@ public class ComparatorExTest {
 
     @Test
     public void testSerializableSingleton_naturalOrder()
-            throws IOException, ClassNotFoundException {
+            throws IOException {
         testSerializableSingletonIsSame(NATURAL_ORDER);
     }
 
     @Test
     public void testSerializableSingleton_reverseOrder()
-            throws IOException, ClassNotFoundException {
+            throws IOException {
         testSerializableSingletonIsSame(REVERSE_ORDER);
     }
 
-    private void testSerializableSingletonIsSame(Object singleton)
-            throws IOException, ClassNotFoundException {
-        byte[] serialized;
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
-            objectOutputStream.writeObject(singleton);
-            objectOutputStream.flush();
-            serialized = outputStream.toByteArray();
-        }
+    private void testSerializableSingletonIsSame(Serializable singleton)
+            throws IOException {
+        byte[] serialized = SerializationUtils.serialize(singleton);
 
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(serialized);
-             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            Object deserialized = objectInputStream.readObject();
-            assertSame(singleton, deserialized);
-        }
+        Object deserialized = SerializationUtils.deserialize(serialized);
+        assertSame(singleton, deserialized);
     }
 }

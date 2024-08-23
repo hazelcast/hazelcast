@@ -18,12 +18,12 @@ package com.hazelcast.test.starter;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.TestJavaSerializationUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -35,7 +35,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
@@ -93,27 +92,10 @@ public class HazelcastStarterUtils {
             return object;
         }
 
-        ByteArrayOutputStream byteArrayOutputStream = null;
-        ObjectOutputStream objectOutputStream = null;
-        ByteArrayInputStream byteArrayInputStream = null;
-        ObjectInputStream objectInputStream = null;
         try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(object);
-            byte[] serializedObject = byteArrayOutputStream.toByteArray();
-
-            byteArrayInputStream = new ByteArrayInputStream(serializedObject);
-            objectInputStream = new ObjectInputStream(byteArrayInputStream);
-            //noinspection unchecked
-            return (T) objectInputStream.readObject();
+            return (T) TestJavaSerializationUtils.serializeAndDeserialize((Serializable) object);
         } catch (Exception e) {
             throw new GuardianException("Object transfer via serialization failed for: " + object, e);
-        } finally {
-            closeResource(objectInputStream);
-            closeResource(byteArrayInputStream);
-            closeResource(objectOutputStream);
-            closeResource(byteArrayOutputStream);
         }
     }
 
@@ -139,15 +121,10 @@ public class HazelcastStarterUtils {
         Method objectInputStreamCloseMethod = objectInputStreamClass.getMethod("close");
         Method objectInputStreamReadObjectMethod = objectInputStreamClass.getMethod("readObject");
 
-        ByteArrayOutputStream byteArrayOutputStream = null;
-        ObjectOutputStream objectOutputStream = null;
         Object byteArrayInputStream = null;
         Object objectInputStream = null;
         try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(object);
-            byte[] serializedObject = byteArrayOutputStream.toByteArray();
+            byte[] serializedObject = TestJavaSerializationUtils.serialize((Serializable) object);
 
             byteArrayInputStream = byteArrayInputStreamConstructor.newInstance(new Object[]{serializedObject});
             objectInputStream = objectInputStreamConstructor.newInstance(byteArrayInputStream);
@@ -162,8 +139,6 @@ public class HazelcastStarterUtils {
             if (byteArrayInputStream != null) {
                 byteArrayInputStreamCloseMethod.invoke(byteArrayInputStream);
             }
-            closeResource(objectOutputStream);
-            closeResource(byteArrayOutputStream);
         }
     }
 

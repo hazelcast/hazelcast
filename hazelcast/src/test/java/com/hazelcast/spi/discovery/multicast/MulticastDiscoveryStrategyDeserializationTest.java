@@ -23,6 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestJavaSerializationUtils;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
 import org.junit.After;
@@ -31,8 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -115,13 +114,9 @@ public class MulticastDiscoveryStrategyDeserializationTest {
     }
 
     private void sendDatagrams() {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
         MulticastSocket multicastSocket = null;
         try {
-            try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-                oos.writeObject(new TestDeserialized());
-            }
-            byte[] data = bos.toByteArray();
+            byte[] data = TestJavaSerializationUtils.serialize(new TestDeserialized());
             multicastSocket = new MulticastSocket(PORT);
             multicastSocket.setTimeToLive(0);
             InetAddress group = InetAddress.getByName(GROUP);

@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka.model;
 
+import com.hazelcast.test.TestJavaSerializationUtils;
 import org.apache.kafka.common.serialization.Serializer;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -35,11 +35,7 @@ public class JavaSerializer implements Serializer<Object> {
     @Override
     public byte[] serialize(String s, Object o) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(o);
-            oos.close();
-            return baos.toByteArray();
+            return TestJavaSerializationUtils.serialize((Serializable) o);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

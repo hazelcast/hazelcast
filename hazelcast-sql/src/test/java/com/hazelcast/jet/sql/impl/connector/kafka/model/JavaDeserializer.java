@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka.model;
 
+import com.hazelcast.test.TestJavaSerializationUtils;
 import org.apache.kafka.common.serialization.Deserializer;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.util.Map;
 
 /**
@@ -34,10 +33,7 @@ public class JavaDeserializer implements Deserializer<Object> {
     @Override
     public Object deserialize(String topic, byte[] data) {
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-                return ois.readObject();
-            }
+            return TestJavaSerializationUtils.deserialize(data);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

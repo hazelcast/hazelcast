@@ -35,16 +35,16 @@ public final class TestJavaSerializationUtils {
 
     @SuppressWarnings("unchecked")
     public static <T> T deserialize(byte[] array) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(array);
-        ObjectInputStream ois = new ObjectInputStream(bis);
-        return (T) ois.readObject();
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(array); ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return (T) ois.readObject();
+        }
     }
 
     public static byte[] serialize(Serializable entry) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(entry);
-        return bos.toByteArray();
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(entry);
+            return bos.toByteArray();
+        }
     }
 
     public static Serializable newSerializableObject(int id) {

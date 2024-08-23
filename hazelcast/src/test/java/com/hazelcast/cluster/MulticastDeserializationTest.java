@@ -28,6 +28,7 @@ import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.TestJavaSerializationUtils;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
 import org.junit.AfterClass;
@@ -37,16 +38,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
@@ -129,15 +128,8 @@ public class MulticastDeserializationTest {
         return config;
     }
 
-    private void sendJoinDatagram(Object object, boolean useBigEndian) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        try {
-            oos.writeObject(object);
-        } finally {
-            closeResource(oos);
-        }
-        byte[] data = bos.toByteArray();
+    private void sendJoinDatagram(Serializable object, boolean useBigEndian) throws IOException {
+        byte[] data = TestJavaSerializationUtils.serialize(object);
         MulticastSocket multicastSocket = null;
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
