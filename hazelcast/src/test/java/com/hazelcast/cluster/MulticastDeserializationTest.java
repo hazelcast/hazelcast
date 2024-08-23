@@ -130,15 +130,14 @@ public class MulticastDeserializationTest {
 
     private void sendJoinDatagram(Serializable object, boolean useBigEndian) throws IOException {
         byte[] data = TestJavaSerializationUtils.serialize(object);
-        MulticastSocket multicastSocket = null;
-        try {
-            multicastSocket = new MulticastSocket(MULTICAST_PORT);
+        try (MulticastSocket multicastSocket = new MulticastSocket(MULTICAST_PORT)) {
             multicastSocket.setTimeToLive(MULTICAST_TTL);
             if (OS.isMac()) {
                 multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
             }
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);
+
             int msgSize = data.length;
 
             ByteBuffer bbuf = ByteBuffer.allocate(1 + 4 + msgSize);
@@ -150,10 +149,6 @@ public class MulticastDeserializationTest {
             DatagramPacket packet = new DatagramPacket(packetData, packetData.length, group, MULTICAST_PORT);
             multicastSocket.send(packet);
             multicastSocket.leaveGroup(group);
-        } finally {
-            if (multicastSocket != null) {
-                multicastSocket.close();
-            }
         }
     }
 }
