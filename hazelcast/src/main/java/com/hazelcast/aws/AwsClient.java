@@ -28,7 +28,7 @@ interface AwsClient {
     String getAvailabilityZone();
 
     /**
-     * Returns the placement group name of the service if specified.
+     * Test Returns the placement group name of the service if specified.
      *
      * @see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html">Placement Groups</a>
      */
