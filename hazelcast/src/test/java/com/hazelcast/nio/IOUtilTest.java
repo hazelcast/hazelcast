@@ -41,8 +41,6 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -906,14 +904,10 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     private static void writeTo(File file, String content) {
-        FileWriter writer = null;
         try {
-            writer = new FileWriter(file);
-            writer.write(content);
+            Files.writeString(file.toPath(), content);
         } catch (IOException e) {
             throw rethrow(e);
-        } finally {
-            closeResource(writer);
         }
     }
 
@@ -941,17 +935,9 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     // Note: use only for small files (e.g. up to a couple of hundred KBs). See below.
     private static boolean isEqualsContents(File f1, File f2) {
-        try (InputStream is1 = new FileInputStream(f1);
-             InputStream is2 = new FileInputStream(f2)) {
-            // compare byte-by-byte since InputStream.read() possibly doesn't return the requested number of bytes
-            // this is why this method should be used for smallFiles
-            int data;
-            while ((data = is1.read()) != -1) {
-                if (data != is2.read()) {
-                    return false;
-                }
-            }
-            return is2.read() == -1;
+        try {
+            // Files.mismatch returns the position of the first byte that differs, or -1 if there is no mismatch
+            return Files.mismatch(f1.toPath(), f2.toPath()) == -1;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
