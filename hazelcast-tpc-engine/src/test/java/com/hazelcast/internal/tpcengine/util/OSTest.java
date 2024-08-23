@@ -36,6 +36,7 @@ public class OSTest {
 
     @Test
     public void test_isWindows0() {
+        // Dummy comment
         assertTrue(OS.isWindows0("Windows"));
         assertTrue(OS.isWindows0("wInDoWs"));
         assertTrue(OS.isWindows0("Windows 10"));
