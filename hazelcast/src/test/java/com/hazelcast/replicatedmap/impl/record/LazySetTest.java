@@ -36,10 +36,9 @@ public class LazySetTest {
     private LazySet<Object, Object, Object> set;
 
     @Before
-    @SuppressWarnings("unchecked")
     public void setUp() {
-        KeySetIteratorFactory<Object, Object> keySetIteratorFactory = mock(KeySetIteratorFactory.class);
-        InternalReplicatedMapStorage<Object, Object> storage = mock(InternalReplicatedMapStorage.class);
+        KeySetIteratorFactory<Object, Object> keySetIteratorFactory = mock();
+        InternalReplicatedMapStorage<Object, Object> storage = mock();
         set = new LazySet<>(keySetIteratorFactory, storage);
     }
 

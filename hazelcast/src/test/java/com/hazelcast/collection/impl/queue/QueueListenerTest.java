@@ -84,7 +84,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         });
 
         IQueue<VersionedObject<String>> queue = hz.getQueue("queueWithTTL");
-        queue.offer(new VersionedObject<>("item"));
+        assertTrue(queue.offer(new VersionedObject<>("item")));
         queue.poll();
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -101,7 +101,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         IQueue<VersionedObject<String>> queue = instance.getQueue(name);
-        queue.offer(new VersionedObject<>("item"));
+        assertTrue(queue.offer(new VersionedObject<>("item")));
         queue.poll();
 
         assertTrue(listener.added.await(10, TimeUnit.SECONDS));
@@ -151,7 +151,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         UUID listenerId = queue.addItemListener(listener, true);
 
         for (int i = 0; i < totalQueuePut / 2; i++) {
-            queue.offer(new VersionedObject<>("item-" + i, i));
+            assertTrue(queue.offer(new VersionedObject<>("item-" + i, i)));
         }
         for (int i = 0; i < totalQueuePut / 2; i++) {
             queue.poll();
@@ -159,7 +159,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         assertTrue(listener.latch.await(5, TimeUnit.SECONDS));
 
         queue.removeItemListener(listenerId);
-        queue.offer(new VersionedObject<>("item-a"));
+        assertTrue(queue.offer(new VersionedObject<>("item-a")));
         queue.poll();
         assertTrue(listener.notCalled.get());
     }

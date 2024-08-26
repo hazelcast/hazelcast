@@ -250,9 +250,8 @@ public class BasicCompletableFutureTest {
         });
     }
 
-    @SuppressWarnings("unchecked")
     private static BiConsumer<String, Throwable> getStringExecutionCallback() {
-        return mock(BiConsumer.class);
+        return mock();
     }
 
     private static <V> BasicCompletableFuture<V> basicCompletableFuture(Future<V> future) {

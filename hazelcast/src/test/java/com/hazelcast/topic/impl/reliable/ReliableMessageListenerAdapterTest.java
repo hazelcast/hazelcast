@@ -135,8 +135,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         adapter.storeSequence(10);
     }
 
-    @SuppressWarnings("unchecked")
     private MessageListener<String> createMessageListenerMock() {
-        return mock(MessageListener.class);
+        return mock();
     }
 }

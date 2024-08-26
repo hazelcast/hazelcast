@@ -259,7 +259,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         assertEquals(Boolean.TRUE, result);
     }
 
-    private void assertFailsEventuallyWithOperationTimeoutException(final BiConsumer callback) {
+    private void assertFailsEventuallyWithOperationTimeoutException(final BiConsumer<Object, Throwable> callback) {
         assertTrueEventually(() -> {
             ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
             verify(callback).accept(isNull(), argument.capture());
@@ -270,7 +270,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
     /**
      * Tests if the future on a blocking operation can be shared by multiple threads. This tests fails in 3.6 because
-     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutExcepyion
+     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutException
      */
     @Test
     public void sync_whenManyGettersAndLotsOfWaiting() throws Exception {
@@ -303,13 +303,13 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         final InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, thisOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
-        // now we are going to do a get on the future by a whole bunch of threads
+        // now we are going to do a get on the future by a bunch of threads
         final List<Future> futures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
-            futures.add(spawn((Callable) () -> future.join()));
+            futures.add(spawn((Callable) future::join));
         }
 
-        // lets do a very long wait so that the heartbeat/retrying mechanism have kicked in.
+        // let's do a very long wait so that the heartbeat/retrying mechanism have kicked in.
         // the lock remains locked; so the threads calling future.get remain blocked
         sleepMillis(callTimeout * 5);
 
@@ -328,7 +328,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
     /**
      * Tests if the future on a blocking operation can be shared by multiple threads. This tests fails in 3.6 because
-     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutExcepyion
+     * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutException
      */
     @Test
     public void async_whenMultipleAndThenOnSameFuture() {
@@ -436,7 +436,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
 
         final String name = randomName();
-        IQueue queue = instances[0].getQueue(name);
+        IQueue<Object> queue = instances[0].getQueue(name);
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(() -> {
@@ -506,9 +506,8 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static BiConsumer<Object, Throwable> getExecutionCallbackMock() {
-        return mock(BiConsumer.class);
+        return mock();
     }
 
     private abstract static class OpThread extends Thread {

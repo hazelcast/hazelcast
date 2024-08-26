@@ -123,8 +123,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     @Test
     public void givenDiscoveryStrategyFactoryExistOnClassPath_whenTheSameFactoryIsConfiguredExplicitly_thenOnlyOneInstanceOfStrategyIsCreated() {
-        // ParametrizedDiscoveryStrategy has a static counter and throws an exception when its instantiated  more than
-        // than once.
+        // ParametrizedDiscoveryStrategy has a static counter and throws an exception when its instantiated  more than once
 
         Config config = new Config();
         config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
@@ -398,9 +397,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Collection<Member> members = createMembers();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 2, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 2, memberGroup.size());
         }
         hazelcastInstance.shutdown();
     }
@@ -418,9 +417,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Collection<Member> members = createMembers();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
+        assertEquals("Member Groups: " + memberGroups, 2, memberGroups.size());
         for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+            assertEquals("Member Group: " + memberGroup, 2, memberGroup.size());
         }
         hazelcastInstance.shutdown();
     }
@@ -438,12 +437,10 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
-        DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
-            public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
-                DiscoveryService mocked = mock(DiscoveryService.class);
-                when(mocked.discoverNodes()).thenReturn(null);
-                return mocked;
-            }
+        DiscoveryServiceProvider discoveryServiceProvider = arg0 -> {
+            DiscoveryService mocked = mock(DiscoveryService.class);
+            when(mocked.discoverNodes()).thenReturn(null);
+            return mocked;
         };
         config.getNetworkConfig().getJoin().getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
@@ -460,11 +457,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         final DiscoveryService discoveryService = mock(DiscoveryService.class);
-        DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
-            public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
-                when(discoveryService.discoverNodes()).thenReturn(Collections.<DiscoveryNode>emptyList());
-                return discoveryService;
-            }
+        DiscoveryServiceProvider discoveryServiceProvider = arg0 -> {
+            when(discoveryService.discoverNodes()).thenReturn(Collections.emptyList());
+            return discoveryService;
         };
         config.getNetworkConfig().getJoin().getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
@@ -759,7 +754,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
-            return asList((PropertyDefinition) new SimplePropertyDefinition("key-string", true, STRING),
+            return asList(new SimplePropertyDefinition("key-string", true, STRING),
                     new SimplePropertyDefinition("key-int", true, INTEGER),
                     new SimplePropertyDefinition("key-boolean", true, BOOLEAN));
         }

@@ -119,11 +119,10 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testGetItemAsPositionOrNull_whenInputImplementsList_thenDoNotUserIterator() {
         Object obj = new Object();
 
-        List<Object> src = mock(List.class);
+        List<Object> src = mock();
         when(src.size()).thenReturn(1);
         when(src.get(0)).thenReturn(obj);
 
