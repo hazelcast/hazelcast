@@ -26,7 +26,7 @@ import java.util.Iterator;
  * The ArrayRingbuffer is responsible for storing the actual contents of a
  * ringbuffer.
  * <p>
- * Currently the Ringbuffer is not a partitioned data-structure. So all
+ * Currently, the Ringbuffer is not a partitioned data-structure. So all
  * data of a ringbuffer is stored in a single partition and replicated to
  * the replicas. No thread safety is needed since a partition can only be
  * accessed by a single thread at any given moment.

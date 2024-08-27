@@ -135,7 +135,7 @@ public class MergeOperation extends Operation
      * Sets the ringbuffer data given by the {@code fromMergeData} to the
      * {@code toContainer}.
      *
-     * @param fromMergeData the data which needs to be set into the containter
+     * @param fromMergeData the data which needs to be set into the container
      * @param toContainer   the target ringbuffer container
      */
     private void setRingbufferData(

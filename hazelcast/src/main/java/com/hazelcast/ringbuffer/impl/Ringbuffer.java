@@ -106,13 +106,13 @@ public interface Ringbuffer<E> extends Iterable<E> {
      * The returned value is the sequence of the added item. Using this sequence
      * you can read the added item.
      * <h3>Using the sequence as ID</h3>
-     * This sequence will always be unique for this ringbuffer instance so it
+     * This sequence will always be unique for this ringbuffer instance, so it
      * can be used as a unique ID generator if you are publishing items on this
-     * ringbuffer. However you need to take care of correctly determining an
+     * ringbuffer. However, you need to take care of correctly determining an
      * initial ID when any node uses the ringbuffer for the first time. The most
      * reliable way to do that is to write a dummy item into the ringbuffer and
      * use the returned sequence as initial ID. On the reading side, this dummy
-     * item should be discard. Please keep in mind that this ID is not the
+     * item should be discarded. Please keep in mind that this ID is not the
      * sequence of the item you are about to publish but from a previously
      * published item. So it can't be used to find that item.
      *
@@ -124,7 +124,7 @@ public interface Ringbuffer<E> extends Iterable<E> {
     /**
      * Reads one item from the ringbuffer.
      * This method is not destructive unlike e.g. a {@code queue.take}. So the
-     * same item can be read by multiple readers or it can be read multiple
+     * same item can be read by multiple readers, or it can be read multiple
      * times by the same reader.
      *
      * @param sequence the sequence of the item to read

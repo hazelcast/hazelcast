@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import static com.hazelcast.function.ComparatorEx.nullsFirst;
@@ -73,7 +72,7 @@ public class ComparatorExTest {
 
     @Test
     public void when_nullsFirst_withoutWrapped() {
-        ComparatorEx c = nullsFirst(null);
+        ComparatorEx<Comparable<Integer>> c = nullsFirst(null);
         assertEquals(0, c.compare(1, 2));
         assertEquals(0, c.compare(2, 1));
         assertEquals(1, c.compare(0, null));
@@ -82,7 +81,7 @@ public class ComparatorExTest {
 
     @Test
     public void when_nullsLast_withoutWrapped() {
-        ComparatorEx c = nullsLast(null);
+        ComparatorEx<Comparable<Integer>> c = nullsLast(null);
         assertEquals(0, c.compare(1, 2));
         assertEquals(0, c.compare(2, 1));
         assertEquals(-1, c.compare(0, null));
@@ -187,19 +186,16 @@ public class ComparatorExTest {
     }
 
     @Test
-    public void testSerializableSingleton_naturalOrder()
-            throws IOException {
+    public void testSerializableSingleton_naturalOrder() {
         testSerializableSingletonIsSame(NATURAL_ORDER);
     }
 
     @Test
-    public void testSerializableSingleton_reverseOrder()
-            throws IOException {
+    public void testSerializableSingleton_reverseOrder() {
         testSerializableSingletonIsSame(REVERSE_ORDER);
     }
 
-    private void testSerializableSingletonIsSame(Serializable singleton)
-            throws IOException {
+    private void testSerializableSingletonIsSame(Serializable singleton) {
         byte[] serialized = SerializationUtils.serialize(singleton);
 
         Object deserialized = SerializationUtils.deserialize(serialized);

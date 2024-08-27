@@ -27,7 +27,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.GENERIC
 
 /**
  * Ring buffer operations which don't need to send any parameters and which can be determined by only sending the operation
- * type which is a byte of information. Typically these are read operations and/or getters.
+ * type which is a byte of information. Typically, these are read operations and/or getters.
  */
 public class GenericOperation extends AbstractRingBufferOperation implements ReadonlyOperation {
 

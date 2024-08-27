@@ -284,7 +284,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * {@link InMemoryFormat} if necessary.
      *
      * @param item item to be stored in the ring buffer and data store, can be
-     *             {@link Data} or an deserialized object
+     *             {@link Data} or a deserialized object
      * @return the sequence ID of the item stored in the ring buffer
      * @throws HazelcastException              if there was any exception thrown by the data store
      * @throws HazelcastSerializationException if the ring buffer is configured to keep items in object format and the
@@ -354,7 +354,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * @throws HazelcastSerializationException if the ring buffer is configured to keep items in object format and the
      *                                         item could not be deserialized
      */
-    @SuppressWarnings("unchecked")
     public void set(long sequenceId, T item) {
         final E rbItem = convertToRingbufferFormat(item);
 
@@ -422,7 +421,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         return seq;
     }
 
-    @SuppressWarnings("unchecked")
     public void cleanup() {
         if (expirationPolicy != null) {
             expirationPolicy.cleanup(ringbuffer);
@@ -447,7 +445,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * @return the bounded sequence
      */
     public long clampReadSequenceToBounds(long readSequence) {
-        // fast forward if late and no store is configured
+        // fast-forward if late and no store is configured
         final long headSequence = headSequence();
         if (readSequence < headSequence && !store.isEnabled()) {
             return headSequence;
@@ -526,7 +524,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         return item;
     }
 
-    @SuppressWarnings("unchecked")
     private long addInternal(T item) {
         final E rbItem = convertToRingbufferFormat(item);
 
@@ -605,9 +602,9 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
             // we write the time difference compared to now. Because the clock on the receiving side
             // can be totally different then our time. If there would be a ttl of 10 seconds, than
-            // the expiration time would be 10 seconds after the insertion time. But the if ringbuffer is
+            // the expiration time would be 10 seconds after the insertion time. But if ringbuffer is
             // migrated to a machine with a time 1 hour earlier, the ttl would effectively become
-            // 1 hours and 10 seconds.
+            // 1 hour and 10 seconds.
             if (ttlEnabled) {
                 long deltaMs = expirationPolicy.getExpirationAt(seq) - now;
                 out.writeLong(deltaMs);
@@ -638,7 +635,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
             if (inMemoryFormat == BINARY) {
                 ringbuffer.set(seq, (E) IOUtil.readData(in));
             } else {
-                ringbuffer.set(seq, (E) in.readObject());
+                ringbuffer.set(seq, in.readObject());
             }
 
             if (ttlEnabled) {
