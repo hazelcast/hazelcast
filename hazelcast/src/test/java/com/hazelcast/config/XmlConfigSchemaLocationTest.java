@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.instance.GeneratedBuildProperties;
+import com.hazelcast.spi.utils.RetryUtils;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -106,16 +107,15 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
             return;
         }
         for (String nameSpaceUrl : schemaAttr.split(" ")) {
-            nameSpaceUrl = nameSpaceUrl.trim();
+            final String trimmedNameSpaceUrl = nameSpaceUrl.trim();
             if (shouldSkipValidation(nameSpaceUrl)) {
                 continue;
             }
-            int responseCode;
-            try {
-                responseCode = getResponseCode(nameSpaceUrl);
-            } catch (Exception e) {
-                throw new IllegalStateException("Error while validating schema location '" + nameSpaceUrl + "' from '" + originalLocation + "'", e);
-            }
+
+            // Use retry logic because sometimes the operation fails due to java.net.ConnectException.
+            // Retrying allows for the operation to succeed if the connection issue is temporary.
+            int responseCode = RetryUtils.retry(() -> getResponseCode(trimmedNameSpaceUrl), 3);
+
             assertEquals("Schema location '" + nameSpaceUrl + "' from '" + originalLocation
                     + "' returned unexpected HTTP response code", HttpURLConnection.HTTP_OK, responseCode);
             validUrlsCache.add(nameSpaceUrl);
