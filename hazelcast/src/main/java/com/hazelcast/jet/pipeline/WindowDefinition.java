@@ -54,7 +54,7 @@ public abstract class WindowDefinition implements Serializable {
      * being filled with data.
      * <p>
      * Note that, for a sliding window, there will be many incomplete windows
-     * that contain some data and you'll get the early results for all of them.
+     * that contain some data, and you'll get the early results for all of them.
      * Similarly, if you configure a high-enough {@code maxLag} for the event
      * timestamps, there can be more than one tumbling/session window with
      * early results.

@@ -512,7 +512,7 @@ class MasterSnapshotContext {
                     assert completedNow : "terminalSnapshotFuture was already completed";
                     if (phase1Error != null) {
                         // If the terminal snapshot failed, the executions might not terminate on some members
-                        // normally and we don't care if they do - the snapshot is done and we have to bring the
+                        // normally, and we don't care if they do - the snapshot is done, and we have to bring the
                         // execution down. Let's execute the CompleteExecutionOperation to terminate them.
                         mc.jobContext().cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, null);
                     }

@@ -101,7 +101,7 @@ public final class AssertionSinkBuilder<S, T> {
     /**
      * Sets the function Jet will call upon receiving every item. The function
      * receives two arguments: the state object (as provided by the {@link
-     * #createFn} and the received item. It may assert the item
+     * #createFn}) and the received item. It may assert the item
      * directly or push it to the state object.
      *
      * @param receiveFn the function to execute upon receiving an item

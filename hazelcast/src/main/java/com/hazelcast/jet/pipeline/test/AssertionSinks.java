@@ -188,8 +188,8 @@ public final class AssertionSinks {
         private final long start = System.nanoTime();
         private final List<T> collected = new ArrayList<>();
 
-        private ConsumerEx<? super List<T>> assertFn;
-        private long timeoutNanos;
+        private final ConsumerEx<? super List<T>> assertFn;
+        private final long timeoutNanos;
         private AssertionError lastError;
 
         CollectingSinkWithTimer(ConsumerEx<? super List<T>> assertFn, int timeoutSeconds) {

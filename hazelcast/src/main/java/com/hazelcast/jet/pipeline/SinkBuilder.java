@@ -114,7 +114,7 @@ public final class SinkBuilder<C, T> {
     /**
      * Sets the function Jet will call upon receiving an item. The function
      * receives two arguments: the context object (as provided by the {@link
-     * #createFn} and the received item. Its job is to push the item to the
+     * #createFn}) and the received item. Its job is to push the item to the
      * context.
      *
      * @param receiveFn the "add item to the context" function. It must be
@@ -171,7 +171,7 @@ public final class SinkBuilder<C, T> {
     }
 
     /**
-     * Sets the the permission required to use this sink when the
+     * Sets the permission required to use this sink when the
      * security is enabled. The default value is {@code null} which
      * means there is no restriction to use this sink. Security is an
      * enterprise feature.

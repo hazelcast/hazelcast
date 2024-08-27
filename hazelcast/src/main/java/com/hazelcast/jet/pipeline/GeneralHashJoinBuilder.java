@@ -87,7 +87,7 @@ public abstract class GeneralHashJoinBuilder<T0> {
 
     /**
      * Adds another contributing pipeline stage to the hash-join operation.
-     *
+     * <p>
      * If no matching items for returned {@linkplain Tag tag} is found, no
      * records for given key will be added.
      *

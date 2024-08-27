@@ -327,7 +327,7 @@ public final class SourceBuilder<C> {
      * partitioned, you may run into issues with event skew between partitions
      * assigned to a given parallel processor. The timestamp you get from one
      * partition may be significantly behind the timestamp you already got from
-     * another one. If the skew is more than the allowed lag and you have
+     * another one. If the skew is more than the allowed lag, and you have
      * {@linkplain StreamSourceStage#withNativeTimestamps(long) configured
      * native timestamps}, you risk that the events will be late. Use a
      * {@linkplain Sources#streamFromProcessorWithWatermarks custom processor}
@@ -392,7 +392,7 @@ public final class SourceBuilder<C> {
         }
 
         /**
-         * Sets the the permission required to use this sink when the
+         * Sets the permission required to use this sink when the
          * security is enabled. The default value is {@code null} which
          * means there is no restriction to use this sink. Security is an
          * enterprise feature.
@@ -738,7 +738,7 @@ public final class SourceBuilder<C> {
          * is distributed, the list will contain objects returned by {@code
          * createSnapshotFn} in all parallel instances. This is why {@code
          * restoreSnapshotFn} accepts a list of snapshot objects. It should
-         * figure out which part of the snapshot data pertains to it and it can
+         * figure out which part of the snapshot data pertains to it, and it can
          * do so as explained {@link Base#distributed here}.
          *
          * @param restoreSnapshotFn the function to restore the state into the

@@ -90,7 +90,7 @@ public final class JmsSourceBuilder {
      *         ? factory.createConnection(usernameLocal, passwordLocal)
      *         : factory.createConnection()
      * </pre>
-     * The user name and password set with {@link #connectionParams} are used.
+     * The username and password set with {@link #connectionParams} are used.
      * <p>
      * The given function must be stateless.
      *
@@ -123,7 +123,7 @@ public final class JmsSourceBuilder {
      * If not provided, {@code Session#createConsumer(destinationName)} is used
      * to create the consumer. See {@link #destinationName(String)}.
      * <p>
-     * If you're consuming a topic and you create a shared consumer, make
+     * If you're consuming a topic, and you create a shared consumer, make
      * sure to also call {@link #sharedConsumer(boolean) sharedConsumer(true)}.
      * <p>
      * The given function must be stateless.
@@ -253,7 +253,7 @@ public final class JmsSourceBuilder {
                     ? session.createTopic(destinationLocal)
                     : session.createQueue(destinationLocal));
             if (isTopic) {
-                // the user didn't specify a custom consumerFn and we know we're using a non-durable consumer
+                // the user didn't specify a custom consumerFn, and we know we're using a non-durable consumer
                 // for a topic - there's no point in using any guarantee, see `maxGuarantee`
                 maxGuaranteeLocal = ProcessingGuarantee.NONE;
             }

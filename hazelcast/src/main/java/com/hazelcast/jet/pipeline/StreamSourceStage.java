@@ -61,7 +61,7 @@ public interface StreamSourceStage<T> {
      * stream must have a stable timestamp associated with them. The source may
      * natively provide such timestamps (the {@link #withNativeTimestamps(long)}
      * option). If that is not appropriate, the events should carry their own
-     * timestamp as a part of their data and you can use {@link
+     * timestamp as a part of their data, and you can use {@link
      * #withTimestamps(ToLongFunctionEx, long)
      * withTimestamps(timestampFn, allowedLag} to extract it.
      * <p>

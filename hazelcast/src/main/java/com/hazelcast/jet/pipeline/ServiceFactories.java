@@ -47,8 +47,8 @@ public final class ServiceFactories {
      * object. A replicated map is a particularly good choice if you are
      * enriching an event stream with the data stored in the Hazelcast Jet
      * cluster. Unlike in a {@code hashJoin} transformation, the data in the
-     * map can change while the job is running so you can keep the enriching
-     * dataset up-to-date. Unlike {@code IMap}, the data you access is local so
+     * map can change while the job is running, so you can keep the enriching
+     * dataset up-to-date. Unlike {@code IMap}, the data you access is local, so
      * you won't do any blocking calls using it (important for performance).
      * <p>
      * If you want to destroy the map after the job finishes, call
@@ -80,7 +80,7 @@ public final class ServiceFactories {
      * Returns a factory that provides an {@link IMap} as the service. This
      * is useful if you are enriching an event stream with the data stored in
      * the Hazelcast Jet cluster. Unlike in a {@code hashJoin} transformation,
-     * the data in the map can change while the job is running so you can keep
+     * the data in the map can change while the job is running, so you can keep
      * the enriching dataset up-to-date.
      * <p>
      * Instead of using this factory, you can call {@link

@@ -21,11 +21,11 @@ import java.util.Map;
 
 /**
  * Thread local holder class for Processor class loaders
- *
+ * <p>
  * This class is used to access processor class loader in deserialization code, where an object (typically metaSupplier,
  * supplier or a processor instance) needs to be deserialized with processor classloader and there is no access to
  * JobExecutionService, which manages the processor classloaders.
- *
+ * <p>
  * The ThreadLocal
  */
 public final class ProcessorClassLoaderTLHolder {

@@ -29,7 +29,7 @@ public class LiveOperationRegistry {
 
     public void register(Operation operation) {
         Map<Long, Operation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
-                (key) -> new ConcurrentHashMap<>());
+                key -> new ConcurrentHashMap<>());
         if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
             throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
         }
