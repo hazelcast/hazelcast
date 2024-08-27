@@ -36,6 +36,7 @@ import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,10 +64,7 @@ import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
 
-/**
- * @implNote This instance factory is not truly thread-safe due to {@link #metricsRule}, so the
- * {@link MetricsRule} set by a thread might not be effective for instances created by another thread.
- */
+@ThreadSafe
 public class TestHazelcastInstanceFactory {
     private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
     private static final int MAX_PORT_NUMBER = (1 << 16) - 1;
@@ -78,7 +76,7 @@ public class TestHazelcastInstanceFactory {
     private final AtomicInteger nodeIndex = new AtomicInteger();
     private final int count;
 
-    private MetricsRule metricsRule;
+    private volatile MetricsRule metricsRule;
 
     public TestHazelcastInstanceFactory() {
         this(0);
