@@ -225,8 +225,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
     }
 
     @Test
-    public void
-    testAddingConnectionListenerTwice_shouldCauseEventDeliveredTwice() {
+    public void testAddingConnectionListenerTwice_shouldCauseEventDeliveredTwice() {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = newClientConfig();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -234,15 +233,20 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 
+        // Block until client has connected to created HZ instance
+        assertClusterSizeEventually(1, client);
+
         final CountingConnectionListener listener = new CountingConnectionListener();
 
         connectionManager.addConnectionListener(listener);
         connectionManager.addConnectionListener(listener);
 
+        // Create a new HZ instance
         hazelcastFactory.newHazelcastInstance();
 
         assertTrueEventually(() -> {
-            // non=smart ones will not connect to newly added server
+            // The client should connect to new HZ instance if routingMode is ALL_MEMBERS
+            // The client should "not" connect to new HZ instance if routingMode is SINGLE_MEMBER or MULTI_MEMBER
             int expectedConnectionCount = routingMode == ALL_MEMBERS ? 2 : 0;
             assertEquals(expectedConnectionCount, listener.connectionAddedCount.get());
         });
