@@ -80,7 +80,7 @@ class TwoWayBlockableExecutor {
         outgoingMessages.shutdown();
     }
 
-    class BlockableRunnable implements Runnable {
+    private static class BlockableRunnable implements Runnable {
 
         private final Runnable runnable;
         private final Lock lock;
