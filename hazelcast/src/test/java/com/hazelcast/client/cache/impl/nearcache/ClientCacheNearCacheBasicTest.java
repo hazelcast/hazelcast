@@ -182,7 +182,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager);

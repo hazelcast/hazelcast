@@ -230,8 +230,8 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
             nearCacheTestContext2.nearCacheAdapter.remove(entry.getKey());
         }
 
-        // we don't shutdown the instance because in case of shutdown even though events are published to event queue,
-        // they may not be processed in the event queue due to shutdown event queue executor or may not be sent
+        // we don't shut down the instance because in case of shutdown even though events are published to event queue,
+        // they may not be processed in the event queue due to shut down event queue executor or may not be sent
         // to client endpoint due to IO handler shutdown
 
         // for not to making test fragile, we just simulate shutting down by sending its event through `LifeCycleService`,
