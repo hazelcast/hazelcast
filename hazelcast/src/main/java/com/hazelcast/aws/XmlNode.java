@@ -35,7 +35,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Helper class for parsing XML strings
  */
 final class XmlNode {
-    private Node node;
+    private final Node node;
 
     private XmlNode(Node node) {
         this.node = node;

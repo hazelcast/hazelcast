@@ -190,10 +190,9 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
             return true;
         }
 
-        if (!(obj instanceof Set)) {
+        if (!(obj instanceof Set that)) {
             return false;
         }
-        Set that = (Set) obj;
 
         return containsAll(that);
     }

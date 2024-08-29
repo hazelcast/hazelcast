@@ -157,7 +157,7 @@ public class AwsDiscoveryStrategy
      * the group name. If it is Partition Placement Group, then returns the group name with the
      * partition number prefixed by '-' appended.
      * <p>
-     * When forming partition groups, this name should be combined with zone name. Otherwise
+     * When forming partition groups, this name should be combined with zone name. Otherwise,
      * two resources in different zones but in the same placement group will be assumed as
      * a single group.
      *

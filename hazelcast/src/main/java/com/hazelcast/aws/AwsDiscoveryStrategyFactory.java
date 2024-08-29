@@ -63,7 +63,7 @@ public class AwsDiscoveryStrategyFactory
     /**
      * Checks if Hazelcast is running on an AWS EC2 instance.
      * <p>
-     * Note that this method returns {@code false} for any ECS environment, since currently there is no way to auto-configure
+     * Note that this method returns {@code false} for any ECS environment, since currently there is no way to autoconfigure
      * Hazelcast network interfaces (required for ECS).
      * <p>
      * To check if Hazelcast is running on EC2, we first check that the machine uuid starts with "ec2" or "EC2". There is

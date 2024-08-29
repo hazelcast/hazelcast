@@ -25,7 +25,7 @@ import java.util.Map;
  */
 final class Filter {
 
-    private Map<String, String> filters = new HashMap<>();
+    private final Map<String, String> filters = new HashMap<>();
 
     private int index = 1;
 

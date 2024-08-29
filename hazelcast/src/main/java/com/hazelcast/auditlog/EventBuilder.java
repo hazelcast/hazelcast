@@ -63,7 +63,7 @@ public interface EventBuilder<T extends EventBuilder<T>> {
     T cause(Throwable throwable);
 
     /**
-     * If provided value greater than zero, then it sets the event timestamp explicitly. Otherwise the timestamp is filled by
+     * If provided value greater than zero, then it sets the event timestamp explicitly. Otherwise, the timestamp is filled by
      * calling {@link #build()} method.
      *
      * @return this instance

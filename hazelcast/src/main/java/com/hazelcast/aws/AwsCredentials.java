@@ -19,9 +19,9 @@ package com.hazelcast.aws;
 import java.util.Objects;
 
 final class AwsCredentials {
-    private String accessKey;
-    private String secretKey;
-    private String token;
+    private final String accessKey;
+    private final String secretKey;
+    private final String token;
 
     private AwsCredentials(String accessKey, String secretKey, String token) {
         this.accessKey = accessKey;

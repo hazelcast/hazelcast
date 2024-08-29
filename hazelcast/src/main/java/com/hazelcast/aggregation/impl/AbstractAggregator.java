@@ -47,11 +47,11 @@ public abstract class AbstractAggregator<I, E, R> implements Aggregator<I, R> {
 
     protected String attributePath;
 
-    public AbstractAggregator() {
+    protected AbstractAggregator() {
         this(null);
     }
 
-    public AbstractAggregator(String attributePath) {
+    protected AbstractAggregator(String attributePath) {
         this.attributePath = attributePath;
     }
 
