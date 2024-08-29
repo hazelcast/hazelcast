@@ -24,6 +24,7 @@ import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -35,6 +36,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import java.net.UnknownHostException;
@@ -124,6 +126,15 @@ public class TestHazelcastInstanceFactory {
     }
 
     /**
+     * Creates a new test Hazelcast instance.
+     *
+     * @param config if {@code null}, the default config is used.
+     */
+    public HazelcastInstance newHazelcastInstance(Config config) {
+        return newHazelcastInstance(null, config, emptySet());
+    }
+
+    /**
      * Equivalent to {@link #newHazelcastInstance(Address, Config) newHazelcastInstance(address, null)}.
      */
     public HazelcastInstance newHazelcastInstance(Address address) {
@@ -137,87 +148,74 @@ public class TestHazelcastInstanceFactory {
      * @param config  if {@code null}, the default config is used.
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
-        final String instanceName = config != null ? config.getInstanceName() : null;
+        return newHazelcastInstance(address, config, emptySet());
+    }
+
+    protected HazelcastInstance newHazelcastInstance(Address address, Config config,
+                                                     @Nonnull Set<Address> blockedAddresses) {
+        NodeContext nodeContext;
         if (isMockNetwork) {
             config = initOrCreateConfig(config);
-            NodeContext nodeContext = registry.createNodeContext(address);
-            HazelcastInstance hazelcastInstance =
-                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
-            registerTestMetricsPublisher(hazelcastInstance);
-
-            return hazelcastInstance;
+            if (address == null) {
+                address = nextAddress(config.getNetworkConfig().getPort());
+            }
+            nodeContext = registry.createNodeContext(address, blockedAddresses);
+        } else {
+            if (address != null) {
+                throw new UnsupportedOperationException("Explicit addresses are only available in mock network");
+            }
+            nodeContext = new DefaultNodeContext();
         }
-        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
-    }
-
-    /**
-     * Creates a new test Hazelcast instance which is not allowed to connect to
-     * the specified addresses: {@code blockedAddresses} are blacklisted in {@code
-     * MockJoiner} and connections to them are blocked by {@code FirewallingServer}.
-     * <p>
-     * This is handy in split-brain tests, when a new instance should be
-     * started on a specific network partition of the split brain.
-     *
-     * @param config           if {@code null}, the default config is used.
-     * @param blockedAddresses the addresses to which the new instance is disallowed to communicate.
-     */
-    public HazelcastInstance newHazelcastInstance(Config config, Address[] blockedAddresses) {
-        return newHazelcastInstance(null, config, blockedAddresses);
-    }
-
-    /**
-     * Creates a new test Hazelcast instance which is not allowed to connect to
-     * the specified addresses: {@code blockedAddresses} are blacklisted in {@code
-     * MockJoiner} and connections to them are blocked by {@code FirewallingServer}.
-     * <p>
-     * This is handy in split-brain tests, when a new instance should be
-     * started on a specific network partition of the split brain.
-     *
-     * @param address          if {@code null}, {@linkplain #nextAddress() the next address} is used.
-     * @param config           if {@code null}, the default config is used.
-     * @param blockedAddresses the addresses to which the new instance is disallowed to communicate.
-     */
-    public HazelcastInstance newHazelcastInstance(Address address, Config config, Address[] blockedAddresses) {
-        final String instanceName = config != null ? config.getInstanceName() : null;
-        if (isMockNetwork) {
-            config = initOrCreateConfig(config);
-            Address thisAddress = address != null ? address : nextAddress(config.getNetworkConfig().getPort());
-            NodeContext nodeContext = registry.createNodeContext(thisAddress,
-                    blockedAddresses == null ? emptySet() : Set.of(blockedAddresses));
-            HazelcastInstance hazelcastInstance =
-                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
-            registerTestMetricsPublisher(hazelcastInstance);
-
-            return hazelcastInstance;
-        }
-        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
-    }
-
-    /**
-     * Creates a new test Hazelcast instance.
-     *
-     * @param config if {@code null}, the default config is used.
-     */
-    public HazelcastInstance newHazelcastInstance(Config config) {
         String instanceName = config != null ? config.getInstanceName() : null;
-        if (isMockNetwork) {
-            config = initOrCreateConfig(config);
-            NodeContext nodeContext = registry.createNodeContext(nextAddress(config.getNetworkConfig().getPort()));
-            HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
-                    .newHazelcastInstance(config, instanceName, nodeContext);
-            registerTestMetricsPublisher(hazelcastInstance);
-            return hazelcastInstance;
-        }
-        HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
-        registerTestMetricsPublisher(hazelcastInstance);
-        return hazelcastInstance;
+        HazelcastInstance instance =
+                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+        registerTestMetricsPublisher(instance);
+        return instance;
     }
 
-    private void registerTestMetricsPublisher(HazelcastInstance hazelcastInstance) {
+    public HazelcastInstanceBuilder builder() {
+        return new HazelcastInstanceBuilder();
+    }
+
+    public class HazelcastInstanceBuilder {
+        private Address address;
+        private Config config;
+        private Set<Address> blockedAddresses = emptySet();
+
+        /** If skipped, or passed {@code null}, {@linkplain #nextAddress() the next address} is used. */
+        public HazelcastInstanceBuilder withAddress(Address address) {
+            this.address = address;
+            return this;
+        }
+
+        /** If skipped, or passed {@code null}, the default config is used. */
+        public HazelcastInstanceBuilder withConfig(Config config) {
+            this.config = config;
+            return this;
+        }
+
+        /**
+         * {@code blockedAddresses} are blacklisted in {@code MockJoiner}
+         * and connections to them are blocked by {@code FirewallingServer}.
+         * <p>
+         * This is handy in split-brain tests, when a new instance should be
+         * started on a specific network partition of the split brain.
+         */
+        public HazelcastInstanceBuilder withBlockedAddresses(@Nonnull Set<Address> blockedAddresses) {
+            this.blockedAddresses = blockedAddresses;
+            return this;
+        }
+
+        public HazelcastInstance construct() {
+            return newHazelcastInstance(address, config, blockedAddresses);
+        }
+    }
+
+    private void registerTestMetricsPublisher(HazelcastInstance instance) {
         if (metricsRule != null && metricsRule.isEnabled()) {
-            MetricsService metricService = getNodeEngineImpl(hazelcastInstance).getService(MetricsService.SERVICE_NAME);
+            MetricsService metricService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
             metricService.registerPublisher(
-                    (FunctionEx<NodeEngine, MetricsPublisher>) nodeEngine -> metricsRule.getMetricsPublisher(hazelcastInstance));
+                    (FunctionEx<NodeEngine, MetricsPublisher>) nodeEngine -> metricsRule.getMetricsPublisher(instance));
         }
     }
 
@@ -234,7 +232,7 @@ public class TestHazelcastInstanceFactory {
             }
             return addNewAddressToAddressMap(id, "127.0.0.1", initialPort);
         }
-        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
+        throw new UnsupportedOperationException("Explicit addresses are only available in mock network");
     }
 
     public HazelcastInstance[] newInstances() {
