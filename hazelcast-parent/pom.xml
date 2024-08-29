@@ -102,7 +102,7 @@
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
         <kafka.version>3.7.1</kafka.version>
-        <kotlin.version>2.0.10</kotlin.version>
+        <kotlin.version>2.0.20</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.8.0.jre11</mssql.version>
         <netty.version>4.1.112.Final</netty.version>
