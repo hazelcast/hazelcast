@@ -253,7 +253,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
             CacheEntryProcessorResult<T> ceResult;
             try {
                 T result = invoke(key, entryProcessor, arguments);
-                ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
+                ceResult = result != null ? new CacheEntryProcessorResult<>(result) : null;
             } catch (Exception e) {
                 ceResult = new CacheEntryProcessorResult<>(e);
             }

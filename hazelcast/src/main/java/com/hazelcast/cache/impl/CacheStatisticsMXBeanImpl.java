@@ -27,7 +27,7 @@ import javax.cache.management.CacheStatisticsMXBean;
  */
 public class CacheStatisticsMXBeanImpl implements CacheStatisticsMXBean {
 
-    private CacheStatisticsImpl statistics;
+    private final CacheStatisticsImpl statistics;
 
     public CacheStatisticsMXBeanImpl(CacheStatisticsImpl statistics) {
         this.statistics = statistics;
