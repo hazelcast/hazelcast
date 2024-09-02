@@ -313,7 +313,7 @@ public final class EntryOperator {
     private void onAddedOrUpdated() {
         Object newValue = extractNewValue();
         if (backup) {
-            recordStore.putBackup(dataKey, newValue, entry.isChangeExpiryOnUpdate(),
+            recordStore.putBackupForEntryProcessor(dataKey, newValue, entry.isChangeExpiryOnUpdate(),
                     entry.getNewTtl(), UNSET, UNSET, NOT_WAN);
         } else {
             recordStore.setWithUncountedAccess(dataKey, newValue, entry.isChangeExpiryOnUpdate(),

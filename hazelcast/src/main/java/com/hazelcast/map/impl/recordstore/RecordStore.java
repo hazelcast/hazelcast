@@ -83,13 +83,15 @@ public interface RecordStore<R extends Record> {
     Object putIfAbsent(Data dataKey, Object value, long ttl, long maxIdle, Address callerAddress);
 
     /**
+     * Called only by backup {@link com.hazelcast.map.EntryProcessor}
+     *
      * @param key        the key
      * @param value      the value to put backup
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, boolean changeExpiryOnUpdate,
-                long ttl, long maxIdle, long nowOrExpiryTime, CallerProvenance provenance);
+    R putBackupForEntryProcessor(Data key, Object value, boolean changeExpiryOnUpdate,
+                                 long ttl, long maxIdle, long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.

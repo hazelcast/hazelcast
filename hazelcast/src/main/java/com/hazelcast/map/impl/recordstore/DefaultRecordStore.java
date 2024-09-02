@@ -90,6 +90,7 @@ import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_FOR_ENTRY_PROCESSOR_PARAMS;
 import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_PARAMS;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.util.Collections.emptyList;
@@ -273,14 +274,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                             boolean putTransient, CallerProvenance provenance) {
         return putBackupInternal(dataKey, newRecord.getValue(), true,
                 expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
-                expiryMetadata.getExpirationTime(), putTransient, provenance, null);
+                expiryMetadata.getExpirationTime(), putTransient, provenance, null, PUT_BACKUP_PARAMS);
     }
 
     @Override
     public Record putBackup(Data dataKey, Record record, long ttl,
                             long maxIdle, long nowOrExpiryTime, CallerProvenance provenance) {
         return putBackupInternal(dataKey, record.getValue(), true,
-                ttl, maxIdle, nowOrExpiryTime, false, provenance, null);
+                ttl, maxIdle, nowOrExpiryTime, false, provenance, null, PUT_BACKUP_PARAMS);
     }
 
     @Override
@@ -288,24 +289,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                boolean putTransient, CallerProvenance provenance, UUID transactionId) {
         return putBackupInternal(dataKey, newRecord.getValue(), true,
                 expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
-                expiryMetadata.getExpirationTime(), putTransient, provenance, transactionId);
+                expiryMetadata.getExpirationTime(), putTransient, provenance, transactionId, PUT_BACKUP_PARAMS);
     }
 
     @Override
-    public Record putBackup(Data key, Object value, boolean changeExpiryOnUpdate, long ttl, long maxIdle,
-                            long nowOrExpiryTime, CallerProvenance provenance) {
+    public Record putBackupForEntryProcessor(Data key, Object value, boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                                             long nowOrExpiryTime, CallerProvenance provenance) {
         return putBackupInternal(key, value, changeExpiryOnUpdate, ttl, maxIdle,
-                nowOrExpiryTime, false, provenance, null);
+                nowOrExpiryTime, false, provenance, null, PUT_BACKUP_FOR_ENTRY_PROCESSOR_PARAMS);
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
     private Record putBackupInternal(Data key, Object value, boolean changeExpiryOnUpdate,
                                      long ttl, long maxIdle, long expiryTime,
                                      boolean putTransient, CallerProvenance provenance,
-                                     UUID transactionId) {
+                                     UUID transactionId, StaticParams staticParams) {
         long now = getNow();
         putInternal(key, value, changeExpiryOnUpdate, ttl, maxIdle, expiryTime,
-                now, null, null, null, PUT_BACKUP_PARAMS);
+                now, null, null, null, staticParams);
 
         Record record = getRecord(key);
 
@@ -1031,7 +1032,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         // Intercept put on owner partition.
-        if (!staticParams.isBackup()) {
+        //
+        // As an exception to the above statement, we allow the
+        // interceptor to run on backup replicas when an EntryProcessor
+        // (EP) is used. This is because the EP is executed on backup
+        // replicas as well (instead of simply copying the result
+        // from the owner replica to the backup), and we need to
+        // ensure consistency between replicas in this scenario.
+        if (!staticParams.isBackup() || staticParams.isBackupEntryProcessor()) {
             newValue = mapServiceContext.interceptPut(interceptorRegistry, oldValue, newValue);
         }
 

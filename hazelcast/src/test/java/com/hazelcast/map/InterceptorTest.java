@@ -21,6 +21,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -31,7 +32,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,6 +52,27 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InterceptorTest extends HazelcastTestSupport {
+
+    protected void put(IMap map, Object key, Object value) {
+        map.put(key, value);
+    }
+
+    protected Object get(IMap map, Object key) {
+        return map.get(key);
+    }
+
+    protected Object remove(IMap map, Object key) {
+        return map.remove(key);
+    }
+
+    protected Map getAll(IMap map, Set keys) {
+        return map.getAll(keys);
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfigWithoutJetAndMetrics();
+    }
 
     @Test
     public void removeInterceptor_returns_true_when_interceptor_removed() {
@@ -90,43 +111,43 @@ public class InterceptorTest extends HazelcastTestSupport {
         IMap<Object, Object> map = hz.getMap("testMapInterceptor");
         String id = map.addInterceptor(new SimpleInterceptor());
 
-        map.put(1, "New York");
-        map.put(2, "Istanbul");
-        map.put(3, "Tokyo");
-        map.put(4, "London");
-        map.put(5, "Paris");
-        map.put(6, "Cairo");
-        map.put(7, "Hong Kong");
+        put(map, 1, "New York");
+        put(map, 2, "Istanbul");
+        put(map, 3, "Tokyo");
+        put(map, 4, "London");
+        put(map, 5, "Paris");
+        put(map, 6, "Cairo");
+        put(map, 7, "Hong Kong");
 
         try {
-            map.remove(1);
+            remove(map, 1);
         } catch (Exception ignore) {
         }
         try {
-            map.remove(2);
+            remove(map, 2);
         } catch (Exception ignore) {
         }
 
         assertEquals(6, map.size());
-        assertNull(map.get(1));
-        assertEquals("ISTANBUL:", map.get(2));
-        assertEquals("TOKYO:", map.get(3));
-        assertEquals("LONDON:", map.get(4));
-        assertEquals("PARIS:", map.get(5));
-        assertEquals("CAIRO:", map.get(6));
-        assertEquals("HONG KONG:", map.get(7));
+        assertNull(get(map, 1));
+        assertEquals("ISTANBUL:", get(map, 2));
+        assertEquals("TOKYO:", get(map, 3));
+        assertEquals("LONDON:", get(map, 4));
+        assertEquals("PARIS:", get(map, 5));
+        assertEquals("CAIRO:", get(map, 6));
+        assertEquals("HONG KONG:", get(map, 7));
 
         map.removeInterceptor(id);
-        map.put(8, "Moscow");
+        put(map, 8, "Moscow");
 
-        assertNull(map.get(1));
-        assertEquals("ISTANBUL", map.get(2));
-        assertEquals("TOKYO", map.get(3));
-        assertEquals("LONDON", map.get(4));
-        assertEquals("PARIS", map.get(5));
-        assertEquals("CAIRO", map.get(6));
-        assertEquals("HONG KONG", map.get(7));
-        assertEquals("Moscow", map.get(8));
+        assertNull(get(map, 1));
+        assertEquals("ISTANBUL", get(map, 2));
+        assertEquals("TOKYO", get(map, 3));
+        assertEquals("LONDON", get(map, 4));
+        assertEquals("PARIS", get(map, 5));
+        assertEquals("CAIRO", get(map, 6));
+        assertEquals("HONG KONG", get(map, 7));
+        assertEquals("Moscow", get(map, 8));
     }
 
     @Test
@@ -136,19 +157,19 @@ public class InterceptorTest extends HazelcastTestSupport {
         IMap<Integer, Object> map1 = hz1.getMap("map");
 
         for (int i = 0; i < 100; i++) {
-            map1.put(i, i);
+            put(map1, i, i);
         }
 
         map1.addInterceptor(new NegativeGetInterceptor());
         for (int i = 0; i < 100; i++) {
-            assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, map1.get(i));
+            assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, get(map1, i));
         }
 
         HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(getConfig());
         IMap<Integer, Object> map2 = hz2.getMap("map");
         for (int i = 0; i < 100; i++) {
-            assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, map1.get(i));
-            assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, map2.get(i));
+            assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, get(map1, i));
+            assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, get(map2, i));
         }
     }
 
@@ -160,11 +181,11 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         Set<Integer> set = new HashSet<>();
         for (int i = 0; i < 100; i++) {
-            map.put(i, String.valueOf(i));
+            put(map, i, String.valueOf(i));
             set.add(i);
         }
 
-        Map<Integer, String> allValues = map.getAll(set);
+        Map<Integer, String> allValues = getAll(map, set);
         for (int i = 0; i < 100; i++) {
             assertEquals("Expected intercepted value on map.getAll()", i + ":", allValues.get(i));
         }
@@ -179,7 +200,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.addEntryListener(listener, true);
 
         String value = "foo";
-        map.put(1, value);
+        put(map, 1, value);
 
         final String expectedValue = StringUtil.upperCaseInternal(value);
         assertTrueEventually(() -> assertEquals(expectedValue, listener.getAddedValue()), 15);
@@ -252,14 +273,14 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         int count = 1000;
         for (int i = 1; i <= count; i++) {
-            map.set(i, i);
+            put(map, i, i);
         }
         waitAllForSafeState(hz1, hz2);
 
         hz1.getLifecycleService().terminate();
 
         for (int i = 1; i <= count; i++) {
-            assertEquals(-i, map.get(i));
+            assertEquals(-i, get(map, i));
         }
     }
 
@@ -288,7 +309,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         hz1.getLifecycleService().terminate();
 
         for (int i = 1; i <= count; i++) {
-            assertEquals(-i, map.get(i));
+            assertEquals(-i, get(map, i));
         }
     }
 

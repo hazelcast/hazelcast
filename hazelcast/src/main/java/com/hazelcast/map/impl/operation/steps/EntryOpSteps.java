@@ -348,7 +348,7 @@ public enum EntryOpSteps implements IMapOpStep {
 
     private static void updateOldValueByConvertingItToHeapData(State state) {
         EntryOperation operation = (EntryOperation) state.getOperation();
-        Object oldValueByInMemoryFormat = operation.convertOldValueToHeapData(state.getOldValue());
+        Object oldValueByInMemoryFormat = operation.copyOldValueToHeapWhenNeeded(state.getOldValue());
         state.setOldValue(oldValueByInMemoryFormat);
     }
 
