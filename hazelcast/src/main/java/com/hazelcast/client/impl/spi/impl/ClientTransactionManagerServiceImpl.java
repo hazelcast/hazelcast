@@ -85,8 +85,8 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             if (e instanceof TransactionException exception) {
                 throw exception;
             }
-            if (e.getCause() instanceof TransactionException) {
-                throw (TransactionException) e.getCause();
+            if (e.getCause() instanceof TransactionException transactionException) {
+                throw transactionException;
             }
             if (e instanceof RuntimeException exception) {
                 throw exception;

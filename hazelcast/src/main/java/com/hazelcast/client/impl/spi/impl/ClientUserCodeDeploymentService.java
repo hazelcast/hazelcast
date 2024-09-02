@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -85,20 +84,15 @@ public class ClientUserCodeDeploymentService {
     }
 
     private void loadClassesFromJars() throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        try {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             for (String jarPath : clientUserCodeDeploymentConfig.getJarPaths()) {
                 loadClassesFromJar(os, jarPath);
             }
-        } finally {
-            closeResource(os);
         }
     }
 
     private void loadClassesFromJar(ByteArrayOutputStream os, String jarPath) throws IOException {
-        JarInputStream inputStream = null;
-        try {
-            inputStream = getJarInputStream(jarPath);
+        try (JarInputStream inputStream = getJarInputStream(jarPath)) {
             JarEntry entry;
             do {
                 entry = inputStream.getNextJarEntry();
@@ -114,8 +108,6 @@ public class ClientUserCodeDeploymentService {
                 inputStream.closeEntry();
                 classDefinitionList.add(new AbstractMap.SimpleEntry<>(className, classDefinition));
             } while (true);
-        } finally {
-            closeResource(inputStream);
         }
     }
 

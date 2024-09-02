@@ -239,10 +239,7 @@ public abstract class ClientProxy implements DistributedObject {
         if (!getDistributedObjectName().equals(that.getDistributedObjectName())) {
             return false;
         }
-        if (!serviceName.equals(that.serviceName)) {
-            return false;
-        }
-        return true;
+        return serviceName.equals(that.serviceName);
     }
 
     @Override
