@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.spi;
 
 /**
  * Descriptor of Hazelcast client proxies
- *
+ * <p>
  * Provided by corresponding provider (see ClientProxyDescriptorProvider).
  * Contains information about client proxy service.
- *
+ * <p>
  * Examples:
  * <pre>
  *           JetClientProxyDescriptor

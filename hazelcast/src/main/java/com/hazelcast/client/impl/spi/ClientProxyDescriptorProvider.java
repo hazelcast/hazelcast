@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi;
 
 /**
  * It will be discovered from some external source (like META-INF/services) and registered in the system.
- *
+ * <p>
  * Examples:
  * <pre>
  *           JetClientProxyDescriptorProvider

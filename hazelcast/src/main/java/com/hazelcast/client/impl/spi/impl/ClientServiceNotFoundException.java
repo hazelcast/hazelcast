@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 /**
  * A {@link IllegalArgumentException} that indicates that a requested client service doesn't exist.
- *
+ * <p>
  * The previous implementation was throwing {@link IllegalArgumentException}
  * but we need a specific exception type for client service not available case.
  * Therefore, for keeping backward compatibility throwing exception is still an {@link IllegalArgumentException}

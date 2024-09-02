@@ -29,7 +29,7 @@ public interface EventHandler<E> {
 
     /**
      * This method is called before registration request is sent to node.
-     *
+     * <p>
      * Note that this method will also be called while first registered node is dead
      * and re-registering to a second node.
      */
@@ -38,7 +38,7 @@ public interface EventHandler<E> {
 
     /**
      * This method is called when registration request response is successfully returned from node.
-     *
+     * <p>
      * Note that this method will also be called while first registered node is dead
      * and re-registering to a second node.
      */

@@ -28,14 +28,14 @@ import java.util.UUID;
 
 /**
  * Partition service for Hazelcast clients.
- *
+ * <p>
  * Allows to retrieve information about the partition count, the partition owner or the partitionId of a key.
  */
 public interface ClientPartitionService {
 
     /**
      * Updates the partition table with the new partition table information.
-     *
+     * <p>
      * Note: The partitions can be empty on the response, client will not apply the empty partition table.
      *
      * @param connection the connection which the partition table is received from

@@ -84,7 +84,7 @@ public interface ClientInvocationService {
 
     /**
      * This will be called on each connection close.
-     * Note that is different than {@link ConnectionListener#connectionRemoved(Connection)} where `connectionRemoved`
+     * Note that is different from {@link ConnectionListener#connectionRemoved(Connection)} where `connectionRemoved`
      * means an authenticated connection is disconnected
      *
      * @param connection closed connection
