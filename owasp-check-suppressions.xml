@@ -153,4 +153,13 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-mapred@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - Maven libs from opentelemetry are identified as GO and Python libs
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.cloud\.opentelemetry/.*$</packageUrl>
+        <cve>CVE-2023-43810</cve>
+        <cve>CVE-2023-45142</cve>
+        <cve>CVE-2023-47108</cve>
+    </suppress>
 </suppressions>
