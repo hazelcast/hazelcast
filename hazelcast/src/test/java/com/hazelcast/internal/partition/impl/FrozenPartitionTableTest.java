@@ -22,7 +22,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
@@ -47,17 +46,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.OverridePropertyRule.clear;
-import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -224,8 +220,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         hz3.shutdown();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()),
-                randomName(), new StaticMemberNodeContext(factory, newUnsecureUUID(), member3.getAddress()));
+        hz3 = factory.newHazelcastInstance(member3.getAddress());
         assertClusterSizeEventually(3, hz1, hz2);
         waitAllForSafeState(hz1, hz2, hz3);
 
@@ -256,8 +251,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         hz4.shutdown();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        newHazelcastInstance(initOrCreateConfig(new Config()),
-                randomName(), new StaticMemberNodeContext(factory, member4.getUuid(), member3.getAddress()));
+        factory.builder().withAddress(member3.getAddress()).withUuid(member4.getUuid()).construct();
         assertClusterSizeEventually(3, hz1, hz2);
         waitAllForSafeState(hz1, hz2);
 

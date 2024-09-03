@@ -21,7 +21,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -43,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -151,10 +149,12 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRestarts_withSameIdentity() throws Exception {
-        whenMemberRestarts(() -> {
-            StaticMemberNodeContext nodeContext = new StaticMemberNodeContext(instanceFactory, remoteMember);
-            remote = newHazelcastInstance(new Config(), remoteMember.toString(), nodeContext);
-        });
+        whenMemberRestarts(() ->
+            remote = instanceFactory.builder()
+                    .withAddress(remoteMember.getAddress())
+                    .withUuid(remoteMember.getUuid())
+                    .construct()
+        );
     }
 
     private void whenMemberRestarts(Runnable restartAction) throws Exception {

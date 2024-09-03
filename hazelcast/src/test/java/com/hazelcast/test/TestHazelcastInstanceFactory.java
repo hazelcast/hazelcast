@@ -29,6 +29,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -44,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,6 +67,10 @@ import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventuall
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 @ThreadSafe
 public class TestHazelcastInstanceFactory {
@@ -131,7 +137,7 @@ public class TestHazelcastInstanceFactory {
      * @param config if {@code null}, the default config is used.
      */
     public HazelcastInstance newHazelcastInstance(Config config) {
-        return newHazelcastInstance(null, config, emptySet());
+        return newHazelcastInstance(null, null, config, emptySet());
     }
 
     /**
@@ -148,10 +154,10 @@ public class TestHazelcastInstanceFactory {
      * @param config  if {@code null}, the default config is used.
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
-        return newHazelcastInstance(address, config, emptySet());
+        return newHazelcastInstance(address, null, config, emptySet());
     }
 
-    protected HazelcastInstance newHazelcastInstance(Address address, Config config,
+    protected HazelcastInstance newHazelcastInstance(Address address, UUID uuid, Config config,
                                                      @Nonnull Set<Address> blockedAddresses) {
         NodeContext nodeContext;
         if (isMockNetwork) {
@@ -166,11 +172,24 @@ public class TestHazelcastInstanceFactory {
             }
             nodeContext = new DefaultNodeContext();
         }
+        nodeContext = withUUID(nodeContext, uuid);
         String instanceName = config != null ? config.getInstanceName() : null;
         HazelcastInstance instance =
                 HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         registerTestMetricsPublisher(instance);
         return instance;
+    }
+
+    protected static NodeContext withUUID(NodeContext nodeContext, @Nullable UUID uuid) {
+        if (uuid != null) {
+            nodeContext = spy(nodeContext);
+            doAnswer(invocation -> {
+                NodeExtension nodeExtension = spy((NodeExtension) invocation.callRealMethod());
+                doReturn(uuid).when(nodeExtension).createMemberUuid();
+                return nodeExtension;
+            }).when(nodeContext).createNodeExtension(any());
+        }
+        return nodeContext;
     }
 
     public HazelcastInstanceBuilder builder() {
@@ -179,12 +198,26 @@ public class TestHazelcastInstanceFactory {
 
     public class HazelcastInstanceBuilder {
         private Address address;
+        private UUID uuid;
         private Config config;
         private Set<Address> blockedAddresses = emptySet();
 
         /** If skipped, or passed {@code null}, {@linkplain #nextAddress() the next address} is used. */
         public HazelcastInstanceBuilder withAddress(Address address) {
             this.address = address;
+            return this;
+        }
+
+        /**
+         * If skipped, or passed {@code null}: <ol>
+         * <li> if persistence is enabled and the member acquires an existing hot restart directory,
+         *      the local member UUID is read from {@code cluster/members.bin};
+         * <li> otherwise, a new securely random UUID is created.
+         *
+         * @see com.hazelcast.instance.impl.EnterpriseNodeExtension#createMemberUuid()
+         */
+        public HazelcastInstanceBuilder withUuid(UUID uuid) {
+            this.uuid = uuid;
             return this;
         }
 
@@ -207,7 +240,7 @@ public class TestHazelcastInstanceFactory {
         }
 
         public HazelcastInstance construct() {
-            return newHazelcastInstance(address, config, blockedAddresses);
+            return newHazelcastInstance(address, uuid, config, blockedAddresses);
         }
     }
 
@@ -433,7 +466,7 @@ public class TestHazelcastInstanceFactory {
      * This method may return {@code null} if no IP address for the {@code host}
      * could be found.
      */
-    public static Address createAddressOrNull(String host, int port) {
+    private static Address createAddressOrNull(String host, int port) {
         try {
             return new Address(host, port);
         } catch (UnknownHostException e) {
@@ -489,7 +522,7 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    public static Config initOrCreateConfig(Config config) {
+    protected static Config initOrCreateConfig(Config config) {
         if (config == null) {
             if (System.getProperty(SYSPROP_MEMBER_CONFIG) != null
                     && isAcceptedSuffixConfigured(System.getProperty(SYSPROP_MEMBER_CONFIG), YAML_ACCEPTED_SUFFIXES)

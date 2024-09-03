@@ -23,9 +23,7 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.nio.Connection;
@@ -67,7 +65,6 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
@@ -86,7 +83,6 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
-import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -617,7 +613,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()), randomName(), new StaticMemberNodeContext(factory, member3));
+        hz3 = factory.builder().withAddress(member3.getAddress()).withUuid(member3.getUuid()).construct();
 
         assertClusterSizeEventually(4, hz1, hz4);
 
@@ -738,10 +734,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         // but master does not realize its leave in time.
         // When master realizes, member3 is terminated,
         // new member should eventually join the cluster.
-        Future<HazelcastInstance> future = spawn(() -> {
-            NodeContext nodeContext = new StaticMemberNodeContext(factory, member3.getUuid(), factory.nextAddress());
-            return newHazelcastInstance(initOrCreateConfig(new Config()), randomName(), nodeContext);
-        });
+        Future<HazelcastInstance> future = spawn(() -> factory.builder().withUuid(member3.getUuid()).construct());
 
         spawn(() -> {
             sleepSeconds(5);
