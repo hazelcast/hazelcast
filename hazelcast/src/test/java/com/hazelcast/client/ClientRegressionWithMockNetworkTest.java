@@ -392,6 +392,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         IMap<Object, Object> m = client.getMap("m");
         UUID id = m.addEntryListener(new EntryAdapter<>() {
+            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 latch.countDown();
             }

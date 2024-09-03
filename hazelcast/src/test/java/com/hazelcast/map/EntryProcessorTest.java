@@ -1461,7 +1461,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         final IMap<Object, Object> map = instance.getMap(MAP_NAME);
 
-        map.addEntryListener(new NoopMapListener<Object, Object>(), false);
+        map.addEntryListener(new NoopMapListener<>(), false);
 
         final LongAdder interceptGetCallCounter = new LongAdder();
         map.addInterceptor(new MapInterceptorAdaptor() {
@@ -1907,11 +1907,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
         }
     }
 
@@ -1955,7 +1955,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     /**
-     * This predicate is used to check whether or not {@link IndexAwarePredicate#isIndexed} method is called.
+     * This predicate is used to check whether {@link IndexAwarePredicate#isIndexed} method is called.
      */
     private static class IndexedTestPredicate<K, V> implements IndexAwarePredicate<K, V> {
 

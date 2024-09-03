@@ -198,6 +198,7 @@ public class IssuesTest extends HazelcastTestSupport {
                         return 123;
                     }
 
+                    @Override
                     public void destroy() {
                     }
                 }));
