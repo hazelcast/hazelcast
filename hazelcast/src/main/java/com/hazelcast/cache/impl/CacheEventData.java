@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Internal event data wrapper used during publishing and dispatching events.
- *
+ * <p>
  * An event data is represented by
  * <ul>
  * <li>name</li>

@@ -33,7 +33,7 @@ import java.util.Map;
 public class CacheEntry<K, V>
         implements Cache.Entry<K, V>, Map.Entry<K, V> {
     private final K key;
-    private V value;
+    private final V value;
 
     public CacheEntry(K key, V value) {
         this.key = key;

@@ -99,7 +99,7 @@ public class CacheEntriesWithCursor implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             Data key = IOUtil.readData(in);
             Data value = IOUtil.readData(in);
-            entries.add(new AbstractMap.SimpleEntry<Data, Data>(key, value));
+            entries.add(new AbstractMap.SimpleEntry<>(key, value));
         }
     }
 

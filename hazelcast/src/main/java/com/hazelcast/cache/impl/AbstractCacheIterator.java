@@ -107,7 +107,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
     protected int index;
     protected int currentIndex = -1;
 
-    public AbstractCacheIterator(ICacheInternal<K, V> cache,
+    protected AbstractCacheIterator(ICacheInternal<K, V> cache,
                                  int partitionCount,
                                  int fetchSize,
                                  boolean prefetchValues) {
