@@ -111,7 +111,7 @@
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.37.0</activemq-artemis.version>
-        <bytebuddy.version>1.14.19</bytebuddy.version>
+        <bytebuddy.version>1.15.1</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
