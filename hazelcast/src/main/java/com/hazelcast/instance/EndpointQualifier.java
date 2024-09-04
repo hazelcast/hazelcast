@@ -98,8 +98,8 @@ public final class EndpointQualifier
     }
 
     public String toMetricsPrefixString() {
-        String identifier = this.identifier != null ? this.identifier : "";
-        return type.name() + (!isSingleType(type) ? ("-" + identifier.replaceAll("\\s", "_")) : "");
+        String str = this.identifier != null ? this.identifier : "";
+        return type.name() + (!isSingleType(type) ? ("-" + str.replaceAll("\\s", "_")) : "");
     }
 
     private static boolean isSingleType(ProtocolType type) {
