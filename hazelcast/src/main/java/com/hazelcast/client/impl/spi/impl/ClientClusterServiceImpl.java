@@ -54,6 +54,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -169,7 +170,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             if (listener instanceof InitialMembershipListener membershipListener) {
                 Cluster cluster = getCluster();
                 Collection<Member> members = memberListSnapshot.get().members().values();
-                //if members are empty,it means initial event did not arrive yet
+                //if members are empty,it means initial event did not arrive, yet
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
                 if (!members.isEmpty()) {
                     InitialMembershipEvent event = new InitialMembershipEvent(cluster, toUnmodifiableHasSet(members));
@@ -194,7 +195,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     @Override
     public void start(Collection<EventListener> configuredListeners) {
-        configuredListeners.stream().filter(listener -> listener instanceof MembershipListener)
+        configuredListeners.stream().filter(MembershipListener.class::isInstance)
                 .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
@@ -311,19 +312,17 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return events;
     }
 
-    private String membersString(MemberListSnapshot snapshot) {
+    private static String membersString(MemberListSnapshot snapshot) {
         Collection<Member> members = snapshot.members().values();
-        StringBuilder sb = new StringBuilder(lineSeparator());
-        sb.append(lineSeparator());
-        sb.append("Members [");
-        sb.append(members.size());
-        sb.append("] {");
-        for (Member member : members) {
-            sb.append(lineSeparator()).append("\t").append(member);
-        }
-        sb.append(lineSeparator()).append("}").append(lineSeparator());
-        return sb.toString();
+                return """
+                Members [%s] {%n\
+                %s%n\
+                }%n\
+                """.formatted(members.size(), members.stream()
+                .map(member -> "\t" + member)
+                .collect(Collectors.joining(lineSeparator())));
     }
+
 
     @Override
     public SubsetMembers getSubsetMembers() {

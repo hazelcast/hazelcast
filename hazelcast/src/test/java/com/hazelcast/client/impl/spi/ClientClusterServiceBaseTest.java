@@ -550,12 +550,11 @@ public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport 
         MemberInfo member = member("127.0.0.1");
         List<MemberInfo> members = List.of(member);
 
-        String expectedLogMessage = "\n\n"
-                + "Members [1] {"
-                + "\n"
-                + "\tMember [127.0.0.1]:5701 - " + member.getUuid()
-                + "\n"
-                + "}\n";
+        String expectedLogMessage = """
+                Members [1] {%n\
+                \tMember [127.0.0.1]:5701 - %s%n\
+                }%n\
+                """.formatted(member.getUuid());
 
         for (int i = 0; i < 3; i++) {
             clusterService.handleMembersViewEvent(i, members, UUID.randomUUID());
