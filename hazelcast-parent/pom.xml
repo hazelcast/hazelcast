@@ -78,41 +78,25 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
 
-        <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.12.0</avro.version>
         <aws.sdk.version>1.12.770</aws.sdk.version>
         <aws.sdk2.version>2.27.10</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
-        <classgraph.version>4.8.175</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <new.debezium.version>2.6.0.Final</new.debezium.version>
         <grpc.version>1.60.0</grpc.version>
         <hadoop.version>3.4.0</hadoop.version>
-        <h2.version>2.3.232</h2.version>
-        <gson.version>2.10.1</gson.version>
-        <jackson.version>2.17.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
-        <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.26.3</jline.version>
-        <jms.api.version>3.1.0</jms.api.version>
-        <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
         Confluent depends on Kafka, and consideration should be given when upgrading
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
         <kafka.version>3.7.1</kafka.version>
+        <confluent.version>7.7.0</confluent.version>
         <kotlin.version>2.0.20</kotlin.version>
-        <reload4j.version>1.2.25</reload4j.version>
-        <mssql.version>12.8.0.jre11</mssql.version>
-        <netty.version>4.1.112.Final</netty.version>
-        <objenesis.version>3.3</objenesis.version>
-        <oracle.version>23.5.0.24.07</oracle.version>
-        <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.14.1</parquet.version>
-        <picocli.version>4.7.6</picocli.version>
-        <postgresql.version>42.7.3</postgresql.version>
-        <prometheus.version>0.20.0</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -123,39 +107,12 @@
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
-        <slf4j.version>2.0.16</slf4j.version>
-        <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
-        <snakeyaml.engine.version>2.7</snakeyaml.engine.version>
         <mongodb.version>4.11.1</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.37.0</activemq-artemis.version>
-        <assertj.version>3.26.3</assertj.version>
-        <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.19</bytebuddy.version>
-        <commons-codec.version>1.17.1</commons-codec.version>
-        <commons-io.version>2.16.1</commons-io.version>
-        <commons-lang3.version>3.16.0</commons-lang3.version>
-        <!--
-        Confluent depends on Kafka, and consideration should be given when upgrading
-        https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
-        -->
-        <confluent.version>7.7.0</confluent.version>
-        <felix.utils.version>1.11.6</felix.utils.version>
-        <http.core.version>4.4.16</http.core.version>
-        <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
-        <wiremock.version>3.9.1</wiremock.version>
-        <reflections.version>0.10.2</reflections.version>
-        <testcontainers.version>1.19.8</testcontainers.version>
-        <jna.version>5.14.0</jna.version>
-        <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
-        <archunit.version>1.3.0</archunit.version>
-        <errorprone.version>2.30.0</errorprone.version>
-        <awaitility.version>4.2.2</awaitility.version>
-        <hikari.version>5.1.0</hikari.version>
-        <checkstyle.version>10.17.0</checkstyle.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -216,7 +173,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>${jackson.version}</version>
+                <version>2.17.2</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -230,7 +187,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>${netty.version}</version>
+                <version>4.1.112.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -357,22 +314,27 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
+                <version>2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.snakeyaml</groupId>
+                <artifactId>snakeyaml-engine</artifactId>
+                <version>2.7</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
+                <version>1.17.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>${commons-io.version}</version>
+                <version>2.16.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>${commons-lang3.version}</version>
+                <version>3.16.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -412,7 +374,7 @@
             <dependency>
                 <groupId>com.microsoft.sqlserver</groupId>
                 <artifactId>mssql-jdbc</artifactId>
-                <version>${mssql.version}</version>
+                <version>12.8.0.jre11</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -422,24 +384,24 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>${postgresql.version}</version>
+                <version>42.7.3</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc11</artifactId>
-                <version>${oracle.version}</version>
+                <version>23.5.0.24.07</version>
                 <scope>test</scope>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>${http.core.version}</version>
+                <version>4.4.16</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>${http.client.version}</version>
+                <version>4.5.14</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auto.value</groupId>
@@ -489,7 +451,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
+                <version>2.0.16</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -512,7 +474,7 @@
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
-                <version>${antlr4.version}</version>
+                <version>4.9.3</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -527,7 +489,7 @@
             <dependency>
                 <groupId>ch.qos.reload4j</groupId>
                 <artifactId>reload4j</artifactId>
-                <version>${reload4j.version}</version>
+                <version>1.2.25</version>
             </dependency>
             <dependency>
                 <groupId>org.lz4</groupId>
@@ -554,12 +516,12 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>${jna.version}</version>
+                <version>5.14.0</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.version}</version>
+                <version>2.3.1</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
@@ -603,7 +565,7 @@
             <dependency>
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
-                <version>${reflections.version}</version>
+                <version>0.10.2</version>
             </dependency>
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
@@ -618,22 +580,23 @@
             <dependency>
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
-                <version>${archunit.version}</version>
+                <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
+                <version>1.3.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>${errorprone.version}</version>
+                <version>2.30.0</version>
             </dependency>
             <dependency>
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli</artifactId>
-                <version>${picocli.version}</version>
+                <version>4.7.6</version>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
-                <version>${awaitility.version}</version>
+                <version>4.2.2</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -650,7 +613,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
+                <version>1.19.8</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -708,6 +671,21 @@
                 <groupId>org.jctools</groupId>
                 <artifactId>jctools-core</artifactId>
                 <version>4.0.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>2.3.232</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.26.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>3.9.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

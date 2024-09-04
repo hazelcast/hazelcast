@@ -39,6 +39,7 @@
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <immutables.version>2.10.1</immutables.version>
+        <json-surfer.version>0.11</json-surfer.version>
     </properties>
 
     <build>
@@ -748,7 +749,6 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
 

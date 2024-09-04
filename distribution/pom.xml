@@ -32,6 +32,7 @@
     <properties>
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <prometheus.version>0.20.0</prometheus.version>
     </properties>
 
     <build>

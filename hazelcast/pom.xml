@@ -600,7 +600,6 @@
         <dependency>
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
-            <version>${snakeyaml.engine.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -611,7 +610,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>${classgraph.version}</version>
+            <version>4.8.175</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -666,7 +665,7 @@
         <dependency>
             <groupId>jakarta.jms</groupId>
             <artifactId>jakarta.jms-api</artifactId>
-            <version>${jms.api.version}</version>
+            <version>3.1.0</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -735,7 +734,7 @@
             <groupId>com.atomikos</groupId>
             <artifactId>transactions-jdbc</artifactId>
             <scope>test</scope>
-            <version>${atomikos.version}</version>
+            <version>3.9.3</version>
         </dependency>
         <dependency>
             <groupId>javax.transaction</groupId>
@@ -809,7 +808,6 @@
             <version>${activemq-artemis.version}</version>
             <type>pom</type>
             <scope>test</scope>
-
         </dependency>
 
         <dependency>
@@ -853,7 +851,6 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -917,7 +914,6 @@
         <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
-            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -931,7 +927,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>${hikari.version}</version>
+            <version>5.1.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

@@ -1116,7 +1116,6 @@
         <dependency>
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
-            <version>${snakeyaml.engine.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -1143,7 +1142,6 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
