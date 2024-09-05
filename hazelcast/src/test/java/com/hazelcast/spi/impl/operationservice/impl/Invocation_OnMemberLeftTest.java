@@ -24,6 +24,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -215,7 +216,8 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertNotNull(nonMaster.getUserContext().get(UnresponsiveMasterOperation.COMPLETION_FLAG)));
     }
 
-    private static class UnresponsiveMasterOperation extends Operation {
+    // Implements SelfResponseOperation marker to allow invoking without returning a response
+    private static class UnresponsiveMasterOperation extends Operation implements SelfResponseOperation {
         static final String COMPLETION_FLAG = UnresponsiveMasterOperation.class.getName();
 
         @Override
@@ -237,7 +239,8 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         }
     }
 
-    private static class UnresponsiveTargetOperation extends Operation {
+    // Implements SelfResponseOperation marker to allow invoking without returning a response
+    private static class UnresponsiveTargetOperation extends Operation implements SelfResponseOperation {
         static final String COMPLETION_FLAG = UnresponsiveTargetOperation.class.getName();
 
         @Override

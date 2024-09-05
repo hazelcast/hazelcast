@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -62,7 +63,7 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
  * An empty response can be sent if the current replica version is 0.
  */
 public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
-        implements PartitionAwareOperation, MigrationCycleOperation {
+        implements PartitionAwareOperation, MigrationCycleOperation, SelfResponseOperation {
 
     protected volatile Collection<ServiceNamespace> namespaces;
 

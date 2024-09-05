@@ -21,11 +21,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-class NewIdBatchOperation extends Operation implements IdentifiedDataSerializable {
+class NewIdBatchOperation extends Operation implements IdentifiedDataSerializable, SelfResponseOperation {
 
     private String flakeIdGenName;
     private int batchSize;

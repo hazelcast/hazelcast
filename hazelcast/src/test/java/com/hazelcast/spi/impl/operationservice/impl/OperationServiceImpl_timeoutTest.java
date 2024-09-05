@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -145,8 +146,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         }
     }
 
-    static class TimedOutBackupAwareOperation extends Operation
-            implements BackupAwareOperation {
+    // Implements SelfResponseOperation marker to allow invoking without returning a response
+    static class TimedOutBackupAwareOperation extends Operation implements BackupAwareOperation, SelfResponseOperation {
         @Override
         public void run() throws Exception {
             LockSupport.parkNanos((long) (Math.random() * 1000 + 10));

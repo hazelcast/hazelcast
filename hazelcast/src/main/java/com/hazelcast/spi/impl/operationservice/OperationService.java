@@ -115,25 +115,128 @@ public interface OperationService {
      */
     void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions);
 
+    /**
+     * Invokes an {@link Operation} on the specified {@code partitionId}, on behalf of the service
+     * defined by the provided {@code serviceName}, expecting a returned response.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke
+     * @param partitionId the ID of the partition this Operation should be invoked on
+     * @return            the {@link InvocationFuture} which will complete when a response is received
+     * @param <E>         the expected response return type for the invocation
+     */
     <E> InvocationFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 
+    /**
+     * Invokes an {@link Operation} asynchronously on the specified {@code partitionId}, on behalf of
+     * the service defined by the provided {@code serviceName}, expecting a returned response.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke
+     * @param partitionId the ID of the partition this Operation should be invoked on
+     * @return            the {@link InvocationFuture} which will complete when a response is received
+     * @param <E>         the expected response return type for the invocation
+     */
     <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId);
 
+    /**
+     * Invokes an {@link Operation} asynchronously on the specified {@code partitionId}, on behalf of
+     * the service defined by the provided {@code serviceName}, expecting a returned response.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param serviceName  the name of the service to invoke this Operation on behalf of
+     * @param op           the {@link Operation} to invoke
+     * @param partitionId  the ID of the partition this Operation should be invoked on
+     * @param replicaIndex the replica index related to this Operation
+     * @return             the {@link InvocationFuture} which will complete when a response is received
+     * @param <E>          the expected response return type for the invocation
+     */
     <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId, int replicaIndex);
 
     /**
-     * Executes an operation on a partition.
+     * Invokes an {@link Operation} on the partition identified by the Operation itself, expecting
+     * a returned response.
      *
-     * @param op  the operation
-     * @param <E> the return type of the operation response
-     * @return the future.
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param op  the {@link Operation} to invoke
+     * @return    the {@link InvocationFuture} which will complete when a response is received
+     * @param <E> the expected response return type for the invocation
      */
     <E> InvocationFuture<E> invokeOnPartition(Operation op);
 
+    /**
+     * Invokes an {@link Operation} on the specified {@code target} member, on behalf of the service
+     * defined by the provided {@code serviceName}, expecting a returned response.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke
+     * @param target      the {@link Address} of the target member to execute this operation on
+     * @return            the {@link InvocationFuture} which will complete when a response is received
+     * @param <E>         the expected response return type for the invocation
+     */
     <E> InvocationFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
+    /**
+     * Invokes an {@link Operation} asynchronously on the specified {@code target} member, on behalf of
+     * the service defined by the provided {@code serviceName}, expecting a returned response.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke
+     * @param target      the {@link Address} of the target member to execute this operation on
+     * @return            the {@link InvocationFuture} which will complete when a response is received
+     * @param <E>         the expected response return type for the invocation
+     */
     <E> InvocationFuture<E> invokeOnTargetAsync(String serviceName, Operation op, Address target);
 
+    /**
+     * Executes an {@link Operation} on the specified {@code target} member, on behalf of the service
+     * defined by the provided {@code serviceName}, expecting no returned response.
+     * <p>
+     * The operation is executed in a non-blocking (asynchronous) manner, and supports the {@code target}
+     * being the local member, as opposed to {@link #send(Operation, Address)} which only supports
+     * sending Operations to a non-local member.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke
+     * @param target      the {@link Address} of the target member to execute this operation on
+     */
+    void executeOrSend(String serviceName, Operation op, Address target);
+
+    /**
+     * Invokes an {@link Operation} on the {@code master} member of the cluster, on behalf of the
+     * service defined by the provided {@code serviceName}.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke
+     * @return            the {@link InvocationFuture} which will complete when a response is received
+     * @param <E>         the expected response return type for the invocation
+     */
     <E> InvocationFuture<E> invokeOnMaster(String serviceName, Operation op);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
@@ -166,6 +269,10 @@ public interface OperationService {
      * If the operations have sync backups, the returned {@link CompletableFuture} does <b>not</b>
      * wait for their completion. Instead, the {@link CompletableFuture} is completed once the
      * operations are completed on primary replicas of the given {@code partitions}.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
@@ -202,6 +309,10 @@ public interface OperationService {
      * wait for their completion. Instead, the {@link CompletableFuture} is completed once the
      * operations are completed on primary replicas of the given {@code partitions}.
      *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
+     *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
@@ -218,6 +329,10 @@ public interface OperationService {
      * If the operations have sync backups, the returned {@link CompletableFuture} does <b>not</b>
      * wait for their completion. Instead, the {@link CompletableFuture} is completed once the
      * operations are completed on primary replicas of the given {@code partitions}.
+     *
+     * <p><b>Warning:</b> The provided {@link Operation} should return a response, otherwise the
+     * returned {@link InvocationFuture} will not complete and the invocation may not be de-registered
+     * if executed locally, as timeouts are ignored for local invocations.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations

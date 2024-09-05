@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -128,15 +129,18 @@ final class InvokeOnPartitions {
     }
 
     private void retryPartition(final int partitionId) {
-        Operation operation;
+        Operation op;
         PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
         if (partitionAwareFactory != null) {
-            operation = partitionAwareFactory.createPartitionOperation(partitionId);
+            op = partitionAwareFactory.createPartitionOperation(partitionId);
         } else {
-            operation = operationFactory.createOperation();
+            op = operationFactory.createOperation();
         }
+        // Only operations which expect a response should be invoked, otherwise they may not be de-registered
+        assert op.returnsResponse() || op instanceof SelfResponseOperation : String.format(
+                "Operation '%s' does not handle responses - this will break Future completion!", op.getClass().getSimpleName());
 
-        operationService.createInvocationBuilder(serviceName, operation, partitionId)
+        operationService.createInvocationBuilder(serviceName, op, partitionId)
                         .invoke()
                         .whenCompleteAsync((response, throwable) -> {
                             if (throwable == null) {

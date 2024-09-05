@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,7 +41,7 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
  * operations from live registry, exception handling and peeling and
  * logging of exceptions
  */
-public abstract class AsyncOperation extends Operation implements IdentifiedDataSerializable {
+public abstract class AsyncOperation extends Operation implements SelfResponseOperation, IdentifiedDataSerializable {
 
     @Override
     public void beforeRun() {

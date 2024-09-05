@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import java.io.IOException;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static java.lang.String.format;
 
 abstract class AbstractRegistrationOperation extends Operation
-        implements AllowedDuringPassiveState, IdentifiedDataSerializable, Versioned {
+        implements AllowedDuringPassiveState, SelfResponseOperation, IdentifiedDataSerializable, Versioned {
 
     private int memberListVersion = -1;
     private int orderKey = -1;

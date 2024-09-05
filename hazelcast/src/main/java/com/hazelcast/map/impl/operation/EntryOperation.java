@@ -49,6 +49,7 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -150,7 +151,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class EntryOperation extends LockAwareOperation
-        implements BackupAwareOperation, BlockingOperation, MutatingOperation {
+        implements BackupAwareOperation, BlockingOperation, MutatingOperation, SelfResponseOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
 

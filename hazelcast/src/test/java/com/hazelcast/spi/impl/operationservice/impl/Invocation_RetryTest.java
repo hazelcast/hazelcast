@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -213,8 +214,10 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
     /**
      * Non-responsive operation.
+     * <p>
+     * Implements SelfResponseOperation marker to allow invoking without returning a response
      */
-    public static class NonResponsiveOperation extends Operation {
+    public static class NonResponsiveOperation extends Operation implements SelfResponseOperation {
 
         @Override
         public void run() throws InterruptedException {

@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -241,7 +242,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         }
     }
 
-    public static class SilentOperation extends Operation implements AllowedDuringPassiveState {
+    // Implements SelfResponseOperation marker to allow invoking without returning a response
+    public static class SilentOperation extends Operation implements AllowedDuringPassiveState, SelfResponseOperation {
 
         static final String EXECUTION_STARTED = "execution-started";
 

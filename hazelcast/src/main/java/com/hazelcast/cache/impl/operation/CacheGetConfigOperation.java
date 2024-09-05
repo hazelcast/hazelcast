@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import java.io.IOException;
 
@@ -37,7 +38,8 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
  *
  * @see AddCacheConfigOperation
  */
-public class CacheGetConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ReadonlyOperation {
+public class CacheGetConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ReadonlyOperation,
+                                                                               SelfResponseOperation {
 
     private transient volatile Object response;
     private transient InternalCompletableFuture createOnAllMembersFuture;

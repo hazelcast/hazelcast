@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import java.io.IOException;
 import java.util.Map.Entry;
@@ -33,7 +34,8 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
-public class ReadMetricsOperation extends Operation implements ReadonlyOperation, IdentifiedDataSerializable {
+public class ReadMetricsOperation extends Operation implements ReadonlyOperation, IdentifiedDataSerializable,
+                                                               SelfResponseOperation {
 
     private long offset;
 
