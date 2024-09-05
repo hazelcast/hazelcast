@@ -39,7 +39,7 @@
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <immutables.version>2.10.1</immutables.version>
-        <json-surfer.version>0.11</json-surfer.version>
+        <json-surfer.version>0.12</json-surfer.version>
     </properties>
 
     <build>
