@@ -182,7 +182,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.55.v20240627</version>
+                <version>9.4.56.v20240826</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
