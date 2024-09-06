@@ -892,27 +892,27 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         PartitionReplica[][] checkSnapshots() {
-            Set<UUID> shutdownRequestedReplicas = new HashSet<>();
-            Set<UUID> currentReplicas = new HashSet<>();
-            Map<UUID, Address> currentAddressMapping = new HashMap<>();
-            getDataDisownRequestedMembers().forEach(member -> shutdownRequestedReplicas.add(member.getUuid()));
-
             Collection<Member> currentMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+
+            Set<UUID> currentReplicas = new HashSet<>();
             currentMembers.forEach(member -> currentReplicas.add(member.getUuid()));
+            getDataDisownRequestedMembers().forEach(member -> currentReplicas.remove(member.getUuid()));
+
+            Map<UUID, Address> currentAddressMapping = new HashMap<>();
             currentMembers.forEach(member -> currentAddressMapping.put(member.getUuid(), member.getAddress()));
 
-            Set<PartitionTableView> candidates = new TreeSet<>(new
-                    PartitionTableViewDistanceComparator(partitionStateManager.getPartitionTable()));
+            Set<PartitionTableView> candidates = new TreeSet<>(
+                    new PartitionTableViewDistanceComparator(partitionStateManager.getPartitionTable()));
 
             for (PartitionTableView partitionTableView : partitionStateManager.snapshots()) {
-                if (partitionTableView.composedOf(currentReplicas, shutdownRequestedReplicas)) {
+                if (partitionTableView.getMemberUuids().equals(currentReplicas)) {
                     candidates.add(partitionTableView);
                 }
             }
             if (candidates.isEmpty()) {
                 return null;
             }
-            // find least distant
+            // find the least distant
             return candidates.iterator().next().toArray(currentAddressMapping);
         }
 

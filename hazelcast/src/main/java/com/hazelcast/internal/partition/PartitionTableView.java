@@ -21,11 +21,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * An immutable/readonly view of partition table.
@@ -69,25 +72,6 @@ public class PartitionTableView {
     public PartitionReplica[] getReplicas(int partitionId) {
         InternalPartition partition = partitions[partitionId];
         return partition != null ? partition.getReplicasCopy() : new PartitionReplica[MAX_REPLICA_COUNT];
-    }
-
-    /**
-     * @return {@code true} when this {@code PartitionTableView}
-     * references the given {@code replicas UUID}s
-     * and not any of the {@code excludedReplicas UUID}s, otherwise
-     * {@code false}.
-     */
-    public boolean composedOf(Set<UUID> replicas, Set<UUID> excludedReplicas) {
-        for (InternalPartition partition : partitions) {
-            for (PartitionReplica replica : partition.getReplicasCopy()) {
-                if (replica != null) {
-                    if (!replicas.contains(replica.uuid()) || excludedReplicas.contains(replica.uuid())) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
     }
 
     /**
@@ -135,6 +119,14 @@ public class PartitionTableView {
             }
         }
         return -1;
+    }
+
+    public Set<UUID> getMemberUuids() {
+        return Stream.of(partitions)
+                .flatMap(partition -> Stream.of(partition.getReplicasCopy()))
+                .filter(Objects::nonNull)
+                .map(PartitionReplica::uuid)
+                .collect(toSet());
     }
 
     public PartitionReplica[][] toArray(Map<UUID, Address> addressMap) {
