@@ -35,6 +35,11 @@ import javax.annotation.Nonnull;
  */
 public final class AvroSources {
 
+    /**
+     * Ensure that this does not collide with any constants in {@link com.hazelcast.jet.pipeline.ConnectorNames}
+     */
+    static final String AVRO_SOURCE_CONNECTOR_NAME = "avroSource";
+
     private AvroSources() {
     }
 

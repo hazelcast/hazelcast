@@ -32,6 +32,7 @@ import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
 import java.nio.file.DirectoryStream;
@@ -127,6 +128,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         }
     }
 
+
     /**
      * Private API. Use {@link SourceProcessors#readFilesP} instead.
      */
@@ -135,15 +137,16 @@ public final class ReadFilesP<T> extends AbstractProcessor {
             @Nonnull String glob,
             boolean sharedFileSystem,
             boolean ignoreFileNotFound,
-            @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn
+            @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn,
+            @Nullable String connectorName
     ) {
         checkSerializable(readFileFn, "readFileFn");
 
         return new MetaSupplier<>(DEFAULT_LOCAL_PARALLELISM, directory, glob, sharedFileSystem,
-                ignoreFileNotFound, readFileFn);
+                ignoreFileNotFound, readFileFn, connectorName);
     }
 
-    private static final class MetaSupplier<T> implements FileProcessorMetaSupplier<T> {
+    private static final class MetaSupplier<T> implements FileProcessorMetaSupplier<T>, ConnectorNameAware {
 
         @Serial
         private static final long serialVersionUID = 1L;
@@ -156,6 +159,8 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         private final boolean sharedFileSystem;
         private final boolean ignoreFileNotFound;
         private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
+        @Nullable
+        private final String connectorName;
 
         private MetaSupplier(
                 int localParallelism,
@@ -163,7 +168,8 @@ public final class ReadFilesP<T> extends AbstractProcessor {
                 String glob,
                 boolean sharedFileSystem,
                 boolean ignoreFileNotFound,
-                FunctionEx<? super Path, ? extends Stream<T>> readFileFn
+                FunctionEx<? super Path, ? extends Stream<T>> readFileFn,
+                @Nullable String connectorName
         ) {
             this.localParallelism = localParallelism;
             this.directory = directory;
@@ -171,6 +177,12 @@ public final class ReadFilesP<T> extends AbstractProcessor {
             this.sharedFileSystem = sharedFileSystem;
             this.ignoreFileNotFound = ignoreFileNotFound;
             this.readFileFn = readFileFn;
+            this.connectorName = connectorName;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            FileProcessorMetaSupplier.super.init(context);
         }
 
         @Nonnull
@@ -209,6 +221,12 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         @Override
         public boolean closeIsCooperative() {
             return true;
+        }
+
+        @Nullable
+        @Override
+        public String getConnectorName() {
+            return connectorName;
         }
     }
 

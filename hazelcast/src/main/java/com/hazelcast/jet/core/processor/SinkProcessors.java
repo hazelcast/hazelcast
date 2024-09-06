@@ -26,6 +26,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorConfiguration;
@@ -302,7 +303,7 @@ public final class SinkProcessors {
         String charsetName = charset.name();
         return preferLocalParallelismOne(
                 ConnectorPermission.socket(host, port, ACTION_WRITE),
-                writeBufferedP(
+                ProcessorSupplier.of(writeBufferedP(
                         SecuredFunctions.createBufferedWriterFn(host, port, charsetName),
                         (bufferedWriter, item) -> {
                             @SuppressWarnings("unchecked")
@@ -312,7 +313,7 @@ public final class SinkProcessors {
                         },
                         BufferedWriter::flush,
                         BufferedWriter::close
-                ));
+                )));
     }
 
     /**

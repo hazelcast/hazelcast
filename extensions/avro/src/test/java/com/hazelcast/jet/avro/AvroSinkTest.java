@@ -43,11 +43,16 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.avro.AvroSinks.AVRO_SINK_CONNECTOR_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static com.hazelcast.jet.pipeline.JetPhoneHomeTestUtil.assertConnectorPhoneHomeCollected;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -82,9 +87,7 @@ public class AvroSinkTest extends JetTestSupport {
 
     @Test
     public void testReflectWriter() throws IOException {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.list(list))
-         .writeTo(AvroSinks.files(directory.getPath(), User.class, User.classSchema()));
+        Pipeline p = getReflectWriterPipeline();
 
         hz.getJet().newJob(p).join();
 
@@ -93,10 +96,7 @@ public class AvroSinkTest extends JetTestSupport {
 
     @Test
     public void testSpecificWriter() throws IOException {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.list(list))
-         .map(user -> new SpecificUser(user.getName(), user.getFavoriteNumber()))
-         .writeTo(AvroSinks.files(directory.getPath(), SpecificUser.class, SpecificUser.getClassSchema()));
+        Pipeline p = getSpecificWriterPipeline();
 
         hz.getJet().newJob(p).join();
 
@@ -105,14 +105,49 @@ public class AvroSinkTest extends JetTestSupport {
 
     @Test
     public void testGenericWriter() throws IOException {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.list(list))
-         .map(AvroSinkTest::toRecord)
-         .writeTo(AvroSinks.files(directory.getPath(), User.classSchema()));
+        Pipeline p = getGenericWriterPipeline();
 
         hz.getJet().newJob(p).join();
 
         checkFileContent(new GenericDatumReader<>());
+    }
+
+    @Test
+    public void testPhoneHome() {
+        List<Supplier<Pipeline>> pipelines = getPipelines();
+
+        assertConnectorPhoneHomeCollected(pipelines, AVRO_SINK_CONNECTOR_NAME, null, true, hz);
+    }
+
+    private List<Supplier<Pipeline>> getPipelines() {
+        List<Supplier<Pipeline>> pipelineSuppliers = new ArrayList<>();
+        pipelineSuppliers.add(this::getReflectWriterPipeline);
+        pipelineSuppliers.add(this::getSpecificWriterPipeline);
+        pipelineSuppliers.add(this::getGenericWriterPipeline);
+        return pipelineSuppliers;
+    }
+
+    private Pipeline getSpecificWriterPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.list(list))
+                .map(user -> new SpecificUser(user.getName(), user.getFavoriteNumber()))
+                .writeTo(AvroSinks.files(directory.getPath(), SpecificUser.class, SpecificUser.getClassSchema()));
+        return p;
+    }
+
+    private Pipeline getReflectWriterPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.list(list))
+                .writeTo(AvroSinks.files(directory.getPath(), User.class, User.classSchema()));
+        return p;
+    }
+
+    private Pipeline getGenericWriterPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.list(list))
+                .map(AvroSinkTest::toRecord)
+                .writeTo(AvroSinks.files(directory.getPath(), User.classSchema()));
+        return p;
     }
 
     private <R> void checkFileContent(DatumReader<R> datumReader) throws IOException {

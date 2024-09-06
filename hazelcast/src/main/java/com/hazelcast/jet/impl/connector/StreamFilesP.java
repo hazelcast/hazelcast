@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.jet.pipeline.ConnectorNames;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -366,7 +367,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.of(2, ConnectorPermission.file(watchedDirectory, ACTION_READ),
                 ProcessorSupplier.of(SecuredFunctions.streamFileProcessorFn(watchedDirectory, charset, glob,
-                        sharedFileSystem, mapOutputFn)));
+                        sharedFileSystem, mapOutputFn)), ConnectorNames.FILE_WATCHER);
     }
 
     private static WatchEvent.Modifier[] getHighSensitivityModifiers() {

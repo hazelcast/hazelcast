@@ -41,6 +41,7 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
+import com.hazelcast.jet.pipeline.ConnectorNames;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
@@ -334,7 +335,8 @@ public final class SourceProcessors {
             boolean ignoreFileNotFound,
             @Nonnull FunctionEx<? super Path, ? extends Stream<I>> readFileFn
     ) {
-        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn);
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn,
+                ConnectorNames.FILES);
     }
 
     /**

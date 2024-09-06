@@ -260,6 +260,26 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new MetaSupplierFromProcessorSupplier(preferredLocalParallelism, permission, procSupplier);
     }
 
+
+    /**
+     * Factory method that wraps the given {@code ProcessorSupplier} and
+     * returns the same instance for each given {@code Address}.
+     *
+     * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
+     * @param permission                the required permission to run the processor
+     * @param procSupplier              the processor supplier
+     * @param connectorName             connector name
+     */
+    @Nonnull
+    static ProcessorMetaSupplier of(
+            int preferredLocalParallelism,
+            @Nullable Permission permission,
+            @Nonnull ProcessorSupplier procSupplier,
+            @Nullable String connectorName
+    ) {
+        return new MetaSupplierFromProcessorSupplier(preferredLocalParallelism, permission, procSupplier, connectorName);
+    }
+
     /**
      * Variant of {@link #of(int, Permission, ProcessorSupplier)} where
      * the processor does not require any permission to run.
@@ -426,7 +446,20 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nullable Permission permission,
             @Nonnull SupplierEx<? extends Processor> procSupplier
     ) {
-        return of(1, permission, ProcessorSupplier.of(procSupplier));
+        return preferLocalParallelismOne(permission, procSupplier, null);
+    }
+
+    /**
+     * Variant of {@link #preferLocalParallelismOne(SupplierEx)} where the
+     * processor requires given permission to run.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier preferLocalParallelismOne(
+            @Nullable Permission permission,
+            @Nonnull SupplierEx<? extends Processor> procSupplier,
+            @Nullable String connectorName
+    ) {
+        return of(1, permission, ProcessorSupplier.of(procSupplier), connectorName);
     }
 
     /**

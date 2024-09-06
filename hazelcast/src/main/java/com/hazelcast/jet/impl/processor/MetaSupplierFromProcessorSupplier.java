@@ -20,22 +20,26 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.connector.ConnectorNameAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.List;
 import java.util.function.Function;
 
 @SerializableByConvention
-public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier, DataSerializable {
+public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier, DataSerializable, ConnectorNameAware {
     private int preferredLocalParallelism;
     private ProcessorSupplier processorSupplier;
     private Permission permission;
+    @Nullable
+    private String connectorName;
 
     // for deserialization
     @SuppressWarnings("unused")
@@ -50,6 +54,18 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         this.preferredLocalParallelism = preferredLocalParallelism;
         this.permission = permission;
         this.processorSupplier = processorSupplier;
+    }
+
+    public MetaSupplierFromProcessorSupplier(
+            int preferredLocalParallelism,
+            Permission permission,
+            ProcessorSupplier processorSupplier,
+            @Nullable String connectorName
+    ) {
+        this.preferredLocalParallelism = preferredLocalParallelism;
+        this.permission = permission;
+        this.processorSupplier = processorSupplier;
+        this.connectorName = connectorName;
     }
 
     @Override
@@ -92,6 +108,7 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         out.writeInt(preferredLocalParallelism);
         out.writeObject(processorSupplier);
         out.writeObject(permission);
+        out.writeString(connectorName);
     }
 
     @Override
@@ -99,5 +116,12 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         preferredLocalParallelism = in.readInt();
         processorSupplier = in.readObject();
         permission = in.readObject();
+        connectorName = in.readString();
+    }
+
+    @Nullable
+    @Override
+    public String getConnectorName() {
+        return connectorName;
     }
 }

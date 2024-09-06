@@ -125,4 +125,8 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     public int getClassId() {
         return JetInitDataSerializerHook.WRAPPING_PROCESSOR_META_SUPPLIER;
     }
+
+    public ProcessorMetaSupplier getWrapped() {
+        return wrapped;
+    }
 }

@@ -31,8 +31,10 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
+import com.hazelcast.jet.impl.connector.ConnectorNameAware;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.FixedCapacityIntArrayList;
+import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -160,10 +162,13 @@ public final class ExecutionPlanBuilder {
                 JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
                 ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
                 try {
-                    doWithClassLoader(processorClassLoader, () ->
-                            metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId, jobConfig,
-                                    logger, vertex.getName(), localParallelism, totalParallelism, memberCount,
-                                    isLightJob, partitionsByAddress, subject, processorClassLoader)));
+                    doWithClassLoader(processorClassLoader, () -> {
+                        metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId, jobConfig,
+                                logger, vertex.getName(), localParallelism, totalParallelism, memberCount,
+                                isLightJob, partitionsByAddress, subject, processorClassLoader)
+                        );
+                        searchConnectorPhoneHomeData(nodeEngine, metaSupplier);
+                    });
                 } catch (Exception e) {
                     throw sneakyThrow(peel(e));
                 }
@@ -189,6 +194,31 @@ public final class ExecutionPlanBuilder {
         }
         return CompletableFuture.allOf(futures)
                 .thenCompose(r -> completedFuture(plans));
+    }
+
+    /**
+     * Recursively searches for the first {@link ConnectorNameAware} processor meta supplier in the provided pms.
+     * <p>
+     * Recursion is required in case pms is instance of {@link WrappingProcessorMetaSupplier}
+     * @param nodeEngineImpl NodeEngineImpl
+     * @param pms Provided ProcessorMetaSupplier
+     */
+    private static void searchConnectorPhoneHomeData(NodeEngineImpl nodeEngineImpl,
+                                                     ProcessorMetaSupplier pms) {
+        if (pms instanceof ConnectorNameAware connectorNameAware) {
+            collectConnectorPhoneHome(nodeEngineImpl, connectorNameAware.getConnectorName());
+        } else if (pms instanceof WrappingProcessorMetaSupplier wrapping) {
+            ProcessorMetaSupplier original = wrapping.getWrapped();
+            searchConnectorPhoneHomeData(nodeEngineImpl, original);
+        }
+    }
+
+    private static void collectConnectorPhoneHome(NodeEngineImpl nodeEngine, String connectorName) {
+        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        if (jetServiceBackend != null && connectorName != null) {
+            // The following increments this connector's usage count by one.
+            jetServiceBackend.onConnectorInitialize(connectorName);
+        }
     }
 
     /**

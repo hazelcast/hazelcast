@@ -17,9 +17,17 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.internal.util.JsonUtil.toJsonObject;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_CONNECTOR_COUNTS;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_ENABLED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_JOBS_SUBMITTED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED;
@@ -36,6 +44,19 @@ class JetMetricsProvider implements MetricsProvider {
             JetServiceBackend jetServiceBackend = node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
             long jobSubmittedCount = jetServiceBackend.getJobCoordinationService().getJobSubmittedCount();
             context.collect(JET_JOBS_SUBMITTED, jobSubmittedCount);
+            // Connector phone homes
+            ConcurrentMap<String, Long> metrics = jetServiceBackend.getConnectorInitializeCounts();
+            if (!metrics.isEmpty()) {
+                context.collect(JET_CONNECTOR_COUNTS, toJsonObject(metrics));
+            }
         }
+    }
+
+    private static JsonObject toJsonObject(Map<String, Long> map) {
+        JsonObject properties = new JsonObject();
+        for (Map.Entry<String, Long> property : map.entrySet()) {
+            properties.add(property.getKey(), Json.value(property.getValue()));
+        }
+        return properties;
     }
 }

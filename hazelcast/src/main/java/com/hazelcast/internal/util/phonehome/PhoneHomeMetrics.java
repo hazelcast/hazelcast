@@ -157,6 +157,7 @@ public enum PhoneHomeMetrics implements Metric {
     JET_ENABLED("jet"),
     JET_RESOURCE_UPLOAD_ENABLED("jetrsup"),
     JET_JOBS_SUBMITTED("jetjobss"),
+    JET_CONNECTOR_COUNTS("jetcc"),
 
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),

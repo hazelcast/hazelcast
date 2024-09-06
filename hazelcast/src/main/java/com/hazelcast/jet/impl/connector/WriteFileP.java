@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -328,8 +329,8 @@ public final class WriteFileP<T> implements Processor {
             @Nonnull LongSupplier clock
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.file(directoryName, ACTION_WRITE),
-                SecuredFunctions.writeFileProcessorFn(directoryName, toStringFn, charset, datePattern,
-                        maxFileSize, exactlyOnce, clock));
+                ProcessorSupplier.of(SecuredFunctions.writeFileProcessorFn(directoryName, toStringFn, charset, datePattern,
+                        maxFileSize, exactlyOnce, clock)));
     }
 
     private abstract class FileResource implements TransactionalResource<FileId> {

@@ -37,6 +37,11 @@ import javax.annotation.Nonnull;
  */
 public final class AvroSinks {
 
+    /**
+     * Ensure that this does not collide with any constants in {@link com.hazelcast.jet.pipeline.ConnectorNames}
+     */
+    static final String AVRO_SINK_CONNECTOR_NAME = "avroSink";
+
     private AvroSinks() {
     }
 
@@ -70,7 +75,7 @@ public final class AvroSinks {
     ) {
 
         return Sinks.fromProcessor("avroFilesSink(" + directoryName + ')',
-                AvroProcessors.writeFilesP(directoryName, schema, datumWriterSupplier));
+                AvroProcessors.writeFilesP(directoryName, schema, datumWriterSupplier, AVRO_SINK_CONNECTOR_NAME));
     }
 
     /**

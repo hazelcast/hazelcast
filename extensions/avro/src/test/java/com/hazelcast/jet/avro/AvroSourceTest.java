@@ -42,8 +42,13 @@ import org.junit.experimental.categories.Category;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import static com.hazelcast.jet.avro.AvroSources.AVRO_SOURCE_CONNECTOR_NAME;
+import static com.hazelcast.jet.pipeline.JetPhoneHomeTestUtil.assertConnectorPhoneHomeCollected;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -72,13 +77,8 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testReflectReader() throws IOException {
-        createAvroFiles(new ReflectDatumWriter<>(User.class), User.classSchema(), i -> new User("name-" + i, i));
-
-        Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(AvroSources.files(directory.getPath(), User.class))
-                .distinct()
-                .writeTo(Sinks.list(list.getName()));
+    public void testReflectReader() {
+        Pipeline pipeline = getReflectReaderPipelineSupplier().get();
 
         instance().getJet().newJob(pipeline).join();
 
@@ -87,14 +87,8 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testSpecificReader() throws IOException {
-        createAvroFiles(new SpecificDatumWriter<>(SpecificUser.class), SpecificUser.getClassSchema(),
-                i -> new SpecificUser("name-" + i, i));
-
-        Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
-                .distinct()
-                .writeTo(Sinks.list(list.getName()));
+    public void testSpecificReader() {
+        Pipeline pipeline = getSpecificReaderPipeline().get();
 
         instance().getJet().newJob(pipeline).join();
 
@@ -103,18 +97,85 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testGenericReader() throws IOException {
-        createAvroFiles(new GenericDatumWriter<>(), User.classSchema(), AvroSourceTest::record);
-
-        Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
-                .distinct()
-                .writeTo(Sinks.list(list.getName()));
+    public void testGenericReader() {
+        Pipeline pipeline = getGenericReaderPipeline().get();
 
         instance().getJet().newJob(pipeline).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
         assertTrue(list.contains(new User("name-1", 1)));
+    }
+
+    @Test
+    public void testPhoneHome() {
+        List<Supplier<Pipeline>> pipelineSuppliers = getPipelineSetupFunctions();
+
+        assertConnectorPhoneHomeCollected(pipelineSuppliers, AVRO_SOURCE_CONNECTOR_NAME, (unused) -> {
+            cleanup();
+            try {
+                createDirectory();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return null;
+        }, true, instance());
+    }
+
+    private Supplier<Pipeline> getReflectReaderPipelineSupplier() {
+        return () -> {
+            try {
+                createAvroFiles(new ReflectDatumWriter<>(User.class), User.classSchema(), i -> new User("name-" + i, i));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            Pipeline pipeline = Pipeline.create();
+            pipeline.readFrom(AvroSources.files(directory.getPath(), User.class))
+                    .distinct()
+                    .writeTo(Sinks.list(list.getName()));
+            return pipeline;
+        };
+    }
+
+    private Supplier<Pipeline> getSpecificReaderPipeline() {
+        return () -> {
+            try {
+                createAvroFiles(new SpecificDatumWriter<>(SpecificUser.class), SpecificUser.getClassSchema(),
+                        i -> new SpecificUser("name-" + i, i));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            Pipeline pipeline = Pipeline.create();
+            pipeline.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
+                    .distinct()
+                    .writeTo(Sinks.list(list.getName()));
+            return pipeline;
+        };
+    }
+
+    private Supplier<Pipeline> getGenericReaderPipeline() {
+        return () -> {
+            try {
+                createAvroFiles(new GenericDatumWriter<>(), User.classSchema(), AvroSourceTest::record);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            Pipeline pipeline = Pipeline.create();
+            pipeline.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
+                    .distinct()
+                    .writeTo(Sinks.list(list.getName()));
+            return pipeline;
+        };
+
+    }
+
+    private List<Supplier<Pipeline>> getPipelineSetupFunctions() {
+        List<Supplier<Pipeline>> pipelineSetupFunctions = new ArrayList<>();
+        pipelineSetupFunctions.add(getReflectReaderPipelineSupplier());
+        pipelineSetupFunctions.add(getSpecificReaderPipeline());
+        pipelineSetupFunctions.add(getGenericReaderPipeline());
+        return pipelineSetupFunctions;
     }
 
     private <R> void createAvroFiles(DatumWriter<R> datumWriter, Schema schema, Function<Integer, R> datumFn)
