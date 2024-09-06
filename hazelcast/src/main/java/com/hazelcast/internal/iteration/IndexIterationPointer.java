@@ -29,7 +29,6 @@ import com.hazelcast.query.impl.OrderedIndexStore;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -353,7 +352,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 : "All iteration pointers must have the same direction";
 
         // order of ranges is critical for preserving ordering of the results
-        Collections.sort(result, descending ? POINTER_COMPARATOR_REVERSED : POINTER_COMPARATOR);
+        result.sort(descending ? POINTER_COMPARATOR_REVERSED : POINTER_COMPARATOR);
 
         // loop until we processed the last remaining pair
         //

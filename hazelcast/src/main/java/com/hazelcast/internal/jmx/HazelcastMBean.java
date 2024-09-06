@@ -199,7 +199,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         return array;
     }
 
-    private class BeanInfo {
+    private static class BeanInfo {
 
         final String name;
         final String description;
