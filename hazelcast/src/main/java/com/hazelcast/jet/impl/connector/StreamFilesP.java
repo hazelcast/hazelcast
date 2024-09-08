@@ -102,7 +102,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     private final Queue<Path> eventQueue = new ArrayDeque<>();
 
     private WatchService watcher;
-    private StringBuilder lineBuilder = new StringBuilder();
+    private final StringBuilder lineBuilder = new StringBuilder();
     private R pendingItem;
     private Path currentFile;
     private String currentFileName;
@@ -372,7 +372,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
 
     private static WatchEvent.Modifier[] getHighSensitivityModifiers() {
         // Modifiers for file watch service to achieve the highest possible sensitivity.
-        // Background: Java 7 SE defines no standard modifiers for a watch service. However some JDKs use internal
+        // Background: Java 7 SE defines no standard modifiers for a watch service. However, some JDKs use internal
         // modifiers to increase sensitivity. This field contains modifiers to be used for highest possible sensitivity.
         // It's JVM-specific and hence it's just a best-effort.
         // I believe this is useful on platforms without native watch service (or where Java does not use it) e.g. MacOSX

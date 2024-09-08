@@ -259,7 +259,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
             this.delegate = traverseIterator(uncheckCall(this::paths))
                     .filter(path -> !Files.isDirectory(path))
                     .peek(path -> hasResults = true)
-                    .filter(pathFilterFn::test)
+                    .filter(pathFilterFn)
                     .flatMap(this::processFile);
         }
 

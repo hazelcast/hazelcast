@@ -82,7 +82,7 @@ public final class WriteFileP<T> implements Processor {
      * A pattern to parse processor index from a file name. File name has the form:
      * [<date>-]<global processor index>[-<sequence>][".tmp"]
      * This regexp assumes the sequence is present and searches from the right
-     * because the structure of the date is user-supplied and can by anything.
+     * because the structure of the date is user-supplied and can be anything.
      */
     private static final Pattern FILE_INDEX_WITH_SEQ = Pattern.compile("(\\d+)-\\d+(\\.tmp)?$");
 

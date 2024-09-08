@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public class WriteLoggerP<T> extends AbstractProcessor {
 
-    private Function<T, ? extends CharSequence> toStringFn;
+    private final Function<T, ? extends CharSequence> toStringFn;
 
     public WriteLoggerP(Function<T, ? extends CharSequence> toStringFn) {
         this.toStringFn = toStringFn;

@@ -457,7 +457,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         protected InternalSerializationService serializationService;
 
         private final FunctionEx<B, IterationPointer[]> toNextIterationPointerFn;
-        private FunctionEx<B, List<R>> toRecordSetFn;
+        private final FunctionEx<B, List<R>> toRecordSetFn;
 
         Reader(@Nonnull String objectName,
                @Nonnull FunctionEx<B, IterationPointer[]> toNextIterationPointerFn,
