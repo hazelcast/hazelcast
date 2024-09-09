@@ -82,7 +82,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate53</artifactId>
-            <version>5.2.0</version>
+            <version>${hazelcast-hibernate53.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
