@@ -24,14 +24,21 @@ import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.impl.MetricsService;
+import com.hazelcast.internal.server.FirewallingServer;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.metrics.MetricsRule;
@@ -52,6 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
@@ -84,6 +92,7 @@ public class TestHazelcastInstanceFactory {
     private final AtomicInteger nodeIndex = new AtomicInteger();
     private final int count;
 
+    private volatile UnaryOperator<NodeContext> nodeContextDelegator = UnaryOperator.identity();
     private volatile MetricsRule metricsRule;
 
     public TestHazelcastInstanceFactory() {
@@ -104,6 +113,11 @@ public class TestHazelcastInstanceFactory {
         fillAddressMap(count);
         this.count = count;
         registry = isMockNetwork ? createRegistry() : null;
+    }
+
+    public TestHazelcastInstanceFactory withNodeContextDelegator(UnaryOperator<NodeContext> nodeContextDelegator) {
+        this.nodeContextDelegator = nodeContextDelegator;
+        return this;
     }
 
     public TestHazelcastInstanceFactory withMetricsRule(MetricsRule metricsRule) {
@@ -167,12 +181,13 @@ public class TestHazelcastInstanceFactory {
             }
             nodeContext = registry.createNodeContext(address, blockedAddresses);
         } else {
-            if (address != null) {
-                throw new UnsupportedOperationException("Explicit addresses are only available in mock network");
+            if (address != null || !blockedAddresses.isEmpty()) {
+                throw new UnsupportedOperationException((address != null ? "Explicit" : "Blocked")
+                        + " addresses are only available in mock network");
             }
             nodeContext = new DefaultNodeContext();
         }
-        nodeContext = withUUID(nodeContext, uuid);
+        nodeContext = withUUID(nodeContextDelegator.apply(nodeContext), uuid);
         String instanceName = config != null ? config.getInstanceName() : null;
         HazelcastInstance instance =
                 HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
@@ -180,7 +195,7 @@ public class TestHazelcastInstanceFactory {
         return instance;
     }
 
-    protected static NodeContext withUUID(NodeContext nodeContext, @Nullable UUID uuid) {
+    private static NodeContext withUUID(NodeContext nodeContext, @Nullable UUID uuid) {
         if (uuid != null) {
             nodeContext = spy(nodeContext);
             doAnswer(invocation -> {
@@ -553,6 +568,47 @@ public class TestHazelcastInstanceFactory {
         }
         synchronized (addressMap) {
             addressMap.entrySet().removeIf(entry -> registry.getInstance(entry.getValue()) == null);
+        }
+    }
+
+    public static class FirewallingNodeContext extends DelegatingNodeContext {
+
+        public FirewallingNodeContext(NodeContext delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+            Server server = super.createServer(node, registry, addressRegistry);
+            return new FirewallingServer(server, emptySet());
+        }
+    }
+
+    public abstract static class DelegatingNodeContext implements NodeContext {
+        private final NodeContext delegate;
+
+        public DelegatingNodeContext(NodeContext delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return delegate.createNodeExtension(node);
+        }
+
+        @Override
+        public AddressPicker createAddressPicker(Node node) {
+            return delegate.createAddressPicker(node);
+        }
+
+        @Override
+        public Joiner createJoiner(Node node) {
+            return delegate.createJoiner(node);
+        }
+
+        @Override
+        public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+            return delegate.createServer(node, registry, addressRegistry);
         }
     }
 }

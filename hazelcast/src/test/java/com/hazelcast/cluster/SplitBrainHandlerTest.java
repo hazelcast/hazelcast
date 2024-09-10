@@ -25,8 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.instance.FirewallingNodeContext;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.internal.util.Clock;
@@ -35,14 +33,14 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory.FirewallingNodeContext;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -70,15 +68,12 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
-    @Before
-    @After
-    public void killAllHazelcastInstances() {
-        HazelcastInstanceFactory.terminateAll();
-    }
+    private TestHazelcastInstanceFactory factory;
 
-    private static HazelcastInstance newHazelcastInstance(@Nonnull Config config) {
-        return HazelcastInstanceFactory
-                .newHazelcastInstance(config, config.getInstanceName(), new FirewallingNodeContext());
+    @Before
+    public void setup() {
+        factory = createHazelcastInstanceFactory()
+                .withNodeContextDelegator(FirewallingNodeContext::new);
     }
 
     @Test
@@ -125,8 +120,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         join2.getMulticastConfig().setEnabled(true);
         join2.getTcpIpConfig().addMember("127.0.0.1");
 
-        HazelcastInstance h1 = newHazelcastInstance(config1);
-        HazelcastInstance h2 = newHazelcastInstance(config2);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config1);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config2);
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
 
@@ -213,9 +208,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         join.getTcpIpConfig().setEnabled(!multicast);
         join.getTcpIpConfig().addMember("127.0.0.1");
 
-        HazelcastInstance h1 = newHazelcastInstance(config);
-        HazelcastInstance h2 = newHazelcastInstance(config);
-        HazelcastInstance h3 = newHazelcastInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        HazelcastInstance h3 = factory.newHazelcastInstance(config);
 
         assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
@@ -269,10 +264,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         c4.addListenerConfig(new ListenerConfig(new MergedEventLifeCycleListener(latch)));
 
-        HazelcastInstance h1 = newHazelcastInstance(c1);
-        HazelcastInstance h2 = newHazelcastInstance(c2);
-        HazelcastInstance h3 = newHazelcastInstance(c3);
-        HazelcastInstance h4 = newHazelcastInstance(c4);
+        HazelcastInstance h1 = factory.newHazelcastInstance(c1);
+        HazelcastInstance h2 = factory.newHazelcastInstance(c2);
+        HazelcastInstance h3 = factory.newHazelcastInstance(c3);
+        HazelcastInstance h4 = factory.newHazelcastInstance(c4);
 
         // We should have two clusters of two
         assertClusterSize(2, h1, h2);
@@ -309,8 +304,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterTwoMembers);
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterThreeMembers);
 
-        final HazelcastInstance h1 = newHazelcastInstance(c1);
-        final HazelcastInstance h2 = newHazelcastInstance(c2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(c1);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(c2);
 
         final CountDownLatch latch = new CountDownLatch(1);
         c3.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
@@ -320,7 +315,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             }
         }));
 
-        final HazelcastInstance h3 = newHazelcastInstance(c3);
+        final HazelcastInstance h3 = factory.newHazelcastInstance(c3);
 
         // We should have three clusters of one
         assertClusterSize(1, h1);
@@ -369,7 +364,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config1.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "0");
         config1.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "0");
         config1.addListenerConfig(mergeListenerConfig);
-        HazelcastInstance hz1 = newHazelcastInstance(config1);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
 
         sleepSeconds(1);
 
@@ -381,7 +376,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config2.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "0");
         config2.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "0");
         config2.addListenerConfig(mergeListenerConfig);
-        HazelcastInstance hz2 = newHazelcastInstance(config2);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
 
         assertClusterSizeEventually(2, hz1, hz2);
         assertFalse("Latch should not be countdown!", latch.await(5, TimeUnit.SECONDS));
@@ -416,9 +411,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             return config;
         };
 
-        final HazelcastInstance hz1 = newHazelcastInstance(configFn.apply("test-node1"));
-        HazelcastInstance hz2 = newHazelcastInstance(configFn.apply("test-node2"));
-        HazelcastInstance hz3 = newHazelcastInstance(configFn.apply("test-node3"));
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(configFn.apply("test-node1"));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(configFn.apply("test-node2"));
+        HazelcastInstance hz3 = factory.newHazelcastInstance(configFn.apply("test-node3"));
 
         assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
@@ -466,11 +461,11 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     public void testClusterMerge_ignoresLiteMembers() {
         String clusterName = generateRandomString(10);
 
-        HazelcastInstance lite1 = newHazelcastInstance(buildConfig(clusterName, true, "lite1"));
-        HazelcastInstance lite2 = newHazelcastInstance(buildConfig(clusterName, true, "lite2"));
-        HazelcastInstance data1 = newHazelcastInstance(buildConfig(clusterName, false, "data1"));
-        HazelcastInstance data2 = newHazelcastInstance(buildConfig(clusterName, false, "data2"));
-        HazelcastInstance data3 = newHazelcastInstance(buildConfig(clusterName, false, "data3"));
+        HazelcastInstance lite1 = factory.newHazelcastInstance(buildConfig(clusterName, true, "lite1"));
+        HazelcastInstance lite2 = factory.newHazelcastInstance(buildConfig(clusterName, true, "lite2"));
+        HazelcastInstance data1 = factory.newHazelcastInstance(buildConfig(clusterName, false, "data1"));
+        HazelcastInstance data2 = factory.newHazelcastInstance(buildConfig(clusterName, false, "data2"));
+        HazelcastInstance data3 = factory.newHazelcastInstance(buildConfig(clusterName, false, "data3"));
 
         assertClusterSize(5, lite1, data3);
         assertClusterSizeEventually(5, lite2, data1, data2);
@@ -523,9 +518,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     public void testClustersShouldNotMergeWhenBiggerClusterIsNotActive() {
         String clusterName = generateRandomString(10);
 
-        final HazelcastInstance hz1 = newHazelcastInstance(buildConfig(clusterName, false, "hz1"));
-        final HazelcastInstance hz2 = newHazelcastInstance(buildConfig(clusterName, false, "hz2"));
-        final HazelcastInstance hz3 = newHazelcastInstance(buildConfig(clusterName, false, "hz3"));
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(buildConfig(clusterName, false, "hz1"));
+        final HazelcastInstance hz2 = factory.newHazelcastInstance(buildConfig(clusterName, false, "hz2"));
+        final HazelcastInstance hz3 = factory.newHazelcastInstance(buildConfig(clusterName, false, "hz3"));
 
         assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
@@ -559,9 +554,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     public void testClustersShouldNotMergeWhenSmallerClusterIsNotActive() {
         String clusterName = generateRandomString(10);
 
-        final HazelcastInstance hz1 = newHazelcastInstance(buildConfig(clusterName, false, "hz1"));
-        final HazelcastInstance hz2 = newHazelcastInstance(buildConfig(clusterName, false, "hz2"));
-        final HazelcastInstance hz3 = newHazelcastInstance(buildConfig(clusterName, false, "hz3"));
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(buildConfig(clusterName, false, "hz1"));
+        final HazelcastInstance hz2 = factory.newHazelcastInstance(buildConfig(clusterName, false, "hz2"));
+        final HazelcastInstance hz3 = factory.newHazelcastInstance(buildConfig(clusterName, false, "hz3"));
 
         assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
@@ -630,9 +625,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             return config;
         };
 
-        HazelcastInstance hz1 = newHazelcastInstance(configFn.apply("test-node1"));
-        HazelcastInstance hz2 = newHazelcastInstance(configFn.apply("test-node2"));
-        final HazelcastInstance hz3 = newHazelcastInstance(configFn.apply("test-node3"));
+        HazelcastInstance hz1 = factory.newHazelcastInstance(configFn.apply("test-node1"));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(configFn.apply("test-node2"));
+        final HazelcastInstance hz3 = factory.newHazelcastInstance(configFn.apply("test-node3"));
 
         assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
@@ -694,9 +689,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             return config;
         };
 
-        HazelcastInstance hz2 = newHazelcastInstance(configFn.apply(5702, "test-node2"));
-        HazelcastInstance hz3 = newHazelcastInstance(configFn.apply(5703, "test-node3"));
-        final HazelcastInstance hz1 = newHazelcastInstance(configFn.apply(5701, "test-node1"));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(configFn.apply(5702, "test-node2"));
+        HazelcastInstance hz3 = factory.newHazelcastInstance(configFn.apply(5703, "test-node3"));
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(configFn.apply(5701, "test-node1"));
 
         assertClusterSize(3, hz2, hz1);
         assertClusterSizeEventually(3, hz3);
@@ -738,7 +733,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         assertOpenEventually(mergingLatch, 60);
         hz2.getLifecycleService().terminate();
-        hz2 = newHazelcastInstance(configFn.apply(5702, "test-node2"));
+        hz2 = factory.newHazelcastInstance(configFn.apply(5702, "test-node2"));
 
         assertOpenEventually(mergeLatch);
         assertClusterSizeEventually(3, hz1, hz2, hz3);
@@ -753,10 +748,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         Config configB = createSimpleTcpIpConfig("cluster_B");
 
         // Start 2 clusters, with 2 members each
-        HazelcastInstance a1 = newHazelcastInstance(configA);
-        HazelcastInstance a2 = newHazelcastInstance(configA);
-        HazelcastInstance b1 = newHazelcastInstance(configB);
-        HazelcastInstance b2 = newHazelcastInstance(configB);
+        HazelcastInstance a1 = factory.newHazelcastInstance(configA);
+        HazelcastInstance a2 = factory.newHazelcastInstance(configA);
+        HazelcastInstance b1 = factory.newHazelcastInstance(configB);
+        HazelcastInstance b2 = factory.newHazelcastInstance(configB);
 
         // Fetch the port of a2
         Address a2Address = getNode(a2).getThisAddress();
@@ -771,7 +766,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         // Shutdown A2, and start B3, which should be on the same address/port
         a2.shutdown();
-        HazelcastInstance b3 = newHazelcastInstance(configB);
+        HazelcastInstance b3 = factory.newHazelcastInstance(configB);
 
         // Confirm b3 is running on the address/port previously occupied by a2
         Address b3Address = getNode(b3).getThisAddress();
@@ -829,8 +824,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         String secondClusterName = generateRandomString(10);
         config2.setClusterName(secondClusterName);
 
-        HazelcastInstance h1 = newHazelcastInstance(config1);
-        HazelcastInstance h2 = newHazelcastInstance(config2);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config1);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config2);
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
 
