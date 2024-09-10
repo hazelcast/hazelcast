@@ -124,7 +124,13 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions), internalAsyncExecutor);
+                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions), internalAsyncExecutor)
+                    .handleAsync((result, exception) -> {
+                        if (exception != null) {
+                            logger.warning(exception);
+                        }
+                        return result;
+                    }, internalAsyncExecutor);
         }
     }
 
