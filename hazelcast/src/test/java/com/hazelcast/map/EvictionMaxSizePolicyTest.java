@@ -179,17 +179,20 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         HazelcastInstance node1 = instanceFactory.newHazelcastInstance(config);
         HazelcastInstance node2 = instanceFactory.newHazelcastInstance(config);
 
+        // Wait for the cluster to form before populating the map
+        assertClusterSizeEventually(2, node1, node2);
+
         IMap<Integer, Integer> map1 = node1.getMap(mapName);
         for (int i = 0; i < 2222; i++) {
             map1.put(i, i);
         }
 
-        IMap map2 = node2.getMap(mapName);
+        IMap<Integer, Integer> map2 = node2.getMap(mapName);
         LocalMapStats localMapStats1 = map1.getLocalMapStats();
         LocalMapStats localMapStats2 = map2.getLocalMapStats();
 
-        assertEqualsEventually(() -> localMapStats2.getBackupEntryCount(), localMapStats1.getOwnedEntryCount());
-        assertEqualsEventually(() -> localMapStats1.getBackupEntryCount(), localMapStats2.getOwnedEntryCount());
+        assertEqualsEventually(localMapStats2::getBackupEntryCount, localMapStats1.getOwnedEntryCount());
+        assertEqualsEventually(localMapStats1::getBackupEntryCount, localMapStats2.getOwnedEntryCount());
     }
 
     @Test
