@@ -234,7 +234,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
             map.put(i, i, 112, SECONDS, 223, SECONDS);
         }
 
-        Map<Integer, EntryView> entryViewsBefore = new HashMap<>();
+        Map<Integer, EntryView<Integer, Integer>> entryViewsBefore = new HashMap<>();
         for (int i = 0; i < keyCount; i++) {
             entryViewsBefore.put(i, map.getEntryView(i));
         }
@@ -242,7 +242,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         HazelcastInstance node2 = factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map2 = node2.getMap(mapName);
-        Map<Integer, EntryView> entryViewsAfter = new HashMap<>();
+        Map<Integer, EntryView<Integer, Integer>> entryViewsAfter = new HashMap<>();
         for (int i = 0; i < keyCount; i++) {
             entryViewsAfter.put(i, map2.getEntryView(i));
         }
@@ -550,7 +550,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertEquals(expirationTimeAfterReplace, expirationTimeAfterPut);
     }
 
-    @SuppressWarnings("rawtypes")
     @Test
     public void last_access_time_updated_on_primary_when_read_backup_data_enabled() {
         String mapName = "test";
@@ -564,7 +563,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         mapConfig.setMaxIdleSeconds(20);
         mapConfig.setInMemoryFormat(inMemoryFormat());
 
-        IMap map = createHazelcastInstance(config).getMap(mapName);
+        IMap<Integer, Integer> map = createHazelcastInstance(config).getMap(mapName);
         map.put(1, 1);
 
         long lastAccessTimeBefore = map.getEntryView(1).getLastAccessTime();

@@ -43,7 +43,7 @@ public class ExtendedValueTest {
 
     @Test
     public void testWithNoDate() {
-        MetadataAwareValue entry = new MetadataAwareValue<>("value");
+        MetadataAwareValue<String> entry = new MetadataAwareValue<>("value");
         assertEquals(NO_TIME_SET, entry.getExpirationTime());
     }
 }

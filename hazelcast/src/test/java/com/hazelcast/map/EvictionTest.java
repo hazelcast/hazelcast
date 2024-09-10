@@ -263,7 +263,7 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals(entryCount, valuesNullCity.size() + valuesNotNullCity.size());
         // check that evaluating the predicate didn't update the last access time of the returned records
         for (int i = 0; i < entryCount; ++i) {
-            EntryView view = map.getEntryView(i);
+            EntryView<Integer, Employee> view = map.getEntryView(i);
             assertNotNull(view);
             long lastAccessTime = view.getLastAccessTime();
             long prevLastAccessTime = lastAccessTimes.get(i);
@@ -361,7 +361,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     private void assertTtlExpirationCorrectness(IMap<Integer, String> map, long expected) {
-        EntryView view = map.getEntryView(1);
+        EntryView<Integer, String> view = map.getEntryView(1);
         assertEquals(expected, view.getExpirationTime());
         assertTrue(map.containsKey(1));
     }

@@ -229,7 +229,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(4 * queriesBulk, valueStats(map3).getQueryCount());
 
         // This work correctly only due to we stored data from shutdown member and uses this data for counting
-        // originalOverallAverageHitSelectivity. However this not represent real scenario. This check is here just for ensure
+        // originalOverallAverageHitSelectivity. However, this not represent real scenario. This check is here just for ensure
         // that AverageHitSelectivity is still counted correctly on live members.
         originalOverallAverageHitSelectivity = calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3);
         assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAverageHitSelectivity, 0.015);
@@ -481,7 +481,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         for (Partition partition : partitions) {
             UUID member = partition.getOwner().getUuid();
 
-            memberToPartitions.computeIfAbsent(member, (key) -> new PartitionIdSet(partitions.size()))
+            memberToPartitions.computeIfAbsent(member, key -> new PartitionIdSet(partitions.size()))
                     .add(partition.getPartitionId());
         }
         return memberToPartitions;

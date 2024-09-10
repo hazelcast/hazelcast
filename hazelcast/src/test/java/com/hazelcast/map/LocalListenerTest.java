@@ -80,10 +80,9 @@ public class LocalListenerTest extends HazelcastTestSupport {
         setFieldValueReflectively(mapEventPublisher, "logger", mapEventPublisherLogger);
     }
 
-    private class MapEventPublisherLogger extends AbstractLogger {
+    private static class MapEventPublisherLogger extends AbstractLogger {
 
-        private final CopyOnWriteArrayList logCollector
-                = new CopyOnWriteArrayList<>();
+        private final CopyOnWriteArrayList<Object> logCollector = new CopyOnWriteArrayList<>();
 
         @Override
         public void log(Level level, String message) {

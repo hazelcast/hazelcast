@@ -400,6 +400,7 @@ public class ListenerTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(1);
 
         map.addEntryListener(new EntryAdapter<String, String>() {
+            @Override
             public void entryRemoved(EntryEvent<String, String> event) {
                 valueRef.set(event.getValue());
                 oldValueRef.set(event.getOldValue());
@@ -483,6 +484,7 @@ public class ListenerTest extends HazelcastTestSupport {
         final ConcurrentMap<String, String> resultHolder = new ConcurrentHashMap<>(1);
 
         map.addEntryListener(new EntryAdapter<String, String>() {
+            @Override
             public void entryRemoved(EntryEvent<String, String> event) {
                 final String oldValue = event.getOldValue();
                 resultHolder.put(key, oldValue);
@@ -643,12 +645,7 @@ public class ListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(getConfig());
         IMap<String, String> map = hz.getMap("updates_with_putTransient_triggers_entryUpdatedListener");
         final CountDownLatch updateEventCounterLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryUpdatedListener<String, String>() {
-            @Override
-            public void entryUpdated(EntryEvent<String, String> event) {
-                updateEventCounterLatch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryUpdatedListener<String, String>) event -> updateEventCounterLatch.countDown(), true);
 
         map.putTransient("hello", "world", 0, TimeUnit.SECONDS);
         map.putTransient("hello", "another world", 0, TimeUnit.SECONDS);
@@ -670,7 +667,7 @@ public class ListenerTest extends HazelcastTestSupport {
         return mapEntry -> false;
     }
 
-    private class UpdateListenerRecordingOldValue<K, V> implements EntryUpdatedListener<K, V> {
+    private static class UpdateListenerRecordingOldValue<K, V> implements EntryUpdatedListener<K, V> {
 
         private volatile V oldValue;
         private final CountDownLatch latch = new CountDownLatch(1);
@@ -691,6 +688,7 @@ public class ListenerTest extends HazelcastTestSupport {
         return new EntryAdapter<>() {
             private final boolean local = isLocal;
 
+            @Override
             public void entryAdded(EntryEvent<String, String> event) {
                 if (local) {
                     localCount.incrementAndGet();
@@ -761,16 +759,13 @@ public class ListenerTest extends HazelcastTestSupport {
         }
     }
 
-    public class CounterEntryListener implements EntryListener<Object, Object> {
+    private static class CounterEntryListener implements EntryListener<Object, Object> {
 
         final AtomicLong addCount = new AtomicLong();
         final AtomicLong removeCount = new AtomicLong();
         final AtomicLong updateCount = new AtomicLong();
         final AtomicLong evictCount = new AtomicLong();
         final AtomicLong expiryCount = new AtomicLong();
-
-        public CounterEntryListener() {
-        }
 
         @Override
         public void entryAdded(EntryEvent<Object, Object> objectObjectEntryEvent) {

@@ -150,9 +150,9 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     /**
      * Eviction starts if a partitions' size exceeds this number:
-     *
+     * <p>
      * double maxPartitionSize = 1D * nodeCount * perNodeMaxSize / PARTITION_COUNT;
-     *
+     * <p>
      * when calculated `maxPartitionSize` is under 1, we should forcibly set it
      * to 1, otherwise all puts will immediately be removed by eviction.
      */
