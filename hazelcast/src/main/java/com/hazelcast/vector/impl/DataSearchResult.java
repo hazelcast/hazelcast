@@ -97,7 +97,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
         IOUtil.writeData(out, key);
         out.writeFloat(score);
         IOUtil.writeData(out, value);
-        out.writeObject(vectors);
+        VectorIOUtils.writeSingleVectorValue(out, vectors);
     }
 
     @Override
@@ -105,7 +105,8 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
         key = IOUtil.readData(in);
         score = in.readFloat();
         value = IOUtil.readData(in);
-        vectors = in.readObject();
+        // vector data is always deserialized as a SingleIndexVectorValues.
+        vectors = VectorIOUtils.readSingleVectorValue(in);
     }
 
     @Override

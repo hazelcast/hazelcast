@@ -50,6 +50,10 @@ public final class MultiIndexVectorValues
                 + '}';
     }
 
+    public int size() {
+        return indexNameToVector.size();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

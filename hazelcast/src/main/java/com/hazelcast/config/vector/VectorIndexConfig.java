@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 @Beta
 public class VectorIndexConfig implements NamedConfig, IdentifiedDataSerializable {
 
-    private static final int DEFAULT_MAX_DEGREE = 16;
+    private static final int DEFAULT_MAX_DEGREE = 32;
     private static final int DEFAULT_EF_CONSTRUCTION = 100;
     private static final boolean DEFAULT_USE_DEDUPLICATION = true;
 

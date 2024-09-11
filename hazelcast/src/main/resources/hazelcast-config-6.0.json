@@ -5438,7 +5438,7 @@
         },
         "max-degree": {
           "type": "integer",
-          "default": 16
+          "default": 32
         },
         "ef-construction": {
           "type": "integer",

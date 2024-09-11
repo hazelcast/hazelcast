@@ -6739,7 +6739,7 @@
         <xs:all>
             <xs:element name="dimension" type="xs:int"/>
             <xs:element name="metric" type="xs:string"/>
-            <xs:element name="max-degree" type="xs:positiveInteger" minOccurs="0" default="16"/>
+            <xs:element name="max-degree" type="xs:positiveInteger" minOccurs="0" default="32"/>
             <xs:element name="ef-construction" type="xs:positiveInteger" minOccurs="0" default="100"/>
             <xs:element name="use-deduplication" type="xs:boolean" minOccurs="0" default="true"/>
         </xs:all>
