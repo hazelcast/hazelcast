@@ -115,8 +115,15 @@ public class TestHazelcastInstanceFactory {
         registry = isMockNetwork ? createRegistry() : null;
     }
 
+    /** Cannot be used in combination with {@link #withNodeExtensionCustomizer}. */
     public TestHazelcastInstanceFactory withNodeContextDelegator(UnaryOperator<NodeContext> nodeContextDelegator) {
         this.nodeContextDelegator = nodeContextDelegator;
+        return this;
+    }
+
+    /** Cannot be used in combination with {@link #withNodeContextDelegator}. */
+    public TestHazelcastInstanceFactory withNodeExtensionCustomizer(Function<Node, NodeExtension> nodeExtensionFn) {
+        nodeContextDelegator = nodeContext -> new NodeExtensionCustomizer(nodeContext, nodeExtensionFn);
         return this;
     }
 
@@ -271,7 +278,7 @@ public class TestHazelcastInstanceFactory {
         return nextAddress(DEFAULT_INITIAL_PORT);
     }
 
-    protected Address nextAddress(int initialPort) {
+    private Address nextAddress(int initialPort) {
         if (isMockNetwork) {
             int id = nodeIndex.getAndIncrement();
             Address currentAddress = addressMap.get(id);
@@ -537,7 +544,7 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    protected static Config initOrCreateConfig(Config config) {
+    private static Config initOrCreateConfig(Config config) {
         if (config == null) {
             if (System.getProperty(SYSPROP_MEMBER_CONFIG) != null
                     && isAcceptedSuffixConfigured(System.getProperty(SYSPROP_MEMBER_CONFIG), YAML_ACCEPTED_SUFFIXES)
@@ -581,6 +588,20 @@ public class TestHazelcastInstanceFactory {
         public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
             Server server = super.createServer(node, registry, addressRegistry);
             return new FirewallingServer(server, emptySet());
+        }
+    }
+
+    public static class NodeExtensionCustomizer extends DelegatingNodeContext {
+        private final Function<Node, NodeExtension> nodeExtensionFn;
+
+        NodeExtensionCustomizer(NodeContext delegate, Function<Node, NodeExtension> nodeExtensionFn) {
+            super(delegate);
+            this.nodeExtensionFn = nodeExtensionFn;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return nodeExtensionFn.apply(node);
         }
     }
 

@@ -23,9 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.longregister.LongRegisterService;
 import com.hazelcast.internal.longregister.operations.AddAndGetOperation;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -40,7 +38,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.mocknetwork.MockNodeContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -363,22 +360,15 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Test
     public void changeClusterState_shouldFail_whenStartupIsNotCompleted() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-
         AtomicBoolean startupDone = new AtomicBoolean(false);
-
-        HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(),
-                new MockNodeContext(factory.getRegistry(), new Address("127.0.0.1", 5555)) {
+        HazelcastInstance instance = createHazelcastInstanceFactory()
+                .withNodeExtensionCustomizer(node -> new DefaultNodeExtension(node) {
                     @Override
-                    public NodeExtension createNodeExtension(Node node) {
-                        return new DefaultNodeExtension(node) {
-                            @Override
-                            public boolean isStartCompleted() {
-                                return startupDone.get() && super.isStartCompleted();
-                            }
-                        };
+                    public boolean isStartCompleted() {
+                        return startupDone.get() && super.isStartCompleted();
                     }
-                });
+                })
+                .newHazelcastInstance(new Address("127.0.0.1", 5555));
 
         try {
             instance.getCluster().changeClusterState(ClusterState.FROZEN);

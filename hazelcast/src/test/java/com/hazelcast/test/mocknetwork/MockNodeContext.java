@@ -37,7 +37,6 @@ import java.lang.reflect.Constructor;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static java.util.Collections.emptySet;
 
 public class MockNodeContext implements NodeContext {
 
@@ -45,11 +44,7 @@ public class MockNodeContext implements NodeContext {
     private final Address thisAddress;
     private final Set<Address> initiallyBlockedAddresses;
 
-    public MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
-        this(registry, thisAddress, emptySet());
-    }
-
-    protected MockNodeContext(TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses) {
+    MockNodeContext(TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses) {
         this.registry = registry;
         this.thisAddress = thisAddress;
         this.initiallyBlockedAddresses = initiallyBlockedAddresses;

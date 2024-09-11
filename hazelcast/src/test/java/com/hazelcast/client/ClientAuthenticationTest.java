@@ -20,9 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SimpleTokenCredentials;
@@ -30,8 +27,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,8 +39,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientAuthenticationTest extends HazelcastTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private TestHazelcastFactory hazelcastFactory;
 
+    @Before
+    public void setup() {
+        hazelcastFactory = new TestHazelcastFactory();
+    }
 
     @After
     public void cleanup() {
@@ -88,18 +89,14 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
     @Test
     public void testAuthentication_with_mcModeEnabled_when_clusterStart_isNotComplete() {
-        HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(),
-                new MockNodeContext(hazelcastFactory.getRegistry(), hazelcastFactory.nextAddress()) {
+        hazelcastFactory
+                .withNodeExtensionCustomizer(node -> new DefaultNodeExtension(node) {
                     @Override
-                    public NodeExtension createNodeExtension(Node node) {
-                        return new DefaultNodeExtension(node) {
-                            @Override
-                            public boolean isStartCompleted() {
-                                return false;
-                            }
-                        };
+                    public boolean isStartCompleted() {
+                        return false;
                     }
-                });
+                })
+                .newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty("hazelcast.client.internal.mc.mode", "true");

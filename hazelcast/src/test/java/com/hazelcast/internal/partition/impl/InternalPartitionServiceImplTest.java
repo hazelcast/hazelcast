@@ -18,14 +18,9 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeContext;
-import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
@@ -33,10 +28,8 @@ import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -68,20 +61,15 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        NodeContext nodeContext = new MockNodeContext(factory.getRegistry(), factory.nextAddress()) {
-            @Override
-            public NodeExtension createNodeExtension(Node node) {
-                return new DefaultNodeExtension(node) {
+        instance = createHazelcastInstanceFactory()
+                .withNodeExtensionCustomizer(node -> new DefaultNodeExtension(node) {
                     @Override
                     public boolean isStartCompleted() {
                         return startupDone.get();
                     }
-                };
-            }
-        };
+                })
+                .newHazelcastInstance();
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(), nodeContext);
         partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
         localMember = getClusterService(instance).getLocalMember();
         partitionCount = partitionService.getPartitionCount();

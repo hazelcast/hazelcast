@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,10 +48,6 @@ public final class TestNodeRegistry {
 
     public TestNodeRegistry(Collection<Address> addresses) {
         joinAddresses = addresses;
-    }
-
-    public NodeContext createNodeContext(Address address) {
-        return createNodeContext(address, emptySet());
     }
 
     public NodeContext createNodeContext(final Address address, Set<Address> initiallyBlockedAddresses) {

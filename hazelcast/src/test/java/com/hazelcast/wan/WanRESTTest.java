@@ -61,7 +61,7 @@ public class WanRESTTest extends HazelcastTestSupport {
     @Before
     public void setupFactoryAndMock() {
         wanServiceMock = mock(WanReplicationService.class);
-        factory = new CustomNodeExtensionTestInstanceFactory(
+        factory = new TestHazelcastInstanceFactory().withNodeExtensionCustomizer(
                 node -> new WanServiceMockingDefaultNodeExtension(node, wanServiceMock));
     }
 
