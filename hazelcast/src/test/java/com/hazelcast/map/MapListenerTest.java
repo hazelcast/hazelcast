@@ -86,7 +86,7 @@ public class MapListenerTest extends HazelcastTestSupport {
 
     private void generateMapEvents(IMap<String, Person> map, AllListener listener) throws InterruptedException, ExecutionException {
         MapRandomizer mapRandomizer = new MapRandomizer(map, listener);
-        Future future = spawn(mapRandomizer);
+        Future<?> future = spawn(mapRandomizer);
         sleepAtLeastSeconds(2);
         mapRandomizer.setRunning(false);
         future.get();
@@ -125,7 +125,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
     }
 
-    class AllListener implements EntryAddedListener<String, Person>, EntryRemovedListener<String, Person>,
+    static class AllListener implements EntryAddedListener<String, Person>, EntryRemovedListener<String, Person>,
             EntryUpdatedListener<String, Person> {
 
         final AtomicInteger entries;
@@ -247,7 +247,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
 
         private void updatePersonAge() {
-            if (map.size() > 0) {
+            if (!map.isEmpty()) {
                 Collection<String> allKeys = map.keySet();
                 String key = allKeys.toArray(new String[0])[random.nextInt(map.size())];
                 Person p = map.get(key);
@@ -265,7 +265,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
 
         private void removePerson() {
-            if (map.size() > 0) {
+            if (!map.isEmpty()) {
                 Collection<String> allKeys = map.keySet();
                 String key = allKeys.toArray(new String[0])[random.nextInt(map.size())];
                 if (listener != null) {

@@ -39,8 +39,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
@@ -87,12 +85,12 @@ public class MapMergePolicySerializationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
             serializedCount += 1;
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
             deserializedCount += 1;
         }
     }

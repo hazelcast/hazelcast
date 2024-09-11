@@ -91,7 +91,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = createNode(instanceFactory);
 
         // THEN - initialized
-        IMap bookMap = instance1.getMap(mapName);
+        IMap<Integer, Book> bookMap = instance1.getMap(mapName);
         fillMap(bookMap);
         assertEquals(BOOK_COUNT, bookMap.size());
         assertAllPartitionContainersAreInitialized(instance1);
@@ -339,7 +339,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     }
 
     // A CoreService with a slow post-join op. Its post-join operation will be executed before map's
-    // post-join operation so we can ensure indexes are created via MapReplicationOperation,
+    // post-join operation, so we can ensure indexes are created via MapReplicationOperation,
     // even though PostJoinMapOperation has not yet been executed.
     public static class SlowPostJoinAwareService implements CoreService, PostJoinAwareService {
         @Override

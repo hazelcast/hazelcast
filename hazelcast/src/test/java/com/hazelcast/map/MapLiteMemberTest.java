@@ -48,7 +48,7 @@ import static org.junit.Assert.assertNull;
 public class MapLiteMemberTest
         extends HazelcastTestSupport {
 
-    private Config liteConfig = new Config().setLiteMember(true);
+    private final Config liteConfig = new Config().setLiteMember(true);
 
     private TestHazelcastInstanceFactory factory;
 
@@ -88,7 +88,7 @@ public class MapLiteMemberTest
     public void testMapLocalKeysOnLiteMember() {
         map.put(1, 1);
 
-        final Set resultSet = map.localKeySet();
+        final Set<Integer> resultSet = map.localKeySet();
         assertNotNull(resultSet);
         assertEquals(0, resultSet.size());
     }
@@ -116,7 +116,7 @@ public class MapLiteMemberTest
     public void testMapEntryProcessorOnLiteMember() {
         map.put(1, 2);
 
-        final Map resultMap = this.map.executeOnEntries(new DummyEntryProcessor());
+        final Map<Integer, String> resultMap = this.map.executeOnEntries(new DummyEntryProcessor());
         assertEquals("dummy", map.get(1));
         assertEquals(1, resultMap.size());
         assertEquals("done", resultMap.get(1));

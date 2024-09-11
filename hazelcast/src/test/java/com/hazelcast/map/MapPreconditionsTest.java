@@ -404,6 +404,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithMapListenerAndKey_NullKey() {
         MapListener mapListener = new MapListenerAdapter() {
+            @Override
             public void onEntryEvent(EntryEvent event) {
                 System.out.println("-");
             }

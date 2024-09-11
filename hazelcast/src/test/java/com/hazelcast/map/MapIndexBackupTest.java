@@ -90,11 +90,7 @@ public class MapIndexBackupTest extends HazelcastTestSupport {
         Map<Member, Set<Object>> foundByPredicateByMember = new HashMap<>();
         for (Object key : foundByPredicate) {
             Member owner = instance1.getPartitionService().getPartition(key).getOwner();
-            Set<Object> keys = foundByPredicateByMember.get(owner);
-            if (keys == null) {
-                keys = new HashSet<>();
-                foundByPredicateByMember.put(owner, keys);
-            }
+            Set<Object> keys = foundByPredicateByMember.computeIfAbsent(owner, k -> new HashSet<>());
             keys.add(key);
         }
 

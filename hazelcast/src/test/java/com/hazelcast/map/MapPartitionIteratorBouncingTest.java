@@ -49,7 +49,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
     private static final int CONCURRENCY = 2;
     public static final int FETCH_SIZE = 100;
     public static final int MUTATION_ENTRY_FACTOR = 10;
-    public AtomicInteger successfullIterations = new AtomicInteger();
+    public AtomicInteger successfulIterations = new AtomicInteger();
 
     @Rule
     public BounceMemberRule bounceMemberRule =
@@ -59,6 +59,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
                             .driverType(isClientDriver() ? DriverType.CLIENT : DriverType.MEMBER)
                             .build();
 
+    @Override
     protected Config getConfig() {
         return smallInstanceConfig();
     }
@@ -102,7 +103,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
                 assertTrue("Missing stable entry", all.contains(i));
             }
 
-            logger.info("Successfully finished iteration " + successfullIterations.incrementAndGet());
+            logger.info("Successfully finished iteration " + successfulIterations.incrementAndGet());
         }
 
         private HashSet<Integer> getAll() {
@@ -131,13 +132,13 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
         return false;
     }
 
-    public class MutationRunnable implements Runnable {
+    private static class MutationRunnable implements Runnable {
         private final HazelcastInstance hazelcastInstance;
         private final int startIndex;
         private final int endIndex;
         private IMap<Integer, Integer> map;
 
-        public MutationRunnable(HazelcastInstance hazelcastInstance, int runnableIndex) {
+        MutationRunnable(HazelcastInstance hazelcastInstance, int runnableIndex) {
             this.hazelcastInstance = hazelcastInstance;
             this.startIndex = runnableIndex * MUTATION_ENTRY_FACTOR * STABLE_ENTRY_COUNT;
             this.endIndex = startIndex + MUTATION_ENTRY_FACTOR * STABLE_ENTRY_COUNT;
