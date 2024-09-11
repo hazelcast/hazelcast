@@ -23,29 +23,29 @@ import com.hazelcast.core.HazelcastInstanceAware;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class TestEntryListener implements EntryListener, HazelcastInstanceAware {
+class TestEntryListener implements EntryListener<Object, Object>, HazelcastInstanceAware {
 
     static final AtomicBoolean INSTANCE_AWARE = new AtomicBoolean();
 
     @Override
-    public void entryAdded(EntryEvent event) {
+    public void entryAdded(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryEvicted(EntryEvent event) {
+    public void entryEvicted(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryExpired(EntryEvent event) {
+    public void entryExpired(EntryEvent<Object, Object> event) {
 
     }
 
     @Override
-    public void entryRemoved(EntryEvent event) {
+    public void entryRemoved(EntryEvent<Object, Object> event) {
     }
 
     @Override
-    public void entryUpdated(EntryEvent event) {
+    public void entryUpdated(EntryEvent<Object, Object> event) {
     }
 
     @Override

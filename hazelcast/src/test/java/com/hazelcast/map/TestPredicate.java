@@ -25,7 +25,7 @@ import java.util.Set;
 
 class TestPredicate implements IndexAwarePredicate<String, TestData> {
 
-    private String value;
+    private final String value;
     private boolean filtered;
     private int applied;
 
