@@ -113,6 +113,7 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
         }
     }
 
+    @Override
     protected Config getConfig() {
         return smallInstanceConfig();
     }

@@ -152,11 +152,11 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put(5, 5);
 
         Set<Map.Entry<Integer, Integer>> entrySet = new HashSet<>();
-        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(1, 1));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(2, 2));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(3, 3));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(4, 4));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(5, 5));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<>(1, 1));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<>(2, 2));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<>(3, 3));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<>(4, 4));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<>(5, 5));
 
         assertEquals(entrySet, map.entrySet());
     }
