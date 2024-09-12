@@ -321,7 +321,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         return resource;
     }
 
-    private void waitForNextSnapshot(HazelcastInstance hazelcastInstance, Job job) {
+    public static void waitForNextSnapshot(HazelcastInstance hazelcastInstance, Job job) {
         JobRepository jobRepository = new JobRepository(hazelcastInstance);
         waitForNextSnapshot(jobRepository, job.getId(), 30, false);
     }

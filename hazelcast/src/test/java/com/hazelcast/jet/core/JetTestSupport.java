@@ -312,7 +312,16 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         SUPPORT_LOGGER.info("First snapshot found (id=" + snapshotId[0] + ")");
     }
 
-    public void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
+    public static void waitForNextSnapshot(HazelcastInstance instance, Job job) {
+        JobRepository jobRepository = new JobRepository(instance);
+        waitForNextSnapshot(jobRepository, job);
+    }
+
+    public static void waitForNextSnapshot(JobRepository repo, Job job) {
+        waitForNextSnapshot(repo, job.getId(), 30, false);
+    }
+
+    public static void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
         long originalSnapshotId = jr.getJobExecutionRecord(jobId).snapshotId();
         // wait until there is at least one more snapshot
         long[] snapshotId = {-1};

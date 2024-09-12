@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cdc.mysql;
 
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
+import com.hazelcast.jet.cdc.mysql.MySqlCdcSources.Builder;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -49,7 +50,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
                     .withPassword("mysqlpw")
     );
 
-    protected MySqlCdcSources.Builder sourceBuilder(String name) {
+    protected Builder sourceBuilder(String name) {
         return MySqlCdcSources.mysql(name)
                 .setDatabaseAddress(mysql.getHost())
                 .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))

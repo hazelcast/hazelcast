@@ -18,6 +18,7 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
@@ -321,7 +322,7 @@ public class SourceConnectorWrapper {
     @SuppressWarnings({"ConstantConditions", "java:S1193"})
     private static SourceConnector newConnectorInstance(String connectorClazz) {
         try {
-            return newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
+            return ClassLoaderUtil.newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
         } catch (Exception e) {
             if (e instanceof ClassNotFoundException) {
                 throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +

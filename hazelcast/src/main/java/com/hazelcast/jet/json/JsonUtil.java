@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.json;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -56,7 +58,11 @@ public final class JsonUtil {
     private static final JSON JSON_JR;
 
     static {
-        JSON.Builder builder = JSON.builder();
+        JsonFactory jf = JsonFactory.builder()
+                                    .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
+                                    .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
+                                    .build();
+        JSON.Builder builder = JSON.builder(jf).enable(JSON.Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
         try {
             Class.forName("com.fasterxml.jackson.annotation.JacksonAnnotation", false, JsonUtil.class.getClassLoader());
             builder.register(JacksonAnnotationExtension.std);

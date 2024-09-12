@@ -64,6 +64,10 @@ public final class SerializerHookConstants {
     public static final int CDC_RECORD_PART = -341;
     public static final int CDC_SOURCE_STATE = -342;
 
+    public static final int EE_CDC_RECORD = -343;
+    public static final int EE_CDC_RECORD_PART = -344;
+    public static final int EE_CDC_SOURCE_STATE = -345;
+
 
     // reserved for hadoop module: -380 to -390
 

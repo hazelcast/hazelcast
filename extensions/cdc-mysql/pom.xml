@@ -66,6 +66,7 @@
                         <excludes>
                             <!-- Exclude dependencies common with cdc-debezium -->
                             <exclude>io.debezium:debezium-core</exclude>
+                            <exclude>com.mysql:mysql-connector-j</exclude>
                         </excludes>
                     </artifactSet>
                 </configuration>
@@ -89,6 +90,7 @@
             <artifactId>hazelcast-jet-cdc-debezium</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
+            <classifier>jar-with-dependencies</classifier>
         </dependency>
 
         <dependency>
@@ -100,14 +102,22 @@
                     <artifactId>mysql-connector-java</artifactId>
                     <groupId>mysql</groupId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
-        <!-- Debezium version 1.9.8.Final has dependency on old mysql-connector-java. Exclude the old mysql driver and use the new driver.
-             When debezium is upgraded, we may clean this explicit dependency -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <!-- This forced ANTLR version shaded -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.9.3</version>
         </dependency>
 
         <!-- TEST -->

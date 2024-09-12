@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.jet.JetException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
@@ -74,16 +75,34 @@ public final class ReflectionUtils {
             throw sneakyThrow(e);
         }
     }
+    /**
+     * See {@link ClassLoaderUtil#newInstance(ClassLoader, String)}. Exceptions
+     * are sneakily thrown.
+     */
+    public static <T> T newInstance(ClassLoader classLoader, String  typeName) {
+        return newInstance(classLoader, typeName, typeName);
+    }
 
     /**
      * See {@link ClassLoaderUtil#newInstance(ClassLoader, String)}. Exceptions
      * are sneakily thrown.
      */
-    public static <T> T newInstance(ClassLoader classLoader, String name) {
+    public static <T> T newInstance(ClassLoader classLoader, String  typeName, String type) {
         try {
-            return ClassLoaderUtil.newInstance(classLoader, name);
+            return ClassLoaderUtil.newInstance(classLoader, typeName);
+        } catch (ClassNotFoundException e) {
+            throw new JetException(String.format("%s class %s not found", type, typeName));
+        } catch (InstantiationException e) {
+            throw new JetException(String.format("%s class %s can't be instantiated", type, typeName));
+        } catch (IllegalArgumentException | NoSuchMethodException e) {
+            throw new JetException(String.format("%s class %s has no default constructor", type, typeName));
+        } catch (IllegalAccessException e) {
+            throw new JetException(String.format("Default constructor of %s class %s is not accessible", type, typeName));
+        } catch (InvocationTargetException e) {
+            throw new JetException(
+                    String.format("%s class %s failed on construction: %s", type, typeName, e.getMessage()));
         } catch (Exception e) {
-            throw sneakyThrow(e);
+            throw new JetException(e);
         }
     }
 
@@ -104,7 +123,7 @@ public final class ReflectionUtils {
     private static <T> T readStaticField(Class<?> clazz, String fieldName) throws NoSuchFieldException,
             IllegalAccessException {
         Field field = clazz.getDeclaredField(fieldName);
-        if (!field.isAccessible()) {
+        if (!field.canAccess(null)) {
             field.setAccessible(true);
         }
         return (T) field.get(null);
@@ -236,7 +255,7 @@ public final class ReflectionUtils {
                 .enableClassInfo()
                 .ignoreClassVisibility();
         stream(classes).map(Class::getClassLoader).distinct().forEach(classGraph::addClassLoader);
-        stream(classes).map(ReflectionUtils::toPackageName).distinct().forEach(classGraph::whitelistPackages);
+        stream(classes).map(ReflectionUtils::toPackageName).distinct().forEach(classGraph::acceptPackages);
         try (ScanResult scanResult = classGraph.scan()) {
             Set<String> classNames = stream(classes).map(Class::getName).collect(toSet());
             return concat(
@@ -260,14 +279,16 @@ public final class ReflectionUtils {
     public static Resources resourcesOf(String... packages) {
         String[] paths = stream(packages).map(ReflectionUtils::toPath).toArray(String[]::new);
         ClassGraph classGraph = new ClassGraph()
-                .whitelistPackages(packages)
-                .whitelistPaths(paths)
+                .acceptPackages(packages)
+                .acceptPaths(paths)
                 .ignoreClassVisibility();
         try (ScanResult scanResult = classGraph.scan()) {
             Collection<ClassResource> classes =
                     scanResult.getAllClasses().stream().map(ClassResource::new).collect(toList());
-            Collection<URL> nonClasses = scanResult.getAllResources().nonClassFilesOnly().getURLs();
-            return new Resources(classes, nonClasses);
+            try (var res = scanResult.getAllResources().nonClassFilesOnly()) {
+                Collection<URL> nonClasses = res.getURLs();
+                return new Resources(classes, nonClasses);
+            }
         }
     }
 

@@ -24,6 +24,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
  */
 public final class TestedVersions {
     public static final String MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.5");
+    public static final DockerImageName MONGO_IMAGE = parse("mongo:" + MONGO_VERSION);
     public static final String TOXIPROXY_VERSION = System.getProperty("test.toxiproxy.version", "2.7.0");
     public static final DockerImageName TOXIPROXY_IMAGE = parse("ghcr.io/shopify/toxiproxy:" + TOXIPROXY_VERSION)
             .asCompatibleSubstituteFor("shopify/toxiproxy");
@@ -35,4 +36,12 @@ public final class TestedVersions {
     public static final String TEST_AZURE_SQL_EDGE_VERSION = System.getProperty("test.azuresqledge.version", "1.0.7");
 
     public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2022-latest");
+
+    public static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.2");
+    public static final DockerImageName TEST_MYSQL_IMAGE = DockerImageName.parse("mysql:" + TEST_MYSQL_VERSION);
+
+    public static final DockerImageName DEBEZIUM_MYSQL_IMAGE = DockerImageName.parse("debezium/example-mysql:2.7.1.Final")
+                                                                              .asCompatibleSubstituteFor("mysql");
+    public static final DockerImageName DEBEZIUM_POSTGRES_IMAGE = DockerImageName.parse("debezium/example-postgres:2.7.1.Final")
+                                                                              .asCompatibleSubstituteFor("postgres");
 }

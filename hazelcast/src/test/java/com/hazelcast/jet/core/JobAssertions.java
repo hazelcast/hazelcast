@@ -45,6 +45,7 @@ import static org.junit.Assert.assertNull;
  *     For instance creation please use {@link JobAssertions#assertThat(Job)}.
  * </p>
  */
+@SuppressWarnings("UnusedReturnValue")
 public class JobAssertions extends AbstractAssert<JobAssertions, Job> {
 
     protected JobAssertions(Job job, Class<?> selfType) {
@@ -62,18 +63,20 @@ public class JobAssertions extends AbstractAssert<JobAssertions, Job> {
      * Asserts that the {@code job} has an {@link ExecutionContext} on the
      * given {@code instance}.
      */
-    public void isExecutingOn(HazelcastInstance instance) {
+    public JobAssertions isExecutingOn(HazelcastInstance instance) {
         var execCtx = getExecutionContext(instance);
         assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
+        return this;
     }
 
     /**
      * Asserts that the {@code job} does not have an {@link ExecutionContext}
      * on the given {@code instance}.
      */
-    public void isNotExecutingOn(HazelcastInstance instance) {
+    public JobAssertions isNotExecutingOn(HazelcastInstance instance) {
         var execCtx = getExecutionContext(instance);
         assertNull("Job should not be executing on member " + instance + ", but is", execCtx);
+        return this;
     }
 
     /**
@@ -81,30 +84,33 @@ public class JobAssertions extends AbstractAssert<JobAssertions, Job> {
      *
      * @param client     Hazelcast Instance used to query the cluster
      */
-    public void isVisible(HazelcastInstance client) {
+    public JobAssertions isVisible(HazelcastInstance client) {
         assertTrueEventually("job not found",
                 () -> assertNotNull(client.getJet().getJob(actual.getId())));
+        return this;
     }
 
     private ExecutionContext getExecutionContext(HazelcastInstance instance) {
         return getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(actual.getId());
     }
 
-    public void eventuallyHasStatus(@Nonnull JobStatus expected) {
+    public JobAssertions eventuallyHasStatus(@Nonnull JobStatus expected) {
         eventuallyHasStatus(expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION);
+        return this;
     }
 
-    public void eventuallyHasStatus(JobStatus expected, Duration timeout) {
+    public JobAssertions eventuallyHasStatus(JobStatus expected, Duration timeout) {
         assertNotNull(actual);
         String message = "jobId=" + idToString(actual.getId());
         assertTrueEventually(() ->
                 assertEquals(message, expected, actual.getStatus()), timeout.getSeconds());
+        return this;
     }
 
     /**
      * Asserts that the {@code job} is eventually SUSPENDED and waits until the suspension cause is set.
      */
-    public void eventuallySuspended() {
+    public JobAssertions eventuallySuspended() {
         assertThat(actual).eventuallyHasStatus(SUSPENDED);
         assertTrueEventually(() -> {
             try {
@@ -113,6 +119,7 @@ public class JobAssertions extends AbstractAssert<JobAssertions, Job> {
                 Assertions.fail("Suspension cause is not set yet", notSuspended);
             }
         });
+        return this;
     }
 
     /**

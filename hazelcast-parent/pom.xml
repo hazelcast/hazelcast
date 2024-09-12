@@ -78,17 +78,21 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
 
+        <docker.maven.plugin.version>0.45.0</docker.maven.plugin.version>
+
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.3</avro.version>
         <aws.sdk.version>1.12.771</aws.sdk.version>
         <aws.sdk2.version>2.27.19</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <debezium.version>1.9.8.Final</debezium.version>
-        <new.debezium.version>2.6.0.Final</new.debezium.version>
+        <new.debezium.version>2.7.0.Final</new.debezium.version>
         <grpc.version>1.60.0</grpc.version>
         <hadoop.version>3.4.0</hadoop.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.26.3</jline.version>
+        <jms.api.version>3.1.0</jms.api.version>
+        <json-surfer.version>0.12</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
         Confluent depends on Kafka, and consideration should be given when upgrading
@@ -383,6 +387,11 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>9.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zendesk</groupId>
+                <artifactId>mysql-binlog-connector-java</artifactId>
+                <version>0.29.2</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
