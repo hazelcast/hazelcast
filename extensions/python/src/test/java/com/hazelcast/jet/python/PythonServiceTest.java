@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.python;
 
 import com.hazelcast.config.Config;
@@ -56,12 +57,22 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
 
     private static final int ITEM_COUNT = 10_000;
     private static final String ECHO_HANDLER_FUNCTION =
-            "def handle(input_list):\n" +
-            "    return ['echo-%s' % i for i in input_list]\n";
+            """
+            def handle(input_list):
+                return ['echo-%s' % i for i in input_list]
+            """;
 
-    private static final String FAILING_FUNCTION
-            = "def handle(input_list):\n"
-            + "    assert 1 == 2\n";
+    private static final String ECHO_LEN_HANDLER_FUNCTION =
+            """
+            def handle(input_list):
+                return ['echo-%s-%s' % (i, len(input_list)) for i in input_list]
+            """;
+
+    private static final String FAILING_FUNCTION =
+            """
+            def handle(input_list):
+                assert 1 == 2
+            """;
 
     private File baseDir;
 
@@ -107,6 +118,30 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
 
     @Test
     @Category(NightlyTest.class)
+    public void batchStage_mapUsingPython_maxBatchSize() throws Exception {
+        installFileToBaseDir(ECHO_LEN_HANDLER_FUNCTION, "echo-len.py");
+
+        // Given
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("echo-len")
+                .setHandlerFunction("handle");
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+        Pipeline p = Pipeline.create();
+        BatchStage<String> stage = p.readFrom(TestSources.items(items));
+
+        // When
+        BatchStage<String> mapped = stage.apply(mapUsingPythonBatch(cfg, 1)).setLocalParallelism(1);
+
+        // Then
+        mapped.writeTo(AssertionSinks.assertAnyOrder(
+                 "Python didn't map the items correctly", items.stream().map(i -> "echo-" + i + "-1").collect(toList())
+        ));
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test
+    @Category(NightlyTest.class)
     public void batchStage_mapUsingPython_onAllMembers() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -144,6 +179,30 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
         // Then
         mapped.writeTo(AssertionSinks.assertAnyOrder(
                  "Python didn't map the items correctly", items.stream().map(i -> "echo-" + i).collect(toList())
+        ));
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void streamStage_mapUsingPython_maxBatchSize() throws Exception {
+        installFileToBaseDir(ECHO_LEN_HANDLER_FUNCTION, "echo-len.py");
+
+        // Given
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("echo-len")
+                .setHandlerFunction("handle");
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+        Pipeline p = Pipeline.create();
+        StreamStage<String> stage = p.readFrom(TestSources.items(items)).addTimestamps(x -> 0, 0);
+
+        // When
+        StreamStage<String> mapped = stage.apply(mapUsingPython(cfg, 1)).setLocalParallelism(2);
+
+        // Then
+        mapped.writeTo(AssertionSinks.assertAnyOrder(
+                "Python didn't map the items correctly", items.stream().map(i -> "echo-" + i + "-1").collect(toList())
         ));
         instance().getJet().newJob(p).join();
     }

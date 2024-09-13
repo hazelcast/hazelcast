@@ -30,6 +30,8 @@ import javax.annotation.Nonnull;
  */
 public final class PythonTransforms {
 
+    private static final int DEFAULT_MAX_BATCH_SIZE = Integer.MAX_VALUE;
+
     private PythonTransforms() {
     }
 
@@ -42,8 +44,28 @@ public final class PythonTransforms {
     public static FunctionEx<StreamStage<String>, StreamStage<String>> mapUsingPython(
             @Nonnull PythonServiceConfig cfg
     ) {
+        return mapUsingPython(cfg, DEFAULT_MAX_BATCH_SIZE);
+    }
+
+    /**
+     * A stage-transforming method that adds a "map using Python" pipeline stage.
+     * Use it with {@code stage.apply(PythonService.mapUsingPython(pyConfig))}.
+     * See {@link com.hazelcast.jet.python.PythonServiceConfig} for more details.
+     * <p>
+     * The {@code maxBatchSize} may be used to limit the size of a single request
+     * to the Python service.
+     *
+     * @param cfg configuration for the Python service
+     * @param maxBatchSize the maximum size of a batch for a single request
+     */
+    @Nonnull
+    public static FunctionEx<StreamStage<String>, StreamStage<String>> mapUsingPython(
+            @Nonnull PythonServiceConfig cfg,
+            int maxBatchSize
+    ) {
         return s -> s
-                .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
+                .mapUsingServiceAsyncBatched(
+                        PythonService.factory(cfg), maxBatchSize, PythonService::sendRequest)
                 .setName("mapUsingPython");
     }
 
@@ -69,7 +91,8 @@ public final class PythonTransforms {
     ) {
         return s -> s
                 .groupingKey(keyFn)
-                .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
+                .mapUsingServiceAsyncBatched(
+                        PythonService.factory(cfg), DEFAULT_MAX_BATCH_SIZE, PythonService::sendRequest)
                 .setName("mapUsingPython");
     }
 
@@ -82,8 +105,28 @@ public final class PythonTransforms {
     public static FunctionEx<BatchStage<String>, BatchStage<String>> mapUsingPythonBatch(
             @Nonnull PythonServiceConfig cfg
     ) {
+        return mapUsingPythonBatch(cfg, DEFAULT_MAX_BATCH_SIZE);
+    }
+
+    /**
+     * A stage-transforming method that adds a "map using Python" pipeline stage.
+     * Use it with {@code stage.apply(PythonService.mapUsingPythonBatch(pyConfig))}.
+     * See {@link com.hazelcast.jet.python.PythonServiceConfig} for more details.
+     * <p>
+     * The {@code maxBatchSize} may be used to limit the size of a single request
+     * to the Python service.
+     *
+     * @param cfg configuration for the Python service
+     * @param maxBatchSize the maximum size of a batch for a single request
+     */
+    @Nonnull
+    public static FunctionEx<BatchStage<String>, BatchStage<String>> mapUsingPythonBatch(
+            @Nonnull PythonServiceConfig cfg,
+            int maxBatchSize
+    ) {
         return s -> s
-                .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
+                .mapUsingServiceAsyncBatched(
+                        PythonService.factory(cfg), maxBatchSize, PythonService::sendRequest)
                 .setName("mapUsingPythonBatch");
     }
 
@@ -97,15 +140,20 @@ public final class PythonTransforms {
      * Use it like this: {@code stage.apply(PythonService.mapUsingPythonBatch(keyFn,
      * pyConfig))}. See {@link com.hazelcast.jet.python.PythonServiceConfig}
      * for more details.
+     *
+     *       @deprecated Jet now has first-class support for data rebalancing, see
+     *      {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
+    @Deprecated
     public static <K> FunctionEx<BatchStage<String>, BatchStage<String>> mapUsingPythonBatch(
             @Nonnull FunctionEx<? super String, ? extends K> keyFn,
             @Nonnull PythonServiceConfig cfg
     ) {
         return s -> s
                 .groupingKey(keyFn)
-                .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
+                .mapUsingServiceAsyncBatched(
+                        PythonService.factory(cfg), DEFAULT_MAX_BATCH_SIZE, PythonService::sendRequest)
                 .setName("mapUsingPythonBatch");
     }
 }
