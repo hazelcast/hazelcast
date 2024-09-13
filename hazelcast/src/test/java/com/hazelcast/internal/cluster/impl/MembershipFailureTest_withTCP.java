@@ -19,47 +19,33 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.FirewallingNodeContext;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory.FirewallingNodeContext;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
+import org.junit.Before;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Collection;
-
-import static com.hazelcast.instance.impl.HazelcastInstanceFactory.createInstanceName;
-
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
-    @After
-    public void tearDown() {
-        HazelcastInstanceFactory.terminateAll();
+    @Before
+    @Override
+    public void init() {
+        factory = createHazelcastInstanceFactory()
+                .withNodeContextDelegator(FirewallingNodeContext::new);
     }
 
     @Override
-    HazelcastInstance newHazelcastInstance() {
-        return newHazelcastInstance(new Config());
+    protected Config getConfig() {
+        return new Config();
     }
 
     @Override
-    HazelcastInstance newHazelcastInstance(Config config) {
-        config.setProperty(ClusterProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType.toString());
-        initConfig(config);
-        return HazelcastInstanceFactory.newHazelcastInstance(config, createInstanceName(config), new FirewallingNodeContext());
-    }
-
-    @Override
-    Collection<HazelcastInstance> getAllHazelcastInstances() {
-        return HazelcastInstanceFactory.getAllHazelcastInstances();
-    }
-
-    private static Config initConfig(Config config) {
+    protected Config initConfig(Config config) {
+        config = super.initConfig(config);
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
         config.setProperty(ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED.getName(), "false");
 
