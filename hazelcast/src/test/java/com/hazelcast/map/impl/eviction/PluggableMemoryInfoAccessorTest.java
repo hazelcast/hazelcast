@@ -61,7 +61,7 @@ public class PluggableMemoryInfoAccessorTest extends HazelcastTestSupport {
                 .setSize(50);
 
         HazelcastInstance node = createHazelcastInstance(config);
-        IMap map = node.getMap("test");
+        IMap<Integer, Integer> map = node.getMap("test");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);

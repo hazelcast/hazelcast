@@ -21,7 +21,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
@@ -59,12 +58,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         final CountDownLatch entryCountingLatch = new CountDownLatch(populationCount);
         QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, Predicates.alwaysTrue(), true);
-        UUID listener = cache.addEntryListener(new EntryAddedListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                entryCountingLatch.countDown();
-            }
-        }, false);
+        UUID listener = cache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> entryCountingLatch.countDown(), false);
 
         for (int i = 0; i < populationCount; i++) {
             map.put(i, i);

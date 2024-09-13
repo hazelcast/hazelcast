@@ -85,9 +85,9 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
     @Override
     protected EventJournalTestContext<K, V, EventJournalMapEvent<K, V>> createContext() {
         return new EventJournalTestContext<>(
-                new EventJournalMapDataStructureAdapter<K, V>(getRandomInstance().<K, V>getMap(NON_EXPIRING_MAP)),
-                new EventJournalMapDataStructureAdapter<K, V>(getRandomInstance().<K, V>getMap(EXPIRING_MAP)),
-                new EventJournalMapEventAdapter<K, V>()
+                new EventJournalMapDataStructureAdapter<>(getRandomInstance().getMap(NON_EXPIRING_MAP)),
+                new EventJournalMapDataStructureAdapter<>(getRandomInstance().getMap(EXPIRING_MAP)),
+                new EventJournalMapEventAdapter<>()
         );
     }
 

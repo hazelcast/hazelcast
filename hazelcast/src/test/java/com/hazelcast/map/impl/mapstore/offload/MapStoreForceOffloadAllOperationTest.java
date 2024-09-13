@@ -62,6 +62,7 @@ public class MapStoreForceOffloadAllOperationTest extends HazelcastTestSupport {
         map = instance.getMap(MAP_NAME);
     }
 
+    @Override
     protected Config getConfig() {
         return super.smallInstanceConfigWithoutJetAndMetrics()
                 .setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), "true");

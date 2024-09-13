@@ -184,6 +184,7 @@ public final class SimpleMapTest {
                 setName("PrintStats." + instance.getName());
             }
 
+            @Override
             public void run() {
                 while (true) {
                     try {
@@ -203,9 +204,9 @@ public final class SimpleMapTest {
      */
     private class Stats {
 
-        private AtomicLong gets = new AtomicLong();
-        private AtomicLong puts = new AtomicLong();
-        private AtomicLong removes = new AtomicLong();
+        private final AtomicLong gets = new AtomicLong();
+        private final AtomicLong puts = new AtomicLong();
+        private final AtomicLong removes = new AtomicLong();
 
         public void printAndReset() {
             long getsNow = gets.getAndSet(0);
