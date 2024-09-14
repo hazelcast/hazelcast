@@ -99,7 +99,7 @@
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
         <kafka.version>3.7.1</kafka.version>
-        <confluent.version>7.7.0</confluent.version>
+        <confluent.version>7.7.1</confluent.version>
         <kotlin.version>2.0.20</kotlin.version>
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <parquet.version>1.14.2</parquet.version>
