@@ -87,7 +87,7 @@
         <calcite.version>1.35.0</calcite.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <new.debezium.version>2.7.2.Final</new.debezium.version>
-        <grpc.version>1.60.0</grpc.version>
+        <grpc.version>1.66.0</grpc.version>
         <hadoop.version>3.4.0</hadoop.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.26.3</jline.version>
