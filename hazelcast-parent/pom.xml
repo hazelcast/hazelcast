@@ -86,7 +86,7 @@
         <aws.sdk2.version>2.27.19</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <debezium.version>1.9.8.Final</debezium.version>
-        <new.debezium.version>2.7.0.Final</new.debezium.version>
+        <new.debezium.version>2.7.2.Final</new.debezium.version>
         <grpc.version>1.60.0</grpc.version>
         <hadoop.version>3.4.0</hadoop.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
