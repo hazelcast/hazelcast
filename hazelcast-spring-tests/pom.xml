@@ -105,13 +105,13 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <org.springframework.version>6.1.12</org.springframework.version>
+                <org.springframework.version>6.1.13</org.springframework.version>
             </properties>
         </profile>
         <profile>
             <id>spring-5</id>
             <properties>
-                <org.springframework.version>5.3.37</org.springframework.version>
+                <org.springframework.version>5.3.39</org.springframework.version>
                 <javax.annotation.version>1.3.2</javax.annotation.version>
             </properties>
             <dependencies>
