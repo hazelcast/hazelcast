@@ -42,7 +42,7 @@ public final class JsonSchemaHelper {
     /**
      * Creates a {@link JsonPattern} for given query path. If the path
      * matches a terminal value in the schema, then the schema is
-     * returned. Otherwise this method returns null. If given path
+     * returned. Otherwise, this method returns null. If given path
      * has "any", pattern is created only upto that part. The rest is
      * omitted.
      *

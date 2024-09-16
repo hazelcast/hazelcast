@@ -57,6 +57,6 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable, SecuredFunctio
      * @since 5.4
      */
     default <V> SupplierEx<V> andThen(FunctionEx<? super T, ? extends V> after) {
-        return new FunctionsImpl.ComposedSupplierEx(this, after);
+        return new FunctionsImpl.ComposedSupplierEx<>(this, after);
     }
 }

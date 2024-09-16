@@ -101,7 +101,7 @@ public final class PredicateTestUtils {
                 value, newExtractor(serializationService));
     }
 
-    protected static Extractors newExtractor(InternalSerializationService serializationService) {
+    private static Extractors newExtractor(InternalSerializationService serializationService) {
         return Extractors.newBuilder(serializationService).build();
     }
 

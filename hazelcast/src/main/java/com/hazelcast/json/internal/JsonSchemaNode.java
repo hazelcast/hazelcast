@@ -25,7 +25,7 @@ public abstract class JsonSchemaNode implements IdentifiedDataSerializable {
 
     private JsonSchemaStructNode parent;
 
-    public JsonSchemaNode() {
+    protected JsonSchemaNode() {
         // no-op
     }
     /**
@@ -33,7 +33,7 @@ public abstract class JsonSchemaNode implements IdentifiedDataSerializable {
      *
      * @param parent may be null for top element
      */
-    public JsonSchemaNode(JsonSchemaStructNode parent) {
+    protected JsonSchemaNode(JsonSchemaStructNode parent) {
         this.parent = parent;
     }
 

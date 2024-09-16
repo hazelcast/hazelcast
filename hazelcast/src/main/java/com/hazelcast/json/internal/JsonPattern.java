@@ -27,7 +27,7 @@ import java.util.List;
  * order of that item within the object. If an item is within an array,
  * then the corresponding number is the index of that item within the
  * array.
- *
+ * <p>
  * For example;
  * A Json object is given:
  * {
@@ -38,7 +38,7 @@ import java.util.List;
  *     ]
  * }
  * The path "attr2[1]" represents "anotherText" JsonString. The logical
- * position of this value is "1.1" because "attr2" is the second attribute
+ * position of this value is "1.1" because "attr2" is the second attribute,
  * and we are looking for the second item in the corresponding array.
  */
 public class JsonPattern {

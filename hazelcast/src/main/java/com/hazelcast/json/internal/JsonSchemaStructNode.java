@@ -16,12 +16,14 @@
 
 package com.hazelcast.json.internal;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_STRUCT_NODE;
 
@@ -80,7 +82,7 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
         }
         JsonSchemaStructNode that = (JsonSchemaStructNode) o;
 
-        return inners != null ? inners.equals(that.inners) : that.inners == null;
+        return Objects.equals(inners, that.inners);
     }
 
     @Override
@@ -99,10 +101,7 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(inners.size());
-        for (int i = 0; i < inners.size(); i++) {
-            inners.get(i).writeData(out);
-        }
+        SerializationUtil.writeCollection(inners, out);
         // Don't serialize parent node from superclass to avoid cyclic dependency
     }
 
