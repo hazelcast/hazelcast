@@ -118,7 +118,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         String hzName = nodeEngine.getHazelcastInstance().getName();
         ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
         ThreadFactory threadFactory = new PoolExecutorThreadFactory(createThreadPoolName(hzName, "cached"),
-                configClassLoader);
+                configClassLoader, nodeEngine);
         this.cachedExecutorService = new ThreadPoolExecutor(
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 threadFactory, (r, executor) -> {
@@ -200,7 +200,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
             if (threadFactory != null) {
                 throw new IllegalArgumentException("Cached executor can not be used with external thread factory");
             }
-            executor = new CachedExecutorServiceDelegate(name, cachedExecutorService, poolSize, queueCapacity, nodeEngine);
+            executor = new CachedExecutorServiceDelegate(name, cachedExecutorService, poolSize, queueCapacity);
         } else if (type == ExecutorType.CONCRETE) {
             if (threadFactory == null) {
                 ClassLoader classLoader = nodeEngine.getConfigClassLoader();

@@ -34,10 +34,25 @@ public class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final NodeEngine nodeEngine;
 
+    /**
+     * Creates a new instance of {@link PoolExecutorThreadFactory} without {@link NodeEngine} context.
+     * This constructor is typically only used for Client-side implementations.
+     *
+     * @param threadNamePrefix the thread name prefix for this factory
+     * @param classLoader      the parent {@link ClassLoader} for this factory
+     */
     public PoolExecutorThreadFactory(String threadNamePrefix, ClassLoader classLoader) {
         this(threadNamePrefix, classLoader, null);
     }
 
+    /**
+     * Creates a new instance of {@link PoolExecutorThreadFactory} with {@link NodeEngine} context.
+     * This constructor is typically used for all Member-side implementations.
+     *
+     * @param threadNamePrefix the thread name prefix for this factory
+     * @param classLoader      the parent {@link ClassLoader} for this factory
+     * @param nodeEngine       the {@link NodeEngine} context for the relevant member
+     */
     public PoolExecutorThreadFactory(String threadNamePrefix, ClassLoader classLoader, NodeEngine nodeEngine) {
         super(classLoader);
         this.threadNamePrefix = threadNamePrefix;

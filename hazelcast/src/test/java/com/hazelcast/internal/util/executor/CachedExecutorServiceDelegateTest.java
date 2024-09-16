@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.util.executor;
 
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,7 +46,6 @@ import static com.hazelcast.internal.util.FutureUtil.checkAllDone;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -348,6 +346,6 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     private ManagedExecutorService newManagedExecutorService(int maxPoolSize, int queueCapacity) {
-        return new CachedExecutorServiceDelegate(NAME, cachedExecutorService, maxPoolSize, queueCapacity, mock(NodeEngine.class));
+        return new CachedExecutorServiceDelegate(NAME, cachedExecutorService, maxPoolSize, queueCapacity);
     }
 }
