@@ -22,11 +22,13 @@ import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Empty implementation of InternalHotRestartService to avoid null checks. This will provide default behaviour when hot restart
@@ -86,7 +88,8 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit) {
+    public void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit,
+                                                  Supplier<SafeStateCheckOperation> supplier) {
     }
 
     @Override

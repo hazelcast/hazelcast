@@ -44,6 +44,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.Timer;
@@ -938,7 +939,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
         long startNanos = Timer.nanos();
         node.getNodeExtension().getInternalHotRestartService()
-            .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+            .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS,
+                    () -> new SafeStateCheckOperation(true));
         timeoutNanos -= (Timer.nanosElapsed(startNanos));
 
         if (node.config.getCPSubsystemConfig().getCPMemberCount() == 0) {

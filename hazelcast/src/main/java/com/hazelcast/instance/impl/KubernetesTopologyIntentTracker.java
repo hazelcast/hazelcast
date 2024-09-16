@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -326,7 +327,8 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         }
         try {
             getNodeExtension().getInternalHotRestartService()
-                    .waitPartitionReplicaSyncOnCluster(remainingNanosForShutdown, TimeUnit.NANOSECONDS);
+                    .waitPartitionReplicaSyncOnCluster(remainingNanosForShutdown, TimeUnit.NANOSECONDS,
+                            () -> new SafeStateCheckOperation(true));
         } catch (IllegalStateException e) {
             logger.severe("Failure while waiting for partition replica sync before shutdown", e);
         }
@@ -349,7 +351,8 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         try {
             // wait for replica sync
             getNodeExtension().getInternalHotRestartService()
-                    .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+                    .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS,
+                            () -> new SafeStateCheckOperation(true));
             logger.info("cluster-wide-shutdown, Completed partition replica sync, Took(ms): "
                                 + Duration.between(partitionSyncStart, Instant.now()).toMillis());
         } catch (IllegalStateException e) {

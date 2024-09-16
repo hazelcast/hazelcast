@@ -19,7 +19,9 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 
 /**
  * Checks whether a node is safe or not.
@@ -31,6 +33,14 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 public class SafeStateCheckOperation extends AbstractPartitionOperation implements AllowedDuringPassiveState {
 
     private transient boolean safe;
+    private transient boolean throwWhenTargetNotMember;
+
+    public SafeStateCheckOperation() {
+    }
+
+    public SafeStateCheckOperation(boolean throwWhenTargetNotMember) {
+        this.throwWhenTargetNotMember = throwWhenTargetNotMember;
+    }
 
     @Override
     public void run() throws Exception {
@@ -46,5 +56,11 @@ public class SafeStateCheckOperation extends AbstractPartitionOperation implemen
     @Override
     public int getClassId() {
         return PartitionDataSerializerHook.SAFE_STATE_CHECK;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return throwable instanceof TargetNotMemberException && throwWhenTargetNotMember
+                ? ExceptionAction.THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 }

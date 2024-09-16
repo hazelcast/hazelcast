@@ -23,10 +23,12 @@ import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Internal service for interacting with hot restart related functionalities (e.g. force and partial start)
@@ -141,9 +143,10 @@ public interface InternalHotRestartService {
      *
      * @param timeout timeout
      * @param unit time unit
+     * @param supplier the {@link SafeStateCheckOperation} supplier
      * @throws IllegalStateException when timeout happens or a member leaves the cluster while waiting
      */
-    void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit);
+    void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit, Supplier<SafeStateCheckOperation> supplier);
 
     void setRejoiningActiveCluster(boolean rejoiningActiveCluster);
 
