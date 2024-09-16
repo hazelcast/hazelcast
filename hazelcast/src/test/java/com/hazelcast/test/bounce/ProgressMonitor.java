@@ -36,7 +36,7 @@ public class ProgressMonitor {
     private final List<BounceMemberRule.TestTaskRunnable> tasks = new ArrayList<>();
 
     private long lastProgressLoggedNanos;
-    private long progressDelta;
+    private long lastProgress;
 
     public ProgressMonitor(long maximumStaleSeconds) {
         this.maximumStaleNanos = maximumStaleSeconds == STALENESS_DETECTOR_DISABLED
@@ -77,12 +77,12 @@ public class ProgressMonitor {
             StringBuilder sb = new StringBuilder("Aggregated progress: ")
                     .append(aggregatedProgress)
                     .append(" operations. ");
-            progressDelta = aggregatedProgress - progressDelta;
             if (lastProgressLoggedNanos > 0) {
                 sb.append("Maximum latency: ")
                         .append(TimeUnit.NANOSECONDS.toMillis(maxLatencyNanos))
                         .append(" ms. ");
 
+                long progressDelta = aggregatedProgress - lastProgress;
                 long timeInNanos = now - lastProgressLoggedNanos;
                 double timeInSeconds = (double) timeInNanos / 1000000000;
                 double progressPerSecond = progressDelta / timeInSeconds;
@@ -94,6 +94,7 @@ public class ProgressMonitor {
 
             }
 
+            lastProgress = aggregatedProgress;
             lastProgressLoggedNanos = now;
             LOGGER.info(sb.toString());
         }
