@@ -424,8 +424,6 @@ public class TestHazelcastInstanceFactory {
 
     /**
      * Terminates supplied instance by releasing internal resources.
-     *
-     * @param instance the instance to terminate
      */
     public void terminate(HazelcastInstance instance) {
         Address address = getNode(instance).address;
