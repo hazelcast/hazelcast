@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
-import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.util.AddressUtil;
 
 import java.net.UnknownHostException;
@@ -35,11 +34,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.instance.impl.NodeState.SHUT_DOWN;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableMap;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public final class TestNodeRegistry {
 
@@ -54,8 +54,8 @@ public final class TestNodeRegistry {
         final Node node = nodes.get(address);
         if (node != null) {
             assertFalse(address + " is already registered", node.isRunning());
-            assertTrueEventually(address + " should be SHUT_DOWN",
-                    () -> assertThat(node.getState()).isEqualTo(NodeState.SHUT_DOWN));
+            assertTrueEventually(() ->
+                    assertTrue(address + " should be SHUT_DOWN", node.getState() == SHUT_DOWN));
             nodes.remove(address, node);
         }
         return new MockNodeContext(this, address, initiallyBlockedAddresses);
@@ -148,18 +148,11 @@ public final class TestNodeRegistry {
     void registerNode(Node node) {
         Address address = node.getThisAddress();
         Node currentNode = nodes.putIfAbsent(address, node);
-        if (currentNode != null) {
-            verifyInvariant(currentNode.equals(node), "This address is already in registry! " + address);
-        }
+        assertTrue("This address is already in registry! " + address,
+                currentNode == null || currentNode.equals(node));
     }
 
     Collection<Address> getAddresses() {
         return unmodifiableCollection(nodes.keySet());
-    }
-
-    private static void verifyInvariant(boolean check, String msg) {
-        if (!check) {
-            throw new AssertionError(msg);
-        }
     }
 }
