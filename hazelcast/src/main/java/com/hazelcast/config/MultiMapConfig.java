@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -380,10 +381,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            out.writeInt(listenerConfigs.size());
-            for (ListenerConfig listenerConfig : listenerConfigs) {
-                out.writeObject(listenerConfig);
-            }
+            SerializationUtil.writeList(listenerConfigs, out);
         }
         out.writeBoolean(binary);
         out.writeInt(backupCount);
@@ -404,12 +402,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
         valueCollectionType = in.readString();
         boolean hasListenerConfig = in.readBoolean();
         if (hasListenerConfig) {
-            int configSize = in.readInt();
-            listenerConfigs = new ArrayList<>(configSize);
-            for (int i = 0; i < configSize; i++) {
-                EntryListenerConfig listenerConfig = in.readObject();
-                listenerConfigs.add(listenerConfig);
-            }
+            listenerConfigs = SerializationUtil.readList(in);
         }
         binary = in.readBoolean();
         backupCount = in.readInt();

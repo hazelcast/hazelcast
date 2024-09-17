@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheMergeResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -124,12 +125,8 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        mergingEntries = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            CacheMergeTypes<Object, Object> mergingEntry = in.readObject();
-            mergingEntries.add(mergingEntry);
-        }
+
+        mergingEntries = SerializationUtil.readList(in);
         mergePolicy = in.readObject();
     }
 

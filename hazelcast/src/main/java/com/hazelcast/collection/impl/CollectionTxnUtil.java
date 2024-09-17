@@ -17,13 +17,13 @@
 package com.hazelcast.collection.impl;
 
 import com.hazelcast.collection.impl.txncollection.CollectionTxnOperation;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -80,19 +80,10 @@ public final class CollectionTxnUtil {
     }
 
     public static void write(ObjectDataOutput out, List<Operation> operationList) throws IOException {
-        out.writeInt(operationList.size());
-        for (Operation operation : operationList) {
-            out.writeObject(operation);
-        }
+        SerializationUtil.writeList(operationList, out);
     }
 
     public static List<Operation> read(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        List<Operation> operationList = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            Operation operation = in.readObject();
-            operationList.add(operation);
-        }
-        return operationList;
+        return SerializationUtil.readList(in);
     }
 }

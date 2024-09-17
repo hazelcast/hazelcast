@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.InterceptorRegistry;
@@ -42,8 +43,6 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -187,15 +186,8 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeInt(interceptorInfoList.size());
-        for (InterceptorInfo interceptorInfo : interceptorInfoList) {
-            out.writeObject(interceptorInfo);
-        }
-        int size = infoList.size();
-        out.writeInt(size);
-        for (AccumulatorInfo info : infoList) {
-            out.writeObject(info);
-        }
+        SerializationUtil.writeList(interceptorInfoList, out);
+        SerializationUtil.writeList(infoList, out);
     }
 
     @Override
@@ -206,16 +198,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         for (int i = 0; i < interceptorsCount; i++) {
             interceptorInfoList.add(in.readObject());
         }
-        int accumulatorsCount = in.readInt();
-        if (accumulatorsCount < 1) {
-            infoList = Collections.emptyList();
-            return;
-        }
-        infoList = new ArrayList<>(accumulatorsCount);
-        for (int i = 0; i < accumulatorsCount; i++) {
-            AccumulatorInfo info = in.readObject();
-            infoList.add(info);
-        }
+        infoList = SerializationUtil.readList(in);
     }
 
 

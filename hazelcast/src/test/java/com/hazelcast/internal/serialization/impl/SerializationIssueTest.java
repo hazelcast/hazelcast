@@ -491,10 +491,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
     static class TheClassThatExtendArrayList<E> extends ArrayList<E> implements DataSerializable {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(size());
-            for (Object item : this) {
-                out.writeObject(item);
-            }
+            SerializationUtil.writeCollection(this, out);
         }
 
         @Override

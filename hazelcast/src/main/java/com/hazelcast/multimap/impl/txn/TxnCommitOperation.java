@@ -21,6 +21,7 @@ import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperati
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -94,19 +95,12 @@ public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation imp
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(opList.size());
-        for (Operation op : opList) {
-            out.writeObject(op);
-        }
+        SerializationUtil.writeList(opList, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        opList = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            opList.add((Operation) in.readObject());
-        }
+        opList = SerializationUtil.readList(in);
     }
 }

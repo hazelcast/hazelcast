@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.JetMemberSelector;
@@ -592,11 +593,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             out.writeObject(entry.getValue());
         }
 
-        out.writeInt(edges.size());
-
-        for (Edge edge : edges) {
-            out.writeObject(edge);
-        }
+        SerializationUtil.writeCollection(edges, out);
 
         out.writeObject(memberSelector);
     }

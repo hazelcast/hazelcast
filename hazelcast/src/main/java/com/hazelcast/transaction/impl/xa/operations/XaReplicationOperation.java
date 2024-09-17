@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -27,7 +28,6 @@ import com.hazelcast.transaction.impl.xa.XATransaction;
 import com.hazelcast.transaction.impl.xa.XATransactionDTO;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class XaReplicationOperation extends Operation implements IdentifiedDataSerializable {
@@ -62,20 +62,12 @@ public class XaReplicationOperation extends Operation implements IdentifiedDataS
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(migrationData.size());
-        for (XATransactionDTO transactionDTO : migrationData) {
-            out.writeObject(transactionDTO);
-        }
+        SerializationUtil.writeList(migrationData, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        migrationData = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            XATransactionDTO transactionDTO = in.readObject();
-            migrationData.add(transactionDTO);
-        }
+        migrationData = SerializationUtil.readList(in);
     }
 
     @Override

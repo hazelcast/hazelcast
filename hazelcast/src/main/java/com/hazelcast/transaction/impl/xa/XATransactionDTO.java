@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl.xa;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,7 +25,6 @@ import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -106,12 +106,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         ownerUuid = UUIDSerializationUtil.readUUID(in);
         timeoutMilis = in.readLong();
         startTime = in.readLong();
-        int size = in.readInt();
-        records = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            TransactionLogRecord transactionLogRecord = in.readObject();
-            records.add(transactionLogRecord);
-        }
+        records = SerializationUtil.readList(in);
     }
 
     @Override

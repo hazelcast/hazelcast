@@ -21,6 +21,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,10 +70,7 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
         out.writeObject(senderMembersViewMetadata);
         UUIDSerializationUtil.writeUUID(out, targetUuid);
         out.writeLong(timestamp);
-        out.writeInt(suspectedMembers.size());
-        for (MemberInfo m : suspectedMembers) {
-            out.writeObject(m);
-        }
+        SerializationUtil.writeCollection(suspectedMembers, out);
     }
 
     @Override

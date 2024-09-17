@@ -24,13 +24,13 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -93,22 +93,14 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(mergeContainers.size());
-        for (MultiMapMergeContainer container : mergeContainers) {
-            out.writeObject(container);
-        }
+        SerializationUtil.writeList(mergeContainers, out);
         out.writeObject(mergePolicy);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        mergeContainers = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            MultiMapMergeContainer container = in.readObject();
-            mergeContainers.add(container);
-        }
+        mergeContainers = SerializationUtil.readList(in);
         mergePolicy = in.readObject();
     }
 

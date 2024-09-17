@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -197,8 +197,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, NamedCo
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeObject(consumerConfig);
-        writeCollection(batchPublisherConfigs, out);
-        writeCollection(customPublisherConfigs, out);
+        writeList(batchPublisherConfigs, out);
+        writeList(customPublisherConfigs, out);
     }
 
     @Override

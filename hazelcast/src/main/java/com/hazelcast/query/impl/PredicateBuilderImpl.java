@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -129,20 +130,13 @@ public class PredicateBuilderImpl
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(attribute);
-        out.writeInt(lsPredicates.size());
-        for (Predicate predicate : lsPredicates) {
-            out.writeObject(predicate);
-        }
+        SerializationUtil.writeList(lsPredicates, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         attribute = in.readString();
-        int size = in.readInt();
-        lsPredicates = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            addPredicate(in.readObject());
-        }
+        lsPredicates = SerializationUtil.readList(in);
     }
 
     @Override

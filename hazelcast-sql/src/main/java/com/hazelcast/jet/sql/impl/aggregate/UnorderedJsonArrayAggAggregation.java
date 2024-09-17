@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.expression.json.JsonCreationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -86,10 +87,7 @@ public final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(isAbsentOnNull);
-        out.writeInt(values.size());
-        for (Object o : values) {
-            out.writeObject(o);
-        }
+        SerializationUtil.writeList(values, out);
     }
 
     @Override

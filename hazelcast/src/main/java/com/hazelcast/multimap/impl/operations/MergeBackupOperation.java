@@ -24,6 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
@@ -78,10 +79,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
         for (Map.Entry<Data, Collection<MultiMapRecord>> entry : backupEntries.entrySet()) {
             IOUtil.writeData(out, entry.getKey());
             Collection<MultiMapRecord> collection = entry.getValue();
-            out.writeInt(collection.size());
-            for (MultiMapRecord record : collection) {
-                out.writeObject(record);
-            }
+            SerializationUtil.writeCollection(collection, out);
         }
     }
 

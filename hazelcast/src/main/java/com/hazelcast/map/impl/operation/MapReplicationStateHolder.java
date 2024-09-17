@@ -26,6 +26,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
@@ -345,10 +346,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             out.writeBoolean(loadedEntry.getValue());
         }
 
-        out.writeInt(mapIndexInfos.size());
-        for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-            out.writeObject(mapIndexInfo);
-        }
+        SerializationUtil.writeList(mapIndexInfos, out);
     }
 
     private void writeRecordStore(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
@@ -421,12 +419,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             loaded.put(in.readString(), in.readBoolean());
         }
 
-        int mapIndexInfoSize = in.readInt();
-        mapIndexInfos = new ArrayList<>(mapIndexInfoSize);
-        for (int i = 0; i < mapIndexInfoSize; i++) {
-            MapIndexInfo mapIndexInfo = in.readObject();
-            mapIndexInfos.add(mapIndexInfo);
-        }
+        mapIndexInfos = SerializationUtil.readList(in);
     }
 
     protected void readDifferentialData(String mapName, ObjectDataInput in)

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +32,6 @@ import org.apache.calcite.rel.RelFieldCollation.Direction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -113,19 +113,12 @@ public final class ExpressionUtil {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(fieldCollationList.size());
-            for (FieldCollation fieldCollation : fieldCollationList) {
-                out.writeObject(fieldCollation);
-            }
+            SerializationUtil.writeList(fieldCollationList, out);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            fieldCollationList = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                fieldCollationList.add(in.readObject());
-            }
+            fieldCollationList = SerializationUtil.readList(in);
         }
 
         @Override

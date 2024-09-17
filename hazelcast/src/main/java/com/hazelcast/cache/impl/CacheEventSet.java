@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -101,10 +102,7 @@ public class CacheEventSet
             throws IOException {
         out.writeInt(eventType.getType());
         out.writeInt(completionId);
-        out.writeInt(events.size());
-        for (CacheEventData ced : events) {
-            out.writeObject(ced);
-        }
+        SerializationUtil.writeCollection(events, out);
     }
 
     @Override

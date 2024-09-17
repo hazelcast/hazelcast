@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,7 +27,6 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -84,13 +84,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         //noinspection unchecked
         mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
-            int size = in.readInt();
-            List<MapMergeTypes<Object, Object>> list = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                MapMergeTypes<Object, Object> mergingEntry = in.readObject();
-                list.add(mergingEntry);
-            }
-            mergingEntries[partitionIndex] = list;
+            mergingEntries[partitionIndex] = SerializationUtil.readList(in);
         }
         mergePolicy = in.readObject();
     }

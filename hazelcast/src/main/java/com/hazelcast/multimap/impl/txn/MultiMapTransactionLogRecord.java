@@ -21,6 +21,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
@@ -70,10 +71,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeInt(partitionId);
-        out.writeInt(opList.size());
-        for (Operation op : opList) {
-            out.writeObject(op);
-        }
+        SerializationUtil.writeList(opList, out);
         IOUtil.writeData(out, key);
         out.writeLong(ttl);
         out.writeLong(threadId);

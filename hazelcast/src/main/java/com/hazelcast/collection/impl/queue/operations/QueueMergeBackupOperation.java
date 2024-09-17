@@ -20,13 +20,13 @@ import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -76,20 +76,12 @@ public class QueueMergeBackupOperation extends QueueOperation implements Mutatin
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(backupItems.size());
-        for (QueueItem backupItem : backupItems) {
-            out.writeObject(backupItem);
-        }
+        SerializationUtil.writeCollection(backupItems, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        backupItems = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            QueueItem backupItem = in.readObject();
-            backupItems.add(backupItem);
-        }
+        backupItems = SerializationUtil.readCollection(in);
     }
 }

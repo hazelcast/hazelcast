@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -112,10 +113,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
         out.writeBoolean(isLightJob);
         out.writeInt(coordinatorMemberListVersion);
         out.writeObject(coordinatorVersion);
-        out.writeInt(participants.size());
-        for (MemberInfo participant : participants) {
-            out.writeObject(participant);
-        }
+        SerializationUtil.writeCollection(participants, out);
         IOUtil.writeData(out, serializedPlan);
     }
 

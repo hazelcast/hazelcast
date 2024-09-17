@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.MapUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -72,10 +73,7 @@ public final class DistinctValuesAggregator<I, R>
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(attributePath);
-        out.writeInt(values.size());
-        for (Object value : values) {
-            out.writeObject(value);
-        }
+        SerializationUtil.writeCollection(values, out);
     }
 
     @Override

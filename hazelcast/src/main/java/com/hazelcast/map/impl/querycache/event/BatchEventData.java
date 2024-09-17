@@ -128,14 +128,14 @@ public class BatchEventData implements Sequenced, EventData {
         source = in.readString();
         int size = in.readInt();
         if (size > 0) {
-            this.events = new ArrayList<>(size);
-        }
-        Collection<QueryCacheEventData> events = this.events;
-        for (int i = 0; i < size; i++) {
-            QueryCacheEventData eventData = newQueryCacheEventDataBuilder(true).build();
-            eventData.readData(in);
+            events = new ArrayList<>(size);
 
-            events.add(eventData);
+            for (int i = 0; i < size; i++) {
+                QueryCacheEventData eventData = newQueryCacheEventDataBuilder(true).build();
+                eventData.readData(in);
+
+                events.add(eventData);
+            }
         }
     }
 

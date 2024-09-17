@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -104,10 +105,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
             out.writeLong(partitionUuid.getLeastSignificantBits());
         }
 
-        out.writeInt(cacheNameSequencePairs.size());
-        for (Object item : cacheNameSequencePairs) {
-            out.writeObject(item);
-        }
+        SerializationUtil.writeList(cacheNameSequencePairs, out);
     }
 
     @Override
@@ -115,11 +113,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         boolean nullUuid = in.readBoolean();
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
-        int size = in.readInt();
-        cacheNameSequencePairs = Collections.synchronizedList(new ArrayList<>(size));
-        for (int i = 0; i < size; i++) {
-            cacheNameSequencePairs.add(in.readObject());
-        }
+        cacheNameSequencePairs = Collections.synchronizedList(SerializationUtil.readList(in));
     }
 
     @Override

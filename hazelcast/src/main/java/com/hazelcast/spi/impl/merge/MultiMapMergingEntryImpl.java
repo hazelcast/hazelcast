@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,10 +139,7 @@ public class MultiMapMergingEntryImpl<K, V> implements MultiMapMergeTypes<K, V>,
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeObject(out, key);
-        out.writeInt(value.size());
-        for (Object aValue : value) {
-            out.writeObject(aValue);
-        }
+        SerializationUtil.writeCollection(value, out);
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
         out.writeLong(hits);
@@ -152,11 +150,7 @@ public class MultiMapMergingEntryImpl<K, V> implements MultiMapMergeTypes<K, V>,
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readObject(in);
-        int size = in.readInt();
-        value = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            value.add(in.readObject());
-        }
+        value = SerializationUtil.readCollection(in);
         creationTime = in.readLong();
         expirationTime = in.readLong();
         hits = in.readLong();

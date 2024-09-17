@@ -22,11 +22,11 @@ import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,21 +61,14 @@ public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(opList.size());
-        for (Operation op : opList) {
-            out.writeObject(op);
-        }
+        SerializationUtil.writeList(opList, out);
         UUIDSerializationUtil.writeUUID(out, caller);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        opList = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            opList.add((Operation) in.readObject());
-        }
+        opList = SerializationUtil.readList(in);
         caller = UUIDSerializationUtil.readUUID(in);
     }
 

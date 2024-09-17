@@ -25,6 +25,7 @@ import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -596,10 +597,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
             return;
         }
 
-        out.writeInt(partitionLostListenerConfigs.size());
-        for (CachePartitionLostListenerConfig partitionLostListenerConfig : partitionLostListenerConfigs) {
-            out.writeObject(partitionLostListenerConfig);
-        }
+        SerializationUtil.writeList(partitionLostListenerConfigs, out);
     }
 
     @Override
@@ -746,10 +744,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
     }
 
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
-        out.writeInt(getListenerConfigurations().size());
-        for (CacheEntryListenerConfiguration<K, V> cc : getListenerConfigurations()) {
-            out.writeObject(cc);
-        }
+        SerializationUtil.writeCollection(getListenerConfigurations(), out);
     }
 
     protected void readListenerConfigurations(ObjectDataInput in) throws IOException {

@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.raft.impl.log;
 
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerConstants;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -60,10 +61,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeLong(groupMembersLogIndex);
-        out.writeInt(groupMembers.size());
-        for (RaftEndpoint endpoint : groupMembers) {
-            out.writeObject(endpoint);
-        }
+        SerializationUtil.writeCollection(groupMembers, out);
     }
 
     @Override

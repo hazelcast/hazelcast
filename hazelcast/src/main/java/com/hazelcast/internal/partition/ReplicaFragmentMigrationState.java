@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,7 +29,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,10 +90,7 @@ public class ReplicaFragmentMigrationState
             out.writeLongArray(e.getValue());
         }
 
-        out.writeInt(migrationOperations.size());
-        for (Operation operation : migrationOperations) {
-            out.writeObject(operation);
-        }
+        SerializationUtil.writeCollection(migrationOperations, out);
 
         chunkSerDeHelper.writeChunkedOperations(out);
     }
@@ -107,13 +104,7 @@ public class ReplicaFragmentMigrationState
             long[] replicaVersions = in.readLongArray();
             namespaces.put(namespace, replicaVersions);
         }
-        int migrationOperationSize = in.readInt();
-        migrationOperations = new ArrayList<>(migrationOperationSize);
-        for (int i = 0; i < migrationOperationSize; i++) {
-            Operation migrationOperation = in.readObject();
-            migrationOperations.add(migrationOperation);
-        }
-
+        migrationOperations = SerializationUtil.readCollection(in);
         migrationOperations = readChunkedOperations(in, migrationOperations);
     }
 

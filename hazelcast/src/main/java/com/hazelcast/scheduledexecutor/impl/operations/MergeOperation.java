@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
@@ -86,10 +87,7 @@ public class MergeOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
-        out.writeInt(mergingEntries.size());
-        for (ScheduledExecutorMergeTypes mergingEntry : mergingEntries) {
-            out.writeObject(mergingEntry);
-        }
+        SerializationUtil.writeList(mergingEntries, out);
     }
 
     @Override
@@ -97,11 +95,6 @@ public class MergeOperation
             throws IOException {
         super.readInternal(in);
         mergePolicy = in.readObject();
-        int size = in.readInt();
-        mergingEntries = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            ScheduledExecutorMergeTypes mergingEntry = in.readObject();
-            mergingEntries.add(mergingEntry);
-        }
+        mergingEntries = SerializationUtil.readList(in);
     }
 }

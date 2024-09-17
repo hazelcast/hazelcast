@@ -18,6 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.cluster.impl.operations.WanOperation;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -27,7 +28,6 @@ import com.hazelcast.wan.WanPublisher;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -125,10 +125,7 @@ public class WanEventContainerReplicationOperation extends Operation implements 
             }
         }
 
-        out.writeInt(wanReplicationConfigs.size());
-        for (WanReplicationConfig wanReplicationConfig : wanReplicationConfigs) {
-            out.writeObject(wanReplicationConfig);
-        }
+        SerializationUtil.writeCollection(wanReplicationConfigs, out);
     }
 
     @Override
@@ -147,11 +144,7 @@ public class WanEventContainerReplicationOperation extends Operation implements 
             eventContainers.put(wanReplicationScheme, eventContainersByPublisherId);
         }
 
-        int wanConfigCount = in.readInt();
-        wanReplicationConfigs = new ArrayList<>(wanConfigCount);
-        for (int i = 0; i < wanConfigCount; i++) {
-            wanReplicationConfigs.add(in.readObject());
-        }
+        wanReplicationConfigs = SerializationUtil.readCollection(in);
     }
 
     private WanReplicationService getWanReplicationService() {

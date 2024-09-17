@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,7 +25,6 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -67,21 +67,12 @@ public class SendSchemaReplicationsOperation extends Operation implements Identi
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        int size = replications.size();
-        out.writeInt(size);
-        for (SchemaReplication replication : replications) {
-            out.writeObject(replication);
-        }
+        SerializationUtil.writeCollection(replications, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        replications = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            SchemaReplication replication = in.readObject();
-            replications.add(replication);
-        }
+        replications = SerializationUtil.readCollection(in);
     }
 
     @Override

@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -46,25 +46,14 @@ public class BatchNearCacheInvalidation extends Invalidation {
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
 
-        out.writeInt(invalidations.size());
-        for (Invalidation invalidation : invalidations) {
-            out.writeObject(invalidation);
-        }
+        SerializationUtil.writeList(invalidations, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
 
-        int size = in.readInt();
-        if (size != 0) {
-            List<Invalidation> invalidations = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                Invalidation invalidation = in.readObject();
-                invalidations.add(invalidation);
-            }
-            this.invalidations = invalidations;
-        }
+        this.invalidations = SerializationUtil.readList(in);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,11 +56,7 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(mapName);
-        out.writeInt(indexConfigs.size());
-
-        for (IndexConfig indexConfig : indexConfigs) {
-            out.writeObject(indexConfig);
-        }
+        SerializationUtil.writeCollection(indexConfigs, out);
     }
 
     @Override

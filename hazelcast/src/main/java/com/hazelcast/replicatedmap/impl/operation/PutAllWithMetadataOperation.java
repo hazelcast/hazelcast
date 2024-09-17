@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
@@ -111,10 +112,7 @@ public class PutAllWithMetadataOperation extends AbstractNamedSerializableOperat
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeInt(entryViewHolders.size());
-        for (ReplicatedMapEntryViewHolder entryViewHolder : entryViewHolders) {
-            out.writeObject(entryViewHolder);
-        }
+        SerializationUtil.writeList(entryViewHolders, out);
         out.writeInt(getPartitionId());
     }
 

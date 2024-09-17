@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Comparables;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.MapUtil;
 
 import java.io.IOException;
@@ -79,10 +80,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(size());
-        for (Object element : this) {
-            out.writeObject(element);
-        }
+        SerializationUtil.writeCollection(this, out);
     }
 
     @Override
