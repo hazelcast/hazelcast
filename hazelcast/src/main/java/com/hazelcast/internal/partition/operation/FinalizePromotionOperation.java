@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 /**
  * Runs locally when the node becomes owner of a partition.
- * Finds the replica indices that are on the sync-waiting state. Those indices represents the lost backups of the partition.
+ * Finds the replica indices that are on the sync-waiting state. Those indices represent the lost backups of the partition.
  * Therefore, it publishes {@link IPartitionLostEvent} to listeners and updates the version for the lost replicas to the
  * first available version value after the lost backups, or {@code 0} if N/A.
  * In the end it sends a {@link PartitionMigrationEvent} to notify {@link MigrationAwareService}s

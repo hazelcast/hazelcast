@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
@@ -47,7 +46,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> members) {
         Map<Integer, MemberGroup> memberGroups = new HashMap<>();
         for (Member member : members) {
-            String host = ((MemberImpl) member).getAddress().getHost();
+            String host = member.getAddress().getHost();
             for (Entry<Integer, MemberGroupConfig> entry : memberGroupConfigMap.entrySet()) {
                 Collection<String> interfaces = entry.getValue().getInterfaces();
                 boolean match;

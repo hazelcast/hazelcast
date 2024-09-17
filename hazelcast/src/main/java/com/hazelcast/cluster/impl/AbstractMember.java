@@ -225,11 +225,10 @@ public abstract class AbstractMember implements Member {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof Member)) {
+        if (!(obj instanceof Member that)) {
             return false;
         }
 
-        Member that = (Member) obj;
         return address.equals(that.getAddress()) && Objects.equals(uuid, that.getUuid());
     }
 
