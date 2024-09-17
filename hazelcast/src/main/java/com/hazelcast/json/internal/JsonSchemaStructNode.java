@@ -16,7 +16,6 @@
 
 package com.hazelcast.json.internal;
 
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -101,7 +100,10 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        SerializationUtil.writeCollection(inners, out);
+        out.writeInt(inners.size());
+        for (JsonSchemaNameValue inner : inners) {
+            inner.writeData(out);
+        }
         // Don't serialize parent node from superclass to avoid cyclic dependency
     }
 
