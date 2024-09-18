@@ -35,9 +35,18 @@ import static java.util.Objects.requireNonNull;
 @Beta
 public class VectorIndexConfig implements NamedConfig, IdentifiedDataSerializable {
 
-    private static final int DEFAULT_MAX_DEGREE = 32;
-    private static final int DEFAULT_EF_CONSTRUCTION = 100;
-    private static final boolean DEFAULT_USE_DEDUPLICATION = true;
+    /**
+     * Default max degree value
+     */
+    public static final int DEFAULT_MAX_DEGREE = 32;
+    /**
+     * Default efConstruction value
+     */
+    public static final int DEFAULT_EF_CONSTRUCTION = 100;
+    /**
+     * Default value of whether deduplication is enabled
+     */
+    public static final boolean DEFAULT_USE_DEDUPLICATION = true;
 
     /**
      * Name of index. Names of indexes within a single VectorCollection
