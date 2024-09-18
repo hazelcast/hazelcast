@@ -69,7 +69,7 @@ public final class SamplingEvictionStrategy<A, E extends Evictable, S extends Sa
      *
      * @return true is an entry was evicted, otherwise false
      */
-    protected boolean evictInternal(S sampleableEvictableStore,
+    private boolean evictInternal(S sampleableEvictableStore,
             EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
             EvictionListener<A, E> evictionListener) {
         final Iterable<EvictionCandidate<A, E>> samples = sampleableEvictableStore.sample(SAMPLE_COUNT);
