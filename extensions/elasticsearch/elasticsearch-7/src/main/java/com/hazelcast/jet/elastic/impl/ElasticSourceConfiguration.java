@@ -30,7 +30,7 @@ import java.io.Serializable;
 
 /**
  * Configuration for the Elastic source which is Serializable
- *
+ * <p>
  * Avoids passing multiple parameters via constructors
  * Builder -> ElasticSourcePMetaSupplier -> ElasticSourcePSupplier
  * -> ElasticSourceP -> ElasticScrollTraverser

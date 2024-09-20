@@ -56,7 +56,7 @@ public final class ElasticClients {
     /**
      * Convenience method to create {@link RestClientBuilder} with given string, it must contain host, and optionally
      * the scheme and a port.
-     *
+     * <p>
      * Valid examples:
      * <pre>{@code elastic-host
      * elastic-host:9200

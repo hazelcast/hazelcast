@@ -206,7 +206,7 @@ public final class ElasticSourceBuilder<T> {
 
     /**
      * Enable co-located reading
-     *
+     * <p>
      * Jet cluster member must run exactly on the same nodes as Elastic cluster.
      */
     @Nonnull
@@ -234,14 +234,14 @@ public final class ElasticSourceBuilder<T> {
     /**
      * Number of retries the connector will do in addition to Elastic
      * client retries
-     *
+     * <p>
      * Elastic client tries to connect to a node only once for each
      * request. When a request fails the node is marked dead and is
      * not retried again for the request. This causes problems with
      * single node clusters or in a situation where whole cluster
      * becomes unavailable at the same time (e.g. due to a network
      * issue).
-     *
+     * <p>
      * The initial delay is 2s, increasing by factor of 2 with each retry (4s, 8s, 16s, ..).
      *
      * @param retries number of retries, defaults to 5

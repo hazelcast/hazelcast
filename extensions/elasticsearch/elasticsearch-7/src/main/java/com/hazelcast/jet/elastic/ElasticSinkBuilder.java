@@ -176,13 +176,13 @@ public final class ElasticSinkBuilder<T> implements Serializable {
     /**
      * Number of retries the connector will do in addition to Elastic client
      * retries
-     *
+     * <p>
      * Elastic client tries to connect to a node only once for each request.
      * When a request fails the node is marked dead and is not retried again
      * for the request. This causes problems with single node clusters or in a
      * situation where whole cluster becomes unavailable at the same time (e.g.
      * due to a network issue).
-     *
+     * <p>
      * The initial delay is 2s, increasing by factor of 2 with each retry (4s,
      * 8s, 16s, ..).
      *
@@ -243,7 +243,7 @@ public final class ElasticSinkBuilder<T> implements Serializable {
             bulkRequest.add(request);
         }
 
-        void flush() throws IOException {
+        void flush() {
             if (!bulkRequest.requests().isEmpty()) {
                 withRetry(
                         () -> {
