@@ -41,8 +41,4 @@ abstract class AbstractMapStreamSerializer<MapType extends Map> implements Strea
         return result;
     }
 
-    @Override
-    public void destroy() {
-    }
-
 }

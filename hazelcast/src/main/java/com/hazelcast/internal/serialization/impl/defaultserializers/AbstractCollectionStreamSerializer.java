@@ -51,8 +51,4 @@ abstract class AbstractCollectionStreamSerializer<CollectionType extends Collect
         }
     }
 
-    @Override
-    public void destroy() {
-    }
-
 }
