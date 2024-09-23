@@ -44,8 +44,4 @@ public class Derived1CustomSerializer implements StreamSerializer<Derived1Custom
         return 4;
     }
 
-    @Override
-    public void destroy() {
-
-    }
 }

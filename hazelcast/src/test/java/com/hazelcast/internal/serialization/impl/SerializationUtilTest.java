@@ -135,9 +135,6 @@ public class SerializationUtilTest {
             return 0;
         }
 
-        @Override
-        public void destroy() {
-        }
     }
 
     private class DummyVersionedPortable implements VersionedPortable {
@@ -158,11 +155,11 @@ public class SerializationUtilTest {
         }
 
         @Override
-        public void writePortable(PortableWriter writer) throws IOException {
+        public void writePortable(PortableWriter writer) {
         }
 
         @Override
-        public void readPortable(PortableReader reader) throws IOException {
+        public void readPortable(PortableReader reader) {
         }
     }
 }

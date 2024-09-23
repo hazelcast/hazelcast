@@ -44,8 +44,4 @@ public class BaseCustomSerializer implements StreamSerializer<BaseCustom> {
         return 3;
     }
 
-    @Override
-    public void destroy() {
-
-    }
 }

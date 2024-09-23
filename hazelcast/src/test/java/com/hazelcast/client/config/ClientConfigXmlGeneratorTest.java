@@ -485,10 +485,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             return 0;
         }
 
-        @Override
-        public void destroy() {
-
-        }
     }
 
     @Test

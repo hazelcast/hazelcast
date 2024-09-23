@@ -204,8 +204,5 @@ public class CustomSerializationTest {
             return (Foo) decoder.readObject();
         }
 
-        @Override
-        public void destroy() {
-        }
     }
 }
