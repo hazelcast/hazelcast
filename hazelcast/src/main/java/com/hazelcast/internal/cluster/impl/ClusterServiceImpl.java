@@ -1101,10 +1101,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return localMember;
     }
 
-
     @Override
     public void demoteLocalDataMember() {
-
         if (getClusterVersion().isUnknownOrLessThan(Versions.V5_4)) {
             throw new UnsupportedOperationException("demoteLocalDataMember requires cluster version 5.4 or greater");
         }

@@ -258,12 +258,10 @@ public class MembershipManager {
         if (!clusterService.isMaster() || !clusterService.isJoined()
                 || clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
             if (logger.isFineEnabled()) {
-                logger.fine("Cannot publish member list to cluster. Is-master: "
-                        + clusterService.isMaster() + ", joined: " + clusterService.isJoined()
-                        + " , mastership claim in progress: " + clusterService.getClusterJoinManager()
-                        .isMastershipClaimInProgress());
+                logger.fine("Cannot publish member list to cluster. Is-master: " + clusterService.isMaster()
+                        + ", joined: " + clusterService.isJoined() + " , mastership claim in progress: "
+                        + clusterService.getClusterJoinManager().isMastershipClaimInProgress());
             }
-
             return;
         }
 
