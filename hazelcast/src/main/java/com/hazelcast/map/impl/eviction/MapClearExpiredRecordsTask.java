@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -165,7 +164,7 @@ public class MapClearExpiredRecordsTask
             partitionContainer.setLastCleanupTimeCopy(partitionContainer.getLastCleanupTime());
         }
 
-        sort(partitionContainers, partitionContainerComparator);
+        partitionContainers.sort(partitionContainerComparator);
     }
 
     @Override

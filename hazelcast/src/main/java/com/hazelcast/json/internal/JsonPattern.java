@@ -18,6 +18,7 @@ package com.hazelcast.json.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A JsonPattern is a structure that represents a logical path to a
@@ -117,7 +118,7 @@ public class JsonPattern {
         if (containsAny != pattern1.containsAny) {
             return false;
         }
-        return pattern != null ? pattern.equals(pattern1.pattern) : pattern1.pattern == null;
+        return Objects.equals(pattern, pattern1.pattern);
     }
 
     @Override

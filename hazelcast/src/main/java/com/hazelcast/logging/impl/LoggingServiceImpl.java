@@ -80,7 +80,7 @@ public class LoggingServiceImpl implements LoggingService {
 
     /**
      * @return the log level of this logging service previously set by {@link
-     * #setLevel}, or {@code null} if no level was set or it was reset by {@link
+     * #setLevel}, or {@code null} if no level was set, or it was reset by {@link
      * #resetLevel}.
      */
     public @Nullable Level getLevel() {

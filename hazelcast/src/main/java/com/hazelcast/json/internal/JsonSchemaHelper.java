@@ -51,7 +51,6 @@ public final class JsonSchemaHelper {
      * @param path          query path
      * @return              a pattern object matching the path or null
      *                      when path does not match a terminal value
-     * @throws IOException
      */
     @SuppressWarnings("checkstyle:npathcomplexity")
     public static JsonPattern createPattern(NavigableJsonInputAdapter input, JsonSchemaNode schemaNode, JsonPathCursor path) {

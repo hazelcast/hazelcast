@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_NAME_VALUE;
 
@@ -92,7 +93,7 @@ public class JsonSchemaNameValue implements IdentifiedDataSerializable {
         if (nameStart != that.nameStart) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override
