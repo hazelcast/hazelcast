@@ -927,7 +927,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>5.1.0</version>
+            <version>6.0.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
