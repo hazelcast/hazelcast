@@ -108,6 +108,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- This forced ANTLR version used in tests -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.9.3</version>
+        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
