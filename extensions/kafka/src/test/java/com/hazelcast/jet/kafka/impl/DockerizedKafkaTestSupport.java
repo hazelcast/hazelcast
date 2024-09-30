@@ -16,27 +16,35 @@
 
 package com.hazelcast.jet.kafka.impl;
 
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.IOException;
+import java.util.Objects;
+
 class DockerizedKafkaTestSupport extends KafkaTestSupport {
-    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.4.0");
+    // TODO This should lookup "confluent.version" Maven property
+    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.7.1");
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
 
     private KafkaContainer kafkaContainer;
 
     @Override
-    protected String createKafkaCluster0() {
-        kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + TEST_KAFKA_VERSION))
+    protected String createKafkaCluster0() throws IOException {
+        String kafkaContainerStarterScript = (String) Objects
+                .requireNonNull(ReflectionUtils.readStaticFieldOrNull(KafkaContainer.class.getName(), "STARTER_SCRIPT"));
+
+        kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka").withTag(TEST_KAFKA_VERSION))
                 .withEmbeddedZookeeper()
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 // Workaround for https://github.com/testcontainers/testcontainers-java/issues/3288
                 // It adds 0.5s sleep before running the script copied from the host to the container.
                 .withCommand("-c",
-                    "while [ ! -f /testcontainers_start.sh ]; do sleep 0.1; done; sleep 0.5; /testcontainers_start.sh");
+                    "while [ ! -f %1$s ]; do sleep 0.1; done; sleep 0.5; %1$s".formatted(kafkaContainerStarterScript));
         kafkaContainer.start();
 
         return kafkaContainer.getBootstrapServers();
