@@ -159,12 +159,13 @@ public class MavenInterface {
                 .put("MAVEN_ARGS", "--quiet --batch-mode");
     }
 
-    /** @return a {@link String} output of {@code mvn help:evaluate -Dexpression=EXPRESSION} */
+    /** @return a {@link String} output of {@code mvn help:evaluate -Dexpression=EXPRESSION} */
     public static String evaluateExpression(String expression) throws IOException {
         // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
         // https://stackoverflow.com/q/76866880
+        // We use `--quiet` to only output the expression result
         ProcessBuilder processBuilder =
-                new ProcessBuilder(MVN.get(), "help:evaluate", "-Dexpression=" + expression, "-DforceStdout");
+                new ProcessBuilder(MVN.get(), "help:evaluate", "--quiet", "-Dexpression=" + expression, "-DforceStdout");
         configureMavenEnvironment(processBuilder);
 
         try (InputStream stream = processBuilder.start()

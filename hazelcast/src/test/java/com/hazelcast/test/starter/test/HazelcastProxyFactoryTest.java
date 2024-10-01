@@ -64,8 +64,8 @@ public class HazelcastProxyFactoryTest {
 
     @Test
     public void testProxyHazelcastInstanceClasses_ofSameVersion_areSame() {
-        HazelcastInstance hz1 = HazelcastStarter.newHazelcastInstance("4.0");
-        HazelcastInstance hz2 = HazelcastStarter.newHazelcastInstance("4.0");
+        HazelcastInstance hz1 = HazelcastStarter.newHazelcastInstance("5.0");
+        HazelcastInstance hz2 = HazelcastStarter.newHazelcastInstance("5.0");
         try {
             assertEquals(hz1.getClass(), hz2.getClass());
         } finally {
