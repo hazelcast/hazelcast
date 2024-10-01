@@ -135,6 +135,22 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
         instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig2);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void memberTest_addConfigWithTheSameNameDifferentBackupCount_then_fail() {
+        var vectorCollectionConfig = buildVectorCollectionConfig("vector-1", "index-1", 1, Metric.COSINE);
+
+        instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig);
+        instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig.setBackupCount(2));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void memberTest_addConfigWithTheSameNameDifferentAsyncBackupCount_then_fail() {
+        var vectorCollectionConfig = buildVectorCollectionConfig("vector-1", "index-1", 1, Metric.COSINE);
+
+        instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig);
+        instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig.setAsyncBackupCount(2));
+    }
+
     @Test
     public void memberTest_addTheSameConfigTwice_then_success() {
         var vectorCollectionConfig = buildVectorCollectionConfig("vector-1", "index-1", 1, Metric.COSINE);
@@ -151,8 +167,9 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
     }
 
 
+    // client test fails because codecs are registered in EE module
     @Test(expected = UnsupportedOperationException.class)
-    public void clientTest_addAndGetVectorCollectionConfig_then_success() {
+    public void clientTest_addAndGetVectorCollectionConfig_then_fail_in_os() {
         var vectorCollectionConfig1 = buildVectorCollectionConfig(
                 "vector_collection-1",
                 "index-1-1",

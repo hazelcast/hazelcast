@@ -37,13 +37,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a new vector collection configuration to a running cluster.
  */
 @SuppressWarnings("unused")
-@Generated("52a7d98dfd816d848ac7f4d5bb84d6d3")
+@Generated("c4fc1ac31337eedec266f624de7ffa96")
 public final class DynamicConfigAddVectorCollectionConfigCodec {
     //hex: 0x1B1400
     public static final int REQUEST_MESSAGE_TYPE = 1774592;
     //hex: 0x1B1401
     public static final int RESPONSE_MESSAGE_TYPE = 1774593;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddVectorCollectionConfigCodec() {
@@ -53,23 +55,47 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
     public static class RequestParameters {
 
         /**
-         * vector collection's name
+         * vector collection name
          */
         public java.lang.String name;
 
         /**
-         * item vector index configurations
+         * vector index configurations
          */
         public java.util.List<com.hazelcast.config.vector.VectorIndexConfig> indexConfigs;
+
+        /**
+         * number of synchronous backups
+         */
+        public int backupCount;
+
+        /**
+         * number of asynchronous backups
+         */
+        public int asyncBackupCount;
+
+        /**
+         * True if the backupCount is received from the client, false otherwise.
+         * If this is false, backupCount has the default value for its type.
+         */
+        public boolean isBackupCountExists;
+
+        /**
+         * True if the asyncBackupCount is received from the client, false otherwise.
+         * If this is false, asyncBackupCount has the default value for its type.
+         */
+        public boolean isAsyncBackupCountExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.List<com.hazelcast.config.vector.VectorIndexConfig> indexConfigs) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.List<com.hazelcast.config.vector.VectorIndexConfig> indexConfigs, int backupCount, int asyncBackupCount) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddVectorCollectionConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET, backupCount);
+        encodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, indexConfigs, VectorIndexConfigCodec::encode);
@@ -79,8 +105,19 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
     public static DynamicConfigAddVectorCollectionConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        if (initialFrame.content.length >= REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES) {
+            request.backupCount = decodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET);
+            request.isBackupCountExists = true;
+        } else {
+            request.isBackupCountExists = false;
+        }
+        if (initialFrame.content.length >= REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES) {
+            request.asyncBackupCount = decodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET);
+            request.isAsyncBackupCountExists = true;
+        } else {
+            request.isAsyncBackupCountExists = false;
+        }
         request.name = StringCodec.decode(iterator);
         request.indexConfigs = ListMultiFrameCodec.decode(iterator, VectorIndexConfigCodec::decode);
         return request;

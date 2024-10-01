@@ -5460,6 +5460,12 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
+          "backup-count": {
+            "$ref": "#/definitions/BackupCount"
+          },
+          "async-backup-count": {
+            "$ref": "#/definitions/AsyncBackupCount"
+          },
           "indexes": {
             "type": "array",
             "items": {

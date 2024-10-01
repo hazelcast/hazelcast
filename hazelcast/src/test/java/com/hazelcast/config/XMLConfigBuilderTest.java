@@ -4956,30 +4956,34 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     public void testVectorCollectionConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <vector-collection name=\"vector-1\">\n"
-                + "      <indexes>\n"
-                + "        <index name=\"index-1-1\">\n"
-                + "            <dimension>2</dimension>\n"
-                + "            <metric>DOT</metric>\n"
-                + "            <max-degree>10</max-degree>\n"
-                + "            <ef-construction>10</ef-construction>\n"
-                + "            <use-deduplication>true</use-deduplication>\n"
-                + "        </index>\n"
-                + "        <index name=\"index-1-2\">\n"
-                + "            <dimension>3</dimension>\n"
-                + "            <metric>EUCLIDEAN</metric>\n"
-                + "        </index>\n"
-                + "      </indexes>\n"
-                + "    </vector-collection>\n"
-                + "    <vector-collection name=\"vector-2\">\n"
-                + "      <indexes>\n"
-                + "        <index>\n"
-                + "            <dimension>4</dimension>\n"
-                + "            <metric>COSINE</metric>\n"
-                + "            <use-deduplication>false</use-deduplication>\n"
-                + "        </index>\n"
-                + "      </indexes>\n"
-                + "    </vector-collection>\n"
+                + """
+                    <vector-collection name="vector-1">
+                      <indexes>
+                        <index name="index-1-1">
+                            <dimension>2</dimension>
+                            <metric>DOT</metric>
+                            <max-degree>10</max-degree>
+                            <ef-construction>10</ef-construction>
+                            <use-deduplication>true</use-deduplication>
+                        </index>
+                        <index name="index-1-2">
+                            <dimension>3</dimension>
+                            <metric>EUCLIDEAN</metric>
+                        </index>
+                      </indexes>
+                    </vector-collection>
+                    <vector-collection name="vector-2">
+                      <backup-count>2</backup-count>
+                      <async-backup-count>1</async-backup-count>
+                      <indexes>
+                        <index>
+                            <dimension>4</dimension>
+                            <metric>COSINE</metric>
+                            <use-deduplication>false</use-deduplication>
+                        </index>
+                      </indexes>
+                    </vector-collection>
+                """
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);

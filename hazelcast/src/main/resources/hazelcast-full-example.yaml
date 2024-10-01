@@ -4117,6 +4117,8 @@ hazelcast:
 
   vector-collection:
     vector-1:
+      backup-count: 1
+      async-backup-count: 0
       indexes:
         - name: index-1
           dimension: 2

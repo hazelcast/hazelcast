@@ -169,13 +169,11 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.WanPublisherState;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
@@ -1716,7 +1714,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                                 .setMaxDegree(12)
                                 .setEfConstruction(13)
                                 .setUseDeduplication(false)
-                );
+                )
+                .setBackupCount(2).setAsyncBackupCount(1);
         var expectedVectorCollectionConfigs = Map.of(
                 "vector-collection-1", expectedVectorCollection1,
                 "vector-collection-2", expectedVectorCollection2

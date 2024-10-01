@@ -953,7 +953,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 10,
                 11,
                 true
-        );
+        ).setBackupCount(2).setAsyncBackupCount(1);
 
         Config config = new Config()
                 .addVectorCollectionConfig(originVectorCollectionConfig);

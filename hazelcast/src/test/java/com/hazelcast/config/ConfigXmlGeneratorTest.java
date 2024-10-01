@@ -1586,6 +1586,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
         var vectorCollection = range(0, 2).mapToObj(
                         i -> new VectorCollectionConfig("name-" + i)
+                                .setBackupCount(i + 1)
+                                .setAsyncBackupCount(i)
                                 .addVectorIndexConfig(
                                         new VectorIndexConfig()
                                                 .setDimension(2)

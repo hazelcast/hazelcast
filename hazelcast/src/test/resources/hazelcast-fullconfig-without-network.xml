@@ -1232,6 +1232,8 @@
         </ssl>
     </rest>
     <vector-collection name="vector-1">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
         <indexes>
             <index name="index-1">
                 <dimension>2</dimension>

@@ -74,7 +74,6 @@ import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
@@ -120,6 +119,7 @@ import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchPublisherConfig;
@@ -130,13 +130,11 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPMapConfig;
-import com.hazelcast.config.rest.RestConfig;
-import com.hazelcast.config.tpc.TpcConfig;
-import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.security.AbstractClusterLoginConfig;
 import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
@@ -147,6 +145,8 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.vector.Metric;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
@@ -196,8 +196,6 @@ import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMo
 import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
-import static com.hazelcast.internal.config.ConfigSections.REST;
-import static com.hazelcast.internal.config.ConfigSections.TPC;
 import static com.hazelcast.internal.config.ConfigSections.AUDITLOG;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
 import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
@@ -225,7 +223,6 @@ import static com.hazelcast.internal.config.ConfigSections.MAP;
 import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
 import static com.hazelcast.internal.config.ConfigSections.METRICS;
 import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
-import static com.hazelcast.internal.config.ConfigSections.USER_CODE_NAMESPACES;
 import static com.hazelcast.internal.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.internal.config.ConfigSections.NETWORK;
 import static com.hazelcast.internal.config.ConfigSections.PARTITION_GROUP;
@@ -235,6 +232,7 @@ import static com.hazelcast.internal.config.ConfigSections.PROPERTIES;
 import static com.hazelcast.internal.config.ConfigSections.QUEUE;
 import static com.hazelcast.internal.config.ConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.REPLICATED_MAP;
+import static com.hazelcast.internal.config.ConfigSections.REST;
 import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.SECURITY;
@@ -243,7 +241,9 @@ import static com.hazelcast.internal.config.ConfigSections.SET;
 import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.internal.config.ConfigSections.SQL;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
+import static com.hazelcast.internal.config.ConfigSections.TPC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
+import static com.hazelcast.internal.config.ConfigSections.USER_CODE_NAMESPACES;
 import static com.hazelcast.internal.config.ConfigSections.VECTOR;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
@@ -3757,26 +3757,35 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleVector(Node node) {
         String name = getAttribute(node, "name");
-        VectorCollectionConfig mapConfig = ConfigUtils.getByNameOrNew(
+        VectorCollectionConfig collectionConfig = ConfigUtils.getByNameOrNew(
                 config.getVectorCollectionConfigs(),
                 name,
                 VectorCollectionConfig.class
         );
-        handleVectorNode(node, mapConfig);
+        handleVectorNode(node, collectionConfig);
     }
 
-    protected void handleVectorNode(Node node, VectorCollectionConfig collectionConfig) {
-        var indexesNode = firstChildElement(node);
-        if (indexesNode == null) {
-            return;
+    protected void handleVectorNode(Node parentNode, VectorCollectionConfig collectionConfig) {
+        for (Node node : childElements(parentNode)) {
+            String nodeName = cleanNodeName(node);
+            if (matches("indexes", nodeName)) {
+                handleVectorIndexesNode(node, collectionConfig);
+            } else if (matches("backup-count", nodeName)) {
+                collectionConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(node)));
+            } else if (matches("async-backup-count", nodeName)) {
+                collectionConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(node)));
+            }
         }
+        config.addVectorCollectionConfig(collectionConfig);
+    }
+
+    protected void handleVectorIndexesNode(Node indexesNode, VectorCollectionConfig collectionConfig) {
         for (Node n : childElements(indexesNode)) {
             String nodeName = cleanNodeName(n);
             if (matches("index", nodeName)) {
                 handleVectorIndex(n, collectionConfig);
             }
         }
-        config.addVectorCollectionConfig(collectionConfig);
     }
 
     protected void handleVectorIndex(Node node, VectorCollectionConfig collectionConfig) {

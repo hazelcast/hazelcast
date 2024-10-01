@@ -36,6 +36,7 @@ import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 
@@ -100,11 +101,12 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     public void interceptTestMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
         Method testMethod = invocationContext.getExecutable();
         long finalTimeoutSeconds = getTimeoutSeconds(testMethod);
+        AtomicReference<Throwable> error = new AtomicReference<>();
         Thread thread = new Thread(() -> {
             try {
                 invocation.proceed();
             } catch (Throwable throwable) {
-                throw new RuntimeException(throwable);
+                error.set(throwable);
             }
         });
         thread.setDaemon(true);
@@ -113,6 +115,9 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
         if (thread.isAlive()) {
             thread.interrupt();
             throw new IllegalStateException("Test method " + testMethod.getName() + " timed out after " + finalTimeoutSeconds + " seconds");
+        }
+        if (error.get() != null) {
+            throw error.get();
         }
     }
 

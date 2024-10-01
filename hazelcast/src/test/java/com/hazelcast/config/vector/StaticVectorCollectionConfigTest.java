@@ -52,7 +52,8 @@ public class StaticVectorCollectionConfigTest extends HazelcastTestSupport {
     @Test
     public void setSeveralVectorCollectionConfig() {
         var vectorCollectionConfigs = range(0, 3)
-                .mapToObj(i -> buildVectorCollectionConfig("collection-" + i, "index-" + i, i, Metric.EUCLIDEAN))
+                .mapToObj(i -> buildVectorCollectionConfig("collection-" + i, "index-" + i, i, Metric.EUCLIDEAN)
+                        .setBackupCount(i).setAsyncBackupCount(i))
                 .collect(Collectors.toMap(VectorCollectionConfig::getName, identity()));
         Config config = new Config().setVectorCollectionConfigs(vectorCollectionConfigs);
 

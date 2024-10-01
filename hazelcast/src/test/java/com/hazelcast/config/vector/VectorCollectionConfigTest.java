@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.config.vector.VectorCollectionConfig.MAX_BACKUP_COUNT;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -54,5 +55,22 @@ public class VectorCollectionConfigTest {
     @Test
     public void setNameValidation_success() {
         assertThatNoException().isThrownBy(() -> new VectorCollectionConfig().setName("***ve*c_tor-234-ANY_*"));
+    }
+
+    @Test
+    public void shouldValidateBackupCount() {
+        assertThatNoException().isThrownBy(() ->
+                new VectorCollectionConfig("a").setBackupCount(0).setAsyncBackupCount(0));
+        assertThatNoException().isThrownBy(() ->
+                new VectorCollectionConfig("a").setBackupCount(MAX_BACKUP_COUNT).setAsyncBackupCount(0));
+        assertThatNoException().isThrownBy(() ->
+                new VectorCollectionConfig("a").setBackupCount(0).setAsyncBackupCount(MAX_BACKUP_COUNT));
+
+        assertThatThrownBy(() -> new VectorCollectionConfig("a").setBackupCount(MAX_BACKUP_COUNT).setAsyncBackupCount(1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("the sum of backup-count and async-backup-count can't be larger than than 6");
+        assertThatThrownBy(() -> new VectorCollectionConfig("a").setAsyncBackupCount(1).setBackupCount(MAX_BACKUP_COUNT))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("the sum of backup-count and async-backup-count can't be larger than than 6");
     }
 }

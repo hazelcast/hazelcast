@@ -1213,7 +1213,9 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addVectorCollectionConfig(@Nonnull VectorCollectionConfig vectorCollectionConfig) {
         ClientMessage request = DynamicConfigAddVectorCollectionConfigCodec.encodeRequest(
                 vectorCollectionConfig.getName(),
-                vectorCollectionConfig.getVectorIndexConfigs());
+                vectorCollectionConfig.getVectorIndexConfigs(),
+                vectorCollectionConfig.getBackupCount(),
+                vectorCollectionConfig.getAsyncBackupCount());
         invoke(request);
         return this;
     }

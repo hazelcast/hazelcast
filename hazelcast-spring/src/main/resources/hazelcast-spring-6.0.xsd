@@ -6647,5 +6647,23 @@
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attribute name="backup-count" type="parameterized-backup-count" default="1">
+            <xs:annotation>
+                <xs:documentation>
+                    Number of sync backups. If 1 is set as the backup-count for example, then
+                    all entries of the vector collection will be copied to another member for fail-safety. Valid
+                    numbers are 0 (no sync backup), 1, 2 ... 6.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="async-backup-count" type="parameterized-backup-count" default="0">
+            <xs:annotation>
+                <xs:documentation>
+                    Number of async backups. If 1 is set as the backup-count for example, then
+                    all entries of the vector collection will be copied to another member for fail-safety. Valid
+                    numbers are 0 (no async backup), 1, 2 ... 6.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

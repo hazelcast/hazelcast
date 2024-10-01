@@ -24,12 +24,12 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
@@ -45,7 +45,6 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
@@ -72,6 +71,7 @@ import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.TrustedInterfacesConfigurable;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -109,7 +109,6 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.YamlMemberDomConfigProcessor.NamespaceDefinitionStyle.NEW_STYLE;
@@ -1090,18 +1089,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleVectorNode(Node node, VectorCollectionConfig collectionConfig) {
-        var indexesNode = firstChildElement(node);
-        if (indexesNode == null) {
-            return;
-        }
-        handleVectorIndex(indexesNode, collectionConfig);
-        config.addVectorCollectionConfig(collectionConfig);
-    }
-
-    @Override
-    protected void handleVectorIndex(Node node, VectorCollectionConfig collectionConfig) {
-        for (Node indexNode : childElements(node)) {
+    protected void handleVectorIndexesNode(Node indexesNode, VectorCollectionConfig collectionConfig) {
+        for (Node indexNode : childElements(indexesNode)) {
             VectorIndexConfig indexConfig = new VectorIndexConfig();
             handleVectorIndexNode(indexNode, indexConfig);
             collectionConfig.addVectorIndexConfig(indexConfig);

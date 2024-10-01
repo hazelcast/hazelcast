@@ -46,12 +46,12 @@ import static org.junit.Assert.assertFalse;
 @SuppressWarnings("unused")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberCompatibilityTest_2_8 {
+public class MemberCompatibilityTest_2_9 {
     private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        try (InputStream inputStream = getClass().getResourceAsStream("/2.8.protocol.compatibility.binary")) {
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.9.protocol.compatibility.binary")) {
             assert inputStream != null;
             byte[] data = inputStream.readAllBytes();
             ByteBuffer buffer = ByteBuffer.wrap(data);
@@ -7037,8 +7037,10 @@ public class MemberCompatibilityTest_2_8 {
         DynamicConfigAddVectorCollectionConfigCodec.RequestParameters parameters = DynamicConfigAddVectorCollectionConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aList_VectorIndexConfig, parameters.indexConfigs));
-        assertFalse(parameters.isBackupCountExists);
-        assertFalse(parameters.isAsyncBackupCountExists);
+        assertTrue(parameters.isBackupCountExists);
+        assertTrue(isEqual(anInt, parameters.backupCount));
+        assertTrue(parameters.isAsyncBackupCountExists);
+        assertTrue(isEqual(anInt, parameters.asyncBackupCount));
     }
 
     @Test

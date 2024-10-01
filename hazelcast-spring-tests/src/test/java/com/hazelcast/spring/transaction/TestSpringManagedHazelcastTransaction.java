@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalTaskContext;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,13 +32,13 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.NoTransactionException;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionSuspensionNotSupportedException;
 import org.springframework.transaction.TransactionSystemException;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static com.hazelcast.spring.transaction.ServiceBeanWithTransactionalContext.TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -75,6 +74,9 @@ class TestSpringManagedHazelcastTransaction {
     @Autowired
     HazelcastTransactionManager transactionManager;
 
+    @Autowired
+    PlatformTransactionManager platformTransactionManager;
+
     /**
      * Tests that transactionalContext cannot be accessed when there is no transaction.
      */
@@ -87,13 +89,17 @@ class TestSpringManagedHazelcastTransaction {
      * Tests that transactionContext is accessible when there is a transaction.
      */
     @Test
-    @Transactional
     void noExceptionWhenTransaction() {
-        // when
-        TransactionalMap<Object, Object> magic = transactionalContext.getMap("magic");
+        // CustomSpringExtension runs tests in separate thread, so we cannot use
+        // @Transactional test method.
+        new TransactionTemplate(platformTransactionManager).execute((status) -> {
+            // when
+            TransactionalMap<Object, Object> magic = transactionalContext.getMap("magic");
 
-        // then
-        assertNotNull(magic);
+            // then
+            assertNotNull(magic);
+            return null;
+        });
     }
 
     /**

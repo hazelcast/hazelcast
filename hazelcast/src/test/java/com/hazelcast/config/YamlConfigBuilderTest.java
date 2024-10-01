@@ -5425,6 +5425,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                           dimension: 3
                           metric: EUCLIDEAN
                     vector-2:
+                      backup-count: 2
+                      async-backup-count: 1
                       indexes:
                         - dimension: 4
                           metric: COSINE

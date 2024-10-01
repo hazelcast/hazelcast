@@ -17,10 +17,12 @@ package com.hazelcast.config.vector;
 
 import com.hazelcast.config.NamedConfig;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
@@ -28,6 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V6_0;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -35,11 +40,25 @@ import static java.util.Objects.requireNonNull;
  *
  * @since 5.5
  */
-
 @Beta
-public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerializable {
+public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerializable, Versioned {
+
+    /**
+     * The minimum number of backups
+     */
+    public static final int MIN_BACKUP_COUNT = 0;
+    /**
+     * The default number of backups
+     */
+    public static final int DEFAULT_BACKUP_COUNT = 1;
+    /**
+     * The maximum number of backups
+     */
+    public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     private String name;
+    private int backupCount = DEFAULT_BACKUP_COUNT;
+    private int asyncBackupCount = MIN_BACKUP_COUNT;
     private final List<VectorIndexConfig> vectorIndexConfigs = new ArrayList<>();
 
     /**
@@ -67,6 +86,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     public VectorCollectionConfig(VectorCollectionConfig config) {
         requireNonNull(config, "config must not be null.");
         this.name = config.getName();
+        this.backupCount = config.getBackupCount();
+        this.asyncBackupCount = config.getAsyncBackupCount();
         setVectorIndexConfigs(config.getVectorIndexConfigs());
     }
 
@@ -124,9 +145,78 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         this.vectorIndexConfigs.addAll(vectorIndexConfigs);
     }
 
+    /**
+     * Returns the backupCount for this {@code VectorCollection}
+     *
+     * @return the backupCount for this {@code VectorCollection}
+     * @see #getAsyncBackupCount()
+     * @since 6.0
+     */
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    /**
+     * Number of synchronous backups. For example, if 1 is set as the backup count,
+     * then all entries of the vector collection will be copied to another JVM for fail-safety.
+     * 0 means no sync backup.
+     *
+     * @param backupCount the number of synchronous backups to set for this {@code VectorCollection}
+     * @return the updated {@link VectorCollectionConfig}
+     * @see #setAsyncBackupCount(int)
+     * @since 6.0
+     */
+    public VectorCollectionConfig setBackupCount(final int backupCount) {
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
+        return this;
+    }
+
+    /**
+     * Returns the asynchronous backup count for this {@code VectorCollection}.
+     *
+     * @return the asynchronous backup count
+     * @see #setBackupCount(int)
+     * @since 6.0
+     */
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    /**
+     * Sets the number of asynchronous backups. 0 means no backups.
+     *
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated {@link VectorCollectionConfig}
+     * @throws IllegalArgumentException if asyncBackupCount smaller than
+     *                                  0, or larger than the maximum number of backup or the sum of the
+     *                                  backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
+     * @since 6.0
+     */
+    public VectorCollectionConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
+        return this;
+    }
+
+    /**
+     * Returns the total number of backups: backupCount plus asyncBackupCount.
+     *
+     * @return the total number of backups: synchronous + asynchronous
+     * @since 6.0
+     */
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
+        // RU_COMPAT_5_5
+        if (out.getVersion().isGreaterOrEqual(V6_0)) {
+            out.writeInt(backupCount);
+            out.writeInt(asyncBackupCount);
+        }
         SerializationUtil.writeList(vectorIndexConfigs, out);
     }
 
@@ -134,6 +224,15 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     public void readData(ObjectDataInput in) throws IOException {
         vectorIndexConfigs.clear();
         name = in.readString();
+        // RU_COMPAT_5_5
+        if (in.getVersion().isGreaterOrEqual(V6_0)) {
+            backupCount = in.readInt();
+            asyncBackupCount = in.readInt();
+        } else {
+            // in 5.5 there were no backups, override new defaults to keep original behavior
+            backupCount = 0;
+            asyncBackupCount = 0;
+        }
         List<VectorIndexConfig> deserialized = SerializationUtil.readList(in);
         vectorIndexConfigs.addAll(deserialized);
     }
@@ -152,6 +251,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     public String toString() {
         return "VectorCollectionConfig{"
                 + "name='" + name + '\''
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
                 + ", vectorIndexConfigs=" + vectorIndexConfigs
                 + '}';
     }
@@ -165,12 +266,15 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
             return false;
         }
         VectorCollectionConfig that = (VectorCollectionConfig) object;
-        return Objects.equals(name, that.name) && Objects.equals(vectorIndexConfigs, that.vectorIndexConfigs);
+        return Objects.equals(name, that.name)
+                && Objects.equals(backupCount, that.backupCount)
+                && Objects.equals(asyncBackupCount, that.asyncBackupCount)
+                && Objects.equals(vectorIndexConfigs, that.vectorIndexConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, vectorIndexConfigs);
+        return Objects.hash(name, backupCount, asyncBackupCount, vectorIndexConfigs);
     }
 
     private static void validateName(String name) {

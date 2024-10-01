@@ -1200,6 +1200,8 @@ public class DynamicConfigYamlGenerator {
                         VectorCollectionConfig::getName,
                         entry -> {
                             Map<String, Object> vectorConfigAsMap = new LinkedHashMap<>();
+                            addNonNullToMap(vectorConfigAsMap, "backup-count", entry.getBackupCount());
+                            addNonNullToMap(vectorConfigAsMap, "async-backup-count", entry.getAsyncBackupCount());
                             addNonNullToMap(
                                     vectorConfigAsMap,
                                     "indexes",

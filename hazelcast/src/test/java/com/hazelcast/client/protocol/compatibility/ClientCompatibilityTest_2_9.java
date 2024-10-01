@@ -47,12 +47,12 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unused")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientCompatibilityTest_2_8 {
+public class ClientCompatibilityTest_2_9 {
     private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        try (InputStream inputStream = getClass().getResourceAsStream("/2.8.protocol.compatibility.binary")) {
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.9.protocol.compatibility.binary")) {
             assert inputStream != null;
             byte[] data = inputStream.readAllBytes();
             ByteBuffer buffer = ByteBuffer.wrap(data);

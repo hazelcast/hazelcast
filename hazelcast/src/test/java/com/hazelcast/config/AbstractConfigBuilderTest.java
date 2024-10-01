@@ -806,6 +806,8 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         expectedCollectionConfigs.put(
                 "vector-2",
                 new VectorCollectionConfig("vector-2")
+                        .setBackupCount(2)
+                        .setAsyncBackupCount(1)
                         .addVectorIndexConfig(
                                 new VectorIndexConfig()
                                         .setDimension(4)

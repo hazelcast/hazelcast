@@ -26,6 +26,7 @@ import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -35,7 +36,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -895,7 +895,9 @@ public final class DynamicConfigXmlGenerator {
     public static void vectorCollectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         Collection<VectorCollectionConfig> vectorCollectionConfigs = config.getVectorCollectionConfigs().values();
         for (VectorCollectionConfig collectionConfig : vectorCollectionConfigs) {
-            gen.open("vector-collection", "name", collectionConfig.getName());
+            gen.open("vector-collection", "name", collectionConfig.getName())
+                    .node("backup-count", collectionConfig.getBackupCount())
+                    .node("async-backup-count", collectionConfig.getAsyncBackupCount());
             gen.open("indexes");
             for (VectorIndexConfig index: collectionConfig.getVectorIndexConfigs()) {
                 gen.open("index", "name", index.getName())
