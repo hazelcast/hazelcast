@@ -19,12 +19,16 @@ package com.hazelcast.internal.hotrestart;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.instance.impl.ClusterTopologyIntent;
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
+import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -152,8 +156,11 @@ public interface InternalHotRestartService {
 
     /**
      * Apply given {@link PartitionRuntimeState} after recovery is successfully completed.
+     *
+     * @see InternalPartitionService#createPartitionState()
+     * @see ClusterJoinManager#startJoin
      */
-    void deferApplyPartitionState(PartitionRuntimeState partitionRuntimeState);
+    void deferApplyPartitionState(@Nullable PartitionRuntimeState partitionRuntimeState);
 
     /**
      * Apply given {@link OnJoinOp} after recovery is successfully completed.
@@ -167,9 +174,8 @@ public interface InternalHotRestartService {
     boolean isClusterMetadataFoundOnDisk();
 
     /**
-     * Invoked each time an enabled {@link com.hazelcast.instance.impl.ClusterTopologyIntentTracker}
-     * detects a change of cluster topology in the runtime environment. Only used when running in a
-     * managed context (Kubernetes).
+     * Invoked each time an enabled {@link ClusterTopologyIntentTracker} detects a change of cluster
+     * topology in the runtime environment. Only used when running in a managed context (Kubernetes).
      */
     void onClusterTopologyIntentChange();
 
