@@ -292,16 +292,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
 
         switch (callStatus.ordinal()) {
             case RESPONSE_ORDINAL:
-                int backupAcks = backupHandler.sendBackups(op);
-                Object response = op.getResponse();
-                if (backupAcks > 0) {
-                    response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
-                }
-                try {
-                    op.sendResponse(response);
-                } catch (ResponseAlreadySentException e) {
-                    logOperationError(op, e);
-                }
+                sendBackupsAndResponse(op);
                 afterRun(op);
                 break;
             case VOID_ORDINAL:
@@ -319,6 +310,19 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
                 break;
             default:
                 throw new IllegalStateException();
+        }
+    }
+
+    public void sendBackupsAndResponse(Operation op) {
+        int backupAcks = backupHandler.sendBackups(op);
+        Object response = op.getResponse();
+        if (backupAcks > 0) {
+            response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
+        }
+        try {
+            op.sendResponse(response);
+        } catch (ResponseAlreadySentException e) {
+            logOperationError(op, e);
         }
     }
 
@@ -454,7 +458,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         }
     }
 
-    private void logOperationError(Operation op, Throwable e) {
+    private static void logOperationError(Operation op, Throwable e) {
         if (e instanceof OutOfMemoryError error) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(error);
         }

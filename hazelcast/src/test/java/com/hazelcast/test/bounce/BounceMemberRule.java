@@ -45,6 +45,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static com.hazelcast.test.HazelcastTestSupport.waitClusterForSafeState;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.LITE_MEMBER;
@@ -77,6 +78,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * the test.</li>
  * <li>{@code MEMBER}: prepare a set of members, apart from the configured cluster members, to be used
  * as test drivers.</li>
+ * <li>{@code LITE_MEMBER}: prepare a set of lite members, apart from the configured cluster members, to
+ *  be used as test drivers.</li>
  * <li>{@code CLIENT}: use clients as test drivers</li>
  * </ul>
  * <b>Defaults: </b> when {@code com.hazelcast.client.test.TestHazelcastFactory} is available on the
@@ -458,6 +461,7 @@ public class BounceMemberRule implements TestRule {
         private DriverFactory driverFactory;
         private DriverType testDriverType;
         private boolean useTerminate;
+        private boolean avoidOverlappingTerminations;
         private int bouncingIntervalSeconds = DEFAULT_BOUNCING_INTERVAL_SECONDS;
         private long maximumStaleSeconds = DEFAULT_MAXIMUM_STALE_SECONDS;
 
@@ -497,7 +501,8 @@ public class BounceMemberRule implements TestRule {
                 }
             }
             return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfigSupplier,
-                    driversCount, driverFactory, useTerminate, bouncingIntervalSeconds, maximumStaleSeconds));
+                    driversCount, driverFactory, useTerminate, avoidOverlappingTerminations,
+                    bouncingIntervalSeconds, maximumStaleSeconds));
         }
 
         public Builder clusterSize(int clusterSize) {
@@ -530,8 +535,24 @@ public class BounceMemberRule implements TestRule {
             return this;
         }
 
+        /**
+         * @see #avoidOverlappingTerminations(boolean)
+         */
         public Builder useTerminate(boolean value) {
             this.useTerminate = value;
+            return this;
+        }
+
+        /**
+         * Wait for cluster reaching safe state after member is terminated
+         * before next member is terminated. This avoids data loss in scenarios
+         * with totalBackupCount = 1 when the promotions and repartitioning are slow.
+         * <p>
+         * Ignored for graceful shutdown.
+         * @see #useTerminate
+         */
+        public Builder avoidOverlappingTerminations(boolean value) {
+            this.avoidOverlappingTerminations = value;
             return this;
         }
 
@@ -559,6 +580,12 @@ public class BounceMemberRule implements TestRule {
             try {
                 while (testRunning.get()) {
                     if (bounceTestConfig.isUseTerminate()) {
+                        if (bounceTestConfig.avoidOverlappingTerminations()) {
+                            // Do not terminate next member before the cluster recovered after previous member crash.
+                            // In default configuration with 1 backup repartitioning slower than bouncingIntervalSeconds
+                            // might lead to data loss.
+                            waitClusterForSafeState(getSteadyMember());
+                        }
                         members.get(i).getLifecycleService().terminate();
                     } else {
                         members.get(i).shutdown();

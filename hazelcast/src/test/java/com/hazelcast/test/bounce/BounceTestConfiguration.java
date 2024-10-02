@@ -31,6 +31,7 @@ public class BounceTestConfiguration {
     private final int driverCount;
     private final DriverFactory driverFactory;
     private final boolean useTerminate;
+    private final boolean avoidOverlappingTerminations;
     private final int bouncingIntervalSeconds;
     private final long maximumStaleSeconds;
 
@@ -59,7 +60,7 @@ public class BounceTestConfiguration {
 
     BounceTestConfiguration(int clusterSize, DriverType driverType,
                             Supplier<Config> memberConfigSupplier, int driverCount,
-                            DriverFactory driverFactory, boolean useTerminate,
+                            DriverFactory driverFactory, boolean useTerminate, boolean avoidOverlappingTerminations,
                             int bouncingIntervalSeconds, long maximumStaleSeconds) {
         this.clusterSize = clusterSize;
         this.driverType = driverType;
@@ -67,6 +68,7 @@ public class BounceTestConfiguration {
         this.driverCount = driverCount;
         this.driverFactory = driverFactory;
         this.useTerminate = useTerminate;
+        this.avoidOverlappingTerminations = avoidOverlappingTerminations;
         this.bouncingIntervalSeconds = bouncingIntervalSeconds;
         this.maximumStaleSeconds = maximumStaleSeconds;
     }
@@ -93,6 +95,10 @@ public class BounceTestConfiguration {
 
     public boolean isUseTerminate() {
         return useTerminate;
+    }
+
+    public boolean avoidOverlappingTerminations() {
+        return avoidOverlappingTerminations;
     }
 
     public int getBouncingIntervalSeconds() {
