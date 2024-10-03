@@ -78,7 +78,7 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
 
-        <docker.maven.plugin.version>0.45.0</docker.maven.plugin.version>
+        <docker.maven.plugin.version>0.45.1</docker.maven.plugin.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.3</avro.version>
