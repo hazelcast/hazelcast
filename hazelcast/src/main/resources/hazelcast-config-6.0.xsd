@@ -179,17 +179,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the map will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then all entries of the map will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the map will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then all entries of the map will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -633,17 +633,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the queue are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then all entries of the queue are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the queue are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then all entries of the queue are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -735,17 +735,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the list are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then all entries of the list are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the list will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then all entries of the list will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -807,17 +807,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the set are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then all entries of the set are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the set will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then all entries of the set will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -873,17 +873,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the multimap are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then all entries of the multimap are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the multimap are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then all entries of the multimap are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1219,17 +1219,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then the items in the ringbuffer are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then the items in the ringbuffer are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then the items in the ringbuffer are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then the items in the ringbuffer are copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1830,8 +1830,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then the cardinality estimation will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then the cardinality estimation will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1839,8 +1839,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
-                        then cardinality estimation will be copied to one other JVM (asynchronously) for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then cardinality estimation will be copied to one other member (asynchronously) for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6760,17 +6760,17 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the vector collection will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        then all entries of the vector collection will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no sync backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the vector will be copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then all entries of the vector collection will be copied to one other member for
+                        fail-safety. Valid numbers are 0 (no async backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

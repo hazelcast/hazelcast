@@ -1024,7 +1024,7 @@
           },
           "split-brain-protection-ref": {
             "type": "string",
-            "description": " Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "merge-policy": {
             "allOf": [
@@ -1336,7 +1336,7 @@
               "write-coalescing": {
                 "type": "boolean",
                 "default": true,
-                "description": " Setting writeCoalescing is meaningful if you are using write-behind MapStore. When writeCoalescing is true, only the latest store operation on a key in the writeDelaySeconds time-window will be reflected to MapStore."
+                "description": "Setting writeCoalescing is meaningful if you are using write-behind MapStore. When writeCoalescing is true, only the latest store operation on a key in the writeDelaySeconds time-window will be reflected to MapStore."
               },
               "class-name": {
                 "type": "string",
@@ -2523,7 +2523,7 @@
         "persistence-enabled": {
           "type": "boolean",
           "default": false,
-          "description": " Flag to denote whether or not CP Subsystem Persistence is enabled. If enabled, CP members persist their local CP data to stable storage and can recover from crashes."
+          "description": "Flag to denote whether or not CP Subsystem Persistence is enabled. If enabled, CP members persist their local CP data to stable storage and can recover from crashes."
         },
         "base-dir": {
           "type": "string",
@@ -2603,7 +2603,7 @@
               "jdk-compatible": {
                 "type": "boolean",
                 "default": false,
-                "description": " Enables / disables JDK compatibility of the CP ISemaphore. When it is JDK compatible, just as in the Semaphore#release() method, a permit can be released without acquiring it first, because acquired permits are not bound to threads. However, there is no auto-cleanup of acquired permits upon Hazelcast server / client failures. If a permit holder fails, its permits must be released manually. When JDK compatibility is disabled, a HazelcastInstance must acquire permits before releasing them and it cannot release a permit that it has mot acquired. It means, you can acquire a permit from one thread and release it from another thread using the same HazelcastInstance, but not different HazelcastInstances. In this mode, acquired permits are automatically released upon failure of the holder HazelcastInstance. So there is a minor behavioral difference to the Semaphore#release() method."
+                "description": "Enables / disables JDK compatibility of the CP ISemaphore. When it is JDK compatible, just as in the Semaphore#release() method, a permit can be released without acquiring it first, because acquired permits are not bound to threads. However, there is no auto-cleanup of acquired permits upon Hazelcast server / client failures. If a permit holder fails, its permits must be released manually. When JDK compatibility is disabled, a HazelcastInstance must acquire permits before releasing them and it cannot release a permit that it has mot acquired. It means, you can acquire a permit from one thread and release it from another thread using the same HazelcastInstance, but not different HazelcastInstances. In this mode, acquired permits are automatically released upon failure of the holder HazelcastInstance. So there is a minor behavioral difference to the Semaphore#release() method."
               },
               "initial-permits": {
                 "type": "integer",
@@ -2626,7 +2626,7 @@
                 "type": "integer",
                 "default": 0,
                 "minimum": 0,
-                "description": " Maximum number of reentrant lock acquires. Once a caller acquires the lock this many times, it will not be able to acquire the lock again, until it makes at least one unlock() call. By default, no upper bound is set for the number of reentrant lock acquires, which means that once a caller acquires a FencedLock, all of its further lock() calls will succeed. However, for instance, if you set lock-acquire-limit to 2, once a caller acquires the lock, it will be able to acquire it once more, but its third lock() call will not succeed. If lock-acquire-limit is set to 1, then the lock becomes non-reentrant."
+                "description": "Maximum number of reentrant lock acquires. Once a caller acquires the lock this many times, it will not be able to acquire the lock again, until it makes at least one unlock() call. By default, no upper bound is set for the number of reentrant lock acquires, which means that once a caller acquires a FencedLock, all of its further lock() calls will succeed. However, for instance, if you set lock-acquire-limit to 2, once a caller acquires the lock, it will be able to acquire it once more, but its third lock() call will not succeed. If lock-acquire-limit is set to 1, then the lock becomes non-reentrant."
               }
             }
           }
@@ -2650,7 +2650,7 @@
       }
     },
     "BackupCount": {
-      "description": "Number of synchronous backups. For example, if 1 is set as the backup count, then all entries of the map will be copied to another JVM for fail-safety. 0 means no sync backup. The sum of backup-count and async-backup-count can't be larger than than 6.",
+      "description": "Number of synchronous backups. For example, if 1 is set as the backup count, then all entries of the map will be copied to another member for fail-safety. 0 means no sync backup. The sum of backup-count and async-backup-count can't be larger than than 6.",
       "type": "integer",
       "minimum": 0,
       "default": 1,
@@ -3598,7 +3598,7 @@
           "type": "integer",
           "minimum": 1,
           "default": 120,
-          "description": " Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition table on the whole cluster."
+          "description": "Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition table on the whole cluster."
         },
         "data-load-timeout-seconds": {
           "type": "integer",
@@ -3613,7 +3613,7 @@
             "PARTIAL_RECOVERY_MOST_COMPLETE"
           ],
           "default": "FULL_RECOVERY_ONLY",
-          "description": " Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are:\\n FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails. This is the default value.\\n PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails.\\n PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition table version and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails."
+          "description": "Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are:\\n FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails. This is the default value.\\n PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails.\\n PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition table version and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails."
         },
         "encryption-at-rest": {
           "type": "object",
@@ -3775,7 +3775,7 @@
           "type": "integer",
           "minimum": 1,
           "default": 120,
-          "description": " Validation timeout for the restart process when validating the cluster members expected to join and the partition table on the whole cluster."
+          "description": "Validation timeout for the restart process when validating the cluster members expected to join and the partition table on the whole cluster."
         },
         "data-load-timeout-seconds": {
           "type": "integer",
@@ -3790,7 +3790,7 @@
             "PARTIAL_RECOVERY_MOST_COMPLETE"
           ],
           "default": "FULL_RECOVERY_ONLY",
-          "description": " Specifies the data recovery policy that will be respected during restart cluster start. Valid values are:\\n FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails. This is the default value.\\n PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails.\\n PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition table version and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails."
+          "description": "Specifies the data recovery policy that will be respected during restart cluster start. Valid values are:\\n FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails. This is the default value.\\n PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails.\\n PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition table version and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails."
         },
         "encryption-at-rest": {
           "type": "object",
@@ -4204,12 +4204,12 @@
                 "batch-max-delay-millis": {
                   "type": "integer",
                   "default": 1000,
-                  "description": " If the number of events generated does not reach the \"batch-size\", they are sent to the target cluster after a certain amount of time is passed. You can set this time in milliseconds using this element."
+                  "description": "If the number of events generated does not reach the \"batch-size\", they are sent to the target cluster after a certain amount of time is passed. You can set this time in milliseconds using this element."
                 },
                 "response-timeout-millis": {
                   "type": "integer",
                   "default": 60000,
-                  "description": " After a replication event is sent to the target cluster, the source member waits for a confirmation that says the event has reached the target. If confirmation is not received for a period of `response-timeout-millis`, the event is resent to the target cluster."
+                  "description": "After a replication event is sent to the target cluster, the source member waits for a confirmation that says the event has reached the target. If confirmation is not received for a period of `response-timeout-millis`, the event is resent to the target cluster."
                 },
                 "acknowledge-type": {
                   "enum": [
@@ -4241,7 +4241,7 @@
                 "idle-min-park-ns": {
                   "type": "integer",
                   "default": 10000000,
-                  "description": " Sets the minimum duration in nanoseconds that the WAN replication thread will be parked if there are no events to replicate."
+                  "description": "Sets the minimum duration in nanoseconds that the WAN replication thread will be parked if there are no events to replicate."
                 },
                 "max-concurrent-invocations": {
                   "type": "integer",
@@ -4251,12 +4251,12 @@
                 "discovery-period-seconds": {
                   "type": "integer",
                   "default": 10,
-                  "description": " Sets the period in seconds in which WAN tries to discover new target endpoints and reestablish connections to failed endpoints."
+                  "description": "Sets the period in seconds in which WAN tries to discover new target endpoints and reestablish connections to failed endpoints."
                 },
                 "use-endpoint-private-address": {
                   "type": "boolean",
                   "default": false,
-                  "description": " Sets whether the WAN connection manager should connect to the endpoint on the private address returned by the discovery SPI. By default this property is false which means the WAN connection manager will always use the public address."
+                  "description": "Sets whether the WAN connection manager should connect to the endpoint on the private address returned by the discovery SPI. By default this property is false which means the WAN connection manager will always use the public address."
                 },
                 "queue-full-behavior": {
                   "enum": [
@@ -4278,7 +4278,7 @@
                 "queue-capacity": {
                   "type": "integer",
                   "default": 10000,
-                  "description": " Size of the queue of events. If you exceed this queue size, then the oldest, not yet replicated updates might get lost. Therefore, if you have a large rate of put/update/remove operations, you should increase queue capacity."
+                  "description": "Size of the queue of events. If you exceed this queue size, then the oldest, not yet replicated updates might get lost. Therefore, if you have a large rate of put/update/remove operations, you should increase queue capacity."
                 },
                 "target-endpoints": {
                   "type": "string",
@@ -4364,7 +4364,7 @@
             "OFF"
           ],
           "default": "ETERNAL",
-          "description": " Controls the local caching behavior for the classes loaded from the remote class repository. Available values are as follows:\\n * ETERNAL: Cache the loaded classes locally. This is the default value and suitable when you load long-living objects, such as domain objects stored in a map. \\n * OFF: Do not cache the loaded classes locally."
+          "description": "Controls the local caching behavior for the classes loaded from the remote class repository. Available values are as follows:\\n * ETERNAL: Cache the loaded classes locally. This is the default value and suitable when you load long-living objects, such as domain objects stored in a map. \\n * OFF: Do not cache the loaded classes locally."
         },
         "provider-mode": {
           "enum": [
@@ -4933,7 +4933,7 @@
       ]
     },
     "CredentialsFactoryIdentity": {
-      "description": " Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
+      "description": "Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
       "$ref": "#/definitions/ClassNameWithProps"
     },
     "ClientNetwork": {
