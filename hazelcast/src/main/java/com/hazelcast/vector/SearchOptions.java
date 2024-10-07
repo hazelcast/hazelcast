@@ -52,6 +52,12 @@ public interface SearchOptions {
     Map<String, String> getHints();
 
     /**
+     * @return SearchOptionsBuilder with the same settings
+     * @since 6.0
+     */
+    SearchOptionsBuilder toBuilder();
+
+    /**
      * @return builder of {@link SearchOptions}
      */
     static SearchOptionsBuilder builder() {

@@ -148,6 +148,10 @@ public class ReadOptimizedLruCache<K, V> {
         }
     }
 
+    public int size() {
+        return cache.size();
+    }
+
     // package-visible for tests
     static class ValueAndTimestamp<V> {
         private static final AtomicLongFieldUpdater<ValueAndTimestamp> TIMESTAMP_UPDATER =

@@ -33,4 +33,11 @@ public record Hint<T>(String name, Function<String, T> parser) {
     public T get(SearchOptions options) {
         return parser.apply(options.getHints().get(name));
     }
+
+    /**
+     * @since 6.0
+     */
+    public boolean isPresent(SearchOptions options) {
+        return options.getHints().containsKey(name);
+    }
 }

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.vector.SearchOptions;
+import com.hazelcast.vector.SearchOptionsBuilder;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -73,6 +74,15 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
     @Override
     public Map<String, String> getHints() {
         return Collections.unmodifiableMap(hints);
+    }
+
+    @Override
+    public SearchOptionsBuilder toBuilder() {
+        return new SearchOptionsBuilder()
+                .setIncludeValue(includeValue)
+                .setIncludeVectors(includeVectors)
+                .limit(limit)
+                .hints(hints);
     }
 
     @Override
