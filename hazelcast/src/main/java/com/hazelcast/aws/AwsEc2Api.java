@@ -65,6 +65,7 @@ class AwsEc2Api {
         Map<String, String> attributes = createAttributesDescribeInstances();
         Map<String, String> headers = createHeaders(attributes, credentials);
         String response = callAwsService(attributes, headers);
+        // This is a test
         return parseDescribeInstances(response);
     }
 
