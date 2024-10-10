@@ -81,7 +81,7 @@
         <docker.maven.plugin.version>0.45.1</docker.maven.plugin.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
-        <avro.version>1.11.3</avro.version>
+        <avro.version>1.11.4</avro.version>
         <aws.sdk.version>1.12.773</aws.sdk.version>
         <aws.sdk2.version>2.28.14</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
@@ -103,7 +103,7 @@
         <confluent.version>7.7.1</confluent.version>
         <kotlin.version>2.0.20</kotlin.version>
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
-        <parquet.version>1.14.2</parquet.version>
+        <parquet.version>1.14.3</parquet.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
