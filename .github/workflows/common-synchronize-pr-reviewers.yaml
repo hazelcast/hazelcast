@@ -13,7 +13,7 @@ on:
          - review_request_removed
 jobs:
    synchronize-pr-reviewers:
-      runs-on: ubuntu-latest
+      runs-on: ubicloud-standard-2
       steps:
          - uses: actions/checkout@v4
            with:

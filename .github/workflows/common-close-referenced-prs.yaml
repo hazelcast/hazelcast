@@ -13,7 +13,7 @@ on:
 jobs:
   close-referenced-prs:
     name: Close referenced PRs
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     steps:
       - name: Close referenced PRs
         run: |
