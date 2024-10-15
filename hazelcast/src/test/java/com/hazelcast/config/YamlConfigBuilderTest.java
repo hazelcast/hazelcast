@@ -208,11 +208,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       - name: mr
                         authentication:
                           jaas:
-                            - class-name: MyRequiredLoginModule
+                            - class-name: org.example.EmptyLoginModule
                               usage: REQUIRED
                               properties:
                                 login-property: login-value
-                            - class-name: MyRequiredLoginModule2
+                            - class-name: org.example.EmptyLoginModule
                               usage: SUFFICIENT
                               properties:
                                 login-property2: login-value2
@@ -224,11 +224,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       - name: cr
                         authentication:
                           jaas:
-                            - class-name: MyOptionalLoginModule
+                            - class-name: org.example.EmptyLoginModule
                               usage: OPTIONAL
                               properties:
                                 client-property: client-value
-                            - class-name: MyRequiredLoginModule
+                            - class-name: org.example.EmptyLoginModule
                               usage: REQUIRED
                               properties:
                                 client-property2: client-value2
@@ -294,13 +294,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Iterator<LoginModuleConfig> memberLoginIterator = memberLoginModuleConfigs.iterator();
 
         LoginModuleConfig memberLoginModuleCfg1 = memberLoginIterator.next();
-        assertEquals("MyRequiredLoginModule", memberLoginModuleCfg1.getClassName());
+        assertEquals("org.example.EmptyLoginModule", memberLoginModuleCfg1.getClassName());
         assertEquals(LoginModuleUsage.REQUIRED, memberLoginModuleCfg1.getUsage());
         assertEquals(1, memberLoginModuleCfg1.getProperties().size());
         assertEquals("login-value", memberLoginModuleCfg1.getProperties().getProperty("login-property"));
 
         LoginModuleConfig memberLoginModuleCfg2 = memberLoginIterator.next();
-        assertEquals("MyRequiredLoginModule2", memberLoginModuleCfg2.getClassName());
+        assertEquals("org.example.EmptyLoginModule", memberLoginModuleCfg2.getClassName());
         assertEquals(LoginModuleUsage.SUFFICIENT, memberLoginModuleCfg2.getUsage());
         assertEquals(1, memberLoginModuleCfg2.getProperties().size());
         assertEquals("login-value2", memberLoginModuleCfg2.getProperties().getProperty("login-property2"));
@@ -311,13 +311,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Iterator<LoginModuleConfig> clientLoginIterator = clientLoginModuleConfigs.iterator();
 
         LoginModuleConfig clientLoginModuleCfg1 = clientLoginIterator.next();
-        assertEquals("MyOptionalLoginModule", clientLoginModuleCfg1.getClassName());
+        assertEquals("org.example.EmptyLoginModule", clientLoginModuleCfg1.getClassName());
         assertEquals(LoginModuleUsage.OPTIONAL, clientLoginModuleCfg1.getUsage());
         assertEquals(1, clientLoginModuleCfg1.getProperties().size());
         assertEquals("client-value", clientLoginModuleCfg1.getProperties().getProperty("client-property"));
 
         LoginModuleConfig clientLoginModuleCfg2 = clientLoginIterator.next();
-        assertEquals("MyRequiredLoginModule", clientLoginModuleCfg2.getClassName());
+        assertEquals("org.example.EmptyLoginModule", clientLoginModuleCfg2.getClassName());
         assertEquals(LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
         assertEquals(1, clientLoginModuleCfg2.getProperties().size());
         assertEquals("client-value2", clientLoginModuleCfg2.getProperties().getProperty("client-property2"));

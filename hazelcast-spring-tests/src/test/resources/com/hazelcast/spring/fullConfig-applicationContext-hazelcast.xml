@@ -733,7 +733,7 @@
                     <hz:realm name="r3">
                         <hz:authentication>
                             <hz:jaas>
-                                <hz:login-module class-name="com.example.LoginModule" usage="REQUIRED"/>
+                                <hz:login-module class-name="org.example.EmptyLoginModule" usage="REQUIRED"/>
                             </hz:jaas>
                         </hz:authentication>
                         <hz:identity>

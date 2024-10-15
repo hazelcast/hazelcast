@@ -16,8 +16,7 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-
+import java.util.Objects;
 import java.util.Properties;
 
 import javax.annotation.Nonnull;
@@ -67,8 +66,7 @@ public class LoginModuleConfig {
         public static LoginModuleUsage get(String v) {
             try {
                 return LoginModuleUsage.valueOf(StringUtil.upperCaseInternal(v));
-            } catch (Exception ignore) {
-                ignore(ignore);
+            } catch (Exception ignored) {
             }
             return REQUIRED;
         }
@@ -134,26 +132,16 @@ public class LoginModuleConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof LoginModuleConfig that)) {
             return false;
         }
-
-        LoginModuleConfig that = (LoginModuleConfig) o;
-
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        if (usage != that.usage) {
-            return false;
-        }
-        return properties != null ? properties.equals(that.properties) : that.properties == null;
+        return Objects.equals(className, that.className)
+                && usage == that.usage
+                && Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        int result = className != null ? className.hashCode() : 0;
-        result = 31 * result + (usage != null ? usage.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(className, usage, properties);
     }
 }

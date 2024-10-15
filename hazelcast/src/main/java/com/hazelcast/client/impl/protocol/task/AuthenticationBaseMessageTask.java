@@ -156,7 +156,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             passed = Boolean.TRUE;
             return AUTHENTICATED;
         } catch (LoginException e) {
-            logger.fine(e);
+            logger.warning(e);
             return CREDENTIALS_FAILED;
         } finally {
             nodeEngine.getNode().getNodeExtension().getAuditlogService()

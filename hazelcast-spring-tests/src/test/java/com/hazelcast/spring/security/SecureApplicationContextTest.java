@@ -90,7 +90,7 @@ class SecureApplicationContextTest {
         List<LoginModuleConfig> list = jaasAuthenticationConfig.getLoginModuleConfigs();
         assertEquals(1, list.size());
         LoginModuleConfig lm = list.get(0);
-        assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm.getClassName());
+        assertEquals("org.example.EmptyLoginModule", lm.getClassName());
         assertFalse(lm.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm.getUsage());
 
@@ -111,7 +111,7 @@ class SecureApplicationContextTest {
         assertFalse(lm1.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.OPTIONAL, lm1.getUsage());
         LoginModuleConfig lm2 = list.get(1);
-        assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm2.getClassName());
+        assertEquals("org.example.EmptyLoginModule", lm2.getClassName());
         assertFalse(lm2.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm2.getUsage());
     }

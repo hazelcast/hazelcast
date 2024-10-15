@@ -692,7 +692,7 @@
             <realm name="jaasRealm">
                 <authentication>
                     <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                        <login-module class-name="org.example.EmptyLoginModule" usage="REQUIRED">
                             <properties>
                                 <property name="property">value</property>
                             </properties>

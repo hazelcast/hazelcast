@@ -29,6 +29,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MultiMapConfig;
@@ -40,13 +41,17 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
@@ -54,6 +59,7 @@ import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -82,6 +88,7 @@ import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.isClassAvailable;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
@@ -736,5 +743,34 @@ public final class ConfigValidator {
         if (!isClient && nearCacheConfig.getPreloaderConfig().isEnabled()) {
             throw new InvalidConfigurationException("The Near Cache pre-loader is just available on Hazelcast clients!");
         }
+    }
+
+    public static void checkSecurityConfig(Node node, SecurityConfig securityConfig) {
+        if (!securityConfig.isEnabled()) {
+            return;
+        }
+        Map<String, RealmConfig> realmConfigs = securityConfig.getRealmConfigs();
+        List<String> errors = new ArrayList<>();
+        if (realmConfigs != null) {
+            realmConfigs.values().forEach(realmConfig -> {
+                JaasAuthenticationConfig jaas = realmConfig.getJaasAuthenticationConfig();
+                if (jaas != null) {
+                    for (LoginModuleConfig jaasLoginModuleConfig : jaas.getLoginModuleConfigs()) {
+                        ClassLoader configClassLoader = node.getConfigClassLoader();
+                        String className = jaasLoginModuleConfig.getClassName();
+                        if (isNotBlank(className) && !isClassAvailable(configClassLoader, className)) {
+                            errors.add(className);
+                        }
+                    }
+                }
+            });
+        }
+        if (!errors.isEmpty()) {
+            throw new InvalidConfigurationException("Login module class(es) not found: " + String.join(", ", errors));
+        }
+    }
+
+    private static boolean isNotBlank(String className) {
+        return className != null && !className.isEmpty();
     }
 }

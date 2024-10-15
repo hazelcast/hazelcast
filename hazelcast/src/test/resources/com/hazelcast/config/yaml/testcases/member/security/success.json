@@ -9,7 +9,7 @@
             "authentication": {
               "jaas": [
                 {
-                  "class-name": "com.hazelcast.examples.MyRequiredLoginModule",
+                  "class-name": "org.example.EmptyLoginModule",
                   "usage": "REQUIRED",
                   "properties": {
                     "property": "value"
@@ -38,7 +38,7 @@
                   }
                 },
                 {
-                  "class-name": "com.hazelcast.examples.MyRequiredLoginModule",
+                  "class-name": "org.example.EmptyLoginModule",
                   "usage": "REQUIRED",
                   "properties": {
                     "property": "value"
