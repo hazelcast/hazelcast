@@ -807,6 +807,8 @@ hazelcast:
   # single partition group.
   # * CUSTOM:
   # You can add different and multiple members to a group.
+  # * CUSTOM_FACTORY
+  # You can provide your own MemberGroupFactory implementation.
   # * PER_MEMBER:
   # Each member is a group of its own and primary/backup partitions are distributed
   # randomly (not on the same physical member).
