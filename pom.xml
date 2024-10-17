@@ -1046,7 +1046,7 @@
             Repository order reference:
             https://maven.apache.org/guides/mini/guide-multiple-repositories.html#repository-order
             -->
-            <id>central</id>
+            <id>central-redeclared</id>
             <name>Central Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
             <releases>
