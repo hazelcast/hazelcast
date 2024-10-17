@@ -82,7 +82,7 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-storage</artifactId>
-            <version>v1-rev20240924-2.0.0</version>
+            <version>v1-rev20241008-2.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.threeten</groupId>
