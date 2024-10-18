@@ -16,34 +16,42 @@
 
 package com.hazelcast.kubernetes;
 
-import javax.annotation.Nullable;
+import com.hazelcast.internal.json.JsonObject;
+
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 
 public class RuntimeContext {
 
-    /**
-     * Unknown value
-     */
-    public static final long UNKNOWN = -1;
-
-    // specified number of replicas. Corresponds to StatefulSetSpec.replicas
+    /** specified number of replicas, corresponds to {@code StatefulSetSpec.replicas} */
     private final int specifiedReplicaCount;
 
-    // number of ready replicas. Corresponds to StatefulSetStatus.readyReplicas
+    /** number of ready replicas, corresponds to {@code StatefulSetStatus.readyReplicas} */
     private final int readyReplicas;
 
-    // number of replicas created by the current revision of the StatefulSet.
-    // Populated from StatefulSetStatus.currentReplicas
+    /**
+     * number of replicas created by the current revision of the StatefulSet,
+     * corresponds to {@code StatefulSetStatus.currentReplicas}
+     */
     private final int currentReplicas;
 
-    @Nullable
     private final String resourceVersion;
 
     public RuntimeContext(int specifiedReplicaCount, int readyReplicas, int currentReplicas,
-                          @Nullable String resourceVersion) {
+                          String resourceVersion) {
         this.specifiedReplicaCount = specifiedReplicaCount;
         this.readyReplicas = readyReplicas;
         this.currentReplicas = currentReplicas;
         this.resourceVersion = resourceVersion;
+    }
+
+    @Nonnull
+    public static RuntimeContext from(@Nonnull JsonObject statefulSet, String resourceVersion) {
+        int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", UNKNOWN);
+        int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", UNKNOWN);
+        int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", UNKNOWN);
+        return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
     }
 
     public int getSpecifiedReplicaCount() {
@@ -54,12 +62,12 @@ public class RuntimeContext {
         return readyReplicas;
     }
 
-    public String getResourceVersion() {
-        return resourceVersion;
-    }
-
     public int getCurrentReplicas() {
         return currentReplicas;
+    }
+
+    public String getResourceVersion() {
+        return resourceVersion;
     }
 
     @Override

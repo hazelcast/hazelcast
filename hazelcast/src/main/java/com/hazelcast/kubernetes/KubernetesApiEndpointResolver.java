@@ -46,7 +46,7 @@ class KubernetesApiEndpointResolver
     KubernetesApiEndpointResolver(ILogger logger, KubernetesConfig config, ClusterTopologyIntentTracker tracker) {
         this(logger, config.getServiceName(), config.getServicePort(), config.getServiceLabelName(),
                 config.getServiceLabelValue(), config.getPodLabelName(), config.getPodLabelValue(),
-                config.isResolveNotReadyAddresses(), buildKubernetesClient(config, tracker));
+                config.isResolveNotReadyAddresses(), new KubernetesClient(config, tracker));
     }
 
     /**
@@ -64,13 +64,6 @@ class KubernetesApiEndpointResolver
         this.podLabelValue = podLabelValue;
         this.resolveNotReadyAddresses = resolveNotReadyAddresses;
         this.client = client;
-    }
-
-    private static KubernetesClient buildKubernetesClient(KubernetesConfig config, ClusterTopologyIntentTracker tracker) {
-        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
-                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
-                config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
-                config.getServicePerPodLabelValue(), tracker);
     }
 
     @Override

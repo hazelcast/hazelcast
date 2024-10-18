@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.spi.exception.RestClientException;
@@ -925,8 +924,8 @@ public class KubernetesClientTest {
     private KubernetesClient newKubernetesClient(KubernetesTokenProvider tokenProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
         return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, null, RETRIES,
-                ExposeExternallyMode.AUTO, true, null, null,
-                (ClusterTopologyIntentTracker) null);
+                ExposeExternallyMode.AUTO, true, null,
+                null, null, null, null);
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
@@ -948,8 +947,9 @@ public class KubernetesClientTest {
                                                  String servicePerPodLabelName, String servicePerPodLabelValue,
                                                  KubernetesApiProvider urlProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), null, RETRIES,
-                exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), null,
+                RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue,
+                null, urlProvider, null);
     }
 
     private static List<String> formatPrivate(List<Endpoint> addresses) {
