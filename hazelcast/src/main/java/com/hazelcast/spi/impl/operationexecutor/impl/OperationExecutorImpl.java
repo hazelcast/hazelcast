@@ -597,7 +597,6 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             awaitTermination(partitionThreads);
         }
         awaitTermination(genericThreads);
-        NodeEngineThreadLocalContext.destroyNodeEngineReference();
     }
 
     private static void shutdownAll(OperationThread[] operationThreads) {
