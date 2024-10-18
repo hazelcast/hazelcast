@@ -26,6 +26,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
@@ -60,6 +62,8 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 public final class SerializationUtil {
 
     static final PartitioningStrategy<?> EMPTY_PARTITIONING_STRATEGY = new EmptyPartitioningStrategy();
+
+    private static final ILogger LOGGER = Logger.getLogger(SerializationUtil.class);
 
     private SerializationUtil() {
     }
@@ -129,6 +133,10 @@ public final class SerializationUtil {
             return exception;
         }
         String clazz = rootObject == null ? "null" : rootObject.getClass().getName();
+        if (rootObject instanceof Throwable throwable) {
+            LOGGER.warning("Failed to serialize '" + clazz + "'. It will be logged here and "
+                    + "then ignored and replaced with a HazelcastSerializationException.", throwable);
+        }
         return new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
     }
 
