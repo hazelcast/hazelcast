@@ -541,7 +541,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
 
         final IQueue<Integer> queue = client.getQueue(randomString());
 
-        UUID id = queue.addItemListener(new ItemListener<Integer>() {
+        UUID id = queue.addItemListener(new ItemListener<>() {
 
             public void itemAdded(ItemEvent<Integer> itemEvent) {
                 itemAddedLatch.countDown();

@@ -112,7 +112,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                     : new PartitionIdSet(partitionCount, this.partitions);
             QueryPath[] rightPaths = rightRowProjectorSupplier.paths();
             KvRowProjector rightProjector = rightRowProjectorSupplier.get(evalContext, extractors);
-            Processor processor = new TransformP<JetSqlRow, JetSqlRow>(
+            Processor processor = new TransformP<>(
                     joinFn(joinInfo, map, partitions, rightPaths, rightProjector, evalContext)
             ) {
                 @Override

@@ -70,7 +70,7 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
         for (int i = 0; i < length; i++) {
             String className = in.readString();
             byte[] classDefinition = in.readByteArray();
-            classDefinitions.add(new AbstractMap.SimpleEntry<String, byte[]>(className, classDefinition));
+            classDefinitions.add(new AbstractMap.SimpleEntry<>(className, classDefinition));
         }
     }
 

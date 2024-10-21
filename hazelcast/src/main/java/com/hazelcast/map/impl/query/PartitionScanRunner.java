@@ -88,7 +88,7 @@ public class PartitionScanRunner {
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
                 pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
 
-        recordStore.forEachAfterLoad(new BiConsumer<Data, Record>() {
+        recordStore.forEachAfterLoad(new BiConsumer<>() {
             LazyMapEntry queryEntry = new LazyMapEntry();
 
             @Override

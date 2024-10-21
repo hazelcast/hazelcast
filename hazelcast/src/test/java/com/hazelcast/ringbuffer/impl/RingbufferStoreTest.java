@@ -333,10 +333,10 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         @Override
         @SuppressWarnings("unchecked")
         public RingbufferStore<Integer> newRingbufferStore(String name, Properties properties) {
-            return ConcurrencyUtil.getOrPutIfAbsent(stores, name, new ConstructorFunction<String, RingbufferStore>() {
+            return ConcurrencyUtil.getOrPutIfAbsent(stores, name, new ConstructorFunction<>() {
                 @Override
                 public RingbufferStore<Integer> createNew(String arg) {
-                    return new TestRingbufferStore<Integer>();
+                    return new TestRingbufferStore<>();
                 }
             });
         }

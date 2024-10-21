@@ -60,7 +60,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
             Data key = entry.getKey();
             Collection<Data> coll = entry.getValue();
             for (Data data : coll) {
-                entrySet.add(new AbstractMap.SimpleEntry<Data, Data>(key, data));
+                entrySet.add(new AbstractMap.SimpleEntry<>(key, data));
             }
         }
         return entrySet;
@@ -73,7 +73,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
             Collection<Data> coll = entry.getValue();
             for (Data data : coll) {
                 V val = nodeEngine.toObject(data);
-                entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, val));
+                entrySet.add(new AbstractMap.SimpleEntry<>(key, val));
             }
         }
         return entrySet;

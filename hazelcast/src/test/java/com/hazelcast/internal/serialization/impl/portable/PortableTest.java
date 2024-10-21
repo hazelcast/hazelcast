@@ -710,9 +710,9 @@ public class PortableTest {
                 }).build();
 
 
-        ss.toData(new ParentGenericPortable<ChildGenericPortable1>(new ChildGenericPortable1("aaa", "bbb")));
+        ss.toData(new ParentGenericPortable<>(new ChildGenericPortable1("aaa", "bbb")));
 
-        Data data = ss.toData(new ParentGenericPortable<ChildGenericPortable2>(new ChildGenericPortable2("ccc")));
+        Data data = ss.toData(new ParentGenericPortable<>(new ChildGenericPortable2("ccc")));
         ss.toObject(data);
 
     }

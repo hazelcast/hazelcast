@@ -68,7 +68,7 @@ public final class UnsafeUtil {
         try {
             return Unsafe.getUnsafe();
         } catch (SecurityException se) {
-            return AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
+            return AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public Unsafe run() {
                     try {

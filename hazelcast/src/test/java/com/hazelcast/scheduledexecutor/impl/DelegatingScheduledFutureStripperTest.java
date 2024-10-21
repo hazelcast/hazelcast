@@ -68,7 +68,7 @@ public class DelegatingScheduledFutureStripperTest {
 
     @Test(expected = NullPointerException.class)
     public void constructWithNull() {
-        new DelegatingScheduledFutureStripper<Object>(null);
+        new DelegatingScheduledFutureStripper<>(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -98,7 +98,7 @@ public class DelegatingScheduledFutureStripperTest {
         ScheduledFuture<Object> inner = createScheduledFutureMock();
         when(outer.get()).thenReturn(inner);
 
-        new DelegatingScheduledFutureStripper<Object>(outer).cancel(true);
+        new DelegatingScheduledFutureStripper<>(outer).cancel(true);
 
         verify(inner).cancel(true);
     }
@@ -106,7 +106,7 @@ public class DelegatingScheduledFutureStripperTest {
     @Test
     public void cancel_twice() {
         ScheduledFuture<Future<Integer>> original = taskScheduler.schedule(new SimpleCallableTestTask(), 10, TimeUnit.SECONDS);
-        ScheduledFuture stripper = new DelegatingScheduledFutureStripper<Future<Integer>>(original);
+        ScheduledFuture stripper = new DelegatingScheduledFutureStripper<>(original);
 
         stripper.cancel(true);
         stripper.cancel(true);
@@ -120,11 +120,11 @@ public class DelegatingScheduledFutureStripperTest {
 
         when(outer.isDone()).thenReturn(true);
         when(inner.isDone()).thenReturn(false);
-        assertFalse(new DelegatingScheduledFutureStripper<Object>(outer).isDone());
+        assertFalse(new DelegatingScheduledFutureStripper<>(outer).isDone());
 
         when(outer.isDone()).thenReturn(true);
         when(inner.isDone()).thenReturn(true);
-        assertTrue(new DelegatingScheduledFutureStripper<Object>(outer).isDone());
+        assertTrue(new DelegatingScheduledFutureStripper<>(outer).isDone());
     }
 
     @Test
@@ -135,21 +135,21 @@ public class DelegatingScheduledFutureStripperTest {
 
         when(outer.isCancelled()).thenReturn(false);
         when(inner.isCancelled()).thenReturn(false);
-        assertFalse(new DelegatingScheduledFutureStripper<Object>(outer).isCancelled());
+        assertFalse(new DelegatingScheduledFutureStripper<>(outer).isCancelled());
 
         when(outer.isCancelled()).thenReturn(true);
         when(inner.isCancelled()).thenReturn(false);
-        assertTrue(new DelegatingScheduledFutureStripper<Object>(outer).isCancelled());
+        assertTrue(new DelegatingScheduledFutureStripper<>(outer).isCancelled());
 
         when(outer.isCancelled()).thenReturn(false);
         when(inner.isCancelled()).thenReturn(true);
-        assertTrue(new DelegatingScheduledFutureStripper<Object>(outer).isCancelled());
+        assertTrue(new DelegatingScheduledFutureStripper<>(outer).isCancelled());
     }
 
     @Test
     public void get() throws Exception {
         ScheduledFuture<Future<Integer>> original = taskScheduler.schedule(new SimpleCallableTestTask(), 0, TimeUnit.SECONDS);
-        ScheduledFuture stripper = new DelegatingScheduledFutureStripper<Future<Integer>>(original);
+        ScheduledFuture stripper = new DelegatingScheduledFutureStripper<>(original);
 
         assertNotNull(original.get());
         assertEquals(5, stripper.get());
@@ -162,7 +162,7 @@ public class DelegatingScheduledFutureStripperTest {
         when(outer.get()).thenThrow(new InterruptedException());
         when(inner.get()).thenReturn(2);
 
-        new DelegatingScheduledFutureStripper<Object>(outer).get();
+        new DelegatingScheduledFutureStripper<>(outer).get();
     }
 
     @Test(expected = ExecutionException.class)
@@ -172,13 +172,13 @@ public class DelegatingScheduledFutureStripperTest {
         when(outer.get()).thenThrow(new ExecutionException(new NullPointerException()));
         when(inner.get()).thenReturn(2);
 
-        new DelegatingScheduledFutureStripper<Object>(outer).get();
+        new DelegatingScheduledFutureStripper<>(outer).get();
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void get_unsupported() throws Exception {
         ScheduledFuture<Integer> future = scheduler.schedule(new SimpleCallableTestTask(), 0, TimeUnit.SECONDS);
-        new DelegatingScheduledFutureStripper<Integer>(future).get(1, TimeUnit.SECONDS);
+        new DelegatingScheduledFutureStripper<>(future).get(1, TimeUnit.SECONDS);
     }
 
     @Test
@@ -186,9 +186,9 @@ public class DelegatingScheduledFutureStripperTest {
         ScheduledFuture<Future<Integer>> original = taskScheduler.schedule(new SimpleCallableTestTask(), 0, TimeUnit.SECONDS);
         ScheduledFuture<Future<Integer>> joker = taskScheduler.schedule(new SimpleCallableTestTask(), 1, TimeUnit.SECONDS);
 
-        ScheduledFuture testA = new DelegatingScheduledFutureStripper<Future<Integer>>(original);
-        ScheduledFuture testB = new DelegatingScheduledFutureStripper<Future<Integer>>(original);
-        ScheduledFuture testC = new DelegatingScheduledFutureStripper<Future<Integer>>(joker);
+        ScheduledFuture testA = new DelegatingScheduledFutureStripper<>(original);
+        ScheduledFuture testB = new DelegatingScheduledFutureStripper<>(original);
+        ScheduledFuture testC = new DelegatingScheduledFutureStripper<>(joker);
 
         assertNotNull(testA);
         assertEquals(testA, testA);

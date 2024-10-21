@@ -86,7 +86,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
         VersionedObject<String> value = new VersionedObject<>("hello");
         CountDownLatch latch = new CountDownLatch(8);
-        queue.addItemListener(new ItemListener<VersionedObject<String>>() {
+        queue.addItemListener(new ItemListener<>() {
             public void itemAdded(ItemEvent<VersionedObject<String>> itemEvent) {
                 assertEquals(value, itemEvent.getItem());
                 latch.countDown();
@@ -538,7 +538,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
         CountDownLatch offerLatch = new CountDownLatch(2);
         CountDownLatch pollLatch = new CountDownLatch(2);
-        testQueue.addItemListener(new ItemListener<VersionedObject<String>>() {
+        testQueue.addItemListener(new ItemListener<>() {
             public void itemAdded(ItemEvent<VersionedObject<String>> item) {
                 offerLatch.countDown();
             }

@@ -535,8 +535,9 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     private MapDelegatingSet<Long> valuesSingleton() {
-        return new MapDelegatingSet<>(this, new Supplier<Iterator<Long>>() {
-            @Override public Iterator<Long> get() {
+        return new MapDelegatingSet<>(this, new Supplier<>() {
+            @Override
+            public Iterator<Long> get() {
                 return valueIterator.reset();
             }
         }, new Predicate() {

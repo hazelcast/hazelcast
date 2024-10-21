@@ -333,8 +333,8 @@ public class HazelcastPropertiesTest {
         // https://github.com/hyperreality/American-British-English-Translator/
         final Map<String, String> rawMap = new ObjectMapper().readValue(URI.create(
                 "https://raw.githubusercontent.com/hyperreality/American-British-English-Translator/master/data/american_spellings.json")
-                .toURL(), new TypeReference<Map<String, String>>() {
-                });
+                .toURL(), new TypeReference<>() {
+        });
 
         final Map<String, String> americanToBritish = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 

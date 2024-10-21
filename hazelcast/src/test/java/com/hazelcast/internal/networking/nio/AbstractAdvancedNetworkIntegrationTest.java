@@ -42,7 +42,7 @@ public abstract class AbstractAdvancedNetworkIntegrationTest {
     protected static final int NOT_OPENED_PORT = MEMBER_PORT - 1;
 
     protected final Set<HazelcastInstance> instances
-            = Collections.newSetFromMap(new ConcurrentHashMap<HazelcastInstance, Boolean>());
+            = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     @After
     public void tearDown() {

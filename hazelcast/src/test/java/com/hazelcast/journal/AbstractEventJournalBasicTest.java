@@ -379,7 +379,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
 
         final ReadResultSet<Integer> resultSet = getAllEvents(context.dataAdapter, TRUE_PREDICATE,
-                new NewValueIncrementingFunction<EJ_TYPE>(100, context.eventJournalAdapter));
+                new NewValueIncrementingFunction<>(100, context.eventJournalAdapter));
         final ArrayList<Integer> ints = new ArrayList<>(count);
         for (Integer i : resultSet) {
             ints.add(i);

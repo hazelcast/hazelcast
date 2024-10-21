@@ -30,7 +30,7 @@ public final class EnumerationUtil {
     public static <T> Stream<T> stream(Enumeration<T> e) {
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(
-                        new Iterator<T>() {
+                        new Iterator<>() {
                             public T next() {
                                 return e.nextElement();
                             }

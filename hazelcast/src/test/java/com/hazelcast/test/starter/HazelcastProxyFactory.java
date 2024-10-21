@@ -425,7 +425,7 @@ public class HazelcastProxyFactory {
 
         @Override
         public MethodRegistry inject(TypeDescription instrumentedType, MethodRegistry methodRegistry) {
-            return methodRegistry.append(new LatentMatcher.Resolved<MethodDescription>(isConstructor()),
+            return methodRegistry.append(new LatentMatcher.Resolved<>(isConstructor()),
                     new MethodRegistry.Handler.ForImplementation(SuperMethodCall.INSTANCE),
                     MethodAttributeAppender.NoOp.INSTANCE,
                     Transformer.NoOp.<MethodDescription>make());

@@ -463,7 +463,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     protected Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> createConcurrentSet() {
-        return Collections.newSetFromMap(new ConcurrentHashMap<DeferredValue<CacheEntryListenerConfiguration<K, V>>, Boolean>());
+        return Collections.newSetFromMap(new ConcurrentHashMap<>());
     }
 
     public CacheConfiguration<K, V> setKeyType(Class<K> keyType) {

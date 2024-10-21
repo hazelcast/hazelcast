@@ -1053,7 +1053,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 if (cacheWriter.exists()) {
                     Object objKey = dataToValue(key);
                     Object objValue = toValue(value);
-                    cacheWriter.get().write(new CacheEntry<Object, Object>(objKey, objValue));
+                    cacheWriter.get().write(new CacheEntry<>(objKey, objValue));
                 }
             } catch (Exception e) {
                 if (!(e instanceof CacheWriterException)) {

@@ -51,7 +51,7 @@ public class LazyIteratorTest extends HazelcastTestSupport {
         TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<>();
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
-            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1));
+            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<>(key, i, -1));
             TEST_DATA_SIMPLE.incrementVersion();
         }
     }

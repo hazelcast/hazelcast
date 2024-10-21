@@ -60,7 +60,7 @@ public final class TestTaskExecutorUtil {
     public static <T> T runOnPartitionThread(HazelcastInstance instance, final Callable<T> task, final int partitionId) {
         OperationServiceImpl operationService = getNodeEngineImpl(instance).getOperationService();
         BlockingQueue<Object> resultQueue = new ArrayBlockingQueue<>(1);
-        operationService.execute(new PartitionSpecificRunnableWithResultQueue<T>(partitionId, task, resultQueue));
+        operationService.execute(new PartitionSpecificRunnableWithResultQueue<>(partitionId, task, resultQueue));
         try {
             Object result = resultQueue.poll(TIMEOUT_SECONDS, SECONDS);
             if (result instanceof Throwable throwable) {

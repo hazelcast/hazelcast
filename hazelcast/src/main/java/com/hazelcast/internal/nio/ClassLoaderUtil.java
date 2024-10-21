@@ -426,7 +426,7 @@ public final class ClassLoaderUtil {
                     innerCache = old;
                 }
             }
-            innerCache.put(className, new WeakReference<V>(value));
+            innerCache.put(className, new WeakReference<>(value));
         }
 
         public V get(ClassLoader classloader, String className) {

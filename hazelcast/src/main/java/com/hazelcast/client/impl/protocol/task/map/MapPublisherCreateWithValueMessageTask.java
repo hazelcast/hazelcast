@@ -121,7 +121,7 @@ public class MapPublisherCreateWithValueMessageTask
         InflatableSet.Builder<Map.Entry<Data, Data>> builder = InflatableSet.newBuilder(numOfEntries);
         for (Object result : results) {
             for (QueryResultRow row : (QueryResult) result) {
-                builder.add(new AbstractMap.SimpleEntry<Data, Data>(row.getKey(), row.getValue()));
+                builder.add(new AbstractMap.SimpleEntry<>(row.getKey(), row.getValue()));
             }
         }
         return builder.build();

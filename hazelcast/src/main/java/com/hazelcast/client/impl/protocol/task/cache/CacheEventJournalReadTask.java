@@ -66,7 +66,7 @@ public class CacheEventJournalReadTask<K, V, T>
         final Function<? super EventJournalCacheEvent<K, V>, T> projection
                 = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalCacheEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
-        return new CacheEventJournalReadOperation<K, V, T>(parameters.name,
+        return new CacheEventJournalReadOperation<>(parameters.name,
                 parameters.startSequence, parameters.minSize, parameters.maxSize, predicate, projection);
     }
 

@@ -87,7 +87,7 @@ public class TestClientSubscriberContext extends ClientSubscriberContext {
 
     private class TestSubscriberAccumulator extends SubscriberAccumulator {
 
-        private final Set<Long> lostSequenceNumber = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+        private final Set<Long> lostSequenceNumber = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
         TestSubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
             super(context, info);

@@ -119,7 +119,7 @@ public class ClientReplicatedMapNearCacheLeakTest extends AbstractNearCacheLeakT
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<>(clientMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager);
     }

@@ -233,7 +233,7 @@ public final class LongHashSet implements Set<Long> {
     }
 
     private <E> boolean containsAllCapture(Collection<E> coll) {
-        return conjunction(coll, new Predicate<E>() {
+        return conjunction(coll, new Predicate<>() {
             @Override
             public boolean test(E value) {
                 return contains(value);
@@ -295,7 +295,7 @@ public final class LongHashSet implements Set<Long> {
     }
 
     private <E> boolean removeAllCapture(final Collection<E> coll) {
-        return conjunction(coll, new Predicate<E>() {
+        return conjunction(coll, new Predicate<>() {
             @Override
             public boolean test(E value) {
                 return remove(value);

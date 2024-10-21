@@ -304,7 +304,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         DiscoveryConfig actual = newConfigViaGenerator().getNetworkConfig().getDiscoveryConfig();
         assertEquals(expected.getNodeFilterClass(), actual.getNodeFilterClass());
         assertCollection(expected.getDiscoveryStrategyConfigs(), actual.getDiscoveryStrategyConfigs(),
-                new Comparator<DiscoveryStrategyConfig>() {
+                new Comparator<>() {
                     @Override
                     public int compare(DiscoveryStrategyConfig o1, DiscoveryStrategyConfig o2) {
                         assertMap(o1.getProperties(), o2.getProperties());

@@ -64,7 +64,7 @@ public class MapEventJournalReadTask<K, V, T>
     protected Operation prepareOperation() {
         final Function<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
-        return new MapEventJournalReadOperation<K, V, T>(
+        return new MapEventJournalReadOperation<>(
                 parameters.name, parameters.startSequence, parameters.minSize,
                 parameters.maxSize, predicate, projection);
     }

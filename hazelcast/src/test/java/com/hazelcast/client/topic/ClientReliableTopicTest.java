@@ -253,7 +253,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         final CountDownLatch messageArrived = new CountDownLatch(publishCount);
         ITopic<String> topic = client.getReliableTopic(topicName);
-        final UUID id = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+        final UUID id = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<>() {
             @Override
             public void onMessage(Message<String> message) {
                 messageArrived.countDown();

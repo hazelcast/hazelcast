@@ -44,7 +44,7 @@ public class DefaultValueCollector implements ValueCollector {
         if (value != null) {
             return value;
         } else if (values != null) {
-            return new MultiResult<Object>(values);
+            return new MultiResult<>(values);
         } else {
             return null;
         }

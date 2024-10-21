@@ -147,7 +147,7 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
                 .setDataInstance(member)
-                .setDataAdapter(new ReplicatedMapDataStructureAdapter<K, V>(memberMap))
+                .setDataAdapter(new ReplicatedMapDataStructureAdapter<>(memberMap))
                 .build();
     }
 
@@ -177,7 +177,7 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<>(clientMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager);
     }

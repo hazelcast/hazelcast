@@ -78,7 +78,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
 
     /** Cache for split brain protection config names */
     private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<>(
-        new ConstructorFunction<String, Object>() {
+        new ConstructorFunction<>() {
             @Override
             public Object createNew(String name) {
                 final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);

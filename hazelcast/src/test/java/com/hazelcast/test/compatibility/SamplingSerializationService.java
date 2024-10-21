@@ -271,7 +271,7 @@ public class SamplingSerializationService implements InternalSerializationServic
 
     private static void addSerializedSample(Object obj, byte[] bytes) {
         String className = obj.getClass().getName();
-        SERIALIZED_SAMPLES_PER_CLASS_NAME.putIfAbsent(className, new CopyOnWriteArrayList<byte[]>());
+        SERIALIZED_SAMPLES_PER_CLASS_NAME.putIfAbsent(className, new CopyOnWriteArrayList<>());
         List<byte[]> samples = SERIALIZED_SAMPLES_PER_CLASS_NAME.get(className);
         if (samples.size() < MAX_SERIALIZED_SAMPLES_PER_CLASS) {
             samples.add(bytes);

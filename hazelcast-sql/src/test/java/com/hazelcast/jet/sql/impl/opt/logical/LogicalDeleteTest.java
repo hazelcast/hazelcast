@@ -98,7 +98,7 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
 
         int[] inputRefFound = new int[1];
         extractHazelcastTable(logicalRel.getInput(0)).getFilter().accept(
-                new RexVisitorImpl<Object>(true) {
+                new RexVisitorImpl<>(true) {
                     @Override
                     public Object visitInputRef(RexInputRef inputRef) {
                         // indexes are determined by IMap predefined row structure

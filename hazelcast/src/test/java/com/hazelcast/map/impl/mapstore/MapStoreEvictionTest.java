@@ -233,9 +233,9 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
     private static class RecordingMapStore implements MapStore<String, String> {
 
-        private ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
-        private ConcurrentHashMap<String, AtomicInteger> loadCounts = new ConcurrentHashMap<String, AtomicInteger>();
-        private ConcurrentHashMap<String, AtomicInteger> storeCounts = new ConcurrentHashMap<String, AtomicInteger>();
+        private ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
+        private ConcurrentHashMap<String, AtomicInteger> loadCounts = new ConcurrentHashMap<>();
+        private ConcurrentHashMap<String, AtomicInteger> storeCounts = new ConcurrentHashMap<>();
 
         public ConcurrentHashMap<String, AtomicInteger> getLoadCounts() {
             return loadCounts;
@@ -250,9 +250,9 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
-            List<String> keysList = new ArrayList<String>(keys);
+            List<String> keysList = new ArrayList<>(keys);
             Collections.sort(keysList);
-            Map<String, String> result = new HashMap<String, String>();
+            Map<String, String> result = new HashMap<>();
             for (String key : keys) {
                 String value = store.get(key);
                 incrementCount(loadCounts, key);
