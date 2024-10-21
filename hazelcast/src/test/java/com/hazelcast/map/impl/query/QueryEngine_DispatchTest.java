@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -117,7 +116,7 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
     }
 
-    private Object toObject(Data data) {
+    private Object toObject(Object data) {
         return getSerializationService(instance).toObject(data);
     }
 

@@ -16,6 +16,11 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
 import com.hazelcast.instance.impl.Node;
@@ -26,11 +31,6 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.SecurityInterceptorConstants;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 public class MapEntriesWithPredicateMessageTask
         extends DefaultMapQueryMessageTask<MapEntriesWithPredicateCodec.RequestParameters> {
 
@@ -40,7 +40,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        return new ArrayList<Map.Entry<Data, Data>>(result);
+        return new ArrayList<Map.Entry<Data, Object>>(result);
     }
 
     @Override

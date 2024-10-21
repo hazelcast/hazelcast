@@ -84,7 +84,7 @@ public class MapFetchWithQueryMessageTask
 
         List<Data> serialized = new ArrayList<>(queryResult.size());
         for (QueryResultRow row : queryResult) {
-            serialized.add(row.getValue());
+            serialized.add(serializationService.toData(row.getValue()));
         }
         IterationPointer[] pointers = resp.getPointers();
         return MapFetchWithQueryCodec.encodeResponse(serialized, encodePointers(pointers));

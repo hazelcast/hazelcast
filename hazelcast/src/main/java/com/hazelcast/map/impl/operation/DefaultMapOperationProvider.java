@@ -59,7 +59,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+    public MapOperation createPutOperation(String name, Data key, Object value, long ttl, long maxIdle) {
         if (hasNoExpiry(ttl, maxIdle)) {
             return new PutOperation(name, key, value);
         } else {
@@ -72,7 +72,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+    public MapOperation createSetOperation(String name, Data dataKey, Object value, long ttl, long maxIdle) {
         if (hasNoExpiry(ttl, maxIdle)) {
             return new SetOperation(name, dataKey, value);
         } else {

@@ -27,7 +27,7 @@ public class PutTransientBackupOperation extends PutBackupOperation {
     }
 
     public PutTransientBackupOperation(String name, Data dataKey,
-                                       Record<Data> record, Data dataValue,
+                                       Record<Data> record, Object dataValue,
                                        ExpiryMetadata expiryMetadata) {
         super(name, dataKey, record, dataValue, expiryMetadata);
     }

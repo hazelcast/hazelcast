@@ -197,12 +197,12 @@ public class ReplicatedMapEventPublishingService
                 entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }
 
-    public void fireEntryListenerEvent(Data key, Data oldValue, Data value, String name, Address caller) {
+    public void fireEntryListenerEvent(Data key, Data oldValue, Object value, String name, Address caller) {
         EntryEventType eventType = value == null ? REMOVED : oldValue == null ? ADDED : UPDATED;
         fireEntryListenerEvent(key, oldValue, value, eventType, name, caller);
     }
 
-    public void fireEntryListenerEvent(Data key, Data oldValue, Data value, EntryEventType eventType, String name,
+    public void fireEntryListenerEvent(Data key, Data oldValue, Object value, EntryEventType eventType, String name,
                                        Address caller) {
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (registrations.isEmpty()) {
@@ -217,10 +217,10 @@ public class ReplicatedMapEventPublishingService
         }
     }
 
-    private boolean shouldPublish(Data key, Data oldValue, Data value, EntryEventType eventType, EventFilter filter) {
+    private boolean shouldPublish(Data key, Object oldValue, Object value, EntryEventType eventType, EventFilter filter) {
         QueryEntry queryEntry = null;
         if (filter instanceof ReplicatedQueryEventFilter) {
-            Data testValue;
+            Object testValue;
             if (eventType == REMOVED) {
                 testValue = oldValue;
             } else {

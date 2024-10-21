@@ -122,7 +122,7 @@ public class PutAllOperation extends MapOperation
     }
 
     // protected for testing purposes
-    protected void put(Data dataKey, Data dataValue) {
+    protected void put(Data dataKey, Object dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
 
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
@@ -185,7 +185,7 @@ public class PutAllOperation extends MapOperation
      * when requested by user and there are map listeners are registered.
      * Otherwise call recordStore.set()
      */
-    private Object putToRecordStore(Data dataKey, Data dataValue) {
+    private Object putToRecordStore(Data dataKey, Object dataValue) {
         if (triggerMapLoader && hasMapListener) {
             return recordStore.put(dataKey, dataValue, UNSET, UNSET);
         }
@@ -200,7 +200,7 @@ public class PutAllOperation extends MapOperation
         super.afterRunInternal();
     }
 
-    public Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
+    public Object getValueOrPostProcessedValue(Data dataKey, Object dataValue) {
         if (!isPostProcessingOrHasInterceptor(recordStore)) {
             return dataValue;
         }

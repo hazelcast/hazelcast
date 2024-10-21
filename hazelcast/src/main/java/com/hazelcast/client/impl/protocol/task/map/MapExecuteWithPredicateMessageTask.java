@@ -93,7 +93,7 @@ public class MapExecuteWithPredicateMessageTask
     }
 
     protected Object reduce(Map<Integer, Object> map) {
-        List<Map.Entry<Data, Data>> dataMap = new ArrayList<>();
+        List<Map.Entry<Data, Object>> dataMap = new ArrayList<>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
@@ -111,7 +111,9 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteWithPredicateCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
+        var list = (List<Map.Entry<Data, Object>>) response;
+        return MapExecuteWithPredicateCodec.encodeResponse(list.stream()
+                .map(e -> Map.entry(e.getKey(), serializationService.<Data>toData(e.getValue()))).toList());
     }
 
     @Override

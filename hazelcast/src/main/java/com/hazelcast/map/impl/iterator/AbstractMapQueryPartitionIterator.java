@@ -16,21 +16,20 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.internal.iteration.IterationPointer;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.query.Query;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 /**
  * Base class for iterating a partition with a {@link Predicate} and a {@link Projection}.
@@ -64,7 +63,7 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
     protected int index;
     protected int currentIndex = -1;
 
-    protected List<Data> segment;
+    protected List<Object> segment;
 
     public AbstractMapQueryPartitionIterator(IMap<K, V> map,
                                              int fetchSize,
@@ -130,17 +129,17 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
      * @param segment  the iteration response
      * @param pointers the pointers defining the state of iteration
      */
-    protected void setLastTableIndex(List<Data> segment, IterationPointer[] pointers) {
+    protected void setLastTableIndex(List<Object> segment, IterationPointer[] pointers) {
         if (isNotEmpty(segment)) {
             this.pointers = pointers;
         }
     }
 
-    protected abstract List<Data> fetch();
+    protected abstract List<Object> fetch();
 
     protected abstract SerializationService getSerializationService();
 
-    private Data getQueryResult(int index) {
+    private Object getQueryResult(int index) {
         if (segment != null) {
             return segment.get(index);
         }

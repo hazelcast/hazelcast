@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.core.AggregatorCloneable;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -42,7 +42,12 @@ public class AggregationResultProcessor implements ResultProcessor<AggregationRe
 
     @Override
     public AggregationResult populateResult(Query query, long resultLimit) {
-        Aggregator resultAggregator = serializationService.toObject(serializationService.toData(query.getAggregator()));
+        var resultAggregator = query.getAggregator();
+        if (resultAggregator instanceof AggregatorCloneable cloneable) {
+            resultAggregator = cloneable.cloneAggregator();
+        } else {
+            resultAggregator = serializationService.toObject(serializationService.toData(query.getAggregator()));
+        }
         return new AggregationResult(resultAggregator, serializationService);
     }
 }

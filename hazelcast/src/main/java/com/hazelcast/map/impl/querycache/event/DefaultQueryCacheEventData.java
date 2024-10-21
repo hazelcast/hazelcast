@@ -16,20 +16,20 @@
 
 package com.hazelcast.map.impl.querycache.event;
 
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.nio.serialization.impl.Versioned;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 import java.io.IOException;
 import java.util.Objects;
 
-import static com.hazelcast.internal.cluster.Versions.V5_4;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 /**
  * Default implementation of {@link QueryCacheEventData} which is sent to subscriber.
@@ -41,8 +41,8 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData, Versione
     private Object key;
     private Object value;
     private Data dataKey;
-    private Data dataNewValue;
-    private Data dataOldValue;
+    private Object dataNewValue;
+    private Object dataOldValue;
     private long sequence;
     private SerializationService serializationService;
     private final long creationTime;
@@ -91,12 +91,24 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData, Versione
 
     @Override
     public Data getDataNewValue() {
-        return dataNewValue;
+        if (dataNewValue == null) {
+            return null;
+        }
+        if (dataNewValue instanceof Data) {
+            return (Data) dataNewValue;
+        }
+        return serializationService.toData(dataNewValue);
     }
 
     @Override
     public Data getDataOldValue() {
-        return dataOldValue;
+        if (dataOldValue == null) {
+            return null;
+        }
+        if (dataOldValue instanceof Data) {
+            return (Data) dataOldValue;
+        }
+        return serializationService.toData(dataOldValue);
     }
 
     @Override
@@ -136,11 +148,11 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData, Versione
         this.value = value;
     }
 
-    public void setDataNewValue(Data dataNewValue) {
+    public void setDataNewValue(Object dataNewValue) {
         this.dataNewValue = dataNewValue;
     }
 
-    public void setDataOldValue(Data dataOldValue) {
+    public void setDataOldValue(Object dataOldValue) {
         this.dataOldValue = dataOldValue;
     }
 
@@ -180,7 +192,7 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData, Versione
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(sequence);
         IOUtil.writeData(out, dataKey);
-        IOUtil.writeData(out, dataNewValue);
+        out.writeObject(dataNewValue);
         out.writeInt(eventType);
         out.writeInt(partitionId);
 
@@ -194,7 +206,7 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData, Versione
     public void readData(ObjectDataInput in) throws IOException {
         this.sequence = in.readLong();
         this.dataKey = IOUtil.readData(in);
-        this.dataNewValue = IOUtil.readData(in);
+        this.dataNewValue = in.readObject();
         this.eventType = in.readInt();
         this.partitionId = in.readInt();
 

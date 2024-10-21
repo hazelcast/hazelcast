@@ -157,7 +157,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data putInternal(Object key, Data valueData, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected Object putInternal(Object key, Object valueData, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.putInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -267,7 +267,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void setInternal(Object key, Data valueData, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected void setInternal(Object key, Object valueData, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             super.setInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -559,13 +559,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> resultingKeyValuePairs) {
+    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate,
+                                         List<Object> resultingKeyValuePairs) {
         try {
             super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
         } finally {
             if (!(entryProcessor instanceof ReadOnly)) {
                 for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
-                    Data key = resultingKeyValuePairs.get(i);
+                    Data key = (Data) resultingKeyValuePairs.get(i);
                     invalidateNearCache(serializeKeys ? key : toObject(key));
                 }
             }

@@ -513,10 +513,9 @@ public class MapChunk extends Operation
 
             Data dataKey = entry.getKey();
             Record record = entry.getValue();
-            Data dataValue = ss.toData(record.getValue());
 
             IOUtil.writeData(out, dataKey);
-            Records.writeRecord(out, record, dataValue);
+            Records.writeRecord(out, record);
             Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
             recordCount++;
 

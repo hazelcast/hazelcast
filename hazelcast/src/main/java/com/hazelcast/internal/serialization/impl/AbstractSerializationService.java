@@ -21,6 +21,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -325,11 +326,13 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final void writeObject(final ObjectDataOutput out, final Object obj) {
-        if (obj instanceof Data) {
-            throw new HazelcastSerializationException("Cannot write a Data instance, use writeData() instead");
-        }
-        SerializerAdapter serializer = serializerFor(obj, false);
         try {
+            if (obj instanceof Data) {
+                out.writeInt(Integer.MIN_VALUE);
+                IOUtil.writeData(out, (Data) obj);
+                return;
+            }
+            SerializerAdapter serializer = serializerFor(obj, false);
             out.writeInt(serializer.getTypeId());
             serializer.write(out, obj);
         } catch (Throwable e) {
@@ -345,6 +348,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 typeId = input.readInt(BIG_ENDIAN);
             } else {
                 typeId = in.readInt();
+            }
+            if (typeId == Integer.MIN_VALUE) {
+                return (T) IOUtil.readData(in);
             }
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {

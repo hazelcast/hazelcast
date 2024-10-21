@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.core.AggregatorCloneable;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -90,7 +91,12 @@ public class AggregationResult implements Result<AggregationResult> {
 
     @Override
     public AggregationResult createSubResult() {
-        Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
+        var aggregatorClone = aggregator;
+        if (aggregatorClone instanceof AggregatorCloneable cloneable) {
+            aggregatorClone = cloneable.cloneAggregator();
+        } else {
+            aggregatorClone = serializationService.toObject(serializationService.toData(aggregatorClone));
+        }
         return new AggregationResult(aggregatorClone, serializationService);
     }
 

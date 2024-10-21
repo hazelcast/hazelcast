@@ -57,8 +57,8 @@ public enum PutAllOpSteps implements IMapOpStep {
             List<Data> keysToLoadOldValue = loadOldValue ? new ArrayList<>() : Collections.emptyList();
 
             Map batchMap = createHashMap(mapEntries.size());
-            List<Map.Entry<Data, Data>> entries = mapEntries.entries();
-            for (Map.Entry<Data, Data> entry : entries) {
+            List<Map.Entry<Data, Object>> entries = mapEntries.entries();
+            for (Map.Entry<Data, Object> entry : entries) {
                 if (loadOldValue && recordStore.getRecord(entry.getKey()) == null) {
                     keysToLoadOldValue.add(entry.getKey());
                 }
@@ -137,7 +137,7 @@ public enum PutAllOpSteps implements IMapOpStep {
             boolean triggerMapLoader = state.isTriggerMapLoader();
 
             MapEntries mapEntries = state.getMapEntries();
-            List<Map.Entry<Data, Data>> entries = mapEntries.entries();
+            List<Map.Entry<Data, Object>> entries = mapEntries.entries();
 
             Map<Data, Object> oldValueByKey = new HashMap<>();
             Map result = (Map) state.getResult();
@@ -154,7 +154,7 @@ public enum PutAllOpSteps implements IMapOpStep {
                 loadedOldValuesPerKey.put(key, biTuple.element1);
             }
 
-            for (Map.Entry<Data, Data> entry : entries) {
+            for (Map.Entry<Data, Object> entry : entries) {
                 Object oldValue = null;
                 if (loadOldValue) {
                     oldValue = loadedOldValuesPerKey.get(entry.getKey());
@@ -199,8 +199,8 @@ public enum PutAllOpSteps implements IMapOpStep {
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             PutAllOperation operation = (PutAllOperation) state.getOperation();
 
-            List<Map.Entry<Data, Data>> entries = state.getMapEntries().entries();
-            for (Map.Entry<Data, Data> entry : entries) {
+            List<Map.Entry<Data, Object>> entries = state.getMapEntries().entries();
+            for (Map.Entry<Data, Object> entry : entries) {
                 // it is possible that forced-eviction can delete some
                 // entries, and we find some entries are missing.
                 if (recordStore.getRecord(entry.getKey()) == null) {
@@ -210,7 +210,7 @@ public enum PutAllOpSteps implements IMapOpStep {
                 Data dataKey = entry.getKey();
                 Object newValue = entry.getValue();
 
-                Data dataValue = operation.getValueOrPostProcessedValue(dataKey, (Data) newValue);
+                Object dataValue = operation.getValueOrPostProcessedValue(dataKey, (Data) newValue);
                 mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
 
                 if (operation.isHasMapListener()) {

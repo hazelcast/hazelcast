@@ -82,7 +82,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
         eventData.setSerializationService(serializationService);
 
         Data keyData = eventData.getDataKey();
-        Data valueData = includeValue ? eventData.getDataNewValue() : null;
+        Object valueData = includeValue ? eventData.getDataNewValue() : null;
 
         int eventType = eventData.getEventType();
         EntryEventType entryEventType = EntryEventType.getByType(eventType);

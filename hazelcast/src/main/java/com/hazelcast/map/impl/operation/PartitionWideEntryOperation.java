@@ -169,7 +169,7 @@ public class PartitionWideEntryOperation extends MapOperation
         keysFromIndex = new HashSet<>();
         for (QueryableEntry entry : entries) {
             keysFromIndex.add(entry.getKeyData());
-            Data response = operator.operateOnKey(entry.getKeyData()).doPostOperateOps().getResult();
+            Object response = operator.operateOnKey(entry.getKeyData()).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(entry.getKeyData(), response);
             }
@@ -182,7 +182,7 @@ public class PartitionWideEntryOperation extends MapOperation
         responses = new MapEntries(recordStore.size());
         operator = operator(this, entryProcessor, getPredicate());
         recordStore.forEach((dataKey, record) -> {
-            Data response = operator.operateOnKey(dataKey).doPostOperateOps().getResult();
+            Object response = operator.operateOnKey(dataKey).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(dataKey, response);
             }
@@ -200,7 +200,7 @@ public class PartitionWideEntryOperation extends MapOperation
         recordStore.forEach((key, record) -> {
             Data dataKey = toHeapData(key);
 
-            Data response = operator.operateOnKey(dataKey).getResult();
+            Object response = operator.operateOnKey(dataKey).getResult();
             if (response != null) {
                 responses.add(dataKey, response);
             }

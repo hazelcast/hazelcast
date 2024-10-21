@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Immutable;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
@@ -391,7 +392,7 @@ public class EntryOperation extends LockAwareOperation
     }
 
     @Nullable
-    public Data convertOldValueToHeapData(Object oldValue) {
+    public Object convertOldValueToHeapData(Object oldValue) {
         assert ThreadUtil.isRunningOnPartitionThread();
 
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
@@ -399,10 +400,14 @@ public class EntryOperation extends LockAwareOperation
             case NATIVE:
                 return toHeapData((Data) oldValue);
             case OBJECT:
-                return getNodeEngine().getSerializationService()
+                if (Immutable.isImmutable(oldValue)) {
+                    return oldValue;
+                } else {
+                    return getNodeEngine().getSerializationService()
                         .toData(oldValue);
+                }
             case BINARY:
-                return (Data) oldValue;
+                return oldValue;
             default:
                 throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
         }
@@ -444,7 +449,7 @@ public class EntryOperation extends LockAwareOperation
         private void executeReadOnlyEntryProcessor(final Object oldValue, String executorName) {
             doExecute(executorName, () -> {
                 try {
-                    Data result = operator(EntryOperation.this, entryProcessor)
+                    Object result = operator(EntryOperation.this, entryProcessor)
                             .operateOnKeyValue(dataKey, oldValue).getResult();
                     sendResponse(result);
                 } catch (Throwable t) {
@@ -472,7 +477,7 @@ public class EntryOperation extends LockAwareOperation
                     try {
                         EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
                                 .operateOnKeyValue(dataKey, oldValue);
-                        Data result = entryOperator.getResult();
+                        Object result = entryOperator.getResult();
                         EntryEventType modificationType = entryOperator.getEventType();
                         if (modificationType != null) {
                             long newTtl = entryOperator.getEntry().getNewTtl();

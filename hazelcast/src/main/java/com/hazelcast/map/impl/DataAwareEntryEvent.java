@@ -53,6 +53,19 @@ public class DataAwareEntryEvent<K, V> extends EntryEvent<K, V> {
         this.serializationService = serializationService;
     }
 
+    public DataAwareEntryEvent(Member from, int eventType,
+                               String source, Data dataKey,
+                               Object dataNewValue, Object dataOldValue,
+                               Object dataMergingValue,
+                               SerializationService serializationService) {
+        super(source, from, eventType, null, null);
+        this.dataKey = dataKey;
+        this.dataNewValue = serializationService.toData(dataNewValue);
+        this.dataOldValue = serializationService.toData(dataOldValue);
+        this.dataMergingValue = serializationService.toData(dataMergingValue);
+        this.serializationService = serializationService;
+    }
+
     public Data getKeyData() {
         return dataKey;
     }

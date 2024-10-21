@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.querycache.event;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 /**
  * Builder for creating a serializable event data for query cache system.
@@ -26,8 +26,8 @@ public final class QueryCacheEventDataBuilder {
 
     private long sequence;
     private Data dataKey;
-    private Data dataNewValue;
-    private Data dataOldValue;
+    private Object dataNewValue;
+    private Object dataOldValue;
     private int eventType;
     private int partitionId;
     private InternalSerializationService serializationService;
@@ -47,12 +47,12 @@ public final class QueryCacheEventDataBuilder {
         return this;
     }
 
-    public QueryCacheEventDataBuilder withDataNewValue(Data dataNewValue) {
+    public QueryCacheEventDataBuilder withDataNewValue(Object dataNewValue) {
         this.dataNewValue = includeValue ? dataNewValue : null;
         return this;
     }
 
-    public QueryCacheEventDataBuilder withDataOldValue(Data dataOldValue) {
+    public QueryCacheEventDataBuilder withDataOldValue(Object dataOldValue) {
         this.dataOldValue = includeValue ? dataOldValue : null;
         return this;
     }

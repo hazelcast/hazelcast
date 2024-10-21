@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.serialization.Data;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -32,7 +31,7 @@ import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
  * @see CachedSimpleRecordWithLFUEviction
  * @see CachedSimpleRecordWithLRUEviction
  */
-class CachedSimpleRecord extends SimpleRecord<Data> {
+class CachedSimpleRecord extends SimpleRecord<Object> {
     private static final AtomicReferenceFieldUpdater<CachedSimpleRecord, Object> CACHED_VALUE =
             AtomicReferenceFieldUpdater.newUpdater(CachedSimpleRecord.class, Object.class, "cachedValue");
 
@@ -41,7 +40,7 @@ class CachedSimpleRecord extends SimpleRecord<Data> {
     CachedSimpleRecord() {
     }
 
-    CachedSimpleRecord(Data value) {
+    CachedSimpleRecord(Object value) {
         super(value);
     }
 
@@ -51,7 +50,7 @@ class CachedSimpleRecord extends SimpleRecord<Data> {
     }
 
     @Override
-    public void setValue(Data o) {
+    public void setValue(Object o) {
         super.setValue(o);
         cachedValue = null;
     }

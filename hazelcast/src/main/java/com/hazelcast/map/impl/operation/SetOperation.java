@@ -32,7 +32,7 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     public SetOperation() {
     }
 
-    public SetOperation(String name, Data dataKey, Data value) {
+    public SetOperation(String name, Data dataKey, Object value) {
         super(name, dataKey, value);
     }
 

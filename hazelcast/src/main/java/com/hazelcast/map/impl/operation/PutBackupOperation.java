@@ -34,11 +34,11 @@ public class PutBackupOperation
 
     protected Record<Data> record;
     protected Data dataKey;
-    protected Data dataValue;
+    protected Object dataValue;
     protected ExpiryMetadata expiryMetadata;
 
     public PutBackupOperation(String name, Data dataKey,
-                              Record<Data> record, Data dataValue,
+                              Record<Data> record, Object dataValue,
                               ExpiryMetadata expiryMetadata) {
         super(name);
         this.dataKey = dataKey;
@@ -85,7 +85,7 @@ public class PutBackupOperation
         super.writeInternal(out);
 
         IOUtil.writeData(out, dataKey);
-        Records.writeRecord(out, record, dataValue);
+        Records.writeRecord(out, record);
         Records.writeExpiry(out, expiryMetadata);
     }
 

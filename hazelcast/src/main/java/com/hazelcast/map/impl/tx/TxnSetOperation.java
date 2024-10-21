@@ -163,10 +163,9 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
-        dataValue = getValueOrPostProcessedValue(record, dataValue);
+        var dataValue = getValueOrPostProcessedValue(record, this.dataValue);
         ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
-        return new TxnSetBackupOperation(name, dataKey,
-                record, dataValue, expiryMetadata, transactionId);
+        return new TxnSetBackupOperation(name, dataKey, record, dataValue, expiryMetadata, transactionId);
     }
 
     @Override

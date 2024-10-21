@@ -32,7 +32,7 @@ public class PutWithExpiryOperation extends PutOperation {
     }
 
     public PutWithExpiryOperation(String name, Data dataKey,
-                                  Data value, long ttl, long maxIdle) {
+                                  Object value, long ttl, long maxIdle) {
         super(name, dataKey, value);
         this.ttl = ttl;
         this.maxIdle = maxIdle;

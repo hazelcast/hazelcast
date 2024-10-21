@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOpe
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -70,7 +71,7 @@ public class MapPublisherCreateWithValueMessageTask
         List<Future> snapshotFutures = NamespaceUtil.callWithNamespace(nodeEngine,
                 MapService.lookupNamespace(nodeEngine, parameters.mapName),
                 () -> createPublishersAndGetSnapshotOf(members));
-        return fetchMapSnapshotFrom(snapshotFutures);
+        return fetchMapSnapshotFrom(snapshotFutures, serializationService);
     }
 
     private List<Future> createPublishersAndGetSnapshotOf(Collection<MemberImpl> members) {
@@ -95,7 +96,8 @@ public class MapPublisherCreateWithValueMessageTask
         return futures;
     }
 
-    private static Set<Map.Entry<Data, Data>> fetchMapSnapshotFrom(List<Future> futures) {
+    private static Set<Map.Entry<Data, Data>> fetchMapSnapshotFrom(List<Future> futures,
+                                                                   InternalSerializationService serializationService) {
         List<Object> queryResults = new ArrayList<>(futures.size());
         int queryResultSize = 0;
 
@@ -114,14 +116,15 @@ public class MapPublisherCreateWithValueMessageTask
             queryResultSize += ((QueryResult) result).size();
         }
 
-        return unpackResults(queryResults, queryResultSize);
+        return unpackResults(queryResults, queryResultSize, serializationService);
     }
 
-    private static Set<Map.Entry<Data, Data>> unpackResults(List<Object> results, int numOfEntries) {
+    private static Set<Map.Entry<Data, Data>> unpackResults(List<Object> results, int numOfEntries,
+                                                            InternalSerializationService serializationService) {
         InflatableSet.Builder<Map.Entry<Data, Data>> builder = InflatableSet.newBuilder(numOfEntries);
         for (Object result : results) {
             for (QueryResultRow row : (QueryResult) result) {
-                builder.add(new AbstractMap.SimpleEntry<Data, Data>(row.getKey(), row.getValue()));
+                builder.add(new AbstractMap.SimpleEntry<>(row.getKey(), serializationService.toData(row.getValue())));
             }
         }
         return builder.build();

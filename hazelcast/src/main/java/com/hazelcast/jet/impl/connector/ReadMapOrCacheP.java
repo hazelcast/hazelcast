@@ -685,7 +685,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     }
 
     static class RemoteMapQueryReader
-            extends Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Data> {
+            extends Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Object> {
 
         private final Predicate predicate;
         private final Projection projection;
@@ -697,7 +697,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                 @Nonnull Predicate predicate,
                 @Nonnull Projection projection
         ) {
-            super(mapName, r -> decodePointers(r.iterationPointers), r -> r.results);
+            super(mapName, r -> decodePointers(r.iterationPointers), r -> (List) r.results);
             this.predicate = predicate;
             this.projection = projection;
             this.clientMapProxy = (ClientMapProxy) hzInstance.getMap(mapName);
@@ -730,7 +730,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Nullable
         @Override
-        public Object toObject(@Nonnull Data data) {
+        public Object toObject(@Nonnull Object data) {
             return serializationService.toObject(data);
         }
     }

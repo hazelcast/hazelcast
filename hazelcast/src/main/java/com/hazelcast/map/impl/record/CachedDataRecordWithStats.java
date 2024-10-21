@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.serialization.Data;
-
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -35,12 +33,12 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
     CachedDataRecordWithStats() {
     }
 
-    CachedDataRecordWithStats(Data value) {
+    CachedDataRecordWithStats(Object value) {
         super(value);
     }
 
     @Override
-    public void setValue(Data o) {
+    public void setValue(Object o) {
         super.setValue(o);
         cachedValue = null;
     }

@@ -39,11 +39,11 @@ import java.util.UUID;
 @SuppressWarnings("MethodCount")
 public interface MapOperationProvider {
 
-    MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle);
+    MapOperation createPutOperation(String name, Data key, Object value, long ttl, long maxIdle);
 
     MapOperation createTryPutOperation(String name, Data dataKey, Data value, long timeout);
 
-    MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle);
+    MapOperation createSetOperation(String name, Data dataKey, Object value, long ttl, long maxIdle);
 
     MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle);
 

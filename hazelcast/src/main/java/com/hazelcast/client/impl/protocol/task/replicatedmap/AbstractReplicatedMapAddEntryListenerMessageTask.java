@@ -101,9 +101,9 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         DataAwareEntryEvent<Object, Object> dataAwareEntryEvent = (DataAwareEntryEvent<Object, Object>) event;
 
         Data key = dataAwareEntryEvent.getKeyData();
-        Data newValue = dataAwareEntryEvent.getNewValueData();
-        Data oldValue = dataAwareEntryEvent.getOldValueData();
-        Data mergingValue = dataAwareEntryEvent.getMergingValueData();
+        Object newValue = dataAwareEntryEvent.getNewValueData();
+        Object oldValue = dataAwareEntryEvent.getOldValueData();
+        Object mergingValue = dataAwareEntryEvent.getMergingValueData();
 
         ClientMessage clientMessage = encodeEvent(key
                 , newValue, oldValue, mergingValue, event.getEventType().getType(),
@@ -137,8 +137,8 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
 
-    protected abstract ClientMessage encodeEvent(Data key, Data newValue, Data oldValue,
-                                                 Data mergingValue, int type, UUID uuid, int numberOfAffectedEntries);
+    protected abstract ClientMessage encodeEvent(Data key, Object newValue, Object oldValue,
+                                                 Object mergingValue, int type, UUID uuid, int numberOfAffectedEntries);
 
     @Override
     public void entryAdded(EntryEvent<Object, Object> event) {

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -25,7 +26,7 @@ import com.hazelcast.map.impl.MapContainer;
 
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
-public class DataRecordFactory implements RecordFactory<Data> {
+public class DataRecordFactory implements RecordFactory<Object> {
 
     private final MapContainer mapContainer;
     private final SerializationService ss;
@@ -36,24 +37,26 @@ public class DataRecordFactory implements RecordFactory<Data> {
     }
 
     @Override
-    public Record<Data> newRecord(Data key, Object value) {
+    public Record<Object> newRecord(Data key, Object value) {
         MapConfig mapConfig = mapContainer.getMapConfig();
         boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
         CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
         boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
-
-        Data valueData = ss.toData(value);
+        if (mapConfig.getInMemoryFormat() != InMemoryFormat.OBJECT) {
+            value = ss.toData(value);
+        }
 
         switch (cacheDeserializedValues) {
             case NEVER:
-                return newSimpleRecord(valueData, mapConfig, perEntryStatsEnabled, hasEviction);
+                return newSimpleRecord(value, mapConfig, perEntryStatsEnabled, hasEviction);
             default:
-                return newCachedSimpleRecord(valueData, mapConfig, perEntryStatsEnabled, hasEviction);
+                return newCachedSimpleRecord(value, mapConfig, perEntryStatsEnabled, hasEviction);
         }
     }
 
-    private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
+    private Record<Object> newCachedSimpleRecord(Object valueData, MapConfig mapConfig,
                                                boolean perEntryStatsEnabled, boolean hasEviction) {
+
         if (perEntryStatsEnabled) {
             return new CachedDataRecordWithStats(valueData);
         }
@@ -77,7 +80,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
         return new CachedSimpleRecord(valueData);
     }
 
-    private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
+    private Record<Object> newSimpleRecord(Object valueData, MapConfig mapConfig,
                                          boolean perEntryStatsEnabled, boolean hasEviction) {
         if (perEntryStatsEnabled) {
             return new DataRecordWithStats(valueData);

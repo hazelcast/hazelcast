@@ -60,7 +60,7 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
         for (int i = 0; i < entries.size(); i++) {
             Data key = entries.getKey(i);
-            Data value = entries.getValue(i);
+            Object value = entries.getValue(i);
             if (partitionId != partitionService.getPartitionId(key)) {
                 continue;
             }
@@ -72,7 +72,7 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
         }
     }
 
-    private void publishReplicationMessage(Data key, Data value, VersionResponsePair response) {
+    private void publishReplicationMessage(Data key, Object value, VersionResponsePair response) {
         OperationService operationService = getNodeEngine().getOperationService();
         Collection<Member> members = getNodeEngine().getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         for (Member member : members) {

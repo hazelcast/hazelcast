@@ -374,13 +374,12 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     private void writeRecordStoreData(RecordStore<Record> recordStore, ObjectDataOutput out)
             throws IOException {
-        SerializationService ss = getSerializationService(recordStore.getMapContainer());
         out.writeInt(recordStore.size());
         // No expiration should be done in forEach, since we have serialized size before.
         recordStore.forEach((dataKey, record) -> {
             try {
                 IOUtil.writeData(out, dataKey);
-                Records.writeRecord(out, record, ss.toData(record.getValue()));
+                Records.writeRecord(out, record);
                 Records.writeExpiry(out, recordStore.getExpirySystem()
                         .getExpiryMetadata(dataKey));
             } catch (IOException e) {

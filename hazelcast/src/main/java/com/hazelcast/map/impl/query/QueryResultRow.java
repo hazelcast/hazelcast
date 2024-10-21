@@ -25,20 +25,21 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This interfaces provides methods related to entry of the query result.
  */
-public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Data, Data> {
+public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Data, Object> {
 
     private Data key;
-    private Data value;
+    private Object value;
 
     // needed for serialization
     public QueryResultRow() {
     }
 
-    public QueryResultRow(Data key, Data valueData) {
+    public QueryResultRow(Data key, Object valueData) {
         this.key = key;
         this.value = valueData;
     }
@@ -49,12 +50,12 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
     }
 
     @Override
-    public Data getValue() {
+    public Object getValue() {
         return value;
     }
 
     @Override
-    public Data setValue(Data value) {
+    public Object setValue(Object value) {
         return value;
     }
 
@@ -71,13 +72,13 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeData(out, key);
-        IOUtil.writeData(out, value);
+        out.writeObject(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readData(in);
-        value = IOUtil.readData(in);
+        value = in.readObject();
     }
 
     @Override
@@ -105,10 +106,6 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
 
     @Override
     public int hashCode() {
-        return hashCode(key) * 31 + hashCode(value);
-    }
-
-    private int hashCode(Data data) {
-        return data == null ? 0 : data.hashCode();
+        return Objects.hashCode(key) * 31 + Objects.hashCode(value);
     }
 }

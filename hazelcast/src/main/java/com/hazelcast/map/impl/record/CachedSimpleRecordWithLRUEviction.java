@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.TimeStripUtil.recomputeWithBaseTime;
@@ -35,7 +34,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
 class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
     private volatile int lastAccessTime;
 
-    CachedSimpleRecordWithLRUEviction(Data value) {
+    CachedSimpleRecordWithLRUEviction(Object value) {
         super(value);
     }
 

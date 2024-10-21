@@ -525,7 +525,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         return recordStore.getMapDataStore().getTxnReservedCapacityCounter();
     }
 
-    public final Data getValueOrPostProcessedValue(Record record, Data dataValue) {
+    public final Object getValueOrPostProcessedValue(Record record, Object dataValue) {
         if (!isPostProcessingOrHasInterceptor(recordStore)) {
             return dataValue;
         }

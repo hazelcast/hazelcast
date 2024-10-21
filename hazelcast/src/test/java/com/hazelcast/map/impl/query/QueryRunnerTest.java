@@ -20,7 +20,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.SetUtil;
 import com.hazelcast.map.IMap;
@@ -188,7 +187,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
         return mapService.getMapServiceContext().getMapQueryRunner(map.getName());
     }
 
-    private Object toObject(Data data) {
+    private Object toObject(Object data) {
         return getSerializationService(instance).toObject(data);
     }
 

@@ -56,7 +56,7 @@ public class MapExecuteOnKeysMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<>();
+        List<Map.Entry<Data, Object>> entries = new ArrayList<>();
 
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
@@ -91,7 +91,9 @@ public class MapExecuteOnKeysMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteOnKeysCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
+        var list = (List<Map.Entry<Data, Object>>) response;
+        return MapExecuteOnKeysCodec.encodeResponse(list.stream()
+                .map(e -> Map.entry(e.getKey(), serializationService.<Data>toData(e.getValue()))).toList());
     }
 
 

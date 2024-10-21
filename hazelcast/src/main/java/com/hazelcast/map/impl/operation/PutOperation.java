@@ -26,13 +26,13 @@ public class PutOperation extends BasePutOperation implements MutatingOperation 
     public PutOperation() {
     }
 
-    public PutOperation(String name, Data dataKey, Data value) {
+    public PutOperation(String name, Data dataKey, Object value) {
         super(name, dataKey, value);
     }
 
     @Override
     protected void runInternal() {
-        oldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, getTtl(), getMaxIdle()));
+        oldValue = recordStore.put(dataKey, dataValue, getTtl(), getMaxIdle());
     }
 
     @Override

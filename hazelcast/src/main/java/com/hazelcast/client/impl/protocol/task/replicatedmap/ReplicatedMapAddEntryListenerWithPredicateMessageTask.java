@@ -49,10 +49,11 @@ public class ReplicatedMapAddEntryListenerWithPredicateMessageTask
     }
 
     @Override
-    protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
+    protected ClientMessage encodeEvent(Data key, Object newValue, Object oldValue, Object mergingValue,
                                         int type, UUID uuid, int numberOfAffectedEntries) {
-        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeEntryEvent(key, newValue,
-                oldValue, mergingValue, type, uuid, numberOfAffectedEntries);
+        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeEntryEvent(key, serializationService.toData(newValue),
+                serializationService.toData(oldValue), serializationService.toData(mergingValue), type, uuid,
+                numberOfAffectedEntries);
     }
 
     @Override

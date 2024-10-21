@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.Immutable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -98,7 +99,7 @@ public final class EntryOperator {
      */
     private Object oldValueClone;
     private EntryEventType eventType;
-    private Data result;
+    private Object result;
     private LockAwareLazyMapEntry entry;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -262,7 +263,7 @@ public final class EntryOperator {
         return oldValueClone;
     }
 
-    public Data getResult() {
+    public Object getResult() {
         return result;
     }
 
@@ -333,8 +334,15 @@ public final class EntryOperator {
     }
 
     public Object extractNewValue() {
-        return inMemoryFormat == OBJECT
-                ? entry.getValue() : entry.getByPrioritizingDataValue();
+        if (inMemoryFormat == OBJECT) {
+            if (entry.getValue() instanceof Immutable) {
+                return entry.getValue();
+            } else {
+                return ss.toObject(ss.toData(entry.getValue()));
+            }
+        } else {
+            return entry.getByPrioritizingDataValue();
+        }
     }
 
     private void onRemove() {
@@ -400,7 +408,12 @@ public final class EntryOperator {
             return;
         }
 
-        result = ss.toData(entryProcessor.process(entry));
+        var processedEntry = entryProcessor.process(entry);
+        if (Immutable.isImmutable(processedEntry)) {
+            this.result = processedEntry;
+        } else {
+            this.result = ss.toData(processedEntry);
+        }
     }
 
     private void throwModificationInReadOnlyException() {

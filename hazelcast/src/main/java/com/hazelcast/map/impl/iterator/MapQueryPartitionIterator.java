@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -60,14 +59,14 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
         advance();
     }
 
-    protected List<Data> fetch() {
+    protected List<Object> fetch() {
         final MapOperation op = mapProxy.getOperationProvider()
                                         .createFetchWithQueryOperation(mapProxy.getName(), pointers, fetchSize, query);
 
         final ResultSegment segment = invoke(op);
         final QueryResult queryResult = (QueryResult) segment.getResult();
 
-        final List<Data> serialized = new ArrayList<>(queryResult.size());
+        final List<Object> serialized = new ArrayList<>(queryResult.size());
         for (QueryResultRow row : queryResult) {
             serialized.add(row.getValue());
         }

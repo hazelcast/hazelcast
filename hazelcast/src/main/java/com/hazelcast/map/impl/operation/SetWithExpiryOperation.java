@@ -31,7 +31,7 @@ public class SetWithExpiryOperation extends SetOperation {
     public SetWithExpiryOperation() {
     }
 
-    public SetWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+    public SetWithExpiryOperation(String name, Data dataKey, Object value, long ttl, long maxIdle) {
         super(name, dataKey, value);
         this.ttl = ttl;
         this.maxIdle = maxIdle;

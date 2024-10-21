@@ -39,14 +39,14 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     private boolean isRemove;
     private String name;
     private Data dataKey;
-    private Data dataValue;
+    private Object dataValue;
     private long ttl;
     private Address origin;
 
     public ReplicateUpdateOperation() {
     }
 
-    public ReplicateUpdateOperation(String name, Data dataKey, Data dataValue, long ttl, VersionResponsePair response,
+    public ReplicateUpdateOperation(String name, Data dataKey, Object dataValue, long ttl, VersionResponsePair response,
                                     boolean isRemove, Address origin) {
         this.name = name;
         this.dataKey = dataKey;
@@ -97,7 +97,7 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
         response.writeData(out);
         out.writeString(name);
         IOUtil.writeData(out, dataKey);
-        IOUtil.writeData(out, dataValue);
+        out.writeObject(dataValue);
         out.writeLong(ttl);
         out.writeBoolean(isRemove);
         out.writeObject(origin);
@@ -109,7 +109,7 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
         response.readData(in);
         name = in.readString();
         dataKey = IOUtil.readData(in);
-        dataValue = IOUtil.readData(in);
+        dataValue = in.readObject();
         ttl = in.readLong();
         isRemove = in.readBoolean();
         origin = in.readObject();

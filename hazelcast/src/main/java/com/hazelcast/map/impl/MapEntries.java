@@ -38,7 +38,7 @@ import java.util.Map;
 public final class MapEntries implements IdentifiedDataSerializable {
 
     private List<Data> keys;
-    private List<Data> values;
+    private List<Object> values;
 
     public MapEntries() {
     }
@@ -58,14 +58,14 @@ public final class MapEntries implements IdentifiedDataSerializable {
         }
     }
 
-    public void add(Data key, Data value) {
+    public void add(Data key, Object value) {
         ensureEntriesCreated();
         keys.add(key);
         values.add(value);
     }
 
-    public List<Map.Entry<Data, Data>> entries() {
-        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<>(keys.size());
+    public List<Map.Entry<Data, Object>> entries() {
+        ArrayList<Map.Entry<Data, Object>> entries = new ArrayList<>(keys.size());
         putAllToList(entries);
         return entries;
     }
@@ -74,7 +74,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
         return keys.get(index);
     }
 
-    public Data getValue(int index) {
+    public Object getValue(int index) {
         return values.get(index);
     }
 
@@ -93,12 +93,12 @@ public final class MapEntries implements IdentifiedDataSerializable {
         }
     }
 
-    public void putAllToList(Collection<Map.Entry<Data, Data>> targetList) {
+    public void putAllToList(Collection<Map.Entry<Data, Object>> targetList) {
         if (keys == null) {
             return;
         }
         Iterator<Data> keyIterator = keys.iterator();
-        Iterator<Data> valueIterator = values.iterator();
+        Iterator<Object> valueIterator = values.iterator();
         while (keyIterator.hasNext()) {
             targetList.add(new AbstractMap.SimpleImmutableEntry<>(keyIterator.next(), valueIterator.next()));
         }
@@ -109,7 +109,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
             return;
         }
         Iterator<Data> keyIterator = keys.iterator();
-        Iterator<Data> valueIterator = values.iterator();
+        Iterator<Object> valueIterator = values.iterator();
         while (keyIterator.hasNext()) {
             K key = serializationService.toObject(keyIterator.next());
             V value = serializationService.toObject(valueIterator.next());
@@ -140,7 +140,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
         out.writeInt(size);
         for (int i = 0; i < size; i++) {
             IOUtil.writeData(out, keys.get(i));
-            IOUtil.writeData(out, values.get(i));
+            out.writeObject(values.get(i));
         }
     }
 
@@ -151,7 +151,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
         values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             keys.add(IOUtil.readData(in));
-            values.add(IOUtil.readData(in));
+            values.add(in.readObject());
         }
     }
 }

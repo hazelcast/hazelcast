@@ -47,13 +47,13 @@ public class PutAllBackupOperation extends AbstractMultiMapOperation implements 
         int size = mapEntries != null ? mapEntries.size() : 0;
         while (currentIndex < size) {
             Data dataKey = mapEntries.getKey(currentIndex);
-            Data value = mapEntries.getValue(currentIndex);
+            Object value = mapEntries.getValue(currentIndex);
             put(dataKey, value);
             currentIndex++;
         }
     }
 
-    protected void put(Data dataKey, Data dataValue) {
+    protected void put(Data dataKey, Object dataValue) {
         MultiMapContainer container = getOrCreateContainer();
         Collection<Data> c = ((DataCollection) toObject(dataValue)).getCollection();
         Collection<MultiMapRecord> coll = container.getOrCreateMultiMapValue(dataKey).getCollection(false);

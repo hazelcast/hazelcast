@@ -143,9 +143,9 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
                 return eventDataExcludingValues;
             } else {
                 EntryEventData entryEventData = new EntryEventData(getThisNodesAddress(), mapName, caller, dataKey,
-                        includingValues ? mapServiceContext.toData(newValue) : null,
-                        includingValues ? mapServiceContext.toData(oldValue) : null,
-                        includingValues ? mapServiceContext.toData(mergingValue) : null, eventType);
+                        includingValues ? newValue : null,
+                        includingValues ? oldValue : null,
+                        includingValues ? mergingValue : null, eventType);
 
                 if (includingValues) {
                     eventDataIncludingValues = entryEventData;

@@ -258,7 +258,7 @@ public class PublisherCreateOperation extends AbstractNamedOperation {
 
     private QueryResultRow newQueryResultRow(QueryCacheEventData eventData) {
         Data dataKey = eventData.getDataKey();
-        Data dataNewValue = eventData.getDataNewValue();
+        Object dataNewValue = eventData.getDataNewValue();
         return new QueryResultRow(dataKey, dataNewValue);
     }
 

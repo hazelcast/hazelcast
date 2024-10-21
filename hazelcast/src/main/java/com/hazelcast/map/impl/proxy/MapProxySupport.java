@@ -450,15 +450,15 @@ abstract class MapProxySupport<K, V>
         return invokeOperationAsync(key, operationProvider.createGetOperation(name, keyData), false);
     }
 
-    protected Data putInternal(Object key, Data valueData,
+    protected Object putInternal(Object key, Object valueData,
                                long ttl, TimeUnit ttlUnit,
                                long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
-        return (Data) invokeOperation(keyData, operation);
+        return invokeOperation(keyData, operation);
     }
 
-    private MapOperation newPutOperation(Data keyData, Data valueData,
+    private MapOperation newPutOperation(Data keyData, Object valueData,
                                          long ttl, TimeUnit timeunit,
                                          long maxIdle, TimeUnit maxIdleUnit) {
         return operationProvider.createPutOperation(name, keyData, valueData,
@@ -603,13 +603,13 @@ abstract class MapProxySupport<K, V>
 
     // WARNING: when UpdateEvent is fired it does *NOT* contain the oldValue
     // see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
-    protected void setInternal(Object key, Data valueData, long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected void setInternal(Object key, Object valueData, long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = newSetOperation(keyData, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
         invokeOperation(keyData, operation);
     }
 
-    private MapOperation newSetOperation(Data keyData, Data valueData,
+    private MapOperation newSetOperation(Data keyData, Object valueData,
                                          long ttl, TimeUnit timeunit,
                                          long maxIdle, TimeUnit maxIdleUnit) {
         return operationProvider.createSetOperation(name, keyData, valueData,
@@ -1309,7 +1309,7 @@ abstract class MapProxySupport<K, V>
     /**
      * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
      */
-    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> result) {
+    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Object> result) {
         try {
             Map<Integer, Object> results;
             if (predicate instanceof PartitionPredicate partitionPredicate) {

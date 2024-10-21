@@ -101,7 +101,7 @@ public class RecordReaderWriterTest {
     private Record writeReadAndGet(Record expectedRecord, Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ObjectDataOutputStream out = new ObjectDataOutputStream(outputStream, ss);
-        Records.writeRecord(out, expectedRecord, dataValue);
+        Records.writeRecord(out, expectedRecord);
         ObjectDataInputStream in = new ObjectDataInputStream(new ByteArrayInputStream(outputStream.toByteArray()), ss);
         return Records.readRecord(in);
     }

@@ -30,7 +30,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
 
     protected long threadId;
     protected Data dataKey;
-    protected Data dataValue;
+    protected Object dataValue;
 
     public KeyBasedMapOperation() {
     }
@@ -40,7 +40,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
         this.dataKey = dataKey;
     }
 
-    protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue) {
+    protected KeyBasedMapOperation(String name, Data dataKey, Object dataValue) {
         super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
@@ -68,7 +68,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
         this.threadId = threadId;
     }
 
-    public final Data getValue() {
+    public final Object getValue() {
         return dataValue;
     }
 
@@ -76,7 +76,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeData(out, dataKey);
-        IOUtil.writeData(out, dataValue);
+        out.writeObject(dataValue);
         out.writeLong(threadId);
     }
 
@@ -84,7 +84,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dataKey = IOUtil.readData(in);
-        dataValue = IOUtil.readData(in);
+        dataValue = in.readObject();
         threadId = in.readLong();
     }
 }

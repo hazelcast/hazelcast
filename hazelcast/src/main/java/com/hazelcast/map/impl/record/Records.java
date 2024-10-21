@@ -37,11 +37,10 @@ public final class Records {
     private Records() {
     }
 
-    public static void writeRecord(ObjectDataOutput out, Record record,
-                                   Data dataValue) throws IOException {
+    public static void writeRecord(ObjectDataOutput out, Record record) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         out.writeByte(readerWriter.getId());
-        readerWriter.writeRecord(out, record, dataValue);
+        readerWriter.writeRecord(out, record);
     }
 
     public static Record readRecord(ObjectDataInput in) throws IOException {

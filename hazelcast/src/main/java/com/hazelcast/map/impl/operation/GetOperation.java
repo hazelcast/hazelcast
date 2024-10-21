@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.Immutable;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.serialization.Data;
@@ -28,7 +29,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
-    private Data result;
+    private Object result;
 
     public GetOperation() {
     }
@@ -51,7 +52,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
         result = extractResult(currentValue);
     }
 
-    public Data extractResult(Object currentValue) {
+    public Object extractResult(Object currentValue) {
         if (noCopyReadAllowed(currentValue)) {
             // in case of a 'remote' call (e.g a client call) we prevent making
             // an on-heap copy of the off-heap data
@@ -59,7 +60,11 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
         } else {
             // in case of a local call, we do make a copy, so we can safely share
             // it with e.g. near cache invalidation
-            return mapService.getMapServiceContext().toData(currentValue);
+            if (Immutable.isImmutable(currentValue)) {
+                return currentValue;
+            } else {
+                return mapService.getMapServiceContext().toData(currentValue);
+            }
         }
     }
 
@@ -105,7 +110,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public Data getResponse() {
+    public Object getResponse() {
         return result;
     }
 

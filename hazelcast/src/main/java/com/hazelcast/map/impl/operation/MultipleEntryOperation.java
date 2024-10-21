@@ -100,7 +100,7 @@ public class MultipleEntryOperation extends MapOperation
 
         EntryOperator operator = operator(this, entryProcessor, getPredicate());
         for (Data key : keys) {
-            Data response = operator.operateOnKey(key).doPostOperateOps().getResult();
+            Object response = operator.operateOnKey(key).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(key, response);
             }

@@ -50,7 +50,7 @@ public class LazyEvictableEntryViewTest {
     private final int key = 1;
     private final long value = 10L;
 
-    private Record<Data> recordInstance;
+    private Record<Object> recordInstance;
     private LazyEvictableEntryView view;
     private EntryCostEstimator costEstimator;
 

@@ -126,7 +126,8 @@ public class PutAllBackupOperation extends MapOperation
             ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
 
             IOUtil.writeData(out, dataKey);
-            Records.writeRecord(out, record, dataValue);
+            // Remove where this getting added
+            Records.writeRecord(out, record);
             Records.writeExpiry(out, expiryMetadata);
         }
         out.writeBoolean(disableWanReplicationEvent);

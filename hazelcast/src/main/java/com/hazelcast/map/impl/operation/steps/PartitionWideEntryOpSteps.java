@@ -148,7 +148,7 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
 
             EntryEventType eventType = singleKeyState.getOperator().getEventType();
             if (eventType == null) {
-                Data result = singleKeyState.getOperator().getResult();
+                Object result = singleKeyState.getOperator().getResult();
                 if (result != null) {
                     ((MapEntries) state.getResult()).add(singleKeyState.getKey(), result);
                 }
@@ -210,7 +210,7 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
                 operator.onAddedOrUpdated0(s.getNewValue());
                 operator.doPostOperateOps0();
 
-                Data result = s.getOperator().getResult();
+                Object result = s.getOperator().getResult();
                 if (result != null) {
                     ((MapEntries) state.getResult()).add(s.getKey(), result);
                 }
@@ -224,7 +224,7 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
                 operator.onRemove0();
                 operator.doPostOperateOps0();
 
-                Data result = s.getOperator().getResult();
+                Object result = s.getOperator().getResult();
                 if (result != null) {
                     ((MapEntries) state.getResult()).add(s.getKey(), result);
                 }

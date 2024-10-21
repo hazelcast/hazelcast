@@ -366,7 +366,7 @@ public final class HazelcastReaders {
     }
 
     public static class RemoteMapQueryReaderFunction<K, V, T> implements FunctionEx<HazelcastInstance,
-            ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Data>>,
+            ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Object>>,
             IdentifiedDataSerializable {
 
         @Serial
@@ -387,7 +387,7 @@ public final class HazelcastReaders {
         }
 
         @Override
-        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Data>
+        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Object>
         applyEx(HazelcastInstance hzInstance) throws Exception {
             return new RemoteMapQueryReader(hzInstance, mapName, predicate, projection);
         }

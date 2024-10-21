@@ -32,15 +32,15 @@ import java.io.IOException;
 public class EntryEventData extends AbstractEventData {
 
     protected Data dataKey;
-    protected Data dataNewValue;
-    protected Data dataOldValue;
-    protected Data dataMergingValue;
+    protected Object dataNewValue;
+    protected Object dataOldValue;
+    protected Object dataMergingValue;
 
     public EntryEventData() {
     }
 
     public EntryEventData(String source, String mapName, Address caller,
-                          Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
+                          Data dataKey, Object dataNewValue, Object dataOldValue, int eventType) {
         super(source, mapName, caller, eventType);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
@@ -48,7 +48,7 @@ public class EntryEventData extends AbstractEventData {
     }
 
     public EntryEventData(String source, String mapName, Address caller,
-                          Data dataKey, Data dataNewValue, Data dataOldValue, Data dataMergingValue, int eventType) {
+                          Data dataKey, Object dataNewValue, Object dataOldValue, Object dataMergingValue, int eventType) {
         super(source, mapName, caller, eventType);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
@@ -60,15 +60,15 @@ public class EntryEventData extends AbstractEventData {
         return dataKey;
     }
 
-    public Data getDataNewValue() {
+    public Object getDataNewValue() {
         return dataNewValue;
     }
 
-    public Data getDataOldValue() {
+    public Object getDataOldValue() {
         return dataOldValue;
     }
 
-    public Data getDataMergingValue() {
+    public Object getDataMergingValue() {
         return dataMergingValue;
     }
 
@@ -76,18 +76,18 @@ public class EntryEventData extends AbstractEventData {
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         IOUtil.writeData(out, dataKey);
-        IOUtil.writeData(out, dataNewValue);
-        IOUtil.writeData(out, dataOldValue);
-        IOUtil.writeData(out, dataMergingValue);
+        out.writeObject(dataNewValue);
+        out.writeObject(dataOldValue);
+        out.writeObject(dataMergingValue);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         dataKey = IOUtil.readData(in);
-        dataNewValue = IOUtil.readData(in);
-        dataOldValue = IOUtil.readData(in);
-        dataMergingValue = IOUtil.readData(in);
+        dataNewValue = in.readObject();
+        dataOldValue = in.readObject();
+        dataMergingValue = in.readObject();
     }
 
     @Override

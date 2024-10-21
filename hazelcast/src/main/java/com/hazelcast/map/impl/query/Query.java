@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.core.AggregatorCloneable;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -119,7 +120,12 @@ public class Query implements IdentifiedDataSerializable, Versioned {
 
     public Result createResult(SerializationService serializationService, long limit) {
         if (isAggregationQuery()) {
-            Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
+            var aggregatorClone = aggregator;
+            if (aggregatorClone instanceof AggregatorCloneable cloneable) {
+                aggregatorClone = cloneable.cloneAggregator();
+            } else {
+                aggregatorClone = serializationService.toObject(serializationService.toData(aggregatorClone));
+            }
             return new AggregationResult(aggregatorClone, serializationService);
         } else {
             return new QueryResult(iterationType, projection, serializationService, limit, predicate instanceof PagingPredicate);

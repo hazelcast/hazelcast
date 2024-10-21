@@ -77,8 +77,8 @@ public class QueryCacheEventPublisher {
 
         EntryEventData entryEvenData = (EntryEventData) eventData;
         Data dataKey = entryEvenData.getDataKey();
-        Data dataNewValue = entryEvenData.getDataNewValue();
-        Data dataOldValue = entryEvenData.getDataOldValue();
+        Object dataNewValue = entryEvenData.getDataNewValue();
+        Object dataOldValue = entryEvenData.getDataOldValue();
         int partitionId = queryCacheContext.getPartitionId(entryEvenData.dataKey);
 
         for (PartitionAccumulatorRegistry registry : partitionAccumulatorRegistries) {
@@ -111,7 +111,7 @@ public class QueryCacheEventPublisher {
     }
 
     private QueryCacheEventData convertQueryCacheEventDataOrNull(PartitionAccumulatorRegistry registry, Data dataKey,
-                                                                 Data dataNewValue, Data dataOldValue, int eventTypeId,
+                                                                 Object dataNewValue, Object dataOldValue, int eventTypeId,
                                                                  int partitionId, String mapName) {
         EventFilter eventFilter = registry.getEventFilter();
         EntryEventType eventType = EntryEventType.getByType(eventTypeId);
@@ -150,7 +150,7 @@ public class QueryCacheEventPublisher {
     // implementation when DefaultEntryEventFilteringStrategy is in use. It is not used when any
     // other filtering strategy is in place
     private EntryEventType getCQCEventTypeOrNull(EntryEventType eventType, EventFilter eventFilter,
-                                                 Data dataKey, Data dataNewValue, Data dataOldValue, String mapName) {
+                                                 Data dataKey, Object dataNewValue, Object dataOldValue, String mapName) {
         boolean newValueMatching = filteringStrategy.doFilter(eventFilter, dataKey, dataOldValue, dataNewValue,
                 eventType, mapName) != FilteringStrategy.FILTER_DOES_NOT_MATCH;
         if (eventType == UPDATED) {

@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.iteration.IterationPointer;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.iterator.AbstractMapQueryPartitionIterator;
@@ -73,7 +72,7 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
     }
 
     @Override
-    protected List<Data> fetch() {
+    protected List<Object> fetch() {
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         ClientMessage request = MapFetchWithQueryCodec.encodeRequest(
                 mapProxy.getName(),
@@ -85,7 +84,7 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
         try {
             ClientInvocationFuture f = clientInvocation.invoke();
             MapFetchWithQueryCodec.ResponseParameters responseParameters = MapFetchWithQueryCodec.decodeResponse(f.get());
-            List<Data> results = responseParameters.results;
+            List<Object> results = (List) responseParameters.results;
             IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
             setLastTableIndex(results, pointers);
             return results;
