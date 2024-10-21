@@ -53,10 +53,10 @@ public class EqualPredicateTest {
         assertFalse(new EqualPredicate("this", 0.0d).apply(entry(-0.0)));
 
         // whereas in Java
-        assertTrue(0.0 == -0.0);
-        assertTrue(0.0d == -0.0d);
-        assertTrue(0.0 == -0.0d);
-        assertTrue(0.0d == -0.0);
+        assertEquals(0.0, -0.0, 0.0);
+        assertEquals(0.0d, -0.0d, 0.0);
+        assertEquals(0.0, -0.0d, 0.0);
+        assertEquals(0.0d, -0.0, 0.0);
     }
 
     @Test

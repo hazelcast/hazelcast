@@ -25,9 +25,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -67,8 +66,8 @@ public class Tuple2Test {
         Tuple2<String, String> t_b = tuple2("a", "b");
 
         // When - Then
-        assertTrue(t.equals(t_b));
-        assertTrue(t.hashCode() == t_b.hashCode());
+        assertEquals(t, t_b);
+        assertEquals(t.hashCode(), t_b.hashCode());
     }
 
     @Test
@@ -78,7 +77,7 @@ public class Tuple2Test {
         Tuple2<String, String> t_b = tuple2("a", "xb");
 
         // When - Then
-        assertFalse(t.equals(t_b));
+        assertNotEquals(t, t_b);
     }
 
     @Test

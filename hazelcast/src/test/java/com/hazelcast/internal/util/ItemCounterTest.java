@@ -29,8 +29,8 @@ import java.util.HashSet;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -168,17 +168,17 @@ public class ItemCounterTest extends HazelcastTestSupport {
 
     @Test
     public void testEquals_returnsTrueOnSameInstance() {
-        assertTrue(counter.equals(counter));
+        assertEquals(counter, counter);
     }
 
     @Test
     public void testEquals_returnsFalseOnNull() {
-        assertFalse(counter.equals(null));
+        assertNotNull(counter);
     }
 
     @Test
     public void testEquals_returnsFalseDifferentClass() {
-        assertFalse(counter.equals(new Object()));
+        assertNotEquals(counter, new Object());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         counter.set(object1, Long.MAX_VALUE);
         otherCounter.set(object1, Long.MAX_VALUE);
 
-        assertTrue(counter.equals(otherCounter));
+        assertEquals(counter, otherCounter);
     }
 
     @Test
@@ -200,7 +200,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         counter.set(object1, Long.MAX_VALUE);
         otherCounter.set(object1, Long.MIN_VALUE);
 
-        assertFalse(counter.equals(otherCounter));
+        assertNotEquals(counter, otherCounter);
     }
 
     @Test

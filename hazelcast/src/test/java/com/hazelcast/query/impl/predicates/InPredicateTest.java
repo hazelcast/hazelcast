@@ -26,8 +26,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -44,10 +45,10 @@ public class InPredicateTest {
         assertFalse(new InPredicate("this", 0.0d).apply(entry(-0.0)));
 
         // whereas in Java
-        assertTrue(0.0 == -0.0);
-        assertTrue(0.0d == -0.0d);
-        assertTrue(0.0 == -0.0d);
-        assertTrue(0.0d == -0.0);
+        assertEquals(0.0, -0.0, 0.0);
+        assertEquals(0.0d, -0.0d, 0.0);
+        assertEquals(0.0, -0.0d, 0.0);
+        assertEquals(0.0d, -0.0, 0.0);
     }
 
     @Test

@@ -868,7 +868,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
         map.remove(1);
-        assertTrue(map.size() == 0);
+        assertEquals(0, map.size());
     }
 
     @Test

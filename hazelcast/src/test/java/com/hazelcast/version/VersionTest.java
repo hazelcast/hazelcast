@@ -29,9 +29,10 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.version.Version.UNKNOWN;
 import static com.hazelcast.version.Version.UNKNOWN_VERSION;
 import static com.hazelcast.version.Version.of;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -141,10 +142,10 @@ public class VersionTest {
         assertEquals(Version.UNKNOWN, Version.UNKNOWN);
         assertEquals(Version.of(3, 0), Version.of(3, 0));
 
-        assertFalse(Version.of(3, 0).equals(Version.of(4, 0)));
-        assertFalse(Version.UNKNOWN.equals(Version.of(4, 0)));
+        assertNotEquals(Version.of(3, 0), Version.of(4, 0));
+        assertNotEquals(Version.UNKNOWN, Version.of(4, 0));
 
-        assertFalse(Version.UNKNOWN.equals(new Object()));
+        assertNotEquals(Version.UNKNOWN, new Object());
     }
 
     @Test

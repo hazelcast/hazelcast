@@ -39,6 +39,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableMap;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public final class TestNodeRegistry {
@@ -55,7 +56,7 @@ public final class TestNodeRegistry {
         if (node != null) {
             assertFalse(address + " is already registered", node.isRunning());
             assertTrueEventually(() ->
-                    assertTrue(address + " should be SHUT_DOWN", node.getState() == SHUT_DOWN));
+                    assertSame(address + " should be SHUT_DOWN", node.getState(), SHUT_DOWN));
             nodes.remove(address, node);
         }
         return new MockNodeContext(this, address, initiallyBlockedAddresses);

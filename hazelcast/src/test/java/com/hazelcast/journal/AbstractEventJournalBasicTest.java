@@ -357,12 +357,12 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
         for (Entry<String, Integer> e : evenMap.entrySet()) {
             final Integer v = e.getValue();
-            assertTrue(v % 2 == 0);
+            assertEquals(0, v % 2);
             assertEquals(context.dataAdapter.get(e.getKey()), v);
         }
         for (Entry<String, Integer> e : oddMap.entrySet()) {
             final Integer v = e.getValue();
-            assertTrue(v % 2 == 1);
+            assertEquals(1, v % 2);
             assertEquals(context.dataAdapter.get(e.getKey()), v);
         }
     }

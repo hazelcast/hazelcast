@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -91,7 +91,7 @@ public class ClientMapTryLockConcurrentTests {
         int upTotal = map.get(upKey);
         int downTotal = map.get(downKey);
 
-        assertTrue("concurrent access to locked code caused wrong total", upTotal + downTotal == 0);
+        assertEquals("concurrent access to locked code caused wrong total", 0, upTotal + downTotal);
     }
 
     static class MapTryLockThread extends TestHelper {

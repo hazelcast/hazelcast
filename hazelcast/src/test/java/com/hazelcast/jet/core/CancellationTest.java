@@ -388,7 +388,7 @@ public class CancellationTest extends JetTestSupport {
             long current = StuckSource.callCounter.get();
             long last = previous[0];
             previous[0] = current;
-            assertTrue("Call counter should eventually stop being incremented.", current == last);
+            assertEquals("Call counter should eventually stop being incremented.", current, last);
             sleepMillis(200);
         }, ASSERTION_TIMEOUT_SECONDS);
     }

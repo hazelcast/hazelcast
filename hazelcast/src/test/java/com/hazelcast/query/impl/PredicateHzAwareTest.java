@@ -39,7 +39,6 @@ import java.util.Map;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -66,7 +65,7 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
 
         final Collection<Integer> result = m.project(new SimpleProjection(), new SimplePredicate());
 
-        assertTrue(result.size() == 1);
+        assertEquals(1, result.size());
         assertEquals(2, (int) result.iterator().next());
     }
 

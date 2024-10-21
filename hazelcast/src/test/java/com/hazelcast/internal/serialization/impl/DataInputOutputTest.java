@@ -31,14 +31,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.Address;
 import static com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest.Person;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -83,7 +82,7 @@ public class DataInputOutputTest {
         byte[] data2 = out2.toByteArray();
 
         assertEquals(data1.length, data2.length);
-        assertTrue(Arrays.equals(data1, data2));
+        assertArrayEquals(data1, data2);
 
         final ByteArrayInputStream bin = new ByteArrayInputStream(data2);
         final ObjectDataInput in = createObjectDataInputStream(bin, ss);

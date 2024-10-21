@@ -75,6 +75,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -275,7 +276,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         Data data = ss.toData(new Foo());
         Foo foo = ss.toObject(data);
 
-        assertTrue("Objects are not identical!", foo == foo.getBar().getFoo());
+        assertSame("Objects are not identical!", foo, foo.getBar().getFoo());
     }
 
     @Test
@@ -330,7 +331,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         Data data = ss.toData(new Foo());
         Foo foo = ss.toObject(data);
 
-        Assert.assertFalse("Objects should not be identical!", foo == foo.getBar().getFoo());
+        Assert.assertNotSame("Objects should not be identical!", foo, foo.getBar().getFoo());
     }
 
     private static class Foo implements Serializable {

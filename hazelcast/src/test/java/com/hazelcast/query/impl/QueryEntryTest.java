@@ -38,11 +38,12 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -129,8 +130,8 @@ public class QueryEntryTest extends HazelcastTestSupport {
         initEntry(queryEntry, serializationService, serializationService.toData(objectKey), objectValue, newExtractor());
 
         // compare references of objects since they should be cloned after QueryEntry#init call.
-        assertTrue("Old dataKey should not be here", dataKey != queryEntry.getKeyData());
-        assertTrue("Old dataValue should not be here", dataValue != queryEntry.getValueData());
+        assertNotSame("Old dataKey should not be here", dataKey, queryEntry.getKeyData());
+        assertNotSame("Old dataValue should not be here", dataValue, queryEntry.getValueData());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -158,14 +159,14 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void test_equality_same() {
         QueryableEntry entry = createEntry();
 
-        assertTrue(entry.equals(entry));
+        assertEquals(entry, entry);
     }
 
     @Test
     public void test_equality_differentType() {
         QueryableEntry entry = createEntry();
 
-        assertFalse(entry.equals("string"));
+        assertNotEquals("string", entry);
     }
 
     @Test
@@ -173,7 +174,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void test_equality_null() {
         QueryableEntry entry = createEntry();
 
-        assertFalse(entry.equals(null));
+        assertNotNull(entry);
     }
 
     @Test
@@ -181,7 +182,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         QueryableEntry queryEntry = createEntry("dataKey", "dataValue");
         QueryableEntry queryEntryOther = createEntry("dataKeyOther", "dataValue");
 
-        assertFalse(queryEntry.equals(queryEntryOther));
+        assertNotEquals(queryEntry, queryEntryOther);
     }
 
     @Test
@@ -189,7 +190,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         QueryableEntry queryEntry = createEntry("dataKey", "dataValue");
         QueryableEntry queryEntryOther = createEntry("dataKey", "dataValueOther");
 
-        assertTrue(queryEntry.equals(queryEntryOther));
+        assertEquals(queryEntry, queryEntryOther);
     }
 
     @Test

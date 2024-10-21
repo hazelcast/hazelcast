@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -104,10 +105,10 @@ public class GreaterLessPredicateTest {
         assertFalse(new GreaterLessPredicate("this", 0.0d, equal, less).apply(entry(-0.0)));
 
         // whereas in Java
-        assertTrue(0.0 == -0.0);
-        assertTrue(0.0d == -0.0d);
-        assertTrue(0.0 == -0.0d);
-        assertTrue(0.0d == -0.0);
+        assertEquals(0.0, -0.0, 0.0);
+        assertEquals(0.0d, -0.0d, 0.0);
+        assertEquals(0.0, -0.0d, 0.0);
+        assertEquals(0.0d, -0.0, 0.0);
     }
 
     @Test

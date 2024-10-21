@@ -171,7 +171,7 @@ public class ProcessorTaskletTest {
         callUntil(tasklet, NO_PROGRESS);
 
         // Then
-        assertTrue(outstream1.getBuffer().equals(mockInput.subList(0, 1)));
+        assertEquals(outstream1.getBuffer(), mockInput.subList(0, 1));
     }
 
     @Test

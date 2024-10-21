@@ -161,8 +161,8 @@ public class EntryCostEstimatorTest extends HazelcastTestSupport {
         map2Cost = map2.getLocalMapStats().getHeapCost();
 
         // costs should be zero
-        assertTrue("map1 cost should zero....: " + map1Cost, map1Cost == 0);
-        assertTrue("map2 cost should zero....: " + map2Cost, map2Cost == 0);
+        assertEquals("map1 cost should zero....: " + map1Cost, 0, map1Cost);
+        assertEquals("map2 cost should zero....: " + map2Cost, 0, map2Cost);
     }
 
     @Test

@@ -114,8 +114,8 @@ public class JsonString_Test {
 
   @Test
   public void hashCode_differsForDifferentStrings() {
-    assertFalse(new JsonString("").hashCode() == new JsonString("foo").hashCode());
-    assertFalse(new JsonString("foo").hashCode() == new JsonString("bar").hashCode());
+      assertNotEquals(new JsonString("").hashCode(), new JsonString("foo").hashCode());
+      assertNotEquals(new JsonString("foo").hashCode(), new JsonString("bar").hashCode());
   }
 
   @Test

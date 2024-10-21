@@ -152,7 +152,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertTrue("consumed different number of items than expected", actual.size() == JOURNAL_CAPACITY);
+            assertEquals("consumed different number of items than expected", JOURNAL_CAPACITY, actual.size());
         }, 3);
     }
 
@@ -216,7 +216,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertTrue("consumed different number of items than expected", actual.size() == 2);
+            assertEquals("consumed different number of items than expected", 2, actual.size());
         });
     }
 

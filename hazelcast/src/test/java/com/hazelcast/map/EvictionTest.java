@@ -267,8 +267,7 @@ public class EvictionTest extends HazelcastTestSupport {
             assertNotNull(view);
             long lastAccessTime = view.getLastAccessTime();
             long prevLastAccessTime = lastAccessTimes.get(i);
-            assertTrue("lastAccessTime=" + lastAccessTime + ", prevLastAccessTime=" + prevLastAccessTime,
-                    lastAccessTime == prevLastAccessTime);
+            assertEquals("lastAccessTime=" + lastAccessTime + ", prevLastAccessTime=" + prevLastAccessTime, lastAccessTime, prevLastAccessTime);
         }
     }
 

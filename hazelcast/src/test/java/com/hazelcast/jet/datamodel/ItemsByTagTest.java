@@ -35,7 +35,7 @@ import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -82,8 +82,8 @@ public class ItemsByTagTest {
         ItemsByTag ibt2 = itemsByTag(tag0(), "a", tag1(), "b", tag2(), "c", tag(3), "d");
 
         // When - Then
-        assertTrue(ibt.equals(ibt2));
-        assertTrue(ibt.hashCode() == ibt2.hashCode());
+        assertEquals(ibt, ibt2);
+        assertEquals(ibt.hashCode(), ibt2.hashCode());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class ItemsByTagTest {
         ItemsByTag ibt2 = itemsByTag(tag1(), "a");
 
         // When - Then
-        assertFalse(ibt.equals(ibt2));
+        assertNotEquals(ibt, ibt2);
     }
 
     @Test

@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -60,7 +61,7 @@ public class QueryCacheCreateDestroyTest extends HazelcastTestSupport {
         queryCache.destroy();
         QueryCache newQueryCache = map.getQueryCache(queryCacheName);
 
-        assertFalse(queryCache == newQueryCache);
+        assertNotSame(queryCache, newQueryCache);
     }
 
     @Test

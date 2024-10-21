@@ -168,7 +168,7 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
 
     private void assertRecoversXid(XAResource xaResource) throws XAException {
         Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
-        assertTrue("" + xids.length, xids.length == 1);
+        assertEquals("" + xids.length, 1, xids.length);
     }
 
     private void performCommitWithXa(XAResource xaResource) throws XAException {

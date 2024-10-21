@@ -26,6 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -44,10 +45,10 @@ public class BetweenPredicateTest {
         assertFalse(new BetweenPredicate("this", 0.0d, 0.0d).apply(entry(-0.0)));
 
         // whereas in Java
-        assertTrue(0.0 == -0.0);
-        assertTrue(0.0d == -0.0d);
-        assertTrue(0.0 == -0.0d);
-        assertTrue(0.0d == -0.0);
+        assertEquals(0.0, -0.0, 0.0);
+        assertEquals(0.0d, -0.0d, 0.0);
+        assertEquals(0.0, -0.0d, 0.0);
+        assertEquals(0.0d, -0.0, 0.0);
     }
 
     @Test

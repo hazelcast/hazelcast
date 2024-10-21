@@ -69,6 +69,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -156,7 +157,7 @@ public class JobBuilderTest {
 
         assertTrue(builderSupplier.test(job));
         EnumSet.allOf(BuilderParameter.class).forEach(param ->
-                assertTrue(param.test(job) == parameters.contains(param)));
+                assertEquals(param.test(job), parameters.contains(param)));
     }
 
     private static JobBuilder newJobBuilderFromDag() {

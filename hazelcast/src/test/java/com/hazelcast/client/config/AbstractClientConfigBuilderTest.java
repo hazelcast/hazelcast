@@ -63,6 +63,7 @@ import static com.hazelcast.client.config.ClientSqlResubmissionMode.RETRY_SELECT
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -262,7 +263,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertFalse(queryCacheClassPredicateConfig.isSerializeKeys());
         for (IndexConfig indexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
-            assertFalse(indexConfig.getType() == IndexType.SORTED);
+            assertNotSame(indexConfig.getType(), IndexType.SORTED);
         }
 
         assertEquals("com.hazelcast.examples.ExamplePredicate",

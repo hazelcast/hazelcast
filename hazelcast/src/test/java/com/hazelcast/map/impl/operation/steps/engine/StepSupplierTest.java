@@ -52,7 +52,6 @@ import java.util.stream.IntStream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -261,7 +260,7 @@ public class StepSupplierTest extends HazelcastTestSupport {
             }
         }
 
-        assertTrue(expectedSteps.equals(actualSteps));
+        assertEquals(expectedSteps, actualSteps);
         int[] expectedExecutions = IntStream.range(0, headSteps).toArray();
         int[] actualExecutions = actualExecutionOrder.stream().mapToInt(i -> i).toArray();
         assertArrayEquals(expectedExecutions, actualExecutions);

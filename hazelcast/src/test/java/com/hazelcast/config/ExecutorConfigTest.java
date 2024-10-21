@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -36,13 +36,13 @@ public class ExecutorConfigTest {
     @Test
     public void testGetCorePoolSize() {
         ExecutorConfig executorConfig = new ExecutorConfig();
-        assertTrue(executorConfig.getPoolSize() == ExecutorConfig.DEFAULT_POOL_SIZE);
+        assertEquals(ExecutorConfig.DEFAULT_POOL_SIZE, executorConfig.getPoolSize());
     }
 
     @Test
     public void testSetCorePoolSize() {
         ExecutorConfig executorConfig = new ExecutorConfig().setPoolSize(1234);
-        assertTrue(executorConfig.getPoolSize() == 1234);
+        assertEquals(1234, executorConfig.getPoolSize());
     }
 
     @Test(expected = IllegalArgumentException.class)

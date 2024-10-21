@@ -31,8 +31,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * This test is intentionally not in the {@link ParallelJVMTest} category,
@@ -90,7 +90,7 @@ public class RestMultiendpointTest
     public void assertAdvancedNetworkInUse() {
         int numberOfEndpointsInConfig = instance.getConfig().getAdvancedNetworkConfig().getEndpointConfigs().size();
         MemberImpl local = getNode(instance).getClusterService().getLocalMember();
-        assertTrue(local.getAddressMap().size() == numberOfEndpointsInConfig);
-        assertFalse(local.getSocketAddress(EndpointQualifier.REST).equals(local.getSocketAddress(EndpointQualifier.MEMBER)));
+        assertEquals(local.getAddressMap().size(), numberOfEndpointsInConfig);
+        assertNotEquals(local.getSocketAddress(EndpointQualifier.REST), local.getSocketAddress(EndpointQualifier.MEMBER));
     }
 }

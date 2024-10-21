@@ -355,7 +355,7 @@ public class ListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < count; i++) {
             map.put("key" + i, "value" + i);
         }
-        assertTrueEventually(() -> assertTrue(globalCount.get() == 1));
+        assertTrueEventually(() -> assertEquals(1, globalCount.get()));
     }
 
     @Test

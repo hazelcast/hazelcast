@@ -27,6 +27,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -53,7 +55,7 @@ public class TopicConfigTest {
     @Test
     public void testSetName() {
         TopicConfig topicConfig = new TopicConfig().setName("test");
-        assertTrue("test".equals(topicConfig.getName()));
+        assertEquals("test", topicConfig.getName());
     }
 
     /**
@@ -72,12 +74,10 @@ public class TopicConfigTest {
     public void testSetGlobalOrderingEnabled() {
         TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(true);
         assertTrue(topicConfig.isGlobalOrderingEnabled());
-        try {
-            topicConfig.setMultiThreadingEnabled(true);
-            assertTrue("multi-threading must be disabled when global-ordering is enabled", false);
-        } catch (IllegalArgumentException e) {
-            // anticipated..
-        }
+        assertThatThrownBy(() -> topicConfig.setMultiThreadingEnabled(true))
+                .withFailMessage("multi-threading must be disabled when global-ordering is enabled")
+                .isInstanceOf(IllegalArgumentException.class);
+
         assertFalse(topicConfig.isMultiThreadingEnabled());
     }
 
@@ -98,12 +98,9 @@ public class TopicConfigTest {
         TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(false);
         topicConfig.setMultiThreadingEnabled(true);
         assertTrue(topicConfig.isMultiThreadingEnabled());
-        try {
-            topicConfig.setGlobalOrderingEnabled(true);
-            assertTrue("global-ordering must be disabled when multi-threading is enabled", false);
-        } catch (IllegalArgumentException e) {
-            // anticipated..
-        }
+        assertThatThrownBy(() -> topicConfig.setGlobalOrderingEnabled(true))
+                .withFailMessage("global-ordering must be disabled when multi-threading is enabled")
+                .isInstanceOf(IllegalArgumentException.class);
         assertFalse(topicConfig.isGlobalOrderingEnabled());
     }
 

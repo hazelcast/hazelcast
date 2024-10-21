@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -136,7 +136,7 @@ public class IterableUtilTest {
     public void test_asReadOnlyIterator_returns_same_iterator_when_given_iterator_is_read_only() {
         Iterator<Integer> iterator = IterableUtil.asReadOnlyIterator(numbers.iterator());
 
-        assertTrue(iterator == IterableUtil.asReadOnlyIterator(iterator));
+        assertSame(iterator, IterableUtil.asReadOnlyIterator(iterator));
     }
 
     @Test

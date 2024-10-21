@@ -38,7 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -145,12 +145,12 @@ public class LazyEvictableEntryViewTest {
 
     @Test
     public void test_equals_whenSameReference() {
-        assertTrue(view.equals(view));
+        assertEquals(view, view);
     }
 
     @Test
     public void test_equals_whenSuppliedObjectIsNotEntryView() {
-        assertFalse(view.equals(this));
+        assertNotEquals(view, this);
     }
 
     @Test

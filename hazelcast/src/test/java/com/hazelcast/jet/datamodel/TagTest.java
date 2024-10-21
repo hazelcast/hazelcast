@@ -28,7 +28,7 @@ import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -56,8 +56,8 @@ public class TagTest {
         Tag tagB = tag(42);
 
         // When - Then
-        assertTrue(tag.equals(tagB));
-        assertTrue(tag.hashCode() == tagB.hashCode());
+        assertEquals(tag, tagB);
+        assertEquals(tag.hashCode(), tagB.hashCode());
     }
 
     @Test
@@ -67,13 +67,13 @@ public class TagTest {
         Tag tagB = tag(42);
 
         // When - Then
-        assertFalse(tag.equals(tagB));
+        assertNotEquals(tag, tagB);
     }
 
     @Test
     public void compareTo_ordersByIndex() {
         assertTrue(tag(42).compareTo(tag(43)) < 0);
-        assertTrue(tag(42).compareTo(tag(42)) == 0);
+        assertEquals(0, tag(42).compareTo(tag(42)));
         assertTrue(tag(42).compareTo(tag(41)) > 0);
     }
 

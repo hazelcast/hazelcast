@@ -285,8 +285,8 @@ public class MapLockTest extends HazelcastTestSupport {
         map.lock(KEY);
         map.clear();
 
-        assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
-        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(KEY));
+        assertFalse("a locked key should not be removed by map clear", map.isEmpty());
+        assertTrue("a key present in a map, should be locked after map clear", map.isLocked(KEY));
     }
 
     /**
