@@ -28,7 +28,6 @@ import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -66,7 +65,7 @@ public class JoinRequest extends JoinMessage {
         this.credentials = credentials;
         this.attributes = attributes;
         if (excludedMemberUuids != null) {
-            this.excludedMemberUuids = unmodifiableSet(new HashSet<>(excludedMemberUuids));
+            this.excludedMemberUuids = Set.copyOf(excludedMemberUuids);
         }
         this.addresses = addresses;
         this.cpMemberUUID = cpMemberUUID;

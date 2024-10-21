@@ -23,9 +23,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -153,7 +151,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      */
     @Override
     public List<DelayedEntry> asList() {
-        return Collections.unmodifiableList(new ArrayList<>(deque));
+        return List.copyOf(deque);
     }
 
     @Override

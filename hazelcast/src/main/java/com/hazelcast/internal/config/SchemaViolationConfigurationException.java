@@ -18,12 +18,10 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -44,7 +42,7 @@ public class SchemaViolationConfigurationException
         super(message);
         this.keywordLocation = keywordLocation;
         this.instanceLocation = instanceLocation;
-        this.errors = unmodifiableList(new ArrayList<>(errors));
+        this.errors = List.copyOf(errors);
     }
 
     /**

@@ -25,10 +25,9 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.SimpleTokenCredentials;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -53,7 +52,7 @@ public class AuthenticationCustomCredentialsMessageTask
         clientSerializationVersion = parameters.serializationVersion;
         clientVersion = parameters.clientHazelcastVersion;
         clientName = parameters.clientName;
-        labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
+        labels = Set.copyOf(parameters.labels);
         routingMode = parameters.isRoutingModeExists ? parameters.routingMode : -1;
         cpDirectToLeaderRouting = parameters.isCpDirectToLeaderRoutingExists && parameters.cpDirectToLeaderRouting;
         return parameters;
