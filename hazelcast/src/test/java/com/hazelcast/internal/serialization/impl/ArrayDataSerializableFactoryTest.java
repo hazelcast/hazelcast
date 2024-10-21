@@ -39,7 +39,7 @@ public class ArrayDataSerializableFactoryTest {
     public void testCreate() {
         Supplier<IdentifiedDataSerializable>[] constructorFunctions = new Supplier[1];
 
-        constructorFunctions[0] = () -> new SampleIdentifiedDataSerializable();
+        constructorFunctions[0] = SampleIdentifiedDataSerializable::new;
 
         ArrayDataSerializableFactory factory = new ArrayDataSerializableFactory(constructorFunctions);
 

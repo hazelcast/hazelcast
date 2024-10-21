@@ -169,7 +169,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
 
     protected void assertInvokedOnlyOnMembers(HazelcastInstance... members) {
         Set<Address> expectedMembers = Arrays.stream(members)
-                .map(instance -> Accessors.getAddress(instance))
+                .map(Accessors::getAddress)
                 .collect(Collectors.toSet());
         assertEquals(expectedMembers, jobInvocationObserver.getMembers());
     }

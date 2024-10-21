@@ -116,12 +116,12 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_andThenInternal() throws ExecutionException, InterruptedException {
-        testMaxAllowed((future, callback) -> future.whenCompleteAsync(callback));
+        testMaxAllowed(ClientDelegatingFuture::whenCompleteAsync);
     }
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_andThen() throws ExecutionException, InterruptedException {
-        testMaxAllowed((future, callback) -> future.whenCompleteAsync(callback));
+        testMaxAllowed(ClientDelegatingFuture::whenCompleteAsync);
     }
 
     @Test(expected = HazelcastOverloadException.class)
@@ -160,12 +160,12 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_withWaitingCallbacks_andThenInternal() throws ExecutionException, InterruptedException {
-        testMaxAllowed_withWaitingCallbacks((future, callback) -> future.whenCompleteAsync(callback));
+        testMaxAllowed_withWaitingCallbacks(ClientDelegatingFuture::whenCompleteAsync);
     }
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_withWaitingCallbacks_a_andThen() throws ExecutionException, InterruptedException {
-        testMaxAllowed_withWaitingCallbacks((future, callback) -> future.whenCompleteAsync(callback));
+        testMaxAllowed_withWaitingCallbacks(ClientDelegatingFuture::whenCompleteAsync);
     }
 
     @Test(expected = HazelcastOverloadException.class)

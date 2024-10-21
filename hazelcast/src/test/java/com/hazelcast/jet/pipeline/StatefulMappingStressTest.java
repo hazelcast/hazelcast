@@ -81,7 +81,7 @@ public class StatefulMappingStressTest extends JetTestSupport {
                 .map(t -> RANDOM.nextInt(100_000))
                 .groupingKey(k -> k % 100_000);
         StreamStage<Map.Entry<Integer, Integer>> statefulStage = statefulFn.apply(streamStageWithKey);
-        statefulStage.writeTo(Sinks.mapWithMerging(MAP_SINK_NAME, (oldValue, newValue) -> oldValue + newValue));
+        statefulStage.writeTo(Sinks.mapWithMerging(MAP_SINK_NAME, Integer::sum));
 
         instance.getJet().newJob(p);
 

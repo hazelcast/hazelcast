@@ -191,7 +191,7 @@ public class ClientInvocationFutureTest {
 
     @Test
     public void test_thenCompose() throws Exception {
-        CompletableFuture nextStage = invocationFuture.thenCompose((v) -> newCompletedFuture(v));
+        CompletableFuture nextStage = invocationFuture.thenCompose(InternalCompletableFuture::newCompletedFuture);
         invocationFuture.complete(response);
 
         assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));

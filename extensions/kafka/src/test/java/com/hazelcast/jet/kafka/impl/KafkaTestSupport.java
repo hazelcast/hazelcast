@@ -274,7 +274,8 @@ public abstract class KafkaTestSupport {
     }
 
     public int getLatestSchemaVersion(String subject) throws SchemaRegistryException {
-        return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(s -> s.getVersion())
+        return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(
+                               io.confluent.kafka.schemaregistry.client.rest.entities.Schema::getVersion)
                 .orElseThrow(() -> new SchemaRegistryException("No schema found in subject '" + subject + "'"));
     }
 

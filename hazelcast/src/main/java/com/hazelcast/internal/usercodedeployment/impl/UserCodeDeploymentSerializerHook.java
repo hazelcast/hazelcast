@@ -47,9 +47,9 @@ public class UserCodeDeploymentSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
-        constructors[CLASS_DATA] = () -> new ClassData();
-        constructors[CLASS_DATA_FINDER_OP] = () -> new ClassDataFinderOperation();
-        constructors[DEPLOY_CLASSES_OP] = () -> new DeployClassesOperation();
+        constructors[CLASS_DATA] = ClassData::new;
+        constructors[CLASS_DATA_FINDER_OP] = ClassDataFinderOperation::new;
+        constructors[DEPLOY_CLASSES_OP] = DeployClassesOperation::new;
         return new ArrayDataSerializableFactory(constructors);
     }
 }

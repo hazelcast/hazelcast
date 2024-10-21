@@ -88,7 +88,7 @@ public abstract class AsyncSocketBuilderTest {
     public void test_build_whenReadHandlerNotSet() {
         Reactor reactor = newReactor();
         AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        assertThrows(IllegalStateException.class, () -> builder.build());
+        assertThrows(IllegalStateException.class, builder::build);
     }
 
     @Test
@@ -116,6 +116,6 @@ public abstract class AsyncSocketBuilderTest {
         builder.setReader(new DevNullAsyncSocketReader());
         builder.build();
 
-        assertThrows(IllegalStateException.class, () -> builder.build());
+        assertThrows(IllegalStateException.class, builder::build);
     }
 }

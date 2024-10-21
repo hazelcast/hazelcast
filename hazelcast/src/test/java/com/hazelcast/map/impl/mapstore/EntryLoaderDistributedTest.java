@@ -33,6 +33,6 @@ public class EntryLoaderDistributedTest extends EntryLoaderSimpleTest {
 
     @Override
     protected HazelcastInstance[] createInstances() {
-        return createHazelcastInstanceFactory().newInstances(() -> getConfig(), 3);
+        return createHazelcastInstanceFactory().newInstances(this::getConfig, 3);
     }
 }

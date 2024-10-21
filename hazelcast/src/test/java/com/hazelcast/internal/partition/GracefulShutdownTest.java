@@ -466,7 +466,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             warmUpPartitions(master);
         }
 
-        Future<?> f1 = spawn((Runnable) () -> master.shutdown());
+        Future<?> f1 = spawn((Runnable) master::shutdown);
 
         Future<?> f2 = spawn((Runnable) () -> {
             changeClusterStateEventually(slaves[0], ClusterState.PASSIVE);

@@ -80,7 +80,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     protected HazelcastInstance[] createInstances() {
-        return createHazelcastInstanceFactory().newInstances(() -> getConfig(), 1);
+        return createHazelcastInstanceFactory().newInstances(this::getConfig, 1);
     }
 
     @Override

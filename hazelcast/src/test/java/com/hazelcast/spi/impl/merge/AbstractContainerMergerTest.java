@@ -113,7 +113,7 @@ public class AbstractContainerMergerTest extends HazelcastTestSupport {
         TestMergeOperation operation = new TestMergeOperation(BLOCKS);
         final TestContainerMerger merger = new TestContainerMerger(collector, nodeEngine, operation);
 
-        Thread thread = new Thread(() -> merger.run());
+        Thread thread = new Thread(merger::run);
         thread.start();
         thread.interrupt();
         assertJoinable(thread);

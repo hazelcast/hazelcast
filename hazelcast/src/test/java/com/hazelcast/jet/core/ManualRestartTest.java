@@ -185,7 +185,7 @@ public class ManualRestartTest extends JetTestSupport {
         Map<Integer, Integer> actual = new ArrayList<>(instances[0].<Entry<Integer, Integer>>getList("sink")).stream()
                 .filter(e -> e.getKey() == 0) // we'll only check partition 0
                 .map(Entry::getValue)
-                .collect(Collectors.toMap(e -> e, e -> 1, (o, n) -> o + n, TreeMap::new));
+                .collect(Collectors.toMap(e -> e, e -> 1, Integer::sum, TreeMap::new));
 
         assertEquals("first item != 1, " + actual, (Integer) 1, actual.get(0));
         assertEquals("last item != 1, " + actual, (Integer) 1, actual.get(9999));

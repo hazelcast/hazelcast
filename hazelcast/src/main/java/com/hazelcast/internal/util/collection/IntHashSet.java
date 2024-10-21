@@ -185,12 +185,7 @@ public final class IntHashSet implements Set<Integer> {
     }
 
     private <E extends Integer> boolean addAllCapture(final Collection<E> coll) {
-        final Predicate<E> p = new Predicate<>() {
-            @Override
-            public boolean test(E x) {
-                return add(x);
-            }
-        };
+        final Predicate<E> p = this::add;
         return conjunction(coll, p);
     }
 
@@ -200,12 +195,7 @@ public final class IntHashSet implements Set<Integer> {
     }
 
     private <E> boolean containsAllCapture(Collection<E> coll) {
-        return conjunction(coll, new Predicate<>() {
-            @Override
-            public boolean test(E value) {
-                return contains(value);
-            }
-        });
+        return conjunction(coll, this::contains);
     }
 
     /**
@@ -259,12 +249,7 @@ public final class IntHashSet implements Set<Integer> {
     }
 
     private <E> boolean removeAllCapture(final Collection<E> coll) {
-        return conjunction(coll, new Predicate<>() {
-            @Override
-            public boolean test(E value) {
-                return remove(value);
-            }
-        });
+        return conjunction(coll, this::remove);
     }
 
     private static <E> boolean conjunction(final Collection<E> collection, final Predicate<E> predicate) {

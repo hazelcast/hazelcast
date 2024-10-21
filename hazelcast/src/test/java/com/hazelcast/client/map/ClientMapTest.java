@@ -413,7 +413,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         Map<String, String> tmpMap = new HashMap<>();
         fillMap(tmpMap);
         InternalCompletableFuture<Void> future = ((ClientMapProxy<String, String>) map).putAllAsync(tmpMap);
-        assertEqualsEventually(() -> future.isDone(), true);
+        assertEqualsEventually(future::isDone, true);
         assertEquals(map.size(), tmpMap.size());
         assertEquals(tmpMap, new HashMap<>(map));
     }
@@ -440,7 +440,7 @@ public class ClientMapTest extends HazelcastTestSupport {
                 .withMaxIdle(60_000);
 
         CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(newArrayList(entryView));
-        assertEqualsEventually(() -> future.isDone(), true);
+        assertEqualsEventually(future::isDone, true);
         EntryView<String, String> actual = map.getEntryView("key");
 
         SoftAssertions sa = new SoftAssertions();
@@ -470,7 +470,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         }
 
         CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(entries);
-        assertEqualsEventually(() -> future.isDone(), true);
+        assertEqualsEventually(future::isDone, true);
 
         assertThat((Map<String, String>) map).hasSize(1000);
         for (int i = 0; i < 1000; i++) {
@@ -486,7 +486,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         ClientMapProxy<String, String> mapProxy = (ClientMapProxy<String, String>) map;
 
         CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(emptyList());
-        assertEqualsEventually(() -> future.isDone(), true);
+        assertEqualsEventually(future::isDone, true);
 
         assertThat((Map<String, String>) map).isEmpty();
     }

@@ -55,12 +55,12 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
     @Test
     public void test_restartJob_nodeShutDown() {
-        testTopologyChange(() -> createHazelcastInstance(), node -> node.shutdown(), true);
+        testTopologyChange(this::createHazelcastInstance, HazelcastInstance::shutdown, true);
     }
 
     @Test
     public void test_restartJob_nodeTerminated() {
-        testTopologyChange(() -> createHazelcastInstance(), node -> node.getLifecycleService().terminate(),
+        testTopologyChange(this::createHazelcastInstance, node -> node.getLifecycleService().terminate(),
                 false);
     }
 

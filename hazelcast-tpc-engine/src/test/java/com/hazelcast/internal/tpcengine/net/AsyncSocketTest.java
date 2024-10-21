@@ -155,7 +155,7 @@ public abstract class AsyncSocketTest {
 
         CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5002));
 
-        assertThrows(CompletionException.class, () -> future.join());
+        assertThrows(CompletionException.class, future::join);
     }
 
     @Test

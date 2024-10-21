@@ -675,7 +675,7 @@ public class BatchStageTest extends PipelineTestSupport {
         stage.writeTo(sink);
         Job job = hz().getJet().newJob(p);
 
-        assertThatThrownBy(() -> job.join())
+        assertThatThrownBy(job::join)
                 .hasMessageContaining("mock error");
     }
 

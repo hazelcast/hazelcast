@@ -85,8 +85,7 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
                         assertEquals(k, m.remove(k))},
                 {"remove2", (BiConsumerEx<IMap, Object>) (m, k) ->
                         assertTrue(m.remove(k, k))},
-                {"delete", (BiConsumerEx<IMap, Object>) (m, k) ->
-                        m.delete(k)},
+                {"delete", (BiConsumerEx<IMap, Object>) IMap::delete},
                 {"putAsync", (BiConsumerEx<IMap, Object>) (m, k) ->
                         assertEquals(k, m.putAsync(k, k + "1").toCompletableFuture().get())},
                 {"setAsync", (BiConsumerEx<IMap, Object>) (m, k) ->

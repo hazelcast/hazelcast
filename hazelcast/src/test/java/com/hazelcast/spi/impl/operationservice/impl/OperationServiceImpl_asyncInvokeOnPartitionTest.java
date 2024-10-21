@@ -71,7 +71,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
             PutOperation op = new PutOperation((String) entry.getValue(), key, val);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             operationService.invokeOnPartitionAsync(MapService.SERVICE_NAME, op, partitionId)
-                    .thenRun(() -> latch.countDown());
+                    .thenRun(latch::countDown);
             return null;
         }
 

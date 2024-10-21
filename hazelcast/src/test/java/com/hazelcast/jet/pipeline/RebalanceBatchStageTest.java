@@ -271,7 +271,7 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
                 enrichingStage,
                 joinMapEntries(wholeItem()),
                 // Method reference avoided due to JDK bug
-                (k, v) -> entry(k, v));
+                Util::entry);
 
         // Then
         joined.writeTo(sink);
@@ -644,7 +644,7 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
                 .setName("filter trues 2")
                 .writeTo(SinkBuilder.sinkBuilder("sink",
                         context -> context.hazelcastInstance().getList("result" + context.globalProcessorIndex()))
-                .receiveFn((list, o) -> list.add(o)).build());
+                .receiveFn(List::add).build());
 
         member.getJet().newJob(p).join();
 

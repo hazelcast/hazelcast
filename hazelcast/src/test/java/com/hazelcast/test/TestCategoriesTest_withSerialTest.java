@@ -40,7 +40,7 @@ public class TestCategoriesTest_withSerialTest extends HazelcastTestSupport {
 
     @Test
     public void testAssertThatNotMultithreadedTest() {
-        assertThatCode(() -> assertThatIsNotMultithreadedTest()).as("Expected an exception on this serial test")
+        assertThatCode(HazelcastTestSupport::assertThatIsNotMultithreadedTest).as("Expected an exception on this serial test")
                 .doesNotThrowAnyException();
     }
 }

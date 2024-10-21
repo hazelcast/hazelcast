@@ -212,7 +212,7 @@ public class MockServerContext implements ServerContext {
                 logger.severe(t);
             }
         }, null);
-        new Thread(() -> future.run()).start();
+        new Thread(future::run).start();
         return future;
     }
 

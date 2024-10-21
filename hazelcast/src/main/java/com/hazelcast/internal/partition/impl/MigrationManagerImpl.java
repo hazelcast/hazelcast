@@ -1668,7 +1668,8 @@ public class MigrationManagerImpl implements MigrationManager {
                 logger.fine("Delaying next repartitioning execution");
                 delayNextRepartitioningExecution = false;
                 ExecutionService executionService = nodeEngine.getExecutionService();
-                scheduledControlTaskFuture = (ScheduledFuture<Void>) executionService.schedule(() -> triggerControlTask(),
+                scheduledControlTaskFuture = (ScheduledFuture<Void>) executionService.schedule(
+                        MigrationManagerImpl.this::triggerControlTask,
                         autoRebalanceDelaySeconds, TimeUnit.SECONDS);
                 return;
             }

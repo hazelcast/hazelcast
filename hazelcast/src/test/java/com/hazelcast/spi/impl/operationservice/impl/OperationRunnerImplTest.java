@@ -74,7 +74,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     @Test
     public void runTask() {
         final AtomicLong counter = new AtomicLong();
-        operationRunner.run(() -> counter.incrementAndGet());
+        operationRunner.run(counter::incrementAndGet);
         assertEquals(1, counter.get());
     }
 

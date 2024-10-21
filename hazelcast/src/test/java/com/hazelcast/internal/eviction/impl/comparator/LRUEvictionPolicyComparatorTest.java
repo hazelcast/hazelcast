@@ -57,7 +57,7 @@ public class LRUEvictionPolicyComparatorTest {
         Collections.sort(descOrderByIdleTimes, (o1, o2) -> -Long.compare(idleTime(o1), idleTime(o2)));
 
         // 2. Then sort given entries by using LRU eviction comparator.
-        Collections.sort(givenEntries, (o1, o2) -> LRUEvictionPolicyComparator.INSTANCE.compare(o1, o2));
+        Collections.sort(givenEntries, LRUEvictionPolicyComparator.INSTANCE::compare);
 
         // 3. Check both lists are equal
         assertEquals(descOrderByIdleTimes, givenEntries);

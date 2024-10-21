@@ -96,7 +96,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         validateBrainsConfig(brains);
 
         int clusterSize = getClusterSize();
-        instances = startInitialCluster(() -> config(), clusterSize);
+        instances = startInitialCluster(this::config, clusterSize);
     }
 
     @After

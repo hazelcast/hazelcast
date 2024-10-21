@@ -63,7 +63,7 @@ public class MulticastDiscoveryStrategyDeserializationTest {
         TestDeserialized.isDeserialized = false;
         stop = false;
         datagramsThreadException = null;
-        datadgramsThread = new Thread(() -> sendDatagrams());
+        datadgramsThread = new Thread(this::sendDatagrams);
         datadgramsThread.start();
     }
 

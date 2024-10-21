@@ -21,12 +21,7 @@ package com.hazelcast.query.impl;
  */
 public class GlobalQueryContextProvider implements QueryContextProvider {
 
-    private static final ThreadLocal<QueryContext> QUERY_CONTEXT = new ThreadLocal<>() {
-        @Override
-        protected QueryContext initialValue() {
-            return new QueryContext();
-        }
-    };
+    private static final ThreadLocal<QueryContext> QUERY_CONTEXT = ThreadLocal.withInitial(() -> new QueryContext());
 
     @Override
     public QueryContext obtainContextFor(IndexRegistry indexes, int ownedPartitionCount) {

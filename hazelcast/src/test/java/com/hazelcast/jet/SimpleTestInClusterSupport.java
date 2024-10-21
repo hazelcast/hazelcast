@@ -83,7 +83,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static Config config;
     private static HazelcastInstance[] instances;
     private static HazelcastInstance client;
-    private final Supplier<Boolean> parallelExecution = com.hazelcast.jet.impl.util.Util.memoize(() -> isParallelTestExecution());
+    private final Supplier<Boolean> parallelExecution = com.hazelcast.jet.impl.util.Util.memoize(this::isParallelTestExecution);
 
     protected static void initialize(int memberCount, @Nullable Config config) {
         assertNoRunningInstances();

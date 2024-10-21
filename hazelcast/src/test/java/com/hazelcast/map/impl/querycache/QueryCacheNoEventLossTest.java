@@ -104,7 +104,7 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
 
         assertJoinable(threads.toArray(new Thread[0]));
 
-        assertTrueEventually(() -> assertAllQueryCachesSyncWithMap());
+        assertTrueEventually(this::assertAllQueryCachesSyncWithMap);
 
         assertEquals(0, eventLostCounter.get());
     }

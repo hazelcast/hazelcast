@@ -138,7 +138,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable).thenRun(() -> responseLatch.countDown());
+        service.submit(runnable).thenRun(responseLatch::countDown);
         IMap map = client.getMap(mapName);
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -183,7 +183,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submitToKeyOwner(runnable, "key").thenRun(() -> responseLatch.countDown());
+        service.submitToKeyOwner(runnable, "key").thenRun(responseLatch::countDown);
         IMap map = client.getMap(mapName);
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -254,7 +254,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable).thenRun(() -> responseLatch.countDown());
+        service.submit(runnable).thenRun(responseLatch::countDown);
         IMap map = client.getMap(mapName);
 
         assertOpenEventually("responseLatch", responseLatch);

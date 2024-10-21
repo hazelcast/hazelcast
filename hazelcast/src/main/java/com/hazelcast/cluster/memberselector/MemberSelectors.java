@@ -30,12 +30,7 @@ public final class MemberSelectors {
      * A {@link MemberSelector} instance that selects only lite members that own no partition
      */
 
-    public static final MemberSelector LITE_MEMBER_SELECTOR = new MemberSelector() {
-        @Override
-        public boolean select(Member member) {
-            return member.isLiteMember();
-        }
-    };
+    public static final MemberSelector LITE_MEMBER_SELECTOR = Member::isLiteMember;
 
     /**
      * A {@link MemberSelector} instance that selects only data members that own a partition
@@ -52,12 +47,7 @@ public final class MemberSelectors {
      * A {@link MemberSelector} instance that selects only local members
      */
 
-    public static final MemberSelector LOCAL_MEMBER_SELECTOR = new MemberSelector() {
-        @Override
-        public boolean select(Member member) {
-            return member.localMember();
-        }
-    };
+    public static final MemberSelector LOCAL_MEMBER_SELECTOR = Member::localMember;
 
     /**
      * A {@link MemberSelector} instance that selects only remote members

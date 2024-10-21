@@ -116,7 +116,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Test
     public void test_migration_local() throws Exception {
-        test_migration(hz.getMap(MAP_NAME), null, () -> createHazelcastInstance());
+        test_migration(hz.getMap(MAP_NAME), null, this::createHazelcastInstance);
     }
 
     @Test

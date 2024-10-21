@@ -439,7 +439,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 // ASYNC executor is of CONCRETE type (does not share threads with other executors)
                 // and is never used for user-supplied code.
                 getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
-                        () -> trySendNewFragment());
+                        MigrationRequestOperation.this::trySendNewFragment);
             } else {
                 ILogger logger = getLogger();
                 if (logger.isFineEnabled()) {

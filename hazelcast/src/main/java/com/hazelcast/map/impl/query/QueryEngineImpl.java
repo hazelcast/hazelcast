@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -300,7 +301,7 @@ public class QueryEngineImpl implements QueryEngine {
         Collection<Address> members;
         if (query.getPartitionIdSet().size() == partitionService.getPartitionCount()) {
             members = clusterService.getMembers(DATA_MEMBER_SELECTOR).stream()
-                    .map(m -> m.getAddress())
+                    .map(Member::getAddress)
                     .collect(Collectors.toList());
         } else {
             members = new HashSet<>();

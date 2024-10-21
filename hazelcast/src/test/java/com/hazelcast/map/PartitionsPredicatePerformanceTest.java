@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -133,7 +134,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
         return partitionService.getPartitions().stream().limit(count)
                        .collect(Collectors.toMap(
                                p -> hzMap.keySet().stream().filter(k -> partitionService.getPartition(k).getPartitionId() == p.getPartitionId()).findFirst().get(),
-                               p -> p.getPartitionId()
+                               Partition::getPartitionId
                        ));
     }
 

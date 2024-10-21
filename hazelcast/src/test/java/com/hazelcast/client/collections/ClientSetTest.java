@@ -117,7 +117,7 @@ public class ClientSetTest extends HazelcastTestSupport {
         Spliterator spliterator = set.spliterator();
 
         ArrayList recorder = new ArrayList(set.size());
-        Consumer consumer = value -> recorder.add(value);
+        Consumer consumer = recorder::add;
 
         // tryAdvance.
         assertTrue(spliterator.tryAdvance(consumer));

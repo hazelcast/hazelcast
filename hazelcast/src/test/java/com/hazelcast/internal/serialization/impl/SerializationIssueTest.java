@@ -302,12 +302,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionHash() {
-        PartitioningStrategy partitionStrategy = new PartitioningStrategy() {
-            @Override
-            public Object getPartitionKey(Object key) {
-                return key.hashCode();
-            }
-        };
+        PartitioningStrategy partitionStrategy = Object::hashCode;
 
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
 

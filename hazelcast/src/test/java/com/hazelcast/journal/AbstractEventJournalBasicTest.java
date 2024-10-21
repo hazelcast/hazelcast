@@ -242,7 +242,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     public void receiveExpirationEventsWhenPutOnExpiringStructure() {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
         final EventJournalDataStructureAdapter<String, Integer, EJ_TYPE> adapter = context.dataAdapterWithExpiration;
-        testExpiration(context, adapter, (k, i) -> adapter.put(k, i));
+        testExpiration(context, adapter, adapter::put);
     }
 
     @Test

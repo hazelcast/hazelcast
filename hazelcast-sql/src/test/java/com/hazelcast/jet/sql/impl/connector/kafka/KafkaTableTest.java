@@ -100,7 +100,7 @@ public class KafkaTableTest {
         );
 
         if (shouldThrow) {
-            assertThatThrownBy(() -> table.preferredLocalParallelism())
+            assertThatThrownBy(table::preferredLocalParallelism)
                     .isInstanceOf(NumberFormatException.class);
         } else {
             assertThat(table.preferredLocalParallelism()).isEqualTo(expected);

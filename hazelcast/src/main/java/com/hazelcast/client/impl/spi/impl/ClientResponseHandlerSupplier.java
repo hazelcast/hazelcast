@@ -63,12 +63,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
-    private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<>() {
-        @Override
-        protected MutableInteger initialValue() {
-            return new MutableInteger();
-        }
-    };
+    private static final ThreadLocal<MutableInteger> INT_HOLDER = ThreadLocal.withInitial(() -> new MutableInteger());
 
     private final ClientInvocationServiceImpl invocationService;
     private final ResponseThread[] responseThreads;

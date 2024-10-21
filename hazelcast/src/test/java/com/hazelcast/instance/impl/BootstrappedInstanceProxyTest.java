@@ -43,7 +43,7 @@ public class BootstrappedInstanceProxyTest {
         bootstrappedInstanceProxy.shutdown();
 
         // Shutdown is not allowed so no exception should be thrown
-        assertThatCode(() -> bootstrappedInstanceProxy.shutdown())
+        assertThatCode(bootstrappedInstanceProxy::shutdown)
                 .doesNotThrowAnyException();
     }
 
@@ -59,7 +59,7 @@ public class BootstrappedInstanceProxyTest {
         bootstrappedInstanceProxy.setShutDownAllowed(true);
 
         // Shutdown is allowed so exception should be thrown
-        assertThatThrownBy(() -> bootstrappedInstanceProxy.shutdown())
+        assertThatThrownBy(bootstrappedInstanceProxy::shutdown)
                 .isInstanceOf(IllegalStateException.class);
     }
 }
