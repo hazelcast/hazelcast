@@ -64,6 +64,10 @@ public enum DeleteOpSteps implements IMapOpStep {
             if (recordStore.persistenceEnabledFor(state.getCallerProvenance())) {
                 MapDataStore mapDataStore = recordStore.getMapDataStore();
                 mapDataStore.remove(state.getKey(), state.getNow(), state.getTxnId());
+
+                if (state.getOldValue() != null) {
+                    recordStore.updateStatsOnRemove(state.getNow());
+                }
             }
         }
 
