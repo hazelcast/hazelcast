@@ -18,7 +18,6 @@ package com.hazelcast.osgi;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -159,6 +158,6 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected String getMajorVersion() {
-        return StringUtil.tokenizeVersionString(BuildInfoProvider.getBuildInfo().getVersion())[0];
+        return String.valueOf(BuildInfoProvider.getBuildInfo().getVersion().getMajor());
     }
 }

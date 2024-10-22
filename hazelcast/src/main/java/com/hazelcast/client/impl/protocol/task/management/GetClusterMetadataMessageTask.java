@@ -40,7 +40,7 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
     protected Object call() throws Exception {
         MCClusterMetadata metadata = new MCClusterMetadata();
         metadata.setCurrentState(nodeEngine.getClusterService().getClusterState());
-        metadata.setMemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
+        metadata.setMemberVersion(BuildInfoProvider.getBuildInfo().getVersion().toString());
         metadata.setClusterTime(nodeEngine.getClusterService().getClusterTime());
         metadata.setClusterId(nodeEngine.getClusterService().getClusterId());
         return metadata;

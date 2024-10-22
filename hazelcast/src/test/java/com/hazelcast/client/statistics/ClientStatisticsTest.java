@@ -106,7 +106,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         TcpClientConnection aConnection = (TcpClientConnection) client.getConnectionManager().getActiveConnections().iterator().next();
         String expectedClientAddress = aConnection.getLocalSocketAddress().getAddress().getHostAddress();
         assertEquals(expectedClientAddress, stats.get("clientAddress"));
-        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
+        assertEquals(BuildInfoProvider.getBuildInfo().getVersion().toString(), stats.get("clientVersion"));
         assertEquals(client.getName(), stats.get("clientName"));
 
         // time measured by us after client connection should be greater than the connection time reported by the statistics

@@ -17,6 +17,7 @@
 package com.hazelcast.commandline;
 
 import com.hazelcast.instance.GeneratedBuildProperties;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
@@ -34,10 +35,10 @@ import static org.reflections.scanners.Scanners.Resources;
 
 public class VersionProviderTest {
     @Test
-    public void test_gerVersion() {
+    public void test_getVersion() {
         try {
             // given
-            String[] expected = {"Version: " + GeneratedBuildProperties.VERSION};
+            String[] expected = {"Version: " + Version.of(GeneratedBuildProperties.VERSION)};
             // when
             String[] version = new VersionProvider().getVersion();
             // then

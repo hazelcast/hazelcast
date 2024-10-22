@@ -37,6 +37,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
+import com.hazelcast.version.Version;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LogEvent;
@@ -577,7 +578,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         client = createHazelcastClient(clientConfig);
 
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-        String clientVersion = buildInfo.getVersion();
+        Version clientVersion = buildInfo.getVersion();
 
         assertThatThrownBy(() -> run("submit", testJobJarFile.toString()))
                 .hasStackTraceContaining("Server and client must have matching minor version. Server version "
@@ -629,7 +630,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         client = createHazelcastClient(clientConfig);
 
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-        String clientVersion = buildInfo.getVersion();
+        Version clientVersion = buildInfo.getVersion();
 
         assertThatThrownBy(() -> run("submit", testJobJarFile.toString()))
                 .hasStackTraceContaining("Server and client must have matching minor version. Server version "

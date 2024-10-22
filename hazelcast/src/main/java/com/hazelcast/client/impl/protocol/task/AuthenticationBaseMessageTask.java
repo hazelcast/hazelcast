@@ -236,7 +236,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         UUID uuid = nodeEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        String serverVersion = getMemberBuildInfo().getVersion();
+        String serverVersion = getMemberBuildInfo().getVersion().toString();
         byte[] tpcToken = endpoint.getTpcToken() != null ? endpoint.getTpcToken().getContent() : null;
 
         ClusterViewListenerService clusterViewListenerService = clientEngine.getClusterViewListenerService();

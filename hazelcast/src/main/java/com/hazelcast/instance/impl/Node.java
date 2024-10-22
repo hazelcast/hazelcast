@@ -221,7 +221,7 @@ public class Node {
         // Calling getBuildInfo() instead of directly using BuildInfoProvider.BUILD_INFO.
         // Version can be overridden via system property. That's why BuildInfo should be parsed for each Node.
         this.buildInfo = BuildInfoProvider.getBuildInfo();
-        this.version = MemberVersion.of(buildInfo.getVersion());
+        this.version = buildInfo.getMemberVersion();
 
         String loggingType = properties.getString(LOGGING_TYPE);
         boolean detailsEnabled = properties.getBoolean(LOGGING_ENABLE_DETAILS);

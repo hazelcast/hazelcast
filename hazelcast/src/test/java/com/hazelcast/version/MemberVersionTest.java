@@ -119,11 +119,12 @@ public class MemberVersionTest {
 
     @Test
     public void testVersionOf_whenVersionStringIsNull() {
-        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(null));
+        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of((String) null));
     }
 
     @Test
     public void testEquals() {
+        //noinspection EqualsWithItself
         assertEquals(version, version);
         assertEquals(version, versionSameAttributes);
 

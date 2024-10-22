@@ -194,7 +194,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
         MCGetClusterMetadataCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         assertTrue(response.clusterTime > 0);
         assertEquals(0, response.currentState);
-        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), response.memberVersion);
+        assertEquals(BuildInfoProvider.getBuildInfo().getVersion().toString(), response.memberVersion);
         assertNull(response.jetVersion);
     }
 

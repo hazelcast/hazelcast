@@ -82,6 +82,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.sql.impl.CoreQueryUtils;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
@@ -1280,7 +1281,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     private ClientMessage encodeAuthenticationRequest(Address toAddress) {
         InternalSerializationService ss = client.getSerializationService();
-        String clientVersion = BuildInfoProvider.getBuildInfo().getVersion();
+        Version clientVersion = BuildInfoProvider.getBuildInfo().getVersion();
 
         CandidateClusterContext currentContext = clusterDiscoveryService.current();
         Credentials credentials = currentContext.getCredentialsFactory().newCredentials(toAddress);
@@ -1307,21 +1308,22 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private ClientMessage encodePasswordCredentialsRequest(String clusterName,
                                                            PasswordCredentials credentials,
                                                            byte serializationVersion,
-                                                           String clientVersion, byte routingMode,
+                                                           Version clientVersion, byte routingMode,
                                                            boolean cpDirectToLeader) {
         return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
                 credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                clientVersion, client.getName(), labels, routingMode, cpDirectToLeader);
+                clientVersion.toString(), client.getName(), labels, routingMode, cpDirectToLeader);
     }
 
     private ClientMessage encodeCustomCredentialsRequest(String clusterName,
                                                          byte[] secretBytes,
                                                          byte serializationVersion,
-                                                         String clientVersion,
+                                                         Version clientVersion,
                                                          byte routingMode,
                                                          boolean cpDirectToLeader) {
         return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                connectionType, serializationVersion, clientVersion, client.getName(), labels, routingMode, cpDirectToLeader);
+                connectionType, serializationVersion, clientVersion.toString(), client.getName(), labels, routingMode,
+                cpDirectToLeader);
     }
 
     protected void checkClientActive() {

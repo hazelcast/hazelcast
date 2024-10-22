@@ -65,7 +65,7 @@ public class ClusterStateManagerTest {
     private static final UUID TXN = UUID.randomUUID();
     private static final UUID ANOTHER_TXN = UUID.randomUUID();
     private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-    private static final Version CURRENT_CLUSTER_VERSION = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final Version CURRENT_CLUSTER_VERSION = BuildInfoProvider.getBuildInfo().getVersion();
     private static final int MEMBERLIST_VERSION = 1;
     private static final long PARTITION_STAMP = 0;
 

@@ -41,7 +41,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestJavaSerializationUtils;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
-import com.hazelcast.version.Version;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -557,7 +556,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         VersionedDataSerializable object = new VersionedDataSerializable();
         ss.toData(object);
         assertEquals("ObjectDataOutput.getVersion should be equal to member version",
-                Version.of(BuildInfoProvider.getBuildInfo().getVersion()), object.getVersion());
+                BuildInfoProvider.getBuildInfo().getVersion(), object.getVersion());
     }
 
     @Test
@@ -566,7 +565,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         VersionedDataSerializable object = new VersionedDataSerializable();
         VersionedDataSerializable otherObject = ss.toObject(ss.toData(object));
         assertEquals("ObjectDataInput.getVersion should be equal to member version",
-                Version.of(BuildInfoProvider.getBuildInfo().getVersion()), otherObject.getVersion());
+                BuildInfoProvider.getBuildInfo().getVersion(), otherObject.getVersion());
     }
 
     @Test

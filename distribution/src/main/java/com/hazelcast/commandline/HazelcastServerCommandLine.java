@@ -62,8 +62,7 @@ public class HazelcastServerCommandLine {
                 .setExecutionExceptionHandler(new ExceptionHandler());
         cmd.execute(args);
 
-        String version = getBuildInfo().getVersion();
-        cmd.getCommandSpec().usageMessage().header("Hazelcast " + version);
+        cmd.getCommandSpec().usageMessage().header("Hazelcast " + getBuildInfo().getVersion());
         if (args.length == 0) {
             cmd.usage(out);
         }
