@@ -469,11 +469,12 @@ public class HazelcastCommandLine implements Runnable {
     private void checkVersionCompatibility(HazelcastInstance client) {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         MemberVersion masterVersion = clientImpl.getClientClusterService().getMasterMember().getVersion();
-        Version clientVersion = getBuildInfo().getVersion();
+        String fullClientVersion = getBuildInfo().getVersion();
 
+        Version clientVersion = Version.of(fullClientVersion);
         if (!masterVersion.asVersion().equals(clientVersion)) {
             throw new HazelcastException("Server and client must have matching minor version. "
-                    + "Server version " + masterVersion + ", hz-cli version " + clientVersion);
+                    + "Server version " + masterVersion + ", hz-cli version " + fullClientVersion);
         }
     }
 
@@ -542,7 +543,7 @@ public class HazelcastCommandLine implements Runnable {
         CommandLine cmd = new CommandLine(new HazelcastCommandLine(hzClientFn, out, err));
         cmd.getSubcommands().get("submit").setStopAtPositional(true);
 
-        Version version = getBuildInfo().getVersion();
+        String version = getBuildInfo().getVersion();
         cmd.getCommandSpec().usageMessage().header("Hazelcast " + version);
 
         if (args.length == 0) {

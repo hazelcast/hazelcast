@@ -166,7 +166,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         refreshMetrics();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-        assertEquals(BuildInfoProvider.getBuildInfo().getVersion().toString(), get(BUILD_VERSION));
+        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), get(BUILD_VERSION));
         assertTrue(get(JAVA_CLASSPATH).endsWith(".jar"));
         assertEquals(node.getLocalMember().getUuid().toString(), get(UUID_OF_CLUSTER));
         assertNull(get(() -> "e"));

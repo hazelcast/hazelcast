@@ -57,7 +57,7 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
         if (upstreamBuildInfo != null) {
             writer.writeKeyValueEntry("UpstreamRevision", upstreamBuildInfo.getRevision());
         }
-        writer.writeKeyValueEntry("Version", buildInfo.getVersion().toString());
+        writer.writeKeyValueEntry("Version", buildInfo.getVersion());
         writer.writeKeyValueEntry("SerialVersion", buildInfo.getSerializationVersion());
         writer.writeKeyValueEntry("Enterprise", buildInfo.isEnterprise());
         writer.endSection();

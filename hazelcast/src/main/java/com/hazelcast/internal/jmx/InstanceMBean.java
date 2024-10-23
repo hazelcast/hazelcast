@@ -202,7 +202,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     @ManagedAnnotation("version")
     @ManagedDescription("The Hazelcast version")
     public String getVersion() {
-        return managedObject.node.getBuildInfo().getVersion().toString();
+        return managedObject.node.getBuildInfo().getVersion();
     }
 
     @ManagedAnnotation("build")

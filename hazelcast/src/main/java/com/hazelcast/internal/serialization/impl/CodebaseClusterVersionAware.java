@@ -24,7 +24,7 @@ import com.hazelcast.version.Version;
  */
 public class CodebaseClusterVersionAware implements ClusterVersionAware {
 
-    private final Version version = BuildInfoProvider.getBuildInfo().getVersion();
+    private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
 
     @Override
     public Version getClusterVersion() {

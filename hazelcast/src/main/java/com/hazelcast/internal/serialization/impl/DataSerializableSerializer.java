@@ -58,7 +58,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
-    private final Version version = BuildInfoProvider.getBuildInfo().getVersion();
+    private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
     private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<>();
 
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,

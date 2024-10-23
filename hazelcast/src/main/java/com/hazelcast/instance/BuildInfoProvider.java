@@ -19,7 +19,6 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.version.MemberVersion;
 
 import java.lang.reflect.Field;
 
@@ -148,7 +147,7 @@ public final class BuildInfoProvider {
                 LOGGER.info("Overriding hazelcast enterprise flag with system property value " + this.enterprise);
                 enterprise = this.enterprise;
             }
-            return new BuildInfo(MemberVersion.of(version), build, revision, buildNumber, enterprise, serialVersion,
+            return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion,
                     commitId, upstreamBuildInfo);
 
         }

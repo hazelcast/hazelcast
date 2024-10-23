@@ -50,7 +50,7 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
         System.setProperty("hazelcast.build", "2");
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
-        String version = buildInfo.getVersion().toString();
+        String version = buildInfo.getVersion();
         String build = buildInfo.getBuild();
         int buildNumber = buildInfo.getBuildNumber();
 
@@ -64,7 +64,7 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
     public void testReadValues() {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
-        String version = buildInfo.getVersion().toString();
+        String version = buildInfo.getVersion();
         String build = buildInfo.getBuild();
         int buildNumber = buildInfo.getBuildNumber();
 
@@ -96,8 +96,7 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
     public void testOverrideBuildVersion() {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, "99.99.99");
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-        assertEquals("99.99", buildInfo.getVersion().toString());
-        assertEquals("99.99.99", buildInfo.getMemberVersion().toString());
+        assertEquals("99.99.99", buildInfo.getVersion());
         System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
     }
 

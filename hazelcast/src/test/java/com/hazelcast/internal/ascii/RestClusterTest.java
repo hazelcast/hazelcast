@@ -283,7 +283,7 @@ public class RestClusterTest {
         ConnectionResponse resp = communicator.listClusterNodes(clusterName, getPassword());
         assertSuccessJson(resp,
                 "response", String.format("[%s]\n%s\n%s", instance.getCluster().getLocalMember(),
-                        BuildInfoProvider.getBuildInfo().getVersion().toString(),
+                        BuildInfoProvider.getBuildInfo().getVersion(),
                         System.getProperty("java.version")));
     }
 

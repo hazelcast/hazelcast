@@ -17,8 +17,6 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
-import com.hazelcast.version.MemberVersion;
-import com.hazelcast.version.Version;
 
 import static com.hazelcast.internal.util.StringUtil.tokenizeVersionString;
 import static java.lang.Integer.parseInt;
@@ -32,7 +30,7 @@ public class BuildInfo {
     private static final int MINOR_VERSION_MULTIPLIER = 100;
     private static final int PATCH_TOKEN_INDEX = 3;
 
-    private final MemberVersion version;
+    private final String version;
     private final String build;
     private final String revision;
     private final int buildNumber;
@@ -41,17 +39,12 @@ public class BuildInfo {
     private final BuildInfo upstreamBuildInfo;
     private final String commitId;
 
-    public BuildInfo(MemberVersion version, String build, String revision, int buildNumber, boolean enterprise,
+    public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion, String commitId) {
         this(version, build, revision, buildNumber, enterprise, serializationVersion, commitId, null);
     }
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
-                     byte serializationVersion, String commitId) {
-        this(MemberVersion.of(version), build, revision, buildNumber, enterprise, serializationVersion, commitId, null);
-    }
-
-    public BuildInfo(MemberVersion version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion, String commitId, BuildInfo upstreamBuildInfo) {
         this.version = version;
         this.build = build;
@@ -67,12 +60,8 @@ public class BuildInfo {
         return revision;
     }
 
-    public MemberVersion getMemberVersion() {
+    public String getVersion() {
         return version;
-    }
-
-    public Version getVersion() {
-        return version.asVersion();
     }
 
     public String getBuild() {

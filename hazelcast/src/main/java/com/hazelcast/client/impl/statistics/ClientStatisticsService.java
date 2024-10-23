@@ -369,7 +369,7 @@ public class ClientStatisticsService {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ConnectionType.JAVA_CLIENT);
-            addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion().toString());
+            addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
             addStat(stats, "clusterConnectionTimestamp", mainConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)

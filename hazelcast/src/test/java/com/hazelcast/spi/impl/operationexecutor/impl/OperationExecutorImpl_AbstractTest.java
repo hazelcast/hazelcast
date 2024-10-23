@@ -74,8 +74,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     @Before
     public void setup() throws Exception {
-        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1.0",
-                "1", "1", 1, false, (byte) 1, "1"),
+        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte) 1, "1"),
                 true, false, null);
 
         serializationService = new DefaultSerializationServiceBuilder().build();

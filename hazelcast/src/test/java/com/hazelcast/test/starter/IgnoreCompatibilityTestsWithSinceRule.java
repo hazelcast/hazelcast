@@ -40,7 +40,7 @@ public class IgnoreCompatibilityTestsWithSinceRule implements TestRule {
             testSince = description.getTestClass().getAnnotation(TestForCompatibilitySince.class);
         }
         if (testSince != null) {
-            final Version currentCodebaseVersion = BuildInfoProvider.getBuildInfo().getVersion();
+            final Version currentCodebaseVersion = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
             final Version testSinceVersion = Version.of(testSince.value());
             if (currentCodebaseVersion.isLessThan(testSinceVersion)) {
                 return new Statement() {
