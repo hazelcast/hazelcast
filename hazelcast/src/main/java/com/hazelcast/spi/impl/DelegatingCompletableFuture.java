@@ -36,7 +36,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 
@@ -100,7 +99,7 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         this.serializationService = (InternalSerializationService) serializationService;
         this.result = result;
         if (listenFutureCompletion) {
-            this.future.whenCompleteAsync((v, t) -> completeSuper(v, (Throwable) t), CALLER_RUNS);
+            this.future.whenCompleteAsync((v, t) -> completeSuper(v, (Throwable) t), defaultExecutor());
         }
     }
 
