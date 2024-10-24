@@ -52,6 +52,21 @@ public final class JobConfigArguments {
      */
     public static final String KEY_JOB_IS_SUSPENDABLE = "__jet.jobIsSuspendable";
 
+    /**
+     * The key under which the associated User Code Namespace for this job is stored.
+     * <p>
+     * <b>NOTE:</b> The User Code Namespace defined by this key should only be used if there
+     * is no {@link ClassLoader} factory defined at {@link JobConfig#getClassLoaderFactory()}.
+     * If {@link JobConfig#getClassLoaderFactory()} is defined in addition to a User Code
+     * Namespace being provided, an {@link com.hazelcast.config.InvalidConfigurationException}
+     * will be thrown at Job creation.
+     * <p>
+     * This argument should be set by calling {@link JobConfig#setUserCodeNamespace(String)}.
+     * <p>
+     * By default, this key will not exist and a User Code Namespace will not be used.
+     */
+    public static final String KEY_USER_CODE_NAMESPACE = "__jet.userCodeNamespace";
+
     private JobConfigArguments() {
     }
 }

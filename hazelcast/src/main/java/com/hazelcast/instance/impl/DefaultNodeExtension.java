@@ -139,7 +139,6 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS;
-import static com.hazelcast.instance.impl.Node.getLegacyUCDClassLoader;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -727,7 +726,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public UserCodeNamespaceService getNamespaceService() {
-        return new NoOpUserCodeNamespaceService(getLegacyUCDClassLoader(node.getConfig()));
+        return new NoOpUserCodeNamespaceService(node.getConfigClassLoader());
     }
 
     @Override

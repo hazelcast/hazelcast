@@ -174,6 +174,8 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                 "JobConfig.classLoaderFactory not supported for light jobs");
         Preconditions.checkTrue(config.getInitialSnapshotName() == null,
                 "JobConfig.initialSnapshotName not supported for light jobs");
+        Preconditions.checkTrue(config.getUserCodeNamespace() == null,
+                "User Code Namespace association is not supported for light jobs");
     }
 
     private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config, @Nullable Subject subject) {

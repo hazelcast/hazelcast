@@ -1211,7 +1211,12 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Sets a custom {@link JobClassLoaderFactory} that will be used to load
      * job classes and resources on Jet members. Not supported for {@linkplain
-     * JetService#newLightJob(Pipeline) light jobs}
+     * JetService#newLightJob(Pipeline) light jobs}.
+     * <p>
+     * <b>NOTE:</b> Defining a custom factory means that a User Code Namespace
+     * should not be defined using {@link #setUserCodeNamespace(String)}
+     * as these features are incompatible and will result in an exception being
+     * thrown at Job creation if both are defined.
      *
      * @return {@code this} instance for fluent API
      */
@@ -1382,6 +1387,32 @@ public class JobConfig implements IdentifiedDataSerializable {
         checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
         this.timeoutMillis = timeoutMillis;
         return this;
+    }
+
+    /**
+     * Retrieves the User Code Namespace (UCN) to use with this job, if one has been set
+     * by calling {@link #setUserCodeNamespace(String)}. If a UCN is provided with a Jet
+     * job, then the job will have access to resources from the UCN during execution.
+     *
+     * @return the User Code Namespace associated with this job if it is configured, or
+     * {@code null} if one has not been set.
+     * @since 6.0
+     */
+    @Nullable
+    public String getUserCodeNamespace() {
+        return (String) this.arguments.get(JobConfigArguments.KEY_USER_CODE_NAMESPACE);
+    }
+
+    /**
+     * Sets the User Code Namespace (UCN) to use with this job. Setting this to {@code null}
+     * will clear the association of this job with a UCN. If a UCN is provided with a Jet
+     * job, then the job will have access to resources from the UCN during execution.
+     *
+     * @param namespace the User Code Namespace to use with this Jet job
+     * @since 6.0
+     */
+    public void setUserCodeNamespace(String namespace) {
+        this.arguments.put(JobConfigArguments.KEY_USER_CODE_NAMESPACE, namespace);
     }
 
     @Override

@@ -20,14 +20,19 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.UUID;
 
 public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters, Void> {
+    private transient JobConfig deserializedJobConfig;
+
     protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetSubmitJobCodec::decodeRequest,
                 o -> JetSubmitJobCodec.encodeResponse());
@@ -40,7 +45,7 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
 
     @Override
     protected Operation prepareOperation() {
-        return new SubmitJobOperation(parameters.jobId, null, null, parameters.dag, parameters.jobConfig,
+        return new SubmitJobOperation(parameters.jobId, null, deserializedJobConfig, parameters.dag, parameters.jobConfig,
                 parameters.lightJobCoordinator != null, endpoint.getSubject());
     }
 
@@ -52,6 +57,17 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
     @Override
     public Object[] getParameters() {
         return new Object[]{};
+    }
+
+    @Nullable
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        // we need to deserialize the JobConfig to read it, so save it for prepareOperation() later too
+        if (deserializedJobConfig == null) {
+            deserializedJobConfig = nodeEngine.getSerializationService().toObject(parameters.jobConfig);
+        }
+        String userCodeNamespace = deserializedJobConfig.getUserCodeNamespace();
+        return userCodeNamespace != null ? new UserCodeNamespacePermission(userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Nullable

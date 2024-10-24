@@ -126,8 +126,9 @@ public final class SortingUtil {
     }
 
     private static Comparator<QueryableEntry> newComparator(final PagingPredicateImpl pagingPredicate) {
-        return NamespaceUtil.callWithNamespace(pagingPredicate.getUserCodeNamespace(), () -> (entry1, entry2) ->
-                SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2));
+        return (entry1, entry2) ->
+                NamespaceUtil.callWithNamespace(pagingPredicate.getUserCodeNamespace(), () ->
+                        SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2));
     }
 
     public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,
