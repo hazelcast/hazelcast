@@ -35,6 +35,10 @@ public class NotLeaderException extends CPSubsystemException {
                 + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
     }
 
+    public NotLeaderException(String message) {
+        super(message, null);
+    }
+
     private NotLeaderException(String message, UUID leaderUuid, Throwable cause) {
         super(message, cause, leaderUuid);
     }
