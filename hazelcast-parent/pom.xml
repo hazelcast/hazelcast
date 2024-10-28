@@ -1185,7 +1185,6 @@
             -->
             <id>release-snapshot</id>
             <properties>
-                <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
@@ -1225,7 +1224,6 @@
             -->
             <id>release-devel</id>
             <properties>
-                <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
@@ -1284,7 +1282,6 @@
             -->
             <id>release</id>
             <properties>
-                <javadoc>true</javadoc>
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
