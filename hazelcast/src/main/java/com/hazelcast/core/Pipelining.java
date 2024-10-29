@@ -22,7 +22,9 @@ import com.hazelcast.spi.annotation.Beta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
@@ -104,9 +106,11 @@ public class Pipelining<E> {
      * This call waits till all requests have completed.
      *
      * @return the List of results.
-     * @throws Exception is something fails getting the results.
+     * @throws InterruptedException if the Thread got interrupted while waiting for the result.
+     * @throws CancellationException if any of the futures was cancelled
+     * @throws ExecutionException if any of the futures completed exceptionally
      */
-    public List<E> results() throws Exception {
+    public List<E> results() throws ExecutionException, InterruptedException {
         List<E> result = new ArrayList<>(futures.size());
         for (CompletionStage<E> f : futures) {
             result.add(f.toCompletableFuture().get());

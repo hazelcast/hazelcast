@@ -32,10 +32,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -76,6 +80,29 @@ public class PipeliningTest extends HazelcastTestSupport {
         t.start();
         t.interrupt();
         t.assertFailsEventually(InterruptedException.class);
+    }
+
+    @Test
+    public void testFailure() throws Exception {
+        final Pipelining<String> pipelining = new Pipelining<>(10);
+        pipelining.add(CompletableFuture.completedFuture("ok"));
+        pipelining.add(CompletableFuture.failedFuture(new RuntimeException("fail")));
+
+        assertThatThrownBy(() -> pipelining.results())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    public void testCancelled() throws Exception {
+        final Pipelining<String> pipelining = new Pipelining<>(10);
+        pipelining.add(CompletableFuture.completedFuture("ok"));
+        CompletableFuture<String> cancelledFuture = new CompletableFuture<>();
+        cancelledFuture.cancel(true);
+        pipelining.add(cancelledFuture);
+
+        assertThatThrownBy(() -> pipelining.results())
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
