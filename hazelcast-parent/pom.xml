@@ -144,6 +144,15 @@
         <attribution.skip>true</attribution.skip>
 
         <main.basedir>..</main.basedir>
+
+        <maven.javadoc.plugin.excludePackageNames>
+            *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:*.util:
+            com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
+            *.client.console:*.buildutils:*.client.protocol.generator:*.cluster.client:
+            *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
+            *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder:
+            io.github.*:org.apache.*
+        </maven.javadoc.plugin.excludePackageNames>
     </properties>
 
     <distributionManagement>
