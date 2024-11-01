@@ -128,7 +128,6 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.impl.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetworkConfig;
@@ -951,7 +950,7 @@ public class Node {
 
         if (!clusterService.isJoined()) {
             logger.severe("Could not join cluster. Shutting down now!");
-            shutdownNodeByFiringEvents(Node.this, true);
+            hazelcastInstance.getLifecycleService().terminate();
         }
     }
 
