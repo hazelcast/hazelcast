@@ -188,7 +188,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                 .config(new JobConfig().setSuspendOnFailure(true))
                 .when((job, listener) -> {
                     assertThat(job).eventuallySuspended();
-                    String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
+                    String failure = job.getSuspensionCause().errorCause().split(System.lineSeparator(), 3)[1];
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
