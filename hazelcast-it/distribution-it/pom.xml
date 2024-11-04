@@ -15,7 +15,7 @@
         <jaxb.version>2.3.1</jaxb.version>
         <jaxb-core.version>3.0.2</jaxb-core.version>
         <activation.version>1.1.1</activation.version>
-        <hsqldb.version>2.7.3</hsqldb.version>
+        <hsqldb.version>2.7.4</hsqldb.version>
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}/..</main.basedir>
