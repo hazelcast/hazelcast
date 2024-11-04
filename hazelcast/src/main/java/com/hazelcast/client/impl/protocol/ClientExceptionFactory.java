@@ -346,7 +346,7 @@ public class ClientExceptionFactory {
         register(LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class,
                 (message, cause) -> new LockOwnershipLostException(message));
         register(CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class,
-                (message, cause) -> new CPGroupDestroyedException());
+                (message, cause) -> new CPGroupDestroyedException(message));
         register(CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class,
                 (message, cause) -> new CannotReplicateException(null));
         register(LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class,
