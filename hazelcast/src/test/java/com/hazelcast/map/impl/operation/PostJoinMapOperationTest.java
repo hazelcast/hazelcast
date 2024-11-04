@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -115,7 +116,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance(config);
         waitAllForSafeState(hz1, hz2);
 
-        hzFactory.terminate(hz1);
+        terminateInstance(hz1);
         waitAllForSafeState(hz2);
 
         // then: once all migrations are committed, the query is executed *with* the index and

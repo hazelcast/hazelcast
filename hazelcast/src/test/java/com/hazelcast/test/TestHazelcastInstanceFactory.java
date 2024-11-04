@@ -62,14 +62,12 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.Accessors.getAddress;
-import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
@@ -420,17 +418,6 @@ public class TestHazelcastInstanceFactory {
         return Hazelcast.getAllHazelcastInstances().stream()
                 .filter(instance -> getAddress(instance).equals(address))
                 .findAny().orElse(null);
-    }
-
-    /**
-     * Terminates supplied instance by releasing internal resources.
-     */
-    public void terminate(HazelcastInstance instance) {
-        Address address = getNode(instance).address;
-        terminateInstance(instance);
-        if (isMockNetwork) {
-            registry.removeInstance(address);
-        }
     }
 
     /**

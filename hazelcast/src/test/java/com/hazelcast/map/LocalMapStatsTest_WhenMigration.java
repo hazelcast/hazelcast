@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -80,7 +81,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
         hz2 = factory.newHazelcastInstance(config);
 
         waitAllForSafeState(factory.getAllHazelcastInstances());
-        factory.terminate(hz2);
+        terminateInstance(hz2);
 
         assertTrueEventually(() -> {
             long hits = map.getLocalMapStats().getHits();

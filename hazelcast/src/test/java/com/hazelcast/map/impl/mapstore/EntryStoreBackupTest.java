@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static junit.framework.TestCase.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,7 +62,7 @@ public class EntryStoreBackupTest extends HazelcastTestSupport {
             keys.add(i);
         }
         map.loadAll(keys, false);
-        factory.terminate(instances[1]);
+        terminateInstance(instances[1]);
         entryLoader.disable();
 
         sleepAtLeastMillis(TTL_MILLIS);
@@ -87,7 +88,7 @@ public class EntryStoreBackupTest extends HazelcastTestSupport {
             keys.add(i);
         }
         map.getAll(keys);
-        factory.terminate(instances[1]);
+        terminateInstance(instances[1]);
         entryLoader.disable();
 
         sleepAtLeastMillis(TTL_MILLIS);
@@ -111,7 +112,7 @@ public class EntryStoreBackupTest extends HazelcastTestSupport {
         for (int i = 0; i < entryCount; i++) {
             map.get(i);
         }
-        factory.terminate(instances[1]);
+        terminateInstance(instances[1]);
         entryLoader.disable();
 
         sleepAtLeastMillis(TTL_MILLIS);

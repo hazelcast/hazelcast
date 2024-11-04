@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -63,7 +64,7 @@ public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
         HazelcastInstance node2 = factory.newHazelcastInstance(config);
         waitClusterForSafeState(node1);
 
-        factory.terminate(node1);
+        terminateInstance(node1);
 
         map = node2.getMap(mapName);
 

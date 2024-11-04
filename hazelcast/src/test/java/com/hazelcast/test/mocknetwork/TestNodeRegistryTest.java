@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -37,7 +38,7 @@ public class TestNodeRegistryTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 
-        factory.terminate(hazelcastInstance);
+        terminateInstance(hazelcastInstance);
 
         assertEquals(0, factory.getRegistry().getNodes().size());
     }

@@ -26,7 +26,6 @@ import com.hazelcast.internal.util.AddressUtil;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.instance.impl.NodeState.SHUT_DOWN;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Collections.unmodifiableCollection;
@@ -83,10 +83,6 @@ public final class TestNodeRegistry {
         return node != null && node.isRunning() ? node.hazelcastInstance : null;
     }
 
-    public void removeInstance(Address address) {
-        nodes.remove(address);
-    }
-
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
         Collection<HazelcastInstance> all = new ArrayList<>();
         for (Node node : nodes.values()) {
@@ -120,9 +116,7 @@ public final class TestNodeRegistry {
     }
 
     private void shutdown(boolean terminate) {
-        Iterator<Node> iterator = nodes.values().iterator();
-        while (iterator.hasNext()) {
-            Node node = iterator.next();
+        for (Node node : nodes.values()) {
             HazelcastInstance hz = node.hazelcastInstance;
             LifecycleService lifecycleService = hz.getLifecycleService();
             if (terminate) {
@@ -130,7 +124,6 @@ public final class TestNodeRegistry {
             } else {
                 lifecycleService.shutdown();
             }
-            iterator.remove();
         }
     }
 
@@ -151,6 +144,11 @@ public final class TestNodeRegistry {
         Node currentNode = nodes.putIfAbsent(address, node);
         assertTrue("This address is already in registry! " + address,
                 currentNode == null || currentNode.equals(node));
+        node.hazelcastInstance.getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == SHUTDOWN) {
+                nodes.remove(address);
+            }
+        });
     }
 
     Collection<Address> getAddresses() {
