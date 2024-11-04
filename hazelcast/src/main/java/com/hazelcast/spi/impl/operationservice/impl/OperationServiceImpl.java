@@ -433,16 +433,6 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 invocationRetryPauseMillis, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
-    @Override
-    public void onStartAsyncOperation(Operation op) {
-        asyncOperations.add(op);
-    }
-
-    @Override
-    public void onCompletionAsyncOperation(Operation op) {
-        asyncOperations.remove(op);
-    }
-
     // =============================== processing operation  ===============================
 
     @Override

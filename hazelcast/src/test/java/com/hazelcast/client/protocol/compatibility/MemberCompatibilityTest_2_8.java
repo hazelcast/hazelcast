@@ -8288,6 +8288,7 @@ public class MemberCompatibilityTest_2_8 {
         VectorCollectionOptimizeCodec.RequestParameters parameters = VectorCollectionOptimizeCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.indexName));
+        assertFalse(parameters.isUuidExists);
     }
 
     @Test

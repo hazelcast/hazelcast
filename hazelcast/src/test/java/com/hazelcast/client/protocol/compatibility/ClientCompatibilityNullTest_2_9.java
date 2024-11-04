@@ -7351,7 +7351,7 @@ public class ClientCompatibilityNullTest_2_9 {
     @Test
     public void test_VectorCollectionOptimizeCodec_encodeRequest() {
         int fileClientMessageIndex = 932;
-        ClientMessage encoded = VectorCollectionOptimizeCodec.encodeRequest(aString, null);
+        ClientMessage encoded = VectorCollectionOptimizeCodec.encodeRequest(aString, null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

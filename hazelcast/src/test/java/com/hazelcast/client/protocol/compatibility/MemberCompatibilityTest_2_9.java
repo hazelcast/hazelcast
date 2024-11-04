@@ -8290,6 +8290,8 @@ public class MemberCompatibilityTest_2_9 {
         VectorCollectionOptimizeCodec.RequestParameters parameters = VectorCollectionOptimizeCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.indexName));
+        assertTrue(parameters.isUuidExists);
+        assertTrue(isEqual(aUUID, parameters.uuid));
     }
 
     @Test

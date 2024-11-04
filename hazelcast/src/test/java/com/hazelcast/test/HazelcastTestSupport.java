@@ -40,6 +40,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -101,6 +102,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -108,7 +110,6 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -378,7 +379,14 @@ public abstract class HazelcastTestSupport {
      * Returns the cartesian product of the specified lists.
      */
     public static List<Object[]> cartesianProduct(List<?>... lists) {
-        return Lists.cartesianProduct(lists).stream().map(List::toArray).collect(toList());
+        return Lists.cartesianProduct(lists).stream().map(List::toArray).toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, U> List<Tuple2<T, U>> cartesianProductTuple(List<T> t, List<U> u) {
+        return Lists.cartesianProduct(List.of(t, u)).stream()
+                .map(pair -> tuple2((T) pair.get(0), (U) pair.get(1)))
+                .toList();
     }
 
     // ###########################

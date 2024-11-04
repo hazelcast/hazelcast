@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.waitClusterForSafeState;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
@@ -580,13 +581,17 @@ public class BounceMemberRule implements TestRule {
             try {
                 while (testRunning.get()) {
                     if (bounceTestConfig.isUseTerminate()) {
+                        members.get(i).getLifecycleService().terminate();
+
                         if (bounceTestConfig.avoidOverlappingTerminations()) {
                             // Do not terminate next member before the cluster recovered after previous member crash.
                             // In default configuration with 1 backup repartitioning slower than bouncingIntervalSeconds
                             // might lead to data loss.
+                            // This check is done after termination to give time to accumulate some in-progress operations
+                            // before next termination.
+                            assertClusterSizeEventually(bounceTestConfig.getClusterSize() - 1, getSteadyMember());
                             waitClusterForSafeState(getSteadyMember());
                         }
-                        members.get(i).getLifecycleService().terminate();
                     } else {
                         members.get(i).shutdown();
                     }
