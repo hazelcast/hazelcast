@@ -174,7 +174,7 @@ public class JoinStressTest extends HazelcastTestSupport {
 
         final Map<String, AtomicInteger> groups = new HashMap<>(groupCount);
         for (int i = 0; i < groupCount; i++) {
-            groups.put("group-" + i, new AtomicInteger(0));
+            groups.put("group-" + i, new AtomicInteger());
         }
 
         ExecutorService ex = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() * 2);

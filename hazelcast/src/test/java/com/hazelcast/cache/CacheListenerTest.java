@@ -85,9 +85,9 @@ public class CacheListenerTest extends HazelcastTestSupport {
         final int threadCount = 10;
         final int shutdownWaitTimeInSeconds = threadCount;
         final int putCount = 1000;
-        final AtomicInteger actualPutCount = new AtomicInteger(0);
+        final AtomicInteger actualPutCount = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(threadCount);
-        final AtomicBoolean shutdown = new AtomicBoolean(false);
+        final AtomicBoolean shutdown = new AtomicBoolean();
         for (int i = 0; i < threadCount; i++) {
             new Thread(() -> {
                 Random rand = new Random();

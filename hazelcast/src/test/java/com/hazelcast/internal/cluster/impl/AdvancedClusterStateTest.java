@@ -360,7 +360,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Test
     public void changeClusterState_shouldFail_whenStartupIsNotCompleted() throws Exception {
-        AtomicBoolean startupDone = new AtomicBoolean(false);
+        AtomicBoolean startupDone = new AtomicBoolean();
         HazelcastInstance instance = createHazelcastInstanceFactory()
                 .withNodeExtensionCustomizer(node -> new DefaultNodeExtension(node) {
                     @Override

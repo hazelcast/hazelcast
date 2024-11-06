@@ -162,7 +162,7 @@ public class MongoSqlConnectorIT extends MongoSqlIT {
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
 
         Pattern parallelismDagPattern = Pattern.compile("\\[localParallelism=(\\d)+]");
-        AtomicBoolean otherFound = new AtomicBoolean(false);
+        AtomicBoolean otherFound = new AtomicBoolean();
         LogListener lookForProjectAndFilterStep = log -> {
             String message = log.getLogRecord().getMessage();
             Matcher matcher = parallelismDagPattern.matcher(message);
@@ -203,7 +203,7 @@ public class MongoSqlConnectorIT extends MongoSqlIT {
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
 
         Pattern parallelismDagPattern = Pattern.compile("\\[localParallelism=(\\d)+]");
-        AtomicBoolean otherFound = new AtomicBoolean(false);
+        AtomicBoolean otherFound = new AtomicBoolean();
         LogListener lookForProjectAndFilterStep = log -> {
             String message = log.getLogRecord().getMessage();
             Matcher matcher = parallelismDagPattern.matcher(message);

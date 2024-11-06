@@ -372,7 +372,7 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
 
     private static class AwaitingAddMemberOperation extends InvokedMemberRecordingOperation {
 
-        private static final AtomicInteger COUNT = new AtomicInteger(0);
+        private static final AtomicInteger COUNT = new AtomicInteger();
         private static final CountDownLatch INITIAL_OPS_LATCH = new CountDownLatch(3);
         private static final CountDownLatch CLUSTER_SIZE_LATCH = new CountDownLatch(1);
         private int membersCount;
@@ -420,7 +420,7 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
 
     private static class AwaitingRemoveMemberOperation extends InvokedMemberRecordingOperation {
 
-        private static final AtomicInteger COUNT = new AtomicInteger(0);
+        private static final AtomicInteger COUNT = new AtomicInteger();
         private static final CountDownLatch INITIAL_OPS_LATCH = new CountDownLatch(3);
         private static final CountDownLatch CLUSTER_SIZE_LATCH = new CountDownLatch(1);
         private int membersCount;

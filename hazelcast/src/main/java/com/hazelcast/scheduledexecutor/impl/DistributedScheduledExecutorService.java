@@ -82,7 +82,7 @@ public class DistributedScheduledExecutorService
     public static final CapacityPermit NOOP_PERMIT = new NoopCapacityPermit();
 
     //Testing only
-    static final AtomicBoolean FAIL_MIGRATIONS = new AtomicBoolean(false);
+    static final AtomicBoolean FAIL_MIGRATIONS = new AtomicBoolean();
 
     private static final Object NULL_OBJECT = new Object();
 

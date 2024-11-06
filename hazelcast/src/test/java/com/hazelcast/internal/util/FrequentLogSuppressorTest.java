@@ -38,7 +38,7 @@ class FrequentLogSuppressorTest {
         FrequentLogSuppressor suppressor = new FrequentLogSuppressor(10, 3, logger, new HashMap<>());
         RuntimeException e = new RuntimeException("exception");
 
-        AtomicBoolean run = new AtomicBoolean(false);
+        AtomicBoolean run = new AtomicBoolean();
         suppressor.runSuppressed(e, () -> run.set(true));
         assertThat(run.get())
                 .describedAs("expected the action to run")
@@ -51,7 +51,7 @@ class FrequentLogSuppressorTest {
         RuntimeException e1 = new RuntimeException("exception 1");
         RuntimeException e2 = new RuntimeException("exception 2");
 
-        AtomicInteger counter = new AtomicInteger(0);
+        AtomicInteger counter = new AtomicInteger();
         suppressor.runSuppressed(e1, counter::incrementAndGet);
         suppressor.runSuppressed(e2, counter::incrementAndGet);
         assertThat(counter.get())
@@ -77,7 +77,7 @@ class FrequentLogSuppressorTest {
         FrequentLogSuppressor suppressor = new FrequentLogSuppressor(10, 3, logger, new HashMap<>());
         RuntimeException e = new RuntimeException("exception");
 
-        AtomicInteger counter = new AtomicInteger(0);
+        AtomicInteger counter = new AtomicInteger();
         for (int i = 0; i < 5; i++) {
             suppressor.runSuppressed(e, counter::incrementAndGet);
         }
@@ -92,7 +92,7 @@ class FrequentLogSuppressorTest {
         FrequentLogSuppressor suppressor = new FrequentLogSuppressor(1, 3, spy, new HashMap<>());
         RuntimeException e = new RuntimeException("exception");
 
-        AtomicInteger counter = new AtomicInteger(0);
+        AtomicInteger counter = new AtomicInteger();
         for (int i = 0; i < 5; i++) {
             // Runs 3 times here
             suppressor.runSuppressed(e, counter::incrementAndGet);

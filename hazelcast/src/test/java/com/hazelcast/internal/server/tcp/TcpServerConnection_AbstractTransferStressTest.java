@@ -48,7 +48,7 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
     // we create the payloads up front and select randomly from them. This is the number of payloads we are creating
     private static final int payloadCount = 10000;
 
-    private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean stop = new AtomicBoolean();
     private DummyPayload[] payloads;
 
     @Before

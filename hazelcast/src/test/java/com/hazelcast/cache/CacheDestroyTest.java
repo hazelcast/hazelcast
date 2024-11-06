@@ -141,7 +141,7 @@ public class CacheDestroyTest extends CacheTestSupport {
     public void testInvalidationListenerCallCount() {
         final ICache<String, String> cache = createCache();
 
-        final AtomicInteger counter = new AtomicInteger(0);
+        final AtomicInteger counter = new AtomicInteger();
 
         final CacheConfig config = cache.getConfiguration(CacheConfig.class);
 

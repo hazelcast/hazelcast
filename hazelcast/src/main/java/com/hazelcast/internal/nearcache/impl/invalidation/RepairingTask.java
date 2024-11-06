@@ -80,7 +80,7 @@ public final class RepairingTask implements Runnable {
     private final InvalidationMetaDataFetcher invalidationMetaDataFetcher;
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean running = new AtomicBoolean();
     private final ConcurrentMap<String, RepairingHandler> handlers = new ConcurrentHashMap<>();
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
 

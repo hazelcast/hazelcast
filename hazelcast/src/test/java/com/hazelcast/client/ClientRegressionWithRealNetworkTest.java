@@ -198,7 +198,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, Integer> map = client.getMap("test");
 
-        AtomicInteger eventCount = new AtomicInteger(0);
+        AtomicInteger eventCount = new AtomicInteger();
 
         map.addEntryListener((EntryAddedListener<Object, Object>) event -> eventCount.incrementAndGet(), false);
 

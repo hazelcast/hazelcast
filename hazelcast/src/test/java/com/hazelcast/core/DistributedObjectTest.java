@@ -260,7 +260,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
     private static class TestInitializingObject implements DistributedObject, InitializingObject {
 
-        private final AtomicBoolean init = new AtomicBoolean(false);
+        private final AtomicBoolean init = new AtomicBoolean();
         private final String name;
         private volatile boolean error;
         private final Runnable initializer;

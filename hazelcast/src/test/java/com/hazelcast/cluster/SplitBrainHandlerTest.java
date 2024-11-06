@@ -142,7 +142,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         LifecycleCountingListener() {
             for (LifecycleState state : LifecycleState.values()) {
-                counter.put(state, new AtomicInteger(0));
+                counter.put(state, new AtomicInteger());
             }
         }
 

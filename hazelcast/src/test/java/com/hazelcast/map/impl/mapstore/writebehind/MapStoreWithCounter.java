@@ -29,10 +29,10 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     protected final Map<K, V> store = new ConcurrentHashMap<>();
 
-    protected AtomicInteger countStore = new AtomicInteger(0);
-    protected AtomicInteger countDelete = new AtomicInteger(0);
-    protected AtomicInteger countLoad = new AtomicInteger(0);
-    protected AtomicInteger batchCounter = new AtomicInteger(0);
+    protected AtomicInteger countStore = new AtomicInteger();
+    protected AtomicInteger countDelete = new AtomicInteger();
+    protected AtomicInteger countLoad = new AtomicInteger();
+    protected AtomicInteger batchCounter = new AtomicInteger();
     protected Map<Integer, Integer> batchOpCountMap = new ConcurrentHashMap<>();
 
     @Override

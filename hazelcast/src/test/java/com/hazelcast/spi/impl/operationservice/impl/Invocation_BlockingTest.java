@@ -400,7 +400,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         final IQueue<Object> q = hz.getQueue("queue");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
+        final AtomicBoolean interruptedFlag = new AtomicBoolean();
 
         OpThread thread = new OpThread("Queue Thread", latch, interruptedFlag) {
             protected void doOp() throws InterruptedException {
@@ -482,7 +482,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         final IQueue queue = hz.getQueue(randomName());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
+        final AtomicBoolean interruptedFlag = new AtomicBoolean();
 
         final OpThread thread = new OpThread("Queue-Poll-Thread", latch, interruptedFlag) {
             protected void doOp() throws InterruptedException {
@@ -513,7 +513,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     private abstract static class OpThread extends Thread {
 
         final CountDownLatch latch;
-        final AtomicBoolean interruptionCaught = new AtomicBoolean(false);
+        final AtomicBoolean interruptionCaught = new AtomicBoolean();
         final AtomicBoolean interruptedFlag;
 
         OpThread(String name, CountDownLatch latch, AtomicBoolean interruptedFlag) {

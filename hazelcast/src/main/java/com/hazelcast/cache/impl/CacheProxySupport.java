@@ -107,8 +107,8 @@ abstract class CacheProxySupport<K, V>
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<>();
 
     private final AtomicReference<HazelcastServerCacheManager> cacheManagerRef = new AtomicReference<>();
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private final AtomicBoolean isClosed = new AtomicBoolean();
+    private final AtomicBoolean isDestroyed = new AtomicBoolean();
 
     private final CacheProxySyncListenerCompleter listenerCompleter = new CacheProxySyncListenerCompleter(this);
 

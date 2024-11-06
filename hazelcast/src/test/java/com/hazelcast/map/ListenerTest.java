@@ -251,7 +251,7 @@ public class ListenerTest extends HazelcastTestSupport {
      */
     @Test
     public void replaceFiresUpdatedEvent() {
-        final AtomicInteger entryUpdatedEventCount = new AtomicInteger(0);
+        final AtomicInteger entryUpdatedEventCount = new AtomicInteger();
 
         HazelcastInstance node = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = node.getMap(randomMapName());

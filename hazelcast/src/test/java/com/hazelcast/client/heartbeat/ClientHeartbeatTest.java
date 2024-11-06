@@ -285,7 +285,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         });
 
         clientListenerService.registerListener(createPartitionLostListenerCodec(), new EventHandler() {
-            final AtomicInteger count = new AtomicInteger(0);
+            final AtomicInteger count = new AtomicInteger();
 
             @Override
             public void handle(Object event) {

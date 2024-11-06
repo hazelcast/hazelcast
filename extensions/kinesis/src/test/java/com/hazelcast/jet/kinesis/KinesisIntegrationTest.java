@@ -75,7 +75,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;
-    public static final AtomicInteger threadCounter = new AtomicInteger(0);
+    public static final AtomicInteger threadCounter = new AtomicInteger();
 
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;

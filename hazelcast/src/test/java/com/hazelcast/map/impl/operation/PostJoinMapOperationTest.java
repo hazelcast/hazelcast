@@ -122,7 +122,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // then: once all migrations are committed, the query is executed *with* the index and
         // returns the expected results.
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
-        AtomicInteger invocationCounter = new AtomicInteger(0);
+        AtomicInteger invocationCounter = new AtomicInteger();
 
         // eventually index should be created after join
         assertTrueEventually(() -> {

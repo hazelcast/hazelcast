@@ -688,8 +688,8 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         public final AtomicLong loads = new AtomicLong();
         public final AtomicLong loadAlls = new AtomicLong();
         public final AtomicLong loadAllKeys = new AtomicLong();
-        public final AtomicBoolean storeFail = new AtomicBoolean(false);
-        public final AtomicBoolean loadFail = new AtomicBoolean(false);
+        public final AtomicBoolean storeFail = new AtomicBoolean();
+        public final AtomicBoolean loadFail = new AtomicBoolean();
         public final List<BlockingQueue<Object>> listeners = new CopyOnWriteArrayList<>();
 
         public void addListener(BlockingQueue<Object> obj) {

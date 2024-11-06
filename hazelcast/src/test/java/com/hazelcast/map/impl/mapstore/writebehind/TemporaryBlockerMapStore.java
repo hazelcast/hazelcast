@@ -26,7 +26,7 @@ import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 public class TemporaryBlockerMapStore extends MapStoreAdapter<String, String> {
 
     private final int blockStoreOperationSeconds;
-    private final AtomicInteger storeOperationCount = new AtomicInteger(0);
+    private final AtomicInteger storeOperationCount = new AtomicInteger();
 
     public TemporaryBlockerMapStore(int blockStoreOperationSeconds) {
         this.blockStoreOperationSeconds = blockStoreOperationSeconds;

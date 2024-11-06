@@ -153,7 +153,7 @@ public class TxnMapNearCacheInvalidationTest extends HazelcastTestSupport {
         final CountDownLatch waitTxnPut = new CountDownLatch(1);
         final CountDownLatch waitNullCaching = new CountDownLatch(1);
 
-        final AtomicBoolean keyExistInTxnMap = new AtomicBoolean(false);
+        final AtomicBoolean keyExistInTxnMap = new AtomicBoolean();
 
         Thread txnPutThread = new Thread(() -> {
             Boolean result = instance.executeTransaction(context -> {

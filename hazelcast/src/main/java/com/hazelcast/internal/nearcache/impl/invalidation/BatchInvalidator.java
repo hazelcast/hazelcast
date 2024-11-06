@@ -61,7 +61,7 @@ public class BatchInvalidator extends Invalidator {
     private final int batchSize;
     private final int batchFrequencySeconds;
     private final UUID nodeShutdownListenerId;
-    private final AtomicBoolean runningBackgroundTask = new AtomicBoolean(false);
+    private final AtomicBoolean runningBackgroundTask = new AtomicBoolean();
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
                             Predicate<EventRegistration> eventFilter, NodeEngine nodeEngine) {

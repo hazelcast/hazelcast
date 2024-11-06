@@ -53,7 +53,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
     private static final int NEAR_CACHE_PUTTER_THREAD_COUNT = 10;
     private static final int NEAR_CACHE_REMOVER_THREAD_COUNT = 3;
 
-    private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean stop = new AtomicBoolean();
 
     private IMap<Integer, Integer> clientMap;
     private IMap<Integer, Integer> memberMap;

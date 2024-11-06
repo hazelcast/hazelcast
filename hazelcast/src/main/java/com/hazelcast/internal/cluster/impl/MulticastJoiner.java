@@ -39,7 +39,7 @@ public class MulticastJoiner extends AbstractJoiner {
     private static final int TRY_COUNT_MAX_LAST_DIGITS = 512;
     private static final int TRY_COUNT_MODULO = 10;
 
-    private final AtomicInteger currentTryCount = new AtomicInteger(0);
+    private final AtomicInteger currentTryCount = new AtomicInteger();
     private final AtomicInteger maxTryCount;
 
     // this deque is used as a stack, the SplitBrainMulticastListener adds to its head and the periodic split brain handler job

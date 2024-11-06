@@ -69,7 +69,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
     public boolean evictionEnabled;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean stop = new AtomicBoolean();
 
     private InternalSerializationService ss;
     private IMap map;

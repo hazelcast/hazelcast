@@ -74,7 +74,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
             mapName -> new LocalTopicStatsImpl();
     private EventService eventService;
-    private final AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicInteger counter = new AtomicInteger();
     private Address localAddress;
 
     @Override

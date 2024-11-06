@@ -89,8 +89,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         _map.put("key2", "value2");
         _map.put("key3", "value3");
 
-        final AtomicBoolean loadAllCalled = new AtomicBoolean(false);
-        final AtomicBoolean loadCalled = new AtomicBoolean(false);
+        final AtomicBoolean loadAllCalled = new AtomicBoolean();
+        final AtomicBoolean loadCalled = new AtomicBoolean();
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
@@ -143,7 +143,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     @Test
     public void map_set_does_not_trigger_load_of_old_value() {
-        final AtomicBoolean loadCalled = new AtomicBoolean(false);
+        final AtomicBoolean loadCalled = new AtomicBoolean();
 
         Config config = getConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -450,9 +450,9 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void issue587CallMapLoaderDuringRemoval() {
-        final AtomicInteger loadCount = new AtomicInteger(0);
-        final AtomicInteger storeCount = new AtomicInteger(0);
-        final AtomicInteger deleteCount = new AtomicInteger(0);
+        final AtomicInteger loadCount = new AtomicInteger();
+        final AtomicInteger storeCount = new AtomicInteger();
+        final AtomicInteger deleteCount = new AtomicInteger();
 
         class SimpleMapStore2 extends SimpleMapStore<String, Long> {
 
@@ -886,7 +886,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     private static class ChunkedLoader extends SimpleMapLoader {
 
-        private AtomicInteger numberOfChunks = new AtomicInteger(0);
+        private AtomicInteger numberOfChunks = new AtomicInteger();
 
         ChunkedLoader(int size, boolean slow) {
             super(size, slow);
@@ -1175,7 +1175,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         private AtomicInteger count;
 
         public WaitingOnFirstTestMapStore() {
-            this.count = new AtomicInteger(0);
+            this.count = new AtomicInteger();
         }
 
         @Override
@@ -1483,7 +1483,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
         public final CountDownLatch latch;
         public final int waitSecond;
-        public final AtomicInteger count = new AtomicInteger(0);
+        public final AtomicInteger count = new AtomicInteger();
         public final int sleepStoreAllSeconds;
 
         public MapStoreWithStoreCount(int expectedStore, int seconds) {

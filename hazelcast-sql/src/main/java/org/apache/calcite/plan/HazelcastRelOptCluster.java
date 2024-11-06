@@ -63,7 +63,7 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
                 planner,
                 rexBuilder.getTypeFactory(),
                 rexBuilder,
-                new AtomicInteger(0),
+                new AtomicInteger(),
                 new HashMap<>(),
                 ssc
         );

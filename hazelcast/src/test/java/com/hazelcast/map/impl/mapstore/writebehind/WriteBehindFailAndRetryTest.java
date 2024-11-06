@@ -256,7 +256,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         boolean failed;
         final int failAfterStoreNum;
         final int numEntriesToStore;
-        final AtomicInteger storeCount = new AtomicInteger(0);
+        final AtomicInteger storeCount = new AtomicInteger();
 
         SequentialMapStore(int failAfterStoreNum, int numEntriesToStore) {
             this.failAfterStoreNum = failAfterStoreNum;

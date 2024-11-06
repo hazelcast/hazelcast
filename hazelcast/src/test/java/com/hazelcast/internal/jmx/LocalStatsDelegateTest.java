@@ -50,7 +50,7 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        done = new AtomicBoolean(false);
+        done = new AtomicBoolean();
     }
 
     @Test

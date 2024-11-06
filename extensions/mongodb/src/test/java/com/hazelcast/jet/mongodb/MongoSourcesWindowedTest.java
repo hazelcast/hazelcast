@@ -62,7 +62,7 @@ public class MongoSourcesWindowedTest extends AbstractMongoTest {
 
         MongoCollection<Document> collection =
                 mongo.getDatabase(defaultDatabase()).getCollection(testName.getMethodName());
-        AtomicInteger counter = new AtomicInteger(0);
+        AtomicInteger counter = new AtomicInteger();
         spawn(() -> {
             while (counter.get() < 20) {
                 ObjectId key = ObjectId.get();

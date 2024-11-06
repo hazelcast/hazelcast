@@ -302,7 +302,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class NullResponseCountingCallback<T> implements Consumer<T>, ExecutionCallback<T> {
 
-        private final AtomicInteger nullResponseCount = new AtomicInteger(0);
+        private final AtomicInteger nullResponseCount = new AtomicInteger();
 
         private final CountDownLatch responseLatch;
 
@@ -369,7 +369,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
     public static class BooleanSuccessResponseCountingCallback
             implements Consumer<Boolean>, ExecutionCallback<Boolean> {
 
-        private final AtomicInteger successResponseCount = new AtomicInteger(0);
+        private final AtomicInteger successResponseCount = new AtomicInteger();
         private final CountDownLatch responseLatch;
 
         public BooleanSuccessResponseCountingCallback(int count) {

@@ -771,7 +771,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testPredicateListenerWithPortableKey() throws Exception {
         IMap<Portable, Integer> tradeMap = createMap();
 
-        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        final AtomicInteger atomicInteger = new AtomicInteger();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         EntryListener listener = new EntryAdapter() {
             @Override

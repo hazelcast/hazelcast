@@ -273,7 +273,7 @@ public class RestClientTest {
         private final AtomicBoolean tls13CipherFound = new AtomicBoolean();
         private final ServerSocket serverSocket;
         private volatile boolean shutdownRequested;
-        private final AtomicBoolean serverReady = new AtomicBoolean(false);
+        private final AtomicBoolean serverReady = new AtomicBoolean();
 
         Tls13CipherCheckingServer() throws IOException {
             this.serverSocket = new ServerSocket(0);

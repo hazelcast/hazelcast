@@ -32,8 +32,8 @@ public class LocalStatsDelegate<T> {
     private volatile T localStats;
     private final StatsSupplier<T> supplier;
     private final long intervalMs;
-    private final AtomicLong lastUpdated = new AtomicLong(0);
-    private final AtomicBoolean inProgress = new AtomicBoolean(false);
+    private final AtomicLong lastUpdated = new AtomicLong();
+    private final AtomicBoolean inProgress = new AtomicBoolean();
 
     public LocalStatsDelegate(StatsSupplier<T> supplier, long intervalSec) {
         this.supplier = supplier;

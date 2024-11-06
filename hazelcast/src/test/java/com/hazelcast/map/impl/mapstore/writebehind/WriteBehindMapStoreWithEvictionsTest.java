@@ -210,7 +210,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_shouldNotMakeDuplicateStoreOperationForAKey_uponEviction() {
-        final AtomicInteger storeCount = new AtomicInteger(0);
+        final AtomicInteger storeCount = new AtomicInteger();
         MapStore<Integer, Integer> store = createSlowMapStore(storeCount);
 
         IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()

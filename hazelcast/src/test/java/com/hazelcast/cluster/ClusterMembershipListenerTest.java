@@ -185,7 +185,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
         return new MembershipAdapter() {
 
             // flag to check listener is not called concurrently
-            final AtomicBoolean flag = new AtomicBoolean(false);
+            final AtomicBoolean flag = new AtomicBoolean();
 
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (flag.compareAndSet(false, true)) {

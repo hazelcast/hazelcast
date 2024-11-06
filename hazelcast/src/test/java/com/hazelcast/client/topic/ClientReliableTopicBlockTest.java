@@ -70,7 +70,7 @@ public class ClientReliableTopicBlockTest extends HazelcastTestSupport {
     @Test
     public void testBlockingAsync() {
         String randomName = "blockingReliableTopic" + generateRandomString(5);
-        AtomicInteger count = new AtomicInteger(0);
+        AtomicInteger count = new AtomicInteger();
         ITopic<Object> topic = client.getReliableTopic(randomName);
         topic.addMessageListener(message -> count.incrementAndGet());
         for (int i = 0; i < 10; i++) {

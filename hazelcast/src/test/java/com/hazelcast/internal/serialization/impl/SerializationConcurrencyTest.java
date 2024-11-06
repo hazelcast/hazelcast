@@ -68,7 +68,7 @@ public class SerializationConcurrencyTest {
                 .build();
 
         final int k = 10;
-        final AtomicBoolean error = new AtomicBoolean(false);
+        final AtomicBoolean error = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(k);
         ExecutorService ex = Executors.newCachedThreadPool();
         for (int i = 0; i < k; i++) {

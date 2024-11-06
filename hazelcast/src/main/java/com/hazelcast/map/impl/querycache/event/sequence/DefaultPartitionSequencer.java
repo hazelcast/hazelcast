@@ -28,7 +28,7 @@ public class DefaultPartitionSequencer implements PartitionSequencer {
     private final AtomicLong sequence;
 
     public DefaultPartitionSequencer() {
-        this.sequence = new AtomicLong(0L);
+        this.sequence = new AtomicLong();
     }
 
     @Override

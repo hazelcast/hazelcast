@@ -50,8 +50,8 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
     private static final String NON_EXPIRING_MAP = "mappy";
     private static final String EXPIRING_MAP = "expiring";
 
-    public final AtomicBoolean isPredicateContextInjected = new AtomicBoolean(false);
-    public final AtomicBoolean isProjectionContextInjected = new AtomicBoolean(false);
+    public final AtomicBoolean isPredicateContextInjected = new AtomicBoolean();
+    public final AtomicBoolean isProjectionContextInjected = new AtomicBoolean();
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();

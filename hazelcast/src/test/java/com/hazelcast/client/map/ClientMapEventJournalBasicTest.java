@@ -35,8 +35,8 @@ public class ClientMapEventJournalBasicTest extends MapEventJournalBasicTest {
     private TestHazelcastFactory factory;
     private HazelcastInstance client;
 
-    private final AtomicBoolean isPredicateContextInjected = new AtomicBoolean(false);
-    private final AtomicBoolean isProjectionContextInjected = new AtomicBoolean(false);
+    private final AtomicBoolean isPredicateContextInjected = new AtomicBoolean();
+    private final AtomicBoolean isProjectionContextInjected = new AtomicBoolean();
 
     @Override
     protected HazelcastInstance getRandomInstance() {

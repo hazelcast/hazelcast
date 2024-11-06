@@ -52,11 +52,11 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
     private final TaskScheduler globalTaskScheduler;
     private final LifecycleService lifecycleService;
     private final PartitionService partitionService;
-    private final AtomicBoolean scheduled = new AtomicBoolean(false);
+    private final AtomicBoolean scheduled = new AtomicBoolean();
     /**
      * @see #rescheduleIfScheduledBefore()
      */
-    private final AtomicBoolean scheduledOneTime = new AtomicBoolean(false);
+    private final AtomicBoolean scheduledOneTime = new AtomicBoolean();
 
     private volatile ScheduledFuture<?> scheduledExpirationTask;
 

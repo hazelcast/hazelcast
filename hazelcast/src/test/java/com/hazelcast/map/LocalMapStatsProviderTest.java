@@ -121,7 +121,7 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
     }
 
     private static class MapPutCountMetricsCollector implements MetricsCollector {
-        final AtomicInteger totalCollected = new AtomicInteger(0);
+        final AtomicInteger totalCollected = new AtomicInteger();
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {

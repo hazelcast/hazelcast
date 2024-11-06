@@ -134,8 +134,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     private ILogger logger;
     private final AtomicReference<HazelcastClientCacheManager> cacheManagerRef = new AtomicReference<>();
     private final ConcurrentMap<Future, CompletionListener> loadAllCalls = new ConcurrentHashMap<>();
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private final AtomicBoolean isClosed = new AtomicBoolean();
+    private final AtomicBoolean isDestroyed = new AtomicBoolean();
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 

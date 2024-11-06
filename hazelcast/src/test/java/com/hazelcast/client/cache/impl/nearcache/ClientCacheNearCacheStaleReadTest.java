@@ -69,10 +69,10 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientCacheNearCacheStaleReadTest.class);
 
-    private final AtomicInteger valuePut = new AtomicInteger(0);
-    private final AtomicBoolean stop = new AtomicBoolean(false);
-    private final AtomicInteger assertionViolationCount = new AtomicInteger(0);
-    private final AtomicBoolean failed = new AtomicBoolean(false);
+    private final AtomicInteger valuePut = new AtomicInteger();
+    private final AtomicBoolean stop = new AtomicBoolean();
+    private final AtomicInteger assertionViolationCount = new AtomicInteger();
+    private final AtomicBoolean failed = new AtomicBoolean();
 
     private HazelcastInstance member;
     private HazelcastInstance client;

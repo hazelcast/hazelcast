@@ -77,7 +77,7 @@ public class MapContainerCreationUponDestroyStressTest extends HazelcastTestSupp
     public void testNewRecordStores_sharesSameMapContainerInstance_afterMapDestroy() throws Exception {
         String mapName = "map";
         final IMap<Long, Long> map = getIMap(mapName);
-        final AtomicBoolean stop = new AtomicBoolean(false);
+        final AtomicBoolean stop = new AtomicBoolean();
 
         Thread putThread = new Thread(() -> {
             while (!stop.get()) {

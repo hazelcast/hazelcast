@@ -36,7 +36,7 @@ import java.util.function.Function;
 public class DataProducer {
 
     private final String jdbcUrl;
-    private final AtomicInteger producedItems = new AtomicInteger(0);
+    private final AtomicInteger producedItems = new AtomicInteger();
     private final AtomicInteger nextId = new AtomicInteger(100_001);
     private Throwable error;
 

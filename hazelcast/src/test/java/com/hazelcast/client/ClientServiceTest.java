@@ -184,7 +184,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final ClientService clientService = instance.getClientService();
         final CountDownLatch latchAdd = new CountDownLatch(2);
         final CountDownLatch latchRemove = new CountDownLatch(2);
-        final AtomicInteger totalAdd = new AtomicInteger(0);
+        final AtomicInteger totalAdd = new AtomicInteger();
 
         final ClientListener clientListener = new ClientListener() {
             @Override

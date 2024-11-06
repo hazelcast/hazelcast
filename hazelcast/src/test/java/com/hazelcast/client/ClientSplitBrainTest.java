@@ -99,7 +99,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         assertOpenEventually(mergedLatch);
         assertClusterSize(2, h1, h2);
 
-        AtomicBoolean testFinished = new AtomicBoolean(false);
+        AtomicBoolean testFinished = new AtomicBoolean();
         final Thread clientThread = startClientPutThread(mapClient, testFinished);
 
         try {

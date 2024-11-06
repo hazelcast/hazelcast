@@ -425,55 +425,55 @@ public final class SampleTestObjects {
 
         @Override
         public long getId() {
-            invocationCounters.computeIfAbsent("getId", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getId", i -> new AtomicInteger()).getAndIncrement();
             return super.getId();
         }
 
         @Override
         public Date getCreateDate() {
-            invocationCounters.computeIfAbsent("getCreateDate", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getCreateDate", i -> new AtomicInteger()).getAndIncrement();
             return super.getCreateDate();
         }
 
         @Override
         public Timestamp getDate() {
-            invocationCounters.computeIfAbsent("getDate", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getDate", i -> new AtomicInteger()).getAndIncrement();
             return super.getDate();
         }
 
         @Override
         public String getName() {
-            invocationCounters.computeIfAbsent("getName", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getName", i -> new AtomicInteger()).getAndIncrement();
             return super.getName();
         }
 
         @Override
         public String getCity() {
-            invocationCounters.computeIfAbsent("getCity", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getCity", i -> new AtomicInteger()).getAndIncrement();
             return super.getCity();
         }
 
         @Override
         public int getAge() {
-            invocationCounters.computeIfAbsent("getAge", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getAge", i -> new AtomicInteger()).getAndIncrement();
             return super.getAge();
         }
 
         @Override
         public double getSalary() {
-            invocationCounters.computeIfAbsent("getSalary", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getSalary", i -> new AtomicInteger()).getAndIncrement();
             return super.getSalary();
         }
 
         @Override
         public boolean isActive() {
-            invocationCounters.computeIfAbsent("isActive", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("isActive", i -> new AtomicInteger()).getAndIncrement();
             return super.isActive();
         }
 
         @Override
         public State getState() {
-            invocationCounters.computeIfAbsent("getState", i -> new AtomicInteger(0)).getAndIncrement();
+            invocationCounters.computeIfAbsent("getState", i -> new AtomicInteger()).getAndIncrement();
             return super.getState();
         }
 

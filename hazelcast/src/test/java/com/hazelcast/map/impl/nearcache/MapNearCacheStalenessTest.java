@@ -54,7 +54,7 @@ public class MapNearCacheStalenessTest extends HazelcastTestSupport {
     private static final int NEAR_CACHE_PUTTER_THREAD_COUNT = 10;
     private static final int NEAR_CACHE_REMOVER_THREAD_COUNT = 3;
 
-    private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean stop = new AtomicBoolean();
 
     private IMap<Integer, Integer> map1;
     private IMap<Integer, Integer> map2;

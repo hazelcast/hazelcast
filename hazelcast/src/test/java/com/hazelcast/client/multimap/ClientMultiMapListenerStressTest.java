@@ -121,7 +121,7 @@ public class ClientMultiMapListenerStressTest {
     }
 
     static class MyEntryListener extends EntryAdapter {
-        public AtomicInteger add = new AtomicInteger(0);
+        public AtomicInteger add = new AtomicInteger();
 
         public void entryAdded(EntryEvent event) {
             add.incrementAndGet();

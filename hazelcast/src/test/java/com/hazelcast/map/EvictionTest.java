@@ -499,7 +499,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final IMap firstMap = instances[0].getMap(mapName);
         final int partitionCount = instances[0].getPartitionService().getPartitions().size();
         final CountDownLatch latch = new CountDownLatch(clusterSize);
-        final AtomicBoolean error = new AtomicBoolean(false);
+        final AtomicBoolean error = new AtomicBoolean();
         new Thread(() -> {
             sleepAtLeastSeconds(1);
             while (latch.getCount() != 0) {
@@ -674,7 +674,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         final int size = 100;
 
-        final AtomicInteger entryEvictedEventCount = new AtomicInteger(0);
+        final AtomicInteger entryEvictedEventCount = new AtomicInteger();
         EntryListenerConfig entryListenerConfig = new EntryListenerConfig()
                 .setLocal(true)
                 .setImplementation(new EntryAdapter() {
@@ -895,7 +895,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testEvictionAfterRemove() {
         IMap<Object, Object> map = createSimpleMap();
 
-        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicInteger count = new AtomicInteger();
         map.addEntryListener(new EntryAdapter<>() {
             @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
@@ -1040,7 +1040,7 @@ public class EvictionTest extends HazelcastTestSupport {
         int maxIdleSeconds = 1;
         int numberOfEntriesToBeAdded = 1000;
 
-        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicInteger count = new AtomicInteger();
         final CountDownLatch evictedEntryLatch = new CountDownLatch(numberOfEntriesToBeAdded);
 
         IMap<Integer, Integer> map = createMapWithReadBackupDataEnabled(maxIdleSeconds);

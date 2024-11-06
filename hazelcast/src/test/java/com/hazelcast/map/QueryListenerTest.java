@@ -117,7 +117,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
         final IMap<Object, Object> map = instance1.getMap("testMapQueryListener2");
-        final AtomicInteger addCount = new AtomicInteger(0);
+        final AtomicInteger addCount = new AtomicInteger();
 
 
         EntryListener<Object, Object> listener = new EntryAdapter<>() {

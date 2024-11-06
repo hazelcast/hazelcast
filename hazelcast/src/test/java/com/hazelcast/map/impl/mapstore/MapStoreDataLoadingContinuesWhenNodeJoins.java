@@ -260,7 +260,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     public class InMemoryMapStore implements MapStore<String, String> {
 
         private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
-        private final AtomicInteger countLoadAllKeys = new AtomicInteger(0);
+        private final AtomicInteger countLoadAllKeys = new AtomicInteger();
 
         private final CountDownLatch halfOfKeysAreLoaded;
         private final int msPerLoad;

@@ -51,7 +51,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private final ExecutorService cachedExecutor;
     private final BlockingQueue<Runnable> taskQ;
     private final Lock lock = new ReentrantLock();
-    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+    private final AtomicBoolean shutdown = new AtomicBoolean();
     private volatile int size;
 
     public CachedExecutorServiceDelegate(String name, ExecutorService cachedExecutor,

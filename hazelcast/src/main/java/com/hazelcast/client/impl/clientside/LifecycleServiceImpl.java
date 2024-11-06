@@ -56,7 +56,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<>();
-    private final AtomicBoolean active = new AtomicBoolean(false);
+    private final AtomicBoolean active = new AtomicBoolean();
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
 

@@ -75,7 +75,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         return cpuWorkers;
     }
 
-    private final AtomicInteger numThreads = new AtomicInteger(0);
+    private final AtomicInteger numThreads = new AtomicInteger();
     private final int maxThreads;
 
     public HazelcastParallelClassRunner(Class<?> clazz) throws InitializationError {

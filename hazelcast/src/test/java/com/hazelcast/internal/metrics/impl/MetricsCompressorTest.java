@@ -447,7 +447,7 @@ public class MetricsCompressorTest {
     // we simply provide our own basic invocation counter instead
     public static class SpiedMetricDescriptor implements Supplier<MetricDescriptor> {
         private final DefaultMetricDescriptorSupplier supplier;
-        private final AtomicInteger invocationCounter = new AtomicInteger(0);
+        private final AtomicInteger invocationCounter = new AtomicInteger();
 
         public SpiedMetricDescriptor(DefaultMetricDescriptorSupplier supplier) {
             this.supplier = supplier;

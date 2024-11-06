@@ -85,7 +85,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
             .mapToObj(i -> "parallel_items_" + i)
             .collect(joining(","));
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectScalingIT.class);
-    private static final AtomicInteger COUNTER = new AtomicInteger(0);
+    private static final AtomicInteger COUNTER = new AtomicInteger();
 
     private static MySQLContainer<?> mysql;
 

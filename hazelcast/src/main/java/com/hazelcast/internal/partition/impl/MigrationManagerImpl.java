@@ -149,7 +149,7 @@ public class MigrationManagerImpl implements MigrationManager {
     private final ConcurrentMap<Integer, MigrationInfo> activeMigrations = new ConcurrentHashMap<>();
     // both reads and updates will be done under lock!
     private final LinkedHashSet<MigrationInfo> completedMigrations = new LinkedHashSet<>();
-    private final AtomicBoolean promotionPermit = new AtomicBoolean(false);
+    private final AtomicBoolean promotionPermit = new AtomicBoolean();
     private final MigrationStats stats = new MigrationStats();
     private volatile MigrationInterceptor migrationInterceptor = new MigrationInterceptor.NopMigrationInterceptor();
     private final Lock partitionServiceLock;

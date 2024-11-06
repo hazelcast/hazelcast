@@ -144,7 +144,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private final PartitionEventManager partitionEventManager;
 
     /** Determines if a {@link AssignPartitions} is being sent to the master, used to limit partition assignment requests. */
-    private final AtomicBoolean masterTriggered = new AtomicBoolean(false);
+    private final AtomicBoolean masterTriggered = new AtomicBoolean();
     private final CoalescingDelayedTrigger masterTrigger;
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<>();

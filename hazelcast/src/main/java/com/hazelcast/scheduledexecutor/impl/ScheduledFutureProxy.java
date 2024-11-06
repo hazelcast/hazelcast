@@ -56,9 +56,9 @@ public final class ScheduledFutureProxy<V>
 
     private transient HazelcastInstance instance;
 
-    private final transient AtomicBoolean partitionLost = new AtomicBoolean(false);
+    private final transient AtomicBoolean partitionLost = new AtomicBoolean();
 
-    private final transient AtomicBoolean memberLost = new AtomicBoolean(false);
+    private final transient AtomicBoolean memberLost = new AtomicBoolean();
 
     // Single writer, many readers (see partition & member listener)
     private volatile ScheduledTaskHandler handler;

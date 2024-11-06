@@ -81,7 +81,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
 
         IMap<String, String> map = node1.getMap(mapName);
 
-        AtomicBoolean stop = new AtomicBoolean(false);
+        AtomicBoolean stop = new AtomicBoolean();
         int availableProcessors = Math.min(6, RuntimeAvailableProcessors.get());
         ExecutorService executorService = Executors.newFixedThreadPool(availableProcessors);
 

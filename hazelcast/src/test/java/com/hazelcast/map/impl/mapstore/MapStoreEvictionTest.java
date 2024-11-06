@@ -297,7 +297,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         private void incrementCount(ConcurrentHashMap<String, AtomicInteger> counts, String key) {
             AtomicInteger count = counts.get(key);
             if (count == null) {
-                count = new AtomicInteger(0);
+                count = new AtomicInteger();
                 AtomicInteger prev = counts.putIfAbsent(key, count);
                 if (prev != null) {
                     count = prev;
