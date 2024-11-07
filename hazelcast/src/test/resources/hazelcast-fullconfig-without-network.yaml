@@ -1155,4 +1155,8 @@ hazelcast:
           max-degree: 10
           ef-construction: 20
           use-deduplication: false
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      merge-policy:
+        batch-size: 1000
+        class-name: PutIfAbsentMergePolicy
 

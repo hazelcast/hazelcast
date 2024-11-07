@@ -35,7 +35,8 @@ import static java.lang.String.format;
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, NamedConfig {
+public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, NamedConfig,
+        SplitBrainPolicyAwareConfig {
 
     /**
      * The number of sync backups per estimator
@@ -133,15 +134,17 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
      *
      * @return the {@link MergePolicyConfig} for the cardinality estimator
      */
+    @Override
     public MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 
     /**
-     * Sets the {@link MergePolicyConfig} for the scheduler.
+     * Sets the {@link MergePolicyConfig} for the cardinality estimator.
      *
-     * @return this executor config instance
+     * @return this configuration
      */
+    @Override
     public CardinalityEstimatorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         validate();
@@ -213,6 +216,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
      *
      * @return the split brain protection name
      */
+    @Override
     public String getSplitBrainProtectionName() {
         return splitBrainProtectionName;
     }
@@ -223,6 +227,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
      * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
+    @Override
     public CardinalityEstimatorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         this.splitBrainProtectionName = splitBrainProtectionName;
         return this;

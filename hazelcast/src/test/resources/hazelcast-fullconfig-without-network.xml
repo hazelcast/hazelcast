@@ -1243,5 +1243,7 @@
                 <use-deduplication>false</use-deduplication>
             </index>
         </indexes>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <merge-policy batch-size="1000">PutIfAbsentMergePolicy</merge-policy>
     </vector-collection>
 </hazelcast>

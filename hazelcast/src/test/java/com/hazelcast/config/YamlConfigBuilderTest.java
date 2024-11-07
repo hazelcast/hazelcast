@@ -5428,6 +5428,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                     vector-2:
                       backup-count: 2
                       async-backup-count: 1
+                      split-brain-protection-ref: splitBrainProtectionName
+                      merge-policy:
+                        batch-size: 132
+                        class-name: CustomMergePolicy
                       indexes:
                         - dimension: 4
                           metric: COSINE

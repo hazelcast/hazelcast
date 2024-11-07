@@ -21,7 +21,6 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -44,7 +43,7 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
 
     protected AbstractSplitBrainHandlerService(NodeEngine nodeEngine) {
         this.partitionService = nodeEngine.getPartitionService();
-        this.operationExecutor = ((OperationServiceImpl) nodeEngine.getOperationService()).getOperationExecutor();
+        this.operationExecutor = nodeEngine.getOperationService().getOperationExecutor();
     }
 
     @Override

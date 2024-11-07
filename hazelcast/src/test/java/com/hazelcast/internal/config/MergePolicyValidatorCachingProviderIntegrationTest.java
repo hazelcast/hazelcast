@@ -61,7 +61,7 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
     }
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
     }
 
     private void getCache(String name, MergePolicyConfig mergePolicyConfig) {
@@ -157,14 +157,14 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
     }
 
     @Override
-    void expectCardinalityEstimatorException(ThrowingCallable toRun) {
+    protected void expectCardinalityEstimatorException(ThrowingCallable toRun) {
         assertThatThrownBy(toRun)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("CardinalityEstimator");
     }
 
     @Override
-    void expectedInvalidMergePolicyException(ThrowingCallable toRun) {
+    protected void expectedInvalidMergePolicyException(ThrowingCallable toRun) {
         assertThatThrownBy(toRun)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(invalidMergePolicyConfig.getPolicy());

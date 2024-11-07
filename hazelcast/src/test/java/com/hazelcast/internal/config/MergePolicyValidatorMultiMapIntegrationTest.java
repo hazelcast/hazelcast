@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 public class MergePolicyValidatorMultiMapIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
         MultiMapConfig multiMapConfig = new MultiMapConfig(name)
                 .setMergePolicyConfig(mergePolicyConfig);
 

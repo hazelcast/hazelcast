@@ -22,9 +22,11 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.io.Serializable;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.test.archunit.BackupOperationShouldNotImplementMutatingOperation.notImplementMutatingOperation;
 import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
 import static com.hazelcast.test.archunit.MatchersUsageCondition.notUseHamcrestMatchers;
 import static com.hazelcast.test.archunit.MixTestAnnotationsCondition.notMixJUnit4AndJUnit5Annotations;
+import static com.hazelcast.test.archunit.OperationShouldNotImplementReadonlyAndMutatingOperation.notImplementReadonlyAndMutatingOperation;
 import static com.hazelcast.test.archunit.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
@@ -68,6 +70,26 @@ public final class ArchUnitRules {
             .and()
             .doNotHaveModifier(JavaModifier.ABSTRACT)
             .should(new TestsHaveRunnersCondition());
+
+    /**
+     * Operations should not implement both {@code ReadonlyOperation} and {@code MutatingOperation} interfaces, otherwise
+     * split brain protection may not work as expected.
+     */
+    public static final ArchRule OPERATIONS_SHOULD_NOTIMPL_BOTH_READONLY_AND_MUTATINGOPERATION = classes()
+            .that()
+            .areAssignableTo("com.hazelcast.spi.impl.operationservice.Operation")
+            .should(notImplementReadonlyAndMutatingOperation());
+
+    /**
+     * Backup operations should not implement {@code MutatingOperation} interface, otherwise there may be failures
+     * to apply backups.
+     */
+    public static final ArchRule BACKUP_OPERATIONS_SHOULD_NOTIMPL_MUTATINGOPERATION = classes()
+            .that()
+            .areAssignableTo("com.hazelcast.spi.impl.operationservice.Operation")
+            .and().haveSimpleNameContaining("Backup")
+            .should(notImplementMutatingOperation());
+
 
     private ArchUnitRules() {
     }

@@ -73,4 +73,10 @@ public class VectorCollectionConfigTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("the sum of backup-count and async-backup-count can't be larger than than 6");
     }
+
+    @Test
+    public void shouldValidateMergePolicy() {
+        assertThatThrownBy(() -> new VectorCollectionConfig("a").setMergePolicyConfig(null))
+                .isInstanceOf(NullPointerException.class);
+    }
 }

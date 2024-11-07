@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 public class MergePolicyValidatorQueueIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
         QueueConfig queueConfig = new QueueConfig(name)
                 .setMergePolicyConfig(mergePolicyConfig);
 

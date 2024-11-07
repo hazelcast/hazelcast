@@ -1693,6 +1693,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     void testVectorCollectionConfig() {
+        var expectedMergePolicyConfig = new MergePolicyConfig("CustomMergePolicy", 132);
         var expectedVectorCollection1 = new VectorCollectionConfig("vector-collection-1")
                 .addVectorIndexConfig(
                         new VectorIndexConfig().setName("index-1").setDimension(2).setMetric(Metric.DOT)
@@ -1715,7 +1716,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                                 .setEfConstruction(13)
                                 .setUseDeduplication(false)
                 )
-                .setBackupCount(2).setAsyncBackupCount(1);
+                .setBackupCount(2).setAsyncBackupCount(1)
+                .setMergePolicyConfig(expectedMergePolicyConfig)
+                .setSplitBrainProtectionName("my-split-brain-protection");
         var expectedVectorCollectionConfigs = Map.of(
                 "vector-collection-1", expectedVectorCollection1,
                 "vector-collection-2", expectedVectorCollection2

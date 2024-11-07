@@ -6774,6 +6774,16 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="split-brain-protection-ref" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
+                        You should set the split-brain-protection-ref's value as the split brain protection's name.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
             <xs:element name="indexes" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>

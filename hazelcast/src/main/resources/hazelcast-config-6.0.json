@@ -913,7 +913,8 @@
             "default": 2147483647
           },
           "split-brain-protection-ref": {
-            "type": "string"
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "user-code-namespace": {
             "type": "string"
@@ -938,7 +939,8 @@
           "default": 100
         },
         "split-brain-protection-ref": {
-          "type": "string"
+          "type": "string",
+          "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
         },
         "user-code-namespace": {
           "type": "string"
@@ -968,7 +970,8 @@
           ]
         },
         "split-brain-protection-ref": {
-          "type": "string"
+          "type": "string",
+          "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
         },
         "merge-policy": {
           "$ref": "#/definitions/MergePolicy"
@@ -1466,7 +1469,8 @@
             }
           },
           "split-brain-protection-ref": {
-            "type": "string"
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "query-caches": {
             "type": "object",
@@ -1667,7 +1671,8 @@
             }
           },
           "split-brain-protection-ref": {
-            "type": "string"
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
@@ -1965,7 +1970,8 @@
             }
           },
           "split-brain-protection-ref": {
-            "type": "string"
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
@@ -2027,7 +2033,8 @@
             }
           },
           "split-brain-protection-ref": {
-            "type": "string"
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
@@ -2069,7 +2076,8 @@
             }
           },
           "split-brain-protection-ref": {
-            "type": "string"
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
@@ -5471,6 +5479,13 @@
             "items": {
               "$ref": "#/definitions/VectorIndex"
             }
+          },
+          "split-brain-protection-ref": {
+            "type": "string",
+            "description": "Adds the Split Brain Protection for this data-structure which you configure using the \"split-brain-protection\" element. You should set the \"split-brain-protection-ref\"'s value as the \"split-brain-protection\"'s name."
+          },
+          "merge-policy": {
+            "$ref": "#/definitions/MergePolicy"
           }
         }
       }

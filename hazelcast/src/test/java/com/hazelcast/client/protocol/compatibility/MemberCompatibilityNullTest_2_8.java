@@ -7039,6 +7039,9 @@ public class MemberCompatibilityNullTest_2_8 {
         assertTrue(isEqual(aList_VectorIndexConfig, parameters.indexConfigs));
         assertFalse(parameters.isBackupCountExists);
         assertFalse(parameters.isAsyncBackupCountExists);
+        assertFalse(parameters.isSplitBrainProtectionNameExists);
+        assertFalse(parameters.isMergePolicyExists);
+        assertFalse(parameters.isMergeBatchSizeExists);
     }
 
     @Test

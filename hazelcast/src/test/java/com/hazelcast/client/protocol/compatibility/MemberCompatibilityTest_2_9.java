@@ -7041,6 +7041,12 @@ public class MemberCompatibilityTest_2_9 {
         assertTrue(isEqual(anInt, parameters.backupCount));
         assertTrue(parameters.isAsyncBackupCountExists);
         assertTrue(isEqual(anInt, parameters.asyncBackupCount));
+        assertTrue(parameters.isSplitBrainProtectionNameExists);
+        assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
+        assertTrue(parameters.isMergePolicyExists);
+        assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(parameters.isMergeBatchSizeExists);
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
     }
 
     @Test

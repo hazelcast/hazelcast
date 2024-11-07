@@ -43,7 +43,7 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
     private boolean perEntryStatsEnabled = true;
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
         MapConfig mapConfig = new MapConfig(name)
                 .setPerEntryStatsEnabled(perEntryStatsEnabled)
                 .setMergePolicyConfig(mergePolicyConfig);

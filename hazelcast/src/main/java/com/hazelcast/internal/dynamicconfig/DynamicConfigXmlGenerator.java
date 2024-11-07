@@ -59,6 +59,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SplitBrainPolicyAwareConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
@@ -895,9 +896,11 @@ public final class DynamicConfigXmlGenerator {
     public static void vectorCollectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         Collection<VectorCollectionConfig> vectorCollectionConfigs = config.getVectorCollectionConfigs().values();
         for (VectorCollectionConfig collectionConfig : vectorCollectionConfigs) {
+            var mergePolicyConfig = collectionConfig.getMergePolicyConfig();
             gen.open("vector-collection", "name", collectionConfig.getName())
                     .node("backup-count", collectionConfig.getBackupCount())
                     .node("async-backup-count", collectionConfig.getAsyncBackupCount());
+            appendSplitBrainPolicyAwareNodes(gen, collectionConfig);
             gen.open("indexes");
             for (VectorIndexConfig index: collectionConfig.getVectorIndexConfigs()) {
                 gen.open("index", "name", index.getName())
@@ -911,5 +914,17 @@ public final class DynamicConfigXmlGenerator {
             gen.close();
             gen.close();
         }
+    }
+
+    /**
+     * Appends split brain protection and merge policy configuration nodes
+     * @param gen
+     * @param config
+     */
+    private static void appendSplitBrainPolicyAwareNodes(ConfigXmlGenerator.XmlGenerator gen,
+                                                         SplitBrainPolicyAwareConfig config) {
+        gen.node("merge-policy", config.getMergePolicyConfig().getPolicy(),
+                "batch-size", config.getMergePolicyConfig().getBatchSize())
+                .node("split-brain-protection-ref", config.getSplitBrainProtectionName());
     }
 }

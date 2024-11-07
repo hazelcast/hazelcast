@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.BitSet;
@@ -409,4 +410,9 @@ public interface OperationService {
      * @param endpoint the endpoint that has left
      */
     void onEndpointLeft(Address endpoint);
+
+    /**
+     * @return the {@link OperationExecutor} for this {@code OperationService}
+     */
+    OperationExecutor getOperationExecutor();
 }

@@ -784,6 +784,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     protected void validateVectorCollectionConfig(Config config) {
         var vectorCollectionConfigs = config.getVectorCollectionConfigs();
         var expectedCollectionConfigs = new HashMap<String, VectorCollectionConfig>();
+        var expectedMergePolicyConfig = new MergePolicyConfig("CustomMergePolicy", 132);
         expectedCollectionConfigs.put(
                 "vector-1",
                 new VectorCollectionConfig("vector-1")
@@ -808,6 +809,8 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
                 new VectorCollectionConfig("vector-2")
                         .setBackupCount(2)
                         .setAsyncBackupCount(1)
+                        .setSplitBrainProtectionName("splitBrainProtectionName")
+                        .setMergePolicyConfig(expectedMergePolicyConfig)
                         .addVectorIndexConfig(
                                 new VectorIndexConfig()
                                         .setDimension(4)

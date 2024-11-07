@@ -774,7 +774,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     !isNullOrEmpty(splitBrainProtectionConfig.getFunctionClassName());
             if (splitBrainProtectionFunctionDefinedByClassName) {
                 throw new InvalidConfigurationException("A split brain protection cannot simultaneously"
-                        + " define probabilistic-split-brain-protectionm or "
+                        + " define probabilistic-split-brain-protection or "
                         + "recently-active-split-brain-protection and a split brain protection function class name.");
             }
             // ensure parsed attributes are reflected in constructed split brain protection config
@@ -3774,6 +3774,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 collectionConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(node)));
             } else if (matches("async-backup-count", nodeName)) {
                 collectionConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(node)));
+            } else if (matches("merge-policy", nodeName)) {
+                MergePolicyConfig mpConfig = createMergePolicyConfig(node, collectionConfig.getMergePolicyConfig());
+                collectionConfig.setMergePolicyConfig(mpConfig);
+            } else if (matches("split-brain-protection-ref", nodeName)) {
+                collectionConfig.setSplitBrainProtectionName(getTextContent(node));
             }
         }
         config.addVectorCollectionConfig(collectionConfig);

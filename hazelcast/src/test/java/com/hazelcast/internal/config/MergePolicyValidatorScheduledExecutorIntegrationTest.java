@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 public class MergePolicyValidatorScheduledExecutorIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig(name)
                 .setMergePolicyConfig(mergePolicyConfig);
 

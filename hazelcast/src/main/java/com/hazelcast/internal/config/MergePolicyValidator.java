@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.spi.merge.MergingCreationTime;
 import com.hazelcast.spi.merge.MergingHits;
 import com.hazelcast.spi.merge.MergingLastAccessTime;
@@ -61,6 +62,13 @@ public final class MergePolicyValidator {
         if (!mapConfig.isPerEntryStatsEnabled() && requiredMergeTypes != null) {
             checkMapMergePolicyWhenStatisticsAreDisabled(mergePolicyClassName, requiredMergeTypes);
         }
+    }
+
+    public static void checkVectorCollectionMergePolicy(VectorCollectionConfig vectorCollectionConfig,
+                                                        String mergePolicyClassName,
+                                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
+        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
+        checkSplitBrainMergePolicy(SplitBrainMergeTypes.VectorCollectionMergeTypes.class, mergePolicyInstance);
     }
 
     /**

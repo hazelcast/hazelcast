@@ -1199,6 +1199,8 @@
                 <hz:indexes>
                     <hz:index name="index-1" dimension="200" metric="COSINE" max-degree="12" ef-construction="13" use-deduplication="false"/>
                 </hz:indexes>
+                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
+                <hz:merge-policy batch-size="132">CustomMergePolicy</hz:merge-policy>
             </hz:vector-collection>
         </hz:config>
     </hz:hazelcast>

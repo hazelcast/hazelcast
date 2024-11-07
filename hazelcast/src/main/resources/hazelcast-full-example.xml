@@ -2747,7 +2747,7 @@
             Split brain protection listeners are local to the member that they are registered, so they receive
             only events occurred on that local member.
     -->
-    <split-brain-protection name="splitBrainProtectionRuleWithThreeMembers" enabled="true">
+    <split-brain-protection name="splitBrainProtectionRuleWithThreeNodes" enabled="true">
         <minimum-cluster-size>3</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>
         <function-class-name>com.your-package.AbsPresMySplitBrainProtection</function-class-name>
@@ -4245,5 +4245,7 @@
                 <metric>DOT</metric>
             </index>
         </indexes>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <merge-policy batch-size="132">PutIfAbsentMergePolicy</merge-policy>
     </vector-collection>
 </hazelcast>

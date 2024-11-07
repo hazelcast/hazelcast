@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
         cacheSimpleConfig.setName(name);
         cacheSimpleConfig.setStatisticsEnabled(false);
@@ -140,14 +140,14 @@ public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolic
     }
 
     @Override
-    void expectCardinalityEstimatorException(ThrowingCallable toRun) {
+    protected void expectCardinalityEstimatorException(ThrowingCallable toRun) {
         assertThatThrownBy(toRun)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("CardinalityEstimator");
     }
 
     @Override
-    void expectedInvalidMergePolicyException(ThrowingCallable toRun) {
+    protected void expectedInvalidMergePolicyException(ThrowingCallable toRun) {
         assertThatThrownBy(toRun)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(invalidMergePolicyConfig.getPolicy());

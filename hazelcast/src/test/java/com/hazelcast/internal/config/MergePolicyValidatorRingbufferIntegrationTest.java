@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 public class MergePolicyValidatorRingbufferIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     @Override
-    void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
+    protected void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
         RingbufferConfig ringbufferConfig = new RingbufferConfig(name)
                 .setMergePolicyConfig(mergePolicyConfig);
 

@@ -265,6 +265,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         return operationExecutor.getPriorityQueueSize();
     }
 
+    @Override
     public OperationExecutor getOperationExecutor() {
         return operationExecutor;
     }

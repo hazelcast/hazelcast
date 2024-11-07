@@ -1202,6 +1202,10 @@ public class DynamicConfigYamlGenerator {
                             Map<String, Object> vectorConfigAsMap = new LinkedHashMap<>();
                             addNonNullToMap(vectorConfigAsMap, "backup-count", entry.getBackupCount());
                             addNonNullToMap(vectorConfigAsMap, "async-backup-count", entry.getAsyncBackupCount());
+                            addNonNullToMap(vectorConfigAsMap, "split-brain-protection-ref",
+                                    entry.getSplitBrainProtectionName());
+                            addNonNullToMap(vectorConfigAsMap, "merge-policy",
+                                    getMergePolicyConfigAsMap(entry.getMergePolicyConfig()));
                             addNonNullToMap(
                                     vectorConfigAsMap,
                                     "indexes",

@@ -23,7 +23,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -35,7 +34,7 @@ import java.util.Map;
  *
  * @since 3.10
  */
-public class QueueMergeBackupOperation extends QueueOperation implements MutatingOperation {
+public class QueueMergeBackupOperation extends QueueOperation {
 
     private Collection<QueueItem> backupItems;
 

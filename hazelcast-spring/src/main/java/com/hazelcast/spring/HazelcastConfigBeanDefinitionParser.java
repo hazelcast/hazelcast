@@ -186,7 +186,6 @@ import static com.hazelcast.internal.config.ConfigUtils.resolveResourceId;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
@@ -2432,13 +2431,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getTextContent(attName);
             fillAttributeValues(node, vectorCollectionConfigBuilder);
             ManagedList<AbstractBeanDefinition> vectorIndexConfigs = new ManagedList<>();
-            Node indexesNode = firstChildElement(node);
-            if ("indexes".equals(cleanNodeName(indexesNode))) {
-                for (Node childNode : childElements(indexesNode)) {
-                    String nodeName = cleanNodeName(childNode);
-                    if ("index".equals(nodeName)) {
-                        vectorIndexConfigs.add(parseVectorIndex(childNode));
+            for (Node childNode : childElements(node)) {
+                String nodeName = cleanNodeName(childNode);
+                if ("indexes".equals(nodeName)) {
+                    for (Node indexNode : childElements(childNode)) {
+                        String indexNodeName = cleanNodeName(indexNode);
+                        if ("index".equals(indexNodeName)) {
+                            vectorIndexConfigs.add(parseVectorIndex(indexNode));
+                        }
                     }
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    vectorCollectionConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, vectorCollectionConfigBuilder);
                 }
             }
             vectorCollectionConfigBuilder.addPropertyValue("vectorIndexConfigs", vectorIndexConfigs);

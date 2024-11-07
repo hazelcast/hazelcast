@@ -26,6 +26,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
+import com.hazelcast.vector.VectorDocument;
 
 import java.util.Collection;
 
@@ -145,5 +146,14 @@ public class SplitBrainMergeTypes {
      * @since 3.10
      */
     public interface CardinalityEstimatorMergeTypes extends MergingEntry<String, HyperLogLog> {
+    }
+
+    /**
+     * Merge type of {@code VectorCollection}.
+     * @param <K>   type of {@code VectorCollection} key
+     * @param <V>   type of {@link VectorDocument}, stored in the {@code VectorCollection}
+     * @since 6.0.0
+     */
+    public interface VectorCollectionMergeTypes<K, V extends VectorDocument<?>> extends MergingEntry<K, V> {
     }
 }

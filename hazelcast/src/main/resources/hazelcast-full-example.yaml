@@ -2681,7 +2681,7 @@ hazelcast:
   #     that they are registered, so they receive only events occurred on that local member.
   #
   split-brain-protection:
-    splitBrainProtectionRuleWithThreeMembers:
+    splitBrainProtectionRuleWithThreeNodes:
       enabled: true
       minimum-cluster-size: 3
       protect-on: READ_WRITE
@@ -4119,6 +4119,10 @@ hazelcast:
     vector-1:
       backup-count: 1
       async-backup-count: 0
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
+      merge-policy:
+        batch-size: 132
+        class-name: PutIfAbsentMergePolicy
       indexes:
         - name: index-1
           dimension: 2

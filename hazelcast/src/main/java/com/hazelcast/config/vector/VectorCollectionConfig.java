@@ -15,7 +15,9 @@
  */
 package com.hazelcast.config.vector;
 
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.NamedConfig;
+import com.hazelcast.config.SplitBrainPolicyAwareConfig;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
@@ -25,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ import java.util.Objects;
 import static com.hazelcast.internal.cluster.Versions.V6_0;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -41,7 +45,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.5
  */
 @Beta
-public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerializable, Versioned {
+public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerializable, Versioned,
+        SplitBrainPolicyAwareConfig {
 
     /**
      * The minimum number of backups
@@ -60,6 +65,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private final List<VectorIndexConfig> vectorIndexConfigs = new ArrayList<>();
+    private String splitBrainProtectionName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     /**
      * Creates a new, empty {@code VectorCollectionConfig}.
@@ -209,6 +216,44 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         return backupCount + asyncBackupCount;
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 6.0
+     */
+    @Override
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 6.0
+     */
+    @Override
+    public VectorCollectionConfig setSplitBrainProtectionName(@Nullable String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 6.0
+     */
+    @Override
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 6.0
+     */
+    @Override
+    public VectorCollectionConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
@@ -216,6 +261,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         if (out.getVersion().isGreaterOrEqual(V6_0)) {
             out.writeInt(backupCount);
             out.writeInt(asyncBackupCount);
+            out.writeString(splitBrainProtectionName);
+            out.writeObject(mergePolicyConfig);
         }
         SerializationUtil.writeList(vectorIndexConfigs, out);
     }
@@ -228,6 +275,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         if (in.getVersion().isGreaterOrEqual(V6_0)) {
             backupCount = in.readInt();
             asyncBackupCount = in.readInt();
+            splitBrainProtectionName = in.readString();
+            mergePolicyConfig = in.readObject();
         } else {
             // in 5.5 there were no backups, override new defaults to keep original behavior
             backupCount = 0;
@@ -253,6 +302,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
                 + "name='" + name + '\''
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", vectorIndexConfigs=" + vectorIndexConfigs
                 + '}';
     }
@@ -269,12 +320,14 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         return Objects.equals(name, that.name)
                 && Objects.equals(backupCount, that.backupCount)
                 && Objects.equals(asyncBackupCount, that.asyncBackupCount)
+                && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
+                && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
                 && Objects.equals(vectorIndexConfigs, that.vectorIndexConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, backupCount, asyncBackupCount, vectorIndexConfigs);
+        return Objects.hash(name, backupCount, asyncBackupCount, splitBrainProtectionName, mergePolicyConfig, vectorIndexConfigs);
     }
 
     private static void validateName(String name) {

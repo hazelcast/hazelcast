@@ -6169,7 +6169,7 @@ public class ClientCompatibilityTest_2_9 {
     @Test
     public void test_DynamicConfigAddVectorCollectionConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 778;
-        ClientMessage encoded = DynamicConfigAddVectorCollectionConfigCodec.encodeRequest(aString, aList_VectorIndexConfig, anInt, anInt);
+        ClientMessage encoded = DynamicConfigAddVectorCollectionConfigCodec.encodeRequest(aString, aList_VectorIndexConfig, anInt, anInt, aString, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
