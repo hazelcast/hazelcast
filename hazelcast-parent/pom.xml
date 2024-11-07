@@ -411,7 +411,7 @@
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc11</artifactId>
-                <version>23.5.0.24.07</version>
+                <version>23.6.0.24.10</version>
                 <scope>test</scope>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
