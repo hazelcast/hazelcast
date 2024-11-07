@@ -90,6 +90,10 @@ public final class ArchUnitRules {
             .and().haveSimpleNameContaining("Backup")
             .should(notImplementMutatingOperation());
 
+    /** @see ConfigClassesExposingInternalImplementationCondition */
+    public static final ArchRule CONFIG_CLASSES_EXPOSING_INTERNAL_IMPLEMENTATION = classes().that()
+            .resideInAPackage("..config..")
+            .should(new ConfigClassesExposingInternalImplementationCondition());
 
     private ArchUnitRules() {
     }
