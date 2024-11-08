@@ -17,7 +17,6 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
@@ -69,7 +68,7 @@ public class SourceConnectorWrapper {
     private String name;
     private final boolean isMasterProcessor;
     private final int processorOrder;
-    private TaskConfigPublisher taskConfigPublisher;
+    private final TaskConfigPublisher taskConfigPublisher;
     private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
     private final RetryTracker reconnectTracker;
     private Map<String, String> currentConfig;
@@ -95,10 +94,15 @@ public class SourceConnectorWrapper {
 
         // Order of resource creation is important.
         // First create the topic. Any processor can create the topic
-        createTopic(context.hazelcastInstance(), context.executionId());
+        taskConfigPublisher = new TaskConfigPublisher(context.hazelcastInstance(), context.executionId());
 
         // Then create the source connector. Now source connector can use the topic
         createSourceConnector();
+
+        // Add message listener only after the connector is created, otherwise
+        // the listener could see null `sourceConnector` or `taskRunner`
+        // All processors must listen the topic
+        taskConfigPublisher.addMessageListener(this::processMessage);
     }
 
     void validatePropertiesFromUser(Properties propertiesFromUser) {
@@ -123,11 +127,11 @@ public class SourceConnectorWrapper {
 
             if (isMasterProcessor) {
                 sourceConnector.initialize(new JetConnectorContext());
-                logger.info("Starting connector '" + name + "'. Below are the propertiesFromUser");
+                logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
                 sourceConnector.start(currentConfig);
-                logger.info("Connector '" + name + "' started");
+                logger.fine("Connector '" + name + "' started");
             } else {
-                logger.info("Connector '" + name + "' created, not starting because it's not a master processor");
+                logger.fine("Connector '" + name + "' created, not starting because it's not a master processor");
             }
 
         } catch (Exception e) {
@@ -142,9 +146,9 @@ public class SourceConnectorWrapper {
         }
 
         try {
-            logger.info("Creating task runner '" + name + "'");
+            logger.fine("Creating task runner '" + name + "'");
             createTaskRunner();
-            logger.info("Task runner '" + name + "' created");
+            logger.fine("Task runner '" + name + "' created");
         } catch (Exception e) {
             reconnectTracker.attemptFailed();
             lastConnectionException = e;
@@ -200,16 +204,6 @@ public class SourceConnectorWrapper {
         return receivedTaskConfiguration.get();
     }
 
-    void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
-        if (hazelcastInstance != null) {
-            taskConfigPublisher = new TaskConfigPublisher(hazelcastInstance);
-            taskConfigPublisher.createTopic(executionId);
-
-            // All processors must listen the topic
-            taskConfigPublisher.addMessageListener(this::processMessage);
-        }
-    }
-
     void destroyTopic() {
         taskConfigPublisher.removeMessageListeners();
         if (isMasterProcessor) {
@@ -220,15 +214,19 @@ public class SourceConnectorWrapper {
 
     protected void publishMessage(TaskConfigMessage taskConfigMessage) {
         if (taskConfigPublisher != null) {
-            logger.info("Publishing TaskConfigTopic");
+            logger.fine("Publishing TaskConfigTopic");
             taskConfigPublisher.publish(taskConfigMessage);
         }
     }
 
     private void processMessage(Message<TaskConfigMessage> message) {
-        logger.info("Received TaskConfigTopic message");
-        TaskConfigMessage taskConfigMessage = message.getMessageObject();
-        processMessage(taskConfigMessage);
+        try {
+            logger.fine("Received TaskConfigTopic message");
+            TaskConfigMessage taskConfigMessage = message.getMessageObject();
+            processMessage(taskConfigMessage);
+        } catch (Exception e) {
+            logger.warning("Failed to process message", e);
+        }
     }
 
     // Protected so that it can be called from tests to simulate received topic
@@ -244,7 +242,7 @@ public class SourceConnectorWrapper {
 
         if (taskConfig != null) {
             // Pass my taskConfig to taskRunner
-            logger.info("Updating taskRunner with processorOrder = " + processorOrder
+            logger.fine("Updating taskRunner with processorOrder = " + processorOrder
                         + " with taskConfig=" + maskPasswords(taskConfig));
 
             taskRunner.updateTaskConfig(taskConfig);
@@ -366,7 +364,7 @@ public class SourceConnectorWrapper {
             TaskConfigMessage taskConfigMessage = new TaskConfigMessage();
             taskConfigMessage.setTaskConfigs(taskConfigs);
             publishMessage(taskConfigMessage);
-            logger.info(taskConfigs.size() + " task configs were sent");
+            logger.fine(taskConfigs.size() + " task configs were sent");
         } finally {
             reconfigurationLock.unlock();
         }

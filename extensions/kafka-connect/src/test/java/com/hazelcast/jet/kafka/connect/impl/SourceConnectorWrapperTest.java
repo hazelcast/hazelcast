@@ -17,10 +17,12 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,10 +40,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SourceConnectorWrapperTest {
+public class SourceConnectorWrapperTest extends SimpleTestInClusterSupport {
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, smallInstanceConfig());
+    }
+
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new TestSourceConnectorWrapper(dummySourceConnectorProperties());
+        new TestSourceConnectorWrapper(dummySourceConnectorProperties(), instance());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -50,7 +58,7 @@ public class SourceConnectorWrapperTest {
     @Test
     public void should_create_task_runners() {
         TestSourceConnectorWrapper sourceConnectorWrapper =
-                new TestSourceConnectorWrapper(dummySourceConnectorProperties());
+                new TestSourceConnectorWrapper(dummySourceConnectorProperties(), instance());
 
         TaskRunner taskRunner1 = sourceConnectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
@@ -66,7 +74,7 @@ public class SourceConnectorWrapperTest {
     @Test
     public void should_reconfigure_task_runners() {
         TestSourceConnectorWrapper sourceConnectorWrapper =
-                new TestSourceConnectorWrapper(dummySourceConnectorProperties());
+                new TestSourceConnectorWrapper(dummySourceConnectorProperties(), instance());
 
         TaskRunner taskRunner1 = sourceConnectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
@@ -103,7 +111,8 @@ public class SourceConnectorWrapperTest {
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        TestProcessorContext testProcessorContext = new TestProcessorContext();
+        TestProcessorContext testProcessorContext = new TestProcessorContext()
+                .setHazelcastInstance(instance());
         var c = new SourceConnectorWrapper(properties, 0, testProcessorContext, never());
         assertThatThrownBy(c::waitNeeded)
                 .isInstanceOf(HazelcastException.class)
@@ -116,7 +125,7 @@ public class SourceConnectorWrapperTest {
     public void should_cleanup_on_destroy() {
         Properties properties = dummySourceConnectorProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        var wrapper = new TestSourceConnectorWrapper(properties);
+        var wrapper = new TestSourceConnectorWrapper(properties, instance());
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
         wrapper.close();

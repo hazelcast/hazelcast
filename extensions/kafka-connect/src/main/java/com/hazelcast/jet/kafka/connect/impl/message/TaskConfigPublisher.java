@@ -27,19 +27,14 @@ import java.util.UUID;
 
 public class TaskConfigPublisher {
     private final HazelcastInstance hazelcastInstance;
-    private String topicName;
-
-    // The reliableTopic is accessed by multiple threads
-    private volatile ITopic<TaskConfigMessage> reliableTopic;
+    private final String topicName;
+    private final ITopic<TaskConfigMessage> reliableTopic;
     private final List<UUID> listeners = new ArrayList<>();
 
-    public TaskConfigPublisher(HazelcastInstance hazelcastInstance) {
+    public TaskConfigPublisher(HazelcastInstance hazelcastInstance, long executionId) {
         this.hazelcastInstance = hazelcastInstance;
-    }
-
-    public void createTopic(long executionId) {
-        topicName = JobRepository.INTERNAL_JET_OBJECTS_PREFIX + executionId;
-        reliableTopic = hazelcastInstance.getReliableTopic(topicName);
+        this.topicName = JobRepository.INTERNAL_JET_OBJECTS_PREFIX + executionId;
+        this.reliableTopic = hazelcastInstance.getReliableTopic(topicName);
     }
 
     public void addMessageListener(MessageListener<TaskConfigMessage> messageListener) {

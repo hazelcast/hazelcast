@@ -23,7 +23,7 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 
 /**
- * This listener will get the last published topic if it joins late.
+ * This listener will get the last published message if it joins late.
  */
 class LateJoiningListener<E> extends ReliableMessageListenerAdapter<E> {
     private final HazelcastInstance hazelcastInstance;
@@ -38,8 +38,10 @@ class LateJoiningListener<E> extends ReliableMessageListenerAdapter<E> {
     @Override
     public long retrieveInitialSequence() {
         Ringbuffer<Object> ringbuffer = hazelcastInstance.getRingbuffer(RingbufferService.TOPIC_RB_PREFIX + topicName);
-        // if tailSequence is -1 get next message
-        // if tailSequence is different from -1 get the oldest message
-        return ringbuffer.tailSequence();
+        // We return either the current tail sequence - we will get the last message,
+        // or we return 0 - we will get the first message in the topic
+        // We must not return -1, because we could miss a message sent concurrently with
+        // the initialization of the listener
+        return Math.max(ringbuffer.tailSequence(), 0);
     }
 }
