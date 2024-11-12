@@ -22,6 +22,7 @@ import com.hazelcast.internal.monitor.impl.LocalUserCodeNamespaceStats;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
@@ -78,7 +79,7 @@ public final class NoOpUserCodeNamespaceService
     }
 
     @Override
-    public void runWithNamespace(@Nullable String namespace, Runnable runnable) {
+    public void runWithNamespace(@Nullable String namespace, RunnableEx runnable) {
         runnable.run();
     }
 

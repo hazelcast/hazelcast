@@ -16,8 +16,10 @@
 
 package com.hazelcast.map.impl.event;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.internal.serialization.Data;
@@ -69,12 +71,19 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
      * @param mapNameOrNull the map name. May be null if this is not a map event (e.g. cache event)
      * @return {@code true} if the entry matches the query event filter
      */
+    @SuppressWarnings("rawtypes")
     protected boolean evaluateQueryEventFilter(EventFilter filter, Data dataKey, Object testValue, String mapNameOrNull) {
         Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
         QueryableEntry entry = new CachedQueryEntry(serializationService,
                 dataKey, testValue, extractors);
-        return queryEventFilter.eval(entry);
+        if (mapNameOrNull == null) {
+            return queryEventFilter.eval(entry);
+        } else {
+            MapContainer mapContainer = mapServiceContext.getMapContainer(mapNameOrNull);
+            return NamespaceUtil.callWithNamespace(mapContainer.getMapConfig().getUserCodeNamespace(),
+                    () -> queryEventFilter.eval(entry));
+        }
     }
 
     /**

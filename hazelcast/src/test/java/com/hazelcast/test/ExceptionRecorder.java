@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import com.google.common.collect.EvictingQueue;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LogListener;
 
@@ -27,7 +28,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
+import static java.lang.System.lineSeparator;
 import static java.util.Collections.synchronizedCollection;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -64,6 +67,17 @@ public class ExceptionRecorder implements LogListener {
         for (HazelcastInstance instance : instances) {
             instance.getLoggingService().removeLogListener(this);
         }
+    }
+
+    public final void assertNoExceptions() {
+        if (throwables.isEmpty()) {
+            return;
+        }
+        String message = throwables.stream()
+                .map(ExceptionUtil::toString)
+                .distinct()
+                .collect(joining(lineSeparator() + "-".repeat(20) + lineSeparator()));
+        throw new AssertionError("Expected no exception, but found: " + lineSeparator() + message);
     }
 
     public List<Throwable> exceptionsLogged() {

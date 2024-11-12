@@ -18,6 +18,8 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
+
 /**
  * This is a {@link com.hazelcast.config.InMemoryFormat#OBJECT} based
  * {@link ReplicatedRecordStore} implementation
@@ -33,11 +35,13 @@ public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecor
 
     @Override
     public Object unmarshall(Object key) {
-        return nodeEngine.toObject(key);
+        String userCodeNamespace = replicatedMapConfig.getUserCodeNamespace();
+        return callWithNamespace(nodeEngine, userCodeNamespace, () -> nodeEngine.toObject(key));
     }
 
     @Override
     public Object marshall(Object key) {
-        return nodeEngine.toObject(key);
+        String userCodeNamespace = replicatedMapConfig.getUserCodeNamespace();
+        return callWithNamespace(nodeEngine, userCodeNamespace, () -> nodeEngine.toObject(key));
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -100,6 +101,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
                 .setTimeToLiveSeconds(ttlSeconds);
 
         final RingbufferContainer rbContainer = getRingbufferContainer(config);
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         testSerialization(rbContainer);
 
         for (int k = 0; k < config.getCapacity() * 2; k++) {

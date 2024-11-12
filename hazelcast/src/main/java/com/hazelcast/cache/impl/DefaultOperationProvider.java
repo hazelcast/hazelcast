@@ -44,6 +44,7 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
+import javax.annotation.Nullable;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
 import java.util.List;
@@ -57,76 +58,79 @@ import java.util.Set;
 public class DefaultOperationProvider implements CacheOperationProvider {
 
     protected final String nameWithPrefix;
+    @Nullable
+    protected final String userCodeNamespace;
 
-    public DefaultOperationProvider(String nameWithPrefix) {
+    public DefaultOperationProvider(String nameWithPrefix, @Nullable String userCodeNamespace) {
         this.nameWithPrefix = nameWithPrefix;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     @Override
     public Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get, int completionId) {
-        return new CachePutOperation(nameWithPrefix, key, value, policy, get, completionId);
+        return new CachePutOperation(nameWithPrefix, key, value, policy, get, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createPutAllOperation(List<Map.Entry<Data, Data>> entries, ExpiryPolicy policy, int completionId) {
-        return new CachePutAllOperation(nameWithPrefix, entries, policy, completionId);
+        return new CachePutAllOperation(nameWithPrefix, entries, policy, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createGetOperation(Data key, ExpiryPolicy policy) {
-        return new CacheGetOperation(nameWithPrefix, key, policy);
+        return new CacheGetOperation(nameWithPrefix, key, policy, userCodeNamespace);
     }
 
     @Override
     public Operation createContainsKeyOperation(Data key) {
-        return new CacheContainsKeyOperation(nameWithPrefix, key);
+        return new CacheContainsKeyOperation(nameWithPrefix, key, userCodeNamespace);
     }
 
     @Override
     public Operation createPutIfAbsentOperation(Data key, Data value, ExpiryPolicy policy, int completionId) {
-        return new CachePutIfAbsentOperation(nameWithPrefix, key, value, policy, completionId);
+        return new CachePutIfAbsentOperation(nameWithPrefix, key, value, policy, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createRemoveOperation(Data key, Data oldValue, int completionId) {
-        return new CacheRemoveOperation(nameWithPrefix, key, oldValue, completionId);
+        return new CacheRemoveOperation(nameWithPrefix, key, oldValue, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createGetAndRemoveOperation(Data key, int completionId) {
-        return new CacheGetAndRemoveOperation(nameWithPrefix, key, completionId);
+        return new CacheGetAndRemoveOperation(nameWithPrefix, key, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createReplaceOperation(Data key, Data oldValue, Data newValue, ExpiryPolicy policy, int completionId) {
-        return new CacheReplaceOperation(nameWithPrefix, key, oldValue, newValue, policy, completionId);
+        return new CacheReplaceOperation(nameWithPrefix, key, oldValue, newValue, policy, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createGetAndReplaceOperation(Data key, Data value, ExpiryPolicy policy, int completionId) {
-        return new CacheGetAndReplaceOperation(nameWithPrefix, key, value, policy, completionId);
+        return new CacheGetAndReplaceOperation(nameWithPrefix, key, value, policy, completionId, userCodeNamespace);
     }
 
     @Override
     public Operation createEntryProcessorOperation(Data key, Integer completionId, EntryProcessor
             entryProcessor, Object... arguments) {
-        return new CacheEntryProcessorOperation(nameWithPrefix, key, completionId, entryProcessor, arguments);
+        return new CacheEntryProcessorOperation(nameWithPrefix, key, completionId, entryProcessor, userCodeNamespace, arguments);
     }
 
     @Override
     public Operation createFetchKeysOperation(IterationPointer[] pointers, int fetchSize) {
-        return new CacheFetchKeysOperation(nameWithPrefix, pointers, fetchSize);
+        return new CacheFetchKeysOperation(nameWithPrefix, pointers, fetchSize, userCodeNamespace);
     }
 
     @Override
     public Operation createFetchEntriesOperation(IterationPointer[] pointers, int fetchSize) {
-        return new CacheFetchEntriesOperation(nameWithPrefix, pointers, fetchSize);
+        return new CacheFetchEntriesOperation(nameWithPrefix, pointers, fetchSize, userCodeNamespace);
     }
 
     @Override
     public Operation createMergeOperation(String name, List<CacheMergeTypes<Object, Object>> mergingEntries,
                                           SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> policy) {
-        return new CacheMergeOperation(name, mergingEntries, policy);
+        return new CacheMergeOperation(name, mergingEntries, policy, userCodeNamespace);
     }
 
     @Override
@@ -134,12 +138,12 @@ public class DefaultOperationProvider implements CacheOperationProvider {
                                                         List<CacheMergeTypes<Object, Object>>[] mergingEntries,
                                                         SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>,
                                                                 Object> policy) {
-        return new CacheMergeOperationFactory(name, partitions, mergingEntries, policy);
+        return new CacheMergeOperationFactory(name, partitions, mergingEntries, policy, userCodeNamespace);
     }
 
     @Override
     public Operation createSetExpiryPolicyOperation(List<Data> keys, Data expiryPolicy) {
-        return new CacheSetExpiryPolicyOperation(nameWithPrefix, keys, expiryPolicy);
+        return new CacheSetExpiryPolicyOperation(nameWithPrefix, keys, expiryPolicy, userCodeNamespace);
     }
 
     @Override

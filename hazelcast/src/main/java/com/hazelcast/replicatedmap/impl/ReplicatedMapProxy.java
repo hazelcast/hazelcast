@@ -60,6 +60,8 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
+import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.destroyNodeEngineReference;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -122,6 +124,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         if (!config.isAsyncFillup()) {
             syncFill();
         }
+        declareNodeEngineReference(nodeEngine);
     }
 
     private void syncFill() {
@@ -181,10 +184,12 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     protected boolean preDestroy() {
+        destroyNodeEngineReference();
         if (super.preDestroy()) {
             eventPublishingService.fireMapClearedEvent(size(), name);
             return true;
         }
+
         return false;
     }
 

@@ -98,6 +98,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -1816,7 +1817,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
         } else {
-            Data oldValue = ss.toData(record.getValue());
+            Data oldValue = toData(record);
             CacheMergeTypes<Object, Object> existingEntry = createMergingEntry(ss, key, oldValue, record);
             Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
 
@@ -1829,6 +1830,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
 
         return result.isMergeApplied() ? new CacheMergeResponse(record, result) : new CacheMergeResponse(null, result);
+    }
+
+    private Data toData(R record) {
+        return callWithNamespace(nodeEngine, getConfig().getUserCodeNamespace(),
+                () -> ss.toData(record.getValue()));
     }
 
     private CacheMergeResponse.MergeResult updateWithMergingValue(Data key, Object existingValue, Object mergingValue,

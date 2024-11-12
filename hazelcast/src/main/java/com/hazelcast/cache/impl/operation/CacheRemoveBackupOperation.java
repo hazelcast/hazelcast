@@ -40,7 +40,7 @@ public class CacheRemoveBackupOperation
     }
 
     public CacheRemoveBackupOperation(String name, Data key, boolean wanOriginated) {
-        super(name, key, true);
+        super(name, key, true, null);
         this.wanOriginated = wanOriginated;
     }
 

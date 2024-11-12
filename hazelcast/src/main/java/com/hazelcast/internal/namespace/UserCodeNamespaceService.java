@@ -22,6 +22,7 @@ import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.monitor.impl.LocalUserCodeNamespaceStats;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.jet.function.RunnableEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -137,7 +138,7 @@ public interface UserCodeNamespaceService extends StatisticsAwareService<LocalUs
      * @param namespace the {@code Namespace} name to use for finding the appropriate {@code Namespace}.
      * @param runnable  the {@link Runnable} to execute with Namespace awareness
      */
-    void runWithNamespace(@Nullable String namespace, Runnable runnable);
+    void runWithNamespace(@Nullable String namespace, RunnableEx runnable);
 
     /**
      * Runs the provided {@link Callable} with the {@code Namespace} context of the {@code Namespace}

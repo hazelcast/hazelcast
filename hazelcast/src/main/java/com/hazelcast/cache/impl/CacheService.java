@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -33,6 +34,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
@@ -58,7 +60,7 @@ import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
  * <p><b>Distributed Cache Name</b> is used for providing a unique name to a cache object to overcome cache manager
  * scoping which depends on URI and class loader parameters. It's a simple concatenation of CacheNamePrefix and
  * cache name where CacheNamePrefix is calculated by each cache manager
- * using {@link AbstractHazelcastCacheManager#getCacheNamePrefix()}.
+ * using {@code AbstractHazelcastCacheManager#getCacheNamePrefix()}.
  * </p>
  */
 public class CacheService extends AbstractCacheService {
@@ -77,7 +79,14 @@ public class CacheService extends AbstractCacheService {
 
     @Override
     protected CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
-        return new DefaultOperationProvider(nameWithPrefix);
+        var future = configs.get(nameWithPrefix);
+        CacheConfig<?, ?> cacheConfig;
+        try {
+            cacheConfig = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new HazelcastException(e);
+        }
+        return new DefaultOperationProvider(nameWithPrefix, cacheConfig.getUserCodeNamespace());
     }
 
     @Override
@@ -170,7 +179,6 @@ public class CacheService extends AbstractCacheService {
      * Checks if the given namespace is referenced by a hot restart enabled
      * cache configuration.
      *
-     * @param engine the node engine.
      * @param namespace  the namespace.
      * @return {@code true} if the namespace is referenced by a hot restart
      * enabled data structure, {@code false} otherwise.

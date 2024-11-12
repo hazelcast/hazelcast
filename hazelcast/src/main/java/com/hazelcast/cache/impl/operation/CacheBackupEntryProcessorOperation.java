@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
+import javax.annotation.Nullable;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
@@ -47,8 +48,9 @@ public class CacheBackupEntryProcessorOperation
     }
 
     public CacheBackupEntryProcessorOperation(String cacheNameWithPrefix, Data key, EntryProcessor entryProcessor,
+                                              @Nullable String userCodeNamespace,
                                               Object... arguments) {
-        super(cacheNameWithPrefix, key);
+        super(cacheNameWithPrefix, key, userCodeNamespace);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
     }

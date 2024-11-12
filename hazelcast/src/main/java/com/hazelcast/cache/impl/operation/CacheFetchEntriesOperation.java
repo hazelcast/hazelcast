@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -43,8 +44,9 @@ public class CacheFetchEntriesOperation extends KeyBasedCacheOperation implement
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
-    public CacheFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize) {
-        super(name, new HeapData());
+    public CacheFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize,
+                                      @Nullable String userCodeNamespace) {
+        super(name, new HeapData(), userCodeNamespace);
         this.pointers = pointers;
         this.fetchSize = fetchSize;
     }

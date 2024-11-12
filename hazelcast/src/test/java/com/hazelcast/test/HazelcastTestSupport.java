@@ -56,6 +56,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.metrics.MetricsRule;
 import junit.framework.AssertionFailedError;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
@@ -166,6 +167,7 @@ public abstract class HazelcastTestSupport {
         PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
         ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
+        Assertions.setMaxStackTraceElementsDisplayed(100);
     }
 
     @AfterEach

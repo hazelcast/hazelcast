@@ -20,10 +20,12 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.namespace.NamespaceUtil.runWithNamespace;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_BACKUP_OPERATION;
 
 /**
@@ -44,7 +46,8 @@ public class AddBackupOperation extends AbstractRingBufferOperation implements B
 
     @Override
     public void run() throws Exception {
-        getRingBufferContainer().set(sequenceId, item);
+        RingbufferContainer container = getRingBufferContainer();
+        runWithNamespace(container.getUserCodeNamespace(), () -> container.set(sequenceId, item));
     }
 
     @Override

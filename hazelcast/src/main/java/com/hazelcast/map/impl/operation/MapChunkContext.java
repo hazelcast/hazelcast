@@ -35,6 +35,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.MapIndexInfo;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,6 +48,8 @@ public class MapChunkContext {
 
     private final int partitionId;
     private final String mapName;
+    @Nullable
+    private final String userCodeNamespace;
     private final SerializationService ss;
     private final ExpirySystem expirySystem;
     private final MapServiceContext mapServiceContext;
@@ -62,6 +65,7 @@ public class MapChunkContext {
         this.partitionId = partitionId;
         this.serviceNamespace = namespaces;
         this.mapName = ((ObjectNamespace) serviceNamespace).getObjectName();
+        this.userCodeNamespace = mapServiceContext.getMapContainer(mapName).getMapConfig().getUserCodeNamespace();
         this.recordStore = getRecordStore(mapName);
         this.expirySystem = recordStore.getExpirySystem();
         this.ss = mapServiceContext.getNodeEngine().getSerializationService();
@@ -115,6 +119,10 @@ public class MapChunkContext {
 
     public final String getMapName() {
         return mapName;
+    }
+
+    public final String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     public final SerializationService getSerializationService() {

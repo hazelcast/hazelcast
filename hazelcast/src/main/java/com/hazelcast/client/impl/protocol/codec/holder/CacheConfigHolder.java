@@ -82,7 +82,7 @@ public class CacheConfigHolder {
                              List<ListenerConfigHolder> cachePartitionLostListenerConfigs, boolean merkleTreeConfigExists,
                              MerkleTreeConfig merkleTreeConfig, boolean isDataPersistenceConfigExist,
                              DataPersistenceConfig dataPersistenceConfig, boolean isNamespaceExists,
-                             String userCodeNamespace) {
+                             @Nullable String userCodeNamespace) {
         this.name = name;
         this.managerPrefix = managerPrefix;
         this.uriString = uriString;

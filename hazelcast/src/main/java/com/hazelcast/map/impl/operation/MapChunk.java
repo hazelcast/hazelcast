@@ -50,6 +50,7 @@ import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -64,6 +65,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.internal.cluster.Versions.V6_0;
+import static com.hazelcast.internal.namespace.NamespaceUtil.runWithNamespace;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
@@ -76,7 +79,7 @@ import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.n
  *
  * @see #writeChunk
  */
-@SuppressWarnings("checkstyle:MethodCount")
+@SuppressWarnings({"checkstyle:MethodCount", "rawtypes", "unchecked"})
 public class MapChunk extends Operation
         implements IdentifiedDataSerializable, Versioned {
 
@@ -86,6 +89,8 @@ public class MapChunk extends Operation
     protected transient MapChunkContext context;
     protected transient Predicate isEndOfChunk;
     protected transient String mapName;
+    @Nullable
+    protected transient String userCodeNamespace;
 
     private transient boolean loaded;
     private transient long currentSequence;
@@ -134,7 +139,7 @@ public class MapChunk extends Operation
         }
 
         if (isNotEmpty(keyRecordExpiry)) {
-            putInto(recordStore);
+            runWithNamespace(getNodeEngine(), userCodeNamespace, () -> putInto(recordStore));
             logProgress(recordStore);
         }
 
@@ -507,6 +512,10 @@ public class MapChunk extends Operation
         long recordCount = 0;
 
         out.writeString(context.getMapName());
+        // RU_COMPAT_5_5
+        if (out.getVersion().isGreaterOrEqual(V6_0)) {
+            out.writeString(context.getUserCodeNamespace());
+        }
         Iterator<Map.Entry<Data, Record>> entries = context.getIterator();
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
@@ -594,6 +603,11 @@ public class MapChunk extends Operation
 
     private void readChunk(ObjectDataInput in) throws IOException {
         this.mapName = in.readString();
+        // RU_COMPAT_5_5
+        if (in.getVersion().isGreaterOrEqual(V6_0)) {
+            this.userCodeNamespace = in.readString();
+        }
+
         LinkedList keyRecordExpiry = new LinkedList<>();
         do {
             Data dataKey = IOUtil.readData(in);

@@ -23,13 +23,12 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.ExceptionUtil;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public abstract class AbstractReplicatedMapNullTest extends HazelcastTestSupport {
 
@@ -72,18 +71,8 @@ public abstract class AbstractReplicatedMapNullTest extends HazelcastTestSupport
     }
 
     protected void assertThrowsNPE(ConsumerEx<ReplicatedMap<Object, Object>> method) {
-        assertThrows(NullPointerException.class, method);
-    }
-
-    private void assertThrows(Class<? extends Exception> expectedExceptionClass,
-                              ConsumerEx<ReplicatedMap<Object, Object>> method) {
-        try {
-            method.accept(getDriver().getReplicatedMap(MAP_NAME));
-            fail("Expected " + expectedExceptionClass
-                    + " but there was no exception!");
-        } catch (Exception e) {
-            Assert.assertSame(expectedExceptionClass, e.getClass());
-        }
+        assertThatThrownBy(() -> method.accept(getDriver().getReplicatedMap(MAP_NAME)))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @FunctionalInterface

@@ -20,6 +20,8 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
+import javax.annotation.Nullable;
+
 /**
  * Cache contains key operation, determines if the cache contains an entry for the specified key.
  * <p>
@@ -33,8 +35,8 @@ public class CacheContainsKeyOperation
     public CacheContainsKeyOperation() {
     }
 
-    public CacheContainsKeyOperation(String name, Data key) {
-        super(name, key, true);
+    public CacheContainsKeyOperation(String name, Data key, @Nullable String userCodeNamespace) {
+        super(name, key, true, userCodeNamespace);
     }
 
     @Override

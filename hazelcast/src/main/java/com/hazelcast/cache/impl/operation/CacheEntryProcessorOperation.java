@@ -20,7 +20,6 @@ import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,8 +27,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
+
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 
 /**
  * Operation of the Cache Entry Processor.
@@ -50,8 +52,9 @@ public class CacheEntryProcessorOperation
     }
 
     public CacheEntryProcessorOperation(String cacheNameWithPrefix, Data key, int completionId,
-                                        javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
-        super(cacheNameWithPrefix, key, completionId);
+                                        javax.cache.processor.EntryProcessor entryProcessor, @Nullable String userCodeNamespace,
+                                        Object... arguments) {
+        super(cacheNameWithPrefix, key, completionId, userCodeNamespace);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
         this.completionId = completionId;
@@ -65,11 +68,11 @@ public class CacheEntryProcessorOperation
     @Override
     public Operation getBackupOperation() {
         if (backupEntryProcessor != null) {
-            return new CacheBackupEntryProcessorOperation(name, key, backupEntryProcessor, arguments);
+            return new CacheBackupEntryProcessorOperation(name, key, backupEntryProcessor, userCodeNamespace, arguments);
         } else {
             if (backupRecord != null) {
                 // After entry processor is executed if there is a record, this means that possible add/update
-                return new CachePutBackupOperation(name, key, backupRecord);
+                return new CachePutBackupOperation(name, key, backupRecord, userCodeNamespace);
             } else {
                 // If there is no record, this means possible remove by entry processor.
                 // TODO In case of non-existing key, this cause redundant remove operation to backups
@@ -99,7 +102,7 @@ public class CacheEntryProcessorOperation
     @Override
     public void afterRun() throws Exception {
         if (recordStore.isWanReplicationEnabled()) {
-            CacheRecord record = recordStore.getRecord(key);
+            CacheRecord record = callWithNamespace(userCodeNamespace, () -> recordStore.getRecord(key));
             if (record != null) {
                 publishWanUpdate(key, record);
             } else {
@@ -128,7 +131,7 @@ public class CacheEntryProcessorOperation
             throws IOException {
         super.readInternal(in);
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
-        entryProcessor = NamespaceUtil.callWithNamespace(engine,
+        entryProcessor = callWithNamespace(engine,
                 CacheService.lookupNamespace(engine, name), in::readObject);
         final boolean hasArguments = in.readBoolean();
         if (hasArguments) {

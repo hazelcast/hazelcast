@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -66,6 +67,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
     @Test
     public void whenFailOverflowPolicy_andNoRemainingCapacity_thenNoBackup() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         for (int k = 0; k < ringbuffer.capacity(); k++) {
             ringbuffer.add("item");
         }
@@ -82,6 +84,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
     @Test
     public void whenFailOverflowPolicy_andRemainingCapacity_thenBackup() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         for (int k = 0; k < ringbuffer.capacity() - 1; k++) {
             ringbuffer.add("item");
         }
@@ -98,6 +101,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
     @Test
     public void whenOverwritePolicy_andNoRemainingCapacity_thenBackup() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         for (int k = 0; k < ringbuffer.capacity(); k++) {
             ringbuffer.add("item");
         }
@@ -114,6 +118,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
     @Test
     public void whenOverwritePolicy_andRemainingCapacity_thenBackup() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         for (int k = 0; k < ringbuffer.capacity() - 1; k++) {
             ringbuffer.add("item");
         }
