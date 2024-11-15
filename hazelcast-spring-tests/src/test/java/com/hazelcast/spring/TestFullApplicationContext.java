@@ -230,15 +230,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private JetService jet;
 
     @Autowired
+    @Qualifier(value = "map1")
     private IMap<Object, Object> map1;
 
     @Autowired
+    @Qualifier(value = "map2")
     private IMap<Object, Object> map2;
 
     @Autowired
     private MultiMap<Object, Object> multiMap;
 
     @Autowired
+    @Qualifier(value = "replicatedMap")
     private ReplicatedMap<Object, Object> replicatedMap;
 
     @Autowired
