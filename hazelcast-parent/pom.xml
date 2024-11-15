@@ -85,6 +85,12 @@
         <aws.sdk.version>1.12.778</aws.sdk.version>
         <aws.sdk2.version>2.29.12</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
+        <!--
+        Calcite 1.35 dependency that has CVE
+        Explicitly upgrade to a version not vulnerable to CVE - https://github.com/advisories/GHSA-gcg6-xv4f-f749
+        Not required with Calcite >=1.37, 
+         -->
+        <janino.version>3.1.10</janino.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <new.debezium.version>2.7.3.Final</new.debezium.version>
         <grpc.version>1.66.0</grpc.version>
@@ -532,6 +538,16 @@
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
                 <version>1.32.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>commons-compiler</artifactId>
+                <version>${janino.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>janino</artifactId>
+                <version>${janino.version}</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
