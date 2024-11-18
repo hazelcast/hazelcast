@@ -5442,6 +5442,129 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         validateVectorCollectionConfig(config);
     }
 
+    @Override
+    @Test
+    public void testVectorCollectionConfig_backupCount_max() {
+        int backupCount = 6;
+        String yaml = simpleVectorCollectionBackupCountConfig(backupCount);
+        Config config = buildConfig(yaml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(backupCount);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_backupCount_moreThanMax() {
+        String yaml = simpleVectorCollectionBackupCountConfig(7);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_backupCount_min() {
+        int backupCount = 0;
+        String yaml = simpleVectorCollectionBackupCountConfig(backupCount);
+        Config config = buildConfig(yaml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(backupCount);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_backupCount_lessThanMin() {
+        String yaml = simpleVectorCollectionBackupCountConfig(-1);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_asyncBackupCount_max() {
+        int asyncBackupCount = 6;
+        // we need to set backup-count=0 since default is 1
+        // and backup count + async backup count must not exceed 6
+        String yaml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(0, asyncBackupCount);
+        Config config = buildConfig(yaml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getAsyncBackupCount()).isEqualTo(asyncBackupCount);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(0);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_asyncBackupCount_moreThanMax() {
+        // we need to set backup-count=0 since default is 1
+        // and backup count + async backup count must not exceed 6
+        String yaml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(0, 7);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_asyncBackupCount_min() {
+        int asyncBackupCount = 0;
+        String yaml = simpleVectorCollectionAsyncBackupCountConfig(asyncBackupCount);
+        Config config = buildConfig(yaml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getAsyncBackupCount()).isEqualTo(asyncBackupCount);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_asyncBackupCount_lessThanMin() {
+        String yaml = simpleVectorCollectionAsyncBackupCountConfig(-1);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_backupSyncAndAsyncCount_max() {
+        int backupCount = 4;
+        int asyncBackupCount = 2;
+        String yaml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(backupCount, asyncBackupCount);
+        Config config = buildConfig(yaml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(backupCount);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getAsyncBackupCount()).isEqualTo(asyncBackupCount);
+    }
+
+    @Override
+    @Test(expected = IllegalArgumentException.class)
+    public void testVectorCollectionConfig_backupSyncAndAsyncCount_moreThanMax() {
+        int backupCount = 4;
+        int asyncBackupCount = 3;
+        String yaml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(backupCount, asyncBackupCount);
+        buildConfig(yaml);
+    }
+
+    private String simpleVectorCollectionBackupCountConfig(int count) {
+        return simpleVectorCollectionBackupCountConfig("backup-count", count);
+    }
+
+    private String simpleVectorCollectionAsyncBackupCountConfig(int count) {
+        return simpleVectorCollectionBackupCountConfig("async-backup-count", count);
+    }
+
+    private String simpleVectorCollectionBackupCountConfig(String tagName, int count) {
+        return String.format("""
+                hazelcast:
+                  vector-collection:
+                    vector-1:
+                      %s: %d
+                      indexes:
+                        - dimension: 4
+                          metric: COSINE
+                """, tagName, count);
+    }
+
+    private String simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(
+            int backupCount, int asyncBackupCount) {
+        return String.format("""
+                hazelcast:
+                  vector-collection:
+                    vector-1:
+                      backup-count: %d
+                      async-backup-count: %d
+                      indexes:
+                        - dimension: 4
+                          metric: COSINE
+                """, backupCount, asyncBackupCount);
+    }
+
     public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
         return "hazelcast:\n"
                 + "  advanced-network:\n"

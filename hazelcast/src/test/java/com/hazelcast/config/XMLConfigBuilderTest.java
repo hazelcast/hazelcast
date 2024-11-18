@@ -4993,6 +4993,137 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         validateVectorCollectionConfig(config);
     }
 
+    @Override
+    @Test
+    public void testVectorCollectionConfig_backupCount_max() {
+        int backupCount = 6;
+        String xml = simpleVectorCollectionBackupCountConfig(backupCount);
+        Config config = buildConfig(xml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(backupCount);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_backupCount_moreThanMax() {
+        String xml = simpleVectorCollectionBackupCountConfig(7);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_backupCount_min() {
+        int backupCount = 0;
+        String xml = simpleVectorCollectionBackupCountConfig(backupCount);
+        Config config = buildConfig(xml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(backupCount);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_backupCount_lessThanMin() {
+        String xml = simpleVectorCollectionBackupCountConfig(-1);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_asyncBackupCount_max() {
+        int asyncBackupCount = 6;
+        // we need to set backup-count=0 since default is 1
+        // and backup count + async backup count must not exceed 6
+        String xml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(0, asyncBackupCount);
+        Config config = buildConfig(xml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getAsyncBackupCount()).isEqualTo(asyncBackupCount);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(0);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_asyncBackupCount_moreThanMax() {
+        // we need to set backup-count=0 since default is 1
+        // and backup count + async backup count must not exceed 6
+        String xml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(0, 7);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_asyncBackupCount_min() {
+        int asyncBackupCount = 0;
+        String xml = simpleVectorCollectionAsyncBackupCountConfig(asyncBackupCount);
+        Config config = buildConfig(xml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getAsyncBackupCount()).isEqualTo(asyncBackupCount);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testVectorCollectionConfig_asyncBackupCount_lessThanMin() {
+        String xml = simpleVectorCollectionAsyncBackupCountConfig(-1);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testVectorCollectionConfig_backupSyncAndAsyncCount_max() {
+        int backupCount = 4;
+        int asyncBackupCount = 2;
+        String xml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(backupCount, asyncBackupCount);
+        Config config = buildConfig(xml);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getBackupCount()).isEqualTo(backupCount);
+        assertThat(config.getVectorCollectionConfigs().get("vector-1").getAsyncBackupCount()).isEqualTo(asyncBackupCount);
+    }
+
+    @Override
+    @Test(expected = IllegalArgumentException.class)
+    public void testVectorCollectionConfig_backupSyncAndAsyncCount_moreThanMax() {
+        int backupCount = 4;
+        int asyncBackupCount = 3;
+        String xml = simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(backupCount, asyncBackupCount);
+        buildConfig(xml);
+    }
+
+    private String simpleVectorCollectionBackupCountConfig(int count) {
+        return simpleVectorCollectionBackupCountConfig("backup-count", count);
+    }
+
+    private String simpleVectorCollectionAsyncBackupCountConfig(int count) {
+        return simpleVectorCollectionBackupCountConfig("async-backup-count", count);
+    }
+
+    private String simpleVectorCollectionBackupCountConfig(String tagName, int count) {
+        return String.format(HAZELCAST_START_TAG
+                + """
+                    <vector-collection name="vector-1">
+                      <%s>%d</%s>
+                      <indexes>
+                        <index>
+                            <dimension>4</dimension>
+                            <metric>COSINE</metric>
+                        </index>
+                      </indexes>
+                    </vector-collection>
+                """
+                + HAZELCAST_END_TAG, tagName, count, tagName);
+    }
+
+    private String simpleVectorCollectionBackupCountAndAsyncBackupCountConfig(
+            int backupCount, int asyncBackupCount) {
+        return String.format(HAZELCAST_START_TAG
+                + """
+                    <vector-collection name="vector-1">
+                      <backup-count>%d</backup-count>
+                      <async-backup-count>%d</async-backup-count>
+                      <indexes>
+                        <index>
+                            <dimension>4</dimension>
+                            <metric>COSINE</metric>
+                        </index>
+                      </indexes>
+                    </vector-collection>
+                """
+                + HAZELCAST_END_TAG, backupCount, asyncBackupCount);
+    }
+
     static Config buildRestConfigFromXmlString() {
         String xml = HAZELCAST_START_TAG
                 + "    <rest enabled=\"true\">\n"

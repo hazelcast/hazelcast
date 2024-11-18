@@ -88,10 +88,14 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
     @Test
     public void memberTest_addAndGetSeveralVectorCollection_then_success() {
         var vectorCollectionConfig1 = buildVectorCollectionConfig("vector-1", "index-1", 1, Metric.COSINE);
+        vectorCollectionConfig1.setBackupCount(2);
+        vectorCollectionConfig1.setAsyncBackupCount(1);
         vectorCollectionConfig1.addVectorIndexConfig(
                 new VectorIndexConfig().setMetric(Metric.DOT).setName("index-2").setDimension(1).setMaxDegree(11).setEfConstruction(12).setUseDeduplication(true)
         );
         var vectorCollectionConfig2 = buildVectorCollectionConfig("vector-2", "index-1", 1, Metric.COSINE);
+        vectorCollectionConfig2.setBackupCount(3);
+        vectorCollectionConfig2.setAsyncBackupCount(2);
 
         instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig1);
         instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig2);
@@ -166,6 +170,101 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
         instance1.getConfig().setVectorCollectionConfigs(Map.of(vectorCollectionConfig.getName(), vectorCollectionConfig));
     }
 
+    @Test
+    public void memberTest_addBackupCountOneConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", 1, null);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getBackupCount()).isEqualTo(1);
+    }
+
+    @Test
+    public void memberTest_addBackupCountMaxConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", 6, null);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getBackupCount()).isEqualTo(6);
+    }
+
+    @Test
+    public void memberTest_addBackupCountMinConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", 0, null);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getBackupCount()).isEqualTo(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void memberTest_addBackupCountMoreThanMaxConfig_then_fail() {
+        memberTest_addBackupConfig("vector-collection-1", 7, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void memberTest_addBackupCountLessThanMinConfig_then_fail() {
+        memberTest_addBackupConfig("vector-collection-1", -1, null);
+    }
+
+    @Test
+    public void memberTest_addAsyncBackupCountOneConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", null, 1);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getAsyncBackupCount()).isEqualTo(1);
+    }
+
+    @Test
+    public void memberTest_addAsyncBackupCountMaxConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", 0, 6);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getAsyncBackupCount()).isEqualTo(6);
+    }
+
+    @Test
+    public void memberTest_addAsyncBackupCountMinConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", null, 0);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getAsyncBackupCount()).isEqualTo(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void memberTest_addAsyncBackupCountMoreThanMaxConfig_then_fail() {
+        memberTest_addBackupConfig("vector-collection-1", 0, 7);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void memberTest_addAsyncBackupCountLessThanMinConfig_then_fail() {
+        memberTest_addBackupConfig("vector-collection-1", null, -1);
+    }
+
+    @Test
+    public void memberTest_addSyncAndAsyncBackupCountMaxConfig_then_success() {
+        memberTest_addBackupConfig("vector-collection-1", 4, 2);
+        var actual = instance2.getConfig().getVectorCollectionConfigOrNull("vector-collection-1");
+        assertThat(actual.getBackupCount()).isEqualTo(4);
+        assertThat(actual.getAsyncBackupCount()).isEqualTo(2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void memberTest_addSyncAndAsyncBackupCountMoreThanMaxConfig_then_fail() {
+        memberTest_addBackupConfig("vector-collection-1", 4, 3);
+    }
+
+    private void memberTest_addBackupConfig(String name, Integer backupCount, Integer asyncBackupCount) {
+        var vectorCollectionConfig
+                = buildVectorCollectionForBackupTests(name, backupCount, asyncBackupCount);
+        instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig);
+    }
+
+    private VectorCollectionConfig buildVectorCollectionForBackupTests(
+            String name, Integer backupCount, Integer asyncBackupCount) {
+        return buildVectorCollectionConfig(
+                name,
+                "index-1",
+                1,
+                Metric.COSINE,
+                11,
+                12,
+                true,
+                backupCount,
+                asyncBackupCount
+        );
+    }
 
     // client test fails because codecs are registered in EE module
     @Test(expected = UnsupportedOperationException.class)

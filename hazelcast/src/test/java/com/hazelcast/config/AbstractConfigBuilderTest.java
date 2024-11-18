@@ -781,6 +781,36 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testVectorCollectionConfig();
 
+    @Test
+    public abstract void testVectorCollectionConfig_backupCount_max();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testVectorCollectionConfig_backupCount_moreThanMax();
+
+    @Test
+    public abstract void testVectorCollectionConfig_backupCount_min();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testVectorCollectionConfig_backupCount_lessThanMin();
+
+    @Test
+    public abstract void testVectorCollectionConfig_asyncBackupCount_max();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testVectorCollectionConfig_asyncBackupCount_moreThanMax();
+
+    @Test
+    public abstract void testVectorCollectionConfig_asyncBackupCount_min();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testVectorCollectionConfig_asyncBackupCount_lessThanMin();
+
+    @Test
+    public abstract void testVectorCollectionConfig_backupSyncAndAsyncCount_max();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testVectorCollectionConfig_backupSyncAndAsyncCount_moreThanMax();
+
     protected void validateVectorCollectionConfig(Config config) {
         var vectorCollectionConfigs = config.getVectorCollectionConfigs();
         var expectedCollectionConfigs = new HashMap<String, VectorCollectionConfig>();

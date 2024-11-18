@@ -37,8 +37,30 @@ public final class VectorTestHelper {
             Integer efConstruction,
             boolean useDeduplication
     ) {
+        return buildVectorCollectionConfig(collectionName, indexName, indexDim, indexMetric,
+                maxDegree, efConstruction, useDeduplication, null, null);
+    }
+
+    @SuppressWarnings("checkstyle:parameternumber")
+    public static VectorCollectionConfig buildVectorCollectionConfig(
+            String collectionName,
+            String indexName,
+            int indexDim,
+            Metric indexMetric,
+            Integer maxDegree,
+            Integer efConstruction,
+            boolean useDeduplication,
+            Integer backupCount,
+            Integer asyncBackupCount
+    ) {
         Config config = new Config();
         VectorCollectionConfig vectorCollectionConfig = new VectorCollectionConfig(collectionName);
+        if (backupCount != null) {
+            vectorCollectionConfig.setBackupCount(backupCount);
+        }
+        if (asyncBackupCount != null) {
+            vectorCollectionConfig.setAsyncBackupCount(asyncBackupCount);
+        }
         VectorIndexConfig indexConfig = new VectorIndexConfig()
                 .setName(indexName)
                 .setDimension(indexDim)
