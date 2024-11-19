@@ -38,7 +38,6 @@ import java.util.ListIterator;
 import java.util.Spliterator;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -222,15 +221,17 @@ public class ClientListTest extends HazelcastTestSupport {
     @Test
     public void testListener() throws Exception {
 
-        final CountDownLatch latch = new CountDownLatch(6);
+        final CountDownLatch addLatch = new CountDownLatch(6);
+        final CountDownLatch removeLatch = new CountDownLatch(1);
 
         ItemListener<String> listener = new ItemListener<>() {
 
             public void itemAdded(ItemEvent<String> itemEvent) {
-                latch.countDown();
+                addLatch.countDown();
             }
 
             public void itemRemoved(ItemEvent<String> item) {
+                removeLatch.countDown();
             }
         };
         UUID registrationId = list.addItemListener(listener, true);
@@ -240,8 +241,10 @@ public class ClientListTest extends HazelcastTestSupport {
                 list.add("item" + i);
             }
             list.add("done");
+            list.remove("done");
         }).start();
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(addLatch);
+        assertOpenEventually(removeLatch);
         list.removeItemListener(registrationId);
     }
 
