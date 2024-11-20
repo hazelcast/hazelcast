@@ -79,7 +79,7 @@
                                     <groupId>com.hazelcast</groupId>
                                     <artifactId>hazelcast</artifactId>
                                     <outputDirectory>${configs.from.jar}</outputDirectory>
-                                    <includes>**/*.xml,**/*.yaml,META-INF/NOTICE</includes>
+                                    <includes>**/*.xml,**/*.yaml,META-INF/NOTICE,**/*.txt</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

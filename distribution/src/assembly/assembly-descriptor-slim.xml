@@ -134,6 +134,13 @@
             <destName>NOTICE</destName>
             <outputDirectory>/</outputDirectory>
         </file>
+
+        <!-- Release Notes from hazelcast.jar -->
+        <file>
+            <source>${configs.from.jar}/release_notes.txt</source>
+            <destName>release_notes.txt</destName>
+            <outputDirectory>/</outputDirectory>
+        </file>
     </files>
 
     <fileSets>

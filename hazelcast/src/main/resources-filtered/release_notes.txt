@@ -1,0 +1,1 @@
+For the full release notes for this release, see https://docs.hazelcast.com/hazelcast/${parsedVersion.majorVersion}.${parsedVersion.minorVersion}/release-notes/${parsedVersion.majorVersion}-${parsedVersion.minorVersion}-${parsedVersion.incrementalVersion}.
