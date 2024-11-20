@@ -13,17 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hazelcast.function;
 
-package com.hazelcast.jet.function;
+import com.hazelcast.internal.util.ExceptionUtil;
 
-import com.hazelcast.function.ThrowingRunnable;
-
-import java.io.Serializable;
-
+/**
+ * A {@link Runnable} that declares checked exception.
+ * @since 6.0
+ */
 @FunctionalInterface
-public interface RunnableEx extends ThrowingRunnable, Serializable {
-    static RunnableEx noop() {
-        return () -> {
-        };
+public interface ThrowingRunnable extends Runnable {
+
+    /**
+     * Runs given action.
+     * @see Runnable#run
+     */
+    void runEx() throws Exception;
+
+    @Override
+    default void run() {
+        try {
+            runEx();
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
     }
 }

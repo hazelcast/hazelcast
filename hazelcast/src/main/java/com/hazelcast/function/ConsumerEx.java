@@ -16,7 +16,6 @@
 
 package com.hazelcast.function;
 
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
@@ -33,22 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 4.0
  */
 @FunctionalInterface
-public interface ConsumerEx<T> extends Consumer<T>, Serializable, SecuredFunction {
-
-    /**
-     * Exception-declaring version of {@link Consumer#accept}
-     * @throws Exception in case of any exceptional case
-     */
-    void acceptEx(T t) throws Exception;
-
-    @Override
-    default void accept(T t) {
-        try {
-            acceptEx(t);
-        } catch (Exception e) {
-            throw ExceptionUtil.sneakyThrow(e);
-        }
-    }
+public interface ConsumerEx<T> extends ThrowingConsumer<T>, Serializable, SecuredFunction {
 
     /**
      * {@code Serializable} variant of {@link Consumer#andThen(Consumer)

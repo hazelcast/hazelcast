@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.namespace.impl;
 
+import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalUserCodeNamespaceStats;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
@@ -79,7 +79,7 @@ public final class NoOpUserCodeNamespaceService
     }
 
     @Override
-    public void runWithNamespace(@Nullable String namespace, RunnableEx runnable) {
+    public void runWithNamespace(@Nullable String namespace, ThrowingRunnable runnable) {
         runnable.run();
     }
 

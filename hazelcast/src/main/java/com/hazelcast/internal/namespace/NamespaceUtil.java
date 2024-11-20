@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.namespace;
 
+import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.internal.namespace.impl.NamespaceThreadLocalContext;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
-import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.deployment.MapResourceClassLoader;
 import com.hazelcast.spi.impl.NodeEngine;
 
@@ -87,12 +87,12 @@ public class NamespaceUtil {
 
     /**
      * Obtains a {@link NodeEngine} reference from {@link NodeEngineThreadLocalContext}
-     * and uses it to call {@link UserCodeNamespaceService#runWithNamespace(String, RunnableEx)} with
+     * and uses it to call {@link UserCodeNamespaceService#runWithNamespace(String, ThrowingRunnable)} with
      * the provided parameters.
      *
-     * @see UserCodeNamespaceService#runWithNamespace(String, RunnableEx)
+     * @see UserCodeNamespaceService#runWithNamespace(String, ThrowingRunnable)
      */
-    public static void runWithNamespace(@Nullable String namespace, RunnableEx runnable) {
+    public static void runWithNamespace(@Nullable String namespace, ThrowingRunnable runnable) {
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
         runWithNamespace(engine, namespace, runnable);
     }
@@ -101,9 +101,9 @@ public class NamespaceUtil {
      * Convenience method for calling the same method name within the {@link UserCodeNamespaceService},
      * obtained from the provided {@link NodeEngine}.
      *
-     * @see UserCodeNamespaceService#runWithNamespace(String, RunnableEx)
+     * @see UserCodeNamespaceService#runWithNamespace(String, ThrowingRunnable)
      */
-    public static void runWithNamespace(NodeEngine engine, @Nullable String namespace, RunnableEx runnable) {
+    public static void runWithNamespace(NodeEngine engine, @Nullable String namespace, ThrowingRunnable runnable) {
         engine.getNamespaceService().runWithNamespace(namespace, runnable);
     }
 
@@ -111,7 +111,7 @@ public class NamespaceUtil {
      * Convenience method for calling the same method name within the {@link UserCodeNamespaceService},
      * obtained from the provided {@link NodeEngine}.
      *
-     * @see UserCodeNamespaceService#runWithNamespace(String, RunnableEx)
+     * @see UserCodeNamespaceService#runWithNamespace(String, ThrowingRunnable)
      */
     public static void runWithNamespace(NodeEngine engine, @Nullable String namespace, Runnable runnable) {
         engine.getNamespaceService().runWithNamespace(namespace, runnable::run);
