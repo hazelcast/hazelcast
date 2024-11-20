@@ -40,7 +40,6 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.AddressCheckerImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.CoreService;
@@ -84,6 +83,8 @@ import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.nio.ConnectionType.MC_CL_CLIENT;
+import static com.hazelcast.internal.nio.ConnectionType.MC_JAVA_CLIENT;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -119,6 +120,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private static final int BLOCKING_THREADS_PER_CORE = 20;
     private static final int THREADS_PER_CORE = 1;
     private static final int QUERY_THREADS_PER_CORE = 1;
+    private static final Set<String> EXEMPT_CONNECTION_TYPES = Set.of(MC_JAVA_CLIENT, MC_CL_CLIENT);
+
     protected final Node node;
     protected final NodeEngineImpl nodeEngine;
     private final Executor executor;
@@ -339,9 +342,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
         ServerConnection conn = endpoint.getConnection();
         InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+        Address address = new Address(socketAddress);
+
+        if (MC_CL_CLIENT.equals(endpoint.getClientType()) && !addressChecker.isTrusted(address)) {
+            return false;
+        }
+
         //socket address can be null if connection closed before bind
         if (socketAddress != null) {
-            conn.setRemoteAddress(new Address(socketAddress));
+            conn.setRemoteAddress(address);
         }
 
         if (endpointManager.registerEndpoint(endpoint)) {
@@ -452,7 +461,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean isClientAllowed(Client client) {
-        return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType()) || clientSelector.select(client);
+        return EXEMPT_CONNECTION_TYPES.contains(client.getClientType()) || clientSelector.select(client);
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

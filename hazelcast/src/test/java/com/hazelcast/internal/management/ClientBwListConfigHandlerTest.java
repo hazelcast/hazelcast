@@ -191,6 +191,18 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         assertTrue(clientEngine.isClientAllowed(mcClient));
     }
 
+    @Test
+    public void testApplyConfig_whenMCCLCAddressIsBlacklisted_alwaysAllow() {
+        handler.applyConfig(createConfig(Mode.BLACKLIST, new ClientBwListEntryDTO(Type.IP_ADDRESS, "1.2.3.4")));
+        ServerConnection mockConnection = mock(ServerConnection.class);
+        when(mockConnection.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("1.2.3.4", 1234));
+        when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_CL_CLIENT);
+
+        ClientEndpointImpl mcClc = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(instance), mockConnection);
+
+        assertTrue(clientEngine.isClientAllowed(mcClc));
+    }
+
     private ClientBwListDTO createConfig(Mode mode, ClientBwListEntryDTO... entries) {
         List<ClientBwListEntryDTO> entriesList = new ArrayList<>();
         if (entries != null) {

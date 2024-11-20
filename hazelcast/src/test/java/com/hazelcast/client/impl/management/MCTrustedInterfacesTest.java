@@ -18,6 +18,8 @@ package com.hazelcast.client.impl.management;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.impl.ClientEndpointImpl;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -54,6 +56,8 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -64,6 +68,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.InetSocketAddress;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,12 +76,16 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({ QuickTest.class, ParallelJVMTest.class })
@@ -274,6 +283,32 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     @Test
     public void testReadMetrics() throws Exception {
         assertFailureOnUntrustedInterface(MCReadMetricsCodec.encodeRequest(randomUUID(), 0L));
+    }
+
+    @Test
+    public void testBind_whenMCCLCAddressIsNotTrusted_returnFalse() {
+        ClientEngine clientEngine = getNode(member).getClientEngine();
+        ServerConnection mockConnection = mock(ServerConnection.class);
+        when(mockConnection.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 1234));
+        when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_CL_CLIENT);
+
+        ClientEndpointImpl mcClc = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(member), mockConnection);
+        mcClc.authenticated(randomUUID(), null, null, 0L, null, null, null, false);
+
+        assertFalse(clientEngine.bind(mcClc));
+    }
+
+    @Test
+    public void testBind_whenMCCLCAddressIsTrusted_returnTrue() {
+        ClientEngine clientEngine = getNode(member).getClientEngine();
+        ServerConnection mockConnection = mock(ServerConnection.class);
+        when(mockConnection.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("222.222.222.222", 1234));
+        when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_CL_CLIENT);
+
+        ClientEndpointImpl mcClc = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(member), mockConnection);
+        mcClc.authenticated(randomUUID(), null, null, 0L, null, null, null, false);
+
+        assertTrue(clientEngine.bind(mcClc));
     }
 
     private void assertFailureOnUntrustedInterface(ClientMessage clientMessage) throws Exception {
