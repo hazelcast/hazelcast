@@ -118,6 +118,7 @@ public class SqlAnalyzeStatement extends SqlCall {
                 case "storeMetricsAfterJobCompletion":
                     jobConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
                     break;
+                case "userCodeNamespace":
                 case "autoScaling":
                 case "splitBrainProtectionEnabled":
                 case "suspendOnFailure":

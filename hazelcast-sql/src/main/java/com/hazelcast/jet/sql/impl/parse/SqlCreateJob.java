@@ -154,6 +154,8 @@ public class SqlCreateJob extends SqlCreate {
                 case "suspendOnFailure":
                     jobConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
                     break;
+                case "userCodeNamespace":
+                    throw validator.newValidationError(option.key(), RESOURCE.notSupported(key, "CREATE JOB"));
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
             }
