@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
@@ -185,6 +186,20 @@ public class ClientMultiMapTest {
         testMultiMapPutAllTemplate(expectedMultiMap,
                 (o) -> o.putAllAsync(expectedMultiMap)
         );
+    }
+
+    @Test
+    public void testMultiMapPutAllAsyncEmptyMap() throws ExecutionException, InterruptedException {
+        MultiMap<String, Integer> mmap = client.getMultiMap(randomString());
+        mmap.putAllAsync(Collections.emptyMap()).toCompletableFuture().get();
+        assertEquals("Multimap should not have any entries", 0, mmap.size());
+    }
+
+    @Test
+    public void testMultiMapPutAllAsyncEmptyCollection() throws ExecutionException, InterruptedException {
+        MultiMap<String, Integer> mmap = client.getMultiMap(randomString());
+        mmap.putAllAsync(randomString(), Collections.emptyList()).toCompletableFuture().get();
+        assertEquals("Multimap should not have any entries", 0, mmap.size());
     }
 
     @Test

@@ -37,6 +37,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -241,6 +243,22 @@ public class MultiMapTest extends HazelcastTestSupport {
                         (v) -> o.putAllAsync(v, expectedMultiMap.get(v))
                 )
         );
+    }
+
+    @Test
+    public void testMultiMapPutAllAsyncEmptyMap() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = testMultiMapPutAllSetup();
+        MultiMap<String, Integer> mmap = instance.getMultiMap(randomString());
+        mmap.putAllAsync(Collections.emptyMap()).toCompletableFuture().get();
+        assertEquals("Multimap should not have any entries", 0, mmap.size());
+    }
+
+    @Test
+    public void testMultiMapPutAllAsyncEmptyCollection() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = testMultiMapPutAllSetup();
+        MultiMap<String, Integer> mmap = instance.getMultiMap(randomString());
+        mmap.putAllAsync(randomString(), Collections.emptyList()).toCompletableFuture().get();
+        assertEquals("Multimap should not have any entries", 0, mmap.size());
     }
 
     @Test
