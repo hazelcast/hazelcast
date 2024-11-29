@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
@@ -273,9 +274,12 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
 
     protected void record(Object op, long startNanos) {
         if (opLatencyDistributions != null) {
-            Class c = op.getClass();
+            Class<?> c = op.getClass();
             if (op instanceof PartitionIteratingOperation operation) {
                 c = operation.getOperationFactory().getClass();
+                if (operation.getOperationFactory() instanceof OperationFactoryWrapper wrapper) {
+                    c = wrapper.getOperationFactory().getClass();
+                }
             }
 
             LatencyDistribution distribution = opLatencyDistributions.get(c);

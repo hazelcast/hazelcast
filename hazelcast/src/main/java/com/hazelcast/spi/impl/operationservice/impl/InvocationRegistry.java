@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
@@ -165,9 +166,12 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         }
 
         Operation op = invocation.op;
-        Class c = op.getClass();
+        Class<?> c = op.getClass();
         if (op instanceof PartitionIteratingOperation operation) {
             c = operation.getOperationFactory().getClass();
+            if (operation.getOperationFactory() instanceof OperationFactoryWrapper wrapper) {
+                c = wrapper.getOperationFactory().getClass();
+            }
         }
         LatencyDistribution distribution = latencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
         distribution.done(invocation.firstInvocationTimeNanos);
