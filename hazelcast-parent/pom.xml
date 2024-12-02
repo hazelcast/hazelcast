@@ -725,6 +725,11 @@
                 <artifactId>wiremock-standalone</artifactId>
                 <version>3.10.0</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>3.1.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
