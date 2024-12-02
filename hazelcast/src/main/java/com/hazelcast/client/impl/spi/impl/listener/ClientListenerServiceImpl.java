@@ -34,6 +34,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
@@ -386,15 +387,25 @@ public class ClientListenerServiceImpl
             }
             ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
             clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
-            futures[i++] = clientInvocation.invokeUrgent().exceptionally(throwable -> {
+            futures[i++] = clientInvocation.invokeUrgent().handleAsync((response, throwable) -> {
+                if (throwable == null) {
+                    boolean result = listenerMessageCodec.decodeRemoveResponse(response);
+                    if (!result) {
+                        logger.warning("Deregistration of listener with ID " + userRegistrationId
+                                + " has failed for address " + subscriber.getRemoteAddress() + " with no exception");
+                    }
+                    return null;
+                }
+
                 if (!(throwable instanceof HazelcastClientNotActiveException
                         || throwable instanceof IOException
                         || throwable instanceof TargetDisconnectedException)) {
                     logger.warning("Deregistration of listener with ID " + userRegistrationId
                             + " has failed for address " + subscriber.getRemoteAddress(), throwable);
                 }
+
                 return null;
-            });
+            }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         CompletableFuture.allOf(futures).join();
         return true;

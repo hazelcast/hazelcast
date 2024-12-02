@@ -101,6 +101,16 @@ public class ClientMultiMapListenersTest {
     }
 
     @Test
+    public void testRemoveListenerToKey() {
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new CountDownValueNotNullListener(1);
+        final UUID id = mm.addEntryListener(listener, 1, true);
+
+        assertTrue(mm.removeEntryListener(id));
+    }
+
+    @Test
     public void testRemoveListener_whenNotExist() {
         final MultiMap mm = client.getMultiMap(randomString());
 
