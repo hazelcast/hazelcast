@@ -340,6 +340,27 @@ public class TestHazelcastInstanceFactory {
      * Spawns a separate thread to start each instance. This is required when
      * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
      * call blocks until the whole cluster is re-formed.
+     * <p>
+     * This can only be used with mock network since it uses explicit addresses.
+     * For an alternative that can be used with real network, see
+     * {@link #newInstancesParallel(int, IntFunction)}.
+     *
+     * @param configFn a function that must return a separate config instance for each address
+     */
+    public HazelcastInstance[] newInstancesParallel(Address[] addresses, Function<Address, Config> configFn) {
+        return newInstancesParallel0(addresses.length, (int i) -> {
+            Address address = addresses[i];
+            return newHazelcastInstance(address, configFn.apply(address));
+        });
+    }
+
+    /**
+     * Creates the given number of Hazelcast instances in parallel.
+     * The first member in the returned array is always the master.
+     * <p>
+     * Spawns a separate thread to start each instance. This is required when
+     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
+     * call blocks until the whole cluster is re-formed.
      *
      * @param configFn a function that must return a separate config instance for each invocation
      */
