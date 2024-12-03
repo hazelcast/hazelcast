@@ -28,7 +28,7 @@ import java.util.Objects;
 
 class DockerizedKafkaTestSupport extends KafkaTestSupport {
     // TODO This should lookup "confluent.version" Maven property
-    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.7.1");
+    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.8.0");
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
 
     private KafkaContainer kafkaContainer;
