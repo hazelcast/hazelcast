@@ -31,11 +31,13 @@ import java.util.Map;
  * might be an instance of {@link java.sql.Connection}, or of a driver or client to a
  * 3rd party system etc.
  * <p>
- * Every connection obtained from a DataConnection must be closed. Otherwise, the data
- * link cannot be closed and the connection will leak.
+ * Every connection obtained from a DataConnection must be  released via
+ * {@link #release()}. Otherwise, the data connection cannot be closed and the
+ * connection will leak.
  * <p>
- * DataConnection is supposed to be used in Jet jobs or SQL mappings where the
- * same connection metadata, or even the same connection is to be reused.
+ * DataConnection is supposed to be used in Jet jobs, SQL mappings and other
+ * places where the same connection metadata, or even the same connection
+ * is to be reused.
  * <p>
  * DataConnection is closely related to Jet connectors (sources and sinks) and
  * to {@code SqlConnector}s. While the DataConnection handles initialization,
@@ -67,9 +69,9 @@ import java.util.Map;
  * </ul>
  * However, the connector might implement any other appropriate strategy.
  * <p>
- * When a DataConnection is closed, connections obtained from should continue to be
- * functional, until all connections are returned. Replacing of a DataConnection is
- * handled as remove+create.
+ * When a DataConnection is released, connections obtained from it should
+ * continue to be functional, until all connections are returned.
+ * Replacing of a DataConnection is handled as remove+create.
  * <p>
  * Implementations of DataConnection must provide a constructor with a single argument
  * of type {@link DataConnectionConfig}. The constructor must not throw an exception
@@ -141,7 +143,7 @@ public interface DataConnection {
      * allows the processor to avoid concurrent close while it is using the
      * connection.
      *
-     * @throws IllegalStateException fi the data connection is already closed
+     * @throws IllegalStateException if the data connection is already closed
      */
     void retain();
 

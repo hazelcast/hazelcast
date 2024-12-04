@@ -78,6 +78,7 @@ import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.internal.session.ProxySessionManager;
 import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -887,6 +888,12 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     @Override
     public SqlService getSql() {
         return sqlService;
+    }
+
+    @Nonnull
+    @Override
+    public DataConnectionService getDataConnectionService() {
+        throw new UnsupportedOperationException("DataConnectionService is not available on the client");
     }
 
     @Nonnull

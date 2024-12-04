@@ -38,6 +38,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -425,6 +426,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public SqlService getSql() {
         return node.getNodeEngine().getSqlService();
+    }
+
+    @Nonnull
+    @Override
+    public DataConnectionService getDataConnectionService() {
+        return node.getNodeEngine().getDataConnectionService();
     }
 
     @Nonnull

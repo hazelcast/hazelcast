@@ -16,6 +16,7 @@
 
 package com.hazelcast.dataconnection.impl;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastException;
@@ -25,7 +26,6 @@ import com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DummyDataConnect
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -52,7 +52,7 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
     public static final String DUMMY_DATA_CONNECTION_TYPE = DUMMY_TYPE;
 
     private final Config config = smallInstanceConfig();
-    private final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
+    private final TestHazelcastFactory hazelcastInstanceFactory = new TestHazelcastFactory();
     private HazelcastInstance instance;
     private InternalDataConnectionService dataConnectionService;
 
@@ -415,6 +415,14 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> dataConnectionService.typeForDataConnection("non-existing-data-connection"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Data connection 'non-existing-data-connection' not found");
+    }
+
+    @Test
+    public void should_fail_from_client() {
+        HazelcastInstance client = hazelcastInstanceFactory.newHazelcastClient();
+        assertThatThrownBy(() -> client.getDataConnectionService())
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage("DataConnectionService is not available on the client");
     }
 
     private InternalDataConnectionService getDataConnectionService() {

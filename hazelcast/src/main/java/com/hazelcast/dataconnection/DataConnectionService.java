@@ -19,14 +19,21 @@ package com.hazelcast.dataconnection;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 
 import javax.annotation.Nonnull;
 
 /**
- * The interface provides access to {@link DataConnection}s for Jet processors. A Jet
- * processor can obtain a reference to the service via {@link
+ * The interface provides access to {@link DataConnection}s
+ * <p>
+ * A Jet processor can obtain a reference to the service via {@link
  * ProcessorMetaSupplier.Context#dataConnectionService()}.
+ * <p>
+ * Other components (e.g. classes implementing
+ * {@link HazelcastInstanceAware}) can use
+ * {@link HazelcastInstance#getDataConnectionService()}
  * <p>
  * Data connections can be created via one of the following ways:
  * <ul>

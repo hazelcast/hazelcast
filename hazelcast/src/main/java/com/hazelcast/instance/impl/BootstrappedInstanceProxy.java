@@ -32,6 +32,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
@@ -308,6 +309,12 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
     @Override
     public SqlService getSql() {
         return instance.getSql();
+    }
+
+    @Nonnull
+    @Override
+    public DataConnectionService getDataConnectionService() {
+        return instance.getDataConnectionService();
     }
 
     @Nonnull

@@ -28,6 +28,7 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.jet.JetService;
@@ -462,6 +463,17 @@ public interface HazelcastInstance {
      * @see SqlService
      */
     @Nonnull SqlService getSql();
+
+    /**
+     * Returns {@link DataConnectionService} that allows getting instances
+     * of configured data connections
+     *
+     * @return DataConnection service
+     * @throws UnsupportedOperationException when requested on the client side
+     * @since 6.0
+     */
+    @Nonnull
+    DataConnectionService getDataConnectionService();
 
     /**
      * Returns a Jet service to execute distributed batch and streaming jobs.
