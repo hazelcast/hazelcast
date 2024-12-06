@@ -292,6 +292,12 @@
             <artifactId>hazelcast-jet-python</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast.jet</groupId>
+                    <artifactId>hazelcast-jet-grpc</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
