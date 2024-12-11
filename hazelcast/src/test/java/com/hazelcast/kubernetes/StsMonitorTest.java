@@ -17,8 +17,8 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
-import com.hazelcast.instance.impl.NoOpClusterTopologyIntentTracker;
 import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.kubernetes.KubernetesClient.StsMonitorThread;
 import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -40,7 +40,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -53,6 +52,9 @@ import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 // test interaction of KubernetesClient with Kubernetes mock API server
@@ -60,34 +62,46 @@ import static org.mockito.Mockito.when;
 @Category(NightlyTest.class)
 public class StsMonitorTest {
 
-    private static final String DEFAULT_STS_NAME = "hz-hazelcast";
+    private static final String SERVICE_NAME = "hz-hazelcast";
 
     @Rule
     public KubernetesServer kubernetesServer = new KubernetesServer(false);
 
-    String apiServerBaseUrl;
     String namespace;
-    NamespacedKubernetesClient mockServerClient;
+    String apiServerBaseUrl;
     String token;
+    ClusterTopologyIntentTracker tracker;
+    KubernetesClient client;
+    StsMonitorThread stsMonitor;
 
     @Before
     public void setup() {
-        mockServerClient = kubernetesServer.getClient();
+        tracker = mock(ClusterTopologyIntentTracker.class);
+        when(tracker.isEnabled()).thenReturn(true);
+
+        NamespacedKubernetesClient mockServerClient = kubernetesServer.getClient();
         namespace = mockServerClient.getNamespace();
-        token = mockServerClient.getConfiguration().getOauthToken();
         apiServerBaseUrl = mockServerClient.getMasterUrl().toString();
         if (apiServerBaseUrl.endsWith("/")) {
             // our KubernetesClient expects a base url without trailing /
             apiServerBaseUrl = apiServerBaseUrl.substring(0, apiServerBaseUrl.length() - 1);
         }
+        token = mockServerClient.getConfiguration().getOauthToken();
+    }
+
+    private void buildKubernetesClient() {
+        StaticTokenProvider tokenProvider = new StaticTokenProvider(token);
+        client = new KubernetesClient(namespace, SERVICE_NAME, apiServerBaseUrl, tokenProvider, null,
+                3, KubernetesConfig.ExposeExternallyMode.DISABLED, false,
+                null, null, tracker, null);
+        stsMonitor = client.stsMonitorThread;
     }
 
     @Test
     public void testInitialStsList() {
         expectAndReturnStsList("1", "2").always();
 
-        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-
+        buildKubernetesClient();
         stsMonitor.readInitialStsList();
         RuntimeContext runtimeContext = stsMonitor.latestRuntimeContext;
         assertEquals("1", runtimeContext.getResourceVersion());
@@ -100,13 +114,11 @@ public class StsMonitorTest {
     public void testWatchSts() throws IOException {
         expectAndReturnStsList("1", "2").once();
         kubernetesServer.expect().get()
-                .withPath("/apis/apps/v1/namespaces/" + namespace
-                        + "/statefulsets?fieldSelector=metadata.name%3D" + DEFAULT_STS_NAME
-                        + "&watch=1&resourceVersion=1")
+                .withPath("/apis/apps/v1/namespaces/" + namespace + "/statefulsets?watch=1&resourceVersion=1")
                 .andReturn(200, new WatchEvent(buildDefaultSts("4"), "MODIFIED"))
                 .always();
 
-        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        buildKubernetesClient();
         stsMonitor.readInitialStsList();
         RestClient.WatchResponse watchResponse = stsMonitor.sendWatchRequest();
         String message = watchResponse.nextLine();
@@ -120,8 +132,7 @@ public class StsMonitorTest {
 
     @Test
     public void testWatchResumesAfter410Gone() {
-        ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class);
-        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token, tracker);
+        buildKubernetesClient();
 
         // initial STS list
         expectAndReturnStsList("1", "2").once();
@@ -151,9 +162,9 @@ public class StsMonitorTest {
 
         // verify
         // 1st time initialization: StsMonitor reads initial statefulset list and provides update
-        Mockito.verify(tracker, Mockito.times(1)).update(-1, 3, -1, 3, -1, 3);
+        verify(tracker, times(1)).update(-1, 3, -1, 3, -1, 3);
         // during resume, tracker is updated
-        Mockito.verify(tracker, Mockito.times(3)).update(3, 3, 3, 3, 3, 3);
+        verify(tracker, times(3)).update(3, 3, 3, 3, 3, 3);
     }
 
     @Test
@@ -162,7 +173,7 @@ public class StsMonitorTest {
         expectAndReturnStsList("1", "2").always();
         expectWatch("1").andReturn(500, null).always();
 
-        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        buildKubernetesClient();
         Future<?> runFuture = spawn(stsMonitor::run);
         sleepSeconds(10);
         stsMonitor.running = false;
@@ -176,7 +187,7 @@ public class StsMonitorTest {
         // sts list fails
         expectStsList().andReturn(500, null).always();
 
-        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        buildKubernetesClient();
         Future<?> runFuture = spawn(stsMonitor::run);
         sleepSeconds(10);
         stsMonitor.running = false;
@@ -186,12 +197,10 @@ public class StsMonitorTest {
     }
 
     @Test
-    public void testStsMonitorThread_TerminatedPromptlyOnClientShutdown() {
+    public void testStsMonitorThread_terminatedPromptlyOnClientShutdown() {
         expectAndReturnStsList("1", "2").always();
         kubernetesServer.expect().get()
-                .withPath("/apis/apps/v1/namespaces/" + namespace
-                        + "/statefulsets?fieldSelector=metadata.name%3D" + DEFAULT_STS_NAME
-                        + "&watch=1&resourceVersion=1")
+                .withPath("/apis/apps/v1/namespaces/" + namespace + "/statefulsets?watch=1&resourceVersion=1")
                 .andReturn(200, new WatchEvent(buildDefaultSts("4"), "MODIFIED"))
                 .always();
         kubernetesServer.expect().get()
@@ -200,20 +209,15 @@ public class StsMonitorTest {
                 .once();
 
         // Create new client instance which uses the topology intent tracker
-        ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class);
-        when(tracker.isEnabled()).thenReturn(true);
-        KubernetesClient client = buildKubernetesClient(namespace, apiServerBaseUrl, token, tracker);
+        buildKubernetesClient();
         client.start();
 
-        // Make sure the sts monitor thread exists within the client
-        assertNotNull(client.stsMonitorThread);
-
         // Wait until we've received some watch data (to ensure our thread is reading connections)
-        assertTrueEventually(() -> assertNotNull(client.stsMonitorThread.watchResponse));
+        assertTrueEventually(() -> assertNotNull(stsMonitor.watchResponse));
 
         // Trigger shutdown of the sts monitor thread and assert it has finished after call completion
         client.destroy();
-        assertTrue(client.stsMonitorThread.finished);
+        assertTrue(stsMonitor.finished);
     }
 
     // respond with 200 OK and statefulset list
@@ -234,14 +238,12 @@ public class StsMonitorTest {
     }
 
     private String watchUrl(String resourceVersion) {
-        return "/apis/apps/v1/namespaces/" + namespace
-                + "/statefulsets?fieldSelector=metadata.name%3D" + DEFAULT_STS_NAME
-                + "&watch=1&resourceVersion=" + resourceVersion;
+        return "/apis/apps/v1/namespaces/" + namespace + "/statefulsets"
+                + "?watch=1&resourceVersion=" + resourceVersion;
     }
 
     private String stsListUrl() {
-        return "/apis/apps/v1/namespaces/" + namespace
-                + "/statefulsets?fieldSelector=metadata.name%3D" + DEFAULT_STS_NAME;
+        return "/apis/apps/v1/namespaces/" + namespace + "/statefulsets";
     }
 
     StatefulSetList buildDefaultStsList(String resourceVersion, String stsResourceVersion) {
@@ -251,7 +253,7 @@ public class StsMonitorTest {
     }
 
     StatefulSet buildDefaultSts(String resourceVersion) {
-        return buildSts("default", DEFAULT_STS_NAME, 3, 3, 3, 3, resourceVersion);
+        return buildSts("default", SERVICE_NAME, 3, 3, 3, 3, resourceVersion);
     }
 
     StatefulSet buildSts(String namespace, String name, int specReplicas, int replicas,
@@ -269,22 +271,5 @@ public class StsMonitorTest {
                         .withResourceVersion(resourceVersion)
                         .build())
                 .build();
-    }
-
-    KubernetesClient.StsMonitorThread buildStsMonitor(String namespace, String masterUrl, String oauthToken) {
-        return buildStsMonitor(namespace, masterUrl, oauthToken, new NoOpClusterTopologyIntentTracker());
-    }
-
-    KubernetesClient.StsMonitorThread buildStsMonitor(String namespace, String masterUrl, String oauthToken,
-                                                      ClusterTopologyIntentTracker tracker) {
-        return buildKubernetesClient(namespace, masterUrl, oauthToken, tracker).new StsMonitorThread();
-    }
-
-    KubernetesClient buildKubernetesClient(String namespace, String masterUrl, String oauthToken,
-                                           ClusterTopologyIntentTracker tracker) {
-        StaticTokenProvider tokenProvider = new StaticTokenProvider(oauthToken);
-        return new KubernetesClient(namespace, masterUrl, tokenProvider, null, 3,
-                KubernetesConfig.ExposeExternallyMode.DISABLED, false,
-                null, null, tracker, null, DEFAULT_STS_NAME);
     }
 }

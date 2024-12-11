@@ -923,9 +923,9 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(KubernetesTokenProvider tokenProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, null, RETRIES,
-                ExposeExternallyMode.AUTO, true, null,
-                null, null, null, null);
+        return new KubernetesClient(NAMESPACE, null, kubernetesMasterUrl, tokenProvider, null,
+                RETRIES, ExposeExternallyMode.AUTO, true, null,
+                null, null, null);
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
@@ -938,18 +938,21 @@ public class KubernetesClientTest {
                 servicePerPodLabelValue);
     }
 
-    private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress,
+    private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally,
+                                                 boolean useNodeNameAsExternalAddress,
                                                  String servicePerPodLabelName, String servicePerPodLabelValue) {
         return newKubernetesClient(exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName,
                 servicePerPodLabelValue, new KubernetesApiEndpointProvider());
     }
-    private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress,
+
+    private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally,
+                                                 boolean useNodeNameAsExternalAddress,
                                                  String servicePerPodLabelName, String servicePerPodLabelValue,
                                                  KubernetesApiProvider urlProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), null,
-                RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue,
-                null, urlProvider, null);
+        return new KubernetesClient(NAMESPACE, null, kubernetesMasterUrl, new StaticTokenProvider(TOKEN),
+                null, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName,
+                servicePerPodLabelValue, null, urlProvider);
     }
 
     private static List<String> formatPrivate(List<Endpoint> addresses) {

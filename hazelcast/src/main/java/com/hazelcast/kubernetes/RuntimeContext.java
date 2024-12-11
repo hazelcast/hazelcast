@@ -16,66 +16,120 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.internal.json.JsonObject;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.NotThreadSafe;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 
+@NotThreadSafe
 public class RuntimeContext {
 
-    /** specified number of replicas, corresponds to {@code StatefulSetSpec.replicas} */
-    private final int specifiedReplicaCount;
+    private final Map<String, StatefulSetInfo> statefulSets = new HashMap<>();
+    private StatefulSetInfo merged;
+    private String resourceVersion;
 
-    /** number of ready replicas, corresponds to {@code StatefulSetStatus.readyReplicas} */
-    private final int readyReplicas;
+    public RuntimeContext() { }
+
+    public RuntimeContext(RuntimeContext context) {
+        statefulSets.putAll(context.statefulSets);
+        merged = context.merged;
+        resourceVersion = context.resourceVersion;
+    }
 
     /**
-     * number of replicas created by the current revision of the StatefulSet,
-     * corresponds to {@code StatefulSetStatus.currentReplicas}
+     * @param specifiedReplicaCount specified number of replicas, corresponds to {@code StatefulSetSpec.replicas}
+     * @param readyReplicas         number of ready replicas, corresponds to {@code StatefulSetStatus.readyReplicas}
+     * @param currentReplicas       number of replicas created by the current revision of the StatefulSet,
+     *                              corresponds to {@code StatefulSetStatus.currentReplicas}
      */
-    private final int currentReplicas;
+    public record StatefulSetInfo(
+            int specifiedReplicaCount,
+            int readyReplicas,
+            int currentReplicas) {
 
-    private final String resourceVersion;
-
-    public RuntimeContext(int specifiedReplicaCount, int readyReplicas, int currentReplicas,
-                          String resourceVersion) {
-        this.specifiedReplicaCount = specifiedReplicaCount;
-        this.readyReplicas = readyReplicas;
-        this.currentReplicas = currentReplicas;
-        this.resourceVersion = resourceVersion;
+        @Nonnull
+        public static StatefulSetInfo from(@Nonnull JsonObject statefulSet) {
+            int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", UNKNOWN);
+            int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", UNKNOWN);
+            int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", UNKNOWN);
+            return new StatefulSetInfo(specReplicas, readyReplicas, replicas);
+        }
     }
 
-    @Nonnull
-    public static RuntimeContext from(@Nonnull JsonObject statefulSet, String resourceVersion) {
-        int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", UNKNOWN);
-        int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", UNKNOWN);
-        int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", UNKNOWN);
-        return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
+    private StatefulSetInfo getMerged() {
+        if (merged == null) {
+            merged = new StatefulSetInfo(
+                    sum(StatefulSetInfo::specifiedReplicaCount),
+                    sum(StatefulSetInfo::readyReplicas),
+                    sum(StatefulSetInfo::currentReplicas));
+        }
+        return merged;
     }
 
+    private int sum(ToIntFunction<StatefulSetInfo> fieldExtractor) {
+        return statefulSets.values().stream().mapToInt(fieldExtractor)
+                .reduce((a, b) -> a == UNKNOWN || b == UNKNOWN ? UNKNOWN : a + b).orElse(UNKNOWN);
+    }
+
+    /**
+     * Returns the total number of specified replicas. If the context
+     * is empty, returns {@value ClusterTopologyIntentTracker#UNKNOWN}.
+     *
+     * @see StatefulSetInfo#specifiedReplicaCount()
+     */
     public int getSpecifiedReplicaCount() {
-        return specifiedReplicaCount;
+        return getMerged().specifiedReplicaCount;
     }
 
+    /**
+     * Returns the total number of ready replicas. If the context
+     * is empty, returns {@value ClusterTopologyIntentTracker#UNKNOWN}.
+     *
+     * @see StatefulSetInfo#readyReplicas()
+     */
     public int getReadyReplicas() {
-        return readyReplicas;
+        return getMerged().readyReplicas;
     }
 
+    /**
+     * Returns the total number of current replicas. If the context
+     * is empty, returns {@value ClusterTopologyIntentTracker#UNKNOWN}.
+     *
+     * @see StatefulSetInfo#currentReplicas()
+     */
     public int getCurrentReplicas() {
-        return currentReplicas;
+        return getMerged().currentReplicas;
     }
 
+    /** Returns the last resource version specified via {@link #addStatefulSetInfo}. */
     public String getResourceVersion() {
         return resourceVersion;
+    }
+
+    public int getStatefulSetCount() {
+        return statefulSets.size();
+    }
+
+    public void addStatefulSetInfo(String name, @Nonnull StatefulSetInfo info, String resourceVersion) {
+        StatefulSetInfo previous = statefulSets.put(name, info);
+        if (!info.equals(previous)) {
+            merged = null;
+        }
+        this.resourceVersion = resourceVersion;
     }
 
     @Override
     public String toString() {
         return "RuntimeContext{"
-                + "specifiedReplicaCount=" + specifiedReplicaCount
-                + ", readyReplicas=" + readyReplicas
-                + ", currentReplicas=" + currentReplicas
+                + "specifiedReplicaCount=" + getSpecifiedReplicaCount()
+                + ", readyReplicas=" + getReadyReplicas()
+                + ", currentReplicas=" + getCurrentReplicas()
                 + ", resourceVersion='" + resourceVersion + '\''
                 + '}';
     }

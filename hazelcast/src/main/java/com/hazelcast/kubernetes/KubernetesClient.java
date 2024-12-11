@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
+import com.hazelcast.kubernetes.RuntimeContext.StatefulSetInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
@@ -35,8 +36,6 @@ import com.hazelcast.spi.utils.RetryUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,7 +76,6 @@ class KubernetesClient {
 
     @Nullable
     final StsMonitorThread stsMonitorThread;
-    private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
     private final String caCertificate;
@@ -98,19 +96,20 @@ class KubernetesClient {
     private boolean isNodePortWarningAlreadyLogged;
 
     KubernetesClient(KubernetesConfig config, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
-        this(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
+        this(config.getNamespace(), config.getServiceName(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
                 config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
                 config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
-                config.getServicePerPodLabelValue(), clusterTopologyIntentTracker, null, null);
+                config.getServicePerPodLabelValue(), clusterTopologyIntentTracker, null);
     }
 
     // test usage only
     @SuppressWarnings("ParameterNumber")
-    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
-                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
-                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue,
+    KubernetesClient(String namespace, String serviceName, String kubernetesMaster,
+                     KubernetesTokenProvider tokenProvider, String caCertificate, int retries,
+                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
+                     String servicePerPodLabelName, String servicePerPodLabelValue,
                      @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker,
-                     @Nullable KubernetesApiProvider apiProvider, @Nullable String stsName) {
+                     @Nullable KubernetesApiProvider apiProvider) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
@@ -125,9 +124,8 @@ class KubernetesClient {
             clusterTopologyIntentTracker.initialize();
         }
         this.apiProvider = apiProvider != null ? apiProvider : buildKubernetesApiUrlProvider();
-        this.stsName = stsName != null ? stsName : extractStsName();
         this.stsMonitorThread = clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled()
-                ? new StsMonitorThread() : null;
+                ? new StsMonitorThread(serviceName) : null;
     }
 
     public void start() {
@@ -297,13 +295,28 @@ class KubernetesClient {
         return isNodePortWarningAlreadyLogged;
     }
 
-    private static String extractStsName() {
-        String stsName = HostnameUtil.getLocalHostname();
-        int dashIndex = stsName.lastIndexOf('-');
-        if (dashIndex > 0) {
-            stsName = stsName.substring(0, dashIndex);
+    /**
+     * Hazelcast Platform Operator keeps instances in two StatefulSet's: {@code <serviceName>}
+     * and {@code <serviceName>-lite}, the latter of which is only created if the cluster has
+     * lite members. {@code serviceName} is the name of the {@code Hazelcast} CRD that is used
+     * to deploy the cluster. Even though it is always set by the Operator (see
+     * <a href="https://github.com/hazelcast/hazelcast-platform-operator/blob/cb1dd7/internal/config/build.go#L240">
+     * here</a>), a label-based fallback mechanism is introduced in order to keep it in line
+     * with {@link KubernetesApiEndpointResolver#resolveNodes()}. Another fallback mechanism
+     * that is based on hostname is also possible since the pattern for the constructed
+     * hostname is {@code <statefulSetName>-<ordinal>} (see
+     * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id">
+     * here</a>), but this solution depends on member liteness and StatefulSet membership,
+     * which is not well-defined on member promotion/demotion.
+     */
+    private List<String> extractStsNames(String serviceName) {
+        if (serviceName == null) {
+            JsonObject podJson = callGet(String.format("%s/api/v1/namespaces/%s/pods/%s",
+                    kubernetesMaster, namespace, HostnameUtil.getLocalHostname()));
+            JsonObject labels = podJson.get("metadata").asObject().get("labels").asObject();
+            serviceName = labels.get("app.kubernetes.io/instance").asString();
         }
-        return stsName;
+        return List.of(serviceName, serviceName + "-lite");
     }
 
     @Nullable
@@ -804,17 +817,19 @@ class KubernetesClient {
         WatchResponse watchResponse;
 
         private final String stsUrlString;
+        private final List<String> stsNames;
         private final BackoffIdleStrategy backoffIdleStrategy;
 
-        StsMonitorThread() {
+        StsMonitorThread(String serviceName) {
             super("hz-k8s-sts-monitor");
-            stsUrlString = formatStsListUrl();
+            stsUrlString = String.format("%s/apis/apps/v1/namespaces/%s/statefulsets", kubernetesMaster, namespace);
+            stsNames = extractStsNames(serviceName);
             backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
                     MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
         }
 
         /**
-         * Initializes and watches information about the StatefulSet in which Hazelcast is being executed.
+         * Initializes and watches information about the StatefulSets in which Hazelcast is being executed.
          * See <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes">
          * Efficient detection of changes on Kubernetes API reference</a>.
          * <p>
@@ -897,13 +912,6 @@ class KubernetesClient {
             }
         }
 
-        String formatStsListUrl() {
-            String fieldSelectorValue = "metadata.name=" + stsName;
-            fieldSelectorValue = URLEncoder.encode(fieldSelectorValue, StandardCharsets.UTF_8);
-            return String.format("%s/apis/apps/v1/namespaces/%s/statefulsets?fieldSelector=%s",
-                    kubernetesMaster, namespace, fieldSelectorValue);
-        }
-
         /**
          * GET StatefulSets list and update the latest runtime context.
          */
@@ -911,11 +919,15 @@ class KubernetesClient {
             JsonObject stsList = callGet(stsUrlString);
             String resourceVersion = stsList.get("metadata").asObject().getString("resourceVersion", null);
 
+            latestRuntimeContext = new RuntimeContext();
             for (JsonValue statefulSet : toJsonArray(stsList.get("items"))) {
-                String name = statefulSet.asObject().get("metadata").asObject().getString("name", null);
-                if (stsName.equals(name)) {
-                    latestRuntimeContext = RuntimeContext.from(statefulSet.asObject(), resourceVersion);
-                    return;
+                String stsName = statefulSet.asObject().get("metadata").asObject().getString("name", null);
+                if (stsNames.contains(stsName)) {
+                    latestRuntimeContext.addStatefulSetInfo(stsName, StatefulSetInfo.from(statefulSet.asObject()),
+                            resourceVersion);
+                    if (latestRuntimeContext.getStatefulSetCount() == stsNames.size()) {
+                        return;
+                    }
                 }
             }
         }
@@ -942,23 +954,23 @@ class KubernetesClient {
             }
             JsonObject watchEvent = Json.parse(message).asObject();
             JsonObject statefulSet = watchEvent.get("object").asObject();
-            String name = statefulSet.asObject().get("metadata").asObject().getString("name", null);
-            if (!stsName.equals(name)) {
+            String stsName = statefulSet.asObject().get("metadata").asObject().getString("name", null);
+            if (!stsNames.contains(stsName)) {
                 return;
             }
             String watchType = watchEvent.getString("type", null);
             RuntimeContext context = null;
             switch (watchType) {
-                case "MODIFIED", "DELETED":
+                case "ADDED", "MODIFIED", "DELETED":
                     String resourceVersion = statefulSet.get("metadata").asObject().getString("resourceVersion", null);
-                    context = RuntimeContext.from(statefulSet, resourceVersion);
+                    StatefulSetInfo info = StatefulSetInfo.from(statefulSet);
                     if (watchType.equals("DELETED")) {
-                        context = new RuntimeContext(0, context.getReadyReplicas(),
-                                context.getCurrentReplicas(), context.getResourceVersion());
+                        info = new StatefulSetInfo(0, info.readyReplicas(), info.currentReplicas());
                     }
+                    context = latestRuntimeContext != null ? new RuntimeContext(latestRuntimeContext)
+                            : new RuntimeContext();
+                    context.addStatefulSetInfo(stsName, info, resourceVersion);
                     break;
-                case "ADDED":
-                    throw new IllegalStateException("A new sts with same name as this cannot be added");
                 default:
                     // BOOKMARK, ERROR
                     // Since we only listen to StatefulSet events, the client-side resourceVersion may be
