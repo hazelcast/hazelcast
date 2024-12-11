@@ -129,7 +129,7 @@ public class AwsEc2ApiTest {
                             <instancesSet>
                                 <item>
                                     <privateIpAddress>172.31.14.42</privateIpAddress>
-                                    <ipAddress>18.196.228.248</ipAddress>
+                                    <ipv6Address>2001:0DB8:C21A::1</ipv6Address>
                                     <tagSet>
                                         <item>
                                             <key>Name</key>
@@ -152,9 +152,10 @@ public class AwsEc2ApiTest {
         Map<String, String> result = awsEc2Api.describeInstances(CREDENTIALS);
 
         // then
-        assertEquals(2, result.size());
+        assertEquals(3, result.size());
         assertEquals("54.93.121.213", result.get("10.0.1.25"));
-        assertEquals("18.196.228.248", result.get("172.31.14.42"));
+        assertNull(result.get("172.31.14.42"));
+        assertEquals("2001:0DB8:C21A::1", result.get("2001:0DB8:C21A::1"));
     }
 
     @Test
@@ -232,9 +233,11 @@ public class AwsEc2ApiTest {
                         <item>
                             <availabilityZone>eu-central-1a</availabilityZone>
                             <privateIpAddress>10.0.1.82</privateIpAddress>
-                            <association>
-                                <publicIp>35.156.192.128</publicIp>
-                            </association>
+                            <ipv6AddressesSet>
+                               <item>
+                                   <ipv6Address>2001:db8:1234:1a2b::123</ipv6Address>
+                               </item>
+                           </ipv6AddressesSet>
                         </item>
                     </networkInterfaceSet>
                 </DescribeNetworkInterfacesResponse>""";
@@ -249,9 +252,10 @@ public class AwsEc2ApiTest {
         Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
 
         // then
-        assertEquals(2, result.size());
+        assertEquals(3, result.size());
         assertEquals("54.93.217.194", result.get("10.0.1.207"));
-        assertEquals("35.156.192.128", result.get("10.0.1.82"));
+        assertNull(result.get("10.0.1.82"));
+        assertEquals("2001:db8:1234:1a2b::123", result.get("2001:db8:1234:1a2b::123"));
     }
 
     @Test
@@ -264,28 +268,6 @@ public class AwsEc2ApiTest {
                 + "&Filter.1.Value.1=10.0.1.207"
                 + "&Filter.1.Value.2=10.0.1.82"
                 + "&Version=2016-11-15";
-
-        //language=XML
-        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<DescribeNetworkInterfacesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-                + "    <requestId>21bc9f93-2196-4107-87a3-9e5b2b3f29d9</requestId>\n"
-                + "    <networkInterfaceSet>\n"
-                + "        <item>\n"
-                + "            <availabilityZone>eu-central-1a</availabilityZone>\n"
-                + "            <privateIpAddress>10.0.1.207</privateIpAddress>\n"
-                + "            <association>\n"
-                + "                <publicIp>54.93.217.194</publicIp>\n"
-                + "            </association>\n"
-                + "        </item>\n"
-                + "        <item>\n"
-                + "            <availabilityZone>eu-central-1a</availabilityZone>\n"
-                + "            <privateIpAddress>10.0.1.82</privateIpAddress>\n"
-                + "            <association>\n"
-                + "                <publicIp>35.156.192.128</publicIp>\n"
-                + "            </association>\n"
-                + "        </item>\n"
-                + "    </networkInterfaceSet>\n"
-                + "</DescribeNetworkInterfacesResponse>";
 
         stubFor(get(urlEqualTo(requestUrl))
                 .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
