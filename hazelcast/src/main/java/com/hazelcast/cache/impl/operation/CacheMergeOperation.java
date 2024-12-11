@@ -27,13 +27,11 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
@@ -54,9 +52,8 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     }
 
     public CacheMergeOperation(String name, List<CacheMergeTypes<Object, Object>> mergingEntries,
-                               SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
-                               @Nullable String userCodeNamespace) {
-        super(name, userCodeNamespace);
+                               SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy) {
+        super(name);
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
     }
@@ -80,8 +77,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     private void merge(CacheMergeTypes<Object, Object> mergingEntry) {
         Data dataKey = (Data) mergingEntry.getRawKey();
 
-        CacheMergeResponse response = callWithNamespace(userCodeNamespace,
-                () -> recordStore.merge(mergingEntry, mergePolicy, NOT_WAN));
+        CacheMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
         if (backupPairs != null && response.getResult().isMergeApplied()) {
             if (response.getResult() == CacheMergeResponse.MergeResult.RECORDS_ARE_EQUAL) {
                 backupNonReplicatedKeys.set(backupPairs.size() / 2);

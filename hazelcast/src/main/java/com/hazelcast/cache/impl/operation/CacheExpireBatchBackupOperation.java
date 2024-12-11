@@ -41,7 +41,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     }
 
     public CacheExpireBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int primaryEntryCount) {
-        super(name, true, null);
+        super(name, true);
         this.expiredKeys = expiredKeys;
         this.primaryEntryCount = primaryEntryCount;
     }

@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -26,6 +27,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,6 +56,11 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         serializationService = getSerializationService(hz);
     }
 
+    @After
+    public void teardown() {
+        NodeEngineThreadLocalContext.destroyNodeEngineReference();
+    }
+
     private Data toData(Object item) {
         return serializationService.toData(item);
     }
@@ -62,6 +69,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void constructionNoTTL() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(0);
         RingbufferContainer container = getRingbufferContainer(config);
 
@@ -78,6 +86,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void constructionWithTTL() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(30);
         RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
@@ -92,6 +101,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void remainingCapacity_whenTTLDisabled() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(0);
         RingbufferContainer<Data, Data> ringbuffer = getRingbufferContainer(config);
 
@@ -104,6 +114,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void remainingCapacity_whenTTLEnabled() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(1);
         RingbufferContainer<Data, Data> ringbuffer = getRingbufferContainer(config);
 
@@ -120,6 +131,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void size_whenEmpty() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100);
         RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
@@ -129,6 +141,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void size_whenAddingManyItems() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100);
         RingbufferContainer<Data, Data> ringbuffer = getRingbufferContainer(config);
 
@@ -150,6 +163,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void add() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(10);
         RingbufferContainer<Data, Data> ringbuffer = getRingbufferContainer(config);
         ringbuffer.add(toData("foo"));
@@ -161,6 +175,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void add_whenWrapped() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setInMemoryFormat(InMemoryFormat.OBJECT).setCapacity(3);
         RingbufferContainer<Data, String> ringbuffer = getRingbufferContainer(config);
 
@@ -199,6 +214,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test(expected = StaleSequenceException.class)
     public void read_whenStaleSequence() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(3);
         RingbufferContainer<Data, Data> ringbuffer = getRingbufferContainer(config);
 
@@ -213,6 +229,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void add_whenBinaryInMemoryFormat() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setInMemoryFormat(InMemoryFormat.BINARY);
         RingbufferContainer<Data, Data> container = getRingbufferContainer(config);
         ArrayRingbuffer ringbuffer = (ArrayRingbuffer) container.getRingbuffer();
@@ -223,6 +240,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     @Test
     public void add_inObjectInMemoryFormat() {
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngine);
         RingbufferConfig config = new RingbufferConfig("foo").setInMemoryFormat(InMemoryFormat.OBJECT);
         RingbufferContainer<Object, String> container = getRingbufferContainer(config);
         ArrayRingbuffer ringbuffer = (ArrayRingbuffer) container.getRingbuffer();
@@ -236,6 +254,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
     private <K, V> RingbufferContainer<K, V> getRingbufferContainer(RingbufferConfig config) {
         // partitionId is irrelevant for this test
-        return new RingbufferContainer<>(RingbufferService.getRingbufferNamespace(config.getName()), config, nodeEngine, 0);
+        return new RingbufferContainer<>(RingbufferService.getRingbufferNamespace(config.getName()), config,
+                nodeEngine, 0);
     }
 }

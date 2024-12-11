@@ -26,12 +26,9 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-
-import static com.hazelcast.internal.cluster.Versions.V6_0;
 
 /**
  * Inserts the merging entries for all partitions of a member via locally invoked {@link CacheMergeOperation}.
@@ -41,8 +38,6 @@ import static com.hazelcast.internal.cluster.Versions.V6_0;
 public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
 
     private String name;
-    @Nullable
-    private String userCodeNamespace;
     private List<CacheMergeTypes<Object, Object>>[] mergingEntries;
     private SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy;
 
@@ -51,20 +46,18 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public CacheMergeOperationFactory(String name, int[] partitions, List<CacheMergeTypes<Object, Object>>[] mergingEntries,
-                                      SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
-                                      @Nullable String userCodeNamespace) {
+                                      SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy) {
         this.name = name;
         this.partitions = partitions;
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
-        this.userCodeNamespace = userCodeNamespace;
     }
 
     @Override
     public Operation createPartitionOperation(int partitionId) {
         for (int i = 0; i < partitions.length; i++) {
             if (partitions[i] == partitionId) {
-                return new CacheMergeOperation(name, mergingEntries[i], mergePolicy, userCodeNamespace);
+                return new CacheMergeOperation(name, mergingEntries[i], mergePolicy);
             }
         }
         throw new IllegalArgumentException("Unknown partitionId " + partitionId + " (" + Arrays.toString(partitions) + ")");
@@ -78,10 +71,6 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
             SerializationUtil.writeList(list, out);
         }
         out.writeObject(mergePolicy);
-        // RU_COMPAT_5_5
-        if (out.getVersion().isGreaterOrEqual(V6_0)) {
-            out.writeString(userCodeNamespace);
-        }
     }
 
     @Override
@@ -95,10 +84,6 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
             mergingEntries[partitionIndex] = list;
         }
         mergePolicy = in.readObject();
-        // RU_COMPAT_5_5
-        if (in.getVersion().isGreaterOrEqual(V6_0)) {
-            userCodeNamespace = in.readString();
-        }
     }
 
     @Override

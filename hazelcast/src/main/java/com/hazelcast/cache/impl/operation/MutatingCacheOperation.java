@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -38,8 +37,8 @@ public abstract class MutatingCacheOperation extends KeyBasedCacheOperation
     protected MutatingCacheOperation() {
     }
 
-    protected MutatingCacheOperation(String name, Data key, int completionId, @Nullable String userCodeNamespace) {
-        super(name, key, userCodeNamespace);
+    protected MutatingCacheOperation(String name, Data key, int completionId) {
+        super(name, key);
         this.completionId = completionId;
     }
 

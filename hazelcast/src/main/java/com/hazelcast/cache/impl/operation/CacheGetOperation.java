@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
-import javax.annotation.Nullable;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
@@ -40,9 +39,8 @@ public class CacheGetOperation
     public CacheGetOperation() {
     }
 
-    public CacheGetOperation(String cacheNameWithPrefix, Data key, ExpiryPolicy expiryPolicy,
-                             @Nullable String userCodeNamespace) {
-        super(cacheNameWithPrefix, key, userCodeNamespace);
+    public CacheGetOperation(String cacheNameWithPrefix, Data key, ExpiryPolicy expiryPolicy) {
+        super(cacheNameWithPrefix, key);
         this.expiryPolicy = expiryPolicy;
     }
 

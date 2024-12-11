@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import javax.annotation.Nullable;
 import java.util.UUID;
 
 /**
@@ -35,8 +34,8 @@ public class CacheGetAndRemoveOperation extends MutatingCacheOperation {
     public CacheGetAndRemoveOperation() {
     }
 
-    public CacheGetAndRemoveOperation(String name, Data key, int completionId, @Nullable String userCodeNamespace) {
-        super(name, key, completionId, userCodeNamespace);
+    public CacheGetAndRemoveOperation(String name, Data key, int completionId) {
+        super(name, key, completionId);
     }
 
     @Override

@@ -26,13 +26,13 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import javax.annotation.Nullable;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 public class CachePutAllOperation extends CacheOperation
@@ -47,9 +47,9 @@ public class CachePutAllOperation extends CacheOperation
     public CachePutAllOperation() {
     }
 
-    public CachePutAllOperation(String cacheNameWithPrefix, List<Map.Entry<Data, Data>> entries, ExpiryPolicy expiryPolicy,
-                                int completionId, @Nullable String userCodeNamespace) {
-        super(cacheNameWithPrefix, userCodeNamespace);
+    public CachePutAllOperation(String cacheNameWithPrefix, List<Entry<Data, Data>> entries, ExpiryPolicy expiryPolicy,
+                                int completionId) {
+        super(cacheNameWithPrefix);
         this.entries = entries;
         this.expiryPolicy = expiryPolicy;
         this.completionId = completionId;

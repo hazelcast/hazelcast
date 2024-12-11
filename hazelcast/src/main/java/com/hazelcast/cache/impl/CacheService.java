@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -34,7 +33,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
@@ -79,14 +77,7 @@ public class CacheService extends AbstractCacheService {
 
     @Override
     protected CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
-        var future = configs.get(nameWithPrefix);
-        CacheConfig<?, ?> cacheConfig;
-        try {
-            cacheConfig = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new HazelcastException(e);
-        }
-        return new DefaultOperationProvider(nameWithPrefix, cacheConfig.getUserCodeNamespace());
+        return new DefaultOperationProvider(nameWithPrefix);
     }
 
     @Override
@@ -213,7 +204,8 @@ public class CacheService extends AbstractCacheService {
     public static String lookupNamespace(NodeEngine engine, String cacheName) {
         if (engine.getNamespaceService().isEnabled()) {
             // No regular containers available, fallback to config
-            CacheSimpleConfig config = engine.getConfig().getCacheConfig(cacheName);
+            CacheService service = engine.getService(CacheService.SERVICE_NAME);
+            var config = service.getCacheConfig(cacheName);
             if (config != null) {
                 return config.getUserCodeNamespace();
             }

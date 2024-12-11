@@ -40,7 +40,7 @@ public class CacheRemoveBackupOperation
     }
 
     public CacheRemoveBackupOperation(String name, Data key, boolean wanOriginated) {
-        super(name, key, true, null);
+        super(name, key, true);
         this.wanOriginated = wanOriginated;
     }
 
@@ -52,10 +52,11 @@ public class CacheRemoveBackupOperation
     }
 
     @Override
-    public void afterRun() {
+    public void afterRun() throws Exception {
         if (recordStore != null && !wanOriginated) {
             publishWanRemove(key);
         }
+        super.afterRun();
     }
 
     @Override

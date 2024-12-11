@@ -396,7 +396,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
             final ObjectNamespace ns = RingbufferService.getRingbufferNamespace(ringbufferName);
             final RingbufferContainer container = service.getContainerOrNull(partitionId, ns);
             if (container != null) {
-                return container.getConfig().getUserCodeNamespace();
+                return container.getUserCodeNamespace();
             }
             // Manual config lookup fallback
             RingbufferConfig config = service.getRingbufferConfig(ringbufferName);

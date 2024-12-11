@@ -17,18 +17,21 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-import javax.annotation.Nullable;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 
 /**
  * Operation of the Cache Backup Entry Processor.
@@ -48,9 +51,8 @@ public class CacheBackupEntryProcessorOperation
     }
 
     public CacheBackupEntryProcessorOperation(String cacheNameWithPrefix, Data key, EntryProcessor entryProcessor,
-                                              @Nullable String userCodeNamespace,
                                               Object... arguments) {
-        super(cacheNameWithPrefix, key, userCodeNamespace);
+        super(cacheNameWithPrefix, key);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
     }
@@ -103,7 +105,9 @@ public class CacheBackupEntryProcessorOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        entryProcessor = in.readObject();
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        entryProcessor = callWithNamespace(engine,
+                CacheService.lookupNamespace(engine, name), in::readObject);
         final boolean hasArguments = in.readBoolean();
         if (hasArguments) {
             final int size = in.readInt();

@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,6 +30,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
@@ -127,9 +129,14 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = createHashMap(mapSize);
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        RingbufferService service = engine.getService(SERVICE_NAME);
         for (int i = 0; i < mapSize; i++) {
             final ObjectNamespace namespace = in.readObject();
-            final RingbufferContainer container = new RingbufferContainer(namespace, getPartitionId());
+            assert namespace != null;
+            RingbufferConfig ringbufferConfig = service.getRingbufferConfig(namespace.getObjectName());
+            String userCodeNamespace = ringbufferConfig.getUserCodeNamespace();
+            final var container = new RingbufferContainer<>(namespace, getPartitionId(), userCodeNamespace);
             container.readData(in);
             migrationData.put(namespace, container);
         }

@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +41,8 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
 
     }
 
-    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, Data expiryPolicy, @Nullable String userCodeNamespace) {
-        super(name, userCodeNamespace);
+    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, Data expiryPolicy) {
+        super(name);
         this.keys = keys;
         this.expiryPolicy = expiryPolicy;
     }
@@ -110,7 +109,7 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new CacheSetExpiryPolicyBackupOperation(name, keys, expiryPolicy, userCodeNamespace);
+        return new CacheSetExpiryPolicyBackupOperation(name, keys, expiryPolicy);
     }
 
     @Override

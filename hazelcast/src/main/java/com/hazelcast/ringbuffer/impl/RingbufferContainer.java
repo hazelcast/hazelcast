@@ -19,7 +19,6 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,6 +39,7 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 import static com.hazelcast.internal.namespace.NamespaceUtil.runWithNamespace;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -101,10 +101,12 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * {@link #init(RingbufferConfig, NodeEngine)}
      * method to complete the initialization before usage.
      *
-     * @param objectNamespace the {@link ObjectNamespace} of the ringbuffer container
+     * @param objectNamespace   the {@link ObjectNamespace} of the ringbuffer container
+     * @param userCodeNamespace the user code namespace of the ringbuffer content
      */
-    public RingbufferContainer(ObjectNamespace objectNamespace, int partitionId) {
+    public RingbufferContainer(ObjectNamespace objectNamespace, int partitionId, String userCodeNamespace) {
         this.objectNamespace = objectNamespace;
+        this.userCodeNamespace = userCodeNamespace;
         this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(objectNamespace, partitionId);
     }
 
@@ -121,11 +123,10 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
                                RingbufferConfig config,
                                NodeEngine nodeEngine,
                                int partitionId) {
-        this(namespace, partitionId);
+        this(namespace, partitionId, config.getUserCodeNamespace());
 
         this.inMemoryFormat = config.getInMemoryFormat();
         this.ringbuffer = new ArrayRingbuffer<>(config.getCapacity());
-        this.userCodeNamespace = config.getUserCodeNamespace();
 
         final long ttlMs = SECONDS.toMillis(config.getTimeToLiveSeconds());
         if (ttlMs != TTL_DISABLED) {
@@ -400,8 +401,10 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      */
     public Data readAsData(long sequence) {
         checkReadSequence(sequence);
-        Object rbItem = readOrLoadItem(sequence);
-        return serializationService.toData(rbItem);
+        return callWithNamespace(userCodeNamespace, () -> {
+            Object rbItem = readOrLoadItem(sequence);
+            return serializationService.toData(rbItem);
+        });
     }
 
     /**
@@ -419,16 +422,18 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     public long readMany(long beginSequence, ReadResultSetImpl result) {
         checkReadSequence(beginSequence);
 
-        long seq = beginSequence;
-        while (seq <= ringbuffer.tailSequence()) {
-            result.addItem(seq, readOrLoadItem(seq));
-            seq++;
-            if (result.isMaxSizeReached()) {
-                // we have found all items we are looking for. We are done.
-                break;
+        return callWithNamespace(userCodeNamespace, () -> {
+            long seq = beginSequence;
+            while (seq <= ringbuffer.tailSequence()) {
+                result.addItem(seq, readOrLoadItem(seq));
+                seq++;
+                if (result.isMaxSizeReached()) {
+                    // we have found all items we are looking for. We are done.
+                    break;
+                }
             }
-        }
-        return seq;
+            return seq;
+        });
     }
 
     public void cleanup() {
@@ -558,9 +563,9 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      *                                         in object format and the item could not be deserialized
      */
     private E convertToRingbufferFormat(Object item) {
-        return inMemoryFormat == OBJECT
+        return callWithNamespace(userCodeNamespace, () -> inMemoryFormat == OBJECT
                 ? (E) serializationService.toObject(item)
-                : (E) serializationService.toData(item);
+                : (E) serializationService.toData(item));
     }
 
     /**
@@ -599,10 +604,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         out.writeInt((int) ringbuffer.getCapacity());
         out.writeLong(ttlEnabled ? expirationPolicy.getTtlMs() : 0);
         out.writeInt(inMemoryFormat.ordinal());
-        // RU_COMPAT_5_5
-        if (out.getVersion().isGreaterOrEqual(Versions.V6_0)) {
-            out.writeString(userCodeNamespace);
-        }
 
         long now = System.currentTimeMillis();
 
@@ -634,10 +635,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         final int capacity = in.readInt();
         final long ttlMs = in.readLong();
         inMemoryFormat = values()[in.readInt()];
-        // RU_COMPAT_5_5
-        if (in.getVersion().isGreaterOrEqual(Versions.V6_0)) {
-            userCodeNamespace = in.readString();
-        }
 
         ringbuffer = new ArrayRingbuffer(capacity);
         ringbuffer.setTailSequence(tailSequence);
@@ -649,19 +646,21 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         }
 
         long now = System.currentTimeMillis();
-        for (long seq = headSequence; seq <= tailSequence; seq++) {
-            final long seqFinal = seq;
-            if (inMemoryFormat == BINARY) {
-                runWithNamespace(userCodeNamespace, () -> ringbuffer.set(seqFinal, (E) IOUtil.readData(in)));
-            } else {
-                runWithNamespace(userCodeNamespace, () -> ringbuffer.set(seqFinal, in.readObject()));
-            }
+        runWithNamespace(userCodeNamespace, () -> {
+            for (long seq = headSequence; seq <= tailSequence; seq++) {
+                final long seqFinal = seq;
+                if (inMemoryFormat == BINARY) {
+                    runWithNamespace(userCodeNamespace, () -> ringbuffer.set(seqFinal, (E) IOUtil.readData(in)));
+                } else {
+                    runWithNamespace(userCodeNamespace, () -> ringbuffer.set(seqFinal, in.readObject()));
+                }
 
-            if (ttlEnabled) {
-                long delta = in.readLong();
-                expirationPolicy.setExpirationAt(seq, delta + now);
+                if (ttlEnabled) {
+                    long delta = in.readLong();
+                    expirationPolicy.setExpirationAt(seq, delta + now);
+                }
             }
-        }
+        });
     }
 
     /**

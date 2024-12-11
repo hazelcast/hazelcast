@@ -32,7 +32,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -49,38 +48,29 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
-import static com.hazelcast.internal.cluster.Versions.V6_0;
-import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 
 /**
  * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base
  * class providing a cacheRecordStore access and partial backup support.
  */
 public abstract class CacheOperation extends AbstractNamedOperation
-        implements PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable, Versioned {
+        implements PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     protected transient boolean dontCreateCacheRecordStoreIfNotExist;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
     protected transient @Nullable String namespace;
-    @Nullable
-    protected String userCodeNamespace;
 
     protected CacheOperation() {
     }
 
     protected CacheOperation(String name) {
-        this(name, false, null);
+        this(name, false);
     }
 
-    protected CacheOperation(String name, @Nullable String userCodeNamespace) {
-        this(name, false, userCodeNamespace);
-    }
-
-    protected CacheOperation(String name, boolean dontCreateCacheRecordStoreIfNotExist, @Nullable String userCodeNamespace) {
+    protected CacheOperation(String name, boolean dontCreateCacheRecordStoreIfNotExist) {
         super(name);
         this.dontCreateCacheRecordStoreIfNotExist = dontCreateCacheRecordStoreIfNotExist;
-        this.userCodeNamespace = userCodeNamespace;
     }
 
     @Override
@@ -117,7 +107,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     @Override
     public void afterRun() throws Exception {
         // Cleanup Namespace awareness
-        getNodeEngine().getNamespaceService().setupNamespace(namespace);
+        getNodeEngine().getNamespaceService().cleanupNamespace(namespace);
     }
 
     /**
@@ -264,21 +254,14 @@ public abstract class CacheOperation extends AbstractNamedOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        // RU_COMPAT_5_5
-        if (out.getVersion().isGreaterOrEqual(V6_0)) {
-            out.writeString(userCodeNamespace);
-        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        // RU_COMPAT_5_5
-        if (in.getVersion().isGreaterOrEqual(V6_0)) {
-            userCodeNamespace = in.readString();
-        }
     }
-    public Data toHeapData(Data data) {
-        return callWithNamespace(userCodeNamespace, () -> ToHeapDataConverter.toHeapData(data));
+
+    Data toHeapData(Data data) {
+        return ToHeapDataConverter.toHeapData(data);
     }
 }

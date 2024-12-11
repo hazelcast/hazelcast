@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +39,8 @@ public class CacheSetExpiryPolicyBackupOperation
 
     }
 
-    public CacheSetExpiryPolicyBackupOperation(String name, List<Data> keys, Data expiryPolicy,
-                                               @Nullable String userCodeNamespace) {
-        super(name, userCodeNamespace);
+    public CacheSetExpiryPolicyBackupOperation(String name, List<Data> keys, Data expiryPolicy) {
+        super(name);
         this.keys = keys;
         this.expiryPolicy = expiryPolicy;
     }

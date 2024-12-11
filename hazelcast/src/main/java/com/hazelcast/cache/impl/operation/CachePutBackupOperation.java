@@ -17,18 +17,18 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
-import static com.hazelcast.internal.namespace.NamespaceUtil.runWithNamespace;
+import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext;
 
 /**
  * Backup operation for the operation of adding cache entries into record stores.
@@ -40,7 +40,7 @@ import static com.hazelcast.internal.namespace.NamespaceUtil.runWithNamespace;
  * @see CacheGetAndReplaceOperation
  */
 public class CachePutBackupOperation
-        extends KeyBasedCacheOperation implements BackupOperation, Versioned {
+        extends KeyBasedCacheOperation implements BackupOperation {
 
     private CacheRecord cacheRecord;
     private boolean wanOriginated;
@@ -48,34 +48,33 @@ public class CachePutBackupOperation
     public CachePutBackupOperation() {
     }
 
-    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord, @Nullable String userCodeNamespace) {
-        this(name, key, cacheRecord, false, userCodeNamespace);
+    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord) {
+        this(name, key, cacheRecord, false);
     }
 
-    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord, boolean wanOriginated,
-                                   @Nullable String userCodeNamespace) {
-        super(name, key, userCodeNamespace);
+    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord, boolean wanOriginated) {
+        super(name, key);
         if (cacheRecord == null) {
             throw new IllegalArgumentException("Cache record of backup operation cannot be null!");
         }
         this.cacheRecord = cacheRecord;
         this.wanOriginated = wanOriginated;
-        this.userCodeNamespace = userCodeNamespace;
     }
 
     @Override
     public void run() {
         if (recordStore != null) {
-            runWithNamespace(userCodeNamespace, () -> recordStore.putRecord(key, cacheRecord, true));
+            recordStore.putRecord(key, cacheRecord, true);
             response = Boolean.TRUE;
         }
     }
 
     @Override
-    public void afterRun() {
+    public void afterRun() throws Exception {
         if (recordStore != null && !wanOriginated) {
-            runWithNamespace(userCodeNamespace, () -> publishWanUpdate(key, cacheRecord));
+            publishWanUpdate(key, cacheRecord);
         }
+        super.afterRun();
     }
 
     @Override
@@ -88,7 +87,10 @@ public class CachePutBackupOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheRecord = callWithNamespace(userCodeNamespace, in::readObject);
+        NodeEngine nodeEngine = getNodeEngineThreadLocalContext();
+        CacheService service = nodeEngine.getService(CacheService.SERVICE_NAME);
+        var cacheConfig = service.getCacheConfig(this.name);
+        cacheRecord = callWithNamespace(nodeEngine, cacheConfig.getUserCodeNamespace(), in::readObject);
         wanOriginated = in.readBoolean();
     }
 

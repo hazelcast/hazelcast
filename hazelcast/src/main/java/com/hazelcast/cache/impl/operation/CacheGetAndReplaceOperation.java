@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import javax.annotation.Nullable;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
@@ -43,8 +42,8 @@ public class CacheGetAndReplaceOperation extends MutatingCacheOperation {
     }
 
     public CacheGetAndReplaceOperation(String cacheNameWithPrefix, Data key, Data value,
-                                       ExpiryPolicy expiryPolicy, int completionId, @Nullable String userCodeNamespace) {
-        super(cacheNameWithPrefix, key, completionId, userCodeNamespace);
+                                       ExpiryPolicy expiryPolicy, int completionId) {
+        super(cacheNameWithPrefix, key, completionId);
         this.value = value;
         this.expiryPolicy = expiryPolicy;
     }
@@ -73,7 +72,7 @@ public class CacheGetAndReplaceOperation extends MutatingCacheOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, backupRecord, userCodeNamespace);
+        return new CachePutBackupOperation(name, key, backupRecord);
     }
 
     @Override

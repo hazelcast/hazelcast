@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -40,9 +39,8 @@ public class CacheRemoveOperation extends MutatingCacheOperation {
     public CacheRemoveOperation() {
     }
 
-    public CacheRemoveOperation(String cacheNameWithPrefix, Data key, Data oldValue, int completionId,
-                                @Nullable String userCodeNamespace) {
-        super(cacheNameWithPrefix, key, completionId, userCodeNamespace);
+    public CacheRemoveOperation(String cacheNameWithPrefix, Data key, Data oldValue, int completionId) {
+        super(cacheNameWithPrefix, key, completionId);
         this.oldValue = oldValue;
     }
 

@@ -106,8 +106,8 @@ import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThr
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.util.Collections.emptySet;
 
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity",
-        "checkstyle:classdataabstractioncoupling"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling",
+        "RedundantCast", "rawtypes", "unchecked"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore, EvictionListener<Data, R> {
 
@@ -1817,7 +1817,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
         } else {
-            Data oldValue = toData(record);
+            Data oldValue = valueToData(record.getValue());
             CacheMergeTypes<Object, Object> existingEntry = createMergingEntry(ss, key, oldValue, record);
             Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
 

@@ -99,6 +99,7 @@ public class CacheClearExpiredOperation extends AbstractLocalOperation
     @Override
     public void afterRun() throws Exception {
         prepareForNextCleanup();
+        super.afterRun();
     }
 
     protected void prepareForNextCleanup() {

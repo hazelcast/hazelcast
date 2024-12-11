@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -38,13 +37,13 @@ public abstract class KeyBasedCacheOperation extends CacheOperation {
     protected KeyBasedCacheOperation() {
     }
 
-    protected KeyBasedCacheOperation(String name, Data key, @Nullable String userCodeNamespace) {
-        this(name, key, false, userCodeNamespace);
+    protected KeyBasedCacheOperation(String name, Data key) {
+        this(name, key, false);
     }
 
     protected KeyBasedCacheOperation(String name, Data key,
-                                     boolean dontCreateCacheRecordStoreIfNotExist, @Nullable String userCodeNamespace) {
-        super(name, dontCreateCacheRecordStoreIfNotExist, userCodeNamespace);
+                                     boolean dontCreateCacheRecordStoreIfNotExist) {
+        super(name, dontCreateCacheRecordStoreIfNotExist);
         this.key = key;
     }
 

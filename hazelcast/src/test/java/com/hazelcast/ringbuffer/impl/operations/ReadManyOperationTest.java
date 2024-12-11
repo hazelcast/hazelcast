@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
@@ -35,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +48,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     private NodeEngineImpl nodeEngine;
     private Ringbuffer<Object> ringbuffer;
     private RingbufferContainer ringbufferContainer;
-    private SerializationService serializationService;
     private RingbufferService ringbufferService;
 
 
@@ -60,7 +59,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         hz = createHazelcastInstance(config);
         nodeEngine = getNodeEngineImpl(hz);
-        serializationService = nodeEngine.getSerializationService();
         final String name = rbConfig.getName();
         ringbuffer = hz.getRingbuffer(name);
 
@@ -73,6 +71,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenAtTail() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         ringbuffer.add("tail");
 
         ReadManyOperation<String> op = getReadManyOperation(ringbuffer.tailSequence(), 1, 1, null);
@@ -92,6 +91,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenOneAfterTail() {
+        declareNodeEngineReference(nodeEngine);
         ringbuffer.add("tail");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 1, 1, 1, null);
@@ -107,6 +107,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenTooFarAfterTail() {
+        declareNodeEngineReference(nodeEngine);
         ringbuffer.add("tail");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 2, 1, 1, null);
@@ -122,6 +123,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenOneAfterTailAndBufferEmpty() {
+        declareNodeEngineReference(nodeEngine);
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 1, 1, 1, null);
 
         // since there is an item, we don't need to wait
@@ -136,6 +138,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenOnTailAndBufferEmpty() {
+        declareNodeEngineReference(nodeEngine);
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence(), 1, 1, null);
 
         // since there is an item, we don't need to wait
@@ -149,6 +152,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenBeforeTail() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
@@ -170,6 +174,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenAtHead() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
@@ -192,6 +197,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenBeforeHead() throws Exception {
+        declareNodeEngineReference(nodeEngine);
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
@@ -216,6 +222,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenMinimumNumberOfItemsNotAvailable() {
+        declareNodeEngineReference(nodeEngine);
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
 
@@ -246,6 +253,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenBelowMinimumAvailable() {
+        declareNodeEngineReference(nodeEngine);
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
 
@@ -268,6 +276,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenMinimumNumberOfItemsAvailable() {
+        declareNodeEngineReference(nodeEngine);
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
 
@@ -284,6 +293,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenEnoughItemsAvailable() {
+        declareNodeEngineReference(nodeEngine);
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 1, 3, null);
 
@@ -308,6 +318,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenFilterProvidedAndNoItemsAvailable() {
+        declareNodeEngineReference(nodeEngine);
         long startSequence = ringbuffer.tailSequence() + 1;
 
         IFunction<String, Boolean> filter = input -> input.startsWith("good");
@@ -365,6 +376,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenFilterProvidedAndAllItemsAvailable() {
+        declareNodeEngineReference(nodeEngine);
         long startSequence = ringbuffer.tailSequence() + 1;
 
         IFunction<String, Boolean> filter = input -> input.startsWith("good");

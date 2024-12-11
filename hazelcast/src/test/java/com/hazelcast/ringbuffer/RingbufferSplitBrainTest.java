@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
@@ -51,7 +52,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
 import static com.hazelcast.ringbuffer.RingbufferTestUtil.getBackupRingbuffer;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
@@ -93,10 +96,10 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
     @Parameter(value = 1)
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
-    private String ringbufferNameA = randomMapName("ringbufferA-");
-    private String ringbufferNameB = randomMapName("ringbufferB-");
-    private SplitBrainRingbufferStore ringbufferStoreA = new SplitBrainRingbufferStore().setLabel("A");
-    private SplitBrainRingbufferStore ringbufferStoreB = new SplitBrainRingbufferStore().setLabel("B");
+    private final String ringbufferNameA = randomMapName("ringbufferA-");
+    private final String ringbufferNameB = randomMapName("ringbufferB-");
+    private final SplitBrainRingbufferStore ringbufferStoreA = new SplitBrainRingbufferStore().setLabel("A");
+    private final SplitBrainRingbufferStore ringbufferStoreB = new SplitBrainRingbufferStore().setLabel("B");
     private Ringbuffer<Object> ringbufferA1;
     private Ringbuffer<Object> ringbufferA2;
     private Ringbuffer<Object> ringbufferB1;
@@ -104,6 +107,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
     private Collection<Object> backupRingbuffer;
     private MergeLifecycleListener mergeLifecycleListener;
     private InternalSerializationService serializationService;
+    private NodeEngineImpl nodeEngine;
 
     @Override
     protected Config config() {
@@ -133,11 +137,14 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
+        nodeEngine = getNodeEngineImpl(instances[0]);
         serializationService = getSerializationService(instances[0]);
+        declareNodeEngineReference(nodeEngine);
     }
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
+        declareNodeEngineReference(nodeEngine);
         mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
         for (HazelcastInstance instance : secondBrain) {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
@@ -169,6 +176,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
+        declareNodeEngineReference(nodeEngine);
         // wait until merge completes
         mergeLifecycleListener.await();
 

@@ -509,7 +509,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nonnull
         @Override
         public InternalCompletableFuture<CacheEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
-            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers, MAX_FETCH_SIZE, objectName);
+            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers, MAX_FETCH_SIZE);
             //no access to CacheOperationProvider, have to be explicit
             OperationService operationService = cacheProxy.getOperationService();
             return operationService.invokeOnPartition(cacheProxy.getServiceName(), op, partitionId);
