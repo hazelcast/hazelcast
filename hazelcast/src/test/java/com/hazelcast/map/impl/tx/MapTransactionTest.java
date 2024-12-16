@@ -283,8 +283,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     return true;
                 });
                 result.set(b);
-            } catch (HazelcastInstanceNotActiveException ignored) {
-            } catch (TransactionException ignored) {
+            } catch (HazelcastInstanceNotActiveException | TransactionException ignored) {
             }
         };
 

@@ -64,15 +64,7 @@ public class HazelcastClientStarter {
             Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastClient", configClass);
             Object delegate = newHazelcastInstanceMethod.invoke(null, config);
             return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
-        } catch (ClassNotFoundException e) {
-            throw rethrowGuardianException(e);
-        } catch (NoSuchMethodException e) {
-            throw rethrowGuardianException(e);
-        } catch (IllegalAccessException e) {
-            throw rethrowGuardianException(e);
-        } catch (InvocationTargetException e) {
-            throw rethrowGuardianException(e);
-        } catch (InstantiationException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
             throw rethrowGuardianException(e);
         } finally {
             if (contextClassLoader != null) {

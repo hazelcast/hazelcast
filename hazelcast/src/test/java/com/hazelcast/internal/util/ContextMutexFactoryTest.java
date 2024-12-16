@@ -94,9 +94,7 @@ public class ContextMutexFactoryTest {
     private void await(CyclicBarrier cyc) {
         try {
             cyc.await();
-        } catch (InterruptedException e) {
-            testFailed.set(true);
-        } catch (BrokenBarrierException e) {
+        } catch (InterruptedException | BrokenBarrierException e) {
             testFailed.set(true);
         }
     }

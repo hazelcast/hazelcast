@@ -166,9 +166,7 @@ public final class JsrTestUtil {
 
             // return the map size
             return count;
-        } catch (NoClassDefFoundError e) {
-            return -1;
-        } catch (Exception e) {
+        } catch (NoClassDefFoundError | Exception e) {
             return -1;
         }
     }
