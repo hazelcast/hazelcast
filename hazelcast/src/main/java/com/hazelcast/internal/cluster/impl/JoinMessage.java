@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
@@ -50,14 +51,14 @@ public class JoinMessage implements IdentifiedDataSerializable {
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion memberVersion, Address address,
+    public JoinMessage(int buildNumber, MemberVersion memberVersion, Address address,
                        UUID uuid, boolean liteMember, ConfigCheck configCheck) {
-        this(packetVersion, buildNumber, memberVersion, address, uuid, liteMember, configCheck, Collections.emptySet(), 0);
+        this(buildNumber, memberVersion, address, uuid, liteMember, configCheck, Collections.emptySet(), 0);
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion memberVersion, Address address, UUID uuid,
+    public JoinMessage(int buildNumber, MemberVersion memberVersion, Address address, UUID uuid,
                        boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
-        this.packetVersion = packetVersion;
+        this.packetVersion = Packet.VERSION;
         this.buildNumber = buildNumber;
         this.memberVersion = memberVersion;
         this.address = address;

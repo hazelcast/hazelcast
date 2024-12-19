@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.JetException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Character.toUpperCase;
 import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
@@ -113,14 +115,39 @@ public final class ReflectionUtils {
     public static <T> T readStaticFieldOrNull(String className, String fieldName) {
         try {
             Class<?> clazz = Class.forName(className);
-            return readStaticField(clazz, fieldName);
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | SecurityException e) {
+            return readStaticFieldOrNull(clazz, fieldName);
+        } catch (ClassNotFoundException | SecurityException e) {
             return null;
         }
     }
 
+    /**
+     * Reads a value of a static field. In case of any exceptions it returns
+     * null.
+     */
+    public static <T> T readStaticFieldOrNull(Class<?> clazz, String fieldName) {
+        try {
+            return readStaticFieldInternal(clazz, fieldName);
+        } catch (NoSuchFieldException | IllegalAccessException | SecurityException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Reads a value of a static field. In case of any exceptions it returns
+     * null.
+     */
+    @Nonnull
+    public static <T> T readStaticField(Class<?> clazz, String fieldName) {
+        try {
+            return requireNonNull(readStaticFieldInternal(clazz, fieldName), fieldName + " must be non-null");
+        } catch (NoSuchFieldException | IllegalAccessException | SecurityException e) {
+            throw new HazelcastException("Error when accessing field " + fieldName, e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    private static <T> T readStaticField(Class<?> clazz, String fieldName) throws NoSuchFieldException,
+    private static <T> T readStaticFieldInternal(Class<?> clazz, String fieldName) throws NoSuchFieldException,
             IllegalAccessException {
         Field field = clazz.getDeclaredField(fieldName);
         if (!field.canAccess(null)) {

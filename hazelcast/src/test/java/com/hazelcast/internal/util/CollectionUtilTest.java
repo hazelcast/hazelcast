@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
@@ -55,6 +56,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("DataFlowIssue")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CollectionUtilTest extends HazelcastTestSupport {
@@ -223,5 +225,11 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     public void testNullToEmpty_whenNotNull() {
         List<Integer> result = asList(1, 2, 3, 4, 5);
         assertEquals(result, nullToEmpty(result));
+    }
+
+    @Test
+    public void testSetOf() {
+        var set = CollectionUtil.setOf(1, 2, null, 2, 3);
+        assertEquals(Set.of(1, 2, 3), set);
     }
 }

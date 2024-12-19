@@ -580,7 +580,7 @@ public class ClusterJoinManager {
 
         BuildInfo buildInfo = node.getBuildInfo();
         Address thisAddress = node.getThisAddress();
-        JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), node.getVersion(),
+        JoinMessage joinMessage = new JoinMessage(buildInfo.getBuildNumber(), node.getVersion(),
                 thisAddress, clusterService.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
         return nodeEngine.getOperationService().send(new WhoisMasterOp(joinMessage), toAddress);
     }

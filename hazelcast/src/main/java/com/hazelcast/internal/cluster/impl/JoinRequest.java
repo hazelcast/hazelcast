@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
@@ -25,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -32,17 +34,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.unmodifiableSet;
+import static java.util.Objects.requireNonNull;
 
 public class JoinRequest extends JoinMessage {
 
     // RU_COMPAT 5.2
-    private static final String VERSION_5_3_0 = "5.3.0";
-    private static final MemberVersion SUPPORTS_PREJOIN_VERSION = MemberVersion.of(VERSION_5_3_0);
+    private static final Version SUPPORTS_PREJOIN_VERSION = V5_3;
+    // RU_COMPAT 5.5
+    private static final MemberVersion SUPPORTS_SUPPORTED_VERSIONS_FIELD = MemberVersion.of(5, 5, 3);
 
     private Credentials credentials;
     private int tryCount;
@@ -52,32 +57,35 @@ public class JoinRequest extends JoinMessage {
     private Map<EndpointQualifier, Address> addresses;
     private UUID cpMemberUUID;
     private OnJoinOp preJoinOperation;
+    private Set<Version> supportedClusterVersions = Collections.emptySet();
 
     public JoinRequest() {
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
-                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
-                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses, UUID cpMemberUUID,
-                       OnJoinOp preJoinOperation) {
-        super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
+    public JoinRequest(int buildNumber, MemberVersion version, Address address, Member member,
+                       ConfigCheck config, Credentials credentials,
+                       Set<UUID> excludedMemberUuids, UUID cpMemberUUID,
+                       OnJoinOp preJoinOperation, Set<Version> versions) {
+        super(buildNumber, version, address, member.getUuid(), member.isLiteMember(), config);
         this.credentials = credentials;
-        this.attributes = attributes;
+        this.attributes = member.getAttributes();
         if (excludedMemberUuids != null) {
             this.excludedMemberUuids = Set.copyOf(excludedMemberUuids);
         }
-        this.addresses = addresses;
+        this.addresses = member.getAddressMap();
         this.cpMemberUUID = cpMemberUUID;
         this.preJoinOperation = preJoinOperation;
+        this.supportedClusterVersions = requireNonNull(versions, "supportedClusterVersions must not be null");
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
-                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
-                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
-        this(packetVersion, buildNumber, version, address, uuid, liteMember, config, credentials, attributes,
-                excludedMemberUuids, addresses, null, null);
+    public JoinRequest(int buildNumber, MemberVersion version, Address address, Member member, Set<Version> versions) {
+        super(buildNumber, version, address, member.getUuid(), member.isLiteMember(), null);
+        this.attributes = member.getAttributes();
+        if (excludedMemberUuids != null) {
+            this.excludedMemberUuids = Set.copyOf(excludedMemberUuids);
+        }
+        this.addresses = member.getAddressMap();
+        this.supportedClusterVersions = requireNonNull(versions, "supportedClusterVersions must be non-null");
     }
 
     public Credentials getCredentials() {
@@ -108,6 +116,10 @@ public class JoinRequest extends JoinMessage {
         return new MemberInfo(address, uuid, cpMemberUUID, attributes, liteMember, memberVersion, addresses);
     }
 
+    public boolean supportsVersion(Version version) {
+        return supportedClusterVersions.contains(version);
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
@@ -130,8 +142,16 @@ public class JoinRequest extends JoinMessage {
         this.addresses = readMap(in);
         cpMemberUUID = UUIDSerializationUtil.readUUID(in);
         // RU_COMPAT 5.2
-        if (MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR.compare(this.memberVersion, SUPPORTS_PREJOIN_VERSION) >= 0) {
+        if (memberVersion.asVersion().isGreaterOrEqual(SUPPORTS_PREJOIN_VERSION)) {
             preJoinOperation = in.readObject();
+        }
+        // RU_COMPAT 5.5
+        if (memberVersion.isGreaterOrEqual(SUPPORTS_SUPPORTED_VERSIONS_FIELD)) {
+            int clusterVersions = in.readInt();
+            this.supportedClusterVersions = createHashSet(clusterVersions);
+            for (int i = 0; i < clusterVersions; i++) {
+                supportedClusterVersions.add(in.readObject());
+            }
         }
     }
 
@@ -152,6 +172,12 @@ public class JoinRequest extends JoinMessage {
         writeMap(addresses, out);
         UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
         out.writeObject(preJoinOperation);
+        // no need for version checks - if we send JoinRequest to a member of older version, they will just end
+        // reading before the new fields
+        out.writeInt(supportedClusterVersions.size());
+        for (Version version : supportedClusterVersions) {
+            out.writeObject(version);
+        }
     }
 
     @Override
@@ -168,6 +194,7 @@ public class JoinRequest extends JoinMessage {
                 + ", memberCount=" + getMemberCount()
                 + ", tryCount=" + tryCount
                 + (excludedMemberUuids.isEmpty() ? "" : ", excludedMemberUuids=" + excludedMemberUuids)
+                + (supportedClusterVersions.isEmpty() ? "" : ", supportedClusterVersions=" + supportedClusterVersions)
                 + '}';
     }
 

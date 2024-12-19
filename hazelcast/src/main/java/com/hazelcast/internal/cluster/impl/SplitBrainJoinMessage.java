@@ -55,10 +55,10 @@ public class SplitBrainJoinMessage extends JoinMessage {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public SplitBrainJoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
+    public SplitBrainJoinMessage(int buildNumber, MemberVersion version, Address address, UUID uuid,
                                  boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses,
                                  int dataMemberCount, Version clusterVersion, int memberListVersion) {
-        super(packetVersion, buildNumber, version, address, uuid, liteMember, configCheck, memberAddresses, dataMemberCount);
+        super(buildNumber, version, address, uuid, liteMember, configCheck, memberAddresses, dataMemberCount);
         this.clusterVersion = clusterVersion;
         this.memberListVersion = memberListVersion;
     }

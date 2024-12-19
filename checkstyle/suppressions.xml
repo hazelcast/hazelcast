@@ -212,4 +212,5 @@
     <!-- TieredStore -->
     <suppress checks="FileLength" files="HybridLogImpl.java"/>
     <suppress checks="FileLength" files="Index.java"/>
+    <suppress checks="FileLength" files="EnterpriseNodeExtension.java"/>
 </suppressions>

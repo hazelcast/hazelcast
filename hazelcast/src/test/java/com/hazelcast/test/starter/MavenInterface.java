@@ -119,7 +119,8 @@ public class MavenInterface {
 
         try {
             int exitValue = builder.start().waitFor();
-            checkState(exitValue == 0, MessageFormat.format("Maven dependency:get failed with code {0}", exitValue));
+            checkState(exitValue == 0, MessageFormat.format("Maven dependency:get failed with code {0} getting artifact \"{1}\"",
+                    exitValue, artifact));
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException(MessageFormat.format("Problem in invoking Maven dependency:get {0}", artifact), e);
         }

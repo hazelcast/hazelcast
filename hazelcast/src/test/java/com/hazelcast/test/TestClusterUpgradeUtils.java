@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_PREV_VERSION;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.Accessors.getNode;
@@ -47,16 +48,31 @@ public final class TestClusterUpgradeUtils {
         }
     }
 
+    // return a new HazelcastInstance at given version
+    public static HazelcastInstance newHazelcastInstance(TestHazelcastInstanceFactory factory, MemberVersion version,
+                                                         MemberVersion previousVersion, Config config) {
+        try {
+            System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, version.toString());
+            System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_PREV_VERSION, previousVersion.toString());
+            return factory.newHazelcastInstance(config);
+        } finally {
+            System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+            System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_PREV_VERSION);
+        }
+    }
+
     // shutdown and replace each member in membersToUpgrade with a new HazelcastInstance at given version
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, HazelcastInstance[] membersToUpgrade,
-                                             MemberVersion version, Config config) {
-        upgradeClusterMembers(factory, membersToUpgrade, version, config, true);
+                                             MemberVersion version, MemberVersion previousVersion, Config config) {
+        upgradeClusterMembers(factory, membersToUpgrade, version, previousVersion, config, true);
     }
 
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
-                                             MemberVersion version, Config config, boolean assertClusterSize) {
+                                             MemberVersion version, MemberVersion previousVersion,
+                                             Config config, boolean assertClusterSize) {
         try {
             System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, version.toString());
+            System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_PREV_VERSION, previousVersion.toString());
             // upgrade one by one each member of the cluster to the next version
             for (int i = 0; i < membersToUpgrade.length; i++) {
                 membersToUpgrade[i].shutdown();
@@ -73,6 +89,7 @@ public final class TestClusterUpgradeUtils {
             }
         } finally {
             System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+            System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_PREV_VERSION);
         }
     }
 

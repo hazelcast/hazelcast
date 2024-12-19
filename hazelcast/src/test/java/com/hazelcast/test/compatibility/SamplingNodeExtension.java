@@ -58,6 +58,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -198,6 +199,11 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public void validateJoinRequest(JoinMessage joinMessage) {
         nodeExtension.validateJoinRequest(joinMessage);
+    }
+
+    @Override
+    public Set<Version> getSupportedVersions() {
+        return nodeExtension.getSupportedVersions();
     }
 
     @Override

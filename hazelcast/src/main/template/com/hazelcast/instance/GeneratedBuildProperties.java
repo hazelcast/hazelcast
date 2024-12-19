@@ -36,6 +36,8 @@ import javax.annotation.processing.Generated;
 @Generated("")
 public final class GeneratedBuildProperties {
     public static final String VERSION = "${project.version}";
+    public static final String LAST_LTS_VERSION = "${hazelcast.lts.version}";
+    public static final String PREVIOUS_MINOR_VERSION = "${hazelcast.previous.version}";
     public static final String BUILD = "${timestamp}";
     public static final String REVISION = "${git.commit.id.abbrev}";
     public static final String COMMIT_ID = "${git.commit.id}";

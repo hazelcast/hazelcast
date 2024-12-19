@@ -50,6 +50,8 @@ import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
@@ -128,6 +130,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
@@ -139,6 +142,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS;
+import static com.hazelcast.internal.util.CollectionUtil.setOf;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -167,6 +171,7 @@ public class DefaultNodeExtension implements NodeExtension {
     protected IntegrityChecker integrityChecker;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
+    private final Set<Version> supportedVersions;
 
     public DefaultNodeExtension(Node node) {
         this.node = node;
@@ -186,6 +191,7 @@ public class DefaultNodeExtension implements NodeExtension {
         }
 
         integrityChecker = new IntegrityChecker(node.getConfig().getIntegrityCheckerConfig(), this.systemLogger);
+        supportedVersions = setOf(BuildInfoProvider.getBuildInfo().getCodebaseVersion().asVersion());
     }
 
     private void checkCPSubsystemAllowed() {
@@ -519,22 +525,33 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void validateJoinRequest(JoinMessage joinMessage) {
-        // check joining member's major.minor version is same as current cluster version's major.minor numbers
+        // check joining member's version is in defined supported versions.
         MemberVersion memberVersion = joinMessage.getMemberVersion();
         Version clusterVersion = node.getClusterService().getClusterVersion();
-        if (!memberVersion.asVersion().equals(clusterVersion)) {
-            String msg = "Joining node's version " + memberVersion + " is not compatible with cluster version " + clusterVersion;
-            if (clusterVersion.getMajor() != memberVersion.getMajor()) {
-                msg += " (Rolling Member Upgrades are only supported for the same major version)";
-            }
-            if (clusterVersion.getMinor() > memberVersion.getMinor()) {
-                msg += " (Rolling Member Upgrades are only supported for the next minor version)";
-            }
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                msg += " (Rolling Member Upgrades are only supported in Hazelcast Enterprise)";
-            }
-            throw new VersionMismatchException(msg);
+        if (joinMessage instanceof JoinRequest joinRequest && joinRequest.supportsVersion(clusterVersion)) {
+            return;
         }
+        // for split brain healing
+        if (joinMessage instanceof SplitBrainJoinMessage && memberVersion.asVersion().equals(clusterVersion)) {
+            return;
+        }
+        String msg = constructVersionMismatchMessage(memberVersion, clusterVersion);
+        throw new VersionMismatchException(msg);
+    }
+
+    @Override
+    public Set<Version> getSupportedVersions() {
+        return supportedVersions;
+    }
+
+    private static String constructVersionMismatchMessage(MemberVersion memberVersion, Version clusterVersion) {
+        String msg = "Joining node's version " + memberVersion + " is not compatible with cluster version " + clusterVersion;
+        if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            msg += " (Rolling Member Upgrades are only supported in Hazelcast Enterprise)";
+        } else {
+            msg += " (Rolling Member Upgrades is not licensed)";
+        }
+        return msg;
     }
 
     @Override
@@ -593,7 +610,7 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public boolean isNodeVersionCompatibleWith(Version clusterVersion) {
         Preconditions.checkNotNull(clusterVersion);
-        return node.getVersion().asVersion().equals(clusterVersion);
+        return getSupportedVersions().contains(clusterVersion);
     }
 
     @Override

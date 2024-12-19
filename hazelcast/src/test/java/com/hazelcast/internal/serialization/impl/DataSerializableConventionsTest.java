@@ -62,6 +62,7 @@ import java.util.TreeSet;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.concreteSubTypesOf;
 import static com.hazelcast.test.ReflectionsHelper.subTypesOf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -125,15 +126,7 @@ public class DataSerializableConventionsTest {
                     nonCompliantClassNames.add(c.toString());
                 }
             }
-            if (!nonCompliantClassNames.isEmpty()) {
-                System.out.println("The following classes are DataSerializable while they should be IdentifiedDataSerializable:");
-                // failure - output non-compliant classes to standard output and fail the test
-                for (String s : nonCompliantClassNames) {
-                    System.out.println(s);
-                }
-                fail("There are " + dataSerializableClasses.size() + " classes which are DataSerializable, not @BinaryInterface-"
-                        + "annotated and are not IdentifiedDataSerializable.");
-            }
+            assertThat(nonCompliantClassNames).isEmpty();
         }
     }
 
@@ -156,15 +149,7 @@ public class DataSerializableConventionsTest {
                     nonCompliantClassNames.add(c.toString());
                 }
             }
-            if (!nonCompliantClassNames.isEmpty()) {
-                System.out.println("The following classes are Serializable and should be IdentifiedDataSerializable:");
-                // failure - output non-compliant classes to standard output and fail the test
-                for (String s : nonCompliantClassNames) {
-                    System.out.println(s);
-                }
-                fail("There are " + nonCompliantClassNames.size() + " classes which are Serializable, not @BinaryInterface-"
-                        + "annotated and are not IdentifiedDataSerializable.");
-            }
+            assertThat(nonCompliantClassNames).isEmpty();
         }
     }
 
@@ -225,16 +210,7 @@ public class DataSerializableConventionsTest {
             }
         }
 
-        if (!classesWithInstantiationProblems.isEmpty()) {
-            System.out.println("There are " + classesWithInstantiationProblems.size() + " classes which threw an exception while"
-                    + " attempting to invoke a default no-args constructor. See console output for exception details."
-                    + " List of problematic classes:");
-            for (String className : classesWithInstantiationProblems) {
-                System.out.println(className);
-            }
-            fail("There are " + classesWithInstantiationProblems.size() + " classes which threw an exception while"
-                    + " attempting to invoke a default no-args constructor. See test output for exception details.");
-        }
+        assertThat(classesWithInstantiationProblems).isEmpty();
     }
 
     /**

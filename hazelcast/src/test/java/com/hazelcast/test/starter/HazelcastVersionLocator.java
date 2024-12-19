@@ -53,13 +53,14 @@ public class HazelcastVersionLocator {
 
     public static Map<Artifact, File> locateVersion(final String version, final boolean enterprise) {
         final Stream.Builder<Artifact> files = Stream.builder();
-        files.add(Artifact.OS_JAR);
-        files.add(Artifact.OS_TEST_JAR);
         if (Version.of(version).isGreaterOrEqual(Versions.V5_0)) {
             files.add(Artifact.SQL_JAR);
         }
         if (enterprise) {
             files.add(Artifact.EE_JAR);
+        } else {
+            files.add(Artifact.OS_JAR);
+            files.add(Artifact.OS_TEST_JAR);
         }
         return files.build().collect(Collectors.toMap(Function.identity(),
                 artifact -> MavenInterface.locateArtifact(artifact.toAetherArtifact(version),

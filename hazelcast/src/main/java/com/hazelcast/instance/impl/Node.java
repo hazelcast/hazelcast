@@ -70,7 +70,6 @@ import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
@@ -893,7 +892,7 @@ public class Node {
         int dataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
         Version clusterVersion = clusterService.getClusterVersion();
         int memberListVersion = clusterService.getMembershipManager().getMemberListVersion();
-        return new SplitBrainJoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
+        return  new SplitBrainJoinMessage(buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
                 liteMember, createConfigCheck(), memberAddresses, dataMemberCount, clusterVersion, memberListVersion);
     }
 
@@ -907,9 +906,8 @@ public class Node {
         UUID cpMemberUUID = localCPMember != null ? localCPMember.getUuid() : null;
         OnJoinRegistrationOperation preJoinOps = nodeEngine.getEventService().getPreJoinOperation();
         OnJoinOp onJoinOp = preJoinOps != null ? new OnJoinOp(Collections.singletonList(preJoinOps)) : null;
-        return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
-                localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap(), cpMemberUUID, onJoinOp);
+        return new JoinRequest(buildInfo.getBuildNumber(), version, address, localMember, createConfigCheck(),
+                credentials, excludedMemberUuids, cpMemberUUID, onJoinOp, nodeExtension.getSupportedVersions());
     }
 
     private CPMember getLocalCPMember() {

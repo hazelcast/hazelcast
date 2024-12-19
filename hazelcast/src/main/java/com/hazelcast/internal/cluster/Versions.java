@@ -78,4 +78,11 @@ public final class Versions {
 
     private Versions() {
     }
+
+    /**
+     * When we decide that a version is LTS, we need to update this method's body.
+     */
+    public static boolean isLts(Version version) {
+        return version.isEqualTo(V5_5);
+    }
 }

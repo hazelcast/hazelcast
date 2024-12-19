@@ -22,12 +22,17 @@ import com.hazelcast.internal.serialization.SerializationService;
 import javax.annotation.Nonnull;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Various collection utility methods.
@@ -43,7 +48,7 @@ public final class CollectionUtil {
      * @param collection the given collection
      * @return {@code true} if collection is empty
      */
-    public static boolean isEmpty(Collection collection) {
+    public static boolean isEmpty(Collection<?> collection) {
         return collection == null || collection.isEmpty();
     }
 
@@ -53,7 +58,7 @@ public final class CollectionUtil {
      * @param collection the given collection
      * @return {@code true} if collection is not empty
      */
-    public static boolean isNotEmpty(Collection collection) {
+    public static boolean isNotEmpty(Collection<?> collection) {
         return !isEmpty(collection);
     }
 
@@ -154,5 +159,20 @@ public final class CollectionUtil {
     /** Returns an empty Collection if argument is null. **/
     public static <T> Collection<T> nullToEmpty(Collection<T> collection) {
         return collection == null ? Collections.emptyList() : collection;
+    }
+
+    /**
+     * Returns immutable version of items, packed as Set.
+     * Similar to {@link Set#of()}, but allows nulls (will remove them automatically) and doubled elements.
+     *
+     * @see Collectors#toUnmodifiableSet()
+     */
+    @SafeVarargs
+    @Nonnull
+    public static <T> Set<T> setOf(@Nonnull T... items) {
+        checkNotNull(items, "items must be non-null");
+        return Arrays.stream(items)
+                     .filter(Objects::nonNull)
+                     .collect(toUnmodifiableSet());
     }
 }

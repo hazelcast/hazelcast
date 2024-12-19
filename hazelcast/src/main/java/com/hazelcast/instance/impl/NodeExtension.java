@@ -54,6 +54,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -303,6 +304,12 @@ public interface NodeExtension {
       * with a message explaining rejection reason.
       */
     void validateJoinRequest(JoinMessage joinMessage);
+
+    /**
+     * Returns {@link Version}s supported by this Node, meaning all the versions that can communicate with this Node.
+     * @return a Set of supported cluster versions
+     */
+    Set<Version> getSupportedVersions();
 
     /**
      * Called before starting a cluster state change transaction. Called only

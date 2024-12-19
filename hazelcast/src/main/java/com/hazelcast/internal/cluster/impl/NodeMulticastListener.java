@@ -24,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import java.util.UUID;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Packet;
 
 public class NodeMulticastListener implements MulticastListener {
 
@@ -68,7 +67,7 @@ public class NodeMulticastListener implements MulticastListener {
         ClusterServiceImpl clusterService = node.getClusterService();
         Address masterAddress = clusterService.getMasterAddress();
         if (clusterService.isMaster()) {
-            JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(), node.getVersion(),
+            JoinMessage response = new JoinMessage(node.getBuildInfo().getBuildNumber(), node.getVersion(),
                     node.getThisAddress(), node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
             node.multicastService.send(response);
         } else if (joinMessage.getAddress().equals(masterAddress)) {

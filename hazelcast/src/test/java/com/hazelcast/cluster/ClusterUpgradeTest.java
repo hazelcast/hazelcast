@@ -26,6 +26,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import com.hazelcast.version.MemberVersion;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.test.TestClusterUpgradeUtils.upgradeClusterMembers;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Create a cluster, then change cluster version. This test uses artificial version numbers, to avoid relying on current version.
@@ -42,11 +44,10 @@ import static com.hazelcast.test.TestClusterUpgradeUtils.upgradeClusterMembers;
 @Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class ClusterUpgradeTest extends HazelcastTestSupport {
 
-    static final MemberVersion VERSION_2_0_5 = MemberVersion.of(2, 0, 5);
-    static final MemberVersion VERSION_2_1_0 = MemberVersion.of(2, 1, 0);
-    static final MemberVersion VERSION_2_1_1 = MemberVersion.of(2, 1, 1);
-    static final MemberVersion VERSION_2_2_0 = MemberVersion.of(2, 2, 0);
-    static final MemberVersion VERSION_3_0_0 = MemberVersion.of(3, 0, 0);
+    static final MemberVersion VERSION_2_0_5 = MemberVersion.of(102, 0, 5);
+    static final MemberVersion VERSION_2_1_0 = MemberVersion.of(102, 1, 0);
+    static final MemberVersion VERSION_2_2_0 = MemberVersion.of(102, 2, 0);
+    static final MemberVersion VERSION_3_0_0 = MemberVersion.of(103, 0, 0);
 
     static final int CLUSTER_MEMBERS_COUNT = 3;
 
@@ -59,34 +60,39 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, VERSION_2_1_0.toString());
         clusterMembers = new HazelcastInstance[CLUSTER_MEMBERS_COUNT];
         for (int i = 0; i < CLUSTER_MEMBERS_COUNT; i++) {
-            clusterMembers[i] = factory.newHazelcastInstance(getConfig());
+            clusterMembers[i] = factory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
         }
         clusterService = (ClusterService) clusterMembers[0].getCluster();
+        Assertions.setMaxStackTraceElementsDisplayed(100);
     }
 
     @Test
     public void test_upgradeMinorVersion_notAllowed() {
-        assertThrows(IllegalStateException.class, () -> upgradeCluster(VERSION_2_2_0));
+        assertThatThrownBy(() -> upgradeCluster(VERSION_2_2_0, VERSION_2_1_0))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     public void test_upgradeMajorVersion_notAllowed() {
-        assertThrows(IllegalStateException.class, () -> upgradeCluster(VERSION_3_0_0));
+        assertThatThrownBy(() -> upgradeCluster(VERSION_3_0_0, VERSION_2_2_0))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     public void test_addNodeOfLesserThanClusterVersion_notAllowed() {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, VERSION_2_0_5.toString());
-        assertThrows(IllegalStateException.class, () -> factory.newHazelcastInstance(getConfig()));
+        assertThatThrownBy(() -> factory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics()))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     public void test_changeClusterVersion_disallowedForMinorVersions() {
-        assertThrows(VersionMismatchException.class, () -> clusterService.changeClusterVersion(VERSION_2_0_5.asVersion()));
+        assertThatThrownBy(() -> clusterService.changeClusterVersion(VERSION_2_0_5.asVersion()))
+                .isInstanceOf(VersionMismatchException.class);
     }
 
-    void upgradeCluster(MemberVersion version) {
-        upgradeClusterMembers(factory, clusterMembers, version, getConfig());
+    void upgradeCluster(MemberVersion version, MemberVersion previousVersion) {
+        upgradeClusterMembers(factory, clusterMembers, version, previousVersion, smallInstanceConfigWithoutJetAndMetrics());
         // also update the reference to clusterService to the one from
         clusterService = (ClusterService) clusterMembers[0].getCluster();
     }

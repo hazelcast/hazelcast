@@ -44,7 +44,7 @@ public final class MemberVersion
     /**
      * Version comparator that takes into account only major &amp; minor version, disregarding patch version number.
      */
-    public static final transient Comparator<MemberVersion> MAJOR_MINOR_VERSION_COMPARATOR = new MajorMinorVersionComparator();
+    public static final Comparator<MemberVersion> MAJOR_MINOR_VERSION_COMPARATOR = new MajorMinorVersionComparator();
 
     private static final String UNKNOWN_VERSION_STRING = "0.0.0";
     @Serial
@@ -70,10 +70,11 @@ public final class MemberVersion
     // populate this Version's major, minor, patch from given String
     private void parse(String version) {
         String[] tokens = StringUtil.tokenizeVersionString(version);
-        this.major = Byte.valueOf(tokens[0]);
-        this.minor = Byte.valueOf(tokens[1]);
+        assert tokens != null;
+        this.major = Byte.parseByte(tokens[0]);
+        this.minor = Byte.parseByte(tokens[1]);
         if (tokens.length > 3 && tokens[3] != null) {
-            this.patch = Byte.valueOf(tokens[3]);
+            this.patch = Byte.parseByte(tokens[3]);
         }
     }
 
@@ -113,7 +114,7 @@ public final class MemberVersion
 
     @Override
     public int hashCode() {
-        int result = (int) major;
+        int result = major;
         result = 31 * result + (int) minor;
         result = 31 * result + (int) patch;
         return result;
@@ -185,5 +186,13 @@ public final class MemberVersion
      */
     public Version asVersion() {
         return Version.of(major, minor);
+    }
+
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is greater than or equal to {@code version}
+     */
+    public boolean isGreaterOrEqual(MemberVersion version) {
+        return (!version.isUnknown() && compareTo(version) >= 0) || (version.isUnknown() && isUnknown());
     }
 }

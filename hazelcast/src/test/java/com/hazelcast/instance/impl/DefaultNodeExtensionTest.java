@@ -24,37 +24,48 @@ import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.test.Accessors.getNode;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 /**
  * Test DefaultNodeExtension behavior
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultNodeExtensionTest extends HazelcastTestSupport {
+
+    private static final String ENTERPRISE_PROPERTY = "hazelcast.internal.override.enterprise";
 
     private int buildNumber;
     private HazelcastInstance hazelcastInstance;
@@ -63,14 +74,28 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     private MemberVersion nodeVersion;
     private Address joinAddress;
 
+    @Parameter
+    public boolean isEnterprise;
+
+    @Parameters(name = "isEnterprise = {0}")
+    public static Collection<Boolean> parameters() {
+        return List.of(true, false);
+    }
+
     @Before
     public void setup() throws Exception {
+        System.setProperty(ENTERPRISE_PROPERTY, String.valueOf(isEnterprise));
         buildNumber = BuildInfoProvider.getBuildInfo().getBuildNumber();
         hazelcastInstance = createHazelcastInstance();
         nodeExtension = getNode(hazelcastInstance).getNodeExtension();
         node = getNode(hazelcastInstance);
         nodeVersion = node.getVersion();
         joinAddress = new Address("127.0.0.1", 9999);
+    }
+
+    @After
+    public void clearProps() {
+        System.clearProperty(ENTERPRISE_PROPERTY);
     }
 
     @Test
@@ -95,8 +120,8 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
 
     @Test
     public void test_joinRequestAllowed_whenSameVersion() {
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nodeVersion, joinAddress, newUnsecureUUID(),
-                false, null, null, null, null, null);
+        JoinRequest joinRequest = new JoinRequest(buildNumber, nodeVersion, joinAddress, node.getLocalMember(),
+                Set.of(nodeVersion.asVersion()));
 
         nodeExtension.validateJoinRequest(joinRequest);
     }
@@ -105,18 +130,41 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     public void test_joinRequestAllowed_whenNextPatchVersion() {
         MemberVersion nextPatchVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor(),
                 nodeVersion.getPatch() + 1);
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextPatchVersion, joinAddress,
-                newUnsecureUUID(), false, null, null, null, null, null);
+        JoinRequest joinRequest = new JoinRequest(buildNumber, nextPatchVersion, joinAddress, node.getLocalMember(),
+                Set.of(nodeVersion.asVersion()));
+
+        nodeExtension.validateJoinRequest(joinRequest);
+    }
+
+    @Test
+    public void test_joinRequestAllowed_whenInSupportedVersions() {
+        final MemberVersion previousMajor = MemberVersion.of(nodeVersion.getMajor() - 1, nodeVersion.getMinor(),
+                nodeVersion.getPatch());
+        final MemberVersion nextMajorVersion = MemberVersion.of(nodeVersion.getMajor() + 1, nodeVersion.getMinor(),
+                nodeVersion.getPatch());
+
+        JoinRequest joinRequest = new JoinRequest(buildNumber, nextMajorVersion, joinAddress, node.getLocalMember(),
+                Set.of(nodeVersion.asVersion(), nextMajorVersion.asVersion()));
+
+        nodeExtension.validateJoinRequest(joinRequest);
+
+        joinRequest = new JoinRequest(buildNumber, previousMajor, joinAddress, node.getLocalMember(),
+                Set.of(nodeVersion.asVersion(), previousMajor.asVersion()));
+
+        nodeExtension.validateJoinRequest(joinRequest);
+
+        joinRequest = new JoinRequest(buildNumber, nextMajorVersion, joinAddress, node.getLocalMember(),
+                Set.of(nextMajorVersion.asVersion(), nodeVersion.asVersion(), previousMajor.asVersion()));
 
         nodeExtension.validateJoinRequest(joinRequest);
     }
 
     @Test
     public void test_joinRequestFails_whenNextMinorVersion() {
+        assumeFalse(isEnterprise);
         MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() + 1,
                 nodeVersion.getPatch());
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMinorVersion, joinAddress,
-                newUnsecureUUID(), false, null, null, null, null, null);
+        JoinRequest joinRequest = new JoinRequest(buildNumber, nextMinorVersion, joinAddress, node.getLocalMember(), emptySet());
 
         assertThatThrownBy(() -> nodeExtension.validateJoinRequest(joinRequest))
                 .isInstanceOf(VersionMismatchException.class)
@@ -128,39 +176,37 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         assumeTrue("Minor version is 0", nodeVersion.getMinor() > 0);
         MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() - 1,
                 nodeVersion.getPatch());
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMinorVersion, joinAddress,
-                newUnsecureUUID(), false, null, null, null, null, null);
+        JoinRequest joinRequest = new JoinRequest(buildNumber, nextMinorVersion, joinAddress, node.getLocalMember(), emptySet());
 
+        String message = isEnterprise ?  "Rolling Member Upgrades is not licensed"
+                : "Rolling Member Upgrades are only supported in Hazelcast Enterprise";
         assertThatThrownBy(() -> nodeExtension.validateJoinRequest(joinRequest))
                 .isInstanceOf(VersionMismatchException.class)
-                .hasMessageContaining("Rolling Member Upgrades are only supported for the next minor version")
-                .hasMessageContaining("Rolling Member Upgrades are only supported in Hazelcast Enterprise");
+                .hasMessageContaining(message);
     }
 
     @Test
     public void test_joinRequestFails_whenNextMajorVersion() {
         MemberVersion nextMajorVersion = MemberVersion.of(nodeVersion.getMajor() + 1, nodeVersion.getMinor(),
                 nodeVersion.getPatch());
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMajorVersion, joinAddress,
-                newUnsecureUUID(), false, null, null, null, null, null);
+        JoinRequest joinRequest = new JoinRequest(buildNumber, nextMajorVersion, joinAddress, node.getLocalMember(), emptySet());
 
+        String message = isEnterprise ? "Rolling Member Upgrades is not licensed" : "Rolling Member Upgrades are only supported in Hazelcast Enterprise";
         assertThatThrownBy(() -> nodeExtension.validateJoinRequest(joinRequest))
                 .isInstanceOf(VersionMismatchException.class)
-                .hasMessageContaining("Rolling Member Upgrades are only supported in Hazelcast Enterprise")
-                .hasMessageContaining("Rolling Member Upgrades are only supported for the same major version");
+                .hasMessageContaining(message);
     }
 
     @Test
     public void test_joinRequestFails_whenPreviousMajorVersion() {
         MemberVersion prevMajorVersion = MemberVersion.of(nodeVersion.getMajor() - 1, nodeVersion.getMinor(),
                 nodeVersion.getPatch());
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, prevMajorVersion, joinAddress,
-                newUnsecureUUID(), false, null, null, null, null, null);
+        JoinRequest joinRequest = new JoinRequest(buildNumber, prevMajorVersion, joinAddress, node.getLocalMember(), emptySet());
 
+        String message = isEnterprise ? "Rolling Member Upgrades is not licensed" : "Rolling Member Upgrades are only supported in Hazelcast Enterprise";
         assertThatThrownBy(() -> nodeExtension.validateJoinRequest(joinRequest))
                 .isInstanceOf(VersionMismatchException.class)
-                .hasMessageContaining("Rolling Member Upgrades are only supported in Hazelcast Enterprise")
-                .hasMessageContaining("Rolling Member Upgrades are only supported for the same major version");
+                .hasMessageContaining(message);
     }
 
     @Test
