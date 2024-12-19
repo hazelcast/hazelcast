@@ -1130,7 +1130,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * job. It will be accessible to all the code attached to the underlying
      * pipeline or DAG, but not to any other code. There are several serializer
      * types you can register, see the
-     * <a href="https://jet-start.sh/docs/api/serialization#serialization-of-data-types
+     * <a href="https://docs.hazelcast.com/hazelcast/latest/pipelines/serialization#serialization-of-data-types
      * Programming Guide</a>.
      * <p>
      * A serializer registered on the job level has precedence over any

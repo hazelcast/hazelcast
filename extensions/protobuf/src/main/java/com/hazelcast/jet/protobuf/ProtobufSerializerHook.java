@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.SerializerHook;
  * To use it, create a JAR containing the serializer hook class and
  * {@code META-INF/services/com.hazelcast.SerializerHook}, a plain-text
  * file containing its fully qualified name. Visit Jet's <a
- * href="https://jet-start.sh/docs/api/serialization#google-protocol-buffers">
+ * href="https://docs.hazelcast.com/hazelcast/latest/pipelines/serialization#google-protocol-buffers">
  * Serialization Guide</a> for more details.
  *
  * @param <T> the Protocol Buffers {@link GeneratedMessageV3} type handled by

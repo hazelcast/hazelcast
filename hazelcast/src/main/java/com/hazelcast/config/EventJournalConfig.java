@@ -33,7 +33,8 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * map add, update, remove, merge events along with the key, old value, new value and so on.
  * This configuration is not tied to a specific data structure and can be reused.
  * <b>NOTE</b>
- * This config is intended to be used with <a href="http://jet.hazelcast.org">Hazelcast Jet</a>
+ * This config is intended to be used with
+ * <a href="https://docs.hazelcast.com/hazelcast/latest/pipelines/overview">Hazelcast Jet</a>
  * and does not expose any features in Hazelcast IMDG.
  */
 public class EventJournalConfig implements IdentifiedDataSerializable {

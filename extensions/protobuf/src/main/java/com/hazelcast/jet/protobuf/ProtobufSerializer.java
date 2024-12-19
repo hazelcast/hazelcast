@@ -26,8 +26,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Adapts a generated <a
@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
  * StreamSerializer} interface.
  * <p>
  * To learn how to use this class, visit Jet's <a
- * href="https://jet-start.sh/docs/api/serialization#google-protocol-buffers">
+ * href="https://docs.hazelcast.com/hazelcast/latest/pipelines/serialization#google-protocol-buffers">
  * Serialization Guide</a>. In brief, you should create a subclass that
  * does nothing else but call this class's protected constructor, and then
  * you can use it in two ways:

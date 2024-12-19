@@ -211,7 +211,7 @@ So, it's a good target for **intra-member** processor pruning.
       - SCAN[map, partitionKey=K]
 ```
 
-![Scan + Scan -> HashJoin](https://jet-start.sh/docs/assets/arch-dag-4.svg)
+![Scan + Scan -> HashJoin](https://docs.hazelcast.com/hazelcast/latest/_images/arch-dag-4.svg)
 
 Two-stage aggregation might be a good target for **inter-member** processor pruning. However,
 processor logic is opaque to Jet and changing it requires a lot of changes, which may jeopardize
