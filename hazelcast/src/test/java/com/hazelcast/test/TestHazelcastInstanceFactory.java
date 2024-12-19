@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PersistenceClusterDataRecoveryPolicy;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -27,8 +28,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
@@ -48,14 +47,17 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -65,14 +67,16 @@ import java.util.stream.IntStream;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
+import static java.util.Comparator.comparing;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -312,82 +316,108 @@ public class TestHazelcastInstanceFactory {
         return newInstances(config, count);
     }
 
-    /**
-     * Creates the given number of Hazelcast instances in parallel.
-     * The first member in the returned array is always the master.
-     * <p>
-     * Spawns a separate thread to start each instance. This is required when
-     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
-     * call blocks until the whole cluster is re-formed.
-     * <p>
-     * This can only be used with mock network since it uses explicit addresses.
-     * For an alternative that can be used with real network, see
-     * {@link #newInstancesParallel(int, IntFunction)}.
-     *
-     * @param configFn a function that must return a separate config instance for each address
-     */
-    public HazelcastInstance[] newInstancesParallel(int nodeCount, Function<Address, Config> configFn) {
-        return newInstancesParallel0(nodeCount, (int i) -> {
-            Address address = nextAddress();
-            return newHazelcastInstance(address, configFn.apply(address));
-        });
+    public HazelcastInstancesBuilder newInstancesParallel() {
+        return new HazelcastInstancesBuilder();
     }
 
-    /**
-     * Creates the given number of Hazelcast instances in parallel.
-     * The first member in the returned array is always the master.
-     * <p>
-     * Spawns a separate thread to start each instance. This is required when
-     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
-     * call blocks until the whole cluster is re-formed.
-     * <p>
-     * This can only be used with mock network since it uses explicit addresses.
-     * For an alternative that can be used with real network, see
-     * {@link #newInstancesParallel(int, IntFunction)}.
-     *
-     * @param configFn a function that must return a separate config instance for each address
-     */
-    public HazelcastInstance[] newInstancesParallel(Address[] addresses, Function<Address, Config> configFn) {
-        return newInstancesParallel0(addresses.length, (int i) -> {
-            Address address = addresses[i];
-            return newHazelcastInstance(address, configFn.apply(address));
-        });
-    }
+    public class HazelcastInstancesBuilder {
+        private int nodeCount;
+        private IntFunction<Address> addressFn = i -> null;
+        private BiFunction<Integer, Address, Config> configFn = (i, address) -> null;
+        private boolean ignoreErrors;
 
-    /**
-     * Creates the given number of Hazelcast instances in parallel.
-     * The first member in the returned array is always the master.
-     * <p>
-     * Spawns a separate thread to start each instance. This is required when
-     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
-     * call blocks until the whole cluster is re-formed.
-     *
-     * @param configFn a function that must return a separate config instance for each invocation
-     */
-    public HazelcastInstance[] newInstancesParallel(int nodeCount, IntFunction<Config> configFn) {
-        return newInstancesParallel0(nodeCount, (int i) -> newHazelcastInstance(configFn.apply(i)));
-    }
+        public HazelcastInstancesBuilder withNodeCount(int nodeCount) {
+            this.nodeCount = nodeCount;
+            return this;
+        }
 
-    private HazelcastInstance[] newInstancesParallel0(int nodeCount, IntFunction<HazelcastInstance> instanceFn) {
-        HazelcastInstance[] hzInstances = IntStream.range(0, nodeCount)
-                .mapToObj(i -> spawn(() -> instanceFn.apply(i)))
-                // we need to collect here to ensure that all threads are spawned before we call future.get()
-                .toList().stream()
-                .map(f -> uncheckCall(f::get))
-                .toArray(HazelcastInstance[]::new);
-        assertClusterSizeEventually(nodeCount, this.getAllHazelcastInstances());
-        Arrays.sort(hzInstances, Comparator.comparing(inst -> !isMaster(inst)));
-        return hzInstances;
-    }
+        /**
+         * Uses {@linkplain #nextAddress() the next address} for created instances.
+         * <p>
+         * This can only be used with mock network since it uses explicit addresses.
+         */
+        public HazelcastInstancesBuilder withNextAddress() {
+            addressFn = i -> nextAddress();
+            return this;
+        }
 
-    private static boolean isMaster(HazelcastInstance inst) {
-        if (inst instanceof HazelcastInstanceImpl impl) {
-            return impl.node.isMaster();
-        } else if (inst instanceof HazelcastInstanceProxy proxy) {
-            return proxy.getOriginal().node.isMaster();
-        } else {
-            throw new IllegalArgumentException("This method can be called only member"
-                    + " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+        /**
+         * Uses the specified addresses for created instances. It also sets the
+         * {@linkplain #withNodeCount node count}.
+         * <p>
+         * This can only be used with mock network since it uses explicit addresses.
+         */
+        public HazelcastInstancesBuilder withAddresses(Address[] addresses) {
+            nodeCount = addresses.length;
+            addressFn = i -> addresses[i];
+            return this;
+        }
+
+        /**
+         * @param configFn an index-accepting function that must return a separate
+         *                 config instance for each index
+         */
+        public HazelcastInstancesBuilder withConfigFn(IntFunction<Config> configFn) {
+            this.configFn = (i, address) -> configFn.apply(i);
+            return this;
+        }
+
+        /**
+         * @param configFn an address-accepting function that must return a separate
+         *                 config instance for each address
+         */
+        public HazelcastInstancesBuilder withConfigFn(Function<Address, Config> configFn) {
+            this.configFn = (i, address) -> configFn.apply(address);
+            return this;
+        }
+
+        /**
+         * Ignores failed instances, which is useful if partial recovery is allowed.
+         *
+         * @see PersistenceClusterDataRecoveryPolicy
+         */
+        public HazelcastInstancesBuilder ignoreErrors() {
+            ignoreErrors = true;
+            return this;
+        }
+
+        /**
+         * Creates the given number of Hazelcast instances in parallel.
+         * The first member in the returned array is always the master.
+         * <p>
+         * Spawns a separate thread to start each instance. This is required when
+         * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
+         * call blocks until the whole cluster is re-formed.
+         */
+        public HazelcastInstance[] construct() {
+            List<Throwable> errors = new ArrayList<>();
+            HazelcastInstance[] instances = IntStream.range(0, nodeCount)
+                     .mapToObj(i -> spawn(() -> {
+                         Address address = addressFn.apply(i);
+                         return newHazelcastInstance(address, configFn.apply(i, address));
+                     }))
+                     // We need to collect here to ensure that all threads are
+                     // spawned before we call future.get()
+                     .toList().stream()
+                     .map(future -> {
+                         try {
+                             return future.get();
+                         } catch (Throwable t) {
+                             errors.add(t);
+                             return null;
+                         }
+                     })
+                     .filter(Objects::nonNull)
+                     .toArray(HazelcastInstance[]::new);
+
+            if (!ignoreErrors && !errors.isEmpty()) {
+                Throwable error = errors.remove(0);
+                errors.forEach(error::addSuppressed);
+                throw sneakyThrow(error);
+            }
+            assertClusterSizeEventually(instances.length, instances);
+            Arrays.sort(instances, comparing(hz -> !getNode(hz).isMaster()));
+            return instances;
         }
     }
 
