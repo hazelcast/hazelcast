@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.version.MemberVersion;
 
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.tokenizeVersionString;
 import static java.lang.Integer.parseInt;
 
@@ -125,6 +126,24 @@ public class BuildInfo {
 
     public MemberVersion getPreviousVersion() {
         return previousVersion;
+    }
+
+    public String toBuildString() {
+        String buildString = build;
+
+        if (!revision.isEmpty()) {
+            buildString += " - " + revision;
+
+            if (upstreamBuildInfo != null) {
+                String upstreamRevision = upstreamBuildInfo.getRevision();
+
+                if (!isNullOrEmpty(upstreamRevision)) {
+                    buildString += ", " + upstreamRevision;
+                }
+            }
+        }
+
+        return buildString;
     }
 
     @Override

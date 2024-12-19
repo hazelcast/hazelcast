@@ -196,50 +196,40 @@ public class DefaultNodeExtension implements NodeExtension {
 
     private void checkCPSubsystemAllowed() {
         CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
-        if (cpSubsystemConfig != null && cpSubsystemConfig.getCPMemberCount() != 0) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException(CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
-            }
+        if (cpSubsystemConfig != null && cpSubsystemConfig.getCPMemberCount() != 0
+                && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException(CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
         }
     }
 
     private void checkPersistenceAllowed() {
         PersistenceConfig persistenceConfig = node.getConfig().getPersistenceConfig();
-        if (persistenceConfig != null && persistenceConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
-            }
+        if (persistenceConfig != null && persistenceConfig.isEnabled() && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
         }
     }
 
     private void checkSecurityAllowed() {
         SecurityConfig securityConfig = node.getConfig().getSecurityConfig();
-        if (securityConfig != null && securityConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
-            }
+        if (securityConfig != null && securityConfig.isEnabled() && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
         }
-        SymmetricEncryptionConfig symmetricEncryptionConfig
-                = getActiveMemberNetworkConfig(node.getConfig()).getSymmetricEncryptionConfig();
-        if (symmetricEncryptionConfig != null && symmetricEncryptionConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("Symmetric Encryption requires Hazelcast Enterprise Edition");
-            }
+        SymmetricEncryptionConfig symmetricEncryptionConfig =
+                getActiveMemberNetworkConfig(node.getConfig()).getSymmetricEncryptionConfig();
+        if (symmetricEncryptionConfig != null && symmetricEncryptionConfig.isEnabled()
+                && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException("Symmetric Encryption requires Hazelcast Enterprise Edition");
         }
         AuditlogConfig auditlogConfig = node.getConfig().getAuditlogConfig();
-        if (auditlogConfig != null && auditlogConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("Auditlog requires Hazelcast Enterprise Edition");
-            }
+        if (auditlogConfig.isEnabled() && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException("Auditlog requires Hazelcast Enterprise Edition");
         }
     }
 
     private void checkLosslessRestartAllowed() {
         JetConfig jetConfig = node.getConfig().getJetConfig();
-        if (jetConfig.isLosslessRestartEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");
-            }
+        if (jetConfig.isLosslessRestartEnabled() && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");
         }
     }
 
@@ -261,10 +251,8 @@ public class DefaultNodeExtension implements NodeExtension {
 
     protected void checkSqlCatalogPersistenceAllowed() {
         Config config = node.getConfig();
-        if (config.getSqlConfig().isCatalogPersistenceEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("SQL Catalog Persistence requires Hazelcast Enterprise Edition");
-            }
+        if (config.getSqlConfig().isCatalogPersistenceEnabled() && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            throw new IllegalStateException("SQL Catalog Persistence requires Hazelcast Enterprise Edition");
         }
     }
 
@@ -285,8 +273,7 @@ public class DefaultNodeExtension implements NodeExtension {
     public void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
         printBannersBeforeNodeInfo();
-        String build = constructBuildString(buildInfo);
-        printNodeInfoInternal(buildInfo, build);
+        printNodeInfoInternal(buildInfo);
     }
 
     @Override
@@ -322,20 +309,11 @@ public class DefaultNodeExtension implements NodeExtension {
         systemLogger.info(COPYRIGHT_LINE);
     }
 
-    protected String constructBuildString(BuildInfo buildInfo) {
-        String build = buildInfo.getBuild();
-        String revision = buildInfo.getRevision();
-        if (!revision.isEmpty()) {
-            build += " - " + revision;
-        }
-        return build;
-    }
-
-    private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
+    private void printNodeInfoInternal(BuildInfo buildInfo) {
         systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
-                + " (" + build + ") starting at " + node.getThisAddress());
+                + " (" + buildInfo.toBuildString() + ") starting at " + node.getThisAddress());
         systemLogger.info("Cluster name: " + node.getConfig().getClusterName());
-        systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
+        systemLogger.fine("Configured Hazelcast Serialization version: %s", buildInfo.getSerializationVersion());
     }
 
     protected String getEditionString() {
@@ -396,7 +374,7 @@ public class DefaultNodeExtension implements NodeExtension {
             ClassLoader configClassLoader = node.getConfigClassLoader();
 
             HazelcastInstanceImpl hazelcastInstance = node.hazelcastInstance;
-            PartitioningStrategy partitioningStrategy = getPartitioningStrategy(configClassLoader);
+            PartitioningStrategy<?> partitioningStrategy = getPartitioningStrategy(configClassLoader);
 
             SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
             SerializationConfig serializationConfig = config.getSerializationConfig() != null
@@ -564,10 +542,7 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void onClusterStateChange(ClusterState newState, boolean isTransient) {
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
-        List<ClusterStateListener> listeners = serviceManager.getServices(ClusterStateListener.class);
-        for (ClusterStateListener listener : listeners) {
-            listener.onClusterStateChange(newState);
-        }
+        serviceManager.getServices(ClusterStateListener.class).forEach(listener -> listener.onClusterStateChange(newState));
     }
 
     @Override
@@ -593,14 +568,10 @@ public class DefaultNodeExtension implements NodeExtension {
             systemLogger.info("Cluster version set to " + newVersion);
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
-        List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
-        for (ClusterVersionListener listener : listeners) {
-            listener.onClusterVersionChange(newVersion);
-        }
+        serviceManager.getServices(ClusterVersionListener.class)
+                .forEach(listener -> listener.onClusterVersionChange(newVersion));
         // also trigger cluster version change on explicitly registered listeners
-        for (ClusterVersionListener listener : clusterVersionListeners) {
-            listener.onClusterVersionChange(newVersion);
-        }
+        clusterVersionListeners.forEach(listener -> listener.onClusterVersionChange(newVersion));
         ClusterViewListenerService service = node.clientEngine.getClusterViewListenerService();
         if (service != null) {
             service.onClusterVersionChange();

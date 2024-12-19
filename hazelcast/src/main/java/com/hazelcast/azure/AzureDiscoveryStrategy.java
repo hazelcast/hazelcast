@@ -174,7 +174,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
             } else {
                 LOGGER.warning("Cannot discover nodes. Starting standalone.", e);
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.warning("Cannot discover nodes. Starting standalone.", e);
         }
         return Collections.emptyList();
