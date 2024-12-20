@@ -62,7 +62,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         recordStore.beforeOperation();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(LatestUpdateMergePolicy.class.getName());
+        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(LatestUpdateMergePolicy.class.getName(), null);
         long now = Clock.currentTimeMillis();
 
         SimpleEntryView<Data, Data> initialEntry = new SimpleEntryView<>(dataKey, dataValue);
@@ -97,7 +97,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         recordStore.beforeOperation();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
+        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName(), null);
 
         SimpleEntryView<Data, Data> initialEntry = new SimpleEntryView<>(dataKey, dataValue);
         recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), initialEntry), mergePolicy, CallerProvenance.NOT_WAN);
@@ -124,7 +124,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         recordStore.beforeOperation();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PassThroughMergePolicy.class.getName());
+        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PassThroughMergePolicy.class.getName(), null);
 
         SimpleEntryView<Data, Data> initialEntry = new SimpleEntryView<>(dataKey, dataValue);
         recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), initialEntry), mergePolicy, CallerProvenance.NOT_WAN);

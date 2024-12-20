@@ -78,6 +78,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
+import com.hazelcast.spi.merge.NamespaceAwareSplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -184,7 +185,9 @@ public class NodeEngineImpl implements NodeEngine {
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
-            this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(configClassLoader);
+            this.splitBrainMergePolicyProvider = getConfig().getNamespacesConfig().isEnabled()
+                    ? new NamespaceAwareSplitBrainMergePolicyProvider(this)
+                    : new SplitBrainMergePolicyProvider(this.getConfigClassLoader());
 
             checkMapMergePolicies(node);
 

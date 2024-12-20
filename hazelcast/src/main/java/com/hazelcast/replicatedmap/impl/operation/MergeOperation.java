@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -85,7 +86,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.readInternal(in);
         name = in.readString();
         mergingEntries = SerializationUtil.readList(in);
-        mergePolicy = in.readObject();
+        mergePolicy = NamespaceUtil.callWithNamespace(in::readObject, name, ReplicatedMapService::lookupNamespace);
     }
 
     @Override

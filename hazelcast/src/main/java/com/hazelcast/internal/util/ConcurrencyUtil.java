@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -171,7 +172,7 @@ public final class ConcurrencyUtil {
      * This is a performance tradeoff - improve {@code map} throughput and reduce deadlocks, at the expense of redundant object
      * instantiation.
      */
-    public static <K, V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K, V> func) {
+    public static <K, V> V getOrPutIfAbsent(Map<K, V> map, K key, ConstructorFunction<K, V> func) {
         V value = map.get(key);
         if (value == null) {
             value = func.createNew(key);

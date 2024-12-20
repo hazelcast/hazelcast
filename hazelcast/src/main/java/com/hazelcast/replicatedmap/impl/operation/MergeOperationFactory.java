@@ -16,9 +16,11 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -84,7 +86,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             mergingEntries[partitionIndex] = SerializationUtil.readList(in);
         }
-        mergePolicy = in.readObject();
+        mergePolicy = NamespaceUtil.callWithNamespace(in::readObject, name, ReplicatedMapService::lookupNamespace);
     }
 
     @Override

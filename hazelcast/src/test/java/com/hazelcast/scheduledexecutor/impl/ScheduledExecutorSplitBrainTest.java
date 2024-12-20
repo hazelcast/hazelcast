@@ -28,7 +28,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceTestSupport.
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -79,15 +78,15 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
-                DiscardMergePolicy.class,
-                PassThroughMergePolicy.class,
-                PutIfAbsentMergePolicy.class,
+                DiscardMergePolicy.class.getName(),
+                PassThroughMergePolicy.class.getName(),
+                PutIfAbsentMergePolicy.class.getName(),
         });
     }
 
     @Parameter
     @SuppressWarnings("rawtypes")
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
     // the ConcurrentMap just for the convenience of the putIfAbsent(), no real concurrency needs here
     private final ConcurrentMap<String, IScheduledFuture<Double>> expectedScheduledFutures
@@ -95,15 +94,15 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     private final ConcurrentMap<String, IScheduledFuture<Double>> unexpectedScheduledFutures
             = new ConcurrentHashMap<>();
 
-    private final String scheduledExecutorName = randomMapName("scheduledExecutor-");
-    private IScheduledExecutorService scheduledExecutorService1;
-    private IScheduledExecutorService scheduledExecutorService2;
+    protected final String scheduledExecutorName = randomMapName("scheduledExecutor-");
+    protected IScheduledExecutorService scheduledExecutorService1;
+    protected IScheduledExecutorService scheduledExecutorService2;
     private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
     protected Config config() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(mergePolicyClass.getName())
+                .setPolicy(mergePolicyClassName)
                 .setBatchSize(10);
 
         Config config = super.config();
@@ -144,15 +143,19 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         scheduledExecutorService1 = firstBrain[0].getScheduledExecutorService(scheduledExecutorName);
         scheduledExecutorService2 = secondBrain[0].getScheduledExecutorService(scheduledExecutorName);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             onAfterSplitDiscardPolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             onAfterSplitPassThroughPolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             onAfterSplitPutIfAbsentPolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     @Override
@@ -160,15 +163,19 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             onAfterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             onAfterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             onAfterMergePutIfAbsentMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainHealedExtension() throws Exception {
+        fail("Unexpected merge policy parameter");
     }
 
     private void onAfterSplitDiscardPolicy() {
@@ -204,7 +211,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         assertUnexpectedFuturesHaveMergedValue();
     }
 
-    private void onAfterSplitPutIfAbsentPolicy() {
+    protected void onAfterSplitPutIfAbsentPolicy() {
         // we should not see the tasks with UNEXPECTED_VALUE in the final tasks,
         // since they have the same name as existing tasks
         for (int i = INITIAL_COUNT; i < AFTER_SPLIT_COMMON_COUNT; i++) {
@@ -218,7 +225,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         }
     }
 
-    private void onAfterMergePutIfAbsentMergePolicy() throws Exception {
+    protected void onAfterMergePutIfAbsentMergePolicy() throws Exception {
         assertContents(scheduledExecutorService1.getAllScheduledFutures());
         assertContents(scheduledExecutorService2.getAllScheduledFutures());
         assertHandlersAreStillCorrect();

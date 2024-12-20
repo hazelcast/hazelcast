@@ -50,6 +50,11 @@ class ScheduledExecutorContainerCollector extends AbstractContainerCollector<Sch
     }
 
     @Override
+    protected String getUserNamespaceContainer(ScheduledExecutorContainer container) {
+        return container.getUserCodeNamespace();
+    }
+
+    @Override
     protected void destroy(ScheduledExecutorContainer container) {
         container.destroy();
     }

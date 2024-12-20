@@ -68,7 +68,7 @@ public class MapMergePolicySerializationTest extends HazelcastTestSupport {
 
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
+        SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName(), null);
         EntryView<Data, Data> mergingEntryView = new SimpleEntryView<>(dataKey, dataValue);
         recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), mergingEntryView), mergePolicy, CallerProvenance.NOT_WAN);
 

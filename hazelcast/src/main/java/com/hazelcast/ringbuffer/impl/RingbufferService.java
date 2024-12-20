@@ -356,7 +356,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
                 for (RingbufferContainer container : containerList) {
                     // TODO: add batching (which is a bit complex, since collections don't have a multi-name operation yet
                     SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy
-                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                            = getMergePolicy(container.getConfig().getMergePolicyConfig(), container.getUserCodeNamespace());
 
                     sendBatch(partitionId, mergePolicy, container);
                 }

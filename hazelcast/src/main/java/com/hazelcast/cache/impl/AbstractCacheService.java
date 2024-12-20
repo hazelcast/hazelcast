@@ -172,7 +172,7 @@ public abstract class AbstractCacheService implements ICacheService,
     public SplitBrainMergePolicy getMergePolicy(String dataStructureName) {
         CacheConfig cacheConfig = getCacheConfig(dataStructureName);
         String mergePolicyName = cacheConfig.getMergePolicyConfig().getPolicy();
-        return mergePolicyProvider.getMergePolicy(mergePolicyName);
+        return mergePolicyProvider.getMergePolicy(mergePolicyName, cacheConfig.getUserCodeNamespace());
     }
 
     public ConcurrentMap<String, CacheConfig> getConfigs() {

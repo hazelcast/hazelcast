@@ -56,6 +56,11 @@ class TestContainerCollector extends AbstractContainerCollector<Object> {
     }
 
     @Override
+    protected String getUserNamespaceContainer(Object container) {
+        return null;
+    }
+
+    @Override
     protected void destroy(Object container) {
     }
 

@@ -16,10 +16,12 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -101,7 +103,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mergeContainers = SerializationUtil.readList(in);
-        mergePolicy = in.readObject();
+        mergePolicy = NamespaceUtil.callWithNamespace(in::readObject, name, MultiMapService::lookupNamespace);
     }
 
     @Override

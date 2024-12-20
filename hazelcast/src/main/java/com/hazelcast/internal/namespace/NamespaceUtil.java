@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.namespace;
 
+import com.hazelcast.function.ThrowingBiFunction;
 import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.internal.namespace.impl.NamespaceThreadLocalContext;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
@@ -23,7 +24,6 @@ import com.hazelcast.jet.impl.deployment.MapResourceClassLoader;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nullable;
-
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -137,6 +137,16 @@ public class NamespaceUtil {
      */
     public static <V> V callWithNamespace(NodeEngine engine, @Nullable String namespace, Callable<V> callable) {
         return engine.getNamespaceService().callWithNamespace(namespace, callable);
+    }
+
+    public static <V> V callWithNamespace(
+            Callable<V> callable,
+            String dataStructureName,
+            ThrowingBiFunction<NodeEngine, String, String> namespaceProvider
+    ) {
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        String namespace = namespaceProvider.apply(engine, dataStructureName);
+        return NamespaceUtil.callWithNamespace(engine, namespace, callable);
     }
 
     /**

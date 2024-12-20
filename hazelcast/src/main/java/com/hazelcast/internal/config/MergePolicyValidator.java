@@ -56,7 +56,10 @@ public final class MergePolicyValidator {
     public static void checkMapMergePolicy(MapConfig mapConfig,
                                            String mergePolicyClassName,
                                            SplitBrainMergePolicyProvider mergePolicyProvider) {
-        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
+        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(
+                mergePolicyClassName,
+                mapConfig.getUserCodeNamespace()
+        );
         List<Class> requiredMergeTypes =
                 checkSplitBrainMergePolicy(SplitBrainMergeTypes.MapMergeTypes.class, mergePolicyInstance);
         if (!mapConfig.isPerEntryStatsEnabled() && requiredMergeTypes != null) {
@@ -67,7 +70,7 @@ public final class MergePolicyValidator {
     public static void checkVectorCollectionMergePolicy(VectorCollectionConfig vectorCollectionConfig,
                                                         String mergePolicyClassName,
                                                         SplitBrainMergePolicyProvider mergePolicyProvider) {
-        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
+        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getBuiltInMergePolicy(mergePolicyClassName);
         checkSplitBrainMergePolicy(SplitBrainMergeTypes.VectorCollectionMergeTypes.class, mergePolicyInstance);
     }
 
@@ -102,22 +105,31 @@ public final class MergePolicyValidator {
      * @param mergePolicyClassName the merge policy class name
      * @throws InvalidConfigurationException if the given merge policy is no {@link SplitBrainMergePolicy}
      */
-    static void checkMergeTypeProviderHasRequiredTypes(Class<? extends MergingValue> mergeTypes,
-                                                       SplitBrainMergePolicyProvider mergePolicyProvider,
-                                                       String mergePolicyClassName) {
+    static void checkMergeTypeProviderHasRequiredTypes(
+            Class<? extends MergingValue> mergeTypes,
+            SplitBrainMergePolicyProvider mergePolicyProvider,
+            String mergePolicyClassName,
+            String namespace
+    ) {
         if (mergePolicyProvider == null) {
             return;
         }
 
-        SplitBrainMergePolicy mergePolicy = getMergePolicyInstance(mergePolicyProvider,
-                mergePolicyClassName);
+        SplitBrainMergePolicy mergePolicy = getMergePolicyInstance(
+                mergePolicyProvider,
+                mergePolicyClassName,
+                namespace
+        );
         checkSplitBrainMergePolicy(mergeTypes, mergePolicy);
     }
 
-    private static SplitBrainMergePolicy getMergePolicyInstance(SplitBrainMergePolicyProvider mergePolicyProvider,
-                                                                String mergePolicyClassName) {
+    private static SplitBrainMergePolicy getMergePolicyInstance(
+            SplitBrainMergePolicyProvider mergePolicyProvider,
+            String mergePolicyClassName,
+            String namespace
+    ) {
         try {
-            return mergePolicyProvider.getMergePolicy(mergePolicyClassName);
+            return mergePolicyProvider.getMergePolicy(mergePolicyClassName, namespace);
         } catch (InvalidConfigurationException e) {
             throw new InvalidConfigurationException("Merge policy must be an instance of SplitBrainMergePolicy,"
                     + " but was " + mergePolicyClassName, e.getCause());

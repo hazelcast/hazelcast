@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -71,24 +70,24 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
-                DiscardMergePolicy.class,
-                PassThroughMergePolicy.class,
-                PutIfAbsentMergePolicy.class,
-                RemoveValuesMergePolicy.class,
-                ReturnPiCollectionMergePolicy.class,
-                MergeCollectionOfIntegerValuesMergePolicy.class,
+                DiscardMergePolicy.class.getName(),
+                PassThroughMergePolicy.class.getName(),
+                PutIfAbsentMergePolicy.class.getName(),
+                RemoveValuesMergePolicy.class.getName(),
+                ReturnPiCollectionMergePolicy.class.getName(),
+                MergeCollectionOfIntegerValuesMergePolicy.class.getName(),
         });
     }
 
     @Parameter
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
-    private String queueNameA = randomMapName("QueueA-");
-    private String queueNameB = randomMapName("QueueB-");
+    protected String queueNameA = randomMapName("QueueA-");
+    protected String queueNameB = randomMapName("QueueB-");
     private SplitBrainQueueStore queueStoreA = new SplitBrainQueueStore();
     private SplitBrainQueueStore queueStoreB = new SplitBrainQueueStore();
-    private IQueue<Object> queueA1;
-    private IQueue<Object> queueA2;
+    protected IQueue<Object> queueA1;
+    protected IQueue<Object> queueA2;
     private IQueue<Object> queueB1;
     private IQueue<Object> queueB2;
     private Queue<Object> backupQueue;
@@ -97,7 +96,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected Config config() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(mergePolicyClass.getName())
+                .setPolicy(mergePolicyClassName)
                 .setBatchSize(10);
 
         Config config = super.config();
@@ -128,21 +127,25 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
 
         queueB2 = secondBrain[0].getQueue(queueNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterSplitDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterSplitPassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterSplitRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterSplitReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterSplitCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     @Override
@@ -158,21 +161,25 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
 
         queueB1 = instances[0].getQueue(queueNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterMergeRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterMergeReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterMergeCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainHealedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     private void afterSplitDiscardMergePolicy() {
@@ -215,7 +222,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
         assertQueueStoreContent(queueStoreB);
     }
 
-    private void afterSplitPutIfAbsentMergePolicy() {
+    protected void afterSplitPutIfAbsentMergePolicy() {
         for (int i = 0; i < ITEM_COUNT; i++) {
             queueA1.add("item" + i);
             queueA2.add("lostItem" + i);
@@ -224,7 +231,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
         }
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
+    protected void afterMergePutIfAbsentMergePolicy() {
         assertQueueContent(queueA1);
         assertQueueContent(queueA2);
         assertQueueContent(backupQueue);

@@ -372,7 +372,10 @@ public class DistributedScheduledExecutorService
                     String name = container.getName();
                     MergePolicyConfig mergePolicyConfig = collector.getMergePolicyConfig(container);
                     SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes,
-                            ScheduledTaskDescriptor> mergePolicy = getMergePolicy(mergePolicyConfig);
+                            ScheduledTaskDescriptor> mergePolicy = getMergePolicy(
+                                    mergePolicyConfig,
+                            container.getUserCodeNamespace()
+                    );
                     int batchSize = mergePolicyConfig.getBatchSize();
 
                     mergingEntries = new ArrayList<>(batchSize);

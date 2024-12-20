@@ -47,6 +47,11 @@ class MultiMapContainerCollector extends AbstractContainerCollector<MultiMapCont
     }
 
     @Override
+    protected String getUserNamespaceContainer(MultiMapContainer container) {
+        return container.getConfig().getUserCodeNamespace();
+    }
+
+    @Override
     protected void destroy(MultiMapContainer container) {
         container.destroy();
     }

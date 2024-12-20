@@ -72,7 +72,10 @@ class ReplicatedMapMergeRunnable
     @Override
     protected SplitBrainMergePolicy getMergePolicy(String dataStructureName) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(dataStructureName);
-        return mergePolicyProvider.getMergePolicy(replicatedMapConfig.getMergePolicyConfig().getPolicy());
+        return mergePolicyProvider.getMergePolicy(
+                replicatedMapConfig.getMergePolicyConfig().getPolicy(),
+                replicatedMapConfig.getUserCodeNamespace()
+        );
     }
 
     @Override

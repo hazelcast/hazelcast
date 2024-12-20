@@ -18,10 +18,12 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheMergeResponse;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -127,7 +129,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
         super.readInternal(in);
 
         mergingEntries = SerializationUtil.readList(in);
-        mergePolicy = in.readObject();
+        mergePolicy = NamespaceUtil.callWithNamespace(in::readObject, name, CacheService::lookupNamespace);
     }
 
     @Override

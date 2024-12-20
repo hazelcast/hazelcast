@@ -176,8 +176,12 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
 
     @Override
     protected boolean hasMergeablePolicy(RecordStore store) {
-        String policy = store.getMapContainer().getMapConfig().getMergePolicyConfig().getPolicy();
-        Object mergePolicy = mapServiceContext.getNodeEngine().getSplitBrainMergePolicyProvider().getMergePolicy(policy);
+        var mapConfig = store.getMapContainer().getMapConfig();
+        String policy = mapConfig.getMergePolicyConfig().getPolicy();
+        String namespace = mapConfig.getUserCodeNamespace();
+        Object mergePolicy = mapServiceContext.getNodeEngine()
+                .getSplitBrainMergePolicyProvider()
+                .getMergePolicy(policy, namespace);
         return !(mergePolicy instanceof DiscardMergePolicy);
     }
 }

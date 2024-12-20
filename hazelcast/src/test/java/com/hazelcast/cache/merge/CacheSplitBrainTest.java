@@ -26,7 +26,6 @@ import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -71,14 +70,14 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "format:{0}, mergePolicy:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {BINARY, DiscardMergePolicy.class},
-                {BINARY, HigherHitsMergePolicy.class},
-                {BINARY, LatestAccessMergePolicy.class},
-                {BINARY, PassThroughMergePolicy.class},
-                {BINARY, PutIfAbsentMergePolicy.class},
+                {BINARY, DiscardMergePolicy.class.getName()},
+                {BINARY, HigherHitsMergePolicy.class.getName()},
+                {BINARY, LatestAccessMergePolicy.class.getName()},
+                {BINARY, PassThroughMergePolicy.class.getName()},
+                {BINARY, PutIfAbsentMergePolicy.class.getName()},
 
-                {BINARY, MergeIntegerValuesMergePolicy.class},
-                {OBJECT, MergeIntegerValuesMergePolicy.class},
+                {BINARY, MergeIntegerValuesMergePolicy.class.getName()},
+                {OBJECT, MergeIntegerValuesMergePolicy.class.getName()},
         });
     }
 
@@ -86,7 +85,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
     protected String cacheNameA = randomMapName("cacheA-");
     protected String cacheNameB = randomMapName("cacheB-");
@@ -106,13 +105,13 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setStatisticsEnabled(false)
-                .getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
+                .getMergePolicyConfig().setPolicy(mergePolicyClassName);
         config.getCacheConfig(cacheNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setStatisticsEnabled(false)
-                .getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
+                .getMergePolicyConfig().setPolicy(mergePolicyClassName);
         return config;
     }
 
@@ -135,22 +134,22 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         cacheA2 = secondBrain[0].getCacheManager().getCache(cacheNameA);
         cacheB2 = secondBrain[0].getCacheManager().getCache(cacheNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterSplitDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(HigherHitsMergePolicy.class.getName())) {
             afterSplitHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestAccessMergePolicy.class.getName())) {
             afterSplitLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestUpdateMergePolicy.class.getName())) {
             afterSplitLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterSplitPassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeIntegerValuesMergePolicy.class.getName())) {
             afterSplitCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
     }
 
@@ -164,23 +163,31 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         backupCacheA = TestBackupUtils.newCacheAccessor(instances, cacheNameA);
         backupCacheB = TestBackupUtils.newCacheAccessor(instances, cacheNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(HigherHitsMergePolicy.class.getName())) {
             afterMergeHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestAccessMergePolicy.class.getName())) {
             afterMergeLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestUpdateMergePolicy.class.getName())) {
             afterMergeLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeIntegerValuesMergePolicy.class.getName())) {
             afterMergeCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
+    }
+
+    protected void onAfterSplitBrainHealedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     private void afterSplitDiscardMergePolicy() {
@@ -342,7 +349,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         assertBackupSizeEventually(1, backupCacheB);
     }
 
-    private void afterSplitPutIfAbsentMergePolicy() {
+    protected void afterSplitPutIfAbsentMergePolicy() {
         cacheA1.put("key1", "PutIfAbsentValue1");
 
         cacheA2.put("key1", "value");
@@ -351,7 +358,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         cacheB2.put("key", "PutIfAbsentValue");
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
+    protected void afterMergePutIfAbsentMergePolicy() {
         assertEquals("PutIfAbsentValue1", cacheA1.get("key1"));
         assertEquals("PutIfAbsentValue1", cacheA2.get("key1"));
         assertBackupEntryEqualsEventually("key1", "PutIfAbsentValue1", backupCacheA);

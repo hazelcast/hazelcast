@@ -505,8 +505,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                     Queue<QueueItem> items = container.getItemQueue();
 
                     String name = container.getName();
+                    var config = container.getConfig();
                     SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy
-                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                            = getMergePolicy(config.getMergePolicyConfig(), config.getUserCodeNamespace());
 
                     QueueMergeTypes mergingValue = createMergingValue(serializationService, items);
                     sendBatch(partitionId, name, mergePolicy, mergingValue);

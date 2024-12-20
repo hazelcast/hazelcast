@@ -35,6 +35,11 @@ class CollectionContainerCollector extends AbstractNamedContainerCollector<Colle
     }
 
     @Override
+    protected String getUserNamespaceContainer(CollectionContainer container) {
+        return container.getConfig().getUserCodeNamespace();
+    }
+
+    @Override
     protected void destroy(CollectionContainer container) {
         // owned data is stored in the collection
         container.getCollection().clear();

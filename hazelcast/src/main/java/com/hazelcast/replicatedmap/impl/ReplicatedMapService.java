@@ -21,7 +21,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
@@ -386,8 +385,11 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public Object getMergePolicy(String name) {
-        MergePolicyConfig mergePolicyConfig = getReplicatedMapConfig(name).getMergePolicyConfig();
-        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
+        var replicatedMapConfig = getReplicatedMapConfig(name);
+        return mergePolicyProvider.getMergePolicy(
+                replicatedMapConfig.getMergePolicyConfig().getPolicy(),
+                replicatedMapConfig.getUserCodeNamespace()
+        );
     }
 
     @Override

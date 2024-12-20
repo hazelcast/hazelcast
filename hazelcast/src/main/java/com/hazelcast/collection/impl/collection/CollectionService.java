@@ -16,15 +16,6 @@
 
 package com.hazelcast.collection.impl.collection;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
-
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
@@ -56,6 +47,15 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
@@ -231,8 +231,9 @@ public abstract class CollectionService implements ManagedService, RemoteService
                     Collection<CollectionItem> items = container.getCollection();
 
                     String name = container.getName();
+                    var config = container.getConfig();
                     SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes<Object>, Collection<Object>> mergePolicy
-                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                            = getMergePolicy(config.getMergePolicyConfig(), config.getUserCodeNamespace());
 
                     CollectionMergeTypes<Object> mergingValue = createMergingValue(serializationService, items);
                     sendBatch(partitionId, name, mergePolicy, mergingValue);
@@ -249,6 +250,14 @@ public abstract class CollectionService implements ManagedService, RemoteService
             CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergingValue);
             invoke(getServiceName(), operation, partitionId);
         }
+    }
+
+    public static String lookupNamespace(NodeEngine engine, String serviceName, String setName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            CollectionService service = engine.getService(serviceName);
+            return service.lookupNamespace(setName);
+        }
+        return null;
     }
 
     // For faster access within the service, primary calling points are from static

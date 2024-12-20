@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -61,22 +60,22 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
-                DiscardMergePolicy.class,
-                PassThroughMergePolicy.class,
-                PutIfAbsentMergePolicy.class,
-                RemoveValuesMergePolicy.class,
-                ReturnPiCollectionMergePolicy.class,
-                MergeCollectionOfIntegerValuesMergePolicy.class,
+                DiscardMergePolicy.class.getName(),
+                PassThroughMergePolicy.class.getName(),
+                PutIfAbsentMergePolicy.class.getName(),
+                RemoveValuesMergePolicy.class.getName(),
+                ReturnPiCollectionMergePolicy.class.getName(),
+                MergeCollectionOfIntegerValuesMergePolicy.class.getName(),
         });
     }
 
     @Parameter
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
-    private String listNameA = randomMapName("listA-");
-    private String listNameB = randomMapName("listB-");
-    private IList<Object> listA1;
-    private IList<Object> listA2;
+    protected String listNameA = randomMapName("listA-");
+    protected String listNameB = randomMapName("listB-");
+    protected IList<Object> listA1;
+    protected IList<Object> listA2;
     private IList<Object> listB1;
     private IList<Object> listB2;
     private List<Object> backupList;
@@ -85,7 +84,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected Config config() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(mergePolicyClass.getName())
+                .setPolicy(mergePolicyClassName)
                 .setBatchSize(10);
 
         Config config = super.config();
@@ -112,21 +111,25 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
 
         listB2 = secondBrain[0].getList(listNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterSplitDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterSplitPassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterSplitRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterSplitReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterSplitCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     @Override
@@ -138,21 +141,25 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
 
         listB1 = instances[0].getList(listNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterMergeRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterMergeReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterMergeCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainHealedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     private void afterSplitDiscardMergePolicy() {
@@ -191,7 +198,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
         assertListContent(listB2);
     }
 
-    private void afterSplitPutIfAbsentMergePolicy() {
+    protected void afterSplitPutIfAbsentMergePolicy() {
         for (int i = 0; i < ITEM_COUNT; i++) {
             listA1.add("item" + i);
             listA2.add("lostItem" + i);
@@ -200,7 +207,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
         }
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
+    protected void afterMergePutIfAbsentMergePolicy() {
         assertListContent(listA1);
         assertListContent(listA2);
         assertListContent(backupList);

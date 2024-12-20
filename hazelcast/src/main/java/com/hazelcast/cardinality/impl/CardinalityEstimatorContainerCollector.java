@@ -63,6 +63,11 @@ class CardinalityEstimatorContainerCollector extends AbstractNamedContainerColle
     }
 
     @Override
+    protected String getUserNamespaceContainer(CardinalityEstimatorContainer container) {
+        return null;
+    }
+
+    @Override
     protected void destroy(CardinalityEstimatorContainer container) {
     }
 

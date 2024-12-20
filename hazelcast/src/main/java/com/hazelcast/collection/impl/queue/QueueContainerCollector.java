@@ -35,6 +35,11 @@ class QueueContainerCollector extends AbstractNamedContainerCollector<QueueConta
     }
 
     @Override
+    protected String getUserNamespaceContainer(QueueContainer container) {
+        return container.getConfig().getUserCodeNamespace();
+    }
+
+    @Override
     protected void destroy(QueueContainer container) {
         // owned data is stored in the item queue
         container.getItemQueue().clear();

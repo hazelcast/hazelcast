@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;
@@ -252,7 +253,12 @@ public class MergeOperation extends Operation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         namespace = in.readObject();
-        mergePolicy = in.readObject();
+
+        mergePolicy = NamespaceUtil.callWithNamespace(
+                in::readObject,
+                namespace.getObjectName(),
+                (e, n) -> RingbufferService.lookupUserCodeNamespace(e, namespace.getObjectName(), getPartitionId())
+        );
 
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();

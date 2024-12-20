@@ -17,6 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -83,7 +85,7 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
             List<CacheMergeTypes<Object, Object>> list = SerializationUtil.readList(in);
             mergingEntries[partitionIndex] = list;
         }
-        mergePolicy = in.readObject();
+        mergePolicy = NamespaceUtil.callWithNamespace(in::readObject, name, CacheService::lookupNamespace);
     }
 
     @Override

@@ -285,7 +285,7 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static <T> Class<T> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+    public static <T> Class<T> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
         Class<T> clazz;
         if (!CLASS_CACHE_DISABLED) {
             clazz = CLASS_CACHE.get(classLoader, className);

@@ -49,6 +49,11 @@ class RingbufferContainerCollector extends AbstractContainerCollector<Ringbuffer
     }
 
     @Override
+    protected String getUserNamespaceContainer(RingbufferContainer container) {
+        return container.getUserCodeNamespace();
+    }
+
+    @Override
     protected void destroy(RingbufferContainer container) {
         container.clear();
     }

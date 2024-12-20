@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
@@ -130,7 +131,7 @@ public class MapWanContextTest {
     public void testWanReplicationInitBasicPositive() {
         when(wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)).thenReturn(true);
         when(wanReplicationService.getWanReplicationPublishers(wanReplicationRefName)).thenReturn(delegatingWanScheme);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(wanMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(wanMergePolicy);
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
 
@@ -149,7 +150,7 @@ public class MapWanContextTest {
         mapWanContext.start();
         verify(wanReplicationService, Mockito.never()).hasWanReplicationScheme(anyString());
         verify(wanReplicationService, Mockito.never()).getWanReplicationPublishers(anyString());
-        verify(splitBrainMergePolicyProvider, Mockito.never()).getMergePolicy(anyString());
+        verify(splitBrainMergePolicyProvider, Mockito.never()).getMergePolicy(anyString(), eq(null));
         verify(config, Mockito.never()).getWanReplicationConfig(anyString());
         verify(wanReplicationConfig, Mockito.never()).getConsumerConfig();
         verify(wanConsumerConfig, Mockito.never()).isPersistWanReplicatedData();
@@ -164,7 +165,7 @@ public class MapWanContextTest {
     public void testWanReplicationRestartWhenNewDelegate() {
         when(wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)).thenReturn(true);
         when(wanReplicationService.getWanReplicationPublishers(wanReplicationRefName)).thenReturn(delegatingWanScheme);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(wanMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(wanMergePolicy);
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
 
@@ -184,7 +185,7 @@ public class MapWanContextTest {
     public void testWanReplicationRestartWhenNoReplicationSchemeFound() {
         when(wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)).thenReturn(true);
         when(wanReplicationService.getWanReplicationPublishers(wanReplicationRefName)).thenReturn(delegatingWanScheme);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(wanMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(wanMergePolicy);
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
 
@@ -203,7 +204,7 @@ public class MapWanContextTest {
     @Test
     public void testMergePersistenceValueWhenRestartingWithWanConsumerConfigChange() {
         when(wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)).thenReturn(true);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(wanMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(wanMergePolicy);
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
 
@@ -219,7 +220,7 @@ public class MapWanContextTest {
     @Test
     public void testMergePolicyUpdatesWhenRestartingWithProviderChanges() {
         when(wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)).thenReturn(true);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(wanMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(wanMergePolicy);
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
 
@@ -227,7 +228,7 @@ public class MapWanContextTest {
         assertEquals(wanMergePolicy, mapWanContext.wanMergePolicy);
 
         SplitBrainMergePolicy newMergePolicy = mock(SplitBrainMergePolicy.class);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(newMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(newMergePolicy);
         mapWanContext.start();
         assertEquals(newMergePolicy, mapWanContext.wanMergePolicy);
     }
@@ -254,7 +255,7 @@ public class MapWanContextTest {
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
 
-        when(splitBrainMergePolicyProvider.getMergePolicy(anyString())).thenReturn(null);
+        when(splitBrainMergePolicyProvider.getMergePolicy(anyString(), eq(null))).thenReturn(null);
 
         mapWanContext.start();
         assertFalse(mapWanContext.isWanReplicationEnabled());
@@ -263,7 +264,7 @@ public class MapWanContextTest {
     @Test
     public void testIsWanRepublishingEnabledFalseWhenDisabledInMapConfig() {
         when(wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)).thenReturn(true);
-        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName)).thenReturn(wanMergePolicy);
+        when(splitBrainMergePolicyProvider.getMergePolicy(mergePolicyClassName, null)).thenReturn(wanMergePolicy);
         when(wanReplicationConfig.getConsumerConfig()).thenReturn(wanConsumerConfig);
         when(wanConsumerConfig.isPersistWanReplicatedData()).thenReturn(true);
         when(wanReplicationRef.isRepublishingEnabled()).thenReturn(false);

@@ -16,9 +16,11 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -94,7 +96,11 @@ public class MergeOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        mergePolicy = in.readObject();
+        mergePolicy = NamespaceUtil.callWithNamespace(
+                in::readObject,
+                schedulerName,
+                DistributedScheduledExecutorService::lookupNamespace
+        );
         mergingEntries = SerializationUtil.readList(in);
     }
 }

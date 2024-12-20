@@ -609,8 +609,12 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
 
                 for (MultiMapContainer container : containers) {
                     String name = container.getObjectNamespace().getObjectName();
-                    SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>,
-                            Collection<Object>> mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    SplitBrainMergePolicy<Collection<Object>,
+                            MultiMapMergeTypes<Object, Object>,
+                            Collection<Object>> mergePolicy = getMergePolicy(
+                            container.getConfig().getMergePolicyConfig(),
+                            container.getConfig().getUserCodeNamespace()
+                    );
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
 
                     List<MultiMapMergeContainer> mergeContainers = new ArrayList<>(batchSize);

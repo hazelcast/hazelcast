@@ -30,7 +30,6 @@ import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -71,39 +70,39 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "mergePolicy:{0}, isBinary:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {DiscardMergePolicy.class, true},
-                {DiscardMergePolicy.class, false},
-                {HigherHitsMergePolicy.class, true},
-                {HigherHitsMergePolicy.class, false},
-                {LatestAccessMergePolicy.class, true},
-                {LatestAccessMergePolicy.class, false},
-                {LatestUpdateMergePolicy.class, true},
-                {LatestUpdateMergePolicy.class, false},
-                {PassThroughMergePolicy.class, true},
-                {PassThroughMergePolicy.class, false},
-                {PutIfAbsentMergePolicy.class, true},
-                {PutIfAbsentMergePolicy.class, false},
-                {RemoveValuesMergePolicy.class, true},
-                {RemoveValuesMergePolicy.class, false},
-                {ReturnPiCollectionMergePolicy.class, true},
-                {ReturnPiCollectionMergePolicy.class, false},
-                {MergeCollectionOfIntegerValuesMergePolicy.class, true},
-                {MergeCollectionOfIntegerValuesMergePolicy.class, false},
+                {DiscardMergePolicy.class.getName(), true},
+                {DiscardMergePolicy.class.getName(), false},
+                {HigherHitsMergePolicy.class.getName(), true},
+                {HigherHitsMergePolicy.class.getName(), false},
+                {LatestAccessMergePolicy.class.getName(), true},
+                {LatestAccessMergePolicy.class.getName(), false},
+                {LatestUpdateMergePolicy.class.getName(), true},
+                {LatestUpdateMergePolicy.class.getName(), false},
+                {PassThroughMergePolicy.class.getName(), true},
+                {PassThroughMergePolicy.class.getName(), false},
+                {PutIfAbsentMergePolicy.class.getName(), true},
+                {PutIfAbsentMergePolicy.class.getName(), false},
+                {RemoveValuesMergePolicy.class.getName(), true},
+                {RemoveValuesMergePolicy.class.getName(), false},
+                {ReturnPiCollectionMergePolicy.class.getName(), true},
+                {ReturnPiCollectionMergePolicy.class.getName(), false},
+                {MergeCollectionOfIntegerValuesMergePolicy.class.getName(), true},
+                {MergeCollectionOfIntegerValuesMergePolicy.class.getName(), false},
         });
     }
 
     @Parameter
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
     @Parameter(value = 1)
     public boolean isBinary;
 
-    private String multiMapNameA = randomMapName("multiMapA-");
-    private String multiMapNameB = randomMapName("multiMapB-");
-    private MultiMap<Object, Object> multiMapA1;
-    private MultiMap<Object, Object> multiMapA2;
-    private MultiMap<Object, Object> multiMapB1;
-    private MultiMap<Object, Object> multiMapB2;
+    protected final String multiMapNameA = randomMapName("multiMapA-");
+    protected final String multiMapNameB = randomMapName("multiMapB-");
+    protected MultiMap<Object, Object> multiMapA1;
+    protected MultiMap<Object, Object> multiMapA2;
+    protected MultiMap<Object, Object> multiMapB1;
+    protected MultiMap<Object, Object> multiMapB2;
     private Map<Object, Collection<Object>> backupMultiMapA;
     private Map<Object, Collection<Object>> backupMultiMapB;
     private MergeLifecycleListener mergeLifecycleListener;
@@ -111,7 +110,7 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected Config config() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(mergePolicyClass.getName())
+                .setPolicy(mergePolicyClassName)
                 .setBatchSize(10);
 
         Config config = super.config();
@@ -147,27 +146,31 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         multiMapA2.addEntryListener(listener, true);
         multiMapB2.addEntryListener(listener, true);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterSplitDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(HigherHitsMergePolicy.class.getName())) {
             afterSplitHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestAccessMergePolicy.class.getName())) {
             afterSplitLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestUpdateMergePolicy.class.getName())) {
             afterSplitLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterSplitPassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterSplitRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterSplitReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterSplitCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     @Override
@@ -180,27 +183,31 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         backupMultiMapA = getBackupMultiMap(instances, multiMapNameA);
         backupMultiMapB = getBackupMultiMap(instances, multiMapNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(HigherHitsMergePolicy.class.getName())) {
             afterMergeHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestAccessMergePolicy.class.getName())) {
             afterMergeLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestUpdateMergePolicy.class.getName())) {
             afterMergeLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterMergeRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterMergeReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterMergeCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainHealedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     private void afterSplitDiscardMergePolicy() {
@@ -322,7 +329,7 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         assertMultiMapsSizeB(1);
     }
 
-    private void afterSplitPutIfAbsentMergePolicy() {
+    protected void afterSplitPutIfAbsentMergePolicy() {
         multiMapA1.put("key1", "PutIfAbsentValue1a");
         multiMapA1.put("key1", "PutIfAbsentValue1b");
 
@@ -333,7 +340,7 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         multiMapB2.put("key", "PutIfAbsentValue");
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
+    protected void afterMergePutIfAbsentMergePolicy() {
         assertMultiMapsA("key1", "PutIfAbsentValue1a", "PutIfAbsentValue1b");
         assertMultiMapsA("key2", "PutIfAbsentValue2a", "PutIfAbsentValue2b");
         assertMultiMapsSizeA(4);

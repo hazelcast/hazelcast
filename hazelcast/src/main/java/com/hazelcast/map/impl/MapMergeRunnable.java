@@ -79,7 +79,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
     protected SplitBrainMergePolicy getMergePolicy(String dataStructureName) {
         MapConfig mapConfig = getMapConfig(dataStructureName);
         MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
-        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy(), mapConfig.getUserCodeNamespace());
     }
 
     @Override

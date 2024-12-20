@@ -28,7 +28,6 @@ import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -66,33 +65,33 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "mergePolicy:{0}, format:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {DiscardMergePolicy.class, BINARY},
-                {HigherHitsMergePolicy.class, BINARY},
-                {LatestAccessMergePolicy.class, BINARY},
-                {PassThroughMergePolicy.class, BINARY},
-                {PutIfAbsentMergePolicy.class, BINARY},
-                {RemoveValuesMergePolicy.class, BINARY},
+                {DiscardMergePolicy.class.getName(), BINARY},
+                {HigherHitsMergePolicy.class.getName(), BINARY},
+                {LatestAccessMergePolicy.class.getName(), BINARY},
+                {PassThroughMergePolicy.class.getName(), BINARY},
+                {PutIfAbsentMergePolicy.class.getName(), BINARY},
+                {RemoveValuesMergePolicy.class.getName(), BINARY},
 
-                {ReturnPiMergePolicy.class, BINARY},
-                {ReturnPiMergePolicy.class, OBJECT},
-                {MergeIntegerValuesMergePolicy.class, BINARY},
-                {MergeIntegerValuesMergePolicy.class, OBJECT},
+                {ReturnPiMergePolicy.class.getName(), BINARY},
+                {ReturnPiMergePolicy.class.getName(), OBJECT},
+                {MergeIntegerValuesMergePolicy.class.getName(), BINARY},
+                {MergeIntegerValuesMergePolicy.class.getName(), OBJECT},
         });
     }
 
     @Parameter
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
     @Parameter(value = 1)
     public InMemoryFormat inMemoryFormat;
 
-    private String replicatedMapNameA = randomMapName("replicatedMapA-");
-    private String replicatedMapNameB = randomMapName("replicatedMapB-");
+    protected String replicatedMapNameA = randomMapName("replicatedMapA-");
+    protected final String replicatedMapNameB = randomMapName("replicatedMapB-");
     private String key;
     private String key1;
     private String key2;
-    private ReplicatedMap<Object, Object> replicatedMapA1;
-    private ReplicatedMap<Object, Object> replicatedMapA2;
+    protected ReplicatedMap<Object, Object> replicatedMapA1;
+    protected ReplicatedMap<Object, Object> replicatedMapA2;
     private ReplicatedMap<Object, Object> replicatedMapB1;
     private ReplicatedMap<Object, Object> replicatedMapB2;
     private MergeLifecycleListener mergeLifecycleListener;
@@ -100,7 +99,7 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected Config config() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(mergePolicyClass.getName())
+                .setPolicy(mergePolicyClassName)
                 .setBatchSize(10);
 
         Config config = super.config();
@@ -137,27 +136,31 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         replicatedMapA2 = secondBrain[0].getReplicatedMap(replicatedMapNameA);
         replicatedMapB2 = secondBrain[0].getReplicatedMap(replicatedMapNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterSplitDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(HigherHitsMergePolicy.class.getName())) {
             afterSplitHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestAccessMergePolicy.class.getName())) {
             afterSplitLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestUpdateMergePolicy.class.getName())) {
             afterSplitLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterSplitPassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterSplitRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiMergePolicy.class.getName())) {
             afterSplitReturnPiMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeIntegerValuesMergePolicy.class.getName())) {
             afterSplitCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     @Override
@@ -167,27 +170,31 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
 
         replicatedMapB1 = instances[0].getReplicatedMap(replicatedMapNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(HigherHitsMergePolicy.class.getName())) {
             afterMergeHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestAccessMergePolicy.class.getName())) {
             afterMergeLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(LatestUpdateMergePolicy.class.getName())) {
             afterMergeLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterMergeRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiMergePolicy.class.getName())) {
             afterMergeReturnPiMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeIntegerValuesMergePolicy.class.getName())) {
             afterMergeCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainHealedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     private void afterSplitDiscardMergePolicy() {
@@ -299,7 +306,7 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         assertReplicatedMapsSizeB(1);
     }
 
-    private void afterSplitPutIfAbsentMergePolicy() {
+    protected void afterSplitPutIfAbsentMergePolicy() {
         replicatedMapA1.put(key1, "PutIfAbsentValue1");
 
         replicatedMapA2.put(key1, "value");
@@ -308,7 +315,7 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         replicatedMapB2.put(key, "PutIfAbsentValue");
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
+    protected void afterMergePutIfAbsentMergePolicy() {
         assertReplicatedMapsA(key1, "PutIfAbsentValue1");
         assertReplicatedMapsA(key2, "PutIfAbsentValue2");
         assertReplicatedMapsSizeA(2);
@@ -386,7 +393,7 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         });
     }
 
-    private void assertReplicatedMapsSizeA(int expectedSize) {
+    protected void assertReplicatedMapsSizeA(int expectedSize) {
         assertReplicatedMapsSize(replicatedMapA1, replicatedMapA2, expectedSize);
     }
 

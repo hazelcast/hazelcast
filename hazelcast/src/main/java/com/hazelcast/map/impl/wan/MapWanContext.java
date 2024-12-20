@@ -93,7 +93,10 @@ public class MapWanContext {
             );
         }
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        wanMergePolicy = mergePolicyProvider.getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+        wanMergePolicy = mergePolicyProvider.getMergePolicy(
+                wanReplicationRef.getMergePolicyClassName(),
+                mapConfig.getUserCodeNamespace()
+        );
         checkMapMergePolicy(mapConfig, wanReplicationRef.getMergePolicyClassName(), mergePolicyProvider);
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);

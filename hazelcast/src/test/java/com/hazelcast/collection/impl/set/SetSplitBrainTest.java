@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -61,22 +60,22 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
-                DiscardMergePolicy.class,
-                PassThroughMergePolicy.class,
-                PutIfAbsentMergePolicy.class,
-                RemoveValuesMergePolicy.class,
-                ReturnPiCollectionMergePolicy.class,
-                MergeCollectionOfIntegerValuesMergePolicy.class,
+                DiscardMergePolicy.class.getName(),
+                PassThroughMergePolicy.class.getName(),
+                PutIfAbsentMergePolicy.class.getName(),
+                RemoveValuesMergePolicy.class.getName(),
+                ReturnPiCollectionMergePolicy.class.getName(),
+                MergeCollectionOfIntegerValuesMergePolicy.class.getName(),
         });
     }
 
     @Parameter
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public String mergePolicyClassName;
 
-    private String setNameA = randomMapName("setA-");
-    private String setNameB = randomMapName("setB-");
-    private ISet<Object> setA1;
-    private ISet<Object> setA2;
+    protected String setNameA = randomMapName("setA-");
+    protected String setNameB = randomMapName("setB-");
+    protected ISet<Object> setA1;
+    protected ISet<Object> setA2;
     private ISet<Object> setB1;
     private ISet<Object> setB2;
     private Set<Object> backupSet;
@@ -85,7 +84,7 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected Config config() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(mergePolicyClass.getName())
+                .setPolicy(mergePolicyClassName)
                 .setBatchSize(10);
 
         Config config = super.config();
@@ -112,21 +111,25 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
 
         setB2 = secondBrain[0].getSet(setNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterSplitDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterSplitPassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterSplitRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterSplitReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterSplitCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainCreatedExtension();
         }
+    }
+
+    protected void onAfterSplitBrainCreatedExtension() {
+        fail("Unexpected merge policy parameter");
     }
 
     @Override
@@ -138,23 +141,26 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
 
         setB1 = instances[0].getSet(setNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClassName.equals(DiscardMergePolicy.class.getName())) {
             afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PassThroughMergePolicy.class.getName())) {
             afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(PutIfAbsentMergePolicy.class.getName())) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(RemoveValuesMergePolicy.class.getName())) {
             afterMergeRemoveValuesMergePolicy();
-        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(ReturnPiCollectionMergePolicy.class.getName())) {
             afterMergeReturnPiCollectionMergePolicy();
-        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClassName.equals(MergeCollectionOfIntegerValuesMergePolicy.class.getName())) {
             afterMergeCustomMergePolicy();
         } else {
-            fail();
+            onAfterSplitBrainHealedExtension();
         }
     }
 
+    protected void onAfterSplitBrainHealedExtension() {
+        fail("Unexpected merge policy parameter");
+    }
     private void afterSplitDiscardMergePolicy() {
         for (int i = 0; i < ITEM_COUNT; i++) {
             setA1.add("item" + i);
@@ -191,7 +197,7 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
         assertSetContent(setB2);
     }
 
-    private void afterSplitPutIfAbsentMergePolicy() {
+    protected void afterSplitPutIfAbsentMergePolicy() {
         for (int i = 0; i < ITEM_COUNT; i++) {
             setA1.add("item" + i);
             setA2.add("lostItem" + i);
@@ -200,7 +206,7 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
         }
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
+    protected void afterMergePutIfAbsentMergePolicy() {
         assertSetContent(setA1);
         assertSetContent(setA2);
         assertSetContent(backupSet);

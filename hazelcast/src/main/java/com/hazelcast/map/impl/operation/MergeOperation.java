@@ -367,7 +367,7 @@ public class MergeOperation extends MapOperation
         super.readInternal(in);
 
         mergingEntries = SerializationUtil.readList(in);
-        mergePolicy = in.readObject();
+        mergePolicy = callWithNamespaceAwareness(in::readObject);
         disableWanReplicationEvent = in.readBoolean();
     }
 
