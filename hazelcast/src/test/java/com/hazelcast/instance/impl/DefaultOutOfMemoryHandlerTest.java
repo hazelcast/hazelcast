@@ -56,5 +56,6 @@ public class DefaultOutOfMemoryHandlerTest extends AbstractOutOfMemoryHandlerTes
         outOfMemoryHandler.onOutOfMemory(new OutOfMemoryError(), instances);
 
         assertFalse("The member should be shutdown", hazelcastInstance.getLifecycleService().isRunning());
+        // TODO assert that an event was fired like in NodeShutdownEventsTest (https://github.com/hazelcast/hazelcast/pull/3903)
     }
 }
