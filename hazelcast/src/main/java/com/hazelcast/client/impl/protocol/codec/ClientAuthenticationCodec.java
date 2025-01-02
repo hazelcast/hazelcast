@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("6b8bd769caad86a22e9c83087554f522")
+@Generated("032cb24d54aa5467d78f1d2e4b9d3bb8")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -112,7 +112,7 @@ public final class ClientAuthenticationCodec {
         public java.util.List<java.lang.String> labels;
 
         /**
-         * Identifies the routing mode of the client. It can be UNISCOKET(0), SMART(1) or SUBSET(2).
+         * Identifies the routing mode of the client. It can be UNISOCKET(0), SMART(1) or SUBSET(2).
          */
         public byte routingMode;
 
