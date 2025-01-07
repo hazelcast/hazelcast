@@ -94,7 +94,7 @@
         <janino.version>3.1.10</janino.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <new.debezium.version>2.7.3.Final</new.debezium.version>
-        <grpc.version>1.66.0</grpc.version>
+        <grpc.version>1.69.0</grpc.version>
         <hadoop.version>3.4.0</hadoop.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.28.0</jline.version>
