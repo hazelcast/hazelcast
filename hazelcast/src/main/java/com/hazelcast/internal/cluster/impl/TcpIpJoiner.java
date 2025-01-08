@@ -367,8 +367,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                 AddressMatcher addressMatcher = null;
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());
-                } catch (InvalidAddressException ignore) {
-                    ignore(ignore);
+                } catch (InvalidAddressException e) {
+                    ignore(e);
                 }
                 if (addressMatcher != null) {
                     final Collection<String> matchedAddresses;
