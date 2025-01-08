@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the size of the set.
  */
 @SuppressWarnings("unused")
-@Generated("2651c27ca976e3eeab190398303eb558")
+@Generated("fc2827c55a66f7a8ea47dd2aee6bef69")
 public final class TransactionalSetSizeCodec {
     //hex: 0x100300
     public static final int REQUEST_MESSAGE_TYPE = 1049344;

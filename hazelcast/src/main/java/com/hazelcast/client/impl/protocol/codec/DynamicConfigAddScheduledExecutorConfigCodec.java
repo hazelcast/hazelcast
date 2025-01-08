@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("7c87344a1e44628c66e43ee587b7c188")
+@Generated("0c0b6b005366e410a9614a656e0eda77")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;

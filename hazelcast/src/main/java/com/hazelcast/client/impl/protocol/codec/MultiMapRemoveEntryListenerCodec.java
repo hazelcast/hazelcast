@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("bd355757c04c7c189787b6155dd48b50")
+@Generated("a3727f763aa521d91d34378fb102483e")
 public final class MultiMapRemoveEntryListenerCodec {
     //hex: 0x020F00
     public static final int REQUEST_MESSAGE_TYPE = 134912;

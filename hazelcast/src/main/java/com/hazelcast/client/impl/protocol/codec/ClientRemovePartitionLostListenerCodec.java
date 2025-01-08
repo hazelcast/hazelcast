@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("0f31502d1338bd15bd14ab9dba878151")
+@Generated("144c96bd584f5d52f0ba377db41fa0e8")
 public final class ClientRemovePartitionLostListenerCodec {
     //hex: 0x000700
     public static final int REQUEST_MESSAGE_TYPE = 1792;

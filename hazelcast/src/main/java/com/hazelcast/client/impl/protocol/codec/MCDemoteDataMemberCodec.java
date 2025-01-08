@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * May throw an exception if the operation is not successful.
  */
 @SuppressWarnings("unused")
-@Generated("98e8ade2654d11a656083b088ecb3148")
+@Generated("e5d7ed2edac027d816f6c6371a0a71ec")
 public final class MCDemoteDataMemberCodec {
     //hex: 0x202500
     public static final int REQUEST_MESSAGE_TYPE = 2106624;

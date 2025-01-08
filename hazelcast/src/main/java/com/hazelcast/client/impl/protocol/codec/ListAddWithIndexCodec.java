@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
  */
 @SuppressWarnings("unused")
-@Generated("59b0f6c5a4f6cd8bfd4c73eec7a8ae4e")
+@Generated("428d36e588596ddaa4e75a92d7f6f893")
 public final class ListAddWithIndexCodec {
     //hex: 0x051100
     public static final int REQUEST_MESSAGE_TYPE = 332032;

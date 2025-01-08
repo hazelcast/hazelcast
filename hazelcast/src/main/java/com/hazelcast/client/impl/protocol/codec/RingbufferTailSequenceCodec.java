@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The initial value of the tail is -1.
  */
 @SuppressWarnings("unused")
-@Generated("8d20954136964dc210829bbc99469cba")
+@Generated("e274ba7faea3b8dbc5658e8d0bca6e58")
 public final class RingbufferTailSequenceCodec {
     //hex: 0x170200
     public static final int REQUEST_MESSAGE_TYPE = 1507840;

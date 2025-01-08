@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("3dff47205cb3cb801e906a7fbf2117c3")
+@Generated("22fb55beabd1d27687340eec5c92529e")
 public final class RaftGroupIdCodec {
     private static final int SEED_FIELD_OFFSET = 0;
     private static final int ID_FIELD_OFFSET = SEED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

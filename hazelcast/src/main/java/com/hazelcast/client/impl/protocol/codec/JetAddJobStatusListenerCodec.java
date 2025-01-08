@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a JobStatusListener to the specified job.
  */
 @SuppressWarnings("unused")
-@Generated("bf17b1b3a88dee3018831bee8f0de2bc")
+@Generated("ec31fd64f0e25321b8de1303b2745e1f")
 public final class JetAddJobStatusListenerCodec {
     //hex: 0xFE1300
     public static final int REQUEST_MESSAGE_TYPE = 16651008;

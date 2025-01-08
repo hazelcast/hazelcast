@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ public class DefaultNodeExtension implements NodeExtension {
       o    o *       o o---o   o--o o----o o---o *       o o----o    o
       """.indent(4);
 
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("94be755b5bdb65744d91d28c520cc7ef")
+@Generated("d7cb8d750092ed5465d48c5570218eff")
 public final class CapacityCodec {
     private static final int VALUE_FIELD_OFFSET = 0;
     private static final int UNIT_FIELD_OFFSET = VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

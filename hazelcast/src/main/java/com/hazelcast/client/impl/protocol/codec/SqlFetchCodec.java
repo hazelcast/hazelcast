@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the next row page.
  */
 @SuppressWarnings("unused")
-@Generated("f362799312deb4f5e9ab63dc11b71381")
+@Generated("ccfc7a7a47eae9b3b63d48b0f079129e")
 public final class SqlFetchCodec {
     //hex: 0x210500
     public static final int REQUEST_MESSAGE_TYPE = 2163968;

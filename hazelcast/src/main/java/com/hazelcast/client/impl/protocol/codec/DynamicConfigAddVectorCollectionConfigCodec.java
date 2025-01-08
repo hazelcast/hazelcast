@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a new vector collection configuration to a running cluster.
  */
 @SuppressWarnings("unused")
-@Generated("678540d35444179dff55f7553c5eb1ae")
+@Generated("928146a9125c61f60bc8d582299fc7af")
 public final class DynamicConfigAddVectorCollectionConfigCodec {
     //hex: 0x1B1400
     public static final int REQUEST_MESSAGE_TYPE = 1774592;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Size of vector collection.
  */
 @SuppressWarnings("unused")
-@Generated("2024ea4e3b8a85a8f7461eef18e268de")
+@Generated("71c80775730d5bac60c400f8d5a3071e")
 public final class VectorCollectionSizeCodec {
     //hex: 0x240B00
     public static final int REQUEST_MESSAGE_TYPE = 2362112;

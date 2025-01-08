@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * add/remove/update/evict events of the specified key only.
  */
 @SuppressWarnings("unused")
-@Generated("c691f65968f20e07ffe2c129f10a702c")
+@Generated("274dafd2787285db8ff118bf1f106f82")
 public final class ReplicatedMapAddEntryListenerToKeyCodec {
     //hex: 0x0D0C00
     public static final int REQUEST_MESSAGE_TYPE = 855040;

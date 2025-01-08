@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("7ee2ff910b2562151f4dcc002a69aa72")
+@Generated("cd31251201375b861dcd020ff5ea83ef")
 public final class CacheSimpleEntryListenerConfigCodec {
     private static final int OLD_VALUE_REQUIRED_FIELD_OFFSET = 0;
     private static final int SYNCHRONOUS_FIELD_OFFSET = OLD_VALUE_REQUIRED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

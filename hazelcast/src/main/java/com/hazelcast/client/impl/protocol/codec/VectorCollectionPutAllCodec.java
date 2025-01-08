@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The API implementation using this request may need to send multiple of these request messages for different partitions.
  */
 @SuppressWarnings("unused")
-@Generated("0cce66f29c78d511d8349c50b8d46208")
+@Generated("cf1365a26235fbd4418758a030548506")
 public final class VectorCollectionPutAllCodec {
     //hex: 0x240300
     public static final int REQUEST_MESSAGE_TYPE = 2360064;

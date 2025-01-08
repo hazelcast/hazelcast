@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to be deleted will be removed from only the current transaction context until the transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("abd41cc37484d2cdd2e7b6e38f67d42a")
+@Generated("86b49ad8c7824f6d3f36cd7aba94caa4")
 public final class TransactionalMapDeleteCodec {
     //hex: 0x0E0C00
     public static final int REQUEST_MESSAGE_TYPE = 920576;

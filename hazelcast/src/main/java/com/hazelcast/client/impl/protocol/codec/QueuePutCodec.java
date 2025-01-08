@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
 @SuppressWarnings("unused")
-@Generated("5c56879ac3047c93897fb2704f9b5df5")
+@Generated("1cf83e9e2d92945c3ba351a9a5eb5427")
 public final class QueuePutCodec {
     //hex: 0x030200
     public static final int REQUEST_MESSAGE_TYPE = 197120;

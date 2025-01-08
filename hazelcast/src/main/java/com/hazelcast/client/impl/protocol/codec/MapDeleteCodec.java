@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
  */
 @SuppressWarnings("unused")
-@Generated("ef7af7a622f146afce3944fdd7426ac7")
+@Generated("9d7093c7f00f37c610b719827f9066c5")
 public final class MapDeleteCodec {
     //hex: 0x010900
     public static final int REQUEST_MESSAGE_TYPE = 67840;

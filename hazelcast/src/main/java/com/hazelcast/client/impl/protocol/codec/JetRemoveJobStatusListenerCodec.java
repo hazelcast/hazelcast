@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * added before, this call does no change in the cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("5cca0666d2fe6baff470d2a10bd8d79b")
+@Generated("49831da1e13040b1ce9a1a4ca1223d3b")
 public final class JetRemoveJobStatusListenerCodec {
     //hex: 0xFE1400
     public static final int REQUEST_MESSAGE_TYPE = 16651264;

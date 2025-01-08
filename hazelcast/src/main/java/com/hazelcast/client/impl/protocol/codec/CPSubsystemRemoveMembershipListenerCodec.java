@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Deregisters CP membership listener.
  */
 @SuppressWarnings("unused")
-@Generated("eafc292fadc925b5dc5d70e0a6c47eb6")
+@Generated("1430b11b8dd495e235bf61116c970a7b")
 public final class CPSubsystemRemoveMembershipListenerCodec {
     //hex: 0x220200
     public static final int REQUEST_MESSAGE_TYPE = 2228736;

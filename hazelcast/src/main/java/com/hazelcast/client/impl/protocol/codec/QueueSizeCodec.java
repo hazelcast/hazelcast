@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * elements, returns Integer.MAX_VALUE
  */
 @SuppressWarnings("unused")
-@Generated("d5f6dd6c8a92bf1cb82f19c10e2865d8")
+@Generated("6896903af4968226bbd116b00b00171a")
 public final class QueueSizeCodec {
     //hex: 0x030300
     public static final int REQUEST_MESSAGE_TYPE = 197376;

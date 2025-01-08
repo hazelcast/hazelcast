@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the system properties of the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("e17987983d385d931e5d100112c68fad")
+@Generated("9ebda9717e8090271aa65fd5eee93cf7")
 public final class MCGetSystemPropertiesCodec {
     //hex: 0x200A00
     public static final int REQUEST_MESSAGE_TYPE = 2099712;

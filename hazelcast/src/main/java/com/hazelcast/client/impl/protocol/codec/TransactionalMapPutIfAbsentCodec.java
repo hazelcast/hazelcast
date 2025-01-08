@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The object to be put will be accessible only in the current transaction context until the transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("e49a59d23b373415b03bf3ac1ece2143")
+@Generated("d9d07fcc275d14113c11c2711757e9ce")
 public final class TransactionalMapPutIfAbsentCodec {
     //hex: 0x0E0800
     public static final int REQUEST_MESSAGE_TYPE = 919552;

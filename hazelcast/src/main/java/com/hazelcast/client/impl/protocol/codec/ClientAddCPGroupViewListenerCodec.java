@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a CP Group view listener to a connection.
  */
 @SuppressWarnings("unused")
-@Generated("407481d83a72b637c80589ae11c1ce3e")
+@Generated("c5c2971f33bbf3aee2d21564f9729404")
 public final class ClientAddCPGroupViewListenerCodec {
     //hex: 0x001700
     public static final int REQUEST_MESSAGE_TYPE = 5888;

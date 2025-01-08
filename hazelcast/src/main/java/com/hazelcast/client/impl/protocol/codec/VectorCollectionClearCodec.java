@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Clear vector collection.
  */
 @SuppressWarnings("unused")
-@Generated("5478ae0a5d32f77ef9d99a6121806021")
+@Generated("c421767d386146d2403edc745a3e44fe")
 public final class VectorCollectionClearCodec {
     //hex: 0x240A00
     public static final int REQUEST_MESSAGE_TYPE = 2361856;

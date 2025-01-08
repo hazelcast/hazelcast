@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * events filtered by the given predicate.
  */
 @SuppressWarnings("unused")
-@Generated("d23507aa13cf954d1c0e78073aee6399")
+@Generated("a8adf0a291fa73e433e58cb3aae59d10")
 public final class ReplicatedMapAddEntryListenerWithPredicateCodec {
     //hex: 0x0D0B00
     public static final int REQUEST_MESSAGE_TYPE = 854784;

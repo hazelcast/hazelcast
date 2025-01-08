@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("d7cde1a8401c1cac2be8274feb965d35")
+@Generated("adbe2a0840b9a2c8b07f01b90b7085d3")
 public final class NearCacheConfigHolderCodec {
     private static final int SERIALIZE_KEYS_FIELD_OFFSET = 0;
     private static final int INVALIDATE_ON_CHANGE_FIELD_OFFSET = SERIALIZE_KEYS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
