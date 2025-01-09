@@ -19,7 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;

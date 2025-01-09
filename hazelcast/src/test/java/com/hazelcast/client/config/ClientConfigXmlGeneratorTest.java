@@ -17,7 +17,6 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;

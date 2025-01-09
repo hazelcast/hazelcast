@@ -25,7 +25,7 @@ import java.util.UUID;
 
 /**
  * Used instead of null when {@link ClusterRoutingConfig#getRoutingMode()} is not
- * set to {@link com.hazelcast.client.impl.connection.tcp.RoutingMode#MULTI_MEMBER}.
+ * set to {@link com.hazelcast.client.config.RoutingMode#MULTI_MEMBER}.
  */
 class NoopSubsetMembers implements SubsetMembers {
 

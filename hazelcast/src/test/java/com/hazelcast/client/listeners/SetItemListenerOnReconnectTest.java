@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemEvent;

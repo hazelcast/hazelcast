@@ -18,7 +18,7 @@ package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;

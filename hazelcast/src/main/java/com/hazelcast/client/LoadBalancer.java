@@ -24,7 +24,7 @@ import com.hazelcast.cluster.Member;
  * {@link LoadBalancer} allows you to send operations to one of a number of endpoints (members).
  * It is up to the implementation to use different load balancing policies.
  * <p>
- * If the client is not configured with {@link com.hazelcast.client.impl.connection.tcp.RoutingMode#SINGLE_MEMBER},
+ * If the client is not configured with {@link com.hazelcast.client.config.RoutingMode#SINGLE_MEMBER},
  * operations that are not key-based will be routed to the endpoint returned by the LoadBalancer. For
  * SINGLE_MEMBER routing clients, the {@link LoadBalancer} is not used.
  * <p>

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;

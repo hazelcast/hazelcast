@@ -31,8 +31,8 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
+import static com.hazelcast.client.config.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.config.RoutingMode.SINGLE_MEMBER;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

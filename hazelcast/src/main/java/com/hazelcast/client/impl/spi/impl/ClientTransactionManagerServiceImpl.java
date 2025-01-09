@@ -22,7 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;

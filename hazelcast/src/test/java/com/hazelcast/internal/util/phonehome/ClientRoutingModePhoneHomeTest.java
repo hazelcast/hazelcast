@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.test.TestAwareClientFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;

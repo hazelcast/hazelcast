@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestAwareClientFactory;
 import com.hazelcast.client.util.ConfigRoutingUtil;

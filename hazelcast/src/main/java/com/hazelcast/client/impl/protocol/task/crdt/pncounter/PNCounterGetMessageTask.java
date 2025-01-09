@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.crdt.pncounter;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec.RequestParameters;

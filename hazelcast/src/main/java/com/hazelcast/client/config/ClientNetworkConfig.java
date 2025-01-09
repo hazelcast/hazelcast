@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;

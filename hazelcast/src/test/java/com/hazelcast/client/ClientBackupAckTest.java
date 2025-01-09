@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -38,9 +38,9 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.MULTI_MEMBER;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
+import static com.hazelcast.client.config.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.config.RoutingMode.MULTI_MEMBER;
+import static com.hazelcast.client.config.RoutingMode.SINGLE_MEMBER;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 

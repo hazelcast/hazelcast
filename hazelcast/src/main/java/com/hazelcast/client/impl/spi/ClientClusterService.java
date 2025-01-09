@@ -98,7 +98,7 @@ public interface ClientClusterService {
 
     /**
      * Returns this client's view of member group subsets, used when the
-     * {@link com.hazelcast.client.impl.connection.tcp.RoutingMode#MULTI_MEMBER}
+     * {@link com.hazelcast.client.config.RoutingMode#MULTI_MEMBER}
      * routing mode is set on the client.
      *
      * @return the {@link SubsetMembers} view.

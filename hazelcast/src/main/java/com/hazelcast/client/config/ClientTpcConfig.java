@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;

@@ -22,7 +22,7 @@ import com.hazelcast.client.config.ClusterRoutingConfig;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.client.impl.clientside.SubsetMembersView;
 import com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPGroupsSnapshot;

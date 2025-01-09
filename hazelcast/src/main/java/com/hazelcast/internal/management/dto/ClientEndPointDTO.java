@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;

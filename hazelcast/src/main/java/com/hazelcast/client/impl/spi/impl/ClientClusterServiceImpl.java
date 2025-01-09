@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.SubsetMembers;
 import com.hazelcast.client.impl.connection.ClientConnection;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.util.ClientConnectivityLogger;

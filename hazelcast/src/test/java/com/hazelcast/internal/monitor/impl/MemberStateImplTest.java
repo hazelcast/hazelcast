@@ -17,7 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;

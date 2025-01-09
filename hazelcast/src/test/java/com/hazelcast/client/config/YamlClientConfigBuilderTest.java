@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;

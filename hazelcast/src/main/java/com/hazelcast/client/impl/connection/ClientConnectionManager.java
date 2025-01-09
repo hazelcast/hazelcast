@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.internal.nio.ConnectionListenable;
 

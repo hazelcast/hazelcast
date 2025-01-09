@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.core.HazelcastException;
 

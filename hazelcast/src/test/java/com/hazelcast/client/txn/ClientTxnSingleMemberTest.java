@@ -18,7 +18,7 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.util.AbstractLoadBalancer;

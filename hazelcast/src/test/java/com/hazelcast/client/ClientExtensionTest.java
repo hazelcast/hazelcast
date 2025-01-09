@@ -21,7 +21,7 @@ import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.clientside.DefaultClientExtension;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.config.InvalidConfigurationException;

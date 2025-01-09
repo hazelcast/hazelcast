@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.connection.tcp;
-
-import com.hazelcast.client.config.RoutingStrategy;
+package com.hazelcast.client.config;
 
 /**
  * <p>Clients can connect to cluster members in one of 3 modes:</p>
@@ -26,12 +24,10 @@ import com.hazelcast.client.config.RoutingStrategy;
  *     <li>{@code MULTI_MEMBER}: Client only connects to a subset of members based on {@link RoutingStrategy}.</li>
  * </ul>
  * <p>The {@code UNKNOWN} enumeration represents a state where the client's
- * {@link RoutingMode} is not known, usually due to < 5.5 client versions</p>
+ * {@link RoutingMode} is not known, due to < 5.5 client versions</p>
  *
- * @deprecated since 5.5.4, this enumeration is replaced by {@link com.hazelcast.client.config.RoutingMode} which
- * exists in the correct public API package. This enumeration will be removed in a future version.
+ * @since 5.5.4
  */
-@Deprecated(since = "5.5.4", forRemoval = true)
 public enum RoutingMode {
     /**
      * Represents a single member routing mode, previously known as `UNISOCKET`.
@@ -49,7 +45,7 @@ public enum RoutingMode {
     MULTI_MEMBER(2),
 
     /**
-     * Represents an unknown routing mode, usually because of a pre-5.5 client
+     * Represents an unknown routing mode, due to < 5.5 client versions
      * <b>Note: This mode should never be configured as a {@link RoutingMode}</b>
      */
     UNKNOWN(-1);

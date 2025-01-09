@@ -15,7 +15,7 @@
  */
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;

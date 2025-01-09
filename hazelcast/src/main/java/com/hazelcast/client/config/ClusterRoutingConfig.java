@@ -18,7 +18,6 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.UnsupportedRoutingModeException;
 import com.hazelcast.client.UnsupportedClusterVersionException;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 
 import java.util.Objects;
 
@@ -76,6 +75,20 @@ public class ClusterRoutingConfig {
      */
     public RoutingMode getRoutingMode() {
         return routingMode;
+    }
+
+    /**
+     * Sets the {@link RoutingMode} for this client to use when connecting to cluster members.
+     *
+     * @param routingMode the legacy {@link RoutingMode} enumeration value to use
+     * @return this configuration.
+     *
+     * @deprecated since 5.5.4, use {@link #setRoutingMode(RoutingMode)} instead.
+     */
+    @Deprecated(since = "5.5.4", forRemoval = true)
+    public ClusterRoutingConfig setRoutingMode(com.hazelcast.client.impl.connection.tcp.RoutingMode routingMode) {
+        this.routingMode = RoutingMode.valueOf(routingMode.name());
+        return this;
     }
 
     /**

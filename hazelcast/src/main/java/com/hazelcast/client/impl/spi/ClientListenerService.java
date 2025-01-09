@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 
 import javax.annotation.Nonnull;

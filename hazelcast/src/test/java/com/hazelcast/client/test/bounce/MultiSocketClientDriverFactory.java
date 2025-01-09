@@ -17,7 +17,7 @@
 package com.hazelcast.client.test.bounce;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.core.HazelcastInstance;
 
 /**

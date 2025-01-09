@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.InvalidConfigurationException;

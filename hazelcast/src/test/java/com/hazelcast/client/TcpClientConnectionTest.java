@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -54,8 +54,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
+import static com.hazelcast.client.config.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.config.RoutingMode.SINGLE_MEMBER;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.junit.Assert.assertEquals;

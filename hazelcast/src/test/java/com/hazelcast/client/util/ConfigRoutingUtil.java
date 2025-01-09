@@ -18,7 +18,7 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 
 /**
  * Utility for creating and modifying {@link ClientConfig} instances

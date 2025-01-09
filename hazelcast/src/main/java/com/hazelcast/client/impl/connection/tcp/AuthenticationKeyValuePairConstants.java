@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.connection.tcp;
 import com.hazelcast.client.UnsupportedClusterVersionException;
 import com.hazelcast.client.UnsupportedRoutingModeException;
 import com.hazelcast.client.config.ClusterRoutingConfig;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.version.Version;
 

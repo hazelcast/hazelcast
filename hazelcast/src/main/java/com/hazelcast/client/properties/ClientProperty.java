@@ -17,7 +17,7 @@
 package com.hazelcast.client.properties;
 
 import com.hazelcast.client.config.ClientMetricsConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;

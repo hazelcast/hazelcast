@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstance;
 import com.hazelcast.client.impl.connection.ClientConnection;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;

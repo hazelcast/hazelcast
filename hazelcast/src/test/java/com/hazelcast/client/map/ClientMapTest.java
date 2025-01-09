@@ -17,7 +17,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.map.helpers.GenericEvent;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -82,8 +82,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.ALL_MEMBERS;
-import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SINGLE_MEMBER;
+import static com.hazelcast.client.config.RoutingMode.ALL_MEMBERS;
+import static com.hazelcast.client.config.RoutingMode.SINGLE_MEMBER;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;

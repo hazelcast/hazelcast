@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClusterViewListenerService;
-import com.hazelcast.client.impl.connection.tcp.RoutingMode;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.ClusterViewListenerService.PartitionsView;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
