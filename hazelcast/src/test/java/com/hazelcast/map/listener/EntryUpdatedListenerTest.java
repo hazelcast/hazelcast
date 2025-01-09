@@ -17,6 +17,9 @@
 package com.hazelcast.map.listener;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptorAdaptor;
@@ -33,12 +36,16 @@ import org.junit.runners.Parameterized;
 
 import java.io.Serial;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -118,6 +125,61 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
         assertEqualsStringFormat(
                 "Initial value provided (%s) does not match old value observed by MapInterceptor.interceptPut (%s)", initial,
                 interceptorOldValue.get());
+    }
+
+    @Test
+    public void testEntryValueVisibilityMatchesConfiguration_WithoutValue() {
+        testEntryValueVisibilityMatchesConfiguration(false);
+    }
+
+    @Test
+    public void testEntryValueVisibilityMatchesConfiguration_WithValue() {
+        testEntryValueVisibilityMatchesConfiguration(true);
+    }
+
+    private void testEntryValueVisibilityMatchesConfiguration(boolean includeValue) {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setProperty(MapServiceContext.PROP_FORCE_OFFLOAD_ALL_OPERATIONS, String.valueOf(offload));
+
+        // Configure both local & remote listeners for our map
+        final String mapName = randomMapName();
+        final HasValueEntryListener localListener = new HasValueEntryListener();
+        final HasValueEntryListener remoteListener = new HasValueEntryListener();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.addEntryListenerConfig(new EntryListenerConfig(localListener, true, includeValue));
+        mapConfig.addEntryListenerConfig(new EntryListenerConfig(remoteListener, false, includeValue));
+
+        // Start the instance, insert into the map, then update the value
+        final HazelcastInstance instance = createHazelcastInstanceFactory().newHazelcastInstance(config);
+        final IMap<String, String> map = instance.getMap(mapName);
+        map.put("key", "previousValue");
+        map.put("key", "newValue");
+
+        // Wait for and assert condition of listeners
+        validateListenerOutput(localListener, true, includeValue);
+        validateListenerOutput(remoteListener, false, includeValue);
+    }
+
+    private static void validateListenerOutput(HasValueEntryListener listener, boolean local, boolean expectsValues) {
+        try {
+            listener.entryReceivedLatch.await(ASSERT_COMPLETES_STALL_TOLERANCE, TimeUnit.SECONDS);
+            assertThat(listener.values).allMatch(expectsValues ? Objects::nonNull : Objects::isNull,
+                    String.format("Expected %s listener to %s values!", local ? "local" : "remote",
+                            expectsValues ? "include" : "not include"));
+        } catch (InterruptedException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    private static class HasValueEntryListener implements EntryUpdatedListener<String, String> {
+        private final CountDownLatch entryReceivedLatch = new CountDownLatch(1);
+        private volatile Object[] values;
+
+        @Override
+        public void entryUpdated(EntryEvent<String, String> event) {
+            values = new Object[]{event.getValue(), event.getOldValue()};
+            entryReceivedLatch.countDown();
+        }
     }
 
     /**

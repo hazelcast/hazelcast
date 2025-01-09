@@ -576,7 +576,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener);
 
-        return addLocalEntryListenerInternal(listener);
+        return addLocalEntryListenerInternal(listener, true);
     }
 
     @Override

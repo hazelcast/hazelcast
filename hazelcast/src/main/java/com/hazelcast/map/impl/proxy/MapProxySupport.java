@@ -285,7 +285,7 @@ abstract class MapProxySupport<K, V>
             MapListener listener = initializeListener(listenerConfig);
             if (listener != null) {
                 if (listenerConfig.isLocal()) {
-                    addLocalEntryListenerInternal(listener);
+                    addLocalEntryListenerInternal(listener, listenerConfig.isIncludeValue());
                 } else {
                     addEntryListenerInternal(listener, null, listenerConfig.isIncludeValue());
                 }
@@ -1205,8 +1205,8 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public UUID addLocalEntryListenerInternal(Object listener) {
-        return addLocalEntryListenerInternal(listener, TruePredicate.INSTANCE, null, true);
+    public UUID addLocalEntryListenerInternal(Object listener, boolean includeValue) {
+        return addLocalEntryListenerInternal(listener, TruePredicate.INSTANCE, null, includeValue);
     }
 
     public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
