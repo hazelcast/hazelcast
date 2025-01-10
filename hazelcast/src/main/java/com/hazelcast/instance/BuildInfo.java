@@ -45,7 +45,7 @@ public class BuildInfo {
      */
     private final MemberVersion lastLtsVersion;
     /**
-     * TODO Will be removed in HZG-272 after 5.5.4 merge.
+     * TODO Will be removed in HZG-272 after 5.5.3 merge.
      */
     private final String lastLtsVersionString;
     /**

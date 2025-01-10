@@ -83,9 +83,9 @@ public class ClusterRoutingConfig {
      * @param routingMode the legacy {@link RoutingMode} enumeration value to use
      * @return this configuration.
      *
-     * @deprecated since 5.5.4, use {@link #setRoutingMode(RoutingMode)} instead.
+     * @deprecated since 5.5.3, use {@link #setRoutingMode(RoutingMode)} instead.
      */
-    @Deprecated(since = "5.5.4", forRemoval = true)
+    @Deprecated(since = "5.5.3", forRemoval = true)
     public ClusterRoutingConfig setRoutingMode(com.hazelcast.client.impl.connection.tcp.RoutingMode routingMode) {
         this.routingMode = RoutingMode.valueOf(routingMode.name());
         return this;

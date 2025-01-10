@@ -26,7 +26,7 @@ package com.hazelcast.client.config;
  * <p>The {@code UNKNOWN} enumeration represents a state where the client's
  * {@link RoutingMode} is not known, due to < 5.5 client versions</p>
  *
- * @since 5.5.4
+ * @since 5.5.3
  */
 public enum RoutingMode {
     /**
