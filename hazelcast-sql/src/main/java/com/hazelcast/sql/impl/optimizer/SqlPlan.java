@@ -71,5 +71,7 @@ public abstract class SqlPlan {
      */
     public abstract boolean producesRows();
 
+    public abstract boolean supportsTimeout();
+
     public abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc);
 }

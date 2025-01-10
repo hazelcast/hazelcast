@@ -156,6 +156,11 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
         }
 
         @Override
+        public boolean supportsTimeout() {
+            return true;
+        }
+
+        @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             throw new UnsupportedOperationException();
         }
