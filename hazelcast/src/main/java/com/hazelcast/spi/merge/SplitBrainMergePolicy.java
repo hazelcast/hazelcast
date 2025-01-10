@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Policy for merging data structure values
@@ -63,8 +64,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * @param <R> the type of the merged value as returned by {@link #merge(MergingValue, MergingValue)}
  * @since 3.10
  */
-public interface SplitBrainMergePolicy<V, T extends MergingValue<V>, R>
-        extends DataSerializable {
+@NamespacesSupported
+public interface SplitBrainMergePolicy<V, T extends MergingValue<V>, R> extends DataSerializable {
 
     /**
      * Selects the value of either the merging or the
