@@ -22,8 +22,6 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Executor;
@@ -168,8 +166,8 @@ public final class NioChannel extends AbstractChannel {
 //        Date date = new Date();
 //        return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " " + s;
 //    }
-
-    private String getPort(SocketAddress socketAddress) {
-        return socketAddress == null ? "*missing*" : Integer.toString(((InetSocketAddress) socketAddress).getPort());
-    }
+//
+//    private String getPort(SocketAddress socketAddress) {
+//        return socketAddress == null ? "*missing*" : Integer.toString(((InetSocketAddress) socketAddress).getPort());
+//    }
 }

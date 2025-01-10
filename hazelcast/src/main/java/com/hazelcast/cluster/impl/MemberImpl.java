@@ -61,7 +61,7 @@ public final class MemberImpl
         this(newHashMap(MEMBER, address), address, version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
-    private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
+    protected MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
                        UUID uuid, Map<String, String> attributes, boolean liteMember, int memberListJoinVersion,
                        HazelcastInstanceImpl instance) {
         this(addresses, addresses.get(MEMBER), version, localMember, uuid, attributes, liteMember, memberListJoinVersion,

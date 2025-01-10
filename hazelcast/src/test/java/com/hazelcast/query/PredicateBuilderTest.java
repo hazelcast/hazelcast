@@ -113,10 +113,6 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
             this.id = id;
         }
 
-        private String getId() {
-            return id;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -145,10 +141,6 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         private Value(String name) {
             this.name = name;
-        }
-
-        private String getName() {
-            return name;
         }
 
         @Override

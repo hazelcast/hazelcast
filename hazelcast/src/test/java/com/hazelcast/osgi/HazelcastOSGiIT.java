@@ -31,7 +31,6 @@ import org.ops4j.pax.url.maven.commons.MavenConstants;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 
 import javax.inject.Inject;
 
@@ -78,13 +77,5 @@ class HazelcastOSGiIT {
         } else {
             System.setProperty(MAVEN_REPOSITORIES_PROP, oldMavenRepoProperty);
         }
-    }
-
-    private HazelcastOSGiService getService() {
-        ServiceReference serviceRef = bundleContext.getServiceReference(HazelcastOSGiService.class.getName());
-        if (serviceRef == null) {
-            return null;
-        }
-        return (HazelcastOSGiService) bundleContext.getService(serviceRef);
     }
 }

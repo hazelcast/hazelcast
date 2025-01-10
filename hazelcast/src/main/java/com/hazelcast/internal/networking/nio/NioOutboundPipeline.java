@@ -530,16 +530,16 @@ public final class NioOutboundPipeline
     }
 
     // useful for debugging
-    private String pipelineToString() {
-        StringBuilder sb = new StringBuilder("out-pipeline[");
-        OutboundHandler[] handlers = this.handlers;
-        for (int k = 0; k < handlers.length; k++) {
-            if (k > 0) {
-                sb.append("->-");
-            }
-            sb.append(handlers[k].getClass().getSimpleName());
-        }
-        sb.append(']');
-        return sb.toString();
-    }
+//    private String pipelineToString() {
+//        StringBuilder sb = new StringBuilder("out-pipeline[");
+//        OutboundHandler[] handlers = this.handlers;
+//        for (int k = 0; k < handlers.length; k++) {
+//            if (k > 0) {
+//                sb.append("->-");
+//            }
+//            sb.append(handlers[k].getClass().getSimpleName());
+//        }
+//        sb.append(']');
+//        return sb.toString();
+//    }
 }

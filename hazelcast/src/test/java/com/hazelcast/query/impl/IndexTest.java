@@ -314,18 +314,6 @@ public class IndexTest {
             this.str = str;
         }
 
-        private MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str) {
-            this.b = b;
-            this.bool = bool;
-            this.c = c;
-            this.s = s;
-            this.i = i;
-            this.l = l;
-            this.f = f;
-            this.d = d;
-            this.str = str;
-        }
-
         @Override
         public int getClassId() {
             return CLASS_ID;

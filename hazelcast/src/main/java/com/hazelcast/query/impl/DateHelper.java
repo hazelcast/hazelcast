@@ -82,20 +82,8 @@ final class DateHelper {
                 + "' ! Valid format are: " + sb.toString() + ".", e);
     }
 
-    private static DateFormat getTimestampFormat() {
-        return new SimpleDateFormat(TIMESTAMP_FORMAT, LOCALE_INTERNAL);
-    }
-
-    private static DateFormat getSqlDateFormat() {
-        return new SimpleDateFormat(SQL_DATE_FORMAT, LOCALE_INTERNAL);
-    }
-
     private static DateFormat getUtilDateFormat() {
         return new SimpleDateFormat(DATE_FORMAT, LOCALE_INTERNAL);
-    }
-
-    private static DateFormat getSqlTimeFormat() {
-        return new SimpleDateFormat(SQL_TIME_FORMAT, LOCALE_INTERNAL);
     }
 
 }

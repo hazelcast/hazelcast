@@ -183,8 +183,4 @@ public class MapMBeanTest extends HazelcastTestSupport {
     private Integer getIntegerAttribute(String name) throws Exception {
         return (Integer) holder.getMBeanAttribute(TYPE_NAME, objectName, name);
     }
-
-    private String invokeMethod(String methodName, Object[] params) throws Exception {
-        return (String) holder.invokeMBeanOperation(TYPE_NAME, objectName, methodName, params, null);
-    }
 }

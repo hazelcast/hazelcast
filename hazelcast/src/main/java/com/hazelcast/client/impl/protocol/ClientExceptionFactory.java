@@ -395,17 +395,6 @@ public class ClientExceptionFactory {
         return throwable;
     }
 
-    /**
-     * hazelcast and jdk exceptions should always be defined
-     * in {@link com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes} and
-     * in {@link ClientExceptionFactory}
-     * so that a well defined error code could be delivered to non-java clients.
-     * So we don't try to load them via ClassLoader to be able to catch the missing exceptions
-     */
-    private boolean checkClassNameForValidity(String exceptionClassName) {
-        return !exceptionClassName.startsWith("com.hazelcast") && !exceptionClassName.startsWith("java");
-    }
-
     // method is used by Jet
     @SuppressWarnings("WeakerAccess")
     public void register(int errorCode, Class clazz, ExceptionFactory exceptionFactory) {

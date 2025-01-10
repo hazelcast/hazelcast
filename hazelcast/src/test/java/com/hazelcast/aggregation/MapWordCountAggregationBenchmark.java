@@ -120,37 +120,6 @@ public class MapWordCountAggregationBenchmark extends HazelcastTestSupport {
         }
     }
 
-    private static void fillMapWithDataEachLineNewEntry(HazelcastInstance hazelcastInstance) throws Exception {
-
-        IMap<String, String> map = hazelcastInstance.getMap(MAP_NAME);
-        for (String file : DATA_RESOURCES_TO_LOAD) {
-            InputStream is = MapWordCountAggregationBenchmark.class.getResourceAsStream("/wordcount/" + file);
-            LineNumberReader reader = new LineNumberReader(new InputStreamReader(is));
-
-            int batchSize = 10000;
-            int batchSizeCount = 0;
-            Map<String, String> batch = new HashMap<>(batchSize);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                batch.put(UuidUtil.newSecureUuidString(), line);
-                batchSizeCount++;
-                if (batchSizeCount == batchSize) {
-                    map.putAll(batch);
-                    batchSizeCount = 0;
-                    batch.clear();
-                }
-            }
-
-            if (batchSizeCount > 0) {
-                map.putAll(batch);
-                batch.clear();
-            }
-
-            is.close();
-            reader.close();
-        }
-    }
-
     private static class MutableInt implements Serializable {
 
         private int value = 0;

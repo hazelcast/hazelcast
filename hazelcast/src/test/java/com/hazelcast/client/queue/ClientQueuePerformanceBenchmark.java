@@ -22,18 +22,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.test.HazelcastTestSupport;
 
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
 
-    private static final AtomicLong TOTAL_OFFER = new AtomicLong();
-    private static final AtomicLong TOTAL_POLL = new AtomicLong();
-    private static final AtomicLong TOTAL_PEEK = new AtomicLong();
-
-    private static final int THREAD_COUNT = 40;
-    private static final byte[] VALUE = new byte[1000];
+//    private static final AtomicLong TOTAL_OFFER = new AtomicLong();
+//    private static final AtomicLong TOTAL_POLL = new AtomicLong();
+//    private static final AtomicLong TOTAL_PEEK = new AtomicLong();
+//
+//    private static final int THREAD_COUNT = 40;
+//    private static final byte[] VALUE = new byte[1000];
 
     private static HazelcastInstance server;
     private static IQueue<Object> queue;
@@ -48,61 +46,61 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
         test2();
     }
 
-    private static void test1() {
-        final Random rnd = new Random();
-        for (int i = 0; i < THREAD_COUNT; i++) {
-            new Thread(() -> {
-                while (true) {
-                    int random = rnd.nextInt(100);
-                    if (random > 54) {
-                        queue.poll();
-                        TOTAL_POLL.incrementAndGet();
-                    } else if (random > 4) {
-                        queue.offer(VALUE);
-                        TOTAL_OFFER.incrementAndGet();
-                    } else {
-                        queue.peek();
-                        TOTAL_PEEK.incrementAndGet();
-                    }
-                }
-            }).start();
-        }
-
-        new Thread(() -> {
-            while (true) {
-                try {
-                    int size = queue.size();
-                    if (size > 50000) {
-                        System.err.println("cleaning a little");
-                        for (int i = 0; i < 20000; i++) {
-                            queue.poll();
-                            TOTAL_POLL.incrementAndGet();
-                        }
-                        Thread.sleep(2 * 1000);
-                    } else {
-                        Thread.sleep(10 * 1000);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
-        while (true) {
-            int sleepTime = 10;
-            sleepSeconds(sleepTime);
-            long totalOfferVal = TOTAL_OFFER.getAndSet(0);
-            long totalPollVal = TOTAL_POLL.getAndSet(0);
-            long totalPeekVal = TOTAL_PEEK.getAndSet(0);
-
-            System.err.println("_______________________________________________________________________________________");
-            System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
-            System.err.println(" size: " + queue.size()
-                    + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
-            System.err.println("---------------------------------------------------------------------------------------");
-            System.err.println("");
-        }
-    }
+//    private static void test1() {
+//        final Random rnd = new Random();
+//        for (int i = 0; i < THREAD_COUNT; i++) {
+//            new Thread(() -> {
+//                while (true) {
+//                    int random = rnd.nextInt(100);
+//                    if (random > 54) {
+//                        queue.poll();
+//                        TOTAL_POLL.incrementAndGet();
+//                    } else if (random > 4) {
+//                        queue.offer(VALUE);
+//                        TOTAL_OFFER.incrementAndGet();
+//                    } else {
+//                        queue.peek();
+//                        TOTAL_PEEK.incrementAndGet();
+//                    }
+//                }
+//            }).start();
+//        }
+//
+//        new Thread(() -> {
+//            while (true) {
+//                try {
+//                    int size = queue.size();
+//                    if (size > 50000) {
+//                        System.err.println("cleaning a little");
+//                        for (int i = 0; i < 20000; i++) {
+//                            queue.poll();
+//                            TOTAL_POLL.incrementAndGet();
+//                        }
+//                        Thread.sleep(2 * 1000);
+//                    } else {
+//                        Thread.sleep(10 * 1000);
+//                    }
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
+//
+//        while (true) {
+//            int sleepTime = 10;
+//            sleepSeconds(sleepTime);
+//            long totalOfferVal = TOTAL_OFFER.getAndSet(0);
+//            long totalPollVal = TOTAL_POLL.getAndSet(0);
+//            long totalPeekVal = TOTAL_PEEK.getAndSet(0);
+//
+//            System.err.println("_______________________________________________________________________________________");
+//            System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
+//            System.err.println(" size: " + queue.size()
+//                    + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
+//            System.err.println("---------------------------------------------------------------------------------------");
+//            System.err.println("");
+//        }
+//    }
 
     private static void test2() {
         final CountDownLatch latch1 = new CountDownLatch(100);

@@ -30,7 +30,6 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -438,18 +437,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertThatThrownBy(map::size)
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageStartingWith("Key loaded by a MapLoader cannot be null");
-    }
-
-    private void handleNpeFromKnownIssue(NullPointerException e) {
-        if ("Key loaded by a MapLoader cannot be null.".equals(e.getMessage())) {
-            // this case is a known issue, which may break the test rarely
-            // map operations following the previous size() operation may still see this NPE cached in a Future
-            // in DefaultRecordStore#loadingFutures
-            EmptyStatement.ignore(e);
-        } else {
-            // otherwise we see a new issue, which we should be notified about
-            throw e;
-        }
     }
 
     @Test
