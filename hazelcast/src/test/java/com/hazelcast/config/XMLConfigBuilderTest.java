@@ -5082,6 +5082,31 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         buildConfig(xml);
     }
 
+    @Override
+    public void testVectorCollectionConfig_multipleIndexesWithTheSameName_fail() {
+        String xml = HAZELCAST_START_TAG
+                + """
+                    <vector-collection name="vector-1">
+                      <indexes>
+                        <index name="index-1">
+                            <dimension>2</dimension>
+                            <metric>DOT</metric>
+                            <max-degree>10</max-degree>
+                            <ef-construction>10</ef-construction>
+                            <use-deduplication>true</use-deduplication>
+                        </index>
+                        <index name="index-1">
+                            <dimension>3</dimension>
+                            <metric>EUCLIDEAN</metric>
+                        </index>
+                      </indexes>
+                    </vector-collection>
+                """
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+    }
+
     private String simpleVectorCollectionBackupCountConfig(int count) {
         return simpleVectorCollectionBackupCountConfig("backup-count", count);
     }

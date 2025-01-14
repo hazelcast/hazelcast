@@ -1703,6 +1703,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 )
                 .addVectorIndexConfig(
                         new VectorIndexConfig()
+                                .setName("index-2")
                                 .setDimension(20)
                                 .setMetric(Metric.EUCLIDEAN)
                                 .setMaxDegree(10)

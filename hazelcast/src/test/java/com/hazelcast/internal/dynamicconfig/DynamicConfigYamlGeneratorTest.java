@@ -645,6 +645,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
                                         new VectorIndexConfig()
                                                 .setDimension(5)
                                                 .setMetric(Metric.DOT)
+                                                .setName("index-2-" + i)
                                 )
                 )
                 .collect(Collectors.toMap(VectorCollectionConfig::getName, identity()));

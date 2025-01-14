@@ -1599,6 +1599,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 )
                                 .addVectorIndexConfig(
                                         new VectorIndexConfig()
+                                                .setName("index-2-" + i)
                                                 .setDimension(5)
                                                 .setMetric(Metric.DOT)
                                 )

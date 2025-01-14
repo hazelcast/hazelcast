@@ -5531,6 +5531,27 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         buildConfig(yaml);
     }
 
+    @Override
+    public void testVectorCollectionConfig_multipleIndexesWithTheSameName_fail() {
+        String yaml = """
+                hazelcast:
+                  vector-collection:
+                    vector-1:
+                      indexes:
+                        - name: index-1
+                          dimension: 2
+                          metric: DOT
+                          max-degree: 10
+                          ef-construction: 10
+                          use-deduplication: true
+                        - name: index-1
+                          dimension: 3
+                          metric: EUCLIDEAN
+                """;
+
+        Config config = buildConfig(yaml);
+    }
+
     private String simpleVectorCollectionBackupCountConfig(int count) {
         return simpleVectorCollectionBackupCountConfig("backup-count", count);
     }

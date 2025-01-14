@@ -15,6 +15,7 @@
  */
 package com.hazelcast.config.vector;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.NamedConfig;
 import com.hazelcast.config.SplitBrainPolicyAwareConfig;
@@ -30,8 +31,10 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.hazelcast.internal.cluster.Versions.V6_0;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
@@ -95,6 +98,8 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         this.name = config.getName();
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
+        this.splitBrainProtectionName = config.getSplitBrainProtectionName();
+        this.mergePolicyConfig = config.getMergePolicyConfig();
         setVectorIndexConfigs(config.getVectorIndexConfigs());
     }
 
@@ -128,6 +133,9 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      */
     public VectorCollectionConfig addVectorIndexConfig(VectorIndexConfig vectorIndexConfig) {
         requireNonNull(vectorIndexConfig, "vector index config must not be null.");
+        validateIndexConfig(new ArrayList<>(vectorIndexConfigs) {{
+            add(vectorIndexConfig);
+        }});
         vectorIndexConfigs.add(vectorIndexConfig);
         return this;
     }
@@ -148,6 +156,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      * @param vectorIndexConfigs The list of {@link VectorIndexConfig} instances to set.
      */
     public void setVectorIndexConfigs(List<VectorIndexConfig> vectorIndexConfigs) {
+        validateIndexConfig(vectorIndexConfigs);
         this.vectorIndexConfigs.clear();
         this.vectorIndexConfigs.addAll(vectorIndexConfigs);
     }
@@ -218,6 +227,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
 
     /**
      * {@inheritDoc}
+     *
      * @since 6.0
      */
     @Override
@@ -227,6 +237,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
 
     /**
      * {@inheritDoc}
+     *
      * @since 6.0
      */
     @Override
@@ -237,6 +248,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
 
     /**
      * {@inheritDoc}
+     *
      * @since 6.0
      */
     @Override
@@ -246,6 +258,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
 
     /**
      * {@inheritDoc}
+     *
      * @since 6.0
      */
     @Override
@@ -335,6 +348,22 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         if (!name.matches(allowedSymbols)) {
             throw new IllegalArgumentException("The name of the vector collection "
                     + "should only consist of letters, numbers, and the symbols \"-\", \"_\" or \"*\".");
+        }
+    }
+
+    private void validateIndexConfig(List<VectorIndexConfig> newIndexConfig) {
+        Set<String> seenNames = new HashSet<>();
+
+        for (var index : newIndexConfig) {
+            if (!seenNames.add(index.getName())) {
+                throw new InvalidConfigurationException(
+                        "The vector index configuration contains multiple indexes with the same name: " + index.getName()
+                );
+            }
+        }
+
+        if (newIndexConfig.size() > 1 && newIndexConfig.stream().anyMatch(index -> index.getName() == null)) {
+            throw new InvalidConfigurationException("Vector collection cannot contain both named and unnamed index");
         }
     }
 }

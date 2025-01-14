@@ -16,6 +16,7 @@
 
 package com.hazelcast.config.vector;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,7 +24,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 import static com.hazelcast.config.vector.VectorCollectionConfig.MAX_BACKUP_COUNT;
+import static com.hazelcast.config.vector.VectorTestHelper.buildVectorCollectionConfig;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -78,5 +82,69 @@ public class VectorCollectionConfigTest {
     public void shouldValidateMergePolicy() {
         assertThatThrownBy(() -> new VectorCollectionConfig("a").setMergePolicyConfig(null))
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void addTwoIndexWithTheSameName_then_fail() {
+        String indexName = "index-1";
+        var vectorCollectionConfig = buildVectorCollectionConfig("collectionName", indexName, 2, Metric.EUCLIDEAN);
+        VectorIndexConfig indexConfig = new VectorIndexConfig().setName(indexName);
+        assertThatThrownBy(() -> vectorCollectionConfig.addVectorIndexConfig(indexConfig))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("The vector index configuration contains multiple indexes with the same name");
+    }
+
+    @Test
+    public void addTwoIndexWithTheEmptyName_then_fail() {
+        var vectorCollectionConfig = new VectorCollectionConfig();
+        vectorCollectionConfig.addVectorIndexConfig(new VectorIndexConfig());
+        assertThatThrownBy(() -> vectorCollectionConfig.addVectorIndexConfig(new VectorIndexConfig()))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("The vector index configuration contains multiple indexes with the same name");
+    }
+
+    @Test
+    public void setTwoIndexWithTheSameName_then_fail() {
+        String indexName = "index-1";
+        var vectorCollectionConfig = buildVectorCollectionConfig("collectionName", indexName, 2, Metric.EUCLIDEAN);
+        VectorIndexConfig indexConfig1 = new VectorIndexConfig().setName(indexName);
+        VectorIndexConfig indexConfig2 = new VectorIndexConfig().setName(indexName);
+        assertThatThrownBy(
+                () -> vectorCollectionConfig.setVectorIndexConfigs(List.of(indexConfig1, indexConfig2))
+        ).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("The vector index configuration contains multiple indexes with the same name");
+    }
+
+    @Test
+    public void setTwoIndexWithEmptyName_then_fail() {
+        var vectorCollectionConfig = buildVectorCollectionConfig("collectionName", "indexName", 2, Metric.EUCLIDEAN);
+        VectorIndexConfig indexConfig1 = new VectorIndexConfig();
+        VectorIndexConfig indexConfig2 = new VectorIndexConfig();
+        assertThatThrownBy(
+                () -> vectorCollectionConfig.setVectorIndexConfigs(List.of(indexConfig1, indexConfig2))
+        ).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("The vector index configuration contains multiple indexes with the same name");
+    }
+
+    @Test
+    public void setNamedAndUnnamedIndex_then_fail() {
+        var vectorCollectionConfig = new VectorCollectionConfig("collection");
+        VectorIndexConfig indexConfig1 = new VectorIndexConfig().setName("name");
+        VectorIndexConfig indexConfig2 = new VectorIndexConfig();
+        assertThatThrownBy(
+                () -> vectorCollectionConfig.setVectorIndexConfigs(List.of(indexConfig1, indexConfig2))
+        ).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessage("Vector collection cannot contain both named and unnamed index");
+    }
+
+    @Test
+    public void addNamedAndUnnamedIndex_then_fail() {
+        var vectorCollectionConfig = new VectorCollectionConfig("collection");
+        vectorCollectionConfig.addVectorIndexConfig(new VectorIndexConfig().setName("name"));
+        VectorIndexConfig indexConfig2 = new VectorIndexConfig();
+        assertThatThrownBy(
+                () -> vectorCollectionConfig.addVectorIndexConfig(indexConfig2)
+        ).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessage("Vector collection cannot contain both named and unnamed index");
     }
 }
