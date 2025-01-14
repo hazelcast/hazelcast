@@ -32,8 +32,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
@@ -41,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 /**
@@ -156,6 +159,31 @@ class HazelcastCacheTest {
         for (Object result : results) {
             assertThat((Integer) result).isEqualTo(1);
         }
+    }
+
+    @Test
+    void testCacheRetrieveWithNull() {
+        assertThrows(NullPointerException.class, () -> cache.retrieve(null));
+    }
+
+    @Test
+    void testCacheRetrieveWithRandomKey() throws ExecutionException, InterruptedException {
+        String key = createRandomKey();
+        CompletableFuture<?> resultFuture = cache.retrieve(key);
+
+        assertNotNull(resultFuture);
+        assertNull(resultFuture.get());
+    }
+
+    @Test
+    void testCacheRetrieveWithExistingKey() throws ExecutionException, InterruptedException {
+        String key = createRandomKey();
+        cache.put(key, "test");
+
+        CompletableFuture<?> resultFuture = cache.retrieve(key);
+
+        assertNotNull(resultFuture);
+        assertThat(resultFuture.get()).isEqualTo("test");
     }
 
     private String createRandomKey() {

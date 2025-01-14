@@ -26,6 +26,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -99,6 +100,11 @@ public class HazelcastCache implements Cache {
         }
     }
 
+    @Override
+    public CompletableFuture<?> retrieve(Object key) {
+        return this.map.getAsync(key).toCompletableFuture();
+    }
+
     private <T> T loadValue(Object key, Callable<T> valueLoader) {
         T value;
         try {
@@ -152,7 +158,7 @@ public class HazelcastCache implements Cache {
     private Object lookup(Object key) {
         if (readTimeout > 0) {
             try {
-                return this.map.getAsync(key).toCompletableFuture().get(readTimeout, TimeUnit.MILLISECONDS);
+                return retrieve(key).get(readTimeout, TimeUnit.MILLISECONDS);
             } catch (TimeoutException te) {
                 throw new OperationTimeoutException(te.getMessage());
             } catch (InterruptedException e) {
