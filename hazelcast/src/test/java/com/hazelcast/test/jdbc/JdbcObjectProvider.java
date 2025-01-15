@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.executeJdbc;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.Column.col;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.INT;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.STRING;
@@ -56,10 +57,8 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
 
     public void createSchema(String schemaName) {
         String query = createSchemaQuery(schemaName);
-        try (Connection conn = DriverManager.getConnection(databaseProvider.url());
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(query);
+        try {
+            executeJdbc(databaseProvider.url(), query);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -75,10 +74,8 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
         List<Column> columns = spec.columns;
         String columnString = columns.stream().map(c -> c.name + " " + resolveType(c.type) + pk(c)).collect(joining(", "));
         String sql = createSql(objectName, columnString);
-        try (Connection conn = DriverManager.getConnection(databaseProvider.url());
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(sql);
+        try {
+            executeJdbc(databaseProvider.url(), sql);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -174,10 +171,8 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
                     return databaseProvider.quote(s.substring(0, spaceIndex)) + s.substring(spaceIndex);
                 }).collect(joining(", "))
                 + ")";
-        try (Connection conn = DriverManager.getConnection(databaseProvider.url());
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(sql);
+        try {
+            executeJdbc(databaseProvider.url(), sql);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

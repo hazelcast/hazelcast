@@ -35,13 +35,10 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.executeJdbc;
 import static com.hazelcast.test.DockerTestUtil.assumeTestDatabaseProviderCanLaunch;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -111,13 +108,5 @@ public class ListResourcesTest {
 
         List<DataConnectionResource> dataConnectionResources = dataConnection.listResources();
         assertThat(dataConnectionResources).containsExactlyInAnyOrder(expectedResources);
-    }
-
-    public static void executeJdbc(String url, String sql) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(url);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(sql);
-        }
     }
 }

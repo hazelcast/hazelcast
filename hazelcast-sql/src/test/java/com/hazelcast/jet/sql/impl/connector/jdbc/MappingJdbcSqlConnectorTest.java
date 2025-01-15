@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.impl.DataConnectionTestUtil;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -34,10 +35,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -236,11 +234,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void createMappingExternalFieldDoesNotExist() throws Exception {
         tableName = randomTableName();
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute("CREATE TABLE " + quote(tableName) + " (" + quote("id") + " INT PRIMARY KEY, " + quote("name") + " VARCHAR(10))");
-        }
+        DataConnectionTestUtil.executeJdbc(dbConnectionUrl, "CREATE TABLE " + quote(tableName) + " (" + quote("id") + " INT PRIMARY KEY, " + quote("name") + " VARCHAR(10))");
 
         assertThatThrownBy(() ->
                 sqlService.executeUpdate("CREATE MAPPING " + tableName

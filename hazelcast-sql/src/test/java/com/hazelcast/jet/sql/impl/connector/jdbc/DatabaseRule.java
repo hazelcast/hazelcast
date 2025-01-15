@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.dataconnection.impl.DataConnectionTestUtil;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseRule implements TestRule {
@@ -63,12 +62,7 @@ public class DatabaseRule implements TestRule {
     }
 
     public void executeJdbc(String sql) throws SQLException {
-
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl.get());
-             java.sql.Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(sql);
-        }
+        DataConnectionTestUtil.executeJdbc(dbConnectionUrl.get(), sql);
     }
 
     public void insertItems(String tableName, int count) throws SQLException {

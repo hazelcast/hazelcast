@@ -32,15 +32,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.executeJdbc;
 import static com.hazelcast.mapstore.GenericMapLoader.SINGLE_COLUMN_AS_VALUE;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_NAME_PROPERTY;
@@ -421,14 +419,10 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         assumeThat(objectProvider).isInstanceOf(JdbcObjectProvider.class);
         var jdbcDbProvider = (JdbcObjectProvider) objectProvider;
         jdbcDbProvider.createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
+        executeJdbc(dbConnectionUrl, String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
                     databaseProvider.quote(mapName),
                     databaseProvider.quote("id"),
                     databaseProvider.quote("name")));
-        }
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -456,14 +450,10 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         assumeThat(objectProvider).isInstanceOf(JdbcObjectProvider.class);
         var jdbcDbProvider = (JdbcObjectProvider) objectProvider;
         jdbcDbProvider.createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
+        executeJdbc(dbConnectionUrl, String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
                     databaseProvider.quote(mapName),
                     databaseProvider.quote("id"),
                     databaseProvider.quote("name")));
-        }
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -489,14 +479,10 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         assumeThat(objectProvider).isInstanceOf(JdbcObjectProvider.class);
         var jdbcDbProvider = (JdbcObjectProvider) objectProvider;
         jdbcDbProvider.createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
+        executeJdbc(dbConnectionUrl, String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
                     databaseProvider.quote(mapName),
                     databaseProvider.quote("id"),
                     databaseProvider.quote("name")));
-        }
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);

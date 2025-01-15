@@ -20,9 +20,9 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
+
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.executeJdbc;
 
 @SuppressWarnings("rawtypes")
 public class H2DatabaseProvider extends JdbcDatabaseProvider {
@@ -83,8 +83,8 @@ public class H2DatabaseProvider extends JdbcDatabaseProvider {
 
     @Override
     public void shutdown() {
-        try (Connection conn = DriverManager.getConnection(jdbcUrl)) {
-            conn.createStatement().execute("shutdown");
+        try {
+            executeJdbc(jdbcUrl, "shutdown");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

@@ -31,14 +31,14 @@ import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.executeJdbc;
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -256,14 +256,6 @@ public class JdbcDataConnectionTest {
         assertThat(resourcedTypes)
                 .map(r -> r.toLowerCase(Locale.ROOT))
                 .containsExactlyInAnyOrder("table");
-    }
-
-    public static void executeJdbc(String url, String sql) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(url);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(sql);
-        }
     }
 
     public static DataSource pooledDataSource(JdbcDataConnection dataConnection) {

@@ -20,11 +20,11 @@ package com.hazelcast.test.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.executeJdbc;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.Column.col;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.INT;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.STRING;
@@ -48,10 +48,8 @@ public class OracleObjectProvider extends JdbcObjectProvider {
         List<Column> columns = spec.columns;
         String columnString = columns.stream().map(c -> databaseProvider.quote(c.name) + " " + resolveType(c.type) + pk(c)).collect(joining(", "));
         String sql = createSql(objectName, columnString);
-        try (Connection conn = DriverManager.getConnection(databaseProvider.url());
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(sql);
+        try {
+            executeJdbc(databaseProvider.url(), sql);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

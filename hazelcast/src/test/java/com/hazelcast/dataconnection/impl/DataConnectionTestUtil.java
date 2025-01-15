@@ -24,9 +24,16 @@ import com.hazelcast.dataconnection.DataConnectionRegistration;
 import com.hazelcast.dataconnection.DataConnectionResource;
 
 import javax.annotation.Nonnull;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
+
+import static org.junit.Assert.assertNotNull;
 
 public final class DataConnectionTestUtil {
 
@@ -117,6 +124,17 @@ public final class DataConnectionTestUtil {
         @Override
         public Class<? extends DataConnection> clazz() {
             return DummyDataConnection.class;
+        }
+    }
+
+    public static void executeJdbc(String jdbcUrl, String sql) throws SQLException {
+        assertNotNull(jdbcUrl, "jdbdUrl must be set");
+        assertNotNull(sql, "sql query must be provided");
+
+        try (Connection conn = DriverManager.getConnection(jdbcUrl);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute(sql);
         }
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.dataconnection.impl.DataConnectionTestUtil;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.sql.SqlResult;
@@ -175,11 +176,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                 finalSql.append(str).append(" ");
             }
         }
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(finalSql.toString());
-        }
+        DataConnectionTestUtil.executeJdbc(dbConnectionUrl, finalSql.toString());
     }
 
     public static void insertItems(String tableName, int start, int count) throws SQLException {
