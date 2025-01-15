@@ -63,8 +63,8 @@ public class ListResourcesTest {
                 {
                         new PostgresDatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource(OBJECT_TYPE_TABLE, "public", "my_table"),
-                                new DataConnectionResource(OBJECT_TYPE_TABLE, "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "public", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "my_schema", "my_table")
                         }
                 },
                 {
