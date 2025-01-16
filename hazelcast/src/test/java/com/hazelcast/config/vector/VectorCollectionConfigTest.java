@@ -36,32 +36,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class VectorCollectionConfigTest {
 
     @Test
-    public void constructorNameValidation_failed() {
-        assertThatThrownBy(() -> new VectorCollectionConfig("asd%6(&"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("The name of the vector collection should "
-                        + "only consist of letters, numbers, and the symbols \"-\", \"_\" or \"*\".");
-    }
-
-    @Test
-    public void setNameValidation_failed() {
-        assertThatThrownBy(() -> new VectorCollectionConfig().setName("asd*^"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("The name of the vector collection should "
-                        + "only consist of letters, numbers, and the symbols \"-\", \"_\" or \"*\".");
-    }
-
-    @Test
-    public void constructorNameValidation_success() {
-        assertThatNoException().isThrownBy(() -> new VectorCollectionConfig("***ve*c_tor-234-ANY_*"));
-    }
-
-    @Test
-    public void setNameValidation_success() {
-        assertThatNoException().isThrownBy(() -> new VectorCollectionConfig().setName("***ve*c_tor-234-ANY_*"));
-    }
-
-    @Test
     public void shouldValidateBackupCount() {
         assertThatNoException().isThrownBy(() ->
                 new VectorCollectionConfig("a").setBackupCount(0).setAsyncBackupCount(0));

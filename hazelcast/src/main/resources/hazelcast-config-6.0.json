@@ -5435,7 +5435,8 @@
           "type": "string"
         },
         "dimension": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         },
         "metric": {
           "enum": [
@@ -5446,11 +5447,13 @@
         },
         "max-degree": {
           "type": "integer",
-          "default": 32
+          "default": 32,
+          "minimum": 1
         },
         "ef-construction": {
           "type": "integer",
-          "default": 100
+          "default": 100,
+          "minimum": 1
         },
         "use-deduplication": {
           "type": "boolean",

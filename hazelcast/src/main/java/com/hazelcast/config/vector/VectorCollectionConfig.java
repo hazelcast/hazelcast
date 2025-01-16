@@ -85,7 +85,6 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      * @param name the name of the vector collection
      */
     public VectorCollectionConfig(String name) {
-        validateName(name);
         this.name = name;
     }
 
@@ -113,7 +112,6 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      */
     @Override
     public VectorCollectionConfig setName(String name) {
-        validateName(name);
         this.name = name;
         return this;
     }
@@ -356,14 +354,6 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
                 userCodeNamespace,
                 vectorIndexConfigs
         );
-    }
-
-    private static void validateName(String name) {
-        String allowedSymbols = "[a-zA-Z0-9\\-*_]+";
-        if (!name.matches(allowedSymbols)) {
-            throw new IllegalArgumentException("The name of the vector collection "
-                    + "should only consist of letters, numbers, and the symbols \"-\", \"_\" or \"*\".");
-        }
     }
 
     private void validateIndexConfig(List<VectorIndexConfig> newIndexConfig) {

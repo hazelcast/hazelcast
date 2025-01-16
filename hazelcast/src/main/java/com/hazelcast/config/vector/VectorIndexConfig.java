@@ -69,11 +69,7 @@ public class VectorIndexConfig implements NamedConfig, IdentifiedDataSerializabl
      * @throws NullPointerException     if the metric is null.
      */
     public VectorIndexConfig(String indexName, Metric metric, int dimension) {
-        validateName(indexName);
-        requireNonNull(metric, "metric must not be null.");
-        this.indexName = indexName;
-        this.metric = metric;
-        this.dimension = dimension;
+        this(indexName, metric, dimension, DEFAULT_MAX_DEGREE, DEFAULT_EF_CONSTRUCTION, DEFAULT_USE_DEDUPLICATION);
     }
 
     /**
@@ -98,6 +94,9 @@ public class VectorIndexConfig implements NamedConfig, IdentifiedDataSerializabl
     ) {
         validateName(indexName);
         requireNonNull(metric, "metric must not be null.");
+        if (dimension <= 0) {
+            throw new IllegalArgumentException("dimension must be positive");
+        }
         if (maxDegree <= 0) {
             throw new IllegalArgumentException("max connections must be positive");
         }
@@ -173,6 +172,9 @@ public class VectorIndexConfig implements NamedConfig, IdentifiedDataSerializabl
      * @return this VectorIndexConfig instance
      */
     public VectorIndexConfig setDimension(int dimension) {
+        if (dimension <= 0) {
+            throw new IllegalArgumentException("dimension must be positive");
+        }
         this.dimension = dimension;
         return this;
     }

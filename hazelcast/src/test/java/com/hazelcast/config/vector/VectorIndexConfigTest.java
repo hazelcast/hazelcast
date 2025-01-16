@@ -42,4 +42,28 @@ public class VectorIndexConfigTest {
     public void constructorNameValidation_success() {
         assertThatNoException().isThrownBy(() -> new VectorIndexConfig().setName("index_234-ANY"));
     }
+
+    @Test
+    public void dimensionValidation_failed() {
+        assertThatThrownBy(
+                () -> new VectorIndexConfig(
+                        "index",
+                        Metric.EUCLIDEAN,
+                        0,
+                        1,
+                        1,
+                        true
+                )
+        )
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("dimension must be positive");
+
+        assertThatThrownBy(() -> new VectorIndexConfig("index", Metric.EUCLIDEAN, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("dimension must be positive");
+
+        assertThatThrownBy(() -> new VectorIndexConfig().setDimension(0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("dimension must be positive");
+    }
 }
