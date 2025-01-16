@@ -844,6 +844,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
                         .setAsyncBackupCount(1)
                         .setSplitBrainProtectionName("splitBrainProtectionName")
                         .setMergePolicyConfig(expectedMergePolicyConfig)
+                        .setUserCodeNamespace("ns1")
                         .addVectorIndexConfig(
                                 new VectorIndexConfig()
                                         .setDimension(4)

@@ -1201,6 +1201,7 @@
                 </hz:indexes>
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="132">CustomMergePolicy</hz:merge-policy>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:vector-collection>
         </hz:config>
     </hz:hazelcast>

@@ -3779,6 +3779,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 collectionConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 collectionConfig.setSplitBrainProtectionName(getTextContent(node));
+            } else if (matches("user-code-namespace", nodeName)) {
+                collectionConfig.setUserCodeNamespace(getTextContent(node));
             }
         }
         config.addVectorCollectionConfig(collectionConfig);

@@ -70,7 +70,8 @@ public final class MergePolicyValidator {
     public static void checkVectorCollectionMergePolicy(VectorCollectionConfig vectorCollectionConfig,
                                                         String mergePolicyClassName,
                                                         SplitBrainMergePolicyProvider mergePolicyProvider) {
-        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getBuiltInMergePolicy(mergePolicyClassName);
+        var namespace = vectorCollectionConfig.getUserCodeNamespace();
+        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName, namespace);
         checkSplitBrainMergePolicy(SplitBrainMergeTypes.VectorCollectionMergeTypes.class, mergePolicyInstance);
     }
 

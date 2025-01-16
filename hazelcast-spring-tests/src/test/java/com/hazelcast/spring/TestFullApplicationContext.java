@@ -1722,6 +1722,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 )
                 .setBackupCount(2).setAsyncBackupCount(1)
                 .setMergePolicyConfig(expectedMergePolicyConfig)
+                .setUserCodeNamespace("ns1")
                 .setSplitBrainProtectionName("my-split-brain-protection");
         var expectedVectorCollectionConfigs = Map.of(
                 "vector-collection-1", expectedVectorCollection1,

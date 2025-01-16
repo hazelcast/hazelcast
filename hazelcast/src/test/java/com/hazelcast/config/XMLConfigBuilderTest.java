@@ -4978,6 +4978,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                       <async-backup-count>1</async-backup-count>
                       <split-brain-protection-ref>splitBrainProtectionName</split-brain-protection-ref>
                       <merge-policy batch-size="132">CustomMergePolicy</merge-policy>
+                      <user-code-namespace>ns1</user-code-namespace>
                       <indexes>
                         <index>
                             <dimension>4</dimension>

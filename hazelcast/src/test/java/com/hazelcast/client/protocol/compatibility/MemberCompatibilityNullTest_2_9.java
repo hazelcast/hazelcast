@@ -7047,6 +7047,8 @@ public class MemberCompatibilityNullTest_2_9 {
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(parameters.isMergeBatchSizeExists);
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a new vector collection configuration to a running cluster.
  */
 @SuppressWarnings("unused")
-@Generated("928146a9125c61f60bc8d582299fc7af")
+@Generated("d43f7b6044aeff86e4d9eba48be499cb")
 public final class DynamicConfigAddVectorCollectionConfigCodec {
     //hex: 0x1B1400
     public static final int REQUEST_MESSAGE_TYPE = 1774592;
@@ -94,6 +94,11 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
         public int mergeBatchSize;
 
         /**
+         * Name of the User Code Namespace applied to this instance.
+         */
+        public @Nullable java.lang.String userCodeNamespace;
+
+        /**
          * True if the backupCount is received from the client, false otherwise.
          * If this is false, backupCount has the default value for its type.
          */
@@ -122,9 +127,15 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
          * If this is false, mergeBatchSize has the default value for its type.
          */
         public boolean isMergeBatchSizeExists;
+
+        /**
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
+         */
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.List<com.hazelcast.config.vector.VectorIndexConfig> indexConfigs, int backupCount, int asyncBackupCount, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.List<com.hazelcast.config.vector.VectorIndexConfig> indexConfigs, int backupCount, int asyncBackupCount, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddVectorCollectionConfig");
@@ -139,6 +150,7 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
         ListMultiFrameCodec.encode(clientMessage, indexConfigs, VectorIndexConfigCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -177,6 +189,12 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
             request.isMergePolicyExists = true;
         } else {
             request.isMergePolicyExists = false;
+        }
+        if (iterator.hasNext()) {
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
+        } else {
+            request.isUserCodeNamespaceExists = false;
         }
         return request;
     }

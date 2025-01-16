@@ -1218,7 +1218,9 @@ public class ClientDynamicClusterConfig extends Config {
                 vectorCollectionConfig.getAsyncBackupCount(),
                 vectorCollectionConfig.getSplitBrainProtectionName(),
                 vectorCollectionConfig.getMergePolicyConfig().getPolicy(),
-                vectorCollectionConfig.getMergePolicyConfig().getBatchSize());
+                vectorCollectionConfig.getMergePolicyConfig().getBatchSize(),
+                vectorCollectionConfig.getUserCodeNamespace()
+        );
         invoke(request);
         return this;
     }

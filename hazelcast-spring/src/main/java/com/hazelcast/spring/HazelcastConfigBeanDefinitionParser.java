@@ -2444,6 +2444,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     vectorCollectionConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, vectorCollectionConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    vectorCollectionConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             vectorCollectionConfigBuilder.addPropertyValue("vectorIndexConfigs", vectorIndexConfigs);

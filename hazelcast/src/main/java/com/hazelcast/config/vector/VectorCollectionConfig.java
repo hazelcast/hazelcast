@@ -19,6 +19,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.NamedConfig;
 import com.hazelcast.config.SplitBrainPolicyAwareConfig;
+import com.hazelcast.config.UserCodeNamespaceAwareConfig;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
@@ -49,7 +50,8 @@ import static java.util.Objects.requireNonNull;
  */
 @Beta
 public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerializable, Versioned,
-        SplitBrainPolicyAwareConfig {
+        SplitBrainPolicyAwareConfig ,
+        UserCodeNamespaceAwareConfig<VectorCollectionConfig> {
 
     /**
      * The minimum number of backups
@@ -70,7 +72,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     private final List<VectorIndexConfig> vectorIndexConfigs = new ArrayList<>();
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
     /**
      * Creates a new, empty {@code VectorCollectionConfig}.
      */
@@ -100,6 +102,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         this.asyncBackupCount = config.getAsyncBackupCount();
         this.splitBrainProtectionName = config.getSplitBrainProtectionName();
         this.mergePolicyConfig = config.getMergePolicyConfig();
+        this.userCodeNamespace = config.getUserCodeNamespace();
         setVectorIndexConfigs(config.getVectorIndexConfigs());
     }
 
@@ -276,6 +279,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
             out.writeInt(asyncBackupCount);
             out.writeString(splitBrainProtectionName);
             out.writeObject(mergePolicyConfig);
+            out.writeObject(userCodeNamespace);
         }
         SerializationUtil.writeList(vectorIndexConfigs, out);
     }
@@ -290,6 +294,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
             asyncBackupCount = in.readInt();
             splitBrainProtectionName = in.readString();
             mergePolicyConfig = in.readObject();
+            userCodeNamespace = in.readObject();
         } else {
             // in 5.5 there were no backups, override new defaults to keep original behavior
             backupCount = 0;
@@ -317,6 +322,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", userCodeNamespace=" + userCodeNamespace
                 + ", vectorIndexConfigs=" + vectorIndexConfigs
                 + '}';
     }
@@ -335,12 +341,21 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
                 && Objects.equals(asyncBackupCount, that.asyncBackupCount)
                 && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
                 && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
+                && Objects.equals(userCodeNamespace, that.userCodeNamespace)
                 && Objects.equals(vectorIndexConfigs, that.vectorIndexConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, backupCount, asyncBackupCount, splitBrainProtectionName, mergePolicyConfig, vectorIndexConfigs);
+        return Objects.hash(
+                name,
+                backupCount,
+                asyncBackupCount,
+                splitBrainProtectionName,
+                mergePolicyConfig,
+                userCodeNamespace,
+                vectorIndexConfigs
+        );
     }
 
     private static void validateName(String name) {
@@ -365,5 +380,25 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         if (newIndexConfig.size() > 1 && newIndexConfig.stream().anyMatch(index -> index.getName() == null)) {
             throw new InvalidConfigurationException("Vector collection cannot contain both named and unnamed index");
         }
+    }
+
+    /**
+     *
+     * @since 6.0
+     */
+    @Override
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
+    }
+
+    /**
+     *
+     * @since 6.0
+     */
+    @Override
+    public VectorCollectionConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
+        return this;
     }
 }

@@ -5486,6 +5486,9 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }

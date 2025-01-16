@@ -899,9 +899,12 @@ public final class DynamicConfigXmlGenerator {
             gen.open("vector-collection", "name", collectionConfig.getName())
                     .node("backup-count", collectionConfig.getBackupCount())
                     .node("async-backup-count", collectionConfig.getAsyncBackupCount());
+            if (collectionConfig.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", collectionConfig.getUserCodeNamespace());
+            }
             appendSplitBrainPolicyAwareNodes(gen, collectionConfig);
             gen.open("indexes");
-            for (VectorIndexConfig index: collectionConfig.getVectorIndexConfigs()) {
+            for (VectorIndexConfig index : collectionConfig.getVectorIndexConfigs()) {
                 gen.open("index", "name", index.getName())
                         .node("dimension", index.getDimension())
                         .node("metric", index.getMetric())
@@ -917,13 +920,14 @@ public final class DynamicConfigXmlGenerator {
 
     /**
      * Appends split brain protection and merge policy configuration nodes
+     *
      * @param gen
      * @param config
      */
     private static void appendSplitBrainPolicyAwareNodes(ConfigXmlGenerator.XmlGenerator gen,
                                                          SplitBrainPolicyAwareConfig config) {
         gen.node("merge-policy", config.getMergePolicyConfig().getPolicy(),
-                "batch-size", config.getMergePolicyConfig().getBatchSize())
+                        "batch-size", config.getMergePolicyConfig().getBatchSize())
                 .node("split-brain-protection-ref", config.getSplitBrainProtectionName());
     }
 }

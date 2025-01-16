@@ -1156,6 +1156,7 @@ hazelcast:
           ef-construction: 20
           use-deduplication: false
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      user-code-namespace: ns1
       merge-policy:
         batch-size: 1000
         class-name: PutIfAbsentMergePolicy

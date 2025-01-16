@@ -647,6 +647,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
                                                 .setMetric(Metric.DOT)
                                                 .setName("index-2-" + i)
                                 )
+                                .setUserCodeNamespace("ns1")
                 )
                 .collect(Collectors.toMap(VectorCollectionConfig::getName, identity()));
         config.setVectorCollectionConfigs(vectorCollection);
