@@ -121,12 +121,12 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
         }
         SearchOptionsImpl that = (SearchOptionsImpl) o;
         return includeValue == that.includeValue && includeVectors == that.includeVectors
-                && limit == that.limit;
+                && limit == that.limit && Objects.equals(hints, that.hints);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(includeValue, includeVectors, limit);
+        return Objects.hash(includeValue, includeVectors, limit, hints);
     }
 
     @Override

@@ -150,6 +150,6 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
 
     @Override
     public int hashCode() {
-        return Objects.hash(key);
+        return Objects.hash(key, score, id, value, vectors);
     }
 }

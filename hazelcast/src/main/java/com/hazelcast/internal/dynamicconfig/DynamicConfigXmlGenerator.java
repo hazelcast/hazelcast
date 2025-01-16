@@ -896,7 +896,6 @@ public final class DynamicConfigXmlGenerator {
     public static void vectorCollectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         Collection<VectorCollectionConfig> vectorCollectionConfigs = config.getVectorCollectionConfigs().values();
         for (VectorCollectionConfig collectionConfig : vectorCollectionConfigs) {
-            var mergePolicyConfig = collectionConfig.getMergePolicyConfig();
             gen.open("vector-collection", "name", collectionConfig.getName())
                     .node("backup-count", collectionConfig.getBackupCount())
                     .node("async-backup-count", collectionConfig.getAsyncBackupCount());

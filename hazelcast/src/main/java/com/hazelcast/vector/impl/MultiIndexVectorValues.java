@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.vector.VectorValues;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
@@ -34,8 +35,8 @@ public final class MultiIndexVectorValues
     public MultiIndexVectorValues() {
     }
 
-    public MultiIndexVectorValues(Map<String, float[]> indexNameToVector) {
-        this.indexNameToVector = indexNameToVector;
+    public MultiIndexVectorValues(@Nonnull Map<String, float[]> indexNameToVector) {
+        this.indexNameToVector = Objects.requireNonNull(indexNameToVector, "indexNameToVector");
     }
 
     @Override
