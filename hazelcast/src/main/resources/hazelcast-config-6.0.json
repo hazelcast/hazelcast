@@ -5481,7 +5481,8 @@
             "type": "array",
             "items": {
               "$ref": "#/definitions/VectorIndex"
-            }
+            },
+            "minItems": 1
           },
           "split-brain-protection-ref": {
             "type": "string",
@@ -5493,7 +5494,10 @@
           "user-code-namespace": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "indexes"
+        ]
       }
     }
   }

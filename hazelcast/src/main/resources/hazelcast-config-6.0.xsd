@@ -6785,10 +6785,10 @@
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
             <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
-            <xs:element name="indexes" minOccurs="0">
+            <xs:element name="indexes">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="index" type="vector-index" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="index" type="vector-index" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
