@@ -6611,10 +6611,10 @@
     </xs:element>
 
     <xs:complexType name="vector-index">
-        <xs:attribute name="dimension" type="xs:int" use="required"/>
+        <xs:attribute name="dimension" type="xs:positiveInteger" use="required"/>
         <xs:attribute name="metric" type="xs:string" use="required"/>
-        <xs:attribute name="max-degree" type="xs:int"/>
-        <xs:attribute name="ef-construction" type="xs:int"/>
+        <xs:attribute name="max-degree" type="xs:positiveInteger"/>
+        <xs:attribute name="ef-construction" type="xs:positiveInteger"/>
         <xs:attribute name="use-deduplication" type="xs:boolean"/>
         <xs:attribute name="name">
             <xs:annotation>
