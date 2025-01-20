@@ -742,15 +742,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             return;
         }
         try {
-            executor.execute(() -> {
-                for (ConnectionListener listener : connectionListeners) {
-                    if (isAdded) {
-                        listener.connectionAdded(connection);
-                    } else {
-                        listener.connectionRemoved(connection);
-                    }
+            for (ConnectionListener listener : connectionListeners) {
+                if (isAdded) {
+                    executor.execute(() -> listener.connectionAdded(connection));
+                } else {
+                    executor.execute(() -> listener.connectionRemoved(connection));
                 }
-            });
+            }
         } catch (RejectedExecutionException e) {
             //RejectedExecutionException thrown when the client is shutting down
             EmptyStatement.ignore(e);
