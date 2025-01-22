@@ -76,7 +76,7 @@ hazelcast:
   #
   # If you have an Enterprise or Enterprise HD license, you can enter it here.
   # You can also set your license key programmatically; please refer to
-  # http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#setting-the-license-key
+  # https://docs.hazelcast.com/hazelcast/5.5/deploy/enterprise-licenses#configuring-a-license-key-on-members
   #
   license-key: Your Hazelcast Enterprise or Enterprise HD License Key
   #
@@ -299,7 +299,7 @@ hazelcast:
   #         Add additional strategies for discovery in various cloud infrastructures.
   #         You can define multiple discovery strategies using the "discovery-strategies" sub-element and its properties.
   #         Please refer to
-  #         http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+  #         https://docs.hazelcast.com/hazelcast/latest/clusters/discovery-mechanisms
   #         to see the properties you can use.
   #         The following is an example for EC2 cloud.
   #         "discovery-strategies"
@@ -519,7 +519,7 @@ hazelcast:
   #     value of "hazelcast.discovery.enabled" property to true. See the description of the "properties" element
   #     to learn how to do this.
   #     You can define multiple discovery strategies and its properties. Please refer to
-  #     http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+  #     https://docs.hazelcast.com/hazelcast/latest/clusters/discovery-mechanisms
   #     to see the properties you can use.
   #     The following is an example for EC2 cloud.
   #     discovery-strategies:
@@ -595,7 +595,7 @@ hazelcast:
   #     constructor.
   # * "failure-detector":
   # A failure detector is responsible to determine if a member in the cluster is unreachable or crashed.
-  # Please refer to https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#failure-detector-configuration
+  # Please refer to https://docs.hazelcast.com/hazelcast/latest/clusters/failure-detector-configuration
   # for the failure detectors implemented by Hazelcast.
   #
   # This element has the following sub-element:
@@ -3017,7 +3017,7 @@ hazelcast:
   #          to learn how to do this.
   #          You can define multiple discovery strategies using the "discovery-strategy" sub-element and its
   #          properties. Please refer to
-  #          http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+  #          https://docs.hazelcast.com/hazelcast/latest/clusters/discovery-mechanisms
   #          to see the properties you can use.
   #          The following is an example for EC2 cloud.
   #          discovery-strategies:
@@ -3056,7 +3056,7 @@ hazelcast:
   #              constructor.
   #  * "failure-detector":
   #      A failure detector is responsible to determine if a member in the cluster is unreachable or crashed.
-  #      Please refer to https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#failure-detector-configuration
+  #      Please refer to https://docs.hazelcast.com/hazelcast/latest/clusters/failure-detector-configuration
   #      for the failure detectors implemented by Hazelcast.
   #
   #      This element has the following sub-element:

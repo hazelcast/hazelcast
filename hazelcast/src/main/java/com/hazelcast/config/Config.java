@@ -574,7 +574,7 @@ public class Config {
      * @param name property name
      * @return property value
      * @see #setProperty(String, String)
-     * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
+     * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
      * Hazelcast System Properties</a>
      */
     public String getProperty(String name) {
@@ -590,7 +590,7 @@ public class Config {
      * @return this config instance
      * @throws IllegalArgumentException if either {@code value} is {@code null} or if {@code name} is empty or
      *                                  {@code null}
-     * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
+     * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
      * Hazelcast System Properties</a>
      */
     public Config setProperty(@Nonnull String name, @Nonnull String value) {

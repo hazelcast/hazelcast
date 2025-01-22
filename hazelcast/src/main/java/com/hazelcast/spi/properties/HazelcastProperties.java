@@ -37,7 +37,7 @@ import static java.util.Collections.unmodifiableSet;
  * <li>the XML configuration</li>
  * </ul>
  *
- * @see <a href="http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties">
+ * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
  * System properties documentaiton</a>
  */
 public class HazelcastProperties {

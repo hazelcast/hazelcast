@@ -119,7 +119,7 @@ import java.util.function.Function;
  * When the split heals, Hazelcast by default, performs a
  * {@link com.hazelcast.spi.merge.PutIfAbsentMergePolicy}.
  * Users can also decide to
- * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
+ * <a href="https://docs.hazelcast.com/hazelcast/latest/network-partitioning/split-brain-recovery#custom-merge-policies">
  * specify their own map merge policies</a>, these policies when used in
  * concert with
  * <a href="http://hal.upmc.fr/inria-00555588/document">CRDTs (Convergent and Commutative
@@ -127,7 +127,7 @@ import java.util.function.Function;
  * <p>
  * As a defensive mechanism against such inconsistency, consider using the
  * in-built
- * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#split-brain-protection">
+ * <a href="https://docs.hazelcast.com/hazelcast/latest/network-partitioning/split-brain-protection">
  * split-brain protection for {@link IMap}</a>.  Using this functionality
  * it is possible to restrict operations in smaller partitioned clusters.
  * It should be noted that there is still an inconsistency window between

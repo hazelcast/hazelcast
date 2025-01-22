@@ -207,7 +207,7 @@ public final class Sources {
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
      * data traffic. If your data is stored in the IMDG using the <a href=
-     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
+     *     "https://docs.hazelcast.com/hazelcast/latest/serialization/implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and
      * {@link Projections#multiAttribute}) to create your projection instance and
@@ -274,7 +274,7 @@ public final class Sources {
      * this.
      * <p>
      * If your data is stored in the IMDG using the <a href=
-     *   "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
+     *   "https://docs.hazelcast.com/hazelcast/latest/serialization/implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and
      * {@link Projections#multiAttribute}) to create your projection instance

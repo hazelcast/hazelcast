@@ -119,7 +119,7 @@ import java.util.concurrent.ForkJoinPool;
  * or it will continue to use the primary or back-up version.
  * <p>
  * As a defensive mechanism against such inconsistency, consider using the in-built
- * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#split-brain-protection">
+ * <a href="https://docs.hazelcast.com/hazelcast/latest/network-partitioning/split-brain-protection">
  * split-brain protection for {@link ICache}</a>.  Using this functionality it is possible to restrict operations in smaller
  * partitioned clusters. It should be noted that there is still an inconsistency window between the time of
  * the split and the actual detection. Therefore using this reduces the window of inconsistency but can never

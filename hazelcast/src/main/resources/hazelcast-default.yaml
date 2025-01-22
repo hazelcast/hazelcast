@@ -861,7 +861,7 @@ hazelcast:
   # Some features of Hazelcast are configured through the system properties.
   # You can configure the same properties here. This configuration overrides the
   # system properties. For a full list of recognized properties see
-  # https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties
+  # https://docs.hazelcast.com/hazelcast/latest/system-properties
 #  properties:
 #    property.name: value
   ##
