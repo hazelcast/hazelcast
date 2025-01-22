@@ -1674,14 +1674,26 @@ public class MigrationManagerImpl implements MigrationManager {
                 return;
             }
 
+            long promotionsStart = Timer.nanos();
+
             Map<PartitionReplica, Collection<MigrationInfo>> promotions = removeUnknownMembersAndCollectPromotions();
             boolean success = promoteBackupsForMissingOwners(promotions);
+
+            long promotionsElapsedMillis = Timer.millisElapsed(promotionsStart);
+            int promotionsCount = promotions.values().stream().mapToInt(Collection::size).sum();
+
+            if (success) {
+                logger.info(String.format("Successfully promoted %d backups on %d members in %d ms",
+                        promotionsCount, promotions.size(), promotionsElapsedMillis));
+            } else {
+                logger.info(String.format("Tried to promote %d backups on %d members but some failed in %d ms",
+                        promotionsCount, promotions.size(), promotionsElapsedMillis));
+            }
+
             partitionServiceLock.lock();
             try {
                 if (success) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("RedoPartitioningTask scheduled");
-                    }
+                    logger.finest("RedoPartitioningTask scheduled");
                     migrationQueue.add(new RedoPartitioningTask());
                 } else {
                     triggerControlTask();
