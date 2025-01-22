@@ -59,7 +59,7 @@ public class MapPutAllWithMetadataMessageTask
         }
 
         SplitBrainMergePolicy mergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
-                                                      .getBuiltInMergePolicy(PassThroughMergePolicy.class.getName());
+                                                      .getMergePolicy(PassThroughMergePolicy.class.getName());
 
         return new MergeOperation(parameters.name, mergingEntries, mergePolicy, true);
     }

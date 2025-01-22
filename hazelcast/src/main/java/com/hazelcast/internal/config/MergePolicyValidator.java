@@ -26,6 +26,7 @@ import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingLastUpdateTime;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.MergingView;
+import com.hazelcast.spi.merge.NamespaceAwareSplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
@@ -130,11 +131,18 @@ public final class MergePolicyValidator {
             String namespace
     ) {
         try {
-            return mergePolicyProvider.getMergePolicy(mergePolicyClassName, namespace);
+            // RU_COMPAT_5_5
+            return isUCNAwareVersion(mergePolicyProvider)
+                    ? mergePolicyProvider.getMergePolicy(mergePolicyClassName, namespace)
+                    : mergePolicyProvider.getMergePolicy(mergePolicyClassName);
         } catch (InvalidConfigurationException e) {
             throw new InvalidConfigurationException("Merge policy must be an instance of SplitBrainMergePolicy,"
                     + " but was " + mergePolicyClassName, e.getCause());
         }
+    }
+
+    private static boolean isUCNAwareVersion(SplitBrainMergePolicyProvider provider) {
+        return provider instanceof NamespaceAwareSplitBrainMergePolicyProvider;
     }
 
     /**

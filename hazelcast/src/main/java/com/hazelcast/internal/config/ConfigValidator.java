@@ -559,8 +559,8 @@ public final class ConfigValidator {
                 SplitBrainMergeTypes.CacheMergeTypes.class,
                 mergePolicyProvider,
                 COMMONLY_SUPPORTED_EVICTION_POLICIES,
-                cacheConfig.getUserCodeNamespace());
-
+                cacheConfig.getUserCodeNamespace()
+        );
     }
 
     /**

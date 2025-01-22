@@ -83,7 +83,7 @@ public class SplitBrainMergePolicyProvider {
      * @return the resolved {@link SplitBrainMergePolicy} class
      * @throws InvalidConfigurationException when the classname could not be resolved
      */
-    public SplitBrainMergePolicy getBuiltInMergePolicy(String className) {
+    public SplitBrainMergePolicy getMergePolicy(String className) {
         if (className == null) {
             throw new InvalidConfigurationException("Class name is mandatory!");
         }
@@ -100,7 +100,7 @@ public class SplitBrainMergePolicyProvider {
      * @throws InvalidConfigurationException when the classname could not be resolved
      */
     public SplitBrainMergePolicy getMergePolicy(String className, @Nullable String namespace) {
-        return getBuiltInMergePolicy(className);
+        return getMergePolicy(className);
     }
 
     private static <T extends SplitBrainMergePolicy> void addPolicy(Class<T> clazz, T policy) {
