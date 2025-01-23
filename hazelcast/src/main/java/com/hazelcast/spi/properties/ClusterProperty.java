@@ -1993,6 +1993,18 @@ public final class ClusterProperty {
     public static final HazelcastProperty DEMOTE_MAX_WAIT
             = new HazelcastProperty("hazelcast.member.demote.max.wait", 600, SECONDS);
 
+    /**
+     * Defines the results threshold at or above which logging is produced for expensive {@link IMap} invocations.
+     * If an implementing invocation returns results totalling equal to or above this threshold, it is logged on the member side.
+     * <p>
+     * Currently only implemented for client invocations of the following methods:
+     * {@link IMap#entrySet()}, and {@link IMap#values()}.
+     *
+     * @since 6.0
+     */
+    public static final HazelcastProperty EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD
+            = new HazelcastProperty("hazelcast.expensive.imap.invocation.reporting.threshold", 100);
+
     private ClusterProperty() {
     }
 }

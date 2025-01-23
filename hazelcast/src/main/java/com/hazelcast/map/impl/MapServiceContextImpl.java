@@ -109,6 +109,7 @@ import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptim
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.properties.ClusterProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.ClusterProperty.EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD;
 import static com.hazelcast.spi.properties.ClusterProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
@@ -156,6 +157,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private final Semaphore nodeWideLoadedKeyLimiter;
     private final boolean forceOffloadEnabled;
     private final long maxSuccessiveOffloadedOpRunNanos;
+    private final int expensiveInvocationReportingThreshold;
 
     private MapService mapService;
 
@@ -189,6 +191,8 @@ class MapServiceContextImpl implements MapServiceContext {
                 .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
         this.maxSuccessiveOffloadedOpRunNanos = nodeEngine.getProperties()
                 .getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
+        this.expensiveInvocationReportingThreshold = nodeEngine.getProperties()
+                                                               .getInteger(EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD);
         if (this.forceOffloadEnabled) {
             logger.info("Force offload is enabled for all maps. This "
                     + "means all map operations will run as if they have map-store configured. "
@@ -958,4 +962,8 @@ class MapServiceContextImpl implements MapServiceContext {
         return partitioningStrategyFactory;
     }
 
+    @Override
+    public int getExpensiveInvocationReportingThreshold() {
+        return expensiveInvocationReportingThreshold;
+    }
 }
