@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.Packet;
 /**
  * A filter used by network system to allow, reject, drop or delay {@code Packet}s
  */
+@FunctionalInterface
 public interface PacketFilter {
 
     enum Action {

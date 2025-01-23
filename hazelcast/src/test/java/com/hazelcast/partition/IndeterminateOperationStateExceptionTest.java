@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.server.PacketFilter;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -42,6 +44,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -52,7 +57,10 @@ import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIME
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.wrapCustomerFilter;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -62,46 +70,70 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndeterminateOperationStateExceptionTest extends HazelcastTestSupport {
 
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
     private HazelcastInstance instance1;
-
     private HazelcastInstance instance2;
 
     private void setup(boolean enableFailOnIndeterminateOperationState) {
-        Config config = new Config();
-        config.setProperty(OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), String.valueOf(3000));
-        if (enableFailOnIndeterminateOperationState) {
-            config.setProperty(FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), String.valueOf(true));
-        }
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = getConfig(enableFailOnIndeterminateOperationState);
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
         warmUpPartitions(instance1, instance2);
     }
 
+    private static Config getConfig(boolean enableFailOnIndeterminateOperationState) {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setProperty(OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), String.valueOf(3000));
+        if (enableFailOnIndeterminateOperationState) {
+            config.setProperty(FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), String.valueOf(true));
+        }
+        return config;
+    }
+
     @Test
-    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally() throws InterruptedException, TimeoutException {
+    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally() {
+        partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally(false);
+    }
+
+    @Test
+    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGloballyAndMemberLeft() {
+        partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally(true);
+    }
+
+    private void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally(boolean shutdownMember) {
         setup(true);
 
-        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        var waitForBackupLatch = waitForBackupAndDrop(instance1);
         int partitionId = getPartitionId(instance1);
 
         OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId).invoke();
-        try {
-            future.get(2, TimeUnit.MINUTES);
-            fail();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof IndeterminateOperationStateException);
+
+        if (shutdownMember) {
+            // wait for operation execution on primary and backup to be sent
+            assertOpenEventually(waitForBackupLatch);
+            instance2.shutdown();
         }
+
+        assertThat(future).failsWithin(2, TimeUnit.MINUTES)
+                .withThrowableThat().withCauseInstanceOf(IndeterminateOperationStateException.class);
     }
 
     @Test
-    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocation() throws InterruptedException, TimeoutException {
+    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocation() {
+        partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocationAndMemberLeft(false);
+    }
+
+    @Test
+    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocationAndMemberLeft() {
+        partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocationAndMemberLeft(true);
+    }
+
+    private void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocationAndMemberLeft(boolean shutdownMember) {
         setup(false);
 
-        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        var waitForBackupLatch = waitForBackupAndDrop(instance1);
         int partitionId = getPartitionId(instance1);
 
         OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
@@ -109,12 +141,51 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId)
                 .setFailOnIndeterminateOperationState(true)
                 .invoke();
-        try {
-            future.get(2, TimeUnit.MINUTES);
-            fail();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof IndeterminateOperationStateException);
+
+        if (shutdownMember) {
+            // wait for operation execution on primary and backup to be sent
+            assertOpenEventually(waitForBackupLatch);
+            instance2.shutdown();
         }
+
+        assertThat(future).failsWithin(2, TimeUnit.MINUTES)
+                .withThrowableThat().withCauseInstanceOf(IndeterminateOperationStateException.class);
+    }
+
+    @Test
+    public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocationAndUnrelatedMemberLeft() throws InterruptedException {
+        setup(false);
+
+        var instance3 = factory.newHazelcastInstance(getConfig(false));
+        assertClusterSizeEventually(3, instance3);
+        waitClusterForSafeState(instance3);
+
+        // in this scenario instance2 or instance3 will contain backup partition
+        // we drop backups to both to be sure that backup operation is lost
+        var waitForBackupLatch = waitForBackupAndDrop(instance1);
+
+        int partitionId = getPartitionId(instance1);
+
+        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
+        InternalCompletableFuture<Object> future = operationService
+                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId)
+                .setFailOnIndeterminateOperationState(true)
+                .invoke();
+
+        // wait for operation execution on primary and backup to be sent
+        assertOpenEventually(waitForBackupLatch);
+
+        // terminate unrelated member to simulate scenario when member not involved in the operation crashes
+        // which should not impact the outcome of the operation (should fail due to lost backup message)
+        var unrelatedMemberAddress = Accessors.getPartitionService(instance1).getPartition(partitionId).getReplica(2).address();
+        for (var instance : List.of(instance2, instance3)) {
+            if (Accessors.getAddress(instance).equals(unrelatedMemberAddress)) {
+                instance.getLifecycleService().terminate();
+            }
+        }
+
+        assertThat(future).failsWithin(2, TimeUnit.MINUTES)
+                .withThrowableThat().withCauseInstanceOf(IndeterminateOperationStateException.class);
     }
 
     @Test
@@ -128,13 +199,9 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
         assertTrueEventually(() -> assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED)));
 
-        spawn((Runnable) () -> instance2.getLifecycleService().terminate());
-        try {
-            future.get(2, TimeUnit.MINUTES);
-            fail();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof IndeterminateOperationStateException);
-        }
+        spawn(() -> instance2.getLifecycleService().terminate());
+        assertThat(future).failsWithin(2, TimeUnit.MINUTES)
+                .withThrowableThat().withCauseInstanceOf(IndeterminateOperationStateException.class);
     }
 
     @Test
@@ -148,7 +215,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new DummyReadOperation(), partitionId).invoke();
-        spawn((Runnable) () -> instance2.getLifecycleService().terminate());
+        spawn(() -> instance2.getLifecycleService().terminate());
         boolean response = future.get(2, TimeUnit.MINUTES);
         assertTrue(response);
         assertEquals(getAddress(instance1), instance1.getUserContext().get(DummyReadOperation.LAST_INVOCATION_ADDRESS));
@@ -195,9 +262,31 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
         assertTrueEventually(() -> assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED)));
 
-        spawn((Runnable) () -> instance2.getLifecycleService().terminate());
+        spawn(() -> instance2.getLifecycleService().terminate());
 
         future.get(2, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Drops all backup operations originating from given instance.
+     * Allows waiting for first dropped backup.
+     *
+     * @param from source instance (partition owner)
+     * @return latch to wait for first dropped backup
+     */
+    @Nonnull
+    public static CountDownLatch waitForBackupAndDrop(HazelcastInstance from) {
+        CountDownLatch waitForBackupLatch = new CountDownLatch(1);
+
+        dropOperationsFrom(from, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        wrapCustomerFilter(from, pf -> (packet, endpoint) -> {
+            var action = pf.filter(packet, endpoint);
+            if (action == PacketFilter.Action.DROP) {
+                waitForBackupLatch.countDown();
+            }
+            return action;
+        });
+        return waitForBackupLatch;
     }
 
     public static class PrimaryOperation extends Operation implements BackupAwareOperation {

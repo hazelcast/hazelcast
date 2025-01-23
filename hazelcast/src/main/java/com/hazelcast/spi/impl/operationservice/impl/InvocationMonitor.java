@@ -432,7 +432,9 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         }
 
         private void onPotentialBackupLoss(Invocation invocation) {
-            invocation.notifyBackupComplete();
+            if (!invocation.shouldFailOnIndeterminateOperationState()) {
+                invocation.notifyBackupComplete();
+            }
         }
     }
 

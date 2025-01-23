@@ -16,21 +16,24 @@
 
 package com.hazelcast.map;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.ObjectArrays;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.After;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,15 +43,15 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
+import static com.hazelcast.partition.IndeterminateOperationStateExceptionTest.waitForBackupAndDrop;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -61,19 +64,16 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
     private static String absentKey(IMap<?, ?> m) {
         // hacky way to generate key that does not exist in map
         // and is owned by first instance
+        assumeThat((Object) m).as("Testcase can be executed only with member proxy")
+                .isInstanceOf(MapProxyImpl.class);
         return generateKeyOwnedBy(((MapProxyImpl<?, ?>) m).getNodeEngine().getHazelcastInstance());
     }
 
     @Parameterized.Parameters(
-            name = "operation:{0},globalFailOnIndeterminateOperationState:{2},overriddenFailOnIndeterminateOperationState:{3}")
+            name = "operation:{0},globalFailOnIndeterminateOperationState:{2},overriddenFailOnIndeterminateOperationState:{3},shutdownMember:{4}")
     public static Collection<Object[]> parameters() {
 
-        List<Object[]> flags = Arrays.asList(new Object[][]{
-                {false, false},
-                {false, true},
-                {true, false},
-                {true, true},
-        });
+        List<Object[]> flags = cartesianProduct(List.of(true, false), List.of(true, false), List.of(false, true));
 
         // each operation must modify map so backup operation is executed
         // some operations do it depending on the arguments and map contents
@@ -128,13 +128,16 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
                         assertEquals(k + "1", m.merge(k, k, (ek, ev) -> ev + "1"))},
 
                 // private methods
-                {"putIfAbsentAsync", (BiConsumerEx<IMap, Object>) (m, k) ->
-                        assertNull(((MapProxyImpl) m).putIfAbsentAsync(absentKey(m), k).toCompletableFuture().get())}
+                {"putIfAbsentAsync", (BiConsumerEx<IMap, Object>) (m, k) -> {
+                    assumeThat((Object) m).as("Testcase can be executed only with member proxy")
+                            .isInstanceOf(MapProxyImpl.class);
+                    assertNull(((MapProxyImpl) m).putIfAbsentAsync(absentKey(m), k).toCompletableFuture().get());
+                } }
         });
 
-        return Lists.cartesianProduct(functions, flags)
+        return cartesianProductTuple(functions, flags)
                 .stream()
-                .map(l -> ObjectArrays.concat(l.get(0), l.get(1), Object.class))
+                .map(l -> ObjectArrays.concat(l.f0(), l.f1(), Object.class))
                 .collect(Collectors.toList());
     }
 
@@ -147,13 +150,22 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
     @Parameterized.Parameter(2)
     public boolean globalFailOnIndeterminateOperationState;
 
+    /**
+     * Meaning of this parameter is different for member-side and client-side tests.
+     * For members it means overriding using private IMap API, for clients it means
+     * setting it in {@link ClientConfig}.
+     */
     @Parameterized.Parameter(3)
     public boolean overriddenFailOnIndeterminateOperationState;
 
+    @Parameterized.Parameter(4)
+    public boolean shutdownMember;
 
     private boolean operationShouldFail() {
         return overriddenFailOnIndeterminateOperationState;
     }
+
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private HazelcastInstance instance1;
 
@@ -161,16 +173,20 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), String.valueOf(1000));
         if (globalFailOnIndeterminateOperationState) {
-            config.setProperty(FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), String.valueOf(true));
+            config.setProperty(ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), String.valueOf(true));
         }
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
         warmUpPartitions(instance1, instance2);
+    }
+
+    @After
+    public void teardown() {
+        factory.shutdownAll();
     }
 
     @Test
@@ -182,7 +198,8 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
         ((MapProxyImpl<?, ?>) map).setFailOnIndeterminateOperationState(overriddenFailOnIndeterminateOperationState);
 
         // break backups
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        var latch = waitForBackupAndDrop(instance1);
+        shutdownBackupMemberIfNeeded(latch);
 
         if (operationShouldFail()) {
             assertThatThrownBy(() -> operation.accept(map, key))
@@ -193,4 +210,49 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
         }
     }
 
+    @Test
+    public void clientOperationShouldFail_whenBackupAckMissed() {
+        // default config - backup ack to client enabled
+        clientOperationShouldFail_whenBackupAckMissed(true);
+    }
+
+    @Test
+    public void clientOperationShouldFail_whenBackupAckMissedAndBoomerangBackupDisabled() {
+        clientOperationShouldFail_whenBackupAckMissed(false);
+    }
+
+    private void clientOperationShouldFail_whenBackupAckMissed(boolean backupAckToClientEnabled) {
+        assumeThat(globalFailOnIndeterminateOperationState)
+                .as("IntermediateOperationStateException should be thrown either on client or on member but not on both")
+                .isNotEqualTo(backupAckToClientEnabled);
+
+        // initialize map with content
+        String key = generateKeyOwnedBy(instance1);
+        var client = factory.newHazelcastClient(new ClientConfig()
+                .setProperty(ClientProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), String.valueOf(overriddenFailOnIndeterminateOperationState))
+                .setBackupAckToClientEnabled(backupAckToClientEnabled));
+        IMap<Object, Object> map = client.getMap(randomMapName());
+        map.put(key, key);
+
+        // break backups
+        var latch = waitForBackupAndDrop(instance1);
+        shutdownBackupMemberIfNeeded(latch);
+
+        if (globalFailOnIndeterminateOperationState || overriddenFailOnIndeterminateOperationState) {
+            assertThatThrownBy(() -> operation.accept(map, key))
+                    .extracting(t -> t instanceof ExecutionException ? t.getCause() : t, InstanceOfAssertFactories.THROWABLE)
+                    .isInstanceOfAny(IndeterminateOperationStateException.class, AssumptionViolatedException.class);
+        } else {
+            operation.accept(map, key);
+        }
+    }
+
+    private void shutdownBackupMemberIfNeeded(CountDownLatch latch) {
+        if (shutdownMember) {
+            spawn(() -> {
+                assertOpenEventually(latch);
+                instance2.getLifecycleService().terminate();
+            });
+        }
+    }
 }

@@ -212,6 +212,10 @@ public class FirewallingServer
             }
         }
 
+        public PacketFilter getPacketFilter() {
+            return packetFilter;
+        }
+
         public void setPacketFilter(PacketFilter packetFilter) {
             this.packetFilter = checkNotNull(packetFilter, "the packetFilter cannot be null");
         }

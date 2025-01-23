@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
@@ -127,6 +128,16 @@ public final class PacketFiltersUtil {
         FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
                 node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
         cm.setPacketFilter(packetFilter);
+    }
+
+    public static void wrapCustomerFilter(HazelcastInstance from, UnaryOperator<PacketFilter> packetFilterWrapper) {
+        Node node = getNode(from);
+        FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
+                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        PacketFilter original = cm.getPacketFilter();
+        assert original != null;
+        var wrapped = packetFilterWrapper.apply(original);
+        cm.setPacketFilter(wrapped);
     }
 
     private static class EndpointAgnosticPacketFilter extends OperationPacketFilter {
