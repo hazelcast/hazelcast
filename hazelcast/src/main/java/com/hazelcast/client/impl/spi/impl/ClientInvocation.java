@@ -329,7 +329,8 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             return;
         }
 
-        long timePassed = System.currentTimeMillis() - startTimeMillis;
+        long currentTimeMillis = System.currentTimeMillis();
+        long timePassed = currentTimeMillis - startTimeMillis;
         if (timePassed > invocationTimeoutMillis) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
@@ -338,10 +339,10 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             StringBuilder sb = new StringBuilder();
             sb.append(this);
             sb.append(" timed out because exception occurred after client invocation timeout ");
-            sb.append(invocationService.getInvocationTimeoutMillis()).append(" ms. ");
-            sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
+            sb.append(invocationTimeoutMillis).append(" ms. ");
+            sb.append("Current time: ").append(timeToString(currentTimeMillis)).append(". ");
             sb.append("Start time: ").append(timeToString(startTimeMillis)).append(". ");
-            sb.append("Total elapsed time: ").append(currentTimeMillis() - startTimeMillis).append(" ms. ");
+            sb.append("Total elapsed time: ").append(timePassed).append(" ms. ");
             String msg = sb.toString();
             completeExceptionally(new OperationTimeoutException(msg, exception));
             return;

@@ -28,13 +28,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.AsynchronouslyExecutingBackupOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -180,20 +180,53 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) getNodeEngine();
         Set<Operation> asyncOperations = nodeEngineImpl.getOperationService().getAsyncOperations();
         CallStatus callStatus = runDirect(backupOp, nodeEngineImpl, asyncOperations, this);
-        offloaded = callStatus.ordinal() == CallStatus.OFFLOAD_ORDINAL;
 
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionReplicaVersionManager versionManager = nodeEngine.getPartitionService().getPartitionReplicaVersionManager();
+        // When implementing offloaded or blocking backup operations it is very important to:
+        // 1) preserve order of backups operations (for primary operations it does not matter
+        // as they do not have a defined order until they enter execution on partition thread).
+        // This is easy to mix with blocking backup operations because returning WAIT from Operation.call()
+        // puts the operation at the end of the queue. Order will be preserved if
+        // after `BlockingOperation.shouldWait()` returned true, subsequent `Operation.call()` does not return WAIT.
+        // For offloaded operations care must be taken not to execute multiple backup operations
+        // concurrently and possibly out of order or the operations must be commutative.
+        // 2) send backup ack using callback provided via OffloadedBackupOperation to avoid waiting
+        // for backup ack timeouts.
+        //
+        // Offloaded and blocking backups should be used with care with sync backups as they can increase
+        // latency if the wait on backup is long and cause backup-timeouts InvocationMonitor log messages.
+        offloaded = callStatus.ordinal() == CallStatus.OFFLOAD_ORDINAL || callStatus == CallStatus.WAIT;
+
+        assert !offloaded || backupOp instanceof AsynchronouslyExecutingBackupOperation
+                : "Offloaded or blocking backup operation must implement AsynchronouslyExecutingBackupOperation";
+
+        // Error handling for backup ops:
+        //
+        // Backup (entire operation) can be rejected due to partition migrations - this is handled by
+        // Backup.onExecutionFailure and normal invocation retries and Backup.run is not even invoked in this case.
+        //
+        // If blocking backup operation throws on first attempt (without WAIT) this will propagate to OperationRunner.run
+        // and ultimately entire Backup will fail, Backup.onExecutionFailure will be invoked, and not sent
+        // and, crucially, replica version not updated which will later trigger anti-entropy sync.
+        //
+        // If a blocking/offloaded backup operation waits and subsequently fails either during its own execution or because
+        // it is rejected due to partitions being migrated, it MUST mark replica as requiring sync so the discrepancy
+        // can be fixed. This also should be done in onExecutionFailure. It can be done when the operation was actually
+        // offloaded/waiting to avoid redundant marking in previous cases, but because this should be rare case
+        // it can also be done for all errors.
+        // See UtilSteps.HANDLE_ERROR.
+        //
+        // isClusterSafe/isMemberSafe is not fully reliable with blocking backups.
+
+        PartitionReplicaVersionManager versionManager = nodeEngineImpl.getPartitionService().getPartitionReplicaVersionManager();
         versionManager.updatePartitionReplicaVersions(getPartitionId(), namespace, replicaVersions, getReplicaIndex());
     }
 
     @Override
     public void accept(Operation operation) {
-        assert operation instanceof StepAwareOperation
+        assert operation instanceof AsynchronouslyExecutingBackupOperation
                 : "Only expected to run when offloading is enabled";
 
         this.afterRunInternal();
-
     }
 
     @Override

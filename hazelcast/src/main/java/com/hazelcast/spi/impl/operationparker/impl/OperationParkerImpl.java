@@ -21,7 +21,9 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
-import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.ReplicaSyncEvent;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
@@ -134,7 +136,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         return count;
     }
 
-    // invalidated waiting ops will removed from queue eventually by notifiers.
+    // invalidated waiting ops will be removed from queue eventually by notifiers.
     public void onMemberLeft(MemberImpl leftMember) {
         for (WaitSet waitSet : waitSetMap.values()) {
             waitSet.invalidateAll(leftMember.getUuid());
@@ -148,17 +150,65 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     /**
-     * Invalidates all parked operations for the migrated partition and sends a {@link PartitionMigratingException} as a
-     * response.
-     * Invoked on the migration destination. This is executed under partition migration lock!
+     * Invalidates all parked operations for the migrated partition if needed
+     * and sends a {@link PartitionMigratingException} as a response.
+     * It is also invoked for promotion.
+     * This is executed under partition migration lock!
      */
-    public void onPartitionMigrate(MigrationInfo migrationInfo) {
-        if (migrationInfo.getSource() == null || !migrationInfo.getSource().isIdentical(nodeEngine.getLocalMember())) {
-            return;
-        }
+    public void onPartitionMigrate(PartitionMigrationEvent migrationInfo) {
 
+        // If this node is migration SOURCE:
+        // - it will no longer be an owner (if it was before), blindly invalidate all primary operations
+        //   as they will be retried on a new owner
+        // - if just the backup replica index changes, backup operations should be kept to avoid backup inconsistency.
+        //   In this case replica versions were already updated when backup was parked so anti-entropy would not be able
+        //   to fix it. The backups would not be retired if they failed with PartitionMigratingException at this stage.
+        //   Additional caveat in this case is that it is necessary to update replicaIndex in the operation so it will
+        //   be allowed to execute after migration.
+        //
+        // If this node is migration DESTINATION:
+        // - if it contained the partition before (currentReplicaIndex != -1), there can be some operations parked,
+        //   either primary or backup. DESTINATION gets partition data from owner, so old operations are no longer needed.
+        // - the node is treated also as DESTINATION when the backup is promoted to owner after previous owner crash.
+        //   The same parked operation rules apply even though it might be tempting to keep backup operations to limit data loss.
+        // - if this node did not have the partition before, there should be no parked operations for it.
+        // - in case when the partition is completely lost, technically new replicas are also DESTINATION, but onPartitionMigrate
+        //   is not invoked in this case. There is also nothing to do.
+        //
+        // The process of invalidating operations after migration should be quite strict to avoid executing
+        // some stray operations when the replica is migrated back and forth (kind of ABA problem).
+        //
+        // Another of the safeguards against executing stray parked operations is replicaIndex checking in
+        // OperationRunnerImpl.ensureNoPartitionProblems. This also the reason why it is necessary to update
+        // replicaIndex for parked backup operations.
+        //
+        // Sometimes waiting backup operations can be cancelled after being unparked because the partition is migrating.
+        // For backups this should happen only on the migration destination (both partition owner and migration destination
+        // set the migrating flag, but not migration source if it is not the owner). If such failure occurs,
+        // partition should be marked for replica sync as the backup operation can be treated as lost.
+
+        if ((migrationInfo.getMigrationEndpoint() == MigrationEndpoint.SOURCE)
+            || (migrationInfo.getMigrationEndpoint() == MigrationEndpoint.DESTINATION
+                && migrationInfo.getCurrentReplicaIndex() >= 0)) {
+
+            for (WaitSet waitSet : waitSetMap.values()) {
+                waitSet.onPartitionMigrate(migrationInfo);
+            }
+        } else {
+            logger.finest("onPartitionMigrate ignores %s", migrationInfo);
+        }
+    }
+
+    /**
+     * Invalidates all parked backup operations for the synced partition and namespace.
+     * Called on operation thread.
+     */
+    public void onReplicaSync(ReplicaSyncEvent syncEvent) {
+        // need to invalidate operation for just replicated namespace partition
+        // - similar to migration DESTINATION.
+        // onReplicaSync is invoked only on the destination receiving data from owner.
         for (WaitSet waitSet : waitSetMap.values()) {
-            waitSet.onPartitionMigrate(migrationInfo);
+            waitSet.onReplicaSync(syncEvent);
         }
     }
 
@@ -194,6 +244,22 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
             sb.append("\t");
             sb.append(waitSet.size());
             sb.append(", ");
+        }
+        sb.append("]\n}");
+        return sb.toString();
+    }
+
+    // for testing
+    public String dump() {
+        StringBuilder sb = new StringBuilder("OperationParker{");
+        sb.append("delayQueue=");
+        sb.append(delayQueue.size());
+        sb.append(" \n[");
+        for (var entry : waitSetMap.entrySet()) {
+            sb.append(entry.getKey());
+            sb.append(" -> ");
+            sb.append(entry.getValue());
+            sb.append(",\n");
         }
         sb.append("]\n}");
         return sb.toString();

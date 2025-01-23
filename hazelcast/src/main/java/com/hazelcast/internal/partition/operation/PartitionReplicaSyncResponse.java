@@ -24,6 +24,7 @@ import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.partition.ReplicaSyncEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -37,6 +38,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
@@ -128,6 +130,9 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         if (replicaIndex == currentReplicaIndex) {
             replicaManager.finalizeReplicaSync(partitionId, replicaIndex, namespace, versions);
+
+            var syncEvent = new ReplicaSyncEvent(partitionId, namespace, replicaIndex);
+            ((NodeEngineImpl) getNodeEngine()).onReplicaSync(syncEvent);
         } else {
             replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
             if (currentReplicaIndex < 0) {

@@ -17,10 +17,11 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationservice.AsynchronouslyExecutingBackupOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -29,6 +30,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
 
 /**
  * The OperationRunner is responsible for the actual running of operations.
@@ -189,15 +193,31 @@ public abstract class OperationRunner {
             op.pushThreadContext();
             op.beforeRun();
             callStatus = op.call();
-            op.afterRun();
 
-            if (callStatus.ordinal() == OFFLOAD_ORDINAL) {
-                Offload offload = (Offload) callStatus;
-                offload.init(nodeEngine, asyncOperations);
-                if (op instanceof StepAwareOperation stepAwareOperation && op instanceof BackupOperation) {
-                    stepAwareOperation.setBackupOpAfterRun(backupOpAfterRun);
-                }
-                offload.start();
+            switch (callStatus.ordinal()) {
+                case RESPONSE_ORDINAL:
+                case VOID_ORDINAL:
+                    op.afterRun();
+                    break;
+                case OFFLOAD_ORDINAL:
+                    op.afterRun();
+                    Offload offload = (Offload) callStatus;
+                    offload.init(nodeEngine, asyncOperations);
+                    if (op instanceof AsynchronouslyExecutingBackupOperation asynchronouslyExecutingBackupOperation
+                            && op instanceof BackupOperation) {
+                        asynchronouslyExecutingBackupOperation.setBackupOpAfterRun(backupOpAfterRun);
+                    }
+                    offload.start();
+                    break;
+                case WAIT_ORDINAL:
+                    if (op instanceof AsynchronouslyExecutingBackupOperation asynchronouslyExecutingBackupOperation
+                            && op instanceof BackupOperation) {
+                        asynchronouslyExecutingBackupOperation.setBackupOpAfterRun(backupOpAfterRun);
+                    }
+                    nodeEngine.getOperationParker().park((BlockingOperation) op);
+                    break;
+                default:
+                    throw new IllegalStateException();
             }
         } finally {
             op.popThreadContext();

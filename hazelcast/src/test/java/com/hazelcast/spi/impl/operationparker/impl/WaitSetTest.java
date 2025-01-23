@@ -16,10 +16,14 @@
 
 package com.hazelcast.spi.impl.operationparker.impl;
 
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -119,7 +123,7 @@ public class WaitSetTest {
         BlockedOperation blockedOp = newBlockingOperationWithServiceNameAndObjectId("service1", "1");
         waitSet.park(blockedOp);
 
-        NotifyingOperation notifyOp = newNotifyingOperationWithServiceNameAndObjectId("service1", "1");
+        NotifyingOperation notifyOp = blockedOp.createNotifyingOperation();
         waitSet.unpark(notifyOp, notifyOp.getNotifiedKey());
 
         verify(operationService).run(blockedOp);
@@ -219,16 +223,9 @@ public class WaitSetTest {
         return op;
     }
 
-    private NotifyingOperation newNotifyingOperationWithServiceNameAndObjectId(String serviceName, String objectId) {
-        NotifyingOperation op = new NotifyingOperation();
-        op.objectId = objectId;
-        op.setServiceName(serviceName);
-        return op;
-    }
-
-    private static class BlockedOperation extends Operation implements BlockingOperation {
-        private String objectId;
-        private boolean hasRun;
+    static class BlockedOperation extends Operation implements BlockingOperation, ServiceNamespaceAware {
+        String objectId;
+        boolean hasRun;
 
         @Override
         public WaitNotifyKey getWaitKey() {
@@ -248,9 +245,29 @@ public class WaitSetTest {
         public void run() throws Exception {
             hasRun = true;
         }
+
+        /**
+         * Creates operation that will unpark this {@link BlockedOperation}
+         */
+        public NotifyingOperation createNotifyingOperation() {
+            var op = new NotifyingOperation();
+            op.setServiceName(getServiceName());
+            op.objectId = objectId;
+            op.setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
+            return op;
+        }
+
+        @Override
+        public ServiceNamespace getServiceNamespace() {
+            if (getServiceName() != null) {
+                return new DistributedObjectNamespace(getServiceName(), objectId);
+            } else {
+                return NonFragmentedServiceNamespace.INSTANCE;
+            }
+        }
     }
 
-    private static class NotifyingOperation extends Operation implements Notifier {
+    static class NotifyingOperation extends Operation implements Notifier {
         private String objectId;
 
         @Override
@@ -268,14 +285,8 @@ public class WaitSetTest {
         }
     }
 
-    private static class WaitNotifyKeyImpl implements WaitNotifyKey {
-        private final String serviceName;
-        private final String objectName;
-
-        WaitNotifyKeyImpl(String serviceName, String objectName) {
-            this.serviceName = serviceName;
-            this.objectName = objectName;
-        }
+    private record WaitNotifyKeyImpl(String serviceName,
+                                     String objectName) implements WaitNotifyKey {
 
         @Override
         public String getServiceName() {

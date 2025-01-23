@@ -16,19 +16,20 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation.PromotionOperationCallback;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.ReplicaMigrationEvent;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Arrays;
 
@@ -76,6 +77,8 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
             migrationInfo.setStatus(MigrationStatus.SUCCESS);
             shiftUpReplicaVersions();
             commitServices();
+
+            ((NodeEngineImpl) getNodeEngine()).onPartitionMigrate(getPartitionMigrationEvent());
         } else {
             rollbackServices();
         }

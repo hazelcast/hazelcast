@@ -52,6 +52,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 
@@ -264,7 +265,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     @Override
-    public void setBackupOpAfterRun(Consumer backupOpAfterRun) {
+    public void setBackupOpAfterRun(Consumer<Operation> backupOpAfterRun) {
         this.backupOpAfterRun = backupOpAfterRun;
     }
 

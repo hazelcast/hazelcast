@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -82,8 +81,7 @@ public final class StepResponseUtil {
     private static void handleBackupAndSendResponse(State state) {
         assert state.getPartitionId() != UNSET;
 
-        OperationService operationService = getOperationService(state);
-        OperationRunner runner = ((OperationServiceImpl) operationService)
+        OperationRunner runner = getOperationService(state)
                 .getOperationExecutor().getPartitionOperationRunners()[state.getPartitionId()];
 
         ((OperationRunnerImpl) runner).sendBackupsAndResponse(state.getOperation());

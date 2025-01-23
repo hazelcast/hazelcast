@@ -43,7 +43,8 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.ReplicaSyncEvent;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
@@ -539,8 +540,12 @@ public class NodeEngineImpl implements NodeEngine {
         operationParker.onClientDisconnected(clientUuid);
     }
 
-    public void onPartitionMigrate(MigrationInfo migrationInfo) {
+    public void onPartitionMigrate(PartitionMigrationEvent migrationInfo) {
         operationParker.onPartitionMigrate(migrationInfo);
+    }
+
+    public void onReplicaSync(ReplicaSyncEvent syncEvent) {
+        operationParker.onReplicaSync(syncEvent);
     }
 
     /**

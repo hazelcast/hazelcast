@@ -211,6 +211,14 @@ public class BounceMemberRule implements TestRule {
         return members;
     }
 
+    public HazelcastInstance[] getMembersSnapshot() {
+        var membersArray = new HazelcastInstance[members.length()];
+        for (int i = 0; i < members.length(); i++) {
+            membersArray[i] = members.get(i);
+        }
+        return membersArray;
+    }
+
     public AtomicReferenceArray<HazelcastInstance> getTestDrivers() {
         return testDrivers;
     }

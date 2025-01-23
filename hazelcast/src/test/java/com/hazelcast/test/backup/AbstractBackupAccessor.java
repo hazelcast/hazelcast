@@ -32,12 +32,12 @@ import static com.hazelcast.test.Accessors.getNode;
  * @param <K> type of keys
  * @param <V> type of values
  */
-abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
+public abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
 
-    final HazelcastInstance[] cluster;
-    final int replicaIndex;
+    protected final HazelcastInstance[] cluster;
+    protected final int replicaIndex;
 
-    AbstractBackupAccessor(HazelcastInstance[] cluster, int replicaIndex) {
+    protected AbstractBackupAccessor(HazelcastInstance[] cluster, int replicaIndex) {
         if (cluster == null || cluster.length == 0) {
             throw new IllegalArgumentException("Cluster has to have at least 1 member.");
         }
@@ -48,7 +48,7 @@ abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
         this.replicaIndex = replicaIndex;
     }
 
-    HazelcastInstance getHazelcastInstance(IPartition partition) {
+    protected HazelcastInstance getHazelcastInstance(IPartition partition) {
         Address replicaAddress = partition.getReplicaAddress(replicaIndex);
         if (replicaAddress == null) {
             // there is no owner of this replica (yet?)
@@ -64,7 +64,7 @@ abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
         return hz;
     }
 
-    InternalPartition getPartitionForKey(K key) {
+    protected InternalPartition getPartitionForKey(K key) {
         // to determine partition we can use any instance (let's pick the first one)
         HazelcastInstance instance = cluster[0];
         InternalPartitionService partitionService = getNode(instance).getPartitionService();
@@ -72,7 +72,7 @@ abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
         return partitionService.getPartition(partitionId);
     }
 
-    HazelcastInstance getInstanceWithAddress(Address address) {
+    protected HazelcastInstance getInstanceWithAddress(Address address) {
         for (HazelcastInstance hz : cluster) {
             if (hz.getCluster().getLocalMember().getAddress().equals(address)) {
                 return hz;

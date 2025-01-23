@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
+import com.hazelcast.spi.impl.operationservice.AsynchronouslyExecutingBackupOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import java.util.function.Consumer;
@@ -25,7 +27,7 @@ import java.util.function.Consumer;
  *
  * @see Step
  */
-public interface StepAwareOperation<S> {
+public interface StepAwareOperation<S> extends AsynchronouslyExecutingBackupOperation {
 
     /**
      * @return create initial state of this operation
@@ -55,7 +57,8 @@ public interface StepAwareOperation<S> {
      *
      * @param backupOpAfterRun {@link Backup#afterRun()}
      */
-    default void setBackupOpAfterRun(Consumer backupOpAfterRun) {
+    @Override
+    default void setBackupOpAfterRun(Consumer<Operation> backupOpAfterRun) {
 
     }
 }

@@ -394,7 +394,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
         if (!(op instanceof BlockingOperation)) {
-            // if the call is not a BLockingOperation, then in case of a call-timeout, we are not going to retry;
+            // if the call is not a BlockingOperation, then in case of a call-timeout, we are not going to retry;
             // only blocking operations are going to be retried, because they rely on a repeated execution mechanism
             complete(CALL_TIMEOUT);
             return;

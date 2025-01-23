@@ -103,7 +103,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
 
         if (success) {
-            nodeEngine.onPartitionMigrate(migrationInfo);
+            nodeEngine.onPartitionMigrate(getPartitionMigrationEvent());
         }
     }
 

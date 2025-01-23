@@ -1453,7 +1453,7 @@ public abstract class HazelcastTestSupport {
         throw new AssertionFailedError(excMsg);
     }
 
-    private static OperationParkerImpl getOperationParkingService(HazelcastInstance instance) {
+    protected static OperationParkerImpl getOperationParkingService(HazelcastInstance instance) {
         return (OperationParkerImpl) Accessors.getNodeEngineImpl(instance).getOperationParker();
     }
 

@@ -16,20 +16,26 @@
 
 package com.hazelcast.spi.impl.operationparker.impl;
 
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.ReplicaSyncEvent;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingBackupOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.exception.PartitionMigratingException;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -77,6 +83,9 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         long timeout = op.getWaitTimeout();
         WaitSetEntry entry = new WaitSetEntry(queue, op);
         entry.setNodeEngine(nodeEngine);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Parking on %s as #%d: %s", op.getWaitKey(), queue.size(), op);
+        }
         queue.offer(entry);
         if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
             delayQueue.offer(entry);
@@ -124,13 +133,26 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
     }
 
     /**
-     * Invalidates all parked operations for the migrated partition and sends a {@link PartitionMigratingException} as a
+     * Invalidates parked operations for the migrated partition and sends a {@link PartitionMigratingException} as a
      * response.
-     * Invoked on the migration destination. This is executed under partition migration lock!
+     * This is executed under partition migration lock!
      */
-    void onPartitionMigrate(MigrationInfo migrationInfo) {
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    void onPartitionMigrate(PartitionMigrationEvent event) {
         Iterator<WaitSetEntry> it = queue.iterator();
-        int partitionId = migrationInfo.getPartitionId();
+        int partitionId = event.getPartitionId();
+
+        boolean backupStillNeeded = event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
+                // the partition was backup partition. owner should not have backups parked
+                && event.getCurrentReplicaIndex() > 0
+                // the partition remains as backup partition, note that newReplicaIndex cannot be 0 for SOURCE
+                && event.getNewReplicaIndex() > 0;
+
+        if (logger.isFinestEnabled() && it.hasNext()) {
+            logger.finest("onPartitionMigrate processes parked operations for partitionId=%d "
+                            + " for migration %s key=%s backup still needed %s",
+                    partitionId, event, ((BlockingOperation) queue.peek().getOperation()).getWaitKey(), backupStillNeeded);
+        }
         while (it.hasNext()) {
             if (Thread.currentThread().isInterrupted()) {
                 return;
@@ -141,13 +163,88 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
             }
 
             Operation op = entry.getOperation();
-            if (partitionId == op.getPartitionId()) {
+            if (partitionId != op.getPartitionId()) {
+                continue;
+            }
+
+            if (backupStillNeeded && op instanceof BlockingBackupOperation bbo
+                    // sanity check
+                    && op.getReplicaIndex() == event.getCurrentReplicaIndex()
+                    // is it still needed?
+                    && bbo.shouldKeepAfterMigration(event)) {
+                logger.finest("onPartitionMigrate updates replica index of operation %s", op);
+                op.setReplicaIndex(event.getNewReplicaIndex());
+            } else {
                 entry.setValid(false);
-                PartitionMigratingException pme = new PartitionMigratingException(nodeEngine.getThisAddress(),
-                        partitionId, op.getClass().getName(), op.getServiceName());
-                op.sendResponse(pme);
+                if (op instanceof BackupOperation) {
+                    // if this was a backup, it does not have to be retried because as part of migration the data
+                    // was already sent.
+                    // onExecutionFailure is _not_ invoked here.
+                    // The partition was just migrated or is no longer needed. In those cases we should _not_ mark it as dirty.
+                    // This is especially pronounced for the just migrated partition (DESTINATION).
+                    //
+                    // Second case when this is invoked is backup promotion to owner.
+                    // Blocking backup operations cannot be reliably executed after promotion: usually just after promotion
+                    // the partition will be marked as migrating (needed to restore requested backup count).
+                    // This will reject backup operations due to PartitionMigratingException and there is no mechanism
+                    // to retry them. After promotion there is no other owner which could be used to sync this replica with.
+                    //
+                    // If we are here after promotion, this may mean that some data is lost. However, it is very hard
+                    // to observe it. Backup ACK has not yet been sent. However, isClusterSafe/isMemberSafe would report
+                    // that the cluster/member is safe after the client invocation finished (after 5s backup ack timeout)
+                    // even though there still would be some parked backups. This is an improbable scenario.
+                    // Nevertheless, isClusterSafe/isMemberSafe is not fully reliable with blocking backups.
+                    logger.fine("onPartitionMigrate invalidates backup operation %s", op);
+                } else {
+                    // if this is a regular operation, it should be retried as a response to PartitionMigratingException
+                    // on a new owner.
+                    logger.fine("onPartitionMigrate invalidates operation %s", op);
+                    PartitionMigratingException pme = new PartitionMigratingException(nodeEngine.getThisAddress(),
+                            partitionId, op.getClass().getName(), op.getServiceName());
+                    op.sendResponse(pme);
+                }
                 it.remove();
             }
+        }
+    }
+
+    public void onReplicaSync(ReplicaSyncEvent syncEvent) {
+        Iterator<WaitSetEntry> it = queue.iterator();
+        int partitionId = syncEvent.partitionId();
+
+        if (logger.isFinestEnabled() && it.hasNext()) {
+            logger.finest("onReplicaSync processes parked operations for partitionId=%d "
+                            + " for sync %s key=%s",
+                    partitionId, syncEvent, ((BlockingOperation) queue.peek().getOperation()).getWaitKey());
+        }
+        while (it.hasNext()) {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
+            WaitSetEntry entry = it.next();
+            if (!entry.isValid()) {
+                continue;
+            }
+
+            Operation op = entry.getOperation();
+            if (partitionId != op.getPartitionId() || op.getReplicaIndex() != syncEvent.replicaIndex()) {
+                continue;
+            }
+
+            if (namespaceMatches(syncEvent, op)) {
+                assert op instanceof BackupOperation : "Unexpected parked operation on backup replica";
+                logger.fine("onReplicaSync invalidates backup operation %s", op);
+                entry.setValid(false);
+                it.remove();
+            }
+        }
+    }
+
+    private static boolean namespaceMatches(ReplicaSyncEvent syncEvent, Operation op) {
+        if (op instanceof ServiceNamespaceAware awareOp) {
+            return syncEvent.namespace().equals(awareOp.getServiceNamespace());
+        } else {
+            return syncEvent.namespace() == NonFragmentedServiceNamespace.INSTANCE;
         }
     }
 
@@ -174,30 +271,37 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
+    // invoked after member left
     public void invalidateAll(UUID callerUuid) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
                 continue;
             }
             Operation op = entry.getOperation();
-            if (callerUuid.equals(op.getCallerUuid())) {
+            // do not invalidate waiting backup operations to have consistent primary and backup:
+            // primary operation already executed
+            if (callerUuid.equals(op.getCallerUuid()) && !(op instanceof BackupOperation)) {
                 entry.setValid(false);
             }
         }
     }
 
+    // invoked after client disconnected
     public void cancelAll(UUID callerUuid, Throwable cause) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
                 continue;
             }
             Operation op = entry.getOperation();
-            if (callerUuid.equals(op.getCallerUuid())) {
+            // do not invalidate waiting backup operations to have consistent primary and backup:
+            // primary operation already executed
+            if (callerUuid.equals(op.getCallerUuid()) && !(op instanceof BackupOperation)) {
                 entry.cancel(cause);
             }
         }
     }
 
+    // invoked after data structure is destroyed
     public void cancelAll(String serviceName, Object objectId, Throwable cause) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
@@ -239,5 +343,13 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
     @Override
     public Iterator<WaitSetEntry> iterator() {
         return queue.iterator();
+    }
+
+    @Override
+    public String toString() {
+        return "WaitSet{"
+                + "queue=" + queue
+                + ", delayQueue=" + delayQueue
+                + '}';
     }
 }

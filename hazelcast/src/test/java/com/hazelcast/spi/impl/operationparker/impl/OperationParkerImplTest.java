@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,12 +39,18 @@ import static com.hazelcast.test.Accessors.getNode;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationParkerImplTest extends HazelcastTestSupport {
 
+    private HazelcastInstance hz;
+    private OperationParkerImpl waitNotifyService;
+
+    @Before
+    public void setup() {
+        hz = createHazelcastInstance();
+        NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
+        waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
+    }
+
     @Test
     public void testAwaitQueueCount_shouldNotExceedBlockedThreadCount() {
-        final HazelcastInstance hz = createHazelcastInstance();
-        NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
-        OperationParkerImpl waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
-
         final int keyCount = 1000;
         int nThreads = 4;
         CountDownLatch latch = new CountDownLatch(nThreads);
