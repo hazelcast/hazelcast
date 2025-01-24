@@ -1682,12 +1682,14 @@ public class MigrationManagerImpl implements MigrationManager {
             long promotionsElapsedMillis = Timer.millisElapsed(promotionsStart);
             int promotionsCount = promotions.values().stream().mapToInt(Collection::size).sum();
 
-            if (success) {
-                logger.info(String.format("Successfully promoted %d backups on %d members in %d ms",
-                        promotionsCount, promotions.size(), promotionsElapsedMillis));
-            } else {
-                logger.info(String.format("Tried to promote %d backups on %d members but some failed in %d ms",
-                        promotionsCount, promotions.size(), promotionsElapsedMillis));
+            if (!promotions.isEmpty()) {
+                if (success) {
+                    logger.info(String.format("Successfully promoted %d backups on %d members in %d ms",
+                            promotionsCount, promotions.size(), promotionsElapsedMillis));
+                } else {
+                    logger.info(String.format("Tried to promote %d backups on %d members but some failed in %d ms",
+                            promotionsCount, promotions.size(), promotionsElapsedMillis));
+                }
             }
 
             partitionServiceLock.lock();
