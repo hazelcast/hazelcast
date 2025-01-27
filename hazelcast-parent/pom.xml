@@ -160,6 +160,7 @@
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder:
             io.github.*:org.apache.*
         </maven.javadoc.plugin.excludePackageNames>
+        <maven.compiler.procfull></maven.compiler.procfull>
     </properties>
 
     <distributionManagement>
@@ -747,6 +748,7 @@
                         <encoding>UTF-8</encoding>
                         <compilerArgs>
                             <arg>-Xlint:-deprecation,-removal</arg>
+                            <arg>${maven.compiler.procfull}</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -1185,6 +1187,20 @@
     </build>
 
     <profiles>
+        <profile>
+            <!--
+            Explicitly enables annotation processing. Since JDK 23 it's required to activate annotation processing, otherwise
+            we will get errors connected to the usage of Immutables (used by SQL engine).
+            For more details on JDK change, you can check https://inside.java/2024/06/18/quality-heads-up/.
+            -->
+            <id>jdk-needing-annotation-processing-activation</id>
+            <activation>
+                <jdk>[23,)</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.procfull>-proc:full</maven.compiler.procfull>
+            </properties>
+        </profile>
         <profile>
             <!--
             Enables faster local builds, by skipping some validation steps (e.g. Checkstyle)
