@@ -562,7 +562,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
     @Test
     public void test_submit_server_cli_version_minor_mismatch() {
-        String serverVersion = "5.0.0";
+        String serverVersion = "5.0.5";
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
 
         Config cfg = smallInstanceConfig();
@@ -593,7 +593,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
     @Test
     public void test_submit_server_cli_version_minor_mismatch_ignore() {
-        String serverVersion = "5.0.0";
+        String serverVersion = "5.0.5";
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
 
         Config cfg = smallInstanceConfig();
@@ -645,7 +645,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
     @Test
     public void test_submit_server_cli_version_same_minor_patch_mismatch() {
-        String serverVersion = "5.0.0";
+        String serverVersion = "5.0.5";
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
 
         Config cfg = smallInstanceConfig();
