@@ -22,12 +22,12 @@ import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.Test;
 
-public class ConfigClassesExposingInternalImplementationConditionTest extends ArchUnitTestSupport {
+public class PublicApiClassesExposingInternalImplementationConditionTest extends ArchUnitTestSupport {
     @Test
-    public void configClassesExposingInternalImplementationCondition() {
+    public void publicApiClassesExposingInternalImplementationCondition() {
         String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
-        ArchUnitRules.CONFIG_CLASSES_EXPOSING_INTERNAL_IMPLEMENTATION.check(classes);
+        ArchUnitRules.PUBLIC_API_CLASSES_EXPOSING_INTERNAL_IMPLEMENTATION.check(classes);
     }
 }
