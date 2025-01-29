@@ -18,6 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -55,8 +56,9 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Config config = new Config().setProperty(Diagnostics.FILENAME_PREFIX.getName(), "foobar");
         HazelcastProperties hzProperties = new HazelcastProperties(config);
 
-        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties);
-        assertEquals("foobar-diagnostics", diagnostics.baseFileName);
+        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties,
+                config.getDiagnosticsConfig());
+        assertEquals("foobar-diagnostics", diagnostics.getBaseFileName());
     }
 
     @Test
@@ -64,8 +66,9 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Config config = new Config();
         HazelcastProperties hzProperties = new HazelcastProperties(config);
 
-        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties);
-        assertEquals("diagnostics", diagnostics.baseFileName);
+        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties,
+                config.getDiagnosticsConfig());
+        assertEquals("diagnostics", diagnostics.getBaseFileName());
     }
 
     @Test(expected = NullPointerException.class)
@@ -137,12 +140,35 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         assertNotNull("DiagnosticsLogFile should not be null", diagnostics.diagnosticsLog);
     }
 
+    @Test
+    public void test_DiagnosticsOutputType() throws Exception {
+        assertEquals(DiagnosticsOutputType.FILE, DiagnosticsOutputType.valueOf("FILE"));
+        assertEquals(DiagnosticsOutputType.STDOUT, DiagnosticsOutputType.valueOf("STDOUT"));
+        assertEquals(DiagnosticsOutputType.LOGGER, DiagnosticsOutputType.valueOf("LOGGER"));
+
+        Config config = new Config();
+        config.getDiagnosticsConfig()
+                .setEnabled(true)
+                .setOutputType(DiagnosticsOutputType.FILE);
+        Diagnostics diagnostics = newDiagnostics(config);
+        assertEquals(DiagnosticsLogFile.class, diagnostics.newLog(diagnostics).getClass());
+        config.getDiagnosticsConfig()
+                .setOutputType(DiagnosticsOutputType.STDOUT);
+        diagnostics = newDiagnostics(config);
+        assertEquals(DiagnosticsStdout.class, diagnostics.newLog(diagnostics).getClass());
+        config.getDiagnosticsConfig()
+                .setOutputType(DiagnosticsOutputType.LOGGER);
+        diagnostics = newDiagnostics(config);
+        assertEquals(DiagnosticsLogger.class, diagnostics.newLog(diagnostics).getClass());
+    }
+
     private Diagnostics newDiagnostics(Config config) throws Exception {
         Address address = new Address("127.0.0.1", 5701);
         String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
         String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 
-        return new Diagnostics(name, mockLoggingService(), "hz", new HazelcastProperties(config));
+        return new Diagnostics(name, mockLoggingService(), "hz", new HazelcastProperties(config),
+                config.getDiagnosticsConfig());
     }
 
     private LoggingService mockLoggingService() {

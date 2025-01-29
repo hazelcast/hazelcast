@@ -23,6 +23,7 @@ import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -57,6 +58,7 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
@@ -121,6 +123,7 @@ public class ClientConfig {
     private ClientSqlConfig sqlConfig = new ClientSqlConfig();
     private ClientTpcConfig tpcConfig = new ClientTpcConfig();
     private boolean cpDirectToLeaderRoutingEnabled;
+    private DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -1063,6 +1066,27 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the diagnostics configuration for this hazelcast client.
+     * @since 6.0
+     * @return the diagnostics configuration
+     */
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return diagnosticsConfig;
+    }
+
+    /**
+     * Sets the diagnostics configuration for this hazelcast client.
+     * @since 6.0
+     * @param diagnosticsConfig the diagnostics configuration
+     * @return this config instance
+     * @throws NullPointerException if diagnosticsConfig is null
+     */
+    public ClientConfig setDiagnosticsConfig(@Nonnull DiagnosticsConfig diagnosticsConfig) {
+        this.diagnosticsConfig = checkNotNull(diagnosticsConfig, "DiagnosticsConfig cannot be null!");
+        return this;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
@@ -1108,7 +1132,8 @@ public class ClientConfig {
                 && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig)
                 && Objects.equals(sqlConfig, other.sqlConfig)
                 && Objects.equals(tpcConfig, other.tpcConfig)
-                && Objects.equals(cpDirectToLeaderRoutingEnabled, other.cpDirectToLeaderRoutingEnabled);
+                && Objects.equals(cpDirectToLeaderRoutingEnabled, other.cpDirectToLeaderRoutingEnabled)
+                && Objects.equals(diagnosticsConfig, other.diagnosticsConfig);
     }
 
     @Override
@@ -1139,6 +1164,7 @@ public class ClientConfig {
                 + ", sqlConfig=" + sqlConfig
                 + ", tpcConfig=" + tpcConfig
                 + ", cpDirectToLeaderRoutingEnabled=" + cpDirectToLeaderRoutingEnabled
+                + ", diagnosticsConfig=" + diagnosticsConfig
                 + '}';
     }
 }

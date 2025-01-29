@@ -61,13 +61,18 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
-        this.fileName = diagnostics.baseFileName + "-%03d.log";
+        this.fileName = diagnostics.getBaseFileName() + "-%03d.log";
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
 
-        this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);
+        this.maxRollingFileCount = diagnostics.properties.containsKey(MAX_ROLLED_FILE_COUNT)
+                ? diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT) : diagnostics.getConfig().getMaxRolledFileCount();
+
+        float maxRollingFileSizeMB = diagnostics.properties.containsKey(MAX_ROLLED_FILE_SIZE_MB)
+                ? diagnostics.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB) : diagnostics.getConfig().getMaxRolledFileSizeInMB();
+
         // we accept a float, so it becomes easier to testing to create a small file
         this.maxRollingFileSizeBytes = round(
-                ONE_MB * diagnostics.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB));
+                ONE_MB * maxRollingFileSizeMB);
 
         logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
     }
@@ -99,12 +104,12 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
 
     private File newFile(int index) {
         createDirectoryIfDoesNotExist();
-        logger.info("Diagnostics log directory is [" + diagnostics.directory + "]");
-        return new File(diagnostics.directory, format(fileName, index));
+        logger.info("Diagnostics log directory is [" + diagnostics.getLoggingDirectory() + "]");
+        return new File(diagnostics.getLoggingDirectory(), format(fileName, index));
     }
 
     private void createDirectoryIfDoesNotExist() {
-        File dir = diagnostics.directory;
+        File dir = diagnostics.getLoggingDirectory();
         if (dir.exists()) {
             if (!dir.isDirectory()) {
                 throw new InvalidConfigurationException("Configured path for diagnostics log file '" + dir

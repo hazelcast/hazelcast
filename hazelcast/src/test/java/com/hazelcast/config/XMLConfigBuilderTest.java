@@ -3135,27 +3135,27 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testJavaReflectionFilter() {
         String xml = HAZELCAST_START_TAG
-            + "  <sql>\n"
-            + "      <java-reflection-filter defaults-disabled='true'>\n"
-            + "          <whitelist>\n"
-            + "              <class>java.lang.String</class>\n"
-            + "              <class>example.Foo</class>\n"
-            + "              <package>com.acme.app</package>\n"
-            + "              <package>com.acme.app.subpkg</package>\n"
-            + "              <prefix>java</prefix>\n"
-            + "              <prefix>com.hazelcast.</prefix>\n"
-            + "              <prefix>[</prefix>\n"
-            + "          </whitelist>\n"
-            + "          <blacklist>\n"
-            + "              <class>com.acme.app.BeanComparator</class>\n"
-            + "          </blacklist>\n"
-            + "      </java-reflection-filter>\n"
-            + "  </sql>\n"
-            + HAZELCAST_END_TAG;
+                + "  <sql>\n"
+                + "      <java-reflection-filter defaults-disabled='true'>\n"
+                + "          <whitelist>\n"
+                + "              <class>java.lang.String</class>\n"
+                + "              <class>example.Foo</class>\n"
+                + "              <package>com.acme.app</package>\n"
+                + "              <package>com.acme.app.subpkg</package>\n"
+                + "              <prefix>java</prefix>\n"
+                + "              <prefix>com.hazelcast.</prefix>\n"
+                + "              <prefix>[</prefix>\n"
+                + "          </whitelist>\n"
+                + "          <blacklist>\n"
+                + "              <class>com.acme.app.BeanComparator</class>\n"
+                + "          </blacklist>\n"
+                + "      </java-reflection-filter>\n"
+                + "  </sql>\n"
+                + HAZELCAST_END_TAG;
 
         Config config = new InMemoryXmlConfig(xml);
         JavaSerializationFilterConfig javaReflectionFilterConfig
-            = config.getSqlConfig().getJavaReflectionFilterConfig();
+                = config.getSqlConfig().getJavaReflectionFilterConfig();
         assertNotNull(javaReflectionFilterConfig);
         ClassFilter blackList = javaReflectionFilterConfig.getBlacklist();
         assertNotNull(blackList);
@@ -3478,7 +3478,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
         assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
         assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
-
 
 
         xml = HAZELCAST_START_TAG
@@ -5106,6 +5105,55 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
+    }
+
+    @Override
+    public void testDiagnosticsConfig() {
+        DiagnosticsConfig cfg = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setMaxRolledFileSizeInMB(60)
+                .setMaxRolledFileCount(15)
+                .setOutputType(DiagnosticsOutputType.STDOUT)
+                .setLogDirectory("/src/user")
+                .setFileNamePrefix("mylogs")
+                .setIncludeEpochTime(true);
+        cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
+        cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
+
+        DiagnosticsConfig cfgBuild = buildConfig(getDiagnosticsConfig(cfg)).getDiagnosticsConfig();
+
+        assertThat(cfgBuild).isEqualTo(cfg);
+    }
+
+    private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
+        String xml = String.format(HAZELCAST_START_TAG + """
+                        <diagnostics enabled="%s">
+                        <max-rolled-file-size-mb>%d</max-rolled-file-size-mb>
+                        <max-rolled-file-count>%d</max-rolled-file-count>
+                        <include-epoch-time>%s</include-epoch-time>
+                        <log-directory>%s</log-directory>
+                        <file-name-prefix>%s</file-name-prefix>
+                        <output-type>%s</output-type>
+                        """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
+                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType());
+
+
+        if (!cfg.getPluginProperties().isEmpty()) {
+            xml += "<plugin-properties>";
+        }
+
+        for (Map.Entry entry : cfg.getPluginProperties().entrySet()) {
+            xml += String.format("""
+                            <property name="%s">%s</property>
+                    """, entry.getKey(), entry.getValue());
+        }
+
+        if (!cfg.getPluginProperties().isEmpty()) {
+            xml += "</plugin-properties></diagnostics>" + HAZELCAST_END_TAG;
+        } else {
+            xml += "</diagnostics>" + HAZELCAST_END_TAG;
+        }
+        return xml;
     }
 
     private String simpleVectorCollectionBackupCountConfig(int count) {

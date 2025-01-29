@@ -1685,7 +1685,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testWanReplicationConfig_withMultipleBatchPublishersAndSameClusterName() {
 
-      String yaml = ""
+        String yaml = ""
                 + "hazelcast:\n"
                 + "  wan-replication:\n"
                 + "    fanout-test:\n"
@@ -2829,8 +2829,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                               capacity:\s
                                 value: 1138
                                 unit: BYTES
-                """
-                ;
+                """;
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
@@ -3271,7 +3270,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = new InMemoryYamlConfig(yaml);
         JavaSerializationFilterConfig javaReflectionFilterConfig
-            = config.getSqlConfig().getJavaReflectionFilterConfig();
+                = config.getSqlConfig().getJavaReflectionFilterConfig();
         assertNotNull(javaReflectionFilterConfig);
         ClassFilter blackList = javaReflectionFilterConfig.getBlacklist();
         assertNotNull(blackList);
@@ -3561,7 +3560,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
-        String yaml =  ""
+        String yaml = ""
                 + "hazelcast:\n";
         Config config = new InMemoryYamlConfig(yaml);
 
@@ -3573,7 +3572,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
         assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
         assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
-
 
 
         yaml = ""
@@ -5551,6 +5549,55 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 """;
 
         Config config = buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testDiagnosticsConfig() {
+
+        DiagnosticsConfig cfg = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setMaxRolledFileSizeInMB(60)
+                .setMaxRolledFileCount(15)
+                .setOutputType(DiagnosticsOutputType.STDOUT)
+                .setLogDirectory("/src/user")
+                .setFileNamePrefix("mylogs")
+                .setIncludeEpochTime(true);
+        cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
+        cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
+
+        DiagnosticsConfig cfgBuild = buildConfig(getDiagnosticsConfig(cfg)).getDiagnosticsConfig();
+
+        assertThat(cfgBuild).isEqualTo(cfg);
+    }
+
+    private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
+        String yaml = String.format("""
+                        hazelcast:
+                          diagnostics:
+                            enabled: %s
+                            max-rolled-file-size-mb: %d
+                            max-rolled-file-count: %d
+                            include-epoch-time: %s
+                            log-directory: %s
+                            file-name-prefix: %s
+                            output-type: %s
+                        """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
+                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType());
+
+
+        if (!cfg.getPluginProperties().isEmpty()) {
+            yaml += """
+                        plugin-properties:
+                    """;
+        }
+
+        for (Map.Entry entry : cfg.getPluginProperties().entrySet()) {
+            yaml += String.format("""
+                            %s: %s
+                    """, entry.getKey(), entry.getValue());
+        }
+        return yaml;
     }
 
     private String simpleVectorCollectionBackupCountConfig(int count) {

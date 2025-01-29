@@ -72,13 +72,13 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         if (diagnostics == null) {
             return;
         }
-        File[] files = diagnostics.directory.listFiles();
+        File[] files = diagnostics.getLoggingDirectory().listFiles();
         if (files == null) {
             return;
         }
         for (File file : files) {
             String name = file.getName();
-            if (name.startsWith(diagnostics.baseFileName) && name.endsWith(".log")) {
+            if (name.startsWith(diagnostics.getBaseFileName()) && name.endsWith(".log")) {
                 deleteQuietly(file);
             }
         }

@@ -77,7 +77,8 @@ public enum ConfigSections {
     USER_CODE_NAMESPACES("user-code-namespaces", false),
     USER_CODE_NAMESPACE("namespace", true),
     REST("rest", false),
-    VECTOR("vector-collection", true);
+    VECTOR("vector-collection", true),
+    DIAGNOSTICS("diagnostics", false);
 
     final boolean multipleOccurrence;
     private final String name;

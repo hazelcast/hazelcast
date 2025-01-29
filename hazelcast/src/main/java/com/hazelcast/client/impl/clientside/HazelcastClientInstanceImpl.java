@@ -327,7 +327,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     private Diagnostics initDiagnostics() {
         String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
 
-        return new Diagnostics(name, loggingService, instanceName, properties);
+        return new Diagnostics(name, loggingService, instanceName, properties, config.getDiagnosticsConfig());
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {

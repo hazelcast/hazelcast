@@ -21,6 +21,7 @@ import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -37,12 +38,14 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.Node;
 
 import java.nio.ByteOrder;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -54,6 +57,8 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
 
 /**
  * Base class of the config processors working from W3C DOM objects
@@ -187,6 +192,35 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
             }
         }
         return serializationConfig;
+    }
+
+    protected void handleDiagnostics(Node node, DiagnosticsConfig diagnosticsConfig) {
+
+        diagnosticsConfig.setEnabled(getBooleanValue(getAttribute(node, "enabled")));
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches("max-rolled-file-size-mb", name)) {
+                diagnosticsConfig.setMaxRolledFileSizeInMB(parseInt(n.getTextContent()));
+            } else if (matches("max-rolled-file-count", name)) {
+                diagnosticsConfig.setMaxRolledFileCount(parseInt(n.getTextContent()));
+            } else if (matches("include-epoch-time", name)) {
+                diagnosticsConfig.setIncludeEpochTime(parseBoolean(n.getTextContent()));
+            } else if (matches("log-directory", name)) {
+                diagnosticsConfig.setLogDirectory(n.getTextContent());
+            } else if (matches("file-name-prefix", name)) {
+                diagnosticsConfig.setFileNamePrefix(n.getTextContent());
+            } else if (matches("output-type", name)) {
+                diagnosticsConfig.setOutputType(DiagnosticsOutputType.valueOf(n.getTextContent()));
+            } else if (matches("plugin-properties", name)) {
+                Map<String, Comparable> rawProperties = new HashMap<>();
+                fillProperties(n, rawProperties);
+                rawProperties
+                        .entrySet()
+                        .forEach(entry -> diagnosticsConfig.getPluginProperties()
+                                .put(entry.getKey(), (String) entry.getValue()));
+            }
+        }
     }
 
     protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {

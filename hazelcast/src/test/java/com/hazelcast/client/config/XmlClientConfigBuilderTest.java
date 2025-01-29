@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -32,6 +33,7 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -877,6 +879,40 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertEquals(RoutingMode.MULTI_MEMBER, clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
         assertEquals(ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY,
                 clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
+    }
+
+    @Override
+    public void testDiagnosticsConfig() {
+        DiagnosticsConfig originalCfg = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setMaxRolledFileSizeInMB(60)
+                .setMaxRolledFileCount(15)
+                .setOutputType(DiagnosticsOutputType.STDOUT)
+                .setLogDirectory("/src/user")
+                .setFileNamePrefix("mylogs")
+                .setIncludeEpochTime(true);
+        String propKey = "hazelcast.diagnostics.prop1";
+        originalCfg.getPluginProperties().put(propKey, "myprop1");
+
+        String xml = String.format(HAZELCAST_CLIENT_START_TAG + """
+                        <diagnostics enabled="%s">
+                        <max-rolled-file-size-mb>%d</max-rolled-file-size-mb>
+                        <max-rolled-file-count>%d</max-rolled-file-count>
+                        <include-epoch-time>%s</include-epoch-time>
+                        <log-directory>%s</log-directory>
+                        <file-name-prefix>%s</file-name-prefix>
+                        <output-type>%s</output-type>
+                        <plugin-properties>
+                            <property name="%s">%s</property>
+                        </plugin-properties>
+                        </diagnostics>
+                        """ + HAZELCAST_CLIENT_END_TAG, originalCfg.isEnabled(), originalCfg.getMaxRolledFileSizeInMB(),
+                originalCfg.getMaxRolledFileCount(), originalCfg.isIncludeEpochTime(), originalCfg.getLogDirectory(),
+                originalCfg.getFileNamePrefix(), originalCfg.getOutputType(), propKey, originalCfg.getPluginProperties().get(propKey));
+
+        DiagnosticsConfig buildConfig = buildConfig(xml).getDiagnosticsConfig();
+
+        assertThat(buildConfig).isEqualTo(originalCfg);
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {

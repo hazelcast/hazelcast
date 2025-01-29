@@ -14,33 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.diagnostics;
+package com.hazelcast.config;
+
+import com.hazelcast.internal.diagnostics.Diagnostics;
 
 /**
  * Defines the output type for Hazelcast diagnostics.
+ * @since 6.0
  */
 public enum DiagnosticsOutputType {
 
     /**
      * Outputs the diagnostics to a set of files managed by Hazelcast.
+     * @since 6.0
      */
-    FILE {
-        @Override
-        DiagnosticsLog newLog(Diagnostics diagnostics) {
-            return new DiagnosticsLogFile(diagnostics);
-        }
-    },
+    FILE,
 
     /**
      * Outputs the diagnostics to the "standard" output stream as determined by
      * {@link System#out}.
+     * @since 6.0
      */
-    STDOUT {
-        @Override
-        DiagnosticsLog newLog(Diagnostics diagnostics) {
-            return new DiagnosticsStdout(diagnostics);
-        }
-    },
+    STDOUT,
 
     /**
      * Outputs the diagnostics to the Hazelcast logger. You may then use your
@@ -52,13 +47,7 @@ public enum DiagnosticsOutputType {
      *
      * @see com.hazelcast.spi.properties.ClusterProperty#LOGGING_ENABLE_DETAILS
      * @see Diagnostics#INCLUDE_EPOCH_TIME
+     * @since 6.0
      */
-    LOGGER {
-        @Override
-        DiagnosticsLog newLog(Diagnostics diagnostics) {
-            return new DiagnosticsLogger(diagnostics);
-        }
-    };
-
-    abstract DiagnosticsLog newLog(Diagnostics diagnostics);
+    LOGGER;
 }

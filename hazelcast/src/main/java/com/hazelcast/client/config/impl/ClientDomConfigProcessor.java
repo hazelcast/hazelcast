@@ -93,6 +93,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.SQL;
 import static com.hazelcast.client.config.impl.ClientConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.client.config.impl.ClientConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.config.security.TokenEncoding.getTokenEncoding;
+import static com.hazelcast.internal.config.ConfigSections.DIAGNOSTICS;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
@@ -201,6 +202,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleTpc(node, clientConfig.getTpcConfig());
         } else if (matches(CP_DIRECT_TO_LEADER_ROUTING.getName(), nodeName)) {
             clientConfig.setCPDirectToLeaderRoutingEnabled(Boolean.parseBoolean(getTextContent(node)));
+        } else if (matches(DIAGNOSTICS.getName(), nodeName)) {
+            handleDiagnostics(node, clientConfig.getDiagnosticsConfig());
         }
     }
 
@@ -470,9 +473,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void checkForAlreadyProcessed() {
         if (processedRoutingMode) {
             throw new InvalidConfigurationException("""
-                            "smart-routing" should not be present in configuration when \
-                            "cluster-routing" is present - only "cluster-routing" should be used.
-                            """);
+                    "smart-routing" should not be present in configuration when \
+                    "cluster-routing" is present - only "cluster-routing" should be used.
+                    """);
         }
     }
 

@@ -27,6 +27,7 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -85,6 +86,7 @@ import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -1368,5 +1370,19 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setRestConfig(@Nonnull RestConfig restConfig) {
         return staticConfig.setRestConfig(restConfig);
+    }
+
+    @Nonnull
+    @Override
+    public Config setDiagnosticsConfig(@Nonnull DiagnosticsConfig diagnosticsConfig) {
+        Preconditions.isNotNull(diagnosticsConfig, "DiagnosticsConfig");
+        configurationService.broadcastConfig(diagnosticsConfig);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return staticConfig.getDiagnosticsConfig();
     }
 }

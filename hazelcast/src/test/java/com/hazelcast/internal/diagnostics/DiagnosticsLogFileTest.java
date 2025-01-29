@@ -56,6 +56,21 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDiagnosticsDirectoryIsCreatedWhenDoesNotExistOverConfig() throws IOException {
+        Config config = new Config();
+        File parentFolder = folder.newFolder();
+
+        // this directory does not exist, we want Hazelcast to create it
+        File diagnosticsFolder = new File(parentFolder, "newdir");
+
+        config.getDiagnosticsConfig().setEnabled(true);
+        config.getDiagnosticsConfig().setLogDirectory(diagnosticsFolder.getAbsolutePath());
+
+        createHazelcastInstance(config);
+        assertContainsFileEventually(diagnosticsFolder);
+    }
+
+    @Test
     public void testDiagnosticsFileCreatedWhenDirectoryExist() throws IOException {
         Config config = new Config();
         File diagnosticsFolder = folder.newFolder();

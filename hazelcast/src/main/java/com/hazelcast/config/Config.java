@@ -237,6 +237,9 @@ public class Config {
     // @since 5.4
     private RestConfig restConfig = new RestConfig();
 
+    // @since 6.0
+    private DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig();
+
     public Config() {
     }
 
@@ -3359,6 +3362,27 @@ public class Config {
     }
 
     /**
+     * Returns the diagnostics configuration for this hazelcast instance.
+     *
+     * @return the diagnostics configuration
+     */
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return diagnosticsConfig;
+    }
+
+    /**
+     * Sets the diagnostics configuration for this hazelcast instance.
+     *
+     * @param diagnosticsConfig the diagnostics configuration
+     * @return this config instance
+     * @throws NullPointerException if diagnosticsConfig is null
+     */
+    public @Nonnull Config setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
+        this.diagnosticsConfig = checkNotNull(diagnosticsConfig, "DiagnosticsConfig cannot be null!");
+        return this;
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3426,6 +3450,7 @@ public class Config {
                 + ", tpcConfig=" + tpcConfig
                 + ", namespacesConfig=" + userCodeNamespacesConfig
                 + ", restConfig=" + restConfig
+                + ", diagnosticsConfig=" + diagnosticsConfig
                 + '}';
     }
 }

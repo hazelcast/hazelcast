@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -32,6 +33,7 @@ import com.hazelcast.config.YamlConfigBuilderTest;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
@@ -146,12 +148,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testFlakeIdGeneratorConfig() {
         String yaml = """
-              hazelcast-client:
-                flake-id-generator:
-                  gen:
-                    prefetch-count: 3
-                    prefetch-validity-millis: 10
-              """;
+                hazelcast-client:
+                  flake-id-generator:
+                    gen:
+                      prefetch-count: 3
+                      prefetch-validity-millis: 10
+                """;
 
         ClientConfig config = buildConfig(yaml);
         ClientFlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
@@ -164,13 +166,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testSecurityConfig_onlyFactory() {
         String yaml = """
-              hazelcast-client:
-                security:
-                  credentials-factory:
-                    class-name: com.hazelcast.examples.MyCredentialsFactory
-                    properties:
-                      property: value
-              """;
+                hazelcast-client:
+                  security:
+                    credentials-factory:
+                      class-name: com.hazelcast.examples.MyCredentialsFactory
+                      properties:
+                        property: value
+                """;
 
         ClientConfig config = buildConfig(yaml);
         ClientSecurityConfig securityConfig = config.getSecurityConfig();
@@ -209,21 +211,21 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testNearCacheEvictionPolicy() {
         String yaml = """
-              hazelcast-client:
-                near-cache:
-                  lfu:
-                    eviction:
-                      eviction-policy: LFU
-                  lru:
-                    eviction:
-                      eviction-policy: LRU
-                  none:
-                    eviction:
-                      eviction-policy: NONE
-                  random:
-                    eviction:
-                      eviction-policy: RANDOM
-              """;
+                hazelcast-client:
+                  near-cache:
+                    lfu:
+                      eviction:
+                        eviction-policy: LFU
+                    lru:
+                      eviction:
+                        eviction-policy: LRU
+                    none:
+                      eviction:
+                        eviction-policy: NONE
+                    random:
+                      eviction:
+                        eviction-policy: RANDOM
+                """;
 
         ClientConfig clientConfig = buildConfig(yaml);
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfu", clientConfig));
@@ -236,15 +238,15 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testClientUserCodeDeploymentConfig() {
         String yaml = """
-              hazelcast-client:
-                user-code-deployment:
-                  enabled: true
-                  jarPaths:
-                    - /User/test/test.jar
-                  classNames:
-                    - test.testClassName
-                    - test.testClassName2
-              """;
+                hazelcast-client:
+                  user-code-deployment:
+                    enabled: true
+                    jarPaths:
+                      - /User/test/test.jar
+                    classNames:
+                      - test.testClassName
+                      - test.testClassName2
+                """;
 
         ClientConfig clientConfig = buildConfig(yaml);
         ClientUserCodeDeploymentConfig userCodeDeploymentConfig = clientConfig.getUserCodeDeploymentConfig();
@@ -262,10 +264,10 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testReliableTopic_defaults() {
         String yaml = """
-              hazelcast-client:
-                reliable-topic:
-                  rel-topic: {}
-              """;
+                hazelcast-client:
+                  reliable-topic:
+                    rel-topic: {}
+                """;
 
         ClientConfig config = buildConfig(yaml);
         ClientReliableTopicConfig reliableTopicConfig = config.getReliableTopicConfig("rel-topic");
@@ -278,14 +280,14 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test(expected = InvalidConfigurationException.class)
     public void testQueryCacheBothPredicateDefinedThrows() {
         String yaml = """
-              hazelcast-client:
-                query-caches:
-                  query-cache-name:
-                    map-name: map-name
-                    predicate:
-                      class-name: com.hazelcast.example.Predicate
-                      sql: "%age=40"
-              """;
+                hazelcast-client:
+                  query-caches:
+                    query-cache-name:
+                      map-name: map-name
+                      predicate:
+                        class-name: com.hazelcast.example.Predicate
+                        sql: "%age=40"
+                """;
         buildConfig(yaml);
     }
 
@@ -293,11 +295,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test(expected = InvalidConfigurationException.class)
     public void testQueryCacheNoPredicateDefinedThrows() {
         String yaml = """
-              hazelcast-client:
-                query-caches:
-                  query-cache-name:
-                    predicate: {}
-              """;
+                hazelcast-client:
+                  query-caches:
+                    query-cache-name:
+                      predicate: {}
+                """;
         buildConfig(yaml);
     }
 
@@ -305,10 +307,10 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testLoadBalancerRandom() {
         String yaml = """
-              hazelcast-client:
-                load-balancer:
-                  type: random
-              """;
+                hazelcast-client:
+                  load-balancer:
+                    type: random
+                """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -320,10 +322,10 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testLoadBalancerRoundRobin() {
         String yaml = """
-              hazelcast-client:
-                load-balancer:
-                  type: round-robin
-              """;
+                hazelcast-client:
+                  load-balancer:
+                    type: round-robin
+                """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -335,11 +337,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testLoadBalancerCustom() {
         String yaml = """
-              hazelcast-client:
-                load-balancer:
-                  type: custom
-                  class-name: com.hazelcast.client.test.CustomLoadBalancer
-              """;
+                hazelcast-client:
+                  load-balancer:
+                    type: custom
+                    class-name: com.hazelcast.client.test.CustomLoadBalancer
+                """;
 
         ClientConfig config = buildConfig(yaml);
 
@@ -361,11 +363,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testNullInSequenceThrows() {
         String yaml = """
-              hazelcast-client:
-                client-labels:
-                  - admin
-                  -
-              """;
+                hazelcast-client:
+                  client-labels:
+                    - admin
+                    -
+                """;
 
         assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/client-labels"));
     }
@@ -529,19 +531,19 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test
     public void testPersistentMemoryDirectoryConfiguration() {
         String yaml = """
-              hazelcast-client:
-                native-memory:
-                  persistent-memory:
-                    directories:
-                      - directory: /mnt/pmem0
-                        numa-node: 0
-                      - directory: /mnt/pmem1
-                        numa-node: 1
-              """;
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      directories:
+                        - directory: /mnt/pmem0
+                          numa-node: 0
+                        - directory: /mnt/pmem1
+                          numa-node: 1
+                """;
         ClientConfig config = buildConfig(yaml);
         List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
-                                                                       .getPersistentMemoryConfig()
-                                                                       .getDirectoryConfigs();
+                .getPersistentMemoryConfig()
+                .getDirectoryConfigs();
         assertEquals(2, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
@@ -672,11 +674,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Test(expected = InvalidConfigurationException.class)
     public void testPersistentMemoryConfiguration_NotExistingModeThrows() {
         String yaml = """
-              hazelcast-client:
-                native-memory:
-                  persistent-memory:
-                    mode: NOT_EXISTING_MODE
-              """;
+                hazelcast-client:
+                  native-memory:
+                    persistent-memory:
+                      mode: NOT_EXISTING_MODE
+                """;
 
         buildConfig(yaml);
     }
@@ -846,12 +848,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     public void testCompactSerialization_withInvalidCompactSerializableClass() {
         String yaml = """
-              hazelcast-client:
-                serialization:
-                  compact-serialization:
-                    classes:
-                      - class: does.not.exist.Foo
-              """;
+                hazelcast-client:
+                  serialization:
+                    compact-serialization:
+                      classes:
+                        - class: does.not.exist.Foo
+                """;
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
@@ -875,17 +877,52 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     @Override
     public void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToMultiMemberRoutingConfig() {
         String yaml = """
-              hazelcast-client:
-                network:
-                  cluster-routing:
-                    mode: MULTI_MEMBER
-              """;
+                hazelcast-client:
+                  network:
+                    cluster-routing:
+                      mode: MULTI_MEMBER
+                """;
 
         ClientConfig clientConfig = buildConfig(yaml);
 
         assertEquals(RoutingMode.MULTI_MEMBER, clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
         assertEquals(ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY,
                 clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
+    }
+
+    @Override
+    public void testDiagnosticsConfig() {
+        DiagnosticsConfig originalConfig = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setMaxRolledFileSizeInMB(60)
+                .setMaxRolledFileCount(15)
+                .setOutputType(DiagnosticsOutputType.STDOUT)
+                .setLogDirectory("/src/user")
+                .setFileNamePrefix("mylogs")
+                .setIncludeEpochTime(true);
+        String propKey = "hazelcast.diagnostics.prop1";
+        originalConfig.getPluginProperties().put(propKey, "myprop1");
+
+        String yaml = String.format("""
+                        hazelcast-client:
+                          diagnostics:
+                            enabled: %s
+                            max-rolled-file-size-mb: %d
+                            max-rolled-file-count: %d
+                            include-epoch-time: %s
+                            log-directory: %s
+                            file-name-prefix: %s
+                            output-type: %s
+                            plugin-properties:
+                                %s: %s
+                        """, originalConfig.isEnabled(), originalConfig.getMaxRolledFileSizeInMB(),
+                originalConfig.getMaxRolledFileCount(), originalConfig.isIncludeEpochTime(),
+                originalConfig.getLogDirectory(), originalConfig.getFileNamePrefix(), originalConfig.getOutputType(),
+                propKey, originalConfig.getPluginProperties().get(propKey));
+
+        DiagnosticsConfig buildConfig = buildConfig(yaml).getDiagnosticsConfig();
+
+        assertThat(originalConfig).isEqualTo(buildConfig);
     }
 
     public static ClientConfig buildConfig(String yaml) {

@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -179,8 +180,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int RESOURCE_DEFINITION = 71;
     public static final short VECTOR_COLLECTION_CONFIG = 72;
     public static final short VECTOR_INDEX_CONFIG = 73;
+    public static final int DIAGNOSTICS_CONFIG = 74;
 
-    private static final int LEN = VECTOR_INDEX_CONFIG + 1;
+    private static final int LEN = DIAGNOSTICS_CONFIG + 1;
+
+
 
     @Override
     public int getFactoryId() {
@@ -265,6 +269,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[RESOURCE_DEFINITION] = ResourceDefinitionImpl::new;
         constructors[VECTOR_COLLECTION_CONFIG] = VectorCollectionConfig::new;
         constructors[VECTOR_INDEX_CONFIG] = VectorIndexConfig::new;
+        constructors[DIAGNOSTICS_CONFIG] = DiagnosticsConfig::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

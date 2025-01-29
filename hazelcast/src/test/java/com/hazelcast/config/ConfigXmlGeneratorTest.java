@@ -122,8 +122,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.setLicenseKey("HazelcastLicenseKey");
 
         cfg.getSecurityConfig().addRealmConfig("simple",
-                new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig().addUser("test", "pass"))
-                        .setUsernamePasswordIdentityConfig("myidentity", "mypasswd"))
+                        new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig().addUser("test", "pass"))
+                                .setUsernamePasswordIdentityConfig("myidentity", "mypasswd"))
                 .addRealmConfig("ldap", new RealmConfig().setLdapAuthenticationConfig(
                         new LdapAuthenticationConfig().setSystemUserDn("cn=test").setSystemUserPassword("ldappass")));
 
@@ -736,11 +736,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testSimpleAuthenticationConfig() {
         Config cfg = new Config();
         RealmConfig realmConfig = new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig()
-                .setRoleSeparator(":")
-                .addUser("test", "1234", "monitor", "hazelcast")
-                .addUser("dev", "secret", "root"))
-            .setAccessControlServiceConfig(new AccessControlServiceConfig()
-                .setFactoryClassName("com.acme.access.ACSFactory").setProperty("decisionFile", "/opt/acl.xml"));
+                        .setRoleSeparator(":")
+                        .addUser("test", "1234", "monitor", "hazelcast")
+                        .addUser("dev", "secret", "root"))
+                .setAccessControlServiceConfig(new AccessControlServiceConfig()
+                        .setFactoryClassName("com.acme.access.ACSFactory").setProperty("decisionFile", "/opt/acl.xml"));
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
@@ -1142,8 +1142,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addLockConfig(new FencedLockConfig("lock1", 2));
 
         config.getCPSubsystemConfig()
-              .addCPMapConfig(new CPMapConfig("map1", 50))
-              .addCPMapConfig(new CPMapConfig("map2", 25));
+                .addCPMapConfig(new CPMapConfig("map1", 50))
+                .addCPMapConfig(new CPMapConfig("map2", 25));
 
         config.getCPSubsystemConfig().setCPMapLimit(30);
 
@@ -1611,6 +1611,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertThat(generatedConfig).isEqualTo(vectorCollection);
     }
 
+    @Test
+    public void testDiagnosticsConfig() {
+        Config cfg = new Config();
+        DiagnosticsConfig generatedCfg = getNewConfigViaXMLGenerator(cfg).getDiagnosticsConfig();
+        assertThat(generatedCfg).isEqualTo(cfg.getDiagnosticsConfig());
+    }
+
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
@@ -1642,7 +1649,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     public static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
-                                                          IcmpFailureDetectorConfig actual) {
+                                                         IcmpFailureDetectorConfig actual) {
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());
         assertEquals(expected.getTimeoutMilliseconds(), actual.getTimeoutMilliseconds());

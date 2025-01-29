@@ -274,7 +274,8 @@ public class NodeEngineImpl implements NodeEngine {
         String addressString = address.getHost().replace(":", "_") + "_" + address.getPort();
         String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 
-        return new Diagnostics(name, loggingService, getHazelcastInstance().getName(), node.getProperties());
+        return new Diagnostics(name, loggingService, getHazelcastInstance().getName(),
+                node.getProperties(), getConfig().getDiagnosticsConfig());
     }
 
     @Override

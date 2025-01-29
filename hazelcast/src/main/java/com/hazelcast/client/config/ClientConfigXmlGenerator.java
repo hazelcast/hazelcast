@@ -23,6 +23,7 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -49,6 +50,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -143,6 +145,8 @@ public final class ClientConfigXmlGenerator {
         sql(gen, clientConfig.getSqlConfig());
         // TPC
         tpc(gen, clientConfig.getTpcConfig());
+        //Diagnostics
+        diagnostics(gen, clientConfig.getDiagnosticsConfig());
 
         //close HazelcastClient
         gen.close();
@@ -150,12 +154,33 @@ public final class ClientConfigXmlGenerator {
         return format(xml.toString(), indent);
     }
 
+    private static void diagnostics(XmlGenerator gen, DiagnosticsConfig diagnosticsConfig) {
+        gen.open(ConfigSections.DIAGNOSTICS.getName(), "enabled", diagnosticsConfig.isEnabled())
+                .node("max-rolled-file-size-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
+                .node("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount())
+                .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
+                .node("log-directory", diagnosticsConfig.getLogDirectory())
+                .node("file-name-prefix", diagnosticsConfig.getFileNamePrefix())
+                .node("output-type", diagnosticsConfig.getOutputType());
+
+        if (!diagnosticsConfig.getPluginProperties().isEmpty()) {
+            gen.open("plugin-properties");
+
+            for (Map.Entry<String, String> prop : diagnosticsConfig.getPluginProperties().entrySet()) {
+                gen.nodeIfContents("property", prop.getValue(), "name", prop.getKey());
+            }
+            gen.close();
+        }
+
+        gen.close();
+    }
+
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
         gen.open("network")
-           .node("cluster-routing", null,
-                   "mode", network.getClusterRoutingConfig().getRoutingMode().name())
-           .node("redo-operation", network.isRedoOperation())
-           .node("connection-timeout", network.getConnectionTimeout());
+                .node("cluster-routing", null,
+                        "mode", network.getClusterRoutingConfig().getRoutingMode().name())
+                .node("redo-operation", network.isRedoOperation())
+                .node("connection-timeout", network.getConnectionTimeout());
 
         clusterMembers(gen, network.getAddresses());
         socketOptions(gen, network.getSocketOptions());
@@ -189,8 +214,8 @@ public final class ClientConfigXmlGenerator {
         CredentialsFactoryConfig cfConfig = security.getCredentialsFactoryConfig();
         if (cfConfig != null) {
             gen.open("credentials-factory", "class-name", cfConfig.getClassName())
-            .appendProperties(cfConfig.getProperties())
-            .close();
+                    .appendProperties(cfConfig.getProperties())
+                    .close();
         }
         kerberosIdentityGenerator(gen, security.getKerberosIdentityConfig());
         Map<String, RealmConfig> realms = security.getRealmConfigs();
@@ -209,14 +234,14 @@ public final class ClientConfigXmlGenerator {
             return;
         }
         gen.open("kerberos")
-            .nodeIfContents("realm", c.getRealm())
-            .nodeIfContents("principal", c.getPrincipal())
-            .nodeIfContents("keytab-file", c.getKeytabFile())
-            .nodeIfContents("security-realm", c.getSecurityRealm())
-            .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
-            .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
-            .nodeIfContents("spn", c.getSpn())
-            .close();
+                .nodeIfContents("realm", c.getRealm())
+                .nodeIfContents("principal", c.getPrincipal())
+                .nodeIfContents("keytab-file", c.getKeytabFile())
+                .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
+                .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
+                .nodeIfContents("spn", c.getSpn())
+                .close();
     }
 
     private static void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
@@ -334,7 +359,7 @@ public final class ClientConfigXmlGenerator {
 
     private static void nativeMemory(XmlGenerator gen, NativeMemoryConfig nativeMemory) {
         gen.open("native-memory", "enabled", nativeMemory.isEnabled(),
-                "allocator-type", nativeMemory.getAllocatorType())
+                        "allocator-type", nativeMemory.getAllocatorType())
                 .node("capacity", null, "value", nativeMemory.getCapacity().getValue(),
                         "unit", nativeMemory.getCapacity().getUnit())
                 .node("min-block-size", nativeMemory.getMinBlockSize())
@@ -426,7 +451,7 @@ public final class ClientConfigXmlGenerator {
                                 "max-size-policy", evictionConfig.getMaxSizePolicy(),
                                 "eviction-policy", evictionConfig.getEvictionPolicy(),
                                 "comparator-class-name",
-                            classNameOrImplClass(evictionConfig.getComparatorClassName(), evictionConfig.getComparator()));
+                                classNameOrImplClass(evictionConfig.getComparatorClassName(), evictionConfig.getComparator()));
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
                 IndexUtils.generateXml(gen, queryCache.getIndexConfigs(), false);
@@ -615,7 +640,7 @@ public final class ClientConfigXmlGenerator {
                         "max-size-policy", eviction.getMaxSizePolicy(),
                         "eviction-policy", eviction.getEvictionPolicy(),
                         "comparator-class-name", classNameOrImplClass(
-                            eviction.getComparatorClassName(), eviction.getComparator()))
+                                eviction.getComparatorClassName(), eviction.getComparator()))
                 .node("preloader", null, "enabled", preloader.isEnabled(),
                         "directory", preloader.getDirectory(),
                         "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),
@@ -642,8 +667,8 @@ public final class ClientConfigXmlGenerator {
 
     private static String classNameOrClass(String className, Class clazz) {
         return !isNullOrEmpty(className) ? className
-            : clazz != null ? clazz.getName()
-            : null;
+                : clazz != null ? clazz.getName()
+                : null;
     }
 
     private static String classNameOrImplClass(String className, Object impl) {
@@ -654,28 +679,28 @@ public final class ClientConfigXmlGenerator {
 
     private static void metrics(XmlGenerator gen, ClientMetricsConfig metricsConfig) {
         gen.open("metrics", "enabled", metricsConfig.isEnabled())
-           .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
-           .close()
-           .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
-           .close();
+                .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
+                .close()
+                .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+                .close();
     }
 
     private static void instanceTrackingConfig(XmlGenerator gen, InstanceTrackingConfig trackingConfig) {
         gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
-           .node("file-name", trackingConfig.getFileName())
-           .node("format-pattern", trackingConfig.getFormatPattern())
-           .close();
+                .node("file-name", trackingConfig.getFileName())
+                .node("format-pattern", trackingConfig.getFormatPattern())
+                .close();
     }
 
     private static void sql(XmlGenerator gen, ClientSqlConfig sqlConfig) {
         gen.open("sql")
-           .node("resubmission-mode", sqlConfig.getResubmissionMode().name())
-           .close();
+                .node("resubmission-mode", sqlConfig.getResubmissionMode().name())
+                .close();
     }
 
     private static void tpc(XmlGenerator gen, ClientTpcConfig tpcConfig) {
         gen.open("tpc", "enabled", tpcConfig.isEnabled())
-           .node("connection-count", tpcConfig.getConnectionCount())
-           .close();
+                .node("connection-count", tpcConfig.getConnectionCount())
+                .close();
     }
 }

@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DiagnosticsConfig;
+import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -29,7 +32,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.diagnostics.DiagnosticsOutputType.FILE;
+import static com.hazelcast.config.DiagnosticsOutputType.FILE;
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -46,6 +49,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class Diagnostics {
 
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * Use the {@link Diagnostics} to see internal performance metrics and cluster
      * related information.
      * <p>
@@ -55,9 +61,13 @@ public class Diagnostics {
      * <p>
      * The default is {@code false}.
      */
+    @Deprecated(since = "6.0")
     public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.diagnostics.enabled", false);
 
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
      * eating too much disk space.
      * <p>
@@ -67,10 +77,14 @@ public class Diagnostics {
      * <p>
      * The default is 50.
      */
+    @Deprecated(since = "6.0")
     @SuppressWarnings("checkstyle:magicnumber")
     public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
             = new HazelcastProperty("hazelcast.diagnostics.max.rolled.file.size.mb", 50);
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
      * eating too much disk space.
      * <p>
@@ -83,6 +97,9 @@ public class Diagnostics {
             = new HazelcastProperty("hazelcast.diagnostics.max.rolled.file.count", 10);
 
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * Configures if the epoch time should be included in the 'top' section.
      * This makes it easy to determine the time in epoch format and prevents
      * needing to parse the date-format section. The default is {@code true}.
@@ -90,6 +107,9 @@ public class Diagnostics {
     public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty("hazelcast.diagnostics.include.epoch", true);
 
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * Configures the output directory of the performance log files.
      * <p>
      * Defaults to the 'user.dir'.
@@ -98,6 +118,9 @@ public class Diagnostics {
             = new HazelcastProperty("hazelcast.diagnostics.directory", "" + System.getProperty("user.dir"));
 
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * Configures the prefix for the diagnostics file.
      * <p>
      * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
@@ -106,6 +129,9 @@ public class Diagnostics {
             = new HazelcastProperty("hazelcast.diagnostics.filename.prefix");
 
     /**
+     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration. The property is deprecated.
+     * <p>
      * Configures the output for the diagnostics. The default value is
      * {@link DiagnosticsOutputType#FILE} which is a set of files managed by the
      * Hazelcast process.
@@ -113,33 +139,86 @@ public class Diagnostics {
     public static final HazelcastProperty OUTPUT_TYPE = new HazelcastProperty("hazelcast.diagnostics.stdout", FILE);
 
     final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(new DiagnosticsPlugin[0]);
-    final String baseFileName;
     final ILogger logger;
     final LoggingService loggingService;
     final String hzName;
     final HazelcastProperties properties;
     final boolean includeEpochTime;
-    final File directory;
 
     DiagnosticsLog diagnosticsLog;
 
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap = new ConcurrentHashMap<>();
-    private final boolean enabled;
+    private final boolean diagnosticsEnabled;
     private final DiagnosticsOutputType outputType;
-
+    private DiagnosticsConfig diagnosticsConfig;
+    private final String diagnosticPropertyPrefix = "hazelcast.diagnostics.";
+    private DiagnosticsConfig config;
+    private File loggingDirectory;
+    private String baseFileName;
+    private String filePrefix;
     private ScheduledExecutorService scheduler;
 
-    public Diagnostics(String baseFileName, LoggingService loggingService, String hzName, HazelcastProperties properties) {
-        String optionalPrefix = properties.getString(FILENAME_PREFIX);
-        this.baseFileName = optionalPrefix == null ? baseFileName : optionalPrefix + "-" + baseFileName;
+    public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
+                       HazelcastProperties properties, DiagnosticsConfig config) {
+
+        String directoryPath = properties.containsKey(DIRECTORY)
+                ? properties.get(DIRECTORY.getName()) : config.getLogDirectory();
+
+        String prefix = properties.containsKey(FILENAME_PREFIX)
+                ? properties.get(FILENAME_PREFIX.getName()) : config.getFileNamePrefix();
+
+        this.filePrefix = prefix;
+        this.baseFileName = prefix == null
+                ? baseFileName : prefix + "-" + baseFileName;
+
         this.logger = loggingService.getLogger(Diagnostics.class);
         this.loggingService = loggingService;
         this.hzName = hzName;
+
         this.properties = properties;
-        this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
-        this.directory = new File(properties.getString(DIRECTORY));
-        this.enabled = properties.getBoolean(ENABLED);
-        this.outputType = properties.getEnum(OUTPUT_TYPE, DiagnosticsOutputType.class);
+        copyPluginProperties(properties, config);
+        this.includeEpochTime = config.isIncludeEpochTime();
+        this.loggingDirectory = new File(directoryPath);
+
+        if (properties.containsKey(ENABLED)) {
+            this.diagnosticsEnabled = properties.getBoolean(ENABLED);
+        } else {
+            this.diagnosticsEnabled = config.isEnabled();
+        }
+
+        if (properties.containsKey(OUTPUT_TYPE)) {
+            this.outputType = properties.getEnum(OUTPUT_TYPE, DiagnosticsOutputType.class);
+        } else {
+            this.outputType = config.getOutputType();
+        }
+
+        this.config = config;
+    }
+
+    // for testing
+    String getBaseFileName() {
+        return baseFileName;
+    }
+
+    File getLoggingDirectory() {
+        return loggingDirectory;
+    }
+
+    DiagnosticsConfig getConfig() {
+        return config;
+    }
+
+    String getFilePrefix() {
+        return filePrefix;
+    }
+
+    private void copyPluginProperties(HazelcastProperties hazelcastProperties, DiagnosticsConfig config) {
+
+        for (String prop : hazelcastProperties.keySet()) {
+            if (prop.startsWith(diagnosticPropertyPrefix)) {
+                config.getPluginProperties().put(prop, hazelcastProperties.get(prop));
+            }
+        }
     }
 
     // just for testing (returns the current file the system is writing to)
@@ -178,7 +257,7 @@ public class Diagnostics {
      */
     public void register(DiagnosticsPlugin plugin) {
         checkNotNull(plugin, "plugin can't be null");
-        if (!enabled) {
+        if (!diagnosticsEnabled) {
             return;
         }
 
@@ -215,19 +294,38 @@ public class Diagnostics {
     }
 
     public void start() {
-        if (!enabled) {
+        if (!diagnosticsEnabled) {
             logger.info(format("Diagnostics disabled. To enable add -D%s=true to the JVM arguments.", ENABLED.getName()));
             return;
         }
 
-        this.diagnosticsLog = outputType.newLog(this);
+        this.diagnosticsLog = newLog(this);
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
         logger.info("Diagnostics started");
     }
 
+    public static DiagnosticsLog newLog(Diagnostics diagnostics) {
+        // class type usage of enums cannot be used as enum. So redefined the newLog here.
+        switch (diagnostics.outputType) {
+            case FILE:
+                return new DiagnosticsLogFile(diagnostics);
+            case STDOUT:
+                return new DiagnosticsStdout(diagnostics);
+            case LOGGER:
+                return new DiagnosticsLogger(diagnostics);
+            default:
+                throw new IllegalArgumentException("Unknown DiagnosticsOutputType: " + diagnostics.outputType);
+        }
+    }
+
+    public void restart(DiagnosticsConfig diagnosticsConfig) {
+
+        // set the config and restart the plugins
+    }
+
     public void shutdown() {
-        if (!enabled) {
+        if (!diagnosticsEnabled) {
             return;
         }
 
