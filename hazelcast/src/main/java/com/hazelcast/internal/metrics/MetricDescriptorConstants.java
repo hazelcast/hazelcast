@@ -790,6 +790,10 @@ public final class MetricDescriptorConstants {
     public static final String VECTOR_COLLECTION_TOTAL_SEARCH_LATENCY = "totalSearchLatency";
     public static final String VECTOR_COLLECTION_MAX_SEARCH_LATENCY = "maxSearchLatency";
 
+    // detailed search metrics
+    public static final String VECTOR_COLLECTION_SEARCH_INDEX_QUERY_COUNT = "searchIndexQueryCount";
+    public static final String VECTOR_COLLECTION_SEARCH_INDEX_VISITED_NODES = "searchIndexVisitedNodes";
+
     public static final String VECTOR_COLLECTION_OPTIMIZE_COUNT = "optimizeCount";
     public static final String VECTOR_COLLECTION_TOTAL_OPTIMIZE_LATENCY = "totalOptimizeLatency";
     public static final String VECTOR_COLLECTION_MAX_OPTIMIZE_LATENCY = "maxOptimizeLatency";
