@@ -43,6 +43,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -54,6 +55,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestLoggingUtils;
 
+import java.util.function.Consumer;
+
+import static com.hazelcast.function.ConsumerEx.noop;
 import static com.hazelcast.splitbrainprotection.PartitionedCluster.SPLIT_BRAIN_PROTECTION_ID;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
@@ -102,11 +106,17 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
 
     protected static void initTestEnvironment(Config config,
                                               TestHazelcastInstanceFactory factory) {
+        initTestEnvironment(config, factory, noop());
+    }
+
+    protected static void initTestEnvironment(Config config,
+                                              TestHazelcastInstanceFactory factory,
+                                              ConsumerEx<SplitBrainProtectionOn[]> additionalInitData) {
         if (AbstractSplitBrainProtectionTest.factory != null) {
             throw new IllegalStateException("Already initialised!");
         }
         AbstractSplitBrainProtectionTest.factory = factory;
-        initCluster(PartitionedCluster.createClusterConfig(config), factory, READ, WRITE, READ_WRITE);
+        initCluster(PartitionedCluster.createClusterConfig(config), factory, additionalInitData, READ, WRITE, READ_WRITE);
     }
 
     protected static void shutdownTestEnvironment() {
@@ -224,7 +234,7 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
         return splitBrainProtectionConfig;
     }
 
-    protected static void initCluster(Config config, TestHazelcastInstanceFactory factory, SplitBrainProtectionOn... types) {
+    protected static void initCluster(Config config, TestHazelcastInstanceFactory factory, Consumer<SplitBrainProtectionOn[]> additionalInitData, SplitBrainProtectionOn... types) {
         cluster = new PartitionedCluster(factory);
 
         String[] splitBrainProtectionNames = new String[types.length];
@@ -260,6 +270,7 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
                     + cluster.instance[0].getQueue(QUEUE_NAME + splitBrainProtectionOn.name()).size());
         }
         initData(types);
+        additionalInitData.accept(types);
         for (SplitBrainProtectionOn splitBrainProtectionOn : types) {
             LOGGER.info("Queue size after data initialization for "
                     + splitBrainProtectionOn
