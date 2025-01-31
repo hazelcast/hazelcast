@@ -90,7 +90,8 @@ public class CachePutBackupOperation
         NodeEngine nodeEngine = getNodeEngineThreadLocalContext();
         CacheService service = nodeEngine.getService(CacheService.SERVICE_NAME);
         var cacheConfig = service.getCacheConfig(this.name);
-        cacheRecord = callWithNamespace(nodeEngine, cacheConfig.getUserCodeNamespace(), in::readObject);
+        String ucn = cacheConfig != null ? cacheConfig.getUserCodeNamespace() : null;
+        cacheRecord = callWithNamespace(nodeEngine, ucn, in::readObject);
         wanOriginated = in.readBoolean();
     }
 
