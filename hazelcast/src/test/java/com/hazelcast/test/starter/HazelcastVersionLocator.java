@@ -46,6 +46,10 @@ public class HazelcastVersionLocator {
             this.artifactId = artifactId;
         }
 
+        public boolean isEnterprise() {
+            return enterprise;
+        }
+
         private org.eclipse.aether.artifact.Artifact toAetherArtifact(final String version) {
             return new DefaultArtifact(GROUP_ID, artifactId, test ? "tests" : null, null, version);
         }
@@ -53,6 +57,7 @@ public class HazelcastVersionLocator {
 
     public static Map<Artifact, File> locateVersion(final String version, final boolean enterprise) {
         final Stream.Builder<Artifact> files = Stream.builder();
+        files.add(Artifact.OS_TEST_JAR);
         if (Version.of(version).isGreaterOrEqual(Versions.V5_0)) {
             files.add(Artifact.SQL_JAR);
         }
@@ -60,11 +65,10 @@ public class HazelcastVersionLocator {
             files.add(Artifact.EE_JAR);
         } else {
             files.add(Artifact.OS_JAR);
-            files.add(Artifact.OS_TEST_JAR);
         }
         return files.build().collect(Collectors.toMap(Function.identity(),
                 artifact -> MavenInterface.locateArtifact(artifact.toAetherArtifact(version),
-                        artifact.enterprise ? new String[] {"https://repository.hazelcast.com/release"} : new String[] {})
+                        artifact.isEnterprise() ? new String[] {"https://repository.hazelcast.com/release"} : new String[] {})
                         .toFile()));
     }
 }

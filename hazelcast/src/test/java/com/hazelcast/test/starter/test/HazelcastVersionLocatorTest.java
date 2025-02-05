@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -47,12 +48,10 @@ import java.util.stream.Stream;
 @Tag("com.hazelcast.test.annotation.NightlyTest")
 class HazelcastVersionLocatorTest {
     private static HashFunction hashFunction;
-    private static Map<HazelcastVersionLocator.Artifact, File> files;
 
     @BeforeAll
     static void setUp() {
         hashFunction = Hashing.crc32c();
-        files = HazelcastVersionLocator.locateVersion("4.0", true);
     }
 
     static Stream<Arguments> testDownloadVersion() {
@@ -63,9 +62,11 @@ class HazelcastVersionLocatorTest {
     @ParameterizedTest
     @MethodSource("testDownloadVersion")
     void testDownloadVersion(Artifact artifact, String expectedHash) throws IOException {
+        Map<Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", artifact.isEnterprise());
         final File file = files.get(artifact);
+        Objects.requireNonNull(file, MessageFormat.format("Failed to find {0} JAR in {1}", artifact, files));
         final HashCode memberHash = Files.asByteSource(file).hash(hashFunction);
         assertEquals(expectedHash, memberHash.toString(),
-                MessageFormat.format("Expected hash of Hazelcast {0} JAR to be {1}", artifact, expectedHash));
+                MessageFormat.format("Unexpected hash of Hazelcast {0} JAR", artifact));
     }
 }
