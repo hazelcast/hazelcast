@@ -705,7 +705,7 @@
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
-                <version>5.27.0</version>
+                <version>5.28.1</version>
             </dependency>
             <dependency>
                 <groupId>org.jctools</groupId>
