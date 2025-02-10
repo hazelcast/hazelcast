@@ -885,8 +885,14 @@ hazelcast-client:
     rel-topic:
       read-batch-size: 100
       topic-overload-policy: DISCARD_NEWEST
+
   #
   # ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
+  #
+  # IMPORTANT: User Code Deployment is deprecated and marked for removal. User Code Namespaces should
+  # be used instead, which is configured in Hazelcast member configurations and does not require
+  # any client configuration. See https://docs.hazelcast.com/hazelcast/latest/clusters/user-code-namespaces
+  # for more information about User Code Namespaces.
   #
   # Configuration element's name is "user-code-deployment".
   # It has the following sub-nodes:
