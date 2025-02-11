@@ -18,18 +18,22 @@ package com.hazelcast.test.archunit;
 
 import org.junit.BeforeClass;
 
+import java.text.MessageFormat;
+
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 public abstract class ArchUnitTestSupport {
 
-    private static final int HIGHEST_JDK = 23;
+    private static final int HIGHEST_JDK = 24;
 
     // ArchUnit releases lag behind the JDK releases.
     // Skip the test if JDK version is higher than the specified assumption
     @BeforeClass
     public static void beforeClass() {
         assumeThat(getMajorJavaVersion())
-                .as("ArchUnit 1.3.0 supports Java 23 or below - https://github.com/TNG/ArchUnit/releases/tag/v1.3.0")
+                .as(MessageFormat.format(
+                        "ArchUnit {1} supports Java {0} or below - https://github.com/TNG/ArchUnit/releases/tag/v{1}",
+                        HIGHEST_JDK, "1.4.0"))
                 .isLessThanOrEqualTo(HIGHEST_JDK);
     }
 
