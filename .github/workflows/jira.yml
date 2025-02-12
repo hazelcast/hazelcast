@@ -56,7 +56,7 @@ jobs:
           JIRA_LABEL: Java
           ISSUE_TYPE: Bug
   createGuardiansJiraIssue:
-    if: ${{ github.event.label.name == 'to-hzg-jira' }}
+    if: ${{ github.event.label.name == 'tf-to-hzg' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create HZG Jira Test Failure issue
