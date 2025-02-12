@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataConnectionConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigSetDiagnosticsConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
@@ -119,6 +120,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into a live
@@ -1236,9 +1238,17 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
     @Override
     public Config setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        checkNotNull(diagnosticsConfig, "DiagnosticsConfig cannot be null!");
+        ClientMessage request = DynamicConfigSetDiagnosticsConfigCodec.encodeRequest(diagnosticsConfig.isEnabled(),
+                diagnosticsConfig.getOutputType().name(), diagnosticsConfig.isIncludeEpochTime(),
+                diagnosticsConfig.getMaxRolledFileSizeInMB(), diagnosticsConfig.getMaxRolledFileCount(),
+                diagnosticsConfig.getLogDirectory(), diagnosticsConfig.getFileNamePrefix(),
+                diagnosticsConfig.getPluginProperties());
+        invoke(request);
+        return this;
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -83,6 +84,7 @@ import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.cluster.Versions.V5_5;
+import static com.hazelcast.internal.cluster.Versions.V6_0;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -133,6 +135,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, UserCodeNamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, VectorCollectionConfig> vectorCollectionConfigs = new ConcurrentHashMap<>();
+    private DiagnosticsConfig diagnosticsConfig;
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -363,6 +366,9 @@ public class ClusterWideConfigurationService implements
             }
         } else if (newConfig instanceof VectorCollectionConfig newVectorCollectionConfig) {
             currentConfig = vectorCollectionConfigs.putIfAbsent(newVectorCollectionConfig.getName(), newVectorCollectionConfig);
+        } else if (newConfig instanceof DiagnosticsConfig newDiagnosticsConfig) {
+            diagnosticsConfig = newDiagnosticsConfig;
+            currentConfig = newDiagnosticsConfig;
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -637,6 +643,11 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return diagnosticsConfig;
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
@@ -708,6 +719,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(WanReplicationConfig.class, V5_4);
         configToVersion.put(UserCodeNamespaceConfig.class, V5_4);
         configToVersion.put(VectorCollectionConfig.class, V5_5);
+        configToVersion.put(DiagnosticsConfig.class, V6_0);
 
         return Collections.unmodifiableMap(configToVersion);
     }

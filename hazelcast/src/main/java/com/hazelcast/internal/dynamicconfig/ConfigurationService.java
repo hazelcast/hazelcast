@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -412,4 +413,11 @@ public interface ConfigurationService {
     VectorCollectionConfig findVectorCollectionConfig(String name);
 
     Map<String, VectorCollectionConfig> getVectorCollectionConfigs();
+
+    /**
+     * Returns registered diagnostics configuration.
+     *
+     * @return registered diagnostics configuration
+     */
+    DiagnosticsConfig getDiagnosticsConfig();
 }

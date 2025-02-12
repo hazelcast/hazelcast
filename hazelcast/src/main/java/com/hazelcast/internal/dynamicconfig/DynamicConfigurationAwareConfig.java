@@ -1383,6 +1383,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public DiagnosticsConfig getDiagnosticsConfig() {
-        return staticConfig.getDiagnosticsConfig();
+        DiagnosticsConfig dynamicDiagnosticsConfig = configurationService.getDiagnosticsConfig();
+        return dynamicDiagnosticsConfig != null ? dynamicDiagnosticsConfig : staticConfig.getDiagnosticsConfig();
     }
 }
