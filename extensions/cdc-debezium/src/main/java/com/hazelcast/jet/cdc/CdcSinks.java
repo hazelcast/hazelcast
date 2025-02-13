@@ -134,7 +134,7 @@ public final class CdcSinks {
      *     delete the key from the map ({@link Operation#DELETE})
      * </li><li>
      *     insert a new value for the key
-     *          ({@link Operation#SYNC} & {@link Operation#INSERT})
+     *          ({@link Operation#SYNC} &amp; {@link Operation#INSERT})
      * </li><li>
      *     update the current value for the key ({@link Operation#UPDATE})
      * </li></ul>
@@ -176,7 +176,7 @@ public final class CdcSinks {
      *     delete the key from the map ({@link Operation#DELETE})
      * </li><li>
      *     insert a new value for the key
-     *          ({@link Operation#SYNC} & {@link Operation#INSERT})
+     *          ({@link Operation#SYNC} &amp; {@link Operation#INSERT})
      * </li><li>
      *     update the current value for the key ({@link Operation#UPDATE})
      * </li></ul>
