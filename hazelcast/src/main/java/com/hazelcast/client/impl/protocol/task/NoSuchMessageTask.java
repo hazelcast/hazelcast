@@ -68,11 +68,9 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 import java.util.Set;
 
-public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
+import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS_CLIENTS;
 
-    public static final String CP_SUBSYSTEM_IS_NOT_AVAILABLE_FOR_OS_CLIENTS =
-            "CP subsystem is an Enterprise feature. Please use the latest applicable Hazelcast Enterprise client to interact "
-                    + "with clusters using CP.";
+public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     private static final Set<Integer> MOVED_CP_MESSAGE_TASKS = Set.of(
             CPGroupCreateCPGroupCodec.REQUEST_MESSAGE_TYPE,
@@ -179,7 +177,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
         // TODO RU_COMPAT_5_4 added for Version 5.4 compatibility, to provide a meaningful error message
         //  to old clients after moving the CP subsystem to EE
         if (MOVED_CP_MESSAGE_TASKS.contains(messageType)) {
-            return CP_SUBSYSTEM_IS_NOT_AVAILABLE_FOR_OS_CLIENTS;
+            return CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS_CLIENTS;
         } else {
             return "Unrecognized client message received with type: 0x" + Integer.toHexString(messageType);
         }

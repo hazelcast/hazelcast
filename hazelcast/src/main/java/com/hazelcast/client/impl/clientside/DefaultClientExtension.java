@@ -250,7 +250,7 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public CPSubsystem createCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance) {
-        return new CPSubsystemStubImpl();
+        return new CPSubsystemStubImpl(true);
     }
 
     @Override

@@ -141,7 +141,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
-import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS;
+import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS_MEMBERS;
 import static com.hazelcast.internal.util.CollectionUtil.setOf;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
@@ -198,7 +198,7 @@ public class DefaultNodeExtension implements NodeExtension {
         CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
         if (cpSubsystemConfig != null && cpSubsystemConfig.getCPMemberCount() != 0
                 && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
-            throw new IllegalStateException(CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
+            throw new IllegalStateException(CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS_MEMBERS);
         }
     }
 
@@ -671,7 +671,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
-        return new CPSubsystemStubImpl();
+        return new CPSubsystemStubImpl(false);
     }
 
     public void setLicenseKey(String licenseKey) {
