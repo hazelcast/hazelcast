@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -61,8 +62,17 @@ public final class TcpServerControl {
     }
 
     public void process(Packet packet) {
-        MemberHandshake handshake = serverContext.getSerializationService().toObject(packet);
         TcpServerConnection connection = (TcpServerConnection) packet.getConn();
+        MemberHandshake handshake;
+        try {
+            handshake = serverContext.getSerializationService().toObject(packet);
+        } catch (Exception e) {
+            boolean is40Packet = (packet.getFlags() & Packet.FLAG_4_0) != 0;
+            String message = String.format("Failed to deserialize member handshake packet received from %s version",
+                is40Packet ? "compatible" : "incompatible");
+            connection.close("The connection handshake couldn't be deserialized", e);
+            throw new HazelcastSerializationException(message, e);
+        }
         if (!connection.setHandshake()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection " + connection + " handshake is already completed, ignoring incoming " + handshake);
