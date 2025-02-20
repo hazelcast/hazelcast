@@ -120,22 +120,20 @@ public final class BuildInfoProvider {
     }
 
     private static final class Overrides {
-        private static final Overrides DISABLED = new Overrides(null, -1, null, null,  null, null);
+        private static final Overrides DISABLED = new Overrides(null, -1, null, null, null);
 
         private final String version;
         private final int buildNo;
         private final Boolean enterprise;
         private final MemberVersion lastLtsVersion;
-        private final String lastLtsVersionString;
         private final MemberVersion previousVersion;
 
         private Overrides(String version, int build, Boolean enterprise,
-                          MemberVersion lastLtsVersion, String lastLtsVersionString, MemberVersion previousVersion) {
+                          MemberVersion lastLtsVersion, MemberVersion previousVersion) {
             this.version = version;
             this.buildNo = build;
             this.enterprise = enterprise;
             this.lastLtsVersion = lastLtsVersion;
-            this.lastLtsVersionString = lastLtsVersionString;
             this.previousVersion = previousVersion;
         }
 
@@ -159,16 +157,12 @@ public final class BuildInfoProvider {
                 LOGGER.info("Overriding hazelcast last LTS version with system property value " + this.lastLtsVersion);
                 lastLtsVersion = this.lastLtsVersion;
             }
-            if (this.lastLtsVersionString != null) {
-                LOGGER.info("Overriding hazelcast last LTS version with system property value " + this.lastLtsVersionString);
-                lastLtsVersionString = this.lastLtsVersionString;
-            }
             if (this.previousVersion != null) {
                 LOGGER.info("Overriding hazelcast previous version with system property value " + this.previousVersion);
                 previousVersion = this.previousVersion;
             }
             return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion,
-                    commitId, upstreamBuildInfo, lastLtsVersion, lastLtsVersionString, previousVersion);
+                                 commitId, upstreamBuildInfo, lastLtsVersion, previousVersion);
 
         }
 
@@ -197,7 +191,7 @@ public final class BuildInfoProvider {
                 prevVersion = MemberVersion.of(prev);
             }
 
-            return new Overrides(version, build, enterprise, lastLtsVersion, lastLts, prevVersion);
+            return new Overrides(version, build, enterprise, lastLtsVersion, prevVersion);
         }
     }
 

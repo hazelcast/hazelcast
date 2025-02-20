@@ -45,23 +45,19 @@ public class BuildInfo {
      */
     private final MemberVersion lastLtsVersion;
     /**
-     * TODO Will be removed in HZG-272 after 5.5.3 merge.
-     */
-    private final String lastLtsVersionString;
-    /**
      * Previous minor version, e.g. for 100.1 it's 100.0.
      */
     private final MemberVersion previousVersion;
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion, String commitId) {
-        this(version, build, revision, buildNumber, enterprise, serializationVersion, commitId, null, null, null, null);
+        this(version, build, revision, buildNumber, enterprise, serializationVersion, commitId, null, null, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion, String commitId, BuildInfo upstreamBuildInfo,
-                     MemberVersion lastLtsVersion, String lastLtsVersionString, MemberVersion previousVersion) {
+                     MemberVersion lastLtsVersion, MemberVersion previousVersion) {
         this.version = version;
         this.build = build;
         this.revision = revision;
@@ -71,7 +67,6 @@ public class BuildInfo {
         this.commitId = commitId;
         this.upstreamBuildInfo = upstreamBuildInfo;
         this.lastLtsVersion = lastLtsVersion;
-        this.lastLtsVersionString = lastLtsVersionString;
         this.previousVersion = previousVersion;
     }
 
@@ -118,10 +113,6 @@ public class BuildInfo {
 
     public MemberVersion getLastLtsVersion() {
         return lastLtsVersion;
-    }
-
-    public String getLastLtsVersionString() {
-        return lastLtsVersionString;
     }
 
     public MemberVersion getPreviousVersion() {
