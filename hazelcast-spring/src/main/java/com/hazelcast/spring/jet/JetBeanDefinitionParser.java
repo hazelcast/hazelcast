@@ -27,8 +27,6 @@ import org.w3c.dom.Node;
 
 import javax.annotation.Nonnull;
 
-// TODO: I directly replaced JetInstance with JetService for
-//  my convenience. If necessary, add the JetInstance bean.
 /**
  * Bean definition parser for {@link com.hazelcast.jet.JetService}.
  * <p>

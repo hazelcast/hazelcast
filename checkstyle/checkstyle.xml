@@ -116,6 +116,7 @@
       
         <module name="JavadocType">
             <property name="scope" value="public"/>
+            <property name="allowUnknownTags" value="true" />
         </module>
         <module name="JavadocVariable">
             <property name="scope" value="public"/>
@@ -283,7 +284,9 @@
         https://github.com/hazelcast/hazelcast-enterprise/pull/6368/#issuecomment-1689625486
         <module name="FinalClass"/>
         -->
-        <module name="HideUtilityClassConstructor"/>
+        <module name="HideUtilityClassConstructor">
+            <property name="ignoreAnnotatedBy" value="Configuration, SpringBootApplication" />
+        </module>
         <module name="InterfaceIsType"/>
         <module name="VisibilityModifier">
             <property name="packageAllowed" value="true"/>

@@ -128,6 +128,7 @@
         <bytebuddy.version>1.17.1</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
+        <spring.boot.version>3.4.1</spring.boot.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -1182,6 +1183,14 @@
                     <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                     <excludes>**/module-info.java</excludes>
                 </configuration>
+                <!-- Upgrade version of checkstyle to have more options, like ignoreAnnotatedBy -->
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>10.21.2</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

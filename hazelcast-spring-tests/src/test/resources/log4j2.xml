@@ -25,8 +25,9 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <!-- example how to set log levels
+
+        <!-- More logging to debug potential issues -->
         <Logger name="com.hazelcast.spring" level="DEBUG"/>
-        -->
+        <Logger name="org.springframework.boot.autoconfigure" level="DEBUG"/>
     </Loggers>
 </Configuration>
