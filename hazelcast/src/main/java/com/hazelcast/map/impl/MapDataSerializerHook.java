@@ -166,6 +166,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY_ID;
 
+@SuppressWarnings({"ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
 public final class MapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_DS_FACTORY, MAP_DS_FACTORY_ID);

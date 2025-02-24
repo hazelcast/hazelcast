@@ -34,6 +34,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICAT
 /**
  * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the replicated map.
  */
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);

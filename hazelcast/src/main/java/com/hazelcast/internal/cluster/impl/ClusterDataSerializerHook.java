@@ -56,6 +56,7 @@ import com.hazelcast.version.Version;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "ClassDataAbstractionCoupling"})
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = 0;

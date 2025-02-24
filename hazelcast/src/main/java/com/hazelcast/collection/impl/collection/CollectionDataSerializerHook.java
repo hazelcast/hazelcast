@@ -69,6 +69,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY_ID;
 
+@SuppressWarnings({"ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
 public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(COLLECTION_DS_FACTORY, COLLECTION_DS_FACTORY_ID);

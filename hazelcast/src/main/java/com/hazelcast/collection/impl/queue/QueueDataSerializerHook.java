@@ -71,6 +71,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS
 /**
  * A {@link DataSerializerHook} for the queue operations and support structures.
  */
+@SuppressWarnings({"ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
 public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(QUEUE_DS_FACTORY, QUEUE_DS_FACTORY_ID);

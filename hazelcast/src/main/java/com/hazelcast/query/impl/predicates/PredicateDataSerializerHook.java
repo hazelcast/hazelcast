@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public class PredicateDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(PREDICATE_DS_FACTORY, PREDICATE_DS_FACTORY_ID);

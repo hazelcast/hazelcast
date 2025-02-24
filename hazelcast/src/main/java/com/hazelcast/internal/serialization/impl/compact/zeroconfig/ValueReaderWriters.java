@@ -100,7 +100,7 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  * Class that stores all the value reader writers and returns the appropriate
  * one for the class that requested it.
  */
-@SuppressWarnings("checkstyle:executablestatementcount")
+@SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:ClassFanOutComplexity", "ClassDataAbstractionCoupling"})
 public final class ValueReaderWriters {
     private static final Map<Class<?>, Function<String, ValueReaderWriter<?>>> CONSTRUCTORS = new HashMap<>();
     private static final Map<Class<?>, Function<String, ValueReaderWriter<?>>> ARRAY_CONSTRUCTORS = new HashMap<>();

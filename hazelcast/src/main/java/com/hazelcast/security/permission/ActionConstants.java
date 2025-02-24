@@ -49,7 +49,7 @@ import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
-@SuppressWarnings({"checkstyle:executablestatementcount"})
+@SuppressWarnings({"checkstyle:executablestatementcount", "ClassDataAbstractionCoupling"})
 public final class ActionConstants {
 
     public static final String ACTION_ALL = "all";

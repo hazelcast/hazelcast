@@ -44,7 +44,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BR
  *
  * @since 3.10
  */
-@SuppressWarnings("checkstyle:javadocvariable")
+@SuppressWarnings({"checkstyle:javadocvariable", "ClassDataAbstractionCoupling"})
 public final class SplitBrainDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SPLIT_BRAIN_DS_FACTORY, SPLIT_BRAIN_DS_FACTORY_ID);

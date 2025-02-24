@@ -82,7 +82,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 
-@SuppressWarnings({"WeakerAccess", "checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"WeakerAccess", "checkstyle:ClassFanOutComplexity", "ClassDataAbstractionCoupling"})
 public class DefaultClientExtension implements ClientExtension {
 
     protected static final ILogger LOGGER = Logger.getLogger(DefaultClientExtension.class);

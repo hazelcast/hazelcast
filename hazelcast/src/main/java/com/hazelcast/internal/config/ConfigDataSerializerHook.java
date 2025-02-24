@@ -101,7 +101,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_D
 /**
  * DataSerializerHook for com.hazelcast.config classes
  */
-@SuppressWarnings({"checkstyle:javadocvariable", "deprecation"})
+@SuppressWarnings({"JavadocVariable", "deprecation", "ClassFanOutComplexity", "ClassDataAbstractionCoupling"})
 public final class ConfigDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(CONFIG_DS_FACTORY, CONFIG_DS_FACTORY_ID);
