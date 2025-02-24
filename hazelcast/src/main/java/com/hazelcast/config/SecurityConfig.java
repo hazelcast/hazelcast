@@ -33,7 +33,7 @@ import com.hazelcast.security.ICredentialsFactory;
 /**
  * Contains configuration for Security
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public class SecurityConfig {
 
     private static final boolean DEFAULT_CLIENT_BLOCK_UNMAPPED_ACTIONS = true;

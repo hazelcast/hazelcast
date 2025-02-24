@@ -57,7 +57,7 @@ import java.util.Queue;
  *
  * @since 3.10
  */
-@SuppressWarnings({"checkstyle:classfanoutcomplexity"})
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class MergingValueFactory {
 
     private MergingValueFactory() {

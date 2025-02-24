@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public interface ICacheService
         extends ManagedService, RemoteService, ChunkedMigrationAwareService,
         EventPublishingService<Object, CacheEventListener>,

@@ -470,7 +470,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;

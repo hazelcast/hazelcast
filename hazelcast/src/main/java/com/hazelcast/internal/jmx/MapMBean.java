@@ -24,7 +24,7 @@ import com.hazelcast.map.LocalMapStats;
 /**
  * Management bean for {@link IMap}
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 

@@ -229,7 +229,7 @@ public abstract class AbstractCacheService implements ICacheService,
     }
 
     @Override
-    @SuppressFBWarnings({"EI_EXPOSE_REP"})
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public CachePartitionSegment[] getPartitionSegments() {
         return segments;
     }

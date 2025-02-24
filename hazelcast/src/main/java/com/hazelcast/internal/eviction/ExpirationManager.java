@@ -61,7 +61,7 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
     private volatile ScheduledFuture<?> scheduledExpirationTask;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @SuppressFBWarnings({"EI_EXPOSE_REP2"})
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ExpirationManager(ClearExpiredRecordsTask task, NodeEngine nodeEngine) {
         this.task = task;
         this.nodeEngine = nodeEngine;

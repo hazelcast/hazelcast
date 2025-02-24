@@ -67,7 +67,7 @@ import static java.util.Collections.singletonList;
 /**
  * Factory methods for functions which requires a permission to run.
  */
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public final class SecuredFunctions {
 
     private SecuredFunctions() {

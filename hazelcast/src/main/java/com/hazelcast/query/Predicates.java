@@ -179,7 +179,7 @@ import java.util.Set;
  * </ul>
  * </ul>
  */
-@SuppressWarnings({"checkstyle:classdataabstractioncoupling"})
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public final class Predicates {
 
     //we don't want instances. private constructor.

@@ -122,7 +122,7 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         return PredicateDataSerializerHook.GREATERLESS_PREDICATE;
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public boolean equals(Object o) {
         if (this == o) {

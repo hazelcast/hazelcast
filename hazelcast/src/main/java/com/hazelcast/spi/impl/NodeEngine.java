@@ -62,7 +62,7 @@ import java.util.UUID;
  * the {@link ManagedService} so you can get access to the services within the system.
  */
 @PrivateApi
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public interface NodeEngine {
 
     OperationService getOperationService();

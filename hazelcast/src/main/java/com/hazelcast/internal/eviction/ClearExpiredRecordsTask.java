@@ -46,7 +46,7 @@ import static java.lang.Integer.parseInt;
 import static java.lang.Math.min;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:methodcount"})
-@SuppressFBWarnings({"URF_UNREAD_FIELD"})
+@SuppressFBWarnings("URF_UNREAD_FIELD")
 public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     private static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
@@ -72,7 +72,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     private int runningCleanupOperationsCount;
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP2"})
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     protected ClearExpiredRecordsTask(String serviceName,
                                       T[] containers,
                                       HazelcastProperty cleanupEnabled,

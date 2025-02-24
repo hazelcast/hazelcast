@@ -472,7 +472,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private static void serializationXmlGenerator(XmlGenerator gen, Config config) {
         SerializationConfig c = config.getSerializationConfig();
         if (c == null) {

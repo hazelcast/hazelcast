@@ -40,7 +40,7 @@ import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
  * <p>
  * Used for processing YAML configuration.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public class YamlElementAdapter implements Element {
     private final YamlNode yamlNode;
 

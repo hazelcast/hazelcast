@@ -60,7 +60,7 @@ public final class ComparisonPredicate extends BiExpression<Boolean> {
         return JetSqlSerializerHook.EXPRESSION_COMPARISON;
     }
 
-    @SuppressWarnings({"rawtypes"})
+    @SuppressWarnings("rawtypes")
     @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Any SQL expression may return null")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {

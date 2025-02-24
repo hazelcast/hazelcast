@@ -468,7 +468,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configMap.put(cacheName, builder.getBeanDefinition());
         }
 
-        @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private void parseQueryCacheInternal(BeanDefinitionBuilder builder, Node node, String nodeName, String textContent) {
             if ("predicate".equals(nodeName)) {
                 BeanDefinitionBuilder predicateBuilder = getPredicate(node, textContent);

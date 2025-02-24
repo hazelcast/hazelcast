@@ -59,7 +59,7 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         return DomConfigHelper.getTextContent(node, domLevel3);
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     protected void populateQueryCacheConfig(QueryCacheConfig queryCacheConfig,
                                             Node childNode, String nodeName) {
         if (matches("entry-listeners", nodeName)) {

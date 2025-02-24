@@ -62,7 +62,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 // A special HazelcastInstance that has a BootstrappedJetProxy
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public final class BootstrappedInstanceProxy implements HazelcastInstance {
 
     private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);

@@ -59,7 +59,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 /**
  * Base Message task.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractMessageTask<P> implements MessageTask, SecureRequest {
 
     private static final List<Class<? extends Throwable>> NON_PEELABLE_EXCEPTIONS =

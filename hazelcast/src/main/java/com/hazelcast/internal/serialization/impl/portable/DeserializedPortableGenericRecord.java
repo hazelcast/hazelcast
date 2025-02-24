@@ -45,7 +45,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     private final ClassDefinition classDefinition;
     private final Object[] objects;
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP2"})
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public DeserializedPortableGenericRecord(ClassDefinition classDefinition, Object[] objects) {
         this.classDefinition = classDefinition;
         this.objects = objects;

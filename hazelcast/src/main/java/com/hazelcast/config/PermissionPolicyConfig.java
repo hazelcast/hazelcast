@@ -73,7 +73,7 @@ public class PermissionPolicyConfig {
                 + '}';
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -37,7 +37,7 @@ import java.util.Set;
  * - Set
  * Used by {@link com.hazelcast.nio.serialization.compatibility.BinaryCompatibilityTest}.
  */
-@SuppressWarnings({"checkstyle:ParameterNumber"})
+@SuppressWarnings("checkstyle:ParameterNumber")
 public class AllFieldsDTO {
 
     public boolean bool;

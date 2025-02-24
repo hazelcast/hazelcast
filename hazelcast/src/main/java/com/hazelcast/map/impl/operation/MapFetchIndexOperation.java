@@ -154,7 +154,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
-                @SuppressWarnings({"rawtypes"})
+                @SuppressWarnings("rawtypes")
                 Iterator<QueryableEntry> keyEntries = indexKeyEntries.getEntries();
 
                 // Read and add until size limit is reached or iterator ends

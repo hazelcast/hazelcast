@@ -195,7 +195,7 @@ public class ClientReliableTopicConfig implements NamedConfig {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;

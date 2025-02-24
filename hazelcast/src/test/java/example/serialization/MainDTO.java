@@ -23,7 +23,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
-@SuppressWarnings({"checkstyle:ParameterNumber"})
+@SuppressWarnings("checkstyle:ParameterNumber")
 public class MainDTO {
 
     public byte b;

@@ -27,7 +27,7 @@ import org.w3c.dom.UserDataHandler;
 
 import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
 
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public class ScalarTextNodeAdapter implements Node {
     private final YamlScalar scalar;
 

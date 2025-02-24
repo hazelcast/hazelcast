@@ -57,7 +57,7 @@ import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp
 /**
  * Maintains the partition table state.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public class PartitionStateManagerImpl implements PartitionStateManager {
 
     private final Node node;

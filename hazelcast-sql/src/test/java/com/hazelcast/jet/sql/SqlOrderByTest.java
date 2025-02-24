@@ -95,7 +95,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings({"checkstyle:RedundantModifier"})
+@SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlOrderByTest extends HazelcastTestSupport {
 
     private static final String MAP_OBJECT = "map_object";

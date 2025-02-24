@@ -59,7 +59,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast properties.
  */
-@SuppressWarnings({"checkstyle:magicnumber"})
+@SuppressWarnings("checkstyle:magicnumber")
 public final class ClusterProperty {
     /*
      * NETWORKING / TCP PROPERTIES

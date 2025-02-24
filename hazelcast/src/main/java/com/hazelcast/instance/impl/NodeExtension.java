@@ -62,7 +62,7 @@ import java.util.function.Function;
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
  * some modules, like; <tt>SerializationService</tt>, <tt>ChannelFactory</tt> etc.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public interface NodeExtension {
 
     /**

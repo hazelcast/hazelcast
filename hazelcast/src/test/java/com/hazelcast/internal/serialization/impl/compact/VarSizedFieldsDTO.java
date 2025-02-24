@@ -25,7 +25,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Objects;
 
-@SuppressWarnings({"checkstyle:ParameterNumber"})
+@SuppressWarnings("checkstyle:ParameterNumber")
 public class VarSizedFieldsDTO {
 
     public boolean[] arrayOfBoolean;

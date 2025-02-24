@@ -100,7 +100,7 @@ public class NodeStateImpl implements NodeState {
         return root;
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public void fromJson(JsonObject json) {
         String jsonClusterState = getString(json, "clusterState", null);

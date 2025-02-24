@@ -50,7 +50,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public final class ScheduledFutureProxy<V>
         implements IScheduledFuture<V>, HazelcastInstanceAware {
 

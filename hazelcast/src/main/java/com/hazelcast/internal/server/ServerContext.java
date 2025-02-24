@@ -42,7 +42,7 @@ import java.util.concurrent.Future;
 /**
  * Contains many of the dependencies passed to the {@link Server}.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public interface ServerContext {
 
     int KILO_BYTE = 1024;

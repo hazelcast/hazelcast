@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * <p>
  * Used for processing external configuration overrides.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 class ConfigOverrideElementAdapter implements Element {
     private final ConfigNode configNode;
 

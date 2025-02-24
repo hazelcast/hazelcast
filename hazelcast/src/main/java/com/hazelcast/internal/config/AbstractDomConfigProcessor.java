@@ -149,7 +149,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         return socketInterceptorConfig;
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     protected SerializationConfig parseSerialization(final Node node) {
         SerializationConfig serializationConfig = new SerializationConfig();
         for (Node child : childElements(node)) {

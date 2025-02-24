@@ -65,7 +65,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 /**
  * Open source implementation of the {@link WanReplicationService}
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public class WanReplicationServiceImpl implements WanReplicationService,
         ChunkedMigrationAwareService, ManagedService {
 

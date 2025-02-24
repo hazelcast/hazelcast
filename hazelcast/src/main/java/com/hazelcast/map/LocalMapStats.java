@@ -35,7 +35,7 @@ import java.util.Map;
  * member may also hold backup entries of other members. LocalMapStats
  * provides the count of owned and backup entries besides their size in memory.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public interface LocalMapStats extends LocalInstanceStats {
 
     /**

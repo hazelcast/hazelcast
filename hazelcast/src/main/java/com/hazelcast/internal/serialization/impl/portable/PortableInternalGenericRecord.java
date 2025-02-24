@@ -680,7 +680,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
         }
     }
 
-    @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"})
+    @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);

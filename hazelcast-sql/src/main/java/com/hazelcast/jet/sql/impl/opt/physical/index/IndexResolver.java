@@ -682,7 +682,7 @@ public final class IndexResolver {
         );
     }
 
-    @SuppressWarnings({"ConstantConditions"})
+    @SuppressWarnings("ConstantConditions")
     private static IndexComponentCandidate prepareSingleColumnSearchCandidateComparison(
             RexNode exp,
             RexNode operand1,

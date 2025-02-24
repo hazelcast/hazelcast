@@ -47,7 +47,7 @@ import java.util.Map;
  * This class is a decorator that delegates most of the calls to given JetService.
  * Implementors of this class provides a strategy pattern to access ExecuteJobParameters to launch a new jet job
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
     private static final ILogger LOGGER = Logger.getLogger(BootstrappedJetProxy.class);

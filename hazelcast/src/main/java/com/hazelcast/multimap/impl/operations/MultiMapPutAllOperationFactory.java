@@ -34,7 +34,7 @@ public class MultiMapPutAllOperationFactory extends PartitionAwareOperationFacto
     public MultiMapPutAllOperationFactory() {
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP2"})
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public MultiMapPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries) {
         this.name = name;
         this.partitions = partitions;

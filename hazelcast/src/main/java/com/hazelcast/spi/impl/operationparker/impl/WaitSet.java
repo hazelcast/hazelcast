@@ -137,7 +137,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
      * response.
      * This is executed under partition migration lock!
      */
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     void onPartitionMigrate(PartitionMigrationEvent event) {
         Iterator<WaitSetEntry> it = queue.iterator();
         int partitionId = event.getPartitionId();

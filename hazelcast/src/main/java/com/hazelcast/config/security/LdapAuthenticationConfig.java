@@ -29,7 +29,7 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 /**
  * Typed authentication configuration for {@code BasicLdapLoginModule} and {@code LdapLoginModule}.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings("checkstyle:methodcount")
 public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAuthenticationConfig> {
 
     private String url;
@@ -315,7 +315,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

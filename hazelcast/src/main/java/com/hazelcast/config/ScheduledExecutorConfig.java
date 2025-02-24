@@ -371,7 +371,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         }
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public final boolean equals(Object o) {
         if (this == o) {
