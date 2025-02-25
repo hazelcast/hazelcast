@@ -376,6 +376,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     migrationManager.triggerControlTask();
                 }
             }
+            node.getNodeExtension().getInternalHotRestartService().onMemberJoined(member);
         } finally {
             partitionServiceLock.unlock();
         }
@@ -393,6 +394,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             for (Member member : members) {
                 migrationManager.onMemberRemove(member);
                 replicaManager.cancelReplicaSyncRequestsTo(member);
+                node.getNodeExtension().getInternalHotRestartService().onMemberLeft(member, clusterState);
 
                 Address formerMaster = latestMaster;
                 latestMaster = node.getClusterService().getMasterAddress();

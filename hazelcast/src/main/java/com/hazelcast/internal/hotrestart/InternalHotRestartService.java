@@ -17,6 +17,7 @@
 package com.hazelcast.internal.hotrestart;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
@@ -184,4 +185,25 @@ public interface InternalHotRestartService {
      * @param clusterTopologyIntent the cluster topology intent, as detected by master member.
      */
     void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent);
+
+    /**
+     * Callback method when a member has left the cluster, and what the cluster's state is
+     * as the member leaves. This is used to track crashed members and mark them as unsafe
+     * if they crash (leave the cluster in an ACTIVE-like state) while 1 or more other nodes
+     * are marked as crashed.
+     *
+     * @param member       the member which is discovered to have crashed.
+     * @param clusterState the cluster's state when the member left
+     */
+    void onMemberLeft(Member member, ClusterState clusterState);
+
+    /**
+     * Callback method when a member joins the cluster. This is used to remove crashed
+     * members from tracking on non-master nodes, as only the master node responds to
+     * Hot Restart requests, but other nodes need to keep their tracker up-to-date as
+     * they may become master in the future.
+     *
+     * @param member the member which has joined the cluster.
+     */
+    void onMemberJoined(Member member);
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.hotrestart;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
@@ -120,5 +121,13 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     @Override
     public boolean trySetDeferredClusterState(ClusterState newClusterState) {
         return false;
+    }
+
+    @Override
+    public void onMemberLeft(Member member, ClusterState clusterState) {
+    }
+
+    @Override
+    public void onMemberJoined(Member member) {
     }
 }

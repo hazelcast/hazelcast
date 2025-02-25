@@ -325,6 +325,7 @@ public class TestHazelcastInstanceFactory {
         private IntFunction<Address> addressFn = i -> null;
         private BiFunction<Integer, Address, Config> configFn = (i, address) -> null;
         private boolean ignoreErrors;
+        private boolean matchAgainstNodeCount;
 
         public HazelcastInstancesBuilder withNodeCount(int nodeCount) {
             this.nodeCount = nodeCount;
@@ -382,6 +383,16 @@ public class TestHazelcastInstanceFactory {
         }
 
         /**
+         * Verifies the cluster size by matching against the expected node count, as opposed
+         * to matching against the HazelcastInstance[] array size after initial startup. This
+         * is useful if nodes which fail startup are expected to restart again immediately.
+         */
+        public HazelcastInstancesBuilder matchAgainstNodeCount() {
+            matchAgainstNodeCount = true;
+            return this;
+        }
+
+        /**
          * Creates the given number of Hazelcast instances in parallel.
          * The first member in the returned array is always the master.
          * <p>
@@ -415,7 +426,11 @@ public class TestHazelcastInstanceFactory {
                 errors.forEach(error::addSuppressed);
                 throw sneakyThrow(error);
             }
-            assertClusterSizeEventually(instances.length, instances);
+            if (matchAgainstNodeCount) {
+                assertClusterSizeEventually(nodeCount, instances);
+            } else {
+                assertClusterSizeEventually(instances.length, instances);
+            }
             Arrays.sort(instances, comparing(hz -> !getNode(hz).isMaster()));
             return instances;
         }
