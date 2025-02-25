@@ -53,6 +53,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -69,7 +70,7 @@ public class ClusterStateManagerTest {
     private static final int MEMBERLIST_VERSION = 1;
     private static final long PARTITION_STAMP = 0;
 
-    private final Node node = mock(Node.class);
+    private final Node node = mock(Node.class, RETURNS_DEEP_STUBS);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
     private final MembershipManager membershipManager = mock(MembershipManager.class);
     private final ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
