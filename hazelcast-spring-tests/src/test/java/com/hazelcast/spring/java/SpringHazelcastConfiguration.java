@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.spring;
+package com.hazelcast.spring.java;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MetadataPolicy;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -34,7 +35,7 @@ import static com.hazelcast.spring.ConfigCreator.createConfig;
 @ExposeHazelcastObjects
 public class SpringHazelcastConfiguration {
 
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public HazelcastInstance hazelcastInstance() {
         Config config = createConfig();
         config.setClusterName("spring-hazelcast-cluster-from-java");
@@ -48,7 +49,7 @@ public class SpringHazelcastConfiguration {
         map1Config.setReadBackupData(true);
         map1Config.setMetadataPolicy(MetadataPolicy.OFF);
         config.addMapConfig(map1Config);
-        return Hazelcast.newHazelcastInstance(config);
+        return HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
     @Bean

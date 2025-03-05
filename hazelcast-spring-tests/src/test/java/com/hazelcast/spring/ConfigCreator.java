@@ -27,8 +27,7 @@ public final class ConfigCreator {
         config.getJetConfig().setEnabled(true);
 
         NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setPort(5801);
-        networkConfig.setPortAutoIncrement(true);
+        networkConfig.setPort(0);
         networkConfig.getInterfaces().addInterface("127.0.0.1");
         networkConfig.getJoin().getAutoDetectionConfig().setEnabled(false);
         networkConfig.getJoin().getMulticastConfig().setEnabled(false);

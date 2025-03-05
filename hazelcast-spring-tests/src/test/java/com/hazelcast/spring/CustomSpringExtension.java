@@ -18,8 +18,8 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spring.config.ConfigFactoryAccessor;
 import com.hazelcast.test.JmxLeakHelper;
@@ -32,6 +32,10 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -44,6 +48,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
  * This Junit5 extension is used per test class. It is similar to a JUnit4 test class runner
  */
 public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback, InvocationInterceptor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CustomSpringExtension.class);
 
     // Specifies the default time out value for a test method, unless a test timeout annotation is not provided
     private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = Integer.getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
@@ -88,11 +93,13 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
 
     @Override
     public void afterAll(ExtensionContext context) {
-        Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-        if (!instances.isEmpty()) {
-            String message = "Instances haven't been shut down: " + instances;
-            Hazelcast.shutdownAll();
-            throw new IllegalStateException(message);
+        var applicationContext = (AbstractApplicationContext) SpringExtension.getApplicationContext(context);
+        if (applicationContext.isClosed() || !applicationContext.isActive()) {
+            Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                LOGGER.warn("Instances haven't been shut down: " + instances);
+                HazelcastInstanceFactory.terminateAll();
+            }
         }
         JmxLeakHelper.checkJmxBeans();
     }

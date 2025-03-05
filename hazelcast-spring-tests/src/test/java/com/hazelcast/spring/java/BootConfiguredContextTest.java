@@ -18,8 +18,8 @@ package com.hazelcast.spring.java;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,9 +27,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 
 import static com.hazelcast.spring.ConfigCreator.createConfig;
+import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = BootConfiguredContextTest.SpringHazelcastPartialConfiguration.class)
+@SpringBootTest(classes = BootConfiguredContextTest.SpringHazelcastBootConfiguration.class)
 public class BootConfiguredContextTest
         extends AppContextTestBase {
 
@@ -37,16 +38,19 @@ public class BootConfiguredContextTest
     void testMap() {
         assertThat((Object) map1).isNotNull();
         assertThat((Object) testMap).isNotNull();
+
+        testMap.set("key1", "value1");
+        assertEqualsEventually(() -> testMap.get("key1"), "value1");
     }
 
-    @SpringBootApplication
-    public static class SpringHazelcastPartialConfiguration {
+    @SpringBootApplication(scanBasePackages = "com.hazelcast.non.existing")
+    public static class SpringHazelcastBootConfiguration {
 
         public static void main(String[] args) {
-            SpringApplication.run(SpringHazelcastPartialConfiguration.class, args);
+            SpringApplication.run(SpringHazelcastBootConfiguration.class, args);
         }
 
-        @Bean
+        @Bean(destroyMethod = "shutdown")
         public HazelcastInstance hazelcastInstance() {
             Config config = createConfig();
             config.setClusterName("spring-hazelcast-cluster-from-java");
@@ -59,7 +63,7 @@ public class BootConfiguredContextTest
             map1Config.setBackupCount(2);
             map1Config.setReadBackupData(true);
             config.addMapConfig(map1Config);
-            return Hazelcast.newHazelcastInstance(config);
+            return HazelcastInstanceFactory.newHazelcastInstance(config);
         }
     }
 }

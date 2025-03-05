@@ -21,6 +21,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.CPMap;
@@ -30,6 +31,8 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -64,6 +67,8 @@ import java.util.function.Supplier;
 @AutoConfiguration
 @AutoConfigureAfter(HazelcastAutoConfiguration.class)
 public class HazelcastObjectExtractionConfiguration {
+
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastObjectExtractionConfiguration.class);
 
     private static Set<Class<?>> registeredConfigClasses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -155,10 +160,30 @@ public class HazelcastObjectExtractionConfiguration {
                                                            final String name,
                                                            final Class<T> clazz,
                                                            final BiFunction<HazelcastInstance, String, T> supplierProvider) {
-            if (!registry.containsBeanDefinition(name) && configuration.canInclude(name) && configuration.canInclude(clazz)) {
+            boolean containsBeanDefinition = registry.containsBeanDefinition(name);
+            boolean canIncludeByName = configuration.canInclude(name);
+            boolean canIncludeByType = configuration.canInclude(clazz);
+            if (LOGGER.isFineEnabled()) {
+                if (containsBeanDefinition) {
+                    LOGGER.fine("Not registering bean %s of type %s, there is already bean with this name",
+                                name, clazz.getSimpleName());
+                }
+                if (!canIncludeByName) {
+                    LOGGER.fine("Not registering bean %s of type %s, this name was excluded in the configuration",
+                                name, clazz.getSimpleName());
+                }
+                if (!canIncludeByType) {
+                    LOGGER.fine("Not registering bean %s of type %s, this type of objects was excluded in the configuration",
+                                name, clazz.getSimpleName());
+                }
+            }
+            if (!containsBeanDefinition && canIncludeByName && canIncludeByType) {
                 final Supplier<T> supplier = () -> supplierProvider.apply(hazelcastInstance, name);
                 var builder = BeanDefinitionBuilder.rootBeanDefinition(clazz, supplier)
                                                    .setLazyInit(true);
+                if (DistributedObject.class.isAssignableFrom(clazz)) {
+                    builder.setDestroyMethodName("destroy");
+                }
                 registry.registerBeanDefinition(name, builder.getBeanDefinition());
             }
             registeredConfigClasses.add(clazz);

@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.spring;
+package com.hazelcast.spring.java;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spring.CustomSpringExtension;
+import com.hazelcast.spring.HazelcastObjectExtractionConfiguration;
 import com.hazelcast.transaction.TransactionalObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;

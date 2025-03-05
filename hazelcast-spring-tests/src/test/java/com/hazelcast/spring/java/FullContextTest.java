@@ -17,12 +17,12 @@
 package com.hazelcast.spring.java;
 
 import com.hazelcast.spring.CustomSpringExtension;
-import com.hazelcast.spring.SpringHazelcastConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
