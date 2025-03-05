@@ -923,7 +923,7 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(KubernetesTokenProvider tokenProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, null, kubernetesMasterUrl, tokenProvider, null,
+        return new KubernetesClient(NAMESPACE, "hazelcast-0", kubernetesMasterUrl, tokenProvider, null,
                 RETRIES, ExposeExternallyMode.AUTO, true, null,
                 null, null, null);
     }
@@ -950,7 +950,7 @@ public class KubernetesClientTest {
                                                  String servicePerPodLabelName, String servicePerPodLabelValue,
                                                  KubernetesApiProvider urlProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, null, kubernetesMasterUrl, new StaticTokenProvider(TOKEN),
+        return new KubernetesClient(NAMESPACE, "hazelcast-0", kubernetesMasterUrl, new StaticTokenProvider(TOKEN),
                 null, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName,
                 servicePerPodLabelValue, null, urlProvider);
     }

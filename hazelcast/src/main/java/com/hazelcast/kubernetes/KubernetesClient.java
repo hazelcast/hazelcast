@@ -42,14 +42,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_GONE;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.net.HttpURLConnection.HTTP_GONE;
-import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 
 /**
  * Responsible for connecting to the Kubernetes API.
@@ -96,7 +97,7 @@ class KubernetesClient {
     private boolean isNodePortWarningAlreadyLogged;
 
     KubernetesClient(KubernetesConfig config, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
-        this(config.getNamespace(), config.getServiceName(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
+        this(config.getNamespace(), HostnameUtil.getLocalHostname(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
                 config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
                 config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
                 config.getServicePerPodLabelValue(), clusterTopologyIntentTracker, null);
@@ -104,7 +105,7 @@ class KubernetesClient {
 
     // test usage only
     @SuppressWarnings("ParameterNumber")
-    KubernetesClient(String namespace, String serviceName, String kubernetesMaster,
+    KubernetesClient(String namespace, String podName, String kubernetesMaster,
                      KubernetesTokenProvider tokenProvider, String caCertificate, int retries,
                      ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
                      String servicePerPodLabelName, String servicePerPodLabelValue,
@@ -125,7 +126,7 @@ class KubernetesClient {
         }
         this.apiProvider = apiProvider != null ? apiProvider : buildKubernetesApiUrlProvider();
         this.stsMonitorThread = clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled()
-                ? new StsMonitorThread(serviceName) : null;
+                ? new StsMonitorThread(podName) : null;
     }
 
     public void start() {
@@ -293,30 +294,6 @@ class KubernetesClient {
     // For test purpose
     boolean isNodePortWarningAlreadyLogged() {
         return isNodePortWarningAlreadyLogged;
-    }
-
-    /**
-     * Hazelcast Platform Operator keeps instances in two StatefulSet's: {@code <serviceName>}
-     * and {@code <serviceName>-lite}, the latter of which is only created if the cluster has
-     * lite members. {@code serviceName} is the name of the {@code Hazelcast} CRD that is used
-     * to deploy the cluster. Even though it is always set by the Operator (see
-     * <a href="https://github.com/hazelcast/hazelcast-platform-operator/blob/cb1dd7/internal/config/build.go#L240">
-     * here</a>), a label-based fallback mechanism is introduced in order to keep it in line
-     * with {@link KubernetesApiEndpointResolver#resolveNodes()}. Another fallback mechanism
-     * that is based on hostname is also possible since the pattern for the constructed
-     * hostname is {@code <statefulSetName>-<ordinal>} (see
-     * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id">
-     * here</a>), but this solution depends on member liteness and StatefulSet membership,
-     * which is not well-defined on member promotion/demotion.
-     */
-    private List<String> extractStsNames(String serviceName) {
-        if (serviceName == null) {
-            JsonObject podJson = callGet(String.format("%s/api/v1/namespaces/%s/pods/%s",
-                    kubernetesMaster, namespace, HostnameUtil.getLocalHostname()));
-            JsonObject labels = podJson.get("metadata").asObject().get("labels").asObject();
-            serviceName = labels.get("app.kubernetes.io/instance").asString();
-        }
-        return List.of(serviceName, serviceName + "-lite");
     }
 
     @Nullable
@@ -820,12 +797,50 @@ class KubernetesClient {
         private final List<String> stsNames;
         private final BackoffIdleStrategy backoffIdleStrategy;
 
-        StsMonitorThread(String serviceName) {
+        StsMonitorThread(String podName) {
             super("hz-k8s-sts-monitor");
             stsUrlString = String.format("%s/apis/apps/v1/namespaces/%s/statefulsets", kubernetesMaster, namespace);
-            stsNames = extractStsNames(serviceName);
-            backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
-                    MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
+            stsNames = chooseStsToMonitor(podName, stsUrlString);
+            backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS, MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS),
+                    SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
+        }
+
+        private List<String> chooseStsToMonitor(String podName, String stsUrl) {
+            String stsRootName = determineStsRootName(podName, stsUrl);
+            return List.of(stsRootName, stsRootName + "-lite");
+        }
+
+        /**
+         * The Hazelcast Platform Operator keeps instances in two StatefulSet's: sts-name and sts-name-lite. We
+         * need to monitor both to detect cluster changes. We can resolve the name of the sts containing this member
+         * easily since the pattern for the pod name (and therefore local hostname) is {@code <statefulSetName>-<ordinal>}
+         * (see <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id">
+         * here</a>). From this name we can then determine the name of the sibling sts by querying the api
+         * server if required for disambiguation. For example if the current sts name is suffixed with "lite"
+         * then this member may be a lite member, or the user chose a name with that suffix and we are
+         * actually a standard member.
+         */
+        private String determineStsRootName(String localHostName, String stsUrl) {
+            String parentStsName = localHostName.replaceAll("-\\d+$", "");
+            if (!parentStsName.endsWith("lite")) {
+                return parentStsName;
+            }
+
+            JsonArray items = toJsonArray(callGet(stsUrl).get("items"));
+            List<String> stsNames = StreamSupport.stream(items.spliterator(), false)
+                    .map(sts -> sts.asObject().get("metadata").asObject().getString("name", ""))
+                    .toList();
+
+            boolean inLiteSts = stsNames.stream().anyMatch(name -> parentStsName.equals(name + "-lite"));
+            boolean inFullSts = stsNames.stream().anyMatch(name -> name.equals(parentStsName + "-lite"));
+
+            if (inFullSts && inLiteSts) {
+                throw new IllegalStateException("Cannot determine root sts name from: " + stsNames);
+            } else if (inLiteSts) {
+                return parentStsName.replaceAll("-lite$", "");
+            } else {
+                return parentStsName;
+            }
         }
 
         /**
@@ -838,6 +853,7 @@ class KubernetesClient {
          */
         @Override
         public void run() {
+            LOGGER.info("Starting to monitor statefulsets: " + stsNames);
             while (running) {
                 if (shuttingDown) {
                     break;

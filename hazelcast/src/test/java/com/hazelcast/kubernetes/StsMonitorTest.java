@@ -91,7 +91,7 @@ public class StsMonitorTest {
 
     private void buildKubernetesClient() {
         StaticTokenProvider tokenProvider = new StaticTokenProvider(token);
-        client = new KubernetesClient(namespace, SERVICE_NAME, apiServerBaseUrl, tokenProvider, null,
+        client = new KubernetesClient(namespace, SERVICE_NAME + "-0", apiServerBaseUrl, tokenProvider, null,
                 3, KubernetesConfig.ExposeExternallyMode.DISABLED, false,
                 null, null, tracker, null);
         stsMonitor = client.stsMonitorThread;

@@ -187,7 +187,7 @@ public final class RestClient {
     private Response call(HttpRequest request) {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            checkResponseCode(request.method(), response);
+            checkResponseCode(request, response);
             return new Response(response.statusCode(), response.body());
         } catch (IOException e) {
             throw new RestClientException("Failure in executing REST call", e);
@@ -227,8 +227,7 @@ public final class RestClient {
 
             HttpRequest request = requestBuilder.build();
             HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-
-            checkResponseCode(request.method(), response);
+            checkResponseCode(request, response);
             return new WatchResponse(response);
         } catch (IOException e) {
             throw new RestClientException("Failure in executing REST call", e);
@@ -237,7 +236,7 @@ public final class RestClient {
         }
     }
 
-    private void checkResponseCode(String method, HttpResponse<?> response) {
+    private void checkResponseCode(HttpRequest request, HttpResponse<?> response) {
         int responseCode = response.statusCode();
         if (!isExpectedResponseCode(responseCode)) {
             String errorMessage = "none, body type: " + response.body().getClass();
@@ -253,7 +252,7 @@ public final class RestClient {
                 }
             }
             throw new RestClientException(
-                    String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
+                    String.format("Failure executing: %s at: %s. Message: %s", request.method(), request.uri(), errorMessage),
                     responseCode);
         }
     }
