@@ -777,7 +777,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         }
 
-        Object value = record.getValue();
+        Object value = mapServiceContext.interceptGet(interceptorRegistry, record.getValue());
         mapServiceContext.interceptAfterGet(interceptorRegistry, value);
         // this serialization step is needed not to expose the object, see issue 1292
         return mapServiceContext.toData(value);

@@ -192,6 +192,29 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testReadFromBackup_withGetInterceptor() {
+        Config config = getConfig();
+        config.getMapConfig("default").setReadBackupData(true);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config, 2);
+        IMap<String, Integer> node1Map = instances[0].getMap(randomString());
+        node1Map.addInterceptor(new NegativeGetInterceptor());
+
+        Map<String, Integer> keysOwnedByNode2 = new HashMap<>(100);
+        for (int i = 1; i <= 100; i++) {
+            String key = randomNameOwnedBy(instances[1]);
+            put(node1Map, key, i);
+            keysOwnedByNode2.put(key, i);
+        }
+
+        for (Map.Entry<String, Integer> entry : keysOwnedByNode2.entrySet()) {
+            Integer value = node1Map.get(entry.getKey());
+            assertEquals("Expected negative value on map.get(" + entry.getKey() + ")", -entry.getValue(), value.intValue());
+        }
+    }
+
+    @Test
     public void testPutEvent_withInterceptor() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, String> map = instance.getMap(randomString());
@@ -407,7 +430,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptGet(Object value) {
-            return ((Integer) value) * -1;
+            return value == null ? null : ((Integer) value) * -1;
         }
     }
 
