@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 final class RegionValidator {
     private static final Pattern AWS_REGION_PATTERN =
-        Pattern.compile("\\w{2}(-gov-|-)(north|northeast|east|southeast|south|southwest|west|northwest|central)-\\d(?!.+)");
+        Pattern.compile("\\w{2}(-\\w{3}-|-)(north|northeast|east|southeast|south|southwest|west|northwest|central)-\\d(?!.+)");
 
     private RegionValidator() {
     }
