@@ -221,7 +221,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.7.8</version>
+            <version>3.7.9</version>
             <scope>test</scope>
         </dependency>
         <!-- Neo4J-->
