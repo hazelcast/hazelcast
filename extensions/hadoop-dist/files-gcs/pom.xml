@@ -76,6 +76,10 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>animal-sniffer-annotations</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.google.re2j</groupId>
+                    <artifactId>re2j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <!-- Declared to resolve dependency version clash -->
@@ -102,6 +106,12 @@
             <groupId>io.opencensus</groupId>
             <artifactId>opencensus-contrib-grpc-metrics</artifactId>
             <version>0.31.1</version>
+        </dependency>
+        <!-- com.google.cloud.bigdataoss:gcsio has internal depdency convergence -->
+        <dependency>
+            <groupId>com.google.re2j</groupId>
+            <artifactId>re2j</artifactId>
+            <version>1.8</version>
         </dependency>
     </dependencies>
 </project>
