@@ -196,7 +196,9 @@ public class WanRESTTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getNetworkConfig().getJoin().getTcpIpConfig().clear();
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         restApiConfig.setEnabled(true);
         restApiConfig.enableGroups(RestEndpointGroup.WAN);
