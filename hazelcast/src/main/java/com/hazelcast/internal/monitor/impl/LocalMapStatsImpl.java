@@ -40,10 +40,12 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_HEAP_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_HITS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEXED_QUERY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEXES_SKIPPED_QUERY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LAST_ACCESS_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LAST_UPDATE_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LOCKED_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_MERKLE_TREES_COST;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NO_MATCHING_INDEX_QUERY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NUMBER_OF_EVENTS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NUMBER_OF_OTHER_OPERATIONS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_OWNED_ENTRY_COUNT;
@@ -114,7 +116,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
-    private final ConcurrentMap<String, PartitionedIndexStatsImpl> mutableIndexStats =
+    private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats =
             new ConcurrentHashMap<>();
     private final Map<String, LocalIndexStats> indexStats = Collections.unmodifiableMap(mutableIndexStats);
     private final LocalReplicationStatsImpl replicationStats = new LocalReplicationStatsImpl();
@@ -189,6 +191,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long queryCount;
     @Probe(name = MAP_METRIC_INDEXED_QUERY_COUNT)
     private volatile long indexedQueryCount;
+    @Probe(name = MAP_METRIC_INDEXES_SKIPPED_QUERY_COUNT)
+    private volatile long indexesSkippedQueryCount;
+    @Probe(name = MAP_METRIC_NO_MATCHING_INDEX_QUERY_COUNT)
+    private volatile long noMatchingIndexQueryCount;
 
     private final boolean ignoreMemoryCosts;
 
@@ -461,6 +467,22 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return indexedQueryCount;
     }
 
+    public long getIndexesSkippedQueryCount() {
+        return indexesSkippedQueryCount;
+    }
+
+    public void setIndexesSkippedQueryCount(long indexesSkippedQueryCount) {
+        this.indexesSkippedQueryCount = indexesSkippedQueryCount;
+    }
+
+    public long getNoMatchingIndexQueryCount() {
+        return noMatchingIndexQueryCount;
+    }
+
+    public void setNoMatchingIndexQueryCount(long noMatchingIndexQueryCount) {
+        this.noMatchingIndexQueryCount = noMatchingIndexQueryCount;
+    }
+
     /**
      * Sets the indexed query count of this stats to the given indexed query
      * count value.
@@ -486,7 +508,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
      *
      * @param indexStats the per-index stats to set.
      */
-    public void setIndexStats(Map<String, PartitionedIndexStatsImpl> indexStats) {
+    public void setIndexStats(Map<String, LocalIndexStatsImpl> indexStats) {
         this.mutableIndexStats.clear();
         if (indexStats != null) {
             this.mutableIndexStats.putAll(indexStats);
@@ -563,13 +585,13 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
         for (Map.Entry<String, OnDemandIndexStats> freshIndexEntry : freshIndexStats.entrySet()) {
             String indexName = freshIndexEntry.getKey();
-            PartitionedIndexStatsImpl indexStats = mutableIndexStats.get(indexName);
-            if (indexStats == null) {
-                indexStats = new PartitionedIndexStatsImpl();
-                indexStats.setAllFrom(freshIndexEntry.getValue());
-                mutableIndexStats.putIfAbsent(indexName, indexStats);
+            LocalIndexStatsImpl indexStatsForName = mutableIndexStats.get(indexName);
+            if (indexStatsForName == null) {
+                indexStatsForName = new LocalIndexStatsImpl();
+                indexStatsForName.setAllFrom(freshIndexEntry.getValue());
+                mutableIndexStats.putIfAbsent(indexName, indexStatsForName);
             } else {
-                indexStats.setAllFrom(freshIndexEntry.getValue());
+                indexStatsForName.setAllFrom(freshIndexEntry.getValue());
             }
         }
     }
@@ -611,6 +633,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", indexedQueryCount=" + indexedQueryCount
                 + ", indexStats=" + indexStats
                 + ", replicationStats=" + replicationStats
+                + ", indexesSkippedQueryCount=" + indexesSkippedQueryCount
+                + ", noMatchingIndexQueryCount=" + noMatchingIndexQueryCount
                 + '}';
     }
 }

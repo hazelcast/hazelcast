@@ -25,8 +25,6 @@ public class OnDemandIndexStats {
 
     private long creationTime;
 
-    private long entryCount;
-
     private long queryCount;
 
     private long hitCount;
@@ -50,6 +48,14 @@ public class OnDemandIndexStats {
     private long memoryCost;
 
     private long totalHitCount;
+
+    private long partitionsIndexed;
+
+    private long partitionUpdatesStarted;
+
+    private long partitionUpdatesFinished;
+
+    private long indexNotReadyQueryCount;
 
     /**
      * Returns the creation time.
@@ -259,14 +265,48 @@ public class OnDemandIndexStats {
         this.totalHitCount = totalHitCount;
     }
 
+    public long getPartitionsIndexed() {
+        return partitionsIndexed;
+    }
+
+    public void setPartitionsIndexed(long partitionsIndexed) {
+        this.partitionsIndexed = partitionsIndexed;
+    }
+
+    public long getIndexNotReadyQueryCount() {
+        return indexNotReadyQueryCount;
+    }
+
+    public void setIndexNotReadyQueryCount(long indexNotReadyQueryCount) {
+        this.indexNotReadyQueryCount = indexNotReadyQueryCount;
+    }
+
+    public long getPartitionUpdatesStarted() {
+        return partitionUpdatesStarted;
+    }
+
+    public void setPartitionUpdatesStarted(long partitionUpdatesStarted) {
+        this.partitionUpdatesStarted = partitionUpdatesStarted;
+    }
+
+    public long getPartitionUpdatesFinished() {
+        return partitionUpdatesFinished;
+    }
+
+    public void setPartitionUpdatesFinished(long partitionUpdatesFinished) {
+        this.partitionUpdatesFinished = partitionUpdatesFinished;
+    }
+
     @Override
     public String toString() {
-        return "LocalIndexStatsImpl{" + "creationTime=" + creationTime + ", hitCount=" + hitCount + ", entryCount=" + entryCount
+        return "LocalIndexStatsImpl{" + "creationTime=" + creationTime + ", hitCount=" + hitCount
                 + ", queryCount=" + queryCount + ", averageHitSelectivity=" + averageHitSelectivity + ", averageHitLatency="
                 + averageHitLatency + ", insertCount=" + insertCount + ", totalInsertLatency=" + totalInsertLatency
                 + ", updateCount=" + updateCount + ", totalUpdateLatency=" + totalUpdateLatency + ", removeCount=" + removeCount
                 + ", totalRemoveLatency=" + totalRemoveLatency + ", memoryCost=" + memoryCost + ", totalHitCount=" + totalHitCount
-                + '}';
+                + ", partitionsIndexed=" + partitionsIndexed + ", partitionUpdatesStarted=" + partitionUpdatesStarted
+                + ", partitionUpdatesFinished=" + partitionUpdatesFinished
+                + ", indexNotReadyQueryCount=" + indexNotReadyQueryCount + "}";
     }
 
 }

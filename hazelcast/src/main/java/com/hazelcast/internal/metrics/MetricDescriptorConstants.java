@@ -228,6 +228,8 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_BACKUP_COUNT = "backupCount";
     public static final String MAP_METRIC_QUERY_COUNT = "queryCount";
     public static final String MAP_METRIC_INDEXED_QUERY_COUNT = "indexedQueryCount";
+    public static final String MAP_METRIC_INDEXES_SKIPPED_QUERY_COUNT = "indexesSkippedQueryCount";
+    public static final String MAP_METRIC_NO_MATCHING_INDEX_QUERY_COUNT = "noMatchingIndexQueryCount";
     public static final String MAP_METRIC_TOTAL_PUT_LATENCY = "totalPutLatency";
     public static final String MAP_METRIC_TOTAL_SET_LATENCY = "totalSetLatency";
     public static final String MAP_METRIC_TOTAL_GET_LATENCY = "totalGetLatency";
@@ -248,6 +250,10 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_INDEX_REMOVE_COUNT = "removeCount";
     public static final String MAP_METRIC_INDEX_TOTAL_REMOVE_LATENCY = "totalRemoveLatency";
     public static final String MAP_METRIC_INDEX_MEMORY_COST = "memoryCost";
+    public static final String MAP_METRIC_INDEX_PARTITIONS_INDEXED = "partitionsIndexed";
+    public static final String MAP_METRIC_INDEX_PARTITION_UPDATES_STARTED = "partitionUpdatesStarted";
+    public static final String MAP_METRIC_INDEX_PARTITION_UPDATES_FINISHED = "partitionUpdatesFinished";
+    public static final String MAP_METRIC_INDEX_NOT_READY_QUERY_COUNT = "notReadyQueryCount";
     public static final String MAP_METRIC_FULL_PARTITION_REPLICATION_COUNT = "fullPartitionReplicationCount";
     public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_COUNT = "differentialPartitionReplicationCount";
     public static final String MAP_METRIC_FULL_PARTITION_REPLICATION_RECORDS_COUNT

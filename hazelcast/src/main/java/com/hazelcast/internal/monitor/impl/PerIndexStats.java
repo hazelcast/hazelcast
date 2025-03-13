@@ -33,6 +33,11 @@ public interface PerIndexStats {
     PerIndexStats EMPTY = new PerIndexStats() {
 
         @Override
+        public long getPartitionsIndexed() {
+            return 0;
+        }
+
+        @Override
         public long makeTimestamp() {
             return 0;
         }
@@ -103,6 +108,16 @@ public interface PerIndexStats {
         }
 
         @Override
+        public long getPartitionUpdatesStarted() {
+            return 0;
+        }
+
+        @Override
+        public long getPartitionUpdatesFinished() {
+            return 0;
+        }
+
+        @Override
         public void updateMemoryCost(long delta) {
             // do nothing
         }
@@ -152,6 +167,18 @@ public interface PerIndexStats {
             return IndexOperationStats.EMPTY;
         }
 
+        @Override
+        public void onPartitionChange(PartitionIndexChangeEvent changeEvent) {
+        }
+
+        @Override
+        public long getIndexNotReadyQueryCount() {
+            return 0;
+        }
+
+        @Override
+        public void incrementIndexNotReadyQueryCount() {
+        }
     };
 
     /**
@@ -257,9 +284,27 @@ public interface PerIndexStats {
 
     /**
      * Updates the memory cost of the index in bytes.
+     *
      * @param delta the value to be added to the memory cost
      */
     void updateMemoryCost(long delta);
+
+    /**
+     * Return the number of partitions this index covers. For partitioned
+     * indexes this value will be 0 or 1.
+     */
+    long getPartitionsIndexed();
+
+    /**
+     * Return the count of started indexed partition updates.
+     */
+    long getPartitionUpdatesStarted();
+
+    /**
+     *
+     * Return the count of finished indexed partition updates.
+     */
+    long getPartitionUpdatesFinished();
 
     /**
      * Invoked on index dispose.
@@ -325,6 +370,11 @@ public interface PerIndexStats {
     void onIndexHit(long timestamp, long hitCardinality);
 
     /**
+     * Invoked when the partition set changes for the associated index.
+     */
+    void onPartitionChange(PartitionIndexChangeEvent changeEvent);
+
+    /**
      * Resets the per-query stats, if any, currently tracked by this internal
      * index stats instance.
      */
@@ -347,4 +397,15 @@ public interface PerIndexStats {
      */
     IndexOperationStats createOperationStats();
 
+    /**
+     * Get the number of queries in which the associated index was skipped due to
+     * active partition changes.
+     */
+    long getIndexNotReadyQueryCount();
+
+    /**
+     * Increments the number of queries in which the associated index was skipped
+     * due to active partition changes.
+     */
+    void incrementIndexNotReadyQueryCount();
 }

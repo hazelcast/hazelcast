@@ -32,9 +32,15 @@ public class GlobalIndexesStats implements IndexesStats {
             "queryCount");
     private static final AtomicLongFieldUpdater<GlobalIndexesStats> INDEXED_QUERY_COUNT = newUpdater(GlobalIndexesStats.class,
             "indexedQueryCount");
+    private static final AtomicLongFieldUpdater<GlobalIndexesStats> INDEXES_SKIPPED_QUERY_COUNT = newUpdater(
+            GlobalIndexesStats.class, "indexesSkippedQueryCount");
+    private static final AtomicLongFieldUpdater<GlobalIndexesStats> NO_MATCHING_INDEX_QUERY_COUNT = newUpdater(
+            GlobalIndexesStats.class, "noMatchingIndexQueryCount");
 
     private volatile long queryCount;
     private volatile long indexedQueryCount;
+    private volatile long indexesSkippedQueryCount;
+    private volatile long noMatchingIndexQueryCount;
 
     @Override
     public long getQueryCount() {
@@ -54,6 +60,26 @@ public class GlobalIndexesStats implements IndexesStats {
     @Override
     public void incrementIndexedQueryCount() {
         INDEXED_QUERY_COUNT.incrementAndGet(this);
+    }
+
+    @Override
+    public long getIndexesSkippedQueryCount() {
+        return indexesSkippedQueryCount;
+    }
+
+    @Override
+    public void incrementIndexesSkippedQueryCount() {
+        INDEXES_SKIPPED_QUERY_COUNT.incrementAndGet(this);
+    }
+
+    @Override
+    public long getNoMatchingIndexQueryCount() {
+        return noMatchingIndexQueryCount;
+    }
+
+    @Override
+    public void incrementNoMatchingIndexQueryCount() {
+        NO_MATCHING_INDEX_QUERY_COUNT.incrementAndGet(this);
     }
 
     @Override

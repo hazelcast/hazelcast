@@ -27,32 +27,7 @@ public interface IndexesStats {
     /**
      * Empty no-op internal indexes stats.
      */
-    IndexesStats EMPTY = new IndexesStats() {
-        @Override
-        public long getQueryCount() {
-            return 0;
-        }
-
-        @Override
-        public void incrementQueryCount() {
-            // do nothing
-        }
-
-        @Override
-        public long getIndexedQueryCount() {
-            return 0;
-        }
-
-        @Override
-        public void incrementIndexedQueryCount() {
-            // do nothing
-        }
-
-        @Override
-        public PerIndexStats createPerIndexStats(boolean ordered, boolean queryableEntriesAreCached) {
-            return PerIndexStats.EMPTY;
-        }
-    };
+    IndexesStats EMPTY = new EmptyIndexesStats();
 
     /**
      * Returns the number of queries performed on the indexes.
@@ -86,4 +61,27 @@ public interface IndexesStats {
      */
     PerIndexStats createPerIndexStats(boolean ordered, boolean queryableEntriesAreCached);
 
+    /**
+     * Get the count of queries on the registry with predicates that are not
+     * {@link com.hazelcast.query.impl.predicates.IndexAwarePredicate}
+     */
+    long getIndexesSkippedQueryCount();
+
+    /**
+     * Increments the count of queries on the registry with predicates that are not
+     * {@link com.hazelcast.query.impl.predicates.IndexAwarePredicate}
+     */
+    void incrementIndexesSkippedQueryCount();
+
+    /**
+     * Get the count of {@link com.hazelcast.query.impl.predicates.IndexAwarePredicate} queries
+     * which do not match with any registered index.
+     */
+    long getNoMatchingIndexQueryCount();
+
+    /**
+     * Increment the count of {@link com.hazelcast.query.impl.predicates.IndexAwarePredicate} queries
+     * which do not match with any registered index.
+     */
+    void incrementNoMatchingIndexQueryCount();
 }

@@ -57,6 +57,8 @@ public class PartitionPerIndexStats implements PerIndexStats {
             PartitionPerIndexStats.class, "totalRemoveLatency");
     private static final AtomicLongFieldUpdater<PartitionPerIndexStats> MEMORY_COST = newUpdater(PartitionPerIndexStats.class,
             "memoryCost");
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> INDEX_NOT_READY_QUERY_COUNT = newUpdater(
+            PartitionPerIndexStats.class, "indexNotReadyQueryCount");
 
     // Per-operation stats may be safely reused/shared for operations on
     // partitioned indexes since we know for sure only a single thread may
@@ -77,6 +79,8 @@ public class PartitionPerIndexStats implements PerIndexStats {
     private volatile long removeCount;
     private volatile long totalRemoveLatency;
     private volatile long memoryCost;
+    private volatile long partitionsIndexed;
+    private volatile long indexNotReadyQueryCount;
 
     private boolean hasQueries;
 
@@ -206,6 +210,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
     @Override
     public void onClear() {
         ENTRY_COUNT.lazySet(this, 0);
+        partitionsIndexed = 0;
     }
 
     @Override
@@ -255,6 +260,46 @@ public class PartitionPerIndexStats implements PerIndexStats {
     public IndexOperationStats createOperationStats() {
         operationStats.reset();
         return operationStats;
+    }
+
+    @Override
+    public long getPartitionsIndexed() {
+        return partitionsIndexed;
+    }
+
+    @Override
+    public long getPartitionUpdatesStarted() {
+        return 0;
+    }
+
+    @Override
+    public long getPartitionUpdatesFinished() {
+        return 0;
+    }
+
+    @Override
+    public void onPartitionChange(PartitionIndexChangeEvent changeEvent) {
+        @SuppressWarnings("unused") long indexed = switch (changeEvent) {
+            case INDEXED -> {
+                partitionsIndexed = 1;
+                yield partitionsIndexed;
+            }
+            case UNINDEXED -> {
+                partitionsIndexed = 0;
+                yield partitionsIndexed;
+            }
+            case CHANGE_STARTED, CHANGE_FINISHED -> partitionsIndexed;
+        };
+    }
+
+    @Override
+    public long getIndexNotReadyQueryCount() {
+        return indexNotReadyQueryCount;
+    }
+
+    @Override
+    public void incrementIndexNotReadyQueryCount() {
+        INDEX_NOT_READY_QUERY_COUNT.incrementAndGet(this);
     }
 
     private class MemoryAllocatorWithStats implements MemoryAllocator {

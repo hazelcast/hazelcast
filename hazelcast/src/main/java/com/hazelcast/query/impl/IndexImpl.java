@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.monitor.impl.PartitionIndexChangeEvent;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
@@ -75,22 +76,28 @@ public class IndexImpl extends AbstractIndex {
     @Override
     public final void beginPartitionUpdate() {
         partitionTracker.beginPartitionUpdate();
+        getPerIndexStats().onPartitionChange(PartitionIndexChangeEvent.CHANGE_STARTED);
     }
 
     @Override
     public final void markPartitionAsIndexed(int partitionId) {
-        partitionTracker.partitionIndexed(partitionId);
+        if (partitionTracker.partitionIndexed(partitionId)) {
+            getPerIndexStats().onPartitionChange(PartitionIndexChangeEvent.INDEXED);
+        }
+        getPerIndexStats().onPartitionChange(PartitionIndexChangeEvent.CHANGE_FINISHED);
     }
 
     @Override
     public final void markPartitionAsUnindexed(int partitionId) {
-        partitionTracker.partitionUnindexed(partitionId);
+        if (partitionTracker.partitionUnindexed(partitionId)) {
+            getPerIndexStats().onPartitionChange(PartitionIndexChangeEvent.UNINDEXED);
+        }
+        getPerIndexStats().onPartitionChange(PartitionIndexChangeEvent.CHANGE_FINISHED);
     }
 
     @Override
     public final void clear() {
         partitionTracker.clear();
-
         super.clear();
     }
 

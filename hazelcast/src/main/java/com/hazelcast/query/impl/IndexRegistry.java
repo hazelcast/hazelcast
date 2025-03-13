@@ -461,7 +461,10 @@ public class IndexRegistry {
     public Iterable<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
-        if (!canQueryOverIndex(predicate)) {
+        if (!(predicate instanceof IndexAwarePredicate)) {
+            stats.incrementIndexesSkippedQueryCount();
+            return null;
+        } else if (!haveAtLeastOneIndex()) {
             return null;
         }
 
@@ -484,10 +487,6 @@ public class IndexRegistry {
         }
     }
 
-    public boolean canQueryOverIndex(Predicate predicate) {
-        return haveAtLeastOneIndex() && predicate instanceof IndexAwarePredicate;
-    }
-
     /**
      * Matches an index for the given pattern and match hint.
      *
@@ -508,7 +507,13 @@ public class IndexRegistry {
             index = attributeIndexRegistry.match(pattern, matchHint);
         }
 
-        if (index == null || !index.allPartitionsIndexed(ownedPartitionCount)) {
+        if (index == null) {
+            stats.incrementNoMatchingIndexQueryCount();
+            return null;
+        }
+
+        if (!index.allPartitionsIndexed(ownedPartitionCount)) {
+            index.getPerIndexStats().incrementIndexNotReadyQueryCount();
             return null;
         }
 

@@ -33,9 +33,15 @@ public class PartitionIndexesStats implements IndexesStats {
             "queryCount");
     private static final AtomicLongFieldUpdater<PartitionIndexesStats> INDEXED_QUERY_COUNT = newUpdater(
             PartitionIndexesStats.class, "indexedQueryCount");
+    private static final AtomicLongFieldUpdater<PartitionIndexesStats> INDEXES_SKIPPED_QUERY_COUNT = newUpdater(
+            PartitionIndexesStats.class, "indexesSkippedQueryCount");
+    private static final AtomicLongFieldUpdater<PartitionIndexesStats> NO_MATCHING_INDEX_QUERY_COUNT = newUpdater(
+            PartitionIndexesStats.class, "noMatchingIndexQueryCount");
 
     private volatile long queryCount;
     private volatile long indexedQueryCount;
+    private volatile long indexesSkippedQueryCount;
+    private volatile long noMatchingIndexQueryCount;
 
     @Override
     public long getQueryCount() {
@@ -55,6 +61,26 @@ public class PartitionIndexesStats implements IndexesStats {
     @Override
     public void incrementIndexedQueryCount() {
         INDEXED_QUERY_COUNT.lazySet(this, indexedQueryCount + 1);
+    }
+
+    @Override
+    public long getIndexesSkippedQueryCount() {
+        return indexesSkippedQueryCount;
+    }
+
+    @Override
+    public void incrementIndexesSkippedQueryCount() {
+        INDEXES_SKIPPED_QUERY_COUNT.lazySet(this, indexesSkippedQueryCount + 1);
+    }
+
+    @Override
+    public long getNoMatchingIndexQueryCount() {
+        return noMatchingIndexQueryCount;
+    }
+
+    @Override
+    public void incrementNoMatchingIndexQueryCount() {
+        NO_MATCHING_INDEX_QUERY_COUNT.lazySet(this, noMatchingIndexQueryCount + 1);
     }
 
     @Override

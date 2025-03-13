@@ -24,18 +24,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PartitionedIndexStatsImplTest {
+public class LocalIndexStatsImplTest {
 
-    private PartitionedIndexStatsImpl stats;
+    private LocalIndexStatsImpl stats;
 
     @Before
     public void setUp() {
-        stats = new PartitionedIndexStatsImpl();
+        stats = new LocalIndexStatsImpl();
 
         stats.setCreationTime(1234);
         stats.setHitCount(20);
@@ -68,4 +72,36 @@ public class PartitionedIndexStatsImplTest {
         assertNotNull(stats.toString());
     }
 
+    @Test
+    public void testPartitionsIndexedIsTransferredFromOnDemandIndexStats() {
+        testFieldTransferredFromOnDemandIndexStats(42L, OnDemandIndexStats::setPartitionsIndexed,
+                LocalIndexStatsImpl::getPartitionsIndexed);
+    }
+
+    @Test
+    public void testIndexNotReadyQueryCountIsTransferredFromOnDemandIndexStats() {
+        testFieldTransferredFromOnDemandIndexStats(4230L, OnDemandIndexStats::setIndexNotReadyQueryCount,
+                LocalIndexStatsImpl::getIndexNotReadyQueryCount);
+    }
+
+    @Test
+    public void testPartitionUpdatesStartedIsTransferredFromOnDemandIndexStats() {
+        testFieldTransferredFromOnDemandIndexStats(4230L, OnDemandIndexStats::setPartitionUpdatesStarted,
+                LocalIndexStatsImpl::getPartitionUpdatesStarted);
+    }
+
+    @Test
+    public void testPartitionUpdatesFinishedIsTransferredFromOnDemandIndexStats() {
+        testFieldTransferredFromOnDemandIndexStats(4231L, OnDemandIndexStats::setPartitionUpdatesFinished,
+                LocalIndexStatsImpl::getPartitionUpdatesFinished);
+    }
+
+    void testFieldTransferredFromOnDemandIndexStats(long value, BiConsumer<OnDemandIndexStats, Long> setter,
+                                                    Function<LocalIndexStatsImpl, Long> getter) {
+        OnDemandIndexStats source = new OnDemandIndexStats();
+        setter.accept(source, value);
+        LocalIndexStatsImpl dest = new LocalIndexStatsImpl();
+        dest.setAllFrom(source);
+        assertThat(getter.apply(dest)).isEqualTo(value);
+    }
 }

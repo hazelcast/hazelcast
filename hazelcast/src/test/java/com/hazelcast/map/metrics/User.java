@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.annotation;
+package com.hazelcast.map.metrics;
+
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+
+import java.util.List;
 
 /**
- * Annotates tests which can run in multiple JVMs in parallel.
- * <p>
- * Has no effect in which build a test will be executed, but if it will be executed in a single or with multiple JVMs.
+ * Used for IMap value type when testing indexing metrics
  */
-public final class ParallelJVMTest {
-    public static final String PARALLEL_JVM_TEST = "com.hazelcast.test.annotation.ParallelJVMTest";
+record User(String userId, String name) {
+    /**
+     * @return Config for an index on the "userId" field of a {@link User} record
+     */
+    static IndexConfig getIndexConfigOnUserId() {
+        return new IndexConfig().setName("testIndex").setAttributes(List.of("userId")).setType(IndexType.HASH);
+    }
 }
