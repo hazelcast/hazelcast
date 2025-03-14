@@ -16,16 +16,15 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.util.AddressUtil.AddressHolder;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.internal.util.AddressUtil.Ip4AddressMatcher;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -34,21 +33,17 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.hazelcast.internal.util.AddressUtil.AddressHolder;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static java.util.List.of;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for AddressUtil class.
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class AddressUtilTest extends HazelcastTestSupport {
+@Tag("com.hazelcast.test.annotation.QuickTest")
+class AddressUtilTest {
 
     private static final String SOME_NOT_LOCAL_ADDRESS = "2001:db8:85a3:0:0:8a2e:370:7334";
     private static final String SOME_LINK_LOCAL_ADDRESS = "fe80::85a3:0:0:8a2e:370:7334";
@@ -56,104 +51,113 @@ public class AddressUtilTest extends HazelcastTestSupport {
     private static final String SOME_OTHER_LINK_LOCAL_ADDRESS = "fe80::85a3:0:0:8a2e:370:7777";
 
     @Test
-    public void testMatchAnyInterface() {
-        assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", asList("10.235.194.23", "10.235.193.121")));
+    void testMatchAnyInterface() {
+        assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", of("10.235.194.23", "10.235.193.121")));
 
         assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", null));
         assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Collections.emptyList()));
-        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", singletonList("10.235.193.*")));
+        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", of("10.235.193.*")));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', useHeadersInDisplayName = true, textBlock = """
+                Address                         | Pattern
+                fe80::62c5:0:fe05:480a%en0      | fe80::62c5:*:fe05:480a%en0
+                fe80::62c5:aefb:fe05:480a%en1   | fe80::62c5:0-ffff:fe05:480a
+            """)
+    void testMatchInterface(String address, String pattern) {
+        assertTrue(AddressUtil.matchInterface(address, pattern));
     }
 
     @Test
-    public void testMatchInterface() {
-        assertTrue(AddressUtil.matchInterface("fe80::62c5:0:fe05:480a%en0", "fe80::62c5:*:fe05:480a%en0"));
-        assertTrue(AddressUtil.matchInterface("fe80::62c5:aefb:fe05:480a%en1", "fe80::62c5:0-ffff:fe05:480a"));
-    }
-
-    @Test
-    public void testMatchInterface_whenInvalidInterface_thenReturnFalse() {
+    void testMatchInterface_whenInvalidInterface_thenReturnFalse() {
         assertFalse(AddressUtil.matchInterface("10.235.194.23", "bar"));
     }
 
     @Test
-    public void testMatchAnyDomain() {
-        assertTrue(AddressUtil.matchAnyDomain("hazelcast.com", singletonList("hazelcast.com")));
+    void testMatchAnyDomain() {
+        assertTrue(AddressUtil.matchAnyDomain("hazelcast.com", of("hazelcast.com")));
 
         assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", null));
         assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", Collections.emptyList()));
-        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", singletonList("abc.com")));
+        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", of("abc.com")));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', useHeadersInDisplayName = true, textBlock = """
+            Name                    | Address               | Expected Match Domain?
+            hazelcast.com           | hazelcast.com         | true
+            hazelcast.com           | *.com                 | true
+            jobs.hazelcast.com      | *.hazelcast.com       | true
+            download.hazelcast.org  | *.hazelcast.*         | true
+            download.hazelcast.org  | *.hazelcast.org       | true
+            hazelcast.com           | abc.com               | false
+            hazelcast.com           | *.hazelcast.com       | false
+            hazelcast.com           | hazelcast.com.tr      | false
+            hazelcast.com           | *.com.tr              | false
+            hazelcast.com           | www.hazelcast.com.tr  | false
+            """)
+    void testMatchDomain(String name, String address, boolean expectedMatchDomain) {
+        assertEquals(expectedMatchDomain, AddressUtil.matchDomain(name, address));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', useHeadersInDisplayName = true, textBlock = """
+            Address                             | Expected Address          | Expected Port | Expected Scope ID
+            [fe80::62c5:*:fe05:480a%en0]:8080   | fe80::62c5:*:fe05:480a    | 8080          | en0
+            [::ffff:192.0.2.128]:5700           | ::ffff:192.0.2.128        | 5700          |
+            192.168.1.1:5700                    | 192.168.1.1               | 5700          |
+            hazelcast.com:80                    | hazelcast.com             | 80            |
+            """)
+    void testParsingHostAndPort(String address, String expectedAddress, int expectedPort, String expectedScopeId) {
+        AddressHolder addressHolder = AddressUtil.getAddressHolder(address);
+        assertEquals(expectedAddress, addressHolder.getAddress());
+        assertEquals(expectedPort, addressHolder.getPort());
+        assertEquals(expectedScopeId, addressHolder.getScopeId());
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', useHeadersInDisplayName = true, textBlock = """
+            Address                             | Is IP Address?
+            # IPv4
+            # true
+            10.10.10.10                         | true
+            111.12-66.123.*                     | true
+            111-255.12-66.123.*                 | true
+            255.255.123.*                       | true
+            255.11-255.123.0                    | true
+            # false
+            255.11-256.123.0                    | false
+            111.12-66-.123.*                    | false
+            111.12*66-.123.-*                   | false
+            as11d.897.hazelcast.com             | false
+            192.111.10.com                      | false
+            192.111.10.999                      | false
+            # IPv6
+            # true
+            ::1                                 | true
+            0:0:0:0:0:0:0:1                     | true
+            2001:db8:85a3:0:0:8a2e:370:7334     | true
+            2001::370:7334                      | true
+            fe80::62c5:0:fe05:480a%en0          | true
+            2001:db8:85a3:*:0:8a2e:370:7334     | true
+            fe80::62c5:0-ffff:fe05:480a         | true
+            fe80::62c5:*:fe05:480a              | true
+            # false
+            2001:acdb8:85a3:0:0:8a2e:370:7334   | false
+            2001::370::7334                     | false
+            2001:370::7334.155                  | false
+            2001:**:85a3:*:0:8a2e:370:7334      | false
+            fe80::62c5:0-ffff:fe05-:480a        | false
+            fe80::62c5:*:fe05-fffddd:480a       | false
+            fe80::62c5:*:fe05-ffxd:480a         | false
+            """)
+    void testIsIpAddress(String address, boolean isIPAdress) {
+        assertEquals(isIPAdress, AddressUtil.isIpAddress(address));
     }
 
     @Test
-    public void testMatchDomain() {
-        assertTrue(AddressUtil.matchDomain("hazelcast.com", "hazelcast.com"));
-        assertTrue(AddressUtil.matchDomain("hazelcast.com", "*.com"));
-        assertTrue(AddressUtil.matchDomain("jobs.hazelcast.com", "*.hazelcast.com"));
-        assertTrue(AddressUtil.matchDomain("download.hazelcast.org", "*.hazelcast.*"));
-        assertTrue(AddressUtil.matchDomain("download.hazelcast.org", "*.hazelcast.org"));
-
-        assertFalse(AddressUtil.matchDomain("hazelcast.com", "abc.com"));
-        assertFalse(AddressUtil.matchDomain("hazelcast.com", "*.hazelcast.com"));
-        assertFalse(AddressUtil.matchDomain("hazelcast.com", "hazelcast.com.tr"));
-        assertFalse(AddressUtil.matchDomain("hazelcast.com", "*.com.tr"));
-        assertFalse(AddressUtil.matchDomain("www.hazelcast.com", "www.hazelcast.com.tr"));
-    }
-
-    @Test
-    public void testParsingHostAndPort() {
-        AddressHolder addressHolder = AddressUtil.getAddressHolder("[fe80::62c5:*:fe05:480a%en0]:8080");
-        assertEquals("fe80::62c5:*:fe05:480a", addressHolder.getAddress());
-        assertEquals(8080, addressHolder.getPort());
-        assertEquals("en0", addressHolder.getScopeId());
-
-        addressHolder = AddressUtil.getAddressHolder("[::ffff:192.0.2.128]:5700");
-        assertEquals("::ffff:192.0.2.128", addressHolder.getAddress());
-        assertEquals(5700, addressHolder.getPort());
-
-        addressHolder = AddressUtil.getAddressHolder("192.168.1.1:5700");
-        assertEquals("192.168.1.1", addressHolder.getAddress());
-        assertEquals(5700, addressHolder.getPort());
-
-        addressHolder = AddressUtil.getAddressHolder("hazelcast.com:80");
-        assertEquals("hazelcast.com", addressHolder.getAddress());
-        assertEquals(80, addressHolder.getPort());
-    }
-
-    @Test
-    public void testIsIpAddress() {
-        assertTrue(AddressUtil.isIpAddress("10.10.10.10"));
-        assertTrue(AddressUtil.isIpAddress("111.12-66.123.*"));
-        assertTrue(AddressUtil.isIpAddress("111-255.12-66.123.*"));
-        assertTrue(AddressUtil.isIpAddress("255.255.123.*"));
-        assertTrue(AddressUtil.isIpAddress("255.11-255.123.0"));
-        assertFalse(AddressUtil.isIpAddress("255.11-256.123.0"));
-        assertFalse(AddressUtil.isIpAddress("111.12-66-.123.*"));
-        assertFalse(AddressUtil.isIpAddress("111.12*66-.123.-*"));
-        assertFalse(AddressUtil.isIpAddress("as11d.897.hazelcast.com"));
-        assertFalse(AddressUtil.isIpAddress("192.111.10.com"));
-        assertFalse(AddressUtil.isIpAddress("192.111.10.999"));
-
-        assertTrue(AddressUtil.isIpAddress("::1"));
-        assertTrue(AddressUtil.isIpAddress("0:0:0:0:0:0:0:1"));
-        assertTrue(AddressUtil.isIpAddress("2001:db8:85a3:0:0:8a2e:370:7334"));
-        assertTrue(AddressUtil.isIpAddress("2001::370:7334"));
-        assertTrue(AddressUtil.isIpAddress("fe80::62c5:0:fe05:480a%en0"));
-        assertTrue(AddressUtil.isIpAddress("fe80::62c5:0:fe05:480a%en0"));
-        assertTrue(AddressUtil.isIpAddress("2001:db8:85a3:*:0:8a2e:370:7334"));
-        assertTrue(AddressUtil.isIpAddress("fe80::62c5:0-ffff:fe05:480a"));
-        assertTrue(AddressUtil.isIpAddress("fe80::62c5:*:fe05:480a"));
-
-        assertFalse(AddressUtil.isIpAddress("2001:acdb8:85a3:0:0:8a2e:370:7334"));
-        assertFalse(AddressUtil.isIpAddress("2001::370::7334"));
-        assertFalse(AddressUtil.isIpAddress("2001:370::7334.155"));
-        assertFalse(AddressUtil.isIpAddress("2001:**:85a3:*:0:8a2e:370:7334"));
-        assertFalse(AddressUtil.isIpAddress("fe80::62c5:0-ffff:fe05-:480a"));
-        assertFalse(AddressUtil.isIpAddress("fe80::62c5:*:fe05-fffddd:480a"));
-        assertFalse(AddressUtil.isIpAddress("fe80::62c5:*:fe05-ffxd:480a"));
-    }
-
-    @Test
-    public void testAddressMatcher() {
+    void testAddressMatcher() {
         AddressMatcher address;
         address = AddressUtil.getAddressMatcher("fe80::62c5:*:fe05:480a%en0");
         assertTrue(address.isIPv6());
@@ -168,46 +172,25 @@ public class AddressUtilTest extends HazelcastTestSupport {
         assertEquals("192.0.2.128", address.getAddress());
     }
 
-    @Test
-    public void testAddressMatcherFail() {
-        try {
-            AddressUtil.getAddressMatcher("fe80::62c5:47ff::fe05:480a%en0");
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof InvalidAddressException);
-        }
-        try {
-            AddressUtil.getAddressMatcher("fe80:62c5:47ff:fe05:480a%en0");
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof InvalidAddressException);
-        }
-        try {
-            AddressUtil.getAddressMatcher("[fe80:62c5:47ff:fe05:480a%en0");
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof InvalidAddressException);
-        }
-        try {
-            AddressUtil.getAddressMatcher("::ffff.192.0.2.128");
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof InvalidAddressException);
-        }
+    @ParameterizedTest
+    @ValueSource(strings = {"fe80::62c5:47ff::fe05:480a%en0", "fe80:62c5:47ff:fe05:480a%en0", "[fe80:62c5:47ff:fe05:480a%en0",
+            "::ffff.192.0.2.128"})
+    void testAddressMatcherFail(String address) {
+        assertThrows(InvalidAddressException.class, () -> AddressUtil.getAddressMatcher(address));
     }
 
     @Test
-    public void testFixScopeIdAndGetInetAddress_whenNotLinkLocalAddress() throws SocketException, UnknownHostException {
+    void testFixScopeIdAndGetInetAddress_whenNotLinkLocalAddress() throws SocketException, UnknownHostException {
         InetAddress inetAddress = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
         InetAddress actual = AddressUtil.fixScopeIdAndGetInetAddress(inetAddress);
         assertEquals(inetAddress, actual);
     }
 
     @Test
-    public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress() throws SocketException, UnknownHostException {
+    void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress() throws SocketException, UnknownHostException {
         byte[] address = InetAddress.getByName(SOME_LINK_LOCAL_ADDRESS).getAddress();
         Inet6Address inet6Address = Inet6Address.getByAddress(SOME_LINK_LOCAL_ADDRESS, address, 1);
-        assertThat(inet6Address.isLinkLocalAddress()).isTrue();
+        assertTrue(inet6Address.isLinkLocalAddress());
 
         InetAddress actual = AddressUtil.fixScopeIdAndGetInetAddress(inet6Address);
 
@@ -215,24 +198,25 @@ public class AddressUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress_withNoInterfaceBind() throws SocketException, UnknownHostException {
+    void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress_withNoInterfaceBind()
+            throws SocketException, UnknownHostException {
         Inet6Address inet6Address = createInet6AddressWithScope(SOME_LINK_LOCAL_ADDRESS, 0);
-        assertThat(inet6Address.isLinkLocalAddress()).isTrue();
+        assertTrue(inet6Address.isLinkLocalAddress());
 
         InetAddress actual = AddressUtil.fixScopeIdAndGetInetAddress(inet6Address);
 
         assertEquals(inet6Address, actual);
     }
 
-    private Inet6Address createInet6AddressWithScope(String address, int scopeId) throws UnknownHostException {
+    private static Inet6Address createInet6AddressWithScope(String address, int scopeId) throws UnknownHostException {
         byte[] rawAddress = InetAddress.getByName(address).getAddress();
         return Inet6Address.getByAddress(address, rawAddress, scopeId);
     }
 
     @Test
-    public void testGetInetAddressFor() throws SocketException, UnknownHostException {
+    void testGetInetAddressFor() throws SocketException, UnknownHostException {
         Inet6Address inet6Address = createInet6AddressWithScope(SOME_SITE_LOCAL_ADDRESS, 1);
-        assertThat(inet6Address.isSiteLocalAddress()).isTrue();
+        assertTrue(inet6Address.isSiteLocalAddress());
 
         InetAddress actual = AddressUtil.getInetAddressFor(inet6Address, "1");
 
@@ -240,10 +224,10 @@ public class AddressUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetPossibleInetAddressesFor_whenNotLocalAddress() throws UnknownHostException {
-        Inet6Address inet6Address = (Inet6Address) Inet6Address.getByName(SOME_NOT_LOCAL_ADDRESS);
-        assertThat(inet6Address.isSiteLocalAddress()).isFalse();
-        assertThat(inet6Address.isLinkLocalAddress()).isFalse();
+    void testGetPossibleInetAddressesFor_whenNotLocalAddress() throws UnknownHostException {
+        Inet6Address inet6Address = (Inet6Address) InetAddress.getByName(SOME_NOT_LOCAL_ADDRESS);
+        assertFalse(inet6Address.isSiteLocalAddress());
+        assertFalse(inet6Address.isLinkLocalAddress());
 
         Collection<Inet6Address> actual = AddressUtil.getPossibleInetAddressesFor(inet6Address);
         assertEquals(1, actual.size());
@@ -251,11 +235,11 @@ public class AddressUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetPossibleInetAddressesFor_whenLocalAddress() throws UnknownHostException {
-        Inet6Address inet6Address = (Inet6Address) Inet6Address.getByName(SOME_LINK_LOCAL_ADDRESS);
-        assertThat(inet6Address.isLinkLocalAddress()).isTrue();
+    void testGetPossibleInetAddressesFor_whenLocalAddress() throws UnknownHostException {
+        Inet6Address inet6Address = (Inet6Address) InetAddress.getByName(SOME_LINK_LOCAL_ADDRESS);
+        assertTrue(inet6Address.isLinkLocalAddress());
 
-        Inet6Address possibleAddress = (Inet6Address) Inet6Address.getByName(SOME_OTHER_LINK_LOCAL_ADDRESS);
+        Inet6Address possibleAddress = (Inet6Address) InetAddress.getByName(SOME_OTHER_LINK_LOCAL_ADDRESS);
 
         NetworkInterfaceInfo networkInterface = NetworkInterfaceInfo.builder("eth1").withInetAddresses(possibleAddress).build();
         AddressUtil.setNetworkInterfacesEnumerator(new DummyNetworkInterfacesEnumerator(networkInterface));
@@ -265,24 +249,22 @@ public class AddressUtilTest extends HazelcastTestSupport {
         assertTrue(actual.contains(inet6Address));
     }
 
-    @Test
-    public void testGetMatchingIpv4Addresses_whenWildcardForLastPart() {
-        AddressMatcher addressMatcher = AddressUtil.getAddressMatcher("192.168.1.*");
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', useHeadersInDisplayName = true, textBlock = """
+            Description             | Address           | Size
+            Wildcard For Last Part  | 192.168.1.*       | 256
+            Dash For Last Part      | 192.168.1.1-42    | 42
+            """)
+    void testGetMatchingIpv4Addresses(@SuppressWarnings("unused") String description, String address, int size) {
+        AddressMatcher addressMatcher = AddressUtil.getAddressMatcher(address);
         Collection<String> actual = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
-        assertEquals(256, actual.size());
+        assertEquals(size, actual.size());
     }
 
     @Test
-    public void testGetMatchingIpv4Addresses_whenDashForLastPart() {
-        AddressMatcher addressMatcher = AddressUtil.getAddressMatcher("192.168.1.1-42");
-        Collection<String> actual = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
-        assertEquals(42, actual.size());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetMatchingIpv4Addresses_whenIPv6AsMatcher() {
+    void testGetMatchingIpv4Addresses_whenIPv6AsMatcher() {
         AddressMatcher addressMatcher = AddressUtil.getAddressMatcher("2001:db8:85a3:0:0:8a2e:370:7334");
-        AddressUtil.getMatchingIpv4Addresses(addressMatcher);
+        assertThrows(IllegalArgumentException.class, () -> AddressUtil.getMatchingIpv4Addresses(addressMatcher));
     }
 }
 
