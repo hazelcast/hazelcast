@@ -48,7 +48,7 @@ public class LimitOffsetScanOptimizerTest extends OptimizerTestSupport {
         IMap<Integer, String> map = instance().getMap(mapName);
         map.addIndex(IndexType.SORTED, "this");
         for (int i = 0; i < 100; i++) {
-            map.put(i, "" + i);
+            map.put(i, String.valueOf(i));
         }
 
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.VARCHAR);
@@ -78,7 +78,7 @@ public class LimitOffsetScanOptimizerTest extends OptimizerTestSupport {
         String mapName = randomName();
         IMap<Integer, String> map = instance().getMap(mapName);
         for (int i = 0; i < 100; i++) {
-            map.put(i, "" + i);
+            map.put(i, String.valueOf(i));
         }
 
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.VARCHAR);

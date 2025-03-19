@@ -207,7 +207,7 @@ public class QueryNullHandlingTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "" + value;
+            return String.valueOf(value);
         }
 
     }

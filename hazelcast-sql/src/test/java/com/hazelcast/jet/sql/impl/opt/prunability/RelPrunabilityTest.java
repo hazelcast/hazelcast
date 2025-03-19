@@ -156,7 +156,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         createMapping(mapName, CompoundKey.class, String.class);
         createIndex(indexName, mapName, IndexType.HASH, "comp1");
         for (int i = 0; i < 100; ++i) {
-            map.put(new CompoundKey(i, i), "" + i);
+            map.put(new CompoundKey(i, i), String.valueOf(i));
         }
 
         table = partitionedTable(

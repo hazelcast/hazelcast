@@ -210,7 +210,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             int repeat = Integer.parseInt(first.substring(1));
             long started = Clock.currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
-                handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
+                handleCommand(command.substring(first.length()).replaceAll("\\$i", String.valueOf(i)));
             }
             long elapsedMilliSeconds = Clock.currentTimeMillis() - started;
             if (elapsedMilliSeconds > 0) {
@@ -226,7 +226,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 final int threadID = i;
                 pool.submit(() -> {
                     String sanitizedCommand = threadCommand;
-                    String[] threadArgs = trim(sanitizedCommand.replaceAll("\\$t", "" + threadID)).split(" ");
+                    String[] threadArgs = trim(sanitizedCommand.replaceAll("\\$t", String.valueOf(threadID))).split(" ");
                     // TODO &t #4 m.putmany x k
                     if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
                         if (threadArgs.length < 4) {

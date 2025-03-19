@@ -185,7 +185,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     private void when_processingGuaranteeOn_then_lingeringRecordsSentOnSnapshot(boolean exactlyOnce) {
         // When
-        properties.setProperty("linger.ms", "" + HOURS.toMillis(1));
+        properties.setProperty("linger.ms", String.valueOf(HOURS.toMillis(1)));
 
         // Given
         Pipeline p = Pipeline.create();

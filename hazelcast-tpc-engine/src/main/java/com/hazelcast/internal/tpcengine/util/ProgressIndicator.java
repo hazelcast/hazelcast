@@ -90,6 +90,6 @@ public class ProgressIndicator {
 
     @Override
     public String toString() {
-        return "" + value;
+        return String.valueOf(value);
     }
 }

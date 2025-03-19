@@ -71,7 +71,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void sync_whenHeartbeatTimeout() {
         int callTimeout = 5000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeout));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -116,7 +116,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void async_whenHeartbeatTimeout() {
         int callTimeout = 5000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeout));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -152,7 +152,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void sync_whenOperationTimeout() {
         int callTimeout = 5000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeout));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -188,7 +188,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void async_whenOperationTimeout() {
         int callTimeout = 5000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeout));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -275,7 +275,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void sync_whenManyGettersAndLotsOfWaiting() throws Exception {
         int callTimeout = 10000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeout));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -333,7 +333,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void async_whenMultipleAndThenOnSameFuture() {
         int callTimeout = 5000;
-        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeout));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);

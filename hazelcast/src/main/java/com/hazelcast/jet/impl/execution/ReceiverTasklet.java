@@ -131,7 +131,7 @@ public class ReceiverTasklet implements Tasklet {
         this.rwinMultiplier = rwinMultiplier;
         this.flowControlPeriodNs = (double) MILLISECONDS.toNanos(flowControlPeriodMs);
         this.sourceAddressString = sourceAddress.toString();
-        this.ordinalString = "" + ordinal;
+        this.ordinalString = String.valueOf(ordinal);
         this.destinationVertexName = destinationVertexName;
         this.memberConnection = memberConnection;
         String prefix = new StringBuilder()

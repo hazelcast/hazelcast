@@ -66,7 +66,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = getConfig()
-                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITIONS));
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 

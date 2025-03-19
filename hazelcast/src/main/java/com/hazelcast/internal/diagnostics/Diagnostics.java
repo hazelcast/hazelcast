@@ -115,7 +115,7 @@ public class Diagnostics {
      * Defaults to the 'user.dir'.
      */
     public static final HazelcastProperty DIRECTORY
-            = new HazelcastProperty("hazelcast.diagnostics.directory", "" + System.getProperty("user.dir"));
+            = new HazelcastProperty("hazelcast.diagnostics.directory", System.getProperty("user.dir"));
 
     /**
      * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,

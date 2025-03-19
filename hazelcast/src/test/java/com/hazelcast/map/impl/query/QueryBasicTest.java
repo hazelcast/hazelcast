@@ -416,7 +416,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap("queryWithThis");
         map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < 1000; i++) {
-            map.put("" + i, "" + i);
+            map.put("" + i, String.valueOf(i));
         }
         Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("this").equal("10");
         Collection<String> set = map.values(predicate);

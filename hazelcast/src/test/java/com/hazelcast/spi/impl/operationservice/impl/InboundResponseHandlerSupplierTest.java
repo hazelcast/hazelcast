@@ -102,7 +102,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
 
     private InboundResponseHandlerSupplier newSupplier(int threadCount) {
         Properties props = new Properties();
-        props.put(ClusterProperty.RESPONSE_THREAD_COUNT.getName(), "" + threadCount);
+        props.put(ClusterProperty.RESPONSE_THREAD_COUNT.getName(), String.valueOf(threadCount));
         HazelcastProperties properties = new HazelcastProperties(props);
         when(nodeEngine.getProperties()).thenReturn(properties);
 

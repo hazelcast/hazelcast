@@ -1425,7 +1425,7 @@ public class DynamicConfigYamlGenerator {
         }
         Map<String, Object> capacityAsMap = new LinkedHashMap<>();
         addNonNullToMap(capacityAsMap, "unit", capacity.getUnit().toString());
-        addNonNullToMap(capacityAsMap, "value", "" + capacity.getValue());
+        addNonNullToMap(capacityAsMap, "value", String.valueOf(capacity.getValue()));
 
         return capacityAsMap;
     }

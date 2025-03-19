@@ -77,7 +77,7 @@ public class DiscoveryJoinerTest {
 
     @Before
     public void init() throws Exception {
-        System.setProperty(DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY, "" + discoveryBehaviourFallbackEnabled);
+        System.setProperty(DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY, String.valueOf(discoveryBehaviourFallbackEnabled));
         discoveryNodes = new ArrayList<>(2);
         Address privateAddress = new Address("127.0.0.1", 5701);
         Address publicAddress = new Address("127.0.0.2", 6701);

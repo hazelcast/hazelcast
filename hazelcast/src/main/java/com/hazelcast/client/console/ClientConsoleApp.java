@@ -276,7 +276,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             int repeat = Integer.parseInt(first.substring(1));
             long t0 = Clock.currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
-                handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
+                handleCommand(command.substring(first.length()).replaceAll("\\$i", String.valueOf(i)));
             }
             println("ops/s = " + repeat * ONE_THOUSAND / (Clock.currentTimeMillis() - t0));
         } else if (first.startsWith("&") && first.length() > 1) {
@@ -287,7 +287,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 final int threadID = i;
                 pool.submit(() -> {
                     String command1 = threadCommand;
-                    String[] threadArgs = command1.replaceAll("\\$t", "" + threadID).trim().split(" ");
+                    String[] threadArgs = command1.replaceAll("\\$t", String.valueOf(threadID)).trim().split(" ");
                     // TODO &t #4 m.putmany x k
                     if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
                         if (threadArgs.length < LENGTH_BORDER) {

@@ -140,7 +140,7 @@ public class PartitionsPredicatePerformanceTest extends HazelcastTestSupport {
 
     private Map<HazelcastInstance, IMap<String, Integer>> createCluster(TestHazelcastInstanceFactory nodeFactory, int partitionCount, int itemsPerPartition) {
         Config config = getConfig()
-                                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + partitionCount);
+                                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
         HazelcastInstance[] instances = IntStream.range(0, nodeFactory.getCount())
                                                 .mapToObj(i -> nodeFactory.newHazelcastInstance(config))

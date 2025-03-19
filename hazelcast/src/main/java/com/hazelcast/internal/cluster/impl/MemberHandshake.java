@@ -84,7 +84,7 @@ public class MemberHandshake
     }
 
     public MemberHandshake addOption(String key, Object value) {
-        options.put(key, "" + value);
+        options.put(key, String.valueOf(value));
         return this;
     }
 

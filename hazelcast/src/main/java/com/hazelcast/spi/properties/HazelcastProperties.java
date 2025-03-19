@@ -148,7 +148,7 @@ public class HazelcastProperties {
 
         Function<HazelcastProperties, ?> function = property.getFunction();
         if (function != null) {
-            return "" + function.apply(this);
+            return String.valueOf(function.apply(this));
         }
         return property.getDefaultValue();
     }

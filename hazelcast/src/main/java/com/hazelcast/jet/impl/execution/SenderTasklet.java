@@ -95,7 +95,7 @@ public class SenderTasklet implements Tasklet {
         this.inboundEdgeStream = inboundEdgeStream;
         this.destinationAddressString = destinationAddress.toString();
         this.sourceVertexName = sourceVertexName;
-        this.sourceOrdinalString = "" + sourceOrdinal;
+        this.sourceOrdinalString = String.valueOf(sourceOrdinal);
         this.packetSizeLimit = packetSizeLimit;
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = connection;

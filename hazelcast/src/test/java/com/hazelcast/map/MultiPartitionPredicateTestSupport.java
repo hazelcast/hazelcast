@@ -77,7 +77,7 @@ public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSu
     @Before
     public void setUp() {
         Config config = getConfig()
-                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITIONS));
 
         factory = new TestHazelcastFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);

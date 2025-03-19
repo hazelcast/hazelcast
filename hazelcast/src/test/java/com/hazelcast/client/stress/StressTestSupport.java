@@ -166,7 +166,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         protected final Random random = new Random();
 
         public TestThread() {
-            setName(getClass().getName() + "" + ID_GENERATOR.getAndIncrement());
+            setName(getClass().getName() + String.valueOf(ID_GENERATOR.getAndIncrement()));
         }
 
         @Override

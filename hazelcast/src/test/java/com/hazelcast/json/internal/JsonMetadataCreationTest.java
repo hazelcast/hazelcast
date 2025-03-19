@@ -296,7 +296,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
     protected Config getConfig() {
         Config config = new Config();
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + getPartitionCount());
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(getPartitionCount()));
         config.getMapConfig("default")
                 .setBackupCount(getNodeCount() - 1)
                 .setAsyncBackupCount(0)

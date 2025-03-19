@@ -88,7 +88,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         // Set partition count to match the parallelism of IMap sources.
         // Their preferred local parallelism is 2, therefore partition count
         // should be 2 * MEMBER_COUNT.
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + 2 * MEMBER_COUNT);
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(2 * MEMBER_COUNT));
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);

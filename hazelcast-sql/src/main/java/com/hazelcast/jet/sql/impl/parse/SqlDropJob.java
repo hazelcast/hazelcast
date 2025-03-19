@@ -50,7 +50,7 @@ public class SqlDropJob extends SqlDrop {
         this.withSnapshotName = withSnapshotName;
 
         Preconditions.checkTrue(name.names.size() == 1, name.toString());
-        Preconditions.checkTrue(withSnapshotName == null || withSnapshotName.names.size() == 1, "" + withSnapshotName);
+        Preconditions.checkTrue(withSnapshotName == null || withSnapshotName.names.size() == 1, String.valueOf(withSnapshotName));
     }
 
     public String name() {

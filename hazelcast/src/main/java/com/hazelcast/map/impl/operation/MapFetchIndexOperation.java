@@ -75,7 +75,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             int sizeLimit
     ) {
         super(mapName);
-        checkPositive(sizeLimit, "" + sizeLimit);
+        checkPositive(sizeLimit, String.valueOf(sizeLimit));
         this.indexName = indexName;
         this.partitionIdSet = partitionIdSet;
         this.pointers = pointers;

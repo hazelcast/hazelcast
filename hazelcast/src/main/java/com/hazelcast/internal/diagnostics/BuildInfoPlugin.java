@@ -51,7 +51,7 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
         writer.startSection("BuildInfo");
         writer.writeKeyValueEntry("Build", buildInfo.getBuild());
         // we convert to string to prevent formatting the number
-        writer.writeKeyValueEntry("BuildNumber", "" + buildInfo.getBuildNumber());
+        writer.writeKeyValueEntry("BuildNumber", String.valueOf(buildInfo.getBuildNumber()));
         writer.writeKeyValueEntry("Revision", buildInfo.getRevision());
         BuildInfo upstreamBuildInfo = buildInfo.getUpstreamBuildInfo();
         if (upstreamBuildInfo != null) {
