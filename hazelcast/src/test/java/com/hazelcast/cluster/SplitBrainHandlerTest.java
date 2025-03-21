@@ -21,6 +21,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -264,29 +265,33 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         c4.addListenerConfig(new ListenerConfig(new MergedEventLifeCycleListener(latch)));
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c1);
-        HazelcastInstance h2 = factory.newHazelcastInstance(c2);
-        HazelcastInstance h3 = factory.newHazelcastInstance(c3);
-        HazelcastInstance h4 = factory.newHazelcastInstance(c4);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(c4);
 
-        // We should have two clusters of two
-        assertClusterSize(2, h1, h2);
-        assertClusterSize(2, h3, h4);
+        try {
+            // We should have two clusters of two
+            assertClusterSize(2, h1, h2);
+            assertClusterSize(2, h3, h4);
 
-        List<String> allMembers = List.of("127.0.0.1:15701", "127.0.0.1:15704", "127.0.0.1:15703", "127.0.0.1:15702");
+            List<String> allMembers = List.of("127.0.0.1:15701", "127.0.0.1:15704", "127.0.0.1:15703", "127.0.0.1:15702");
 
-        /*
-         * This simulates restoring a network connection between h3 and the
-         * other cluster. But it only makes h3 aware of the other cluster so for
-         * h4 to restart it will have to be notified by h3.
-         */
-        h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(emptyList());
+            /*
+             * This simulates restoring a network connection between h3 and the
+             * other cluster. But it only makes h3 aware of the other cluster so for
+             * h4 to restart it will have to be notified by h3.
+             */
+            h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+            h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(emptyList());
 
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
+            assertTrue(latch.await(60, TimeUnit.SECONDS));
 
-        // Both nodes from cluster two should have joined cluster one
-        assertClusterSizeEventually(4, h1, h2, h3, h4);
+            // Both nodes from cluster two should have joined cluster one
+            assertClusterSizeEventually(4, h1, h2, h3, h4);
+        } finally {
+            shutdownNodes(h1, h2, h3, h4);
+        }
     }
 
     @Test
@@ -304,8 +309,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterTwoMembers);
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterThreeMembers);
 
-        final HazelcastInstance h1 = factory.newHazelcastInstance(c1);
-        final HazelcastInstance h2 = factory.newHazelcastInstance(c2);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
 
         final CountDownLatch latch = new CountDownLatch(1);
         c3.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
@@ -315,22 +320,26 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             }
         }));
 
-        final HazelcastInstance h3 = factory.newHazelcastInstance(c3);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
 
-        // We should have three clusters of one
-        assertClusterSize(1, h1);
-        assertClusterSize(1, h2);
-        assertClusterSize(1, h3);
+        try {
+            // We should have three clusters of one
+            assertClusterSize(1, h1);
+            assertClusterSize(1, h2);
+            assertClusterSize(1, h3);
 
-        List<String> allMembers = List.of("127.0.0.1:25701", "127.0.0.1:25704", "127.0.0.1:25703");
+            List<String> allMembers = List.of("127.0.0.1:25701", "127.0.0.1:25704", "127.0.0.1:25703");
 
-        h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+            h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
 
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
+            assertTrue(latch.await(60, TimeUnit.SECONDS));
 
-        // Both nodes from cluster two should have joined cluster one
-        assertFalse(h1.getLifecycleService().isRunning());
-        assertClusterSize(2, h2, h3);
+            // Both nodes from cluster two should have joined cluster one
+            assertFalse(h1.getLifecycleService().isRunning());
+            assertClusterSize(2, h2, h3);
+        } finally {
+            shutdownNodes(h1, h2, h3);
+        }
     }
 
     private static Config buildConfig(boolean multicastEnabled, int port) {
@@ -748,36 +757,41 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         Config configB = createSimpleTcpIpConfig("cluster_B");
 
         // Start 2 clusters, with 2 members each
-        HazelcastInstance a1 = factory.newHazelcastInstance(configA);
-        HazelcastInstance a2 = factory.newHazelcastInstance(configA);
-        HazelcastInstance b1 = factory.newHazelcastInstance(configB);
-        HazelcastInstance b2 = factory.newHazelcastInstance(configB);
+        HazelcastInstance a1 = Hazelcast.newHazelcastInstance(configA);
+        HazelcastInstance a2 = Hazelcast.newHazelcastInstance(configA);
+        HazelcastInstance b1 = Hazelcast.newHazelcastInstance(configB);
+        HazelcastInstance b2 = Hazelcast.newHazelcastInstance(configB);
 
-        // Fetch the port of a2
-        Address a2Address = getNode(a2).getThisAddress();
+        try {
+            // Fetch the port of a2
+            Address a2Address = getNode(a2).getThisAddress();
 
-        // Confirm that A2 is blacklisted by B1 after a SplitBrainHandler run (due to cluster mismatch)
-        Joiner joinerB1 = getNode(b1).getJoiner();
-        assertTrueEventually(() ->
-                assertTrue("Node A2 has not been blacklisted by Node B1!", joinerB1.isBlacklisted(a2Address)), 6);
+            // Confirm that A2 is blacklisted by B1 after a SplitBrainHandler run (due to cluster mismatch)
+            Joiner joinerB1 = getNode(b1).getJoiner();
+            assertTrueEventually(() ->
+                    assertTrue("Node A2 has not been blacklisted by Node B1!", joinerB1.isBlacklisted(a2Address)), 6);
 
-        // Confirm that A2's address is not returned in the list of filtered addresses used in SplitBrainHandler
-        assertFalse(((TcpIpJoiner) joinerB1).getFilteredPossibleAddresses().contains(a2Address));
+            // Confirm that A2's address is not returned in the list of filtered addresses used in SplitBrainHandler
+            assertFalse(((TcpIpJoiner) joinerB1).getFilteredPossibleAddresses().contains(a2Address));
 
-        // Shutdown A2, and start B3, which should be on the same address/port
-        a2.shutdown();
-        HazelcastInstance b3 = factory.newHazelcastInstance(configB);
+            // Shutdown A2, and start B3, which should be on the same address/port
+            a2.shutdown();
+            HazelcastInstance b3 = Hazelcast.newHazelcastInstance(configB);
 
-        // Confirm b3 is running on the address/port previously occupied by a2
-        Address b3Address = getNode(b3).getThisAddress();
-        assertEquals(a2Address, b3Address);
+            // Confirm b3 is running on the address/port previously occupied by a2
+            Address b3Address = getNode(b3).getThisAddress();
+            assertEquals(a2Address, b3Address);
 
-        // Confirm B3 joins the cluster with B1/B2
-        assertClusterSizeEventually(3, b1, b2, b3);
+            // Confirm B3 joins the cluster with B1/B2
+            assertClusterSizeEventually(3, b1, b2, b3);
 
-        // Confirm that B3's address is not blacklisted on B1, allowing SplitBrainHandler checks
-        assertTrueEventually(() ->
-                assertFalse("Node B3 is still blacklisted by Node B1!", joinerB1.isBlacklisted(b3Address)), 6);
+            // Confirm that B3's address is not blacklisted on B1, allowing SplitBrainHandler checks
+            assertTrueEventually(() ->
+                    assertFalse("Node B3 is still blacklisted by Node B1!", joinerB1.isBlacklisted(b3Address)), 6);
+            b3.shutdown();
+        } finally {
+            shutdownNodes(a1, b1, b2);
+        }
     }
 
     private Config createSimpleTcpIpConfig(String clusterName) {
@@ -791,6 +805,12 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "3");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         return config;
+    }
+
+    private void shutdownNodes(HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            instance.shutdown();
+        }
     }
 
     public record MergedEventLifeCycleListener(CountDownLatch mergeLatch) implements LifecycleListener {
