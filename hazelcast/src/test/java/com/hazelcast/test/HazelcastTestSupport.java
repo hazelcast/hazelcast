@@ -56,6 +56,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.metrics.MetricsRule;
 import junit.framework.AssertionFailedError;
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Assume;
@@ -1666,5 +1667,10 @@ public abstract class HazelcastTestSupport {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /** Converts Windows line separators ({@code \r\n}) to {@code \r} */
+    protected static String convertWindowsLineSeperators(String str) {
+        return StringUtils.remove(str, StringUtils.CR);
     }
 }
