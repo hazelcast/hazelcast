@@ -30,6 +30,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -349,5 +350,16 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public ClientEngine createClientEngine() {
         return nodeExtension.createClientEngine();
+    }
+
+    @Nullable
+    @Override
+    public Object getLicense() {
+        return nodeExtension.getLicense();
+    }
+
+    @Override
+    public HealthMonitor createHealthMonitor() {
+        return nodeExtension.createHealthMonitor();
     }
 }

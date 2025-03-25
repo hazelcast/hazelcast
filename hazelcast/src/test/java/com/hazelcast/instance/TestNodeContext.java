@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
@@ -99,6 +100,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.getNamespaceService()).thenReturn(new NoOpUserCodeNamespaceService(TestNodeContext.class.getClassLoader()));
         when(nodeExtension.createTpcServerBootstrap()).thenReturn(new TpcServerBootstrapImpl(node));
         when(nodeExtension.createClientEngine()).thenReturn(new NoOpClientEngine());
+        when(nodeExtension.createHealthMonitor()).thenReturn(mock(HealthMonitor.class));
         return nodeExtension;
     }
 

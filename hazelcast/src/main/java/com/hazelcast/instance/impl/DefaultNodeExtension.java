@@ -57,6 +57,7 @@ import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.EventQueuePlugin;
+import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.diagnostics.InvocationProfilerPlugin;
 import com.hazelcast.internal.diagnostics.InvocationSamplePlugin;
 import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
@@ -725,5 +726,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public ClientEngine createClientEngine() {
         return new ClientEngineImpl(node);
+    }
+
+    @Override
+    public HealthMonitor createHealthMonitor() {
+        return new HealthMonitor(node);
     }
 }
