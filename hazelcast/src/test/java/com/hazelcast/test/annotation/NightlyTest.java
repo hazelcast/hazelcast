@@ -16,10 +16,21 @@
 
 package com.hazelcast.test.annotation;
 
+import org.junit.jupiter.api.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Annotates tests which are too slow for the PR builder and have no relevance for code coverage.
  * <p>
  * Will be executed in nightly builds, but are not used for code coverage measurements.
  */
-public final class NightlyTest {
+@Retention(RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.test.annotation.NightlyTest")
+public @interface NightlyTest {
 }

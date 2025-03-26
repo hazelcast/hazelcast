@@ -16,11 +16,21 @@
 
 package com.hazelcast.test.annotation;
 
+import org.junit.jupiter.api.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Annotates tests which can run in multiple JVMs in parallel.
  * <p>
  * Has no effect in which build a test will be executed, but if it will be executed in a single or with multiple JVMs.
  */
-public final class ParallelJVMTest {
-    public static final String PARALLEL_JVM_TEST = "com.hazelcast.test.annotation.ParallelJVMTest";
+@Retention(RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.test.annotation.ParallelJVMTest")
+public @interface ParallelJVMTest {
 }

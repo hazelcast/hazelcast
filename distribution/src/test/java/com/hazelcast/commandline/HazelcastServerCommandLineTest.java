@@ -17,8 +17,8 @@
 package com.hazelcast.commandline;
 
 import com.hazelcast.jet.function.RunnableEx;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junitpioneer.jupiter.SetSystemProperty;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@Tag("com.hazelcast.test.annotation.ParallelJVMTest")
+@ParallelJVMTest
 class HazelcastServerCommandLineTest {
     private HazelcastServerCommandLine hazelcastServerCommandLine;
 

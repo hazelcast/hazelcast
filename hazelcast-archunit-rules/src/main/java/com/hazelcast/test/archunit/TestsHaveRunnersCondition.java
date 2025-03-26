@@ -24,13 +24,11 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.experimental.categories.Category;
-import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -67,8 +65,7 @@ public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
             }
 
             // Has "ParallelJVMTest" tag
-            if ((classToTest.isAnnotatedWith(Tag.class) && Objects.equals(classToTest.getAnnotationOfType(Tag.class)
-                    .value(), "com.hazelcast.test.annotation.ParallelJVMTest"))
+            if ((classToTest.isAnnotatedWith("com.hazelcast.test.annotation.ParallelJVMTest"))
                     || (classToTest.isAnnotatedWith(Category.class) && Arrays
                             .stream(classToTest.getAnnotationOfType(Category.class)
                                     .value())

@@ -17,9 +17,9 @@
 package com.hazelcast.internal.cluster;
 
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.MavenInterface;
 import com.hazelcast.version.Version;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@Tag("com.hazelcast.test.annotation.QuickTest")
+@QuickTest
 public class VersionsTest {
     private static final String PREVIOUS_VERSION_MAVEN_PROPERTY_KEY = "hazelcast.previous.version";
     /** Derived from {@value #PREVIOUS_VERSION_MAVEN_PROPERTY_KEY} Maven property **/

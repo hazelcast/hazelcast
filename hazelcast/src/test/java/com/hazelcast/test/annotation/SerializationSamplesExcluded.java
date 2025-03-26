@@ -16,10 +16,20 @@
 
 package com.hazelcast.test.annotation;
 
+import org.junit.jupiter.api.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * Annotates tests which should not be used for generating serialization samples used in compatibility checks.
  * <p>
  * See {@code generate-compatibility-samples} Maven profile in root {@code pom.xml}.
  */
-public final class SerializationSamplesExcluded {
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Tag("com.hazelcast.test.annotation.SerializationSamplesExcluded")
+public @interface SerializationSamplesExcluded {
 }

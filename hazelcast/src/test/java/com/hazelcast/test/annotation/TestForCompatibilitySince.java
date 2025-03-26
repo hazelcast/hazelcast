@@ -18,6 +18,7 @@ package com.hazelcast.test.annotation;
 
 import com.hazelcast.test.AutoRegisteredTestRule;
 import com.hazelcast.test.starter.IgnoreCompatibilityTestsWithSinceRule;
+import org.junit.jupiter.api.Tag;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -31,6 +32,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Retention(RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.test.annotation.TestForCompatibilitySince")
 @AutoRegisteredTestRule(testRule = IgnoreCompatibilityTestsWithSinceRule.class)
 public @interface TestForCompatibilitySince {
     /**
