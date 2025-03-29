@@ -73,7 +73,7 @@ public class AzureComputeApiTest {
                 .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForPublicIPAddresses())));
 
         // when
-        Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, null, ACCESS_TOKEN);
+        Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, ACCESS_TOKEN);
 
         // then
         AzureAddress address1 = new AzureAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
@@ -103,7 +103,7 @@ public class AzureComputeApiTest {
                 .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForPublicIPAddresses())));
 
         // when
-        Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, null, ACCESS_TOKEN);
+        Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, ACCESS_TOKEN);
 
         // then
         AzureAddress address1 = new AzureAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
@@ -131,7 +131,7 @@ public class AzureComputeApiTest {
                 .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(instancesResponseForPublicIPAddresses())));
 
         // when
-        Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, TAG, ACCESS_TOKEN);
+        Collection<AzureAddress> result = azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, TAG, ACCESS_TOKEN);
 
         // then
         AzureAddress address1 = new AzureAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
