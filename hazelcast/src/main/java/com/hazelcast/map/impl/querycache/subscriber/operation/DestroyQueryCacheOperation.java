@@ -89,7 +89,11 @@ public class DestroyQueryCacheOperation extends AbstractNamedOperation {
             return;
         }
         UUID listenerId = listenerRegistry.remove(cacheId);
-        getMapServiceContext().removeEventListener(name, listenerId);
+        if (listenerId != null) {
+            getMapServiceContext().removeEventListener(name, listenerId);
+        } else {
+            getLogger().finest("No listener ID found for query cache '%s' - assuming cleanup already completed", cacheId);
+        }
     }
 
     private void removeAccumulatorInfo() {
