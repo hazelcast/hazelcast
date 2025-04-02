@@ -11,7 +11,7 @@ if "x%JAVA_HOME%" == "x" (
 
 "%RUN_JAVA%" -version 1>nul 2>nul || (
     echo JAVA could not be found in your system.
-    echo Please install Java 1.8 or higher and ensure either JAVA_HOME
+    echo Please install Java and ensure either JAVA_HOME
     echo is defined, or the java executable is in the PATH.
     exit /b 2
 )
