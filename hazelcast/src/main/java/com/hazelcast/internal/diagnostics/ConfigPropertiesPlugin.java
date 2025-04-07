@@ -17,6 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -35,17 +36,28 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
     private final List<String> keyList = new ArrayList<>();
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(ConfigPropertiesPlugin.class), nodeEngine.getProperties());
+        this(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getLogger(ConfigPropertiesPlugin.class),
+                nodeEngine.getProperties());
     }
 
-    public ConfigPropertiesPlugin(ILogger logger, HazelcastProperties properties) {
-        super(logger);
+    public ConfigPropertiesPlugin(DiagnosticsConfig config,
+                                  ILogger logger, HazelcastProperties properties) {
+        super(config, logger);
         this.properties = properties;
     }
 
     @Override
     public void onStart() {
+        setProperties(getConfig().getPluginProperties());
+        super.onStart();
         logger.info("Plugin:active");
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:deactivated");
     }
 
     @Override
@@ -62,6 +74,10 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
         writer.startSection("ConfigProperties");
         for (String key : keyList) {
             String value = properties.get(key);
+            writer.writeKeyValueEntry(key, value);
+        }
+        for (String key : getConfig().getPluginProperties().keySet()) {
+            String value = getConfig().getPluginProperties().get(key);
             writer.writeKeyValueEntry(key, value);
         }
         writer.endSection();

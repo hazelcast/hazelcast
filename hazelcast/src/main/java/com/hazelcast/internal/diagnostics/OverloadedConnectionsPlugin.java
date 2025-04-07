@@ -26,7 +26,6 @@ import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.util.ItemCounter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.text.NumberFormat;
@@ -85,20 +84,24 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     private final Random random = new Random();
     private final NumberFormat defaultFormat = NumberFormat.getPercentInstance();
     private final NodeEngineImpl nodeEngine;
-    private final long periodMillis;
-    private final int threshold;
-    private final int samples;
+    private long periodMillis;
+    private int threshold;
+    private int samples;
 
     public OverloadedConnectionsPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(OverloadedConnectionsPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getLogger(OverloadedConnectionsPlugin.class));
         this.nodeEngine = nodeEngine;
         this.serializationService = nodeEngine.getSerializationService();
         this.defaultFormat.setMinimumFractionDigits(3);
 
-        HazelcastProperties props = nodeEngine.getProperties();
-        this.periodMillis = props.getMillis(PERIOD_SECONDS);
-        this.threshold = props.getInteger(THRESHOLD);
-        this.samples = props.getInteger(SAMPLES);
+        readProperties();
+    }
+
+    private void readProperties() {
+        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
+        this.threshold = nodeEngine.getProperties().getInteger(overrideProperty(THRESHOLD));
+        this.samples = nodeEngine.getProperties().getInteger(overrideProperty(SAMPLES));
     }
 
     @Override
@@ -108,7 +111,16 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis + " threshold:" + threshold + " samples:" + samples);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        clear();
+        logger.info("Plugin:deactivated");
     }
 
     @Override
@@ -224,5 +236,14 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         } else {
             return packet.getClass().getName();
         }
+    }
+
+    // just for testing
+     int getThreshold() {
+        return threshold;
+    }
+
+     int getSamples() {
+        return samples;
     }
 }

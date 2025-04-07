@@ -411,25 +411,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
 
             diagnostics.start();
 
-            // static loggers at beginning of file
-            diagnostics.register(
-                    new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
-            diagnostics.register(
-                    new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
-            diagnostics.register(
-                    new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
-
-            // periodic loggers
-            diagnostics.register(
-                    new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
-            diagnostics.register(
-                    new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
-            diagnostics.register(
-                    new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
-                            loggingService.getLogger(NetworkingImbalancePlugin.class)));
-            diagnostics.register(
-                    new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
-                            properties));
+            registerDiagnosticsPlugins();
 
             metricsRegistry.provideMetrics(listenerService);
 
@@ -457,6 +439,33 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
             }
             throw rethrow(e);
         }
+    }
+
+    private void registerDiagnosticsPlugins() {
+        // static loggers at beginning of file
+        diagnostics.register(
+                new BuildInfoPlugin(config.getDiagnosticsConfig(), loggingService.getLogger(BuildInfoPlugin.class)));
+        diagnostics.register(
+                new ConfigPropertiesPlugin(config.getDiagnosticsConfig(),
+                        loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
+        diagnostics.register(
+                new SystemPropertiesPlugin(config.getDiagnosticsConfig(),
+                        loggingService.getLogger(SystemPropertiesPlugin.class)));
+
+        // periodic loggers
+        diagnostics.register(
+                new MetricsPlugin(config.getDiagnosticsConfig(), loggingService.getLogger(MetricsPlugin.class),
+                        metricsRegistry, properties));
+        diagnostics.register(
+                new SystemLogPlugin(config.getDiagnosticsConfig(), properties, connectionManager, this,
+                        loggingService.getLogger(SystemLogPlugin.class)));
+        diagnostics.register(
+                new NetworkingImbalancePlugin(config.getDiagnosticsConfig(), properties, connectionManager.getNetworking(),
+                        loggingService.getLogger(NetworkingImbalancePlugin.class)));
+        diagnostics.register(
+                new EventQueuePlugin(config.getDiagnosticsConfig(), loggingService.getLogger(EventQueuePlugin.class),
+                        listenerService.getEventExecutor(),
+                        properties));
     }
 
     private void startHeartbeat() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -49,22 +50,34 @@ public class MetricsPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.metrics.period.seconds", 60, SECONDS);
 
     private final MetricsRegistry metricsRegistry;
-    private final long periodMillis;
     private final MetricsCollectorImpl metricCollector = new MetricsCollectorImpl();
+    private final HazelcastProperties properties;
+    private long periodMillis;
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
+        this(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
     }
 
-    public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {
-        super(logger);
+    public MetricsPlugin(DiagnosticsConfig config, ILogger logger, MetricsRegistry metricsRegistry,
+                         HazelcastProperties properties) {
+        super(config, logger);
         this.metricsRegistry = metricsRegistry;
-        this.periodMillis = properties.getMillis(PERIOD_SECONDS);
+        this.properties = properties;
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
     public void onStart() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override

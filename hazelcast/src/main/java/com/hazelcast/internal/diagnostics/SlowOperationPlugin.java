@@ -50,21 +50,22 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
             "hazelcast.diagnostics.slowoperations.period.seconds", 60, SECONDS);
 
     private final OperationServiceImpl operationService;
-    private final long periodMillis;
+    private final HazelcastProperties properties;
+    private long periodMillis;
 
     public SlowOperationPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(SlowOperationPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(SlowOperationPlugin.class));
         this.operationService = nodeEngine.getOperationService();
-        this.periodMillis = getPeriodMillis(nodeEngine);
+        this.properties = nodeEngine.getProperties();
+        this.periodMillis = readPeriodMillis();
     }
 
-    private long getPeriodMillis(NodeEngineImpl nodeEngine) {
-        HazelcastProperties props = nodeEngine.getProperties();
-        if (!props.getBoolean(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
+    private long readPeriodMillis() {
+        if (!properties.getBoolean(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
             return DISABLED;
         }
 
-        return props.getMillis(PERIOD_SECONDS);
+        return properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
@@ -74,7 +75,15 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        this.periodMillis = readPeriodMillis();
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override

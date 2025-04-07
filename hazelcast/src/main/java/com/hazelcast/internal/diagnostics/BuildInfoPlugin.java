@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
@@ -29,11 +30,11 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
     public BuildInfoPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(BuildInfoPlugin.class));
+        this(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(BuildInfoPlugin.class));
     }
 
-    public BuildInfoPlugin(ILogger logger) {
-        super(logger);
+    public BuildInfoPlugin(DiagnosticsConfig diagnosticsConfig, ILogger logger) {
+        super(diagnosticsConfig, logger);
     }
 
     @Override
@@ -43,7 +44,14 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active");
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:deactivated");
     }
 
     @Override

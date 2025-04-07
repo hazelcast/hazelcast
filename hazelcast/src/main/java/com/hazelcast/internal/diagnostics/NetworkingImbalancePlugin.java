@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioThread;
@@ -51,21 +52,32 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     private static final double HUNDRED = 100d;
 
     private final NioNetworking networking;
-    private final long periodMillis;
+    private final HazelcastProperties properties;
+    private long periodMillis;
+
 
     public NetworkingImbalancePlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingImbalancePlugin.class));
+        this(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getProperties(),
+                getThreadingModel(nodeEngine),
+                nodeEngine.getLogger(NetworkingImbalancePlugin.class));
     }
 
-    public NetworkingImbalancePlugin(HazelcastProperties properties, Networking networking, ILogger logger) {
-        super(logger);
+    public NetworkingImbalancePlugin(DiagnosticsConfig config, HazelcastProperties properties, Networking networking,
+                                     ILogger logger) {
+        super(config, logger);
 
         if (networking instanceof NioNetworking nioNetworking) {
             this.networking = nioNetworking;
         } else {
             this.networking = null;
         }
-        this.periodMillis = this.networking == null ? 0 : properties.getMillis(PERIOD_SECONDS);
+        this.properties = properties;
+        readProperties();
+    }
+
+    private void readProperties() {
+        this.periodMillis = this.networking == null ? 0 : properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
@@ -83,7 +95,15 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override

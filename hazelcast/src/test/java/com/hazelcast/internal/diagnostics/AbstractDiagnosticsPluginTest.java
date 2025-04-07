@@ -57,7 +57,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         assertNotContains(getContent(), expected);
     }
 
-    static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
+    protected static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
         try {
             Field field = NodeEngineImpl.class.getDeclaredField("diagnostics");

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,8 +39,9 @@ public class StoreLatencyPluginResetTest extends AbstractDiagnosticsPluginTest {
         props.put(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "1");
         props.put(StoreLatencyPlugin.RESET_PERIOD_SECONDS.getName(), "2");
 
+        Config config = new Config();
         HazelcastProperties properties = new HazelcastProperties(props);
-        StoreLatencyPlugin plugin = new StoreLatencyPlugin(Logger.getLogger(StoreLatencyPlugin.class), properties);
+        StoreLatencyPlugin plugin = new StoreLatencyPlugin(config.getDiagnosticsConfig(), Logger.getLogger(StoreLatencyPlugin.class), properties);
 
         StoreLatencyPlugin.LatencyProbe probe = plugin.newProbe("foo", "queue", "somemethod");
 

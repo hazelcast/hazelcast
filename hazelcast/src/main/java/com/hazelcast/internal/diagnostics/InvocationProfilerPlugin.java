@@ -19,6 +19,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -32,13 +33,15 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
             "hazelcast.diagnostics.invocation-profiler.period.seconds", 5, SECONDS);
 
     private final InvocationRegistry invocationRegistry;
-    private final long periodMs;
+    private long periodMs;
+    private HazelcastProperties properties;
 
     public InvocationProfilerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(InvocationProfilerPlugin.class));
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = operationService.getInvocationRegistry();
-        this.periodMs = nodeEngine.getProperties().getMillis(PERIOD_SECONDS);
+        this.properties = nodeEngine.getProperties();
+        this.periodMs = this.properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
@@ -48,7 +51,15 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        this.periodMs = this.properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMs);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:deactivated: period-millis:" + periodMs);
     }
 
     @Override
@@ -57,5 +68,6 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
         OperationProfilerPlugin.write(writer, invocationRegistry.latencyDistributions());
         writer.endSection();
     }
+
 }
 

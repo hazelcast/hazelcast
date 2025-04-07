@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -37,11 +38,12 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     private String inputArgs;
 
     public SystemPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(SystemPropertiesPlugin.class));
+        this(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getLogger(SystemPropertiesPlugin.class));
     }
 
-    public SystemPropertiesPlugin(ILogger logger) {
-        super(logger);
+    public SystemPropertiesPlugin(DiagnosticsConfig config, ILogger logger) {
+        super(config, logger);
     }
 
     @Override
@@ -51,8 +53,15 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active");
         inputArgs = getInputArgs();
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     private static String getInputArgs() {

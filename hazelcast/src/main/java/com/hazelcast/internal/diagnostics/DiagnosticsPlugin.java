@@ -16,7 +16,13 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperty;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Plugin for the {@link Diagnostics}.
@@ -41,11 +47,35 @@ public abstract class DiagnosticsPlugin {
      * Indicates that the plugin is disabled.
      */
     static final long DISABLED = 0;
-
+    /**
+     * Indicates that the plugin is running.
+     */
+    static final int RUNNING = 1;
+    /**
+     * Indicates that the plugin is stopped.
+     */
+    static final int STOPPED = 0;
     protected final ILogger logger;
+    private DiagnosticsConfig diagnosticsConfig;
+    private Map<String, String> properties = new ConcurrentHashMap<>();
+    protected AtomicInteger isRunning = new AtomicInteger(STOPPED);
 
-    protected DiagnosticsPlugin(ILogger logger) {
+    protected DiagnosticsPlugin(DiagnosticsConfig diagnosticsConfig, ILogger logger) {
         this.logger = logger;
+        this.diagnosticsConfig = diagnosticsConfig;
+        setProperties(diagnosticsConfig.getPluginProperties());
+    }
+
+    protected void setRunning() {
+        isRunning.compareAndSet(STOPPED, RUNNING);
+    }
+
+    protected void setStopped() {
+        isRunning.compareAndSet(RUNNING, STOPPED);
+    }
+
+    public boolean isRunning() {
+        return isRunning.compareAndSet(RUNNING, isRunning.get());
     }
 
     /**
@@ -62,7 +92,38 @@ public abstract class DiagnosticsPlugin {
      */
     public abstract long getPeriodMillis();
 
-    public abstract void onStart();
+    public void onStart() {
+        setRunning();
+    }
+
+    public void onShutdown() {
+        setStopped();
+    }
+
+    void setProperties(Map<String, String> props) {
+        if (!isRunning() && !this.properties.equals(props)) {
+            this.properties.clear();
+            this.properties.putAll(props);
+        }
+    }
+
+    /**
+     * Overrides the property with the value from the diagnostics config if it is set.
+     */
+    HazelcastProperty overrideProperty(HazelcastProperty property) {
+        String value = properties.get(property.getName());
+
+        if (value == null) {
+            return property;
+        }
+
+        property.setSystemProperty(value);
+        return property;
+    }
+
+    DiagnosticsConfig getConfig() {
+        return this.diagnosticsConfig;
+    }
 
     public abstract void run(DiagnosticsLogWriter writer);
 }

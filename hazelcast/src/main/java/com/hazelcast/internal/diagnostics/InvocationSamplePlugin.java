@@ -61,20 +61,26 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.invocation.slow.max.count", 100);
 
     private final InvocationRegistry invocationRegistry;
-    private final long samplePeriodMillis;
-    private final long thresholdMillis;
-    private final int maxCount;
+    private long samplePeriodMillis;
+    private long thresholdMillis;
+    private int maxCount;
     private final ItemCounter<String> slowOccurrences = new ItemCounter<>();
     private final ItemCounter<String> occurrences = new ItemCounter<>();
+    private final NodeEngineImpl nodeEngine;
 
     public InvocationSamplePlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(InvocationSamplePlugin.class));
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = operationService.getInvocationRegistry();
+        this.nodeEngine = nodeEngine;
+        readProperties();
+    }
+
+    private void readProperties() {
         HazelcastProperties props = nodeEngine.getProperties();
-        this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);
-        this.thresholdMillis = props.getMillis(SLOW_THRESHOLD_SECONDS);
-        this.maxCount = props.getInteger(SLOW_MAX_COUNT);
+        this.samplePeriodMillis = props.getMillis(overrideProperty(SAMPLE_PERIOD_SECONDS));
+        this.thresholdMillis = props.getMillis(overrideProperty(SLOW_THRESHOLD_SECONDS));
+        this.maxCount = props.getInteger(overrideProperty(SLOW_MAX_COUNT));
     }
 
     @Override
@@ -84,7 +90,15 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + samplePeriodMillis + " threshold-millis:" + thresholdMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override
@@ -100,6 +114,14 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
         renderSlowHistory(writer);
 
         writer.endSection();
+    }
+
+    int getMaxCount() {
+        return maxCount;
+    }
+
+    long getThresholdMillis() {
+        return thresholdMillis;
     }
 
     private void runCurrent(DiagnosticsLogWriter writer, long now) {

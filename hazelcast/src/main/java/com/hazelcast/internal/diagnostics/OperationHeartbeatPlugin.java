@@ -63,20 +63,25 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     private static final float HUNDRED = 100f;
 
-    private final long periodMillis;
-    private final long expectedIntervalMillis;
-    private final int maxDeviationPercentage;
     private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember;
+    private final HazelcastProperties properties;
     private boolean mainSectionStarted;
+    private long periodMillis;
+    private int maxDeviationPercentage;
+    private long expectedIntervalMillis;
 
     public OperationHeartbeatPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(OperationHeartbeatPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(OperationHeartbeatPlugin.class));
         InvocationMonitor invocationMonitor = nodeEngine.getOperationService().getInvocationMonitor();
-        HazelcastProperties properties = nodeEngine.getProperties();
-        this.periodMillis = properties.getMillis(PERIOD_SECONDS);
-        this.maxDeviationPercentage = properties.getInteger(MAX_DEVIATION_PERCENTAGE);
+        this.properties = nodeEngine.getProperties();
+        readProperties();
         this.expectedIntervalMillis = invocationMonitor.getHeartbeatBroadcastPeriodMillis();
         this.heartbeatPerMember = invocationMonitor.getHeartbeatPerMember();
+    }
+
+    private void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.maxDeviationPercentage = properties.getInteger(overrideProperty(MAX_DEVIATION_PERCENTAGE));
     }
 
     @Override
@@ -86,7 +91,15 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " max-deviation:" + maxDeviationPercentage + "%");
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override
@@ -112,6 +125,11 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
         }
 
         endLazyMainSection(writer);
+    }
+
+    // for testing
+    int getMaxDeviationPercentage() {
+        return maxDeviationPercentage;
     }
 
     private void startLazyMainSection(DiagnosticsLogWriter writer) {

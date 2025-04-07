@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -83,37 +84,46 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     private final ConnectionListenable connectionObservable;
     private final HazelcastInstance hazelcastInstance;
     private final Address thisAddress;
-    private final boolean logPartitions;
-    private final boolean enabled;
     private final NodeExtension nodeExtension;
+    private final HazelcastProperties properties;
+    private boolean logPartitions;
+    private volatile boolean enabled;
 
     public SystemLogPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getProperties(),
+        this(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getProperties(),
                 nodeEngine.getNode().getServer(),
                 nodeEngine.getHazelcastInstance(),
                 nodeEngine.getLogger(SystemLogPlugin.class),
                 nodeEngine.getNode().getNodeExtension());
     }
 
-    public SystemLogPlugin(HazelcastProperties properties,
+    public SystemLogPlugin(DiagnosticsConfig config,
+                           HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
                            ILogger logger) {
-        this(properties, connectionObservable, hazelcastInstance, logger, null);
+        this(config, properties, connectionObservable, hazelcastInstance, logger, null);
     }
 
-    public SystemLogPlugin(HazelcastProperties properties,
+    public SystemLogPlugin(DiagnosticsConfig config,
+                           HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
                            ILogger logger,
                            NodeExtension nodeExtension) {
-        super(logger);
+        super(config, logger);
         this.connectionObservable = connectionObservable;
         this.hazelcastInstance = hazelcastInstance;
         this.thisAddress = getThisAddress(hazelcastInstance);
-        this.logPartitions = properties.getBoolean(LOG_PARTITIONS);
-        this.enabled = properties.getBoolean(ENABLED);
         this.nodeExtension = nodeExtension;
+        this.properties = properties;
+        readProperties();
+    }
+
+    private void readProperties() {
+        this.logPartitions = properties.getBoolean(overrideProperty(LOG_PARTITIONS));
+        this.enabled = properties.getBoolean(overrideProperty(ENABLED));
     }
 
     private Address getThisAddress(HazelcastInstance hazelcastInstance) {
@@ -134,6 +144,8 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: logPartitions:" + logPartitions);
 
         connectionObservable.addConnectionListener(new ConnectionListenerImpl());
@@ -145,6 +157,13 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         if (nodeExtension != null) {
             nodeExtension.registerListener(new ClusterVersionListenerImpl());
         }
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logQueue.clear();
+        logger.info("Plugin:inactive");
     }
 
     @Override
@@ -169,6 +188,11 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
                 render(writer, version);
             }
         }
+    }
+
+    //for testing
+    boolean getLogPartitions() {
+        return logPartitions;
     }
 
     private void render(DiagnosticsLogWriter writer, LifecycleEvent event) {
@@ -312,53 +336,71 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     protected class ConnectionListenerImpl implements ConnectionListener {
         @Override
         public void connectionAdded(Connection connection) {
-            logQueue.add(new ConnectionEvent(true, connection));
+            if (enabled) {
+                logQueue.add(new ConnectionEvent(true, connection));
+            }
         }
 
         @Override
         public void connectionRemoved(Connection connection) {
-            logQueue.add(new ConnectionEvent(false, connection));
+            if (enabled) {
+                logQueue.add(new ConnectionEvent(false, connection));
+            }
         }
     }
 
     protected class MembershipListenerImpl extends MembershipAdapter {
         @Override
         public void memberAdded(MembershipEvent event) {
-            logQueue.add(event);
+            if (enabled) {
+                logQueue.add(event);
+            }
         }
 
         @Override
         public void memberRemoved(MembershipEvent event) {
-            logQueue.add(event);
+            if (enabled) {
+                logQueue.add(event);
+            }
         }
     }
 
     protected class MigrationListenerImpl implements MigrationListener {
         @Override
         public void migrationStarted(MigrationState state) {
-            logQueue.add(state);
+            if (enabled) {
+                logQueue.add(state);
+            }
         }
 
         @Override
         public void migrationFinished(MigrationState state) {
-            logQueue.add(state);
+            if (enabled) {
+                logQueue.add(state);
+            }
         }
 
         @Override
         public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-            logQueue.add(event);
+            if (enabled) {
+                logQueue.add(event);
+            }
         }
 
         @Override
         public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-            logQueue.add(event);
+            if (enabled) {
+                logQueue.add(event);
+            }
         }
     }
 
     protected class ClusterVersionListenerImpl implements ClusterVersionListener {
         @Override
         public void onClusterVersionChange(Version newVersion) {
-            logQueue.add(newVersion);
+            if (enabled) {
+                logQueue.add(newVersion);
+            }
         }
     }
 }

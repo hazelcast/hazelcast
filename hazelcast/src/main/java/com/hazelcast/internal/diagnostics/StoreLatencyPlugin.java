@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -79,20 +80,29 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     private final ConstructorFunction<String, ServiceProbes> metricsPerServiceConstructorFunction
             = ServiceProbes::new;
 
-    private final long periodMillis;
-    private final long resetPeriodMillis;
-    private final long resetFrequency;
+    private final HazelcastProperties properties;
+    private long periodMillis;
+    private long resetPeriodMillis;
+    private long resetFrequency;
 
     private long iteration;
 
     public StoreLatencyPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(StoreLatencyPlugin.class), nodeEngine.getProperties());
+        this(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getLogger(StoreLatencyPlugin.class),
+                nodeEngine.getProperties());
     }
 
-    public StoreLatencyPlugin(ILogger logger, HazelcastProperties properties) {
-        super(logger);
-        this.periodMillis = properties.getMillis(PERIOD_SECONDS);
-        this.resetPeriodMillis = properties.getMillis(RESET_PERIOD_SECONDS);
+    public StoreLatencyPlugin(DiagnosticsConfig config, ILogger logger, HazelcastProperties properties) {
+        super(config, logger);
+
+        this.properties = properties;
+        readProperties();
+    }
+
+    private void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.resetPeriodMillis = properties.getMillis(overrideProperty(RESET_PERIOD_SECONDS));
         if (periodMillis == 0 || resetPeriodMillis == 0) {
             this.resetFrequency = 0;
         } else {
@@ -107,14 +117,24 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " resetPeriod-millis:" + resetPeriodMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        resetStatisticsIfNeeded(true);
+        super.onShutdown();
+        iteration = 0;
+        logger.info("Plugin:inactive");
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
         iteration++;
         render(writer);
-        resetStatisticsIfNeeded();
+        resetStatisticsIfNeeded(false);
     }
 
     private void render(DiagnosticsLogWriter writer) {
@@ -123,8 +143,8 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private void resetStatisticsIfNeeded() {
-        if (resetFrequency > 0 && iteration % resetFrequency == 0) {
+    private void resetStatisticsIfNeeded(boolean force) {
+        if ((resetFrequency > 0 && iteration % resetFrequency == 0) || force) {
             for (ServiceProbes serviceProbes : metricsPerServiceMap.values()) {
                 serviceProbes.resetStatistics();
             }
@@ -140,6 +160,10 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         ServiceProbes serviceProbes = getOrPutIfAbsent(
                 metricsPerServiceMap, serviceName, metricsPerServiceConstructorFunction);
         return serviceProbes.newProbe(dataStructureName, methodName);
+    }
+
+    long getResetPeriodMillis() {
+        return resetPeriodMillis;
     }
 
     private final class ServiceProbes {
@@ -163,7 +187,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
         protected void render(DiagnosticsLogWriter writer) {
             writer.startSection(serviceName);
-            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext();) {
+            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext(); ) {
                 InstanceProbes instanceProbes = it.next().getValue();
                 if (instanceProbes != null) {
                     instanceProbes.render(writer);
@@ -175,7 +199,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
 
         public void resetStatistics() {
-            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext();) {
+            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext(); ) {
                 InstanceProbes instanceProbes = it.next().getValue();
                 if (instanceProbes != null) {
                     instanceProbes.resetStatistics();

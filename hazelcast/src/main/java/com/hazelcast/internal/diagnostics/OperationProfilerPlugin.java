@@ -46,18 +46,20 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
             "hazelcast.diagnostics.operation-profiler.period.seconds", 5, SECONDS);
 
     private final OperationServiceImpl operationService;
-    private final long periodMillis;
     private final ConcurrentMap<Class, LatencyDistribution> opLatencyDistribution;
+    private final NodeEngineImpl nodeEngine;
+    private long periodMillis;
 
     public OperationProfilerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(OperationProfilerPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(OperationProfilerPlugin.class));
         this.operationService = nodeEngine.getOperationService();
-        this.periodMillis = getPeriodMillis(nodeEngine);
+        this.nodeEngine = nodeEngine;
+        readProperties();
         this.opLatencyDistribution = this.operationService.getOpLatencyDistributions();
     }
 
-    private long getPeriodMillis(NodeEngineImpl nodeEngine) {
-        return nodeEngine.getProperties().getMillis(PERIOD_SECONDS);
+    private void readProperties() {
+        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
@@ -67,7 +69,15 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:deactivated, period-millis:" + periodMillis);
     }
 
     @Override

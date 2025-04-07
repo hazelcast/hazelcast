@@ -22,6 +22,7 @@ import com.hazelcast.collection.impl.collection.CollectionEvent;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.set.SetService;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.event.EntryEventData;
@@ -81,25 +82,29 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     private final NumberFormat defaultFormat = NumberFormat.getPercentInstance();
 
     private final StripedExecutor eventExecutor;
-    private final long periodMillis;
-    private final int threshold;
-    private final int samples;
-
+    private long periodMillis;
+    private int threshold;
+    private int samples;
     private int eventCount;
+    private HazelcastProperties props;
 
     public EventQueuePlugin(NodeEngineImpl nodeEngine, StripedExecutor eventExecutor) {
-        this(nodeEngine.getLogger(EventQueuePlugin.class), eventExecutor, nodeEngine.getProperties());
+        this(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(EventQueuePlugin.class),
+                eventExecutor, nodeEngine.getProperties());
     }
 
-    public EventQueuePlugin(ILogger logger, StripedExecutor eventExecutor, HazelcastProperties props) {
-        super(logger);
-
+    public EventQueuePlugin(DiagnosticsConfig config, ILogger logger, StripedExecutor eventExecutor, HazelcastProperties props) {
+        super(config, logger);
         this.defaultFormat.setMinimumFractionDigits(3);
         this.eventExecutor = eventExecutor;
+        this.props = props;
+        readProperties();
+    }
 
-        this.periodMillis = props.getMillis(PERIOD_SECONDS);
-        this.threshold = props.getInteger(THRESHOLD);
-        this.samples = props.getInteger(SAMPLES);
+    private void readProperties() {
+        this.periodMillis = props.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.threshold = props.getInteger(overrideProperty(THRESHOLD));
+        this.samples = props.getInteger(overrideProperty(SAMPLES));
     }
 
     @Override
@@ -109,7 +114,17 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis + " threshold:" + threshold + " samples:" + samples);
+    }
+
+    @Override
+    public void onShutdown() {
+        occurrenceMap.clear();
+        occurrenceMap.reset();
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override
@@ -128,6 +143,14 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     // just for testing
     ItemCounter<String> getOccurrenceMap() {
         return occurrenceMap;
+    }
+
+    int getThreshold() {
+        return threshold;
+    }
+
+    int getSamples() {
+        return samples;
     }
 
     private List<BlockingQueue<Runnable>> getEventQueues() {

@@ -28,4 +28,9 @@ public interface DiagnosticsLog {
      * @param plugin the plugin to log
      */
     void write(DiagnosticsPlugin plugin);
+
+    /**
+     * Sends closing signal to the logger.
+     */
+    void close();
 }

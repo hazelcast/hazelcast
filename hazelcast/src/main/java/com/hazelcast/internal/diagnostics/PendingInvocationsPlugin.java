@@ -54,16 +54,21 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     private final InvocationRegistry invocationRegistry;
     private final ItemCounter<String> occurrenceMap = new ItemCounter<>();
-    private final long periodMillis;
-    private final int threshold;
+    private final HazelcastProperties properties;
+    private long periodMillis;
+    private int threshold;
 
     public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(PendingInvocationsPlugin.class));
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = operationService.getInvocationRegistry();
-        HazelcastProperties props = nodeEngine.getProperties();
-        this.periodMillis = props.getMillis(PERIOD_SECONDS);
-        this.threshold = props.getInteger(THRESHOLD);
+        properties = nodeEngine.getProperties();
+        readProperties();
+    }
+
+    private void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.threshold = properties.getInteger(overrideProperty(THRESHOLD));
     }
 
     @Override
@@ -73,7 +78,16 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " threshold:" + threshold);
+    }
+
+    @Override
+    public void onShutdown() {
+        clean();
+        super.onShutdown();
+        logger.info("Plugin:inactive");
     }
 
     @Override
@@ -111,5 +125,10 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
             writer.writeKeyValueEntry(op, count);
         }
         writer.endSection();
+    }
+
+    // just for testing
+     int getThreshold() {
+        return threshold;
     }
 }

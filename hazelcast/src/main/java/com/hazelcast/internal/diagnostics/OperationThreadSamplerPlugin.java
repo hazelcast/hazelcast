@@ -16,13 +16,12 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.internal.util.concurrent.ConcurrentItemCounter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.locks.LockSupport;
@@ -77,24 +76,28 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.includeName", false);
     public static final float HUNDRED = 100f;
 
-    protected final long samplerPeriodMillis;
     protected final ConcurrentItemCounter<String> partitionSpecificSamples = new ConcurrentItemCounter<>();
     protected final ConcurrentItemCounter<String> genericSamples = new ConcurrentItemCounter<>();
     protected final OperationExecutor executor;
     protected final NodeEngineImpl nodeEngine;
-    protected final boolean includeName;
-
-    private final long periodMillis;
+    private boolean includeName;
+    private long samplerPeriodMillis;
+    private long periodMillis;
+    private SampleThread sampleThread;
 
     public OperationThreadSamplerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
+        super(nodeEngine.getConfig().getDiagnosticsConfig(),
+                nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
         this.nodeEngine = nodeEngine;
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.executor = operationService.getOperationExecutor();
-        HazelcastProperties props = nodeEngine.getProperties();
-        this.periodMillis = props.getMillis(PERIOD_SECONDS);
-        this.samplerPeriodMillis = props.getMillis(SAMPLER_PERIOD_MILLIS);
-        this.includeName = props.getBoolean(INCLUDE_NAME);
+        readProperties();
+    }
+
+    private void readProperties() {
+        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
+        this.samplerPeriodMillis = nodeEngine.getProperties().getMillis(overrideProperty(SAMPLER_PERIOD_MILLIS));
+        this.includeName = nodeEngine.getProperties().getBoolean(overrideProperty(INCLUDE_NAME));
     }
 
     @Override
@@ -104,9 +107,19 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        readProperties();
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " sampler-period-millis:" + samplerPeriodMillis);
 
-        new SampleThread().start();
+        sampleThread = new SampleThread();
+        sampleThread.start();
+    }
+
+    @Override
+    public void onShutdown() {
+        sampleThread.interrupt();
+        super.onShutdown();
+        logger.info("Plugin:deactivated");
     }
 
     @Override
@@ -128,13 +141,21 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
+    boolean getIncludeName() {
+        return includeName;
+    }
+
+    long getSamplerPeriodMillis() {
+        return samplerPeriodMillis;
+    }
+
     protected class SampleThread extends Thread {
 
         @Override
         public void run() {
             long nextRunMillis = System.currentTimeMillis();
 
-            while (nodeEngine.isRunning()) {
+            while (nodeEngine.isRunning() && !Thread.currentThread().isInterrupted()) {
                 LockSupport.parkUntil(nextRunMillis);
                 nextRunMillis = samplerPeriodMillis;
                 sample(executor.getPartitionOperationRunners(), partitionSpecificSamples);

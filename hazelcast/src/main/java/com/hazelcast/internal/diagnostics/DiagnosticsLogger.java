@@ -36,7 +36,7 @@ final class DiagnosticsLogger implements DiagnosticsLog {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
         this.diagnosticsLogger = diagnostics.loggingService.getLogger("com.hazelcast.diagnostics");
-        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.isIncludeEpochTime(), diagnostics.logger);
         this.writer = new CharArrayWriter();
         logWriter.init(new PrintWriter(writer));
         logger.info("Sending diagnostics to the 'com.hazelcast.diagnostics' logger");
@@ -59,6 +59,10 @@ final class DiagnosticsLogger implements DiagnosticsLog {
         } catch (RuntimeException e) {
             logger.warning("Failed to write to log: ", e);
         }
+    }
+
+    @Override
+    public void close() {
     }
 
     private void renderStaticPlugins() {

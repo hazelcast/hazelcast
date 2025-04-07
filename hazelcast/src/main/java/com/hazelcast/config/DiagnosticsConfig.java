@@ -271,6 +271,19 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         return this.pluginProperties;
     }
 
+    /**
+     * Sets properties of the Diagnostic Configuration. The properties are used by diagnostic plugins.
+     * <p>Note that the keys and values are not verified. Make sure that the keys and values
+     * are valid and compatible with the diagnostic plugins.</p>
+     *
+     * @param name  property name
+     * @param value property value
+     * @since 6.0
+     */
+    public void setProperty(String name, String value) {
+        this.pluginProperties.put(checkNotNull(name), checkNotNull(value));
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;

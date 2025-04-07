@@ -28,9 +28,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_SIZE_MB;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static java.lang.Math.round;
@@ -57,28 +56,27 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
     private PrintWriter printWriter;
     private final int maxRollingFileCount;
     private final int maxRollingFileSizeBytes;
+    private AtomicBoolean closed = new AtomicBoolean(false);
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
-        this.fileName = diagnostics.getBaseFileName() + "-%03d.log";
-        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
+        this.fileName = diagnostics.getFileName() + "-%03d.log";
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.isIncludeEpochTime(), diagnostics.logger);
 
-        this.maxRollingFileCount = diagnostics.properties.containsKey(MAX_ROLLED_FILE_COUNT)
-                ? diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT) : diagnostics.getConfig().getMaxRolledFileCount();
-
-        float maxRollingFileSizeMB = diagnostics.properties.containsKey(MAX_ROLLED_FILE_SIZE_MB)
-                ? diagnostics.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB) : diagnostics.getConfig().getMaxRolledFileSizeInMB();
-
+        this.maxRollingFileCount = diagnostics.getMaxRollingFileCount();
         // we accept a float, so it becomes easier to testing to create a small file
         this.maxRollingFileSizeBytes = round(
-                ONE_MB * maxRollingFileSizeMB);
+                ONE_MB * diagnostics.getMaxRollingFileSizeMB());
 
         logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
     }
 
     @Override
     public void write(DiagnosticsPlugin plugin) {
+        if (!closed.compareAndSet(false, false)) {
+            return;
+        }
         try {
             if (file == null) {
                 file = newFile(index);
@@ -94,12 +92,30 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
             }
         } catch (IOException e) {
             logger.warning("Failed to write to file:" + file.getAbsolutePath(), e);
-            file = null;
-            closeResource(printWriter);
-            printWriter = null;
+            close();
         } catch (RuntimeException e) {
             logger.warning("Failed to write file: " + file, e);
         }
+    }
+
+    @Override
+    public void close() {
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+        file = null;
+        closeResource(printWriter);
+        printWriter = null;
+    }
+
+    // just for testing
+    int getMaxRollingFileCount() {
+        return maxRollingFileCount;
+    }
+
+    // just for testing
+    int getMaxRollingFileSizeBytes() {
+        return maxRollingFileSizeBytes;
     }
 
     private File newFile(int index) {
