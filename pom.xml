@@ -1068,13 +1068,13 @@
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-jupiter</artifactId>
-            <version>2.1.7</version>
+            <version>${system-stubs.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-junit4</artifactId>
-            <version>2.1.7</version>
+            <version>${system-stubs.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
