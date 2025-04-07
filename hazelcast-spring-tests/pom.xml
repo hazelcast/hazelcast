@@ -100,7 +100,7 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>6.6.12.Final</version>
+            <version>6.6.13.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
