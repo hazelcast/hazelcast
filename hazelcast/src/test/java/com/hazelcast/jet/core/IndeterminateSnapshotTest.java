@@ -35,6 +35,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -89,7 +90,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalAnswers.answersWithDelay;
-import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1194,13 +1194,31 @@ public class IndeterminateSnapshotTest {
             }
         }
 
+        public static class OnceFailedInterceptor extends MapInterceptorAdaptor {
+
+            // This is not thread safe, but it is not a problem in this test
+            private static volatile boolean firstRun = true;
+
+            // This class is deserialized using JavaDefaultSerializers, so the constructor is not called.
+            // However, be aware that using a different serializer might invoke the constructor and reset the state.
+            public OnceFailedInterceptor() {
+                firstRun = true;
+            }
+
+            @Override
+            public Object interceptPut(Object key, Object value) {
+                if (firstRun) {
+                    firstRun = false;
+                    throw new IndeterminateOperationStateException("Once simulated lost IMap update");
+                } else {
+                    return value;
+                }
+            }
+        }
+
         private void singleIndeterminatePutLost() {
             // affects put and also executeOnKey
-            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
-            when(mockInt.interceptPut(any(), any()))
-                    .thenThrow(new IndeterminateOperationStateException("Simulated lost IMap update"))
-                    .thenAnswer(returnsSecondArg());
-            getJobExecutionRecordIMap().addInterceptor(mockInt);
+            getJobExecutionRecordIMap().addInterceptor(new OnceFailedInterceptor());
         }
 
         private String allIndeterminatePutsLost() {
