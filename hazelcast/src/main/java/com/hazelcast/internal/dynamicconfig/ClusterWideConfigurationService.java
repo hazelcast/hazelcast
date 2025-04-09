@@ -62,6 +62,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -367,6 +368,7 @@ public class ClusterWideConfigurationService implements
         } else if (newConfig instanceof VectorCollectionConfig newVectorCollectionConfig) {
             currentConfig = vectorCollectionConfigs.putIfAbsent(newVectorCollectionConfig.getName(), newVectorCollectionConfig);
         } else if (newConfig instanceof DiagnosticsConfig newDiagnosticsConfig) {
+            ((NodeEngineImpl) nodeEngine).getDiagnostics().setConfig(newDiagnosticsConfig);
             diagnosticsConfig = newDiagnosticsConfig;
             currentConfig = newDiagnosticsConfig;
         } else {

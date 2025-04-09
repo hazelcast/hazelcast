@@ -600,7 +600,7 @@ public final class ClientConfigXmlGenerator {
                         classNameOrImplClass(discovery.getNodeFilterClass(), discovery.getNodeFilter()));
         for (DiscoveryStrategyConfig strategy : discovery.getDiscoveryStrategyConfigs()) {
             gen.open("discovery-strategy", "class", strategy.getClassName(), "enabled", true)
-                    .appendProperties(strategy.getProperties())
+                    .appendProperties(strategy.getProperties(), "properties")
                     .close();
         }
         gen.close();

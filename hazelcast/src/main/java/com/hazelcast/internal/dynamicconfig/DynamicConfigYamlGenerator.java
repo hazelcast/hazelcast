@@ -30,6 +30,7 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -174,6 +175,7 @@ public class DynamicConfigYamlGenerator {
         metricsConfigGenerator(root, config);
         splitBrainProtectionConfigsGenerator(root, config);
         vectorCollectionYamlGenerator(root, config);
+        diagnosticsYamlGenerator(root, config);
 
         // Reset maskSensitiveFields to default
         DynamicConfigYamlGenerator.maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
@@ -1217,6 +1219,26 @@ public class DynamicConfigYamlGenerator {
                 )
         );
         parent.put("vector-collection", vectorsConfigAsMap);
+    }
+
+    public static void diagnosticsYamlGenerator(Map<String, Object> parent, Config config) {
+        DiagnosticsConfig diagnosticsConfig = config.getDiagnosticsConfig();
+        Map<String, Object> child = new LinkedHashMap<>();
+
+        child.put("enabled", diagnosticsConfig.isEnabled());
+        child.put("max-rolled-file-size-mb", diagnosticsConfig.getMaxRolledFileSizeInMB());
+        child.put("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount());
+        child.put("include-epoch-time", diagnosticsConfig.isIncludeEpochTime());
+        child.put("log-directory", diagnosticsConfig.getLogDirectory());
+        if (diagnosticsConfig.getFileNamePrefix() != null) {
+            child.put("file-name-prefix", diagnosticsConfig.getFileNamePrefix());
+        }
+        child.put("output-type", diagnosticsConfig.getOutputType().name());
+        if (!diagnosticsConfig.getPluginProperties().isEmpty()) {
+            child.put("plugin-properties", diagnosticsConfig.getPluginProperties());
+        }
+
+        parent.put("diagnostics", child);
     }
 
     private static List<Map<String, Object>> vectorIndexesToList(List<VectorIndexConfig> vectorIndexesConfigs) {

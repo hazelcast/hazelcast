@@ -66,6 +66,7 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.ali
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.cacheXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.cardinalityEstimatorXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.diagnosticsXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.discoveryStrategyConfigXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.durableExecutorXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.executorXmlGenerator;
@@ -205,6 +206,7 @@ public class ConfigXmlGenerator {
         namespacesConfiguration(gen, config);
         restServerConfiguration(gen, config);
         vectorCollectionXmlGenerator(gen, config);
+        diagnosticsXmlGenerator(gen, config);
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();
@@ -1402,9 +1404,9 @@ public class ConfigXmlGenerator {
             return this;
         }
 
-        public XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
+        public XmlGenerator appendProperties(Map<String, ? extends Comparable> props, String tagName) {
             if (!MapUtil.isNullOrEmpty(props)) {
-                open("properties");
+                open(tagName);
                 for (Map.Entry<String, ?> entry : props.entrySet()) {
                     node("property", entry.getValue(), "name", entry.getKey());
                 }

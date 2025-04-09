@@ -28,6 +28,7 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -71,6 +72,7 @@ import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.query.impl.IndexUtils;
@@ -501,7 +503,7 @@ public final class DynamicConfigXmlGenerator {
             gen.node("class-name", consumerClassName);
         }
         gen.node("persist-wan-replicated-data", consumerConfig.isPersistWanReplicatedData())
-                .appendProperties(consumerConfig.getProperties())
+                .appendProperties(consumerConfig.getProperties(), "properties")
                 .close();
     }
 
@@ -523,7 +525,7 @@ public final class DynamicConfigXmlGenerator {
                 .node("queue-full-behavior", c.getQueueFullBehavior())
                 .node("max-target-endpoints", c.getMaxTargetEndpoints())
                 .node("queue-capacity", c.getQueueCapacity())
-                .appendProperties(c.getProperties());
+                .appendProperties(c.getProperties(), "properties");
 
         if (!isNullOrEmptyAfterTrim(publisherId)) {
             gen.node("publisher-id", publisherId);
@@ -543,7 +545,7 @@ public final class DynamicConfigXmlGenerator {
     private static void wanCustomPublisherXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, WanCustomPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("custom-publisher")
-                .appendProperties(c.getProperties())
+                .appendProperties(c.getProperties(), "properties")
                 .node("class-name", c.getClassName())
                 .node("publisher-id", publisherId)
                 .close();
@@ -865,7 +867,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.open("discovery-strategy",
                                 "class", classNameOrImplClass(config.getClassName(), config.getDiscoveryStrategyFactory()),
                                 "enabled", "true")
-                        .appendProperties(config.getProperties())
+                        .appendProperties(config.getProperties(), "properties")
                         .close();
             }
         }
@@ -929,5 +931,19 @@ public final class DynamicConfigXmlGenerator {
         gen.node("merge-policy", config.getMergePolicyConfig().getPolicy(),
                         "batch-size", config.getMergePolicyConfig().getBatchSize())
                 .node("split-brain-protection-ref", config.getSplitBrainProtectionName());
+    }
+
+    public static void diagnosticsXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        DiagnosticsConfig diagnosticsConfig = config.getDiagnosticsConfig();
+
+        gen.open(ConfigSections.DIAGNOSTICS.getName(), "enabled", diagnosticsConfig.isEnabled())
+                .node("max-rolled-file-size-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
+                .node("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount())
+                .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
+                .node("log-directory", diagnosticsConfig.getLogDirectory())
+                .node("file-name-prefix", diagnosticsConfig.getFileNamePrefix())
+                .node("output-type", diagnosticsConfig.getOutputType())
+                .appendProperties(diagnosticsConfig.getPluginProperties(), "plugin-properties");
+        gen.close();
     }
 }
