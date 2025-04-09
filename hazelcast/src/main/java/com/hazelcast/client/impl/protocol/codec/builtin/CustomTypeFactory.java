@@ -389,12 +389,14 @@ public final class CustomTypeFactory {
 
     public static SearchOptions createVectorSearchOptions(boolean includeValue, boolean includeVectors, int limit,
                                                           Map<String, String> hints) {
-        return SearchOptions.builder()
+        var builder = SearchOptions.builder()
                 .setIncludeValue(includeValue)
                 .setIncludeVectors(includeVectors)
-                .limit(limit)
-                .hints(hints)
-                .build();
+                .limit(limit);
+        if (hints != null) {
+            builder.hints(hints);
+        }
+        return builder.build();
     }
 
     public static DataSearchResult createVectorSearchResult(Data key, Data value, float score, List<VectorPairHolder> vectors) {

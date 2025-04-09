@@ -19,6 +19,7 @@ package com.hazelcast.vector;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.vector.impl.SearchOptionsImpl;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,7 +108,7 @@ public class SearchOptionsBuilder {
      * @return this builder instance
      * @see SearchOptions#getHints()
      */
-    public <T> SearchOptionsBuilder hint(String hintName, T value) {
+    public <T> SearchOptionsBuilder hint(@Nonnull String hintName, @Nonnull T value) {
         if (hints == null) {
             hints = new HashMap<>();
         }
@@ -124,7 +125,7 @@ public class SearchOptionsBuilder {
      * @return this builder instance
      * @see SearchOptions#getHints()
      */
-    public <T> SearchOptionsBuilder hint(Hint<T> hint, T value) {
+    public <T> SearchOptionsBuilder hint(@Nonnull Hint<T> hint, @Nonnull T value) {
         if (hints == null) {
             hints = new HashMap<>();
         }
@@ -139,7 +140,7 @@ public class SearchOptionsBuilder {
      * @return this builder instance
      * @see SearchOptions#getHints()
      */
-    public SearchOptionsBuilder hints(Map<String, String> hints) {
+    public SearchOptionsBuilder hints(@Nonnull Map<String, String> hints) {
         if (this.hints == null) {
             this.hints = new HashMap<>();
         }
