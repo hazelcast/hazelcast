@@ -1,0 +1,17 @@
+name: 'Get Supported maintenance versions'
+
+outputs:
+  versions:
+    value: ${{ steps.get-maintenance-versions.outputs.versions }}
+
+env:
+  # Not possible to set this as a default
+  # https://github.com/orgs/community/discussions/46670
+  shell: bash
+
+runs:
+  using: composite
+  steps:
+    - shell: ${{ env.shell }}
+      id: get-maintenance-versions
+      run: echo "versions=['5.3', '5.4', '5.5']" >> ${GITHUB_OUTPUT}
