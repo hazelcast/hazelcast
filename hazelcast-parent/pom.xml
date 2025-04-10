@@ -1083,6 +1083,11 @@
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>3.6.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>3.1.4</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1479,7 +1484,7 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-	<!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
+        <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
         <repository>
             <id>redhat-ga</id>
             <url>https://maven.repository.redhat.com/ga/</url>
