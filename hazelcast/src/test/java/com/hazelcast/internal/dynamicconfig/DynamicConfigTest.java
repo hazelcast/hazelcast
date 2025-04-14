@@ -119,7 +119,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     private final String name = randomString();
     private HazelcastInstance[] members;
     // add***Config is invoked on driver instance
-    private HazelcastInstance driver;
+    protected HazelcastInstance driver;
 
     @Before
     public void setup() {

@@ -190,7 +190,6 @@ public final class SecurityInterceptorConstants {
     public static final String ADD_VECTOR_COLLECTION_CONFIG = "addVectorCollectionConfig";
     public static final String SEARCH = "search";
     public static final String OPTIMIZE = "optimize";
-    public static final String SET_DIAGNOSTICS_CONFIG = "setDiagnosticsConfig";
 
     private SecurityInterceptorConstants() {
     }

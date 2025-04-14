@@ -88,7 +88,6 @@ import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartition
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataConnectionConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigSetDiagnosticsConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
@@ -454,7 +453,6 @@ import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetMessag
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCacheConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCardinalityEstimatorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDataConnectionConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.SetDiagnosticsConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
@@ -1608,8 +1606,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddWanReplicationConfigTask(cm, node, con));
         factories.put(DynamicConfigAddUserCodeNamespaceConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddUserCodeNamespaceConfigMessageTask(cm, node, con));
-        factories.put(DynamicConfigSetDiagnosticsConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new SetDiagnosticsConfigMessageTask(cm, node, con));
     }
 
     private void initializeFlakeIdGeneratorTaskFactories() {
