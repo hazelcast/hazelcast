@@ -226,7 +226,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                LOGGER.fine("Compiled import instruction '" + packageInstruction + "' -> " + instruction);
+                LOGGER.fine("Compiled import instruction '%s' -> %s", packageInstruction, instruction);
                 importOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -236,7 +236,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                LOGGER.fine("Compiled export instruction '" + packageInstruction + "' -> " + instruction);
+                LOGGER.fine("Compiled export instruction '%s' -> %s", packageInstruction, instruction);
                 exportOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -247,7 +247,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         for (Map.Entry<String, PackageDefinition> entry : exportedPackages.entrySet()) {
             String definition = entry.getValue().buildDefinition(false);
             exports.add(definition);
-            LOGGER.fine("Adding shaded export -> " + definition);
+            LOGGER.fine("Adding shaded export -> %s", definition);
         }
         return exports;
     }
@@ -264,9 +264,9 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (overridden != null) {
                 String definition = overridden.buildDefinition(true);
                 imports.add(definition);
-                LOGGER.fine("Adding shaded import -> " + definition);
+                LOGGER.fine("Adding shaded import -> %s", definition);
             } else {
-                LOGGER.fine("Removing shaded import -> " + entry.getValue().packageName);
+                LOGGER.fine("Removing shaded import -> %s", entry.getValue().packageName);
             }
         }
         return imports;
@@ -278,11 +278,11 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (instruction.matches(packageDefinition.packageName)) {
                 // is remove instruction?
                 if (instruction.isNegated()) {
-                    LOGGER.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                    LOGGER.fine("Instruction '%s' -> package '%s'", instruction, packageDefinition.packageName);
                     return null;
                 }
 
-                LOGGER.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                LOGGER.fine("Instruction '%s' -> package '%s'", instruction, packageDefinition.packageName);
 
                 PackageDefinition override = instructionDefinition.packageDefinition;
                 String packageName = packageDefinition.packageName;

@@ -106,7 +106,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
                 new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
 
         if (logger.isFinestEnabled()) {
-            logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);
+            logger.finest("MetricsRegistry minimumLevel:%s", minimumLevel);
         }
     }
 
@@ -245,7 +245,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
         if (probeInstance.source == source && probeInstance.function == function) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Registered probeInstance " + descriptor.metricString());
+                logger.finest("Registered probeInstance %s", descriptor.metricString());
             }
         } else {
             logOverwrite(probeInstance);

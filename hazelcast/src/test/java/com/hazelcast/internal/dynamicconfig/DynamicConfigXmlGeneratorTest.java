@@ -73,7 +73,7 @@ public class DynamicConfigXmlGeneratorTest extends AbstractDynamicConfigGenerato
     protected Config getNewConfigViaGenerator(Config config) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, true);
         String xml = configXmlGenerator.generate(config);
-        LOGGER.fine("\n" + xml);
+        LOGGER.fine("\n%s", xml);
         return new InMemoryXmlConfig(xml);
 
     }

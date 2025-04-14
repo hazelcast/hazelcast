@@ -161,9 +161,9 @@ public abstract class HazelcastTestSupport {
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
         ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION = Duration.ofSeconds(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-        LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = %s", ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
-        LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
+        LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = %s", ASSERT_COMPLETES_STALL_TOLERANCE);
         String pmemDirectories = System.getProperty("hazelcast.persistent.memory");
         PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
         ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");

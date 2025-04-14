@@ -46,7 +46,7 @@ public class JoinMastershipClaimOp extends AbstractJoinOperation {
             logger.warning("This node requires MulticastJoin strategy!");
         }
         if (logger.isFineEnabled()) {
-            logger.fine("Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
+            logger.fine("Sending '%s' for master claim of node: %s", approvedAsMaster, getCallerAddress());
         }
     }
 

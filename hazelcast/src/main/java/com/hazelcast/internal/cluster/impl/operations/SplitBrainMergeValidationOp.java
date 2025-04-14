@@ -75,7 +75,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
             }
 
             if (logger.isFineEnabled()) {
-                logger.fine("Returning " + response + " to " + getCallerAddress());
+                logger.fine("Returning %s to %s", response, getCallerAddress());
             }
         }
     }
@@ -169,7 +169,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
             return result != CANNOT_MERGE;
         } catch (Exception e) {
             if (logger.isFineEnabled()) {
-                logger.fine("Could not validate split-brain join message! -> " + e.getMessage());
+                logger.fine("Could not validate split-brain join message! -> %s", e.getMessage());
             }
             return false;
         }

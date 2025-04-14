@@ -488,7 +488,7 @@ public class JobRepository {
         cleanupJobResults(nodeEngine);
 
         long elapsed = System.nanoTime() - start;
-        logger.fine("Job cleanup took " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
+        logger.fine("Job cleanup took %sms", TimeUnit.NANOSECONDS.toMillis(elapsed));
     }
 
     private void cleanupMaps(NodeEngine nodeEngine) {
@@ -531,7 +531,7 @@ public class JobRepository {
             IMap resourceMap = (IMap) map;
             long creationTime = resourceMap.getLocalMapStats().getCreationTime();
             if (isResourceMapExpired(creationTime)) {
-                logger.fine("Deleting job resource map " + map.getName() + " because the map " +
+                logger.fine("Deleting job resource map %s because the map %s", map.getName(),
                         "was created long ago and job record or result still doesn't exist");
                 resourceMap.destroy();
             }

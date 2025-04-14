@@ -75,7 +75,7 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
         } else {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Released lock " + namespace.getObjectName());
+                logger.finest("Released lock %s", namespace.getObjectName());
             }
         }
     }
@@ -88,9 +88,9 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             if (unlocked) {
-                logger.finest("Released lock " + namespace.getObjectName());
+                logger.finest("Released lock %s", namespace.getObjectName());
             } else {
-                logger.finest("Could not release lock " + namespace.getObjectName() + " as it is not locked");
+                logger.finest("Could not release lock %s as it is not locked", namespace.getObjectName());
             }
         }
     }

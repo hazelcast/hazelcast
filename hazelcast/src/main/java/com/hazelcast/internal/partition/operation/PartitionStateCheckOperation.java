@@ -55,8 +55,7 @@ public final class PartitionStateCheckOperation extends AbstractPartitionOperati
         if (currentStamp != stamp) {
             stale = true;
             if (logger.isFineEnabled()) {
-                logger.fine("Partition table is stale! Current stamp: " + currentStamp
-                        + ", master stamp: " + stamp);
+                logger.fine("Partition table is stale! Current stamp: %s, master stamp: %s", currentStamp, stamp);
             }
         }
     }

@@ -102,7 +102,7 @@ public class JobClassLoaderService {
     private JobClassLoaders createJobClassLoaders(JobConfig config, long jobId, JetConfig jetConfig) {
         return AccessController.doPrivileged(
                 (PrivilegedAction<JobClassLoaders>) () -> {
-                    logger.fine("Creating job classLoader for job " + idToString(jobId));
+                    logger.fine("Creating job classLoader for job %s", idToString(jobId));
                     ClassLoader parent = parentClassLoader(config, jobId);
                     JetDelegatingClassLoader jobClassLoader;
                     if (!jetConfig.isResourceUploadEnabled()) {
@@ -161,7 +161,7 @@ public class JobClassLoaderService {
     }
 
     private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig, ClassLoader parent) {
-        logger.fine("Create processor classloader map for job " + idToString(jobId));
+        logger.fine("Create processor classloader map for job %s", idToString(jobId));
         String customLibDir = nodeEngine.getProperties().getString(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR);
         Map<String, ClassLoader> classLoaderMap = new HashMap<>();
         for (Entry<String, List<String>> entry : jobConfig.getCustomClassPaths().entrySet()) {

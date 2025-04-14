@@ -82,8 +82,8 @@ public class TranslateToPublicAddressProvider implements InitialMembershipListen
 
             if (memberInternalAddressAsDefinedInClientConfig(members)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("There are internal addresses of members used in the config."
-                            + " The client will use internal addresses");
+                    logger.fine("There are internal addresses of members used in the config.%s",
+                            " The client will use internal addresses");
                 }
                 return false;
             }

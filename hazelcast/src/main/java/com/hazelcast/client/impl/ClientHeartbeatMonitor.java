@@ -82,7 +82,7 @@ public class ClientHeartbeatMonitor implements Runnable {
                 //therefore connection.close could not remove the endpoint.
                 //we will remove the endpoint here when detected.
                 if (logger.isFineEnabled()) {
-                    logger.fine("Cleaning up endpoints with dead connection " + endpoint);
+                    logger.fine("Cleaning up endpoints with dead connection %s", endpoint);
                 }
                 clientEndpointManager.removeEndpoint(endpoint);
             }

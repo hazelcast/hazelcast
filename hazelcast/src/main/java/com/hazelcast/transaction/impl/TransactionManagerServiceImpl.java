@@ -192,8 +192,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             logger.info("Committing/rolling-back live transactions of " + member.getAddress() + ", UUID: " + uuid);
             nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, () -> finalizeTransactionsOf(uuid));
         } else if (logger.isFinestEnabled()) {
-            logger.finest("Will not commit/roll-back transactions of " + member.getAddress() + ", UUID: " + uuid
-                    + " because this member is not running");
+            logger.finest("Will not commit/roll-back transactions of %s, UUID: %s because this member is not running",
+                    member.getAddress(), uuid);
         }
     }
 
@@ -218,7 +218,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
         if (log.state == ACTIVE) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Rolling-back transaction[id:" + txnId + ", state:ACTIVE] of endpoint " + uuid);
+                logger.finest("Rolling-back transaction[id:%s, state:ACTIVE] of endpoint %s", txnId, uuid);
             }
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             Collection<Future<Object>> futures = new ArrayList<>(memberList.size());
@@ -242,7 +242,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
             if (log.state == COMMITTING) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Committing transaction[id:" + txnId + ", state:COMMITTING] of endpoint " + uuid);
+                    logger.finest("Committing transaction[id:%s, state:COMMITTING] of endpoint %s", txnId, uuid);
                 }
                 try {
                     tx.commit();

@@ -123,7 +123,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 threadFactory, (r, executor) -> {
             if (logger.isFinestEnabled()) {
-                logger.finest("Node is shutting down; discarding the task: " + r);
+                logger.finest("Node is shutting down; discarding the task: %s", r);
             }
         });
 

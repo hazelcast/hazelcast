@@ -88,7 +88,7 @@ public class MulticastJoiner extends AbstractJoiner {
             Address master = clusterService.getMasterAddress();
             if (master != null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Joining to master " + master);
+                    logger.fine("Joining to master %s", master);
                 }
                 clusterJoinManager.sendJoinRequest(master);
             } else {
@@ -115,12 +115,12 @@ public class MulticastJoiner extends AbstractJoiner {
         try {
             while ((splitBrainMsg = splitBrainJoinMessages.poll(3, TimeUnit.SECONDS)) != null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Received  " + splitBrainMsg);
+                    logger.fine("Received  %s", splitBrainMsg);
                 }
                 Address targetAddress = splitBrainMsg.getAddress();
                 if (node.clusterService.getMember(targetAddress) != null) {
                     if (logger.isFineEnabled()) {
-                        logger.fine("Ignoring merge join response, since " + targetAddress + " is already a member.");
+                        logger.fine("Ignoring merge join response, since %s is already a member.", targetAddress);
                     }
                     continue;
                 }
@@ -172,7 +172,7 @@ public class MulticastJoiner extends AbstractJoiner {
     private Address findMasterWithMulticast() {
         try {
             if (logger.isFineEnabled()) {
-                logger.fine("Searching for master node. Max tries: " + maxTryCount.get());
+                logger.fine("Searching for master node. Max tries: %s", maxTryCount.get());
             }
             JoinRequest joinRequest = node.createJoinRequest(null);
             while (node.isRunning() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {

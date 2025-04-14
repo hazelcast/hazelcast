@@ -401,7 +401,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: %s", this);
         }
 
         long oldWaitTimeout = op.getWaitTimeout();
@@ -805,8 +805,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 }
 
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Node is not joined. Re-scheduling " + this
-                            + " to be executed in " + tryPauseMillis + " ms.");
+                    logger.finest("Node is not joined. Re-scheduling %s to be executed in %s ms.", this, tryPauseMillis);
                 }
                 try {
                     context.invocationMonitor.schedule(new InvocationRetryTask(), tryPauseMillis);

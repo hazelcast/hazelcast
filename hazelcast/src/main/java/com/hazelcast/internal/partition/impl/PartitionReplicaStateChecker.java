@@ -183,7 +183,7 @@ public class PartitionReplicaStateChecker {
                 PartitionReplica replica = partition.getReplica(index);
                 if (replica == null) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("Missing replica=" + index + " for partitionId=" + partition.getPartitionId());
+                        logger.finest("Missing replica=%s for partitionId=%s", index, partition.getPartitionId());
                     }
                     return true;
                 }

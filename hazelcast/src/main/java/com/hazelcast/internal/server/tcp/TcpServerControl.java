@@ -75,7 +75,7 @@ public final class TcpServerControl {
         }
         if (!connection.setHandshake()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection " + connection + " handshake is already completed, ignoring incoming " + handshake);
+                logger.finest("Connection %s handshake is already completed, ignoring incoming %s", connection, handshake);
             }
             return;
         }
@@ -95,7 +95,7 @@ public final class TcpServerControl {
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private synchronized void process(TcpServerConnection connection, MemberHandshake handshake) {
         if (logger.isFinestEnabled()) {
-            logger.finest("Handshake " + connection + ", complete message is " + handshake);
+            logger.finest("Handshake %s, complete message is %s", connection, handshake);
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();

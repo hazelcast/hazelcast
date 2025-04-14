@@ -236,7 +236,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         public void run() {
             retries++;
             if (logger.isFinestEnabled()) {
-                logger.finest("Retrying[" + retries + "] packet send operation to: " + targetAddress);
+                logger.finest("Retrying[%s] packet send operation to: %s", retries, targetAddress);
             }
             send(packet, targetAddress, this, streamId);
         }
@@ -346,7 +346,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                     throw e;
                 }
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
+                    logger.finest("Packet send task is rejected. Packet cannot be sent to %s", target);
                 }
             }
         }

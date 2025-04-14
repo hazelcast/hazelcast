@@ -349,8 +349,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     public void handleMembersViewEvent(int memberListVersion, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         if (logger.isFinestEnabled()) {
             MemberListSnapshot snapshot = createSnapshot(memberListVersion, memberInfos, clusterUuid);
-            logger.finest("Handling new snapshot with membership version: " + memberListVersion + ", membersString "
-                    + membersString(snapshot));
+            logger.finest("Handling new snapshot with membership version: %s, membersString %s", memberListVersion,
+                    membersString(snapshot));
         }
         MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
         if (clusterViewSnapshot.version() == INITIAL_MEMBER_LIST_VERSION) {

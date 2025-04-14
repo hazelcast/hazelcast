@@ -616,7 +616,7 @@ public class Node {
                     try {
                         boolean success = service.onShutdown(maxWaitSeconds, TimeUnit.SECONDS);
                         if (success) {
-                            logger.fine("Graceful shutdown completed for " + service);
+                            logger.fine("Graceful shutdown completed for %s", service);
                         } else {
                             logger.warning("Graceful shutdown failed for " + service);
                         }

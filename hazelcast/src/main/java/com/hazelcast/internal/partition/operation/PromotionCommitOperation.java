@@ -177,7 +177,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
         for (MigrationInfo promotion : promotions) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Submitting BeforePromotionOperation for promotion: " + promotion);
+                logger.finest("Submitting BeforePromotionOperation for promotion: %s", promotion);
             }
             Operation op = new BeforePromotionOperation(promotion, beforePromotionsCallback);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
@@ -205,7 +205,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             InternalPartitionImpl partition = stateManager.getPartitionImpl(promotion.getPartitionId());
 
             if (partition.version() >= promotion.getFinalPartitionVersion()) {
-                logger.fine("Already applied promotion commit. -> " + promotion);
+                logger.fine("Already applied promotion commit. -> %s", promotion);
                 iter.remove();
             }
         }
@@ -238,7 +238,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
         for (MigrationInfo promotion : promotions) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Submitting FinalizePromotionOperation for promotion: " + promotion + ". Result: " + success);
+                logger.finest("Submitting FinalizePromotionOperation for promotion: %s. Result: %s", promotion, success);
             }
             Operation op = new FinalizePromotionOperation(promotion, success, finalizePromotionsCallback);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
@@ -290,7 +290,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
             ILogger logger = promotionCommitOperation.getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Completed before stage of " + promotion + ". Remaining before promotion tasks: " + remainingTasks);
+                logger.finest("Completed before stage of %s. Remaining before promotion tasks: %s", promotion, remainingTasks);
             }
 
             if (remainingTasks == 0) {
@@ -320,8 +320,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
             ILogger logger = promotionCommitOperation.getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Completed finalize stage of " + promotion
-                        + ". Remaining finalize promotion tasks: " + remainingTasks);
+                logger.finest("Completed finalize stage of %s. Remaining finalize promotion tasks: %s", promotion,
+                        remainingTasks);
             }
 
             if (remainingTasks == 0) {

@@ -90,7 +90,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
                             return current;
                         }
                         // close the old DataConnection
-                        logger.fine("Asynchronously closing the old data connection: " + config.getName());
+                        logger.fine("Asynchronously closing the old data connection: %s", config.getName());
                         //noinspection resource
                         ForkJoinPool.commonPool().execute(() -> {
                             try {

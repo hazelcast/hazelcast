@@ -69,7 +69,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     public void handlePartitionsViewEvent(Connection connection, Collection<Map.Entry<UUID, List<Integer>>> partitions,
                                           int partitionStateVersion) {
         if (logger.isFinestEnabled()) {
-            logger.finest("Handling new partition table with  partitionStateVersion: " + partitionStateVersion);
+            logger.finest("Handling new partition table with  partitionStateVersion: %s", partitionStateVersion);
         }
         while (true) {
             PartitionTable current = this.partitionTable.get();
@@ -80,7 +80,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             PartitionTable newMetaData = new PartitionTable(connection, partitionStateVersion, newPartitions);
             if (this.partitionTable.compareAndSet(current, newMetaData)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Applied partition table with partitionStateVersion : " + partitionStateVersion);
+                    logger.fine("Applied partition table with partitionStateVersion : %s", partitionStateVersion);
                 }
                 return;
             }
@@ -99,8 +99,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
         if (!connection.equals(current.connection)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Event coming from a new connection. Old connection: " + current.connection
-                        + ", new connection " + connection);
+                logger.finest("Event coming from a new connection. Old connection: %s, new connection %s", current.connection,
+                        connection);
             }
             return true;
         }

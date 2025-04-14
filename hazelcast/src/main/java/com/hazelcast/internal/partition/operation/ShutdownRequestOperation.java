@@ -55,7 +55,7 @@ public class ShutdownRequestOperation
             Member member = clusterService.getMember(caller);
             if (member != null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Received shutdown request from " + caller);
+                    logger.finest("Received shutdown request from %s", caller);
                 }
                  if (member.getUuid().equals(uuid)) {
                     partitionService.onShutdownRequest(member);

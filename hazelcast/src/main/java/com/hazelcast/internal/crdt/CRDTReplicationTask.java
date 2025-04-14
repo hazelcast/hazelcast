@@ -105,11 +105,11 @@ class CRDTReplicationTask implements Runnable {
                 service.prepareReplicationOperation(lastSuccessfullyReplicatedClocks, targetIndex);
 
         if (replicationOperation == null) {
-            logger.finest("Skipping replication of " + service.getName() + " for target " + target);
+            logger.finest("Skipping replication of %s for target %s", service.getName(), target);
             return;
         }
         try {
-            logger.finest("Replicating " + service.getName() + " to " + target);
+            logger.finest("Replicating %s to %s", service.getName(), target);
             operationService.invokeOnTarget(null, replicationOperation.getOperation(), target.getAddress()).joinInternal();
             replicationMigrationService.setReplicatedVectorClocks(service.getName(), target.getUuid(),
                     replicationOperation.getVectorClocks());

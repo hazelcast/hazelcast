@@ -1467,20 +1467,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void startLoading() {
         if (logger.isFinestEnabled()) {
-            logger.finest("StartLoading invoked " + getStateMessage());
+            logger.finest("StartLoading invoked %s", getStateMessage());
         }
         if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
             assert keyLoader != null;
 
             if (!loadedOnPreMigration) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Triggering load " + getStateMessage());
+                    logger.finest("Triggering load %s", getStateMessage());
                 }
                 loadedOnCreate = true;
                 addLoadingFuture(keyLoader.startInitialLoad(mapStoreContext, partitionId));
             } else {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Promoting to loaded on migration " + getStateMessage());
+                    logger.finest("Promoting to loaded on migration %s", getStateMessage());
                 }
                 keyLoader.promoteToLoadedOnMigration();
             }
@@ -1509,7 +1509,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
         if (logger.isFinestEnabled()) {
-            logger.finest("loadAll invoked " + getStateMessage());
+            logger.finest("loadAll invoked %s", getStateMessage());
         }
 
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
@@ -1539,7 +1539,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         keyLoader.trackLoading(lastBatch, exception);
 
         if (lastBatch) {
-            logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
+            logger.finest("Completed loading map %s on partitionId=%s", name, partitionId);
         }
     }
 

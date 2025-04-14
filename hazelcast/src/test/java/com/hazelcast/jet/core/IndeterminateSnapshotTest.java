@@ -175,7 +175,7 @@ public class IndeterminateSnapshotTest {
             return firstExecutionConsumer((idx) -> {
                 logger.info("Breaking replication in " + message + " for " + idx);
                 snapshotAction.run();
-                logger.finest("Proceeding with " + message + " " + idx + " after breaking replication");
+                logger.finest("Proceeding with %s %s after breaking replication", message, idx);
             });
         }
 
@@ -313,9 +313,9 @@ public class IndeterminateSnapshotTest {
             IMap<String, String> map = instances[0].getMap("testMapPutAndGet");
 
             InternalPartition partitionForKey = getPartitionForKey("Hello");
-            logger.fine("KEY partition id:" + partitionForKey.getPartitionId() + " owner: " + partitionForKey.getOwnerOrNull());
+            logger.fine("KEY partition id:%s owner: %s", partitionForKey.getPartitionId(), partitionForKey.getOwnerOrNull());
             for (int i = 0; i < 3; ++i) {
-                logger.fine("KEY partition addr:" + partitionForKey.getReplica(i));
+                logger.fine("KEY partition addr:%s", partitionForKey.getReplica(i));
             }
 
             int masterPartitionInstanceIdx = partitionForKey.getReplica(0).address().getPort() - BASE_PORT;
@@ -376,9 +376,9 @@ public class IndeterminateSnapshotTest {
             IMap<String, String> map = instances[0].getMap("testMapPutAndGet");
 
             InternalPartition partitionForKey = getPartitionForKey("Hello");
-            logger.fine("KEY partition id:" + partitionForKey.getPartitionId() + " owner: " + partitionForKey.getOwnerOrNull());
+            logger.fine("KEY partition id:%s owner: %s", partitionForKey.getPartitionId(), partitionForKey.getOwnerOrNull());
             for (int i = 0; i < 3; ++i) {
-                logger.fine("KEY partition addr:" + partitionForKey.getReplica(i));
+                logger.fine("KEY partition addr:%s", partitionForKey.getReplica(i));
             }
 
             int masterPartitionInstanceIdx = partitionForKey.getReplica(0).address().getPort() - BASE_PORT;
@@ -416,7 +416,7 @@ public class IndeterminateSnapshotTest {
 
             IMap<String, String> mapNoInstance = instances[noPartitionInstanceIdx].getMap("testMapPutAndGet");
 
-            logger.fine("Size after clear: " + mapNoInstance.size());
+            logger.fine("Size after clear: %s", mapNoInstance.size());
             assertGreaterOrEquals("Should lose some clear executions", mapNoInstance.size(), 1);
 
             assertEquals("Should lose clear on master", "World", mapNoInstance.get("Hello"));

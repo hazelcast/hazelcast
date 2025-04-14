@@ -93,11 +93,11 @@ class CRDTMigrationTask implements Runnable {
         final CRDTReplicationContainer migrationOperation = service.prepareMigrationOperation(maxConfiguredReplicaCount);
 
         if (migrationOperation == null) {
-            logger.finest("Skipping migration of " + service.getName() + " for target " + target);
+            logger.finest("Skipping migration of %s for target %s", service.getName(), target);
             return true;
         }
         try {
-            logger.finest("Migrating " + service.getName() + " to " + target);
+            logger.finest("Migrating %s to %s", service.getName(), target);
             operationService.invokeOnTarget(null, migrationOperation.getOperation(), target.getAddress()).joinInternal();
             final boolean allMigrated = service.clearCRDTState(migrationOperation.getVectorClocks());
             if (!allMigrated) {

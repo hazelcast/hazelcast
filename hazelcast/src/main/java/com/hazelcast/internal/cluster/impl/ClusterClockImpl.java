@@ -65,7 +65,7 @@ public class ClusterClockImpl implements ClusterClock {
     /** Set the cluster time diff and records the maximum observed cluster time diff */
     void setClusterTimeDiff(long diff) {
         if (logger.isFineEnabled()) {
-            logger.fine("Setting cluster time diff to " + diff + "ms.");
+            logger.fine("Setting cluster time diff to %sms.", diff);
         }
 
         if (abs(diff) > abs(maxClusterTimeDiff)) {

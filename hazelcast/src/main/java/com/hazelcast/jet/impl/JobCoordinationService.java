@@ -244,8 +244,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 // first, check if the job is already completed
                 JobResult jobResult = jobRepository.getJobResult(jobId);
                 if (jobResult != null) {
-                    logger.fine("Not starting job " + idToString(jobId) + " since already completed with result: "
-                            + jobResult);
+                    logger.fine("Not starting job %s since already completed with result: %s", idToString(jobId), jobResult);
                     return;
                 }
                 if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
@@ -283,7 +282,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                         // just try to initiate the coordination
                         MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
                         if (prev != null) {
-                            logger.fine("Joining to already existing masterContext " + prev.jobIdString());
+                            logger.fine("Joining to already existing masterContext %s", prev.jobIdString());
                             return;
                         }
                     }
@@ -520,7 +519,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                         throw new IllegalStateException("Cannot " + terminationMode + " job " + idToString(jobId)
                                 + " because it already has a result: " + jobResult);
                     }
-                    logger.fine("Ignoring cancellation of a completed job " + idToString(jobId));
+                    logger.fine("Ignoring cancellation of a completed job %s", idToString(jobId));
                 },
                 jobRecord -> {
                     // we'll eventually learn of the job through scanning of records or from a join operation
@@ -989,7 +988,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         PartitionServiceState state =
                 getInternalPartitionService().getPartitionReplicaStateChecker().getPartitionServiceState();
         if (state != PartitionServiceState.SAFE) {
-            logger.fine("Not starting jobs because partition replication is not in safe state, but in " + state);
+            logger.fine("Not starting jobs because partition replication is not in safe state, but in %s", state);
             return false;
         }
         if (!getInternalPartitionService().getPartitionStateManager().isInitialized()) {
@@ -1173,7 +1172,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             logger.severe("Master context for job " + idToString(jobId) + " not found to schedule restart");
             return;
         }
-        logger.fine("Scheduling restart on master for job " + masterContext.jobName());
+        logger.fine("Scheduling restart on master for job %s", masterContext.jobName());
         nodeEngine.getExecutionService().schedule(COORDINATOR_EXECUTOR_NAME, () -> restartJob(jobId),
                 RETRY_DELAY_IN_MILLIS, MILLISECONDS);
     }
@@ -1316,7 +1315,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             // 3. We re-create the master context below
             JobResult jobResult = jobRepository.getJobResult(jobId);
             if (jobResult != null) {
-                logger.fine("Not starting job " + idToString(jobId) + ", already has result: " + jobResult);
+                logger.fine("Not starting job %s, already has result: %s", idToString(jobId), jobResult);
                 return jobResult.asCompletableFuture();
             }
 
@@ -1351,8 +1350,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         long jobId = masterContext.jobId();
         JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
-            logger.fine("Completing master context for " + masterContext.jobIdString()
-                    + " since already completed with result: " + jobResult);
+            logger.fine("Completing master context for %s since already completed with result: %s", masterContext.jobIdString(),
+                    jobResult);
             masterContext.jobContext().setFinalResult(jobResult.getFailureAsThrowable());
             return removeMasterContext(masterContext);
         }

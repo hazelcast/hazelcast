@@ -82,7 +82,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         public void sendResponse(Operation op, Object obj) {
             if (obj instanceof Throwable t) {
                 if (t instanceof RetryableException) {
-                    logger.finest("While unlocking... " + t.getMessage());
+                    logger.finest("While unlocking... %s", t.getMessage());
                 } else {
                     logger.warning(t);
                 }

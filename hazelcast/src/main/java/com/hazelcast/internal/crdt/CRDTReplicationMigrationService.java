@@ -174,7 +174,7 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
             }
             long start = System.nanoTime();
             try {
-                logger.fine("Replicating " + serviceName + " to " + target);
+                logger.fine("Replicating %s to %s", serviceName, target);
                 InternalCompletableFuture<Object> future =
                         operationService.createInvocationBuilder(null, operation, target.getAddress())
                                 .setTryCount(1)

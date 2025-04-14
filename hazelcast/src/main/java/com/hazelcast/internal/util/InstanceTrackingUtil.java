@@ -70,7 +70,7 @@ public final class InstanceTrackingUtil {
             // Set the instance tracking file path to a system property, so it can be audited
             System.setProperty(HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE, file.toString());
 
-            logger.fine("Writing instance tracking information to " + file);
+            logger.fine("Writing instance tracking information to %s", file);
             Files.writeString(file, trackingFileContents);
         } catch (Exception e) {
             logger.warning("Failed to write instance tracking information", e);

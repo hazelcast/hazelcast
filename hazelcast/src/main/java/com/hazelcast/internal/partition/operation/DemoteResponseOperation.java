@@ -61,7 +61,7 @@ public class DemoteResponseOperation
 
         if (partitionService.isMemberMaster(caller)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Received demote response from " + caller);
+                logger.finest("Received demote response from %s", caller);
             }
 
             if (nodeEngine.getLocalMember().getUuid().equals(uuid)) {

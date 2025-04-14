@@ -168,7 +168,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             }
 
         } else if (logger.isFinestEnabled()) {
-            logger.finest("ReplicaVersions are not set since migration failed. " + migrationInfo);
+            logger.finest("ReplicaVersions are not set since migration failed. %s", migrationInfo);
         }
     }
 

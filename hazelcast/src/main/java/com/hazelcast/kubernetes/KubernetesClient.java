@@ -966,7 +966,7 @@ class KubernetesClient {
          */
         void onWatchEventReceived(String message) {
             if (LOGGER.isFinestEnabled()) {
-                LOGGER.finest("Complete message from kubernetes API: " + message);
+                LOGGER.finest("Complete message from kubernetes API: %s", message);
             }
             JsonObject watchEvent = Json.parse(message).asObject();
             JsonObject statefulSet = watchEvent.get("object").asObject();

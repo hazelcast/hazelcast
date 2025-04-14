@@ -119,7 +119,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
             // taking too much time.
             if (invocation == null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for backup response with callId=" + callId);
+                    logger.finest("No Invocation found for backup response with callId=%s", callId);
                 }
                 return;
             }

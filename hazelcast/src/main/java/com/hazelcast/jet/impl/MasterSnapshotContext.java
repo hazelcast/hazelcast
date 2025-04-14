@@ -159,14 +159,14 @@ class MasterSnapshotContext {
         mc.lock();
         try {
             if (mc.jobStatus() != RUNNING) {
-                logger.fine("Not beginning snapshot, " + mc.jobIdString() + " is not RUNNING, but " + mc.jobStatus());
+                logger.fine("Not beginning snapshot, %s is not RUNNING, but %s", mc.jobIdString(), mc.jobStatus());
                 return;
             }
             if (mc.executionId() != executionId) {
                 // Current execution is completed and probably a new execution has started, but we don't
                 // cancel the scheduled snapshot from previous execution, so let's just ignore it.
-                logger.fine("Not beginning snapshot since unexpected execution ID received for " + mc.jobIdString()
-                        + ". Received execution ID: " + idToString(executionId));
+                logger.fine("Not beginning snapshot since unexpected execution ID received for %s. Received execution ID: %s",
+                        mc.jobIdString(), idToString(executionId));
                 return;
             }
             enqueueRegularSnapshot();
@@ -183,15 +183,15 @@ class MasterSnapshotContext {
             long localExecutionId;
             try {
                 if (mc.jobStatus() != RUNNING) {
-                    logger.fine("Not beginning snapshot, " + mc.jobIdString() + " is not RUNNING, but " + mc.jobStatus());
+                    logger.fine("Not beginning snapshot, %s is not RUNNING, but %s", mc.jobIdString(), mc.jobStatus());
                     return;
                 }
                 if (snapshotInProgress) {
-                    logger.fine("Not beginning snapshot since one is already in progress " + mc.jobIdString());
+                    logger.fine("Not beginning snapshot since one is already in progress %s", mc.jobIdString());
                     return;
                 }
                 if (terminalSnapshotFuture.isDone()) {
-                    logger.fine("Not beginning snapshot since terminal snapshot is already completed " + mc.jobIdString());
+                    logger.fine("Not beginning snapshot since terminal snapshot is already completed %s", mc.jobIdString());
                     return;
                 }
 

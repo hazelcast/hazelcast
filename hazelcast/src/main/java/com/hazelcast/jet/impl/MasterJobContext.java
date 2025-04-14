@@ -312,7 +312,7 @@ public class MasterJobContext {
                   logger.info("Start executing " + mc.jobIdString()
                           + ", execution graph in DOT format:\n" + dotRepresentation
                           + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-                  logger.fine("Building execution plan for " + mc.jobIdString());
+                  logger.fine("Building execution plan for %s", mc.jobIdString());
 
                   createExecutionPlans(dag, membersView)
                           .thenCompose(plans -> coordinator.submitToCoordinatorThread(
@@ -344,7 +344,7 @@ public class MasterJobContext {
 
     private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap, DAG dag) {
         mc.setExecutionPlanMap(executionPlanMap);
-        logger.fine("Built execution plans for " + mc.jobIdString());
+        logger.fine("Built execution plans for %s", mc.jobIdString());
         Set<MemberInfo> participants = mc.executionPlanMap().keySet();
         Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
         mc.coordinationService().jobInvocationObservers.forEach(obs ->
@@ -361,11 +361,11 @@ public class MasterJobContext {
         Supplier<DAG> dag = memoize(this::deserializeDag);
         try {
             if (isCancelled()) {
-                logger.fine("Skipping init job '" + mc.jobName() + "': is already cancelled.");
+                logger.fine("Skipping init job '%s': is already cancelled.", mc.jobName());
                 throw createCancellationException();
             }
             if (mc.jobStatus() != NOT_RUNNING) {
-                logger.fine("Not starting job '" + mc.jobName() + "': status is " + mc.jobStatus());
+                logger.fine("Not starting job '%s': status is %s", mc.jobName(), mc.jobStatus());
                 return null;
             }
             if (mc.jobExecutionRecord().isSuspended()) {
@@ -558,7 +558,7 @@ public class MasterJobContext {
             return false;
         }
 
-        logger.fine("Rescheduling restart of '" + mc.jobName() + "': cluster is not safe");
+        logger.fine("Rescheduling restart of '%s': cluster is not safe", mc.jobName());
         scheduleRestart("Cluster is not safe");
         return true;
     }
@@ -569,7 +569,7 @@ public class MasterJobContext {
             return false;
         }
 
-        logger.fine("Rescheduling restart of '" + mc.jobName() + "': quorum size " + quorumSize + " is not met");
+        logger.fine("Rescheduling restart of '%s': quorum size %s is not met", mc.jobName(), quorumSize);
         scheduleRestart("Quorum is absent");
         return true;
     }
@@ -580,7 +580,7 @@ public class MasterJobContext {
             return false;
         }
 
-        logger.fine("Rescheduling restart of '" + mc.jobName() + "': no member is selected");
+        logger.fine("Rescheduling restart of '%s': no member is selected", mc.jobName());
         scheduleRestart("No member is selected");
         return true;
     }
@@ -617,7 +617,7 @@ public class MasterJobContext {
     // If a participant leaves or the execution fails in a participant locally, executions are cancelled
     // on the remaining participants and the callback is completed after all invocations return.
     private void invokeStartExecution() {
-        logger.fine("Executing " + mc.jobIdString());
+        logger.fine("Executing %s", mc.jobIdString());
 
         long executionId = mc.executionId();
         mc.resetStartOperationResponses();
@@ -854,7 +854,7 @@ public class MasterJobContext {
                     boolean isSuccess = logExecutionSummary(failure, completionTime);
                     mc.setJobStatus(isSuccess ? COMPLETED : FAILED, description, userRequested);
                     if (failure instanceof LocalMemberResetException) {
-                        logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
+                        logger.fine("Cancelling job %s locally: member (local or remote) reset. %s", mc.jobIdString(),
                                 "We don't delete job metadata: job will restart on majority cluster");
                         setFinalResult(new CancellationException());
                     } else {
@@ -992,7 +992,7 @@ public class MasterJobContext {
         } finally {
             mc.unlock();
         }
-        logger.fine("Resuming job " + mc.jobName());
+        logger.fine("Resuming job %s", mc.jobName());
         tryStartJob();
     }
 

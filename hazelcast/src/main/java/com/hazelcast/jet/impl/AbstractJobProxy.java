@@ -289,7 +289,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
             checkNotLightJob(mode.toString());
         }
 
-        logger.fine("Sending " + mode + " request for job " + idAndName());
+        logger.fine("Sending %s request for job %s", mode, idAndName());
         while (true) {
             try {
                 try {
@@ -323,7 +323,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                 if (!isRestartable(e)) {
                     throw rethrow(e);
                 }
-                logger.fine("Re-sending " + mode + " request for job " + idAndName());
+                logger.fine("Re-sending %s request for job %s", mode, idAndName());
             }
         }
     }
@@ -540,7 +540,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
         @Override
         protected void retryActionInt(Throwable t) {
-            logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
+            logger.fine("Resubmitting job %s after %s", idAndName(), t.getClass().getSimpleName());
             invokeSubmitJob(jobDefinition, config).whenCompleteAsync(this);
         }
 

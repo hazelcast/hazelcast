@@ -66,7 +66,7 @@ public class DemoteRequestOperation
             Member member = clusterService.getMember(caller);
             if (member != null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Received demote request from " + caller);
+                    logger.finest("Received demote request from %s", caller);
                 }
                 if (member.getUuid().equals(uuid)) {
                     response = partitionService.onDemoteRequest(member);

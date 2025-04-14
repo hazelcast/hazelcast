@@ -134,7 +134,7 @@ public abstract class AbstractChannel implements Channel {
             }
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
+                logger.finest("Successfully connected to: %s using socket %s", address, socketChannel.socket());
             }
         } catch (RuntimeException e) {
             IOUtil.closeResource(this);

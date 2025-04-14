@@ -189,7 +189,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         if (threadCount <= 0) {
             threadCount = coreSize * threadsPerCore;
         }
-        logger.finest("Creating new client executor with threadCount=" + threadCount);
+        logger.finest("Creating new client executor with threadCount=%s", threadCount);
 
         //if user code deployment enabled, don't use the unblockable thread factory since operations can do blocking tasks
         // to load classes from other members
@@ -218,7 +218,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         if (threadCount <= 0) {
             threadCount = coreSize * QUERY_THREADS_PER_CORE;
         }
-        logger.finest("Creating new client query executor with threadCount=" + threadCount);
+        logger.finest("Creating new client query executor with threadCount=%s", threadCount);
 
         return executionService.register(ExecutionService.CLIENT_QUERY_EXECUTOR,
                 threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
@@ -234,7 +234,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             threadCount = coreSize * BLOCKING_THREADS_PER_CORE;
         }
 
-        logger.finest("Creating new client executor for blocking tasks with threadCount=" + threadCount);
+        logger.finest("Creating new client executor for blocking tasks with threadCount=%s", threadCount);
 
         return executionService.register(ExecutionService.CLIENT_BLOCKING_EXECUTOR,
                 threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
@@ -482,7 +482,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             }
             final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
             if (endpoint == null) {
-                logger.finest("connectionRemoved: No endpoint for connection:" + connection);
+                logger.finest("connectionRemoved: No endpoint for connection:%s", connection);
                 return;
             }
             UUID clientUuid = endpoint.getUuid();

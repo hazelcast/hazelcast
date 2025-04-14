@@ -127,11 +127,11 @@ public class SourceConnectorWrapper {
 
             if (isMasterProcessor) {
                 sourceConnector.initialize(new JetConnectorContext());
-                logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
+                logger.fine("Starting connector '%s'. Below are the propertiesFromUser", name);
                 sourceConnector.start(currentConfig);
-                logger.fine("Connector '" + name + "' started");
+                logger.fine("Connector '%s' started", name);
             } else {
-                logger.fine("Connector '" + name + "' created, not starting because it's not a master processor");
+                logger.fine("Connector '%s' created, not starting because it's not a master processor", name);
             }
 
         } catch (Exception e) {
@@ -146,9 +146,9 @@ public class SourceConnectorWrapper {
         }
 
         try {
-            logger.fine("Creating task runner '" + name + "'");
+            logger.fine("Creating task runner '%s'", name);
             createTaskRunner();
-            logger.fine("Task runner '" + name + "' created");
+            logger.fine("Task runner '%s' created", name);
         } catch (Exception e) {
             reconnectTracker.attemptFailed();
             lastConnectionException = e;
@@ -242,8 +242,8 @@ public class SourceConnectorWrapper {
 
         if (taskConfig != null) {
             // Pass my taskConfig to taskRunner
-            logger.fine("Updating taskRunner with processorOrder = " + processorOrder
-                        + " with taskConfig=" + maskPasswords(taskConfig));
+            logger.fine("Updating taskRunner with processorOrder = %s with taskConfig=%s", processorOrder,
+                    maskPasswords(taskConfig));
 
             taskRunner.updateTaskConfig(taskConfig);
             currentConfig = taskConfig;
@@ -358,7 +358,7 @@ public class SourceConnectorWrapper {
             // Log taskConfigs
             for (int index = 0; index < taskConfigs.size(); index++) {
                 Map<String, String> map = taskConfigs.get(index);
-                logger.fine("sourceConnector index " + index + " taskConfig=" + map);
+                logger.fine("sourceConnector index %s taskConfig=%s", index, map);
             }
             // Publish taskConfigs
             TaskConfigMessage taskConfigMessage = new TaskConfigMessage();

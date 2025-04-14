@@ -34,7 +34,7 @@ public class TestIgnoreRuleAccordingToUnsafeAvailability implements TestRule {
             return new Statement() {
                 @Override
                 public void evaluate() throws Throwable {
-                    LOGGER.finest("Ignoring `" + description.getClassName() + "` because Unsafe is not available");
+                    LOGGER.finest("Ignoring `%s` because Unsafe is not available", description.getClassName());
                 }
             };
         }

@@ -82,7 +82,7 @@ public abstract class AbstractListenerService {
         clientListeningEndpoints.put(clientEndpoint, correlationId);
         Connection connection = clientEndpoint.getConnection();
 
-        logger.finest("Registered listener with endpoint: " + clientEndpoint);
+        logger.finest("Registered listener with endpoint: %s", clientEndpoint);
         sendUpdate(clientEndpoint, connection, correlationId);
     }
 
@@ -90,7 +90,7 @@ public abstract class AbstractListenerService {
 
     public void deregisterListener(ClientEndpoint clientEndpoint) {
         clientListeningEndpoints.remove(clientEndpoint);
-        logger.finest("Deregistered listener with endpoint: " + clientEndpoint);
+        logger.finest("Deregistered listener with endpoint: %s", clientEndpoint);
     }
 
     // for test purpose only

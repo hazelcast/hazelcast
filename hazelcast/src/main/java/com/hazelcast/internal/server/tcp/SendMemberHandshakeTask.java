@@ -65,7 +65,7 @@ public class SendMemberHandshakeTask implements Runnable {
         serverContext.onSuccessfulConnection(remoteAddress);
         //make sure memberHandshake packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
-            logger.finest("Sending memberHandshake packet to " + remoteAddress);
+            logger.finest("Sending memberHandshake packet to %s", remoteAddress);
         }
         MemberHandshake memberHandshake = new MemberHandshake(
                 SCHEMA_VERSION_2,

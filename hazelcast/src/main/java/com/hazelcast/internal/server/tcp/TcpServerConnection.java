@@ -244,7 +244,7 @@ public class TcpServerConnection implements ServerConnection {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Connection is closed, won't write packet -> " + frame);
+            logger.finest("Connection is closed, won't write packet -> %s", frame);
         }
         return false;
     }

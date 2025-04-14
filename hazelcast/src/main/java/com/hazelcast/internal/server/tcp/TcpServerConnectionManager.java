@@ -161,11 +161,11 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             });
             if (isNotYetInProgress.get()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet in progress");
+                    logger.fine("Connection to: %s streamId:%s is not yet in progress", address, streamId);
                 }
             } else {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is already in progress");
+                    logger.fine("Connection to: %s streamId:%s is already in progress", address, streamId);
                 }
             }
         }
@@ -301,7 +301,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             connections.add(connection);
 
             if (logger.isFineEnabled()) {
-                logger.fine("Established socket connection between " + channel.localSocketAddress() + " and " + channel
+                logger.fine("Established socket connection between %s and %s", channel.localSocketAddress(), channel
                         .remoteSocketAddress());
             }
             openedCount.inc();

@@ -203,8 +203,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
         if (!partition.isOwnerOrBackup(localReplica)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("This node is not backup replica of partitionId=" + partitionId
-                        + ", replicaIndex=" + replicaIndex + " anymore.");
+                logger.finest("This node is not backup replica of partitionId=%s, replicaIndex=%s anymore.", partitionId,
+                        replicaIndex);
             }
             return null;
         }
@@ -283,7 +283,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         ReplicaFragmentSyncInfo syncInfo = new ReplicaFragmentSyncInfo(partitionId, namespace, replicaIndex, target);
         if (!replicaSyncRequests.add(syncInfo)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Cannot send sync replica request for " + syncInfo + ". Sync is already in progress!");
+                logger.finest("Cannot send sync replica request for %s. Sync is already in progress!", syncInfo);
             }
             return false;
         }

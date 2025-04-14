@@ -278,7 +278,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Shutting down IO Threads... Total: " + (inputThreads.length + outputThreads.length));
+            logger.finest("Shutting down IO Threads... Total: %s", (inputThreads.length + outputThreads.length));
         }
 
         shutdown(inputThreads);

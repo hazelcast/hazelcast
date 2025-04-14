@@ -675,7 +675,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private SerializerAdapter lookupGlobalSerializer(Class type) {
         SerializerAdapter serializer = global.get();
         if (serializer != null) {
-            logger.fine("Registering global serializer for: " + type.getName());
+            logger.fine("Registering global serializer for: %s", type.getName());
             safeRegister(type, serializer);
         }
         return serializer;

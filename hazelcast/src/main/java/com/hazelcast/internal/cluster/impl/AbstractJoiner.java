@@ -160,7 +160,7 @@ public abstract class AbstractJoiner
         blacklistedAddresses.clear();
 
         if (logger.isFineEnabled()) {
-            logger.fine("PostJoin master: " + clusterService.getMasterAddress() + ", isMaster: " + clusterService.isMaster());
+            logger.fine("PostJoin master: %s, isMaster: %s", clusterService.getMasterAddress(), clusterService.isMaster());
         }
         if (!node.isRunning()) {
             return;
@@ -194,7 +194,7 @@ public abstract class AbstractJoiner
                             .getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
                         if (logger.isFineEnabled()) {
-                            logger.fine("Not-connected to " + member.getAddress());
+                            logger.fine("Not-connected to %s", member.getAddress());
                         }
                     }
                 }
@@ -238,7 +238,7 @@ public abstract class AbstractJoiner
      */
     private SplitBrainJoinMessage sendSplitBrainJoinMessage(Address target, SplitBrainJoinMessage request) {
         if (logger.isFineEnabled()) {
-            logger.fine("Sending SplitBrainJoinMessage to " + target);
+            logger.fine("Sending SplitBrainJoinMessage to %s", target);
         }
 
         Connection conn = node.getServer().getConnectionManager(MEMBER).getOrConnect(target, true);

@@ -350,7 +350,7 @@ class MockServer implements Server {
                         throw e;
                     }
                     if (server.logger.isFinestEnabled()) {
-                        server.logger.finest("Packet send task is rejected. Packet cannot be sent to " + targetUuid);
+                        logger.finest("Packet send task is rejected. Packet cannot be sent to %s", targetUuid);
                     }
                 }
                 return true;
@@ -409,7 +409,7 @@ class MockServer implements Server {
             public void run() {
                 int actualRetries = retries.incrementAndGet();
                 if (server.logger.isFinestEnabled()) {
-                    server.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + target);
+                    logger.finest("Retrying[%s] packet send operation to: %s", actualRetries, target);
                 }
                 send(packet, target, this);
             }

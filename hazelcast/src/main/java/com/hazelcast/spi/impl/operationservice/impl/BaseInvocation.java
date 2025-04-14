@@ -144,7 +144,7 @@ public abstract class BaseInvocation {
 
         if (shouldCompleteWithoutBackups()) {
             if (logger.isFineEnabled()) {
-                logger.fine("Invocation " + this + " will be completed without backup acks.");
+                logger.fine("Invocation %s will be completed without backup acks.", this);
             }
             // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
             completeWithPendingResponse();

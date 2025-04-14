@@ -36,7 +36,7 @@ public class ScheduledExecutorMemberBin
         this.logger = nodeEngine.getLogger(getClass());
         this.containerConstructorFunction = name -> {
             if (logger.isFinestEnabled()) {
-                logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);
+                logger.finest("[Partition: -1] Create new scheduled executor container with name: %s", name);
             }
 
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);

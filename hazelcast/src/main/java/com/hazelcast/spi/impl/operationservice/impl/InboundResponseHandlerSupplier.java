@@ -121,7 +121,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine("Running with " + responseThreadCount + " response threads");
+            logger.fine("Running with %s response threads", responseThreadCount);
         }
 
         this.responseThreads = new ResponseThread[responseThreadCount];

@@ -201,8 +201,8 @@ final class InvokeOnPartitions {
                         : "results.length=" + results.length + ", but was sent to just "
                         + requestedPartitions.size() + " partitions";
                 if (results.length != requestedPartitions.size()) {
-                    logger.fine("Responses received for " + responsePartitions.length + " partitions, but "
-                            + requestedPartitions.size() + " partitions were requested");
+                    logger.fine("Responses received for %s partitions, but %s partitions were requested",
+                            responsePartitions.length, requestedPartitions.size());
                 }
                 int failedPartitionsCnt = 0;
                 for (int i = 0; i < responsePartitions.length; i++) {

@@ -257,7 +257,7 @@ public final class TcpServer implements Server {
 
         TcpServerConnectionManager connectionManager = connectionManagers.get(qualifier);
         if (connectionManager == null) {
-            logger.finest("An connection manager for qualifier " + qualifier + " was never registered.");
+            logger.finest("An connection manager for qualifier %s was never registered.", qualifier);
         }
         return connectionManager;
     }
@@ -290,7 +290,7 @@ public final class TcpServer implements Server {
 
     private void closeServerSockets() {
         if (logger.isFinestEnabled()) {
-            logger.finest("Closing server socket channel: " + registry);
+            logger.finest("Closing server socket channel: %s", registry);
         }
         registry.destroy();
     }

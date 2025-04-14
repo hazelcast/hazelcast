@@ -109,7 +109,7 @@ public class MemberSchemaService implements
             return InternalCompletableFuture.newCompletedFuture(null);
         }
         if (logger.isFinestEnabled()) {
-            logger.finest("Putting schemas to the cluster" + schemas);
+            logger.finest("Putting schemas to the cluster%s", schemas);
         }
 
         return replicator.replicateAll(schemas);
@@ -149,7 +149,7 @@ public class MemberSchemaService implements
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Preparing pre-join operation with replications " + replications);
+            logger.finest("Preparing pre-join operation with replications %s", replications);
         }
 
         return new SendSchemaReplicationsOperation(replications);

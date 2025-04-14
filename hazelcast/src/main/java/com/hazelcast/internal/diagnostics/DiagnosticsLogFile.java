@@ -69,7 +69,7 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         this.maxRollingFileSizeBytes = round(
                 ONE_MB * diagnostics.getMaxRollingFileSizeMB());
 
-        logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
+        logger.finest("maxRollingFileSizeBytes:%s maxRollingFileCount:%s", maxRollingFileSizeBytes, maxRollingFileCount);
     }
 
     @Override
