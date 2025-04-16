@@ -26,6 +26,8 @@ import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.core.metrics.Unit;
 
 import javax.annotation.Nonnull;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -105,8 +107,17 @@ public class MetricsContext implements DynamicMetricsProvider {
 
     private static final class SingleWriterMetric extends AbstractMetric {
 
-        private static final AtomicLongFieldUpdater<SingleWriterMetric> VOLATILE_VALUE_UPDATER =
-                AtomicLongFieldUpdater.newUpdater(SingleWriterMetric.class, "value");
+        private static final VarHandle VALUE_VARHANDLE;
+
+        static {
+            try {
+                MethodHandles.Lookup l = MethodHandles.lookup();
+
+                VALUE_VARHANDLE = l.findVarHandle(SingleWriterMetric.class, "value", long.class);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
 
         private volatile long value;
 
@@ -116,27 +127,27 @@ public class MetricsContext implements DynamicMetricsProvider {
 
         @Override
         public void set(long newValue) {
-            VOLATILE_VALUE_UPDATER.lazySet(this, newValue);
+            VALUE_VARHANDLE.setOpaque(this, newValue);
         }
 
         @Override
         public void increment() {
-            VOLATILE_VALUE_UPDATER.lazySet(this, value + 1);
+            VALUE_VARHANDLE.setOpaque(this, value + 1);
         }
 
         @Override
         public void increment(long increment) {
-            VOLATILE_VALUE_UPDATER.lazySet(this, value + increment);
+            VALUE_VARHANDLE.setOpaque(this, value + increment);
         }
 
         @Override
         public void decrement() {
-            VOLATILE_VALUE_UPDATER.lazySet(this, value - 1);
+            VALUE_VARHANDLE.setOpaque(this, value - 1);
         }
 
         @Override
         public void decrement(long decrement) {
-            VOLATILE_VALUE_UPDATER.lazySet(this, value - decrement);
+            VALUE_VARHANDLE.setOpaque(this, value - decrement);
         }
 
         @Override
