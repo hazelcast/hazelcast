@@ -60,7 +60,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
         Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties,
                 config.getDiagnosticsConfig());
-        assertEquals("foobar-diagnostics", diagnostics.getFileName());
+        assertStartsWith("foobar-diagnostics", diagnostics.getFileName());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
         Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties,
                 config.getDiagnosticsConfig());
-        assertEquals("diagnostics", diagnostics.getFileName());
+        assertStartsWith("diagnostics", diagnostics.getFileName());
     }
 
     @Test(expected = NullPointerException.class)

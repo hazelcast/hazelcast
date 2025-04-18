@@ -161,9 +161,9 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         closeResource(printWriter);
         printWriter = null;
         file = null;
-        index++;
 
         File file = newFile(index - maxRollingFileCount);
         deleteQuietly(file);
+        index++;
     }
 }

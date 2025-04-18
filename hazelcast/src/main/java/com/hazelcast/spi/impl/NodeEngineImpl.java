@@ -107,7 +107,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.CONCURRENT_WINDOW_MS;
-import static java.lang.System.currentTimeMillis;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
@@ -272,7 +271,7 @@ public class NodeEngineImpl implements NodeEngine {
     private Diagnostics newDiagnostics() {
         Address address = node.getThisAddress();
         String addressString = address.getHost().replace(":", "_") + "_" + address.getPort();
-        String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
+        String name = "diagnostics-" + addressString;
 
         return new Diagnostics(name, loggingService, getHazelcastInstance().getName(),
                 node.getProperties(), getConfig().getDiagnosticsConfig());

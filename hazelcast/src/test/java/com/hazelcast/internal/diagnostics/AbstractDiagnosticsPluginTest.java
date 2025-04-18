@@ -78,7 +78,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         }
         for (File file : files) {
             String name = file.getName();
-            if (name.startsWith(diagnostics.getBaseFileName()) && name.endsWith(".log")) {
+            if (name.startsWith(diagnostics.getBaseFileNameWithTime()) && name.endsWith(".log")) {
                 deleteQuietly(file);
             }
         }

@@ -244,7 +244,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(() -> {
             assertEquals(tmpFolder.getRoot().getAbsolutePath(), diagnostics.getLoggingDirectory().getAbsolutePath());
             assertTrue(tmpFolder.getRoot().listFiles().length > 0);
-            assertStartsWith(diagnostics.getBaseFileName(), tmpFolder.getRoot().listFiles()[0].getName());
+            assertStartsWith(diagnostics.getBaseFileNameWithTime(), tmpFolder.getRoot().listFiles()[0].getName());
             assertGreaterOrEquals("log file size", tmpFolder.getRoot().listFiles()[0].length(), 1);
         });
     }

@@ -41,6 +41,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
+import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -185,10 +186,11 @@ public class Diagnostics {
     private final AtomicInteger status = new AtomicInteger();
     private final String baseFileName;
 
+    // each start of the diagnostics service will create a new time stamp for that "session"
+    private String baseFileNameWithTime;
     private DiagnosticsOutputType outputType;
     private DiagnosticsConfig config;
     private File loggingDirectory;
-    private String fileName;
     private String filePrefix;
     private boolean includeEpochTime;
     private float maxRollingFileSizeMB;
@@ -208,12 +210,16 @@ public class Diagnostics {
         copyPluginProperties(config);
     }
 
-    public String getBaseFileName() {
-        return baseFileName;
+    public String getBaseFileNameWithTime() {
+        return baseFileNameWithTime != null
+                ? baseFileNameWithTime
+                : baseFileName;
     }
 
     public String getFileName() {
-        return fileName;
+        return this.filePrefix == null
+                ? getBaseFileNameWithTime()
+                : this.filePrefix + "-" + getBaseFileNameWithTime();
     }
 
     public File getLoggingDirectory() {
@@ -315,7 +321,13 @@ public class Diagnostics {
         }
 
         plugin.setProperties(config.getPluginProperties());
-        plugin.onStart();
+
+        try {
+            plugin.onStart();
+        } catch (Throwable t) {
+            logger.warning("Diagnostics plugin failed to start: " + plugin, t);
+            return;
+        }
 
         if (periodMillis > 0) {
             // it is a periodic task
@@ -346,10 +358,13 @@ public class Diagnostics {
             return;
         }
 
+        long startedTime = currentTimeMillis();
+        baseFileNameWithTime = baseFileName + "-" + startedTime;
+
         this.diagnosticsLog = newLog(this);
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
-        logger.info(format("Diagnostics %s", (status.get() == SERVICE_RESTARTING ? "restarted" : "started")));
+        logger.info(format("Diagnostics started at [%s]", startedTime));
     }
 
     /**
@@ -386,6 +401,7 @@ public class Diagnostics {
             // this is a restart
             if (diagnosticsConfig.isEnabled() && currentStatus == SERVICE_ENABLED) {
                 this.status.set(SERVICE_RESTARTING);
+                logger.info("Diagnostics is going to restart with new configuration.");
             } else {
                 this.status.set(SERVICE_DISABLED);
             }
@@ -530,10 +546,6 @@ public class Diagnostics {
         } else {
             this.outputType = config.getOutputType();
         }
-
-        this.fileName = this.filePrefix == null
-                ? baseFileName
-                : this.filePrefix + "-" + baseFileName;
 
         this.config = config;
         copyPluginProperties(hazelcastProperties, config);

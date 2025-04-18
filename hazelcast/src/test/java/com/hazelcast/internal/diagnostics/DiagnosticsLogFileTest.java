@@ -17,6 +17,9 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiagnosticsConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -29,7 +32,11 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
 
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -83,14 +90,75 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
 
     }
 
+    @Test
+    public void testDiagnosticsFilesRollOver() throws IOException, NoSuchFieldException, IllegalAccessException {
+
+        // Prepare the config for a lot of output
+        Config config = new Config();
+        File diagnosticsFolder = folder.newFolder();
+        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setMaxRolledFileCount(5)
+                .setMaxRolledFileSizeInMB(1)
+                .setLogDirectory(diagnosticsFolder.getAbsolutePath())
+                .setFileNamePrefix("my-prefix")
+                .setProperty(OperationProfilerPlugin.PERIOD_SECONDS.getName(), "1")
+                .setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1")
+                .setProperty(InvocationProfilerPlugin.PERIOD_SECONDS.getName(), "1");
+
+        config.setDiagnosticsConfig(diagnosticsConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        // Let's tweak the file size on LogFileWrite to speed up the test.
+        Diagnostics diagnostics = TestUtil.getNode(instance).getNodeEngine().getDiagnostics();
+        DiagnosticsLogFile fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
+        Field field = DiagnosticsLogFile.class.getDeclaredField("maxRollingFileSizeBytes");
+        field.setAccessible(true);
+        field.set(fileLogger, 10_000); // 10 kilobyte
+        String fileNameOfFirstRun = diagnostics.getFileName();
+
+        // Ensure configured amount of files are created
+        assertContainsFileEventually(diagnosticsFolder, diagnosticsConfig.getMaxRolledFileCount());
+
+        // now, let's decrease the rolling count. Since each run on diagnostics is a different "session",
+        // previous files should be there
+
+        // from first run, there should be 5 files
+        int totalExpectedFileCount = diagnosticsConfig.getMaxRolledFileCount();
+        diagnosticsConfig.setMaxRolledFileCount(2);
+        // from second run, there should be 2 files -> we expect 7 files
+        totalExpectedFileCount += diagnosticsConfig.getMaxRolledFileCount();
+
+        // set the config for second phase
+        instance.getConfig().setDiagnosticsConfig(diagnosticsConfig);
+        // let's tweak the file size on LogFileWrite to speed up the test.
+        fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
+        field.set(fileLogger, 10_000); // 10 kilobyte
+        assertContainsFileEventually(diagnosticsFolder, totalExpectedFileCount);
+
+
+        File[] logFiles = diagnosticsFolder.listFiles();
+        String fileNameOfSecondRun = diagnostics.getFileName();
+
+        // There should be files from two different "sessions" or runs
+        assertNotEquals(fileNameOfFirstRun, fileNameOfSecondRun);
+        List<String> fileNames = Arrays.stream(logFiles).map((file) -> file.getName()).toList();
+        assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfFirstRun)));
+        assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfSecondRun)));
+    }
+
     private void assertContainsFileEventually(final File dir) {
+        assertContainsFileEventually(dir, 1);
+    }
+
+    private void assertContainsFileEventually(final File dir, int minFileCount) {
         assertTrueEventually(() -> {
             assertTrue(dir.exists());
             assertTrue(dir.isDirectory());
 
             File[] files = dir.listFiles();
             assertNotNull(files);
-            assertTrue(files.length > 0);
+            assertTrue(files.length >= minFileCount);
         });
     }
 }

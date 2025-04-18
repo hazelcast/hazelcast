@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -144,7 +146,8 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * The default is 50.
      */
     public DiagnosticsConfig setMaxRolledFileSizeInMB(int maxRolledFileSizeInMB) {
-        this.maxRolledFileSizeInMB = maxRolledFileSizeInMB;
+        this.maxRolledFileSizeInMB = checkNotNegative(maxRolledFileSizeInMB,
+                "maxRolledFileSizeInMB must be positive");
         return this;
     }
 
@@ -173,7 +176,8 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * @since 6.0
      */
     public DiagnosticsConfig setMaxRolledFileCount(int maxRolledFileCount) {
-        this.maxRolledFileCount = maxRolledFileCount;
+        this.maxRolledFileCount = checkNotNegative(maxRolledFileCount,
+                "maxRolledFileCount must be positive");
         return this;
     }
 
@@ -234,7 +238,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * @since 6.0
      */
     public DiagnosticsConfig setFileNamePrefix(String fileNamePrefix) {
-        this.fileNamePrefix = fileNamePrefix;
+        this.fileNamePrefix = checkHasText(fileNamePrefix, "fileNamePrefix must not be null");
         return this;
     }
 
@@ -280,8 +284,9 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * @param value property value
      * @since 6.0
      */
-    public void setProperty(String name, String value) {
+    public DiagnosticsConfig setProperty(String name, String value) {
         this.pluginProperties.put(checkNotNull(name), checkNotNull(value));
+        return this;
     }
 
     @Override

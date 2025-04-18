@@ -172,7 +172,6 @@ import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.clientMetr
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.unmodifiableSet;
 
 @SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
@@ -325,7 +324,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     }
 
     private Diagnostics initDiagnostics() {
-        String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
+        String name = "diagnostics-client-" + id;
 
         return new Diagnostics(name, loggingService, instanceName, properties, config.getDiagnosticsConfig());
     }
