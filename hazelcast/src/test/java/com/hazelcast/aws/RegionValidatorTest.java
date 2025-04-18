@@ -28,6 +28,7 @@ public class RegionValidatorTest {
     public void validateValidRegion() {
         RegionValidator.validateRegion("us-west-1");
         RegionValidator.validateRegion("us-gov-east-1");
+        RegionValidator.validateRegion("us-any-northeast-1");
     }
 
     @Test
@@ -48,6 +49,20 @@ public class RegionValidatorTest {
     public void validateInvalidGovRegion() {
         // given
         String region = "us-gov-wrong-1";
+        String expectedMessage = String.format("The provided region %s is not a valid AWS region.", region);
+
+        // when
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(region);
+
+        //then
+        InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
+        assertEquals(expectedMessage, thrownEx.getMessage());
+    }
+
+    @Test
+    public void validateInvalidAnyRegion() {
+        // given
+        String region = "us-any-wrong-1";
         String expectedMessage = String.format("The provided region %s is not a valid AWS region.", region);
 
         // when
