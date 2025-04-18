@@ -6,7 +6,7 @@ on:
 
 jobs:
   createClientJiraIssue:
-    if: ${{ github.event.label.name == 'Action: Create Client Jira' }}
+    if: "${{ github.event.label.name == 'Action: Create Client Jira' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Create jira issue
@@ -19,7 +19,7 @@ jobs:
           JIRA_LABEL: Java
           ISSUE_TYPE: Bug
   createGuardiansJiraIssue:
-    if: ${{ github.event.label.name == 'Action: Create HZG Jira' }}
+    if: "${{ github.event.label.name == 'Action: Create HZG Jira' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Create HZG Jira Test Failure issue
