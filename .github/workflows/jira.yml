@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create jira issue
-        uses: hazelcast/github-jira-tool-action@v5
+        uses: hazelcast/github-jira-tool-action@v6
         with:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
