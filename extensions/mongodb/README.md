@@ -159,8 +159,8 @@ resume-token.
 
 To run the tests run the command below: 
 
-```
-mvn test
+```shell
+../../mvnw test
 ```
 
 ## Authors
