@@ -83,6 +83,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -586,7 +587,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
                                     return metrics;
                                   }
                                   throw sneakyThrow(e);
-                              })
+                              }),
+                              nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR)
                       )
                       .thenCompose(stage -> stage)
                       .whenComplete((metrics, e) -> {

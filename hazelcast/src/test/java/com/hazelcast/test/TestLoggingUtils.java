@@ -16,11 +16,11 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import org.apache.logging.log4j.ThreadContext;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 
@@ -80,7 +80,7 @@ public final class TestLoggingUtils {
 
     public static class CustomTestNameAwareForkJoinPool implements Executor {
 
-        private final Executor defaultExecutor = ForkJoinPool.commonPool();
+        private final Executor defaultExecutor = ConcurrencyUtil.getDefaultAsyncExecutor();
 
         @Override
         public void execute(@Nonnull Runnable task) {
