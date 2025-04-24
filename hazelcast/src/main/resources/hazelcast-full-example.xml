@@ -528,7 +528,7 @@
             the configuration details.
         - <kubernetes>:
             Set its "enabled" attribute to true for discovery in the Kubernetes environment.
-            Please refer to https://github.com/hazelcast/hazelcast-kubernetes#hazelcast-configuration for
+            Please refer to https://docs.hazelcast.com/hazelcast/latest/kubernetes/kubernetes-auto-discovery#hazelcast-configuration for
             the configuration details.
         - <eureka>:
             Set its "enabled" attribute to true for discovery with using Eureka Service Registry.
@@ -3083,7 +3083,7 @@
                 the configuration details.
             - <kubernetes>:
                 Set its "enabled" attribute to true for discovery in the Kubernetes environment.
-                Please refer to https://github.com/hazelcast/hazelcast-kubernetes#hazelcast-configuration for
+                Please refer to https://docs.hazelcast.com/hazelcast/latest/kubernetes/kubernetes-auto-discovery#hazelcast-configuration for
                 the configuration details.
             - <eureka>:
                 Set its "enabled" attribute to true for discovery with using Eureka Service Registry.
