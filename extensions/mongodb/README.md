@@ -162,7 +162,3 @@ To run the tests run the command below:
 ```shell
 ../../mvnw test
 ```
-
-## Authors
-
-* **[Ali Gurbuz](https://github.com/gurbuzali)**
