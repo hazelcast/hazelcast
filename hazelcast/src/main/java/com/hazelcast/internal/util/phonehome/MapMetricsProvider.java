@@ -182,7 +182,7 @@ class MapMetricsProvider implements MetricsProvider {
                                    ToLongFunction<LocalMapStats> mapStatProvider) {
         return mapConfigs.keySet().stream()
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig).getLocalMapStats())
-                .map(mapStatProvider::applyAsLong)
-                .reduce(0L, Long::sum);
+                .mapToLong(mapStatProvider::applyAsLong)
+                .sum();
     }
 }
