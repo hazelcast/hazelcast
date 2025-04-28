@@ -44,6 +44,7 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     private V value;
     private Data dataKey;
     private Data dataValue;
+    /** @see com.hazelcast.wan.impl.InternalWanEvent#getCreationTime() */
     private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
@@ -52,6 +53,7 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     public WanCacheEntryView() {
     }
 
+    /** @param creationTime {@link #creationTime} */
     public WanCacheEntryView(@Nonnull Data dataKey,
                              @Nullable Data dataValue,
                              long creationTime,
