@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.auditlog.AuditlogService;
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiagnosticsOutputType;
@@ -197,15 +199,21 @@ public class Diagnostics {
     private int maxRollingFileCount;
     private ScheduledExecutorService scheduler;
     private final Object lifecycleLock = new Object();
+    private final AuditlogService auditlogService;
 
     public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
                        HazelcastProperties properties, DiagnosticsConfig config) {
+        this(baseFileName, loggingService, hzName, properties, config, null);
+    }
 
+    public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
+                       HazelcastProperties properties, DiagnosticsConfig config, AuditlogService auditlogService) {
         this.logger = loggingService.getLogger(Diagnostics.class);
         this.loggingService = loggingService;
         this.hzName = hzName;
         this.hazelcastProperties = properties;
         this.baseFileName = baseFileName;
+        this.auditlogService = auditlogService;
         setConfig0(config);
         copyPluginProperties(config);
     }
@@ -364,7 +372,14 @@ public class Diagnostics {
         this.diagnosticsLog = newLog(this);
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
-        logger.info(format("Diagnostics started at [%s]", startedTime));
+        String message = format("Diagnostics started at [%s]", startedTime);
+        logger.info(message);
+        if (auditlogService != null) {
+            auditlogService.eventBuilder(AuditlogTypeIds.DIAGNOSTICS_LOGGING_START)
+                    .message(message)
+                    .addParameter("DiagnosticsConfig", config)
+                    .log();
+        }
     }
 
     /**
@@ -401,7 +416,14 @@ public class Diagnostics {
             // this is a restart
             if (diagnosticsConfig.isEnabled() && currentStatus == SERVICE_ENABLED) {
                 this.status.set(SERVICE_RESTARTING);
-                logger.info("Diagnostics is going to restart with new configuration.");
+                String message = "Diagnostics is going to restart with new configuration.";
+                logger.info(message);
+                if (auditlogService != null) {
+                    auditlogService.eventBuilder(AuditlogTypeIds.DIAGNOSTICS_LOGGING_RESTART)
+                            .message(message)
+                            .addParameter("DiagnosticsConfig", diagnosticsConfig)
+                            .log();
+                }
             } else {
                 this.status.set(SERVICE_DISABLED);
             }
@@ -415,6 +437,12 @@ public class Diagnostics {
             if (status.get() == SERVICE_DISABLED) {
                 logger.info("Diagnostics disabled. To enable set DiagnosticsConfig over instance, config file, "
                         + "Management Center or Operator.");
+                if (auditlogService != null) {
+                    auditlogService.eventBuilder(AuditlogTypeIds.DIAGNOSTICS_LOGGING_DISABLE)
+                            .message("Diagnostics disabled")
+                            .addParameter("DiagnosticsConfig", config)
+                            .log();
+                }
                 return;
             }
 
