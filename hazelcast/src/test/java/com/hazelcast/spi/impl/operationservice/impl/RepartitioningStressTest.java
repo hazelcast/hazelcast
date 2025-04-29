@@ -185,11 +185,11 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private void assertEqualsWithDuplicatesTolerance(String msg, long expected, long actual) {
         assertThat(actual)
-                .as(msg + ": number of actual events lost is outside of tolerance")
+                .as("%s: number of actual events lost is outside of tolerance", msg)
                 .isGreaterThan((long) (expected * LOST_EVENTS_TOLERANCE));
 
         assertThat(actual)
-                .as(msg + ": number of actual events duplicated is outside of tolerance")
+                .as("%s: number of actual events duplicated is outside of tolerance", msg)
                 .isLessThan(expected + DUPLICATE_OPS_TOLERANCE);
     }
 

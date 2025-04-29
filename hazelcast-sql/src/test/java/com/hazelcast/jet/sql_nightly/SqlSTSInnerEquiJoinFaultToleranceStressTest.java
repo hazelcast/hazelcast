@@ -232,19 +232,19 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                     .collect(Collectors.toList());
 
             assertThat(duplicates)
-                    .as("Non-unique result count: " + duplicates.size())
+                    .as("Non-unique result count: %d", duplicates.size())
                     .isEmpty();
         }
 
         for (int i = firstItemId; i <= lastItemId; ++i) {
             String key = "value-" + i;
             assertThat(resultSet.remove(key))
-                    .as("Missing element: " + key)
+                    .as("Missing element: %s", key)
                     .isNotNull();
         }
 
         assertThat(resultSet)
-                .as("Unexpected items in the result: " + resultSet)
+                .as("Unexpected items in the result: %s", resultSet)
                 .isEmpty();
     }
 

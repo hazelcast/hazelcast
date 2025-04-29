@@ -278,7 +278,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         for (Integer p : service.keys(ns)) {
             int replicaIndex = partitions[p].getReplicaIndex(localReplica);
             assertThat(replicaIndex)
-                    .as("Partition: " + p + " is leaking on " + localReplica)
+                    .as("Partition: %s is leaking on %s", p, localReplica)
                     .isNotNegative()
                     .isLessThanOrEqualTo(backupCount);
         }

@@ -750,7 +750,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                         "expected map keys"
                 );
             }
-        }).as("Test failed for query " + sql).doesNotThrowAnyException();
+        }).as("Test failed for query %s", sql).doesNotThrowAnyException();
     }
 
     @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
