@@ -56,6 +56,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.TestedVersions.DEBEZIUM_MYSQL_IMAGE;
 import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
@@ -336,7 +337,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     @SuppressWarnings("resource")
     private MySQLContainer<?> initMySql(Network network, Integer fixedExposedPort) {
         MySQLContainer<?> mysql = namedTestContainer(
-                new MySQLContainer<>(AbstractMySqlCdcIntegrationTest.DOCKER_IMAGE)
+                new MySQLContainer<>(DEBEZIUM_MYSQL_IMAGE)
                         .withUsername("mysqluser")
                         .withPassword("mysqlpw")
         );

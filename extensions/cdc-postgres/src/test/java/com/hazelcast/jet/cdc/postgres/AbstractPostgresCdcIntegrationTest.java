@@ -26,7 +26,6 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -37,15 +36,12 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.cdc.PostgresTestUtils.getPostgreSqlConnection;
+import static com.hazelcast.jet.TestedVersions.DEBEZIUM_POSTGRES_IMAGE;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 @Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
-
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:2.3.0.Final")
-            .asCompatibleSubstituteFor("postgres");
-
     protected static final String DATABASE_NAME = "postgres";
     protected static final String REPLICATION_SLOT_NAME = "debezium";
 
@@ -53,7 +49,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
 
     @Rule
     public PostgreSQLContainer<?> postgres = namedTestContainer(
-            new PostgreSQLContainer<>(DOCKER_IMAGE)
+            new PostgreSQLContainer<>(DEBEZIUM_POSTGRES_IMAGE)
                     .withDatabaseName("postgres")
                     .withUsername("postgres")
                     .withPassword("postgres")

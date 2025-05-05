@@ -23,9 +23,9 @@ import static org.testcontainers.utility.DockerImageName.parse;
  * Simple placeholder for versions of various Docker images.
  */
 public final class TestedVersions {
-    public static final String MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.5");
+    private static final String MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.5");
     public static final DockerImageName MONGO_IMAGE = parse("mongo:" + MONGO_VERSION);
-    public static final String TOXIPROXY_VERSION = System.getProperty("test.toxiproxy.version", "2.7.0");
+    private static final String TOXIPROXY_VERSION = System.getProperty("test.toxiproxy.version", "2.7.0");
     public static final DockerImageName TOXIPROXY_IMAGE = parse("ghcr.io/shopify/toxiproxy:" + TOXIPROXY_VERSION)
             .asCompatibleSubstituteFor("shopify/toxiproxy");
 
@@ -37,11 +37,17 @@ public final class TestedVersions {
 
     public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2022-latest");
 
-    public static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.2");
+    private static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.2");
     public static final DockerImageName TEST_MYSQL_IMAGE = DockerImageName.parse("mysql:" + TEST_MYSQL_VERSION);
+
+    private static final String TEST_POSTGRES_VERSION = System.getProperty("test.postgres.version", "11.19-bullseye");
+    public static final DockerImageName TEST_POSTGRES_IMAGE = DockerImageName.parse("postgres:" + TEST_POSTGRES_VERSION);
 
     public static final DockerImageName DEBEZIUM_MYSQL_IMAGE = DockerImageName.parse("debezium/example-mysql:2.7.1.Final")
                                                                               .asCompatibleSubstituteFor("mysql");
     public static final DockerImageName DEBEZIUM_POSTGRES_IMAGE = DockerImageName.parse("debezium/example-postgres:2.7.1.Final")
                                                                               .asCompatibleSubstituteFor("postgres");
+
+    private static final String TEST_NEO4J_VERSION = System.getProperty("test.neo4j.version", "5.5.0");
+    public static final DockerImageName TEST_NEO4J_IMAGE = DockerImageName.parse("neo4j:" + TEST_NEO4J_VERSION);
 }

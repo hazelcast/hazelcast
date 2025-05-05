@@ -58,6 +58,7 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.TestedVersions.DEBEZIUM_POSTGRES_IMAGE;
 import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.cdc.postgres.AbstractPostgresCdcIntegrationTest.getConnection;
@@ -354,7 +355,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     @SuppressWarnings("ConstantConditions")
     private PostgreSQLContainer<?> initPostgres(Network network, Integer fixedExposedPort) {
         PostgreSQLContainer<?> postgres = namedTestContainer(
-                new PostgreSQLContainer<>(AbstractPostgresCdcIntegrationTest.DOCKER_IMAGE)
+                new PostgreSQLContainer<>(DEBEZIUM_POSTGRES_IMAGE)
                         .withDatabaseName("postgres")
                         .withUsername("postgres")
                         .withPassword("postgres")

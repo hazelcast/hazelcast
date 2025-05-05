@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -51,6 +50,9 @@ import static com.hazelcast.jet.cdc.MySQLTestUtils.runQuery;
 import static com.hazelcast.jet.cdc.PostgresTestUtils.getPostgreSqlConnection;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.TestedVersions.DEBEZIUM_MYSQL_IMAGE;
+import static com.hazelcast.jet.TestedVersions.DEBEZIUM_POSTGRES_IMAGE;
+import static com.hazelcast.jet.TestedVersions.MONGO_IMAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
@@ -60,12 +62,6 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve", "Convert2MethodRef", "checkstyle:NeedBraces"})
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
-    private static final DockerImageName MYSQL_IMAGE =
-            DockerImageName.parse("debezium/example-mysql:2.6.2.Final").asCompatibleSubstituteFor("mysql");
-    private static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("debezium/example-postgres:2.6.2.Final").asCompatibleSubstituteFor("postgres");
-    private static final DockerImageName MONGODB_IMAGE =
-            DockerImageName.parse("mongo:6.0.3").asCompatibleSubstituteFor("mongodb");
     private Job job;
 
     @Test
@@ -171,7 +167,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     @SuppressWarnings("resource")
     private MySQLContainer<?> mySqlContainer() {
         return namedTestContainer(
-                new MySQLContainer<>(MYSQL_IMAGE)
+                new MySQLContainer<>(DEBEZIUM_MYSQL_IMAGE)
                         .withUsername("mysqluser")
                         .withPassword("mysqlpw")
         );
@@ -275,7 +271,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     @SuppressWarnings("resource")
     private PostgreSQLContainer<?> postgresContainer() {
         return namedTestContainer(
-                new PostgreSQLContainer<>(POSTGRES_IMAGE)
+                new PostgreSQLContainer<>(DEBEZIUM_POSTGRES_IMAGE)
                         .withDatabaseName("postgres")
                         .withUsername("postgres")
                         .withPassword("postgres")
@@ -440,7 +436,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
      */
     @Test
     public void noFailWhenBeforeIsNotPresent() {
-        try (MongoDBContainer container = new MongoDBContainer(MONGODB_IMAGE).withExposedPorts(27017)
+        try (MongoDBContainer container = new MongoDBContainer(MONGO_IMAGE).withExposedPorts(27017)
                                                                              .withNetworkAliases("mongo")) {
             container.start();
             String connectionString = container.getConnectionString();

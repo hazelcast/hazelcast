@@ -49,7 +49,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -64,6 +63,7 @@ import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
+import static com.hazelcast.jet.TestedVersions.TEST_NEO4J_IMAGE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,7 +81,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
     @SuppressWarnings("resource")
     @ClassRule
-    public static final Neo4jContainer<?> container = new Neo4jContainer<>(DockerImageName.parse("neo4j:5.5.0"))
+    public static final Neo4jContainer<?> container = new Neo4jContainer<>(TEST_NEO4J_IMAGE)
             .withoutAuthentication()
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
