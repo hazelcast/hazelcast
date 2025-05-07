@@ -24,10 +24,23 @@ import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static org.junit.Assert.assertEquals;
 
 public class RegionValidatorTest {
+
+    private static final String[] VALID_AWS_REGIONS_MAY_2025 = new String[] {
+            "af-south-1", "ap-east-1", "ap-northeast-1", "ap-northeast-2", "ap-northeast-3", "ap-south-1", "ap-south-2",
+            "ap-southeast-1", "ap-southeast-2", "ap-southeast-3", "ap-southeast-4", "ap-southeast-5", "ap-southeast-7",
+            "aws-cn-global", "aws-global", "aws-iso-b-global", "aws-iso-global", "aws-us-gov-global", "ca-central-1",
+            "ca-west-1", "cn-north-1", "cn-northwest-1", "eu-central-1", "eu-central-2", "eu-isoe-west-1", "eu-north-1",
+            "eu-south-1", "eu-south-2", "eu-west-1", "eu-west-2", "eu-west-3", "eusc-de-east-1", "il-central-1",
+            "me-central-1", "me-south-1", "mx-central-1", "sa-east-1", "us-east-1", "us-east-2", "us-gov-east-1",
+            "us-gov-west-1", "us-iso-east-1", "us-iso-west-1", "us-isob-east-1", "us-isof-east-1", "us-isof-south-1",
+            "us-west-1", "us-west-2"
+    };
+
     @Test
     public void validateValidRegion() {
-        RegionValidator.validateRegion("us-west-1");
-        RegionValidator.validateRegion("us-gov-east-1");
+        for (String region : VALID_AWS_REGIONS_MAY_2025) {
+            RegionValidator.validateRegion(region);
+        }
     }
 
     @Test
