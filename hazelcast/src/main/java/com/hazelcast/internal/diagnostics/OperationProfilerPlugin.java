@@ -54,11 +54,12 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
         super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(OperationProfilerPlugin.class));
         this.operationService = nodeEngine.getOperationService();
         this.nodeEngine = nodeEngine;
-        readProperties();
         this.opLatencyDistribution = this.operationService.getOpLatencyDistributions();
+        readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
@@ -69,7 +70,6 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
@@ -77,11 +77,14 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
     @Override
     public void onShutdown() {
         super.onShutdown();
-        logger.info("Plugin:deactivated, period-millis:" + periodMillis);
+        logger.info("Plugin:inactive, period-millis:" + periodMillis);
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("OperationsProfiler");
 
         write(writer, opLatencyDistribution);

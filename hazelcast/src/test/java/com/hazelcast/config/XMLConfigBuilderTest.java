@@ -5128,7 +5128,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
         String xml = String.format(HAZELCAST_START_TAG + """
                         <diagnostics enabled="%s">
-                        <max-rolled-file-size-mb>%d</max-rolled-file-size-mb>
+                        <max-rolled-file-size-in-mb>%d</max-rolled-file-size-in-mb>
                         <max-rolled-file-count>%d</max-rolled-file-count>
                         <include-epoch-time>%s</include-epoch-time>
                         <log-directory>%s</log-directory>

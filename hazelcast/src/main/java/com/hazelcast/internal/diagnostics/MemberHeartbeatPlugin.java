@@ -71,13 +71,13 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     public MemberHeartbeatPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(MemberHazelcastInstanceInfoPlugin.class));
+                nodeEngine.getLogger(MemberHeartbeatPlugin.class));
         this.nodeEngine = nodeEngine;
-
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
         this.maxDeviationPercentage = nodeEngine.getProperties().getInteger(overrideProperty(MAX_DEVIATION_PERCENTAGE));
     }
@@ -89,7 +89,6 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
@@ -102,6 +101,9 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         ClusterService cs = nodeEngine.getClusterService();
         if (!(cs instanceof ClusterServiceImpl)) {
             // Let's be lenient during testing if a mocked cluster service is encountered.

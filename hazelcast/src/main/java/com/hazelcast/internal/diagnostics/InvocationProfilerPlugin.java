@@ -41,6 +41,11 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = operationService.getInvocationRegistry();
         this.properties = nodeEngine.getProperties();
+        readProperties();
+    }
+
+    @Override
+    void readProperties() {
         this.periodMs = this.properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
@@ -59,11 +64,14 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
     @Override
     public void onShutdown() {
         super.onShutdown();
-        logger.info("Plugin:deactivated: period-millis:" + periodMs);
+        logger.info("Plugin:inactive: period-millis:" + periodMs);
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("InvocationProfiler");
         OperationProfilerPlugin.write(writer, invocationRegistry.latencyDistributions());
         writer.endSection();

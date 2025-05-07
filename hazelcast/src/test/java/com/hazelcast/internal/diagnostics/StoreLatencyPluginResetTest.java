@@ -42,6 +42,7 @@ public class StoreLatencyPluginResetTest extends AbstractDiagnosticsPluginTest {
         Config config = new Config();
         HazelcastProperties properties = new HazelcastProperties(props);
         StoreLatencyPlugin plugin = new StoreLatencyPlugin(config.getDiagnosticsConfig(), Logger.getLogger(StoreLatencyPlugin.class), properties);
+        plugin.onStart();
 
         StoreLatencyPlugin.LatencyProbe probe = plugin.newProbe("foo", "queue", "somemethod");
 

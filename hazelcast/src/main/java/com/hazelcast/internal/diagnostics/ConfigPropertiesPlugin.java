@@ -49,24 +49,31 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        setProperties(getConfig().getPluginProperties());
         super.onStart();
         logger.info("Plugin:active");
     }
 
     @Override
+    void readProperties() {
+        // no properties to read
+    }
+
+    @Override
     public void onShutdown() {
         super.onShutdown();
-        logger.info("Plugin:deactivated");
+        logger.info("Plugin:inactive");
     }
 
     @Override
     public long getPeriodMillis() {
-        return STATIC;
+        return RUN_ONCE_PERIOD_MS;
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         keyList.clear();
         keyList.addAll(properties.keySet());
         sort(keyList);

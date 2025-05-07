@@ -117,7 +117,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
     @Test
     public void register_whenMonitorEnabled_andPluginStatic() throws Exception {
         DiagnosticsPlugin plugin = mock(DiagnosticsPlugin.class);
-        when(plugin.getPeriodMillis()).thenReturn(DiagnosticsPlugin.STATIC);
+        when(plugin.getPeriodMillis()).thenReturn(DiagnosticsPlugin.RUN_ONCE_PERIOD_MS);
 
         Diagnostics diagnostics = newDiagnostics(new Config().setProperty(Diagnostics.ENABLED.getName(), "true"));
         diagnostics.start();
@@ -230,10 +230,12 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
     private void registerSomePlugins(Diagnostics diagnostics) {
         DiagnosticsPlugin pluginStatic = mock(BuildInfoPlugin.class);
-        when(pluginStatic.getPeriodMillis()).thenReturn(DiagnosticsPlugin.STATIC);
+        when(pluginStatic.canBeEnabledDynamically()).thenReturn(true);
+        when(pluginStatic.getPeriodMillis()).thenReturn(DiagnosticsPlugin.RUN_ONCE_PERIOD_MS);
         diagnostics.register(pluginStatic);
 
         DiagnosticsPlugin pluginDynamic = mock(InvocationSamplePlugin.class);
+        when(pluginDynamic.canBeEnabledDynamically()).thenReturn(true);
         when(pluginDynamic.getPeriodMillis()).thenReturn(100_000L);
         diagnostics.register(pluginDynamic);
     }

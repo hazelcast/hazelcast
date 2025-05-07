@@ -39,7 +39,7 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
 
     @Override
     public long getPeriodMillis() {
-        return STATIC;
+        return RUN_ONCE_PERIOD_MS;
     }
 
     @Override
@@ -51,7 +51,12 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
     @Override
     public void onShutdown() {
         super.onShutdown();
-        logger.info("Plugin:deactivated");
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
+    void readProperties() {
+        // no properties to read
     }
 
     @Override

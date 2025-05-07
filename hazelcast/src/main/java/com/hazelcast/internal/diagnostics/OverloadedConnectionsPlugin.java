@@ -94,11 +94,11 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         this.nodeEngine = nodeEngine;
         this.serializationService = nodeEngine.getSerializationService();
         this.defaultFormat.setMinimumFractionDigits(3);
-
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
         this.threshold = nodeEngine.getProperties().getInteger(overrideProperty(THRESHOLD));
         this.samples = nodeEngine.getProperties().getInteger(overrideProperty(SAMPLES));
@@ -111,7 +111,6 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis + " threshold:" + threshold + " samples:" + samples);
     }
@@ -120,11 +119,14 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     public void onShutdown() {
         super.onShutdown();
         clear();
-        logger.info("Plugin:deactivated");
+        logger.info("Plugin:inactive");
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("OverloadedConnections");
 
         Collection<ServerConnection> connections = nodeEngine.getNode().getServer().getConnections();
@@ -239,11 +241,11 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     }
 
     // just for testing
-     int getThreshold() {
+    int getThreshold() {
         return threshold;
     }
 
-     int getSamples() {
+    int getSamples() {
         return samples;
     }
 }

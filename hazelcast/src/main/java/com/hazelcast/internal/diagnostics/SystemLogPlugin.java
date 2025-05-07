@@ -88,6 +88,11 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     private final HazelcastProperties properties;
     private boolean logPartitions;
     private volatile boolean enabled;
+    private ClusterVersionListenerImpl clusterVersionListener;
+    private ConnectionListenerImpl connectionListener;
+    private MembershipListenerImpl membershipListener;
+    private MigrationListenerImpl migrationListener;
+    private LifecycleListenerImpl lifecycleListener;
 
     public SystemLogPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getConfig().getDiagnosticsConfig(),
@@ -121,7 +126,8 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.logPartitions = properties.getBoolean(overrideProperty(LOG_PARTITIONS));
         this.enabled = properties.getBoolean(overrideProperty(ENABLED));
     }
@@ -137,25 +143,45 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     @Override
     public long getPeriodMillis() {
         if (!enabled) {
-            return DiagnosticsPlugin.DISABLED;
+            return DiagnosticsPlugin.NOT_SCHEDULED_PERIOD_MS;
         }
         return PERIOD_MILLIS;
     }
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: logPartitions:" + logPartitions);
 
-        connectionObservable.addConnectionListener(new ConnectionListenerImpl());
-        hazelcastInstance.getCluster().addMembershipListener(new MembershipListenerImpl());
-        if (logPartitions) {
-            hazelcastInstance.getPartitionService().addMigrationListener(new MigrationListenerImpl());
+        // the listeners should be registered once during the lifetime of the Diagnostics service which is tied to
+        // Hazelcast instance
+        if (connectionListener == null) {
+            connectionListener = new ConnectionListenerImpl();
+            connectionObservable.addConnectionListener(connectionListener);
         }
-        hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
+
+        if (membershipListener == null) {
+            membershipListener = new MembershipListenerImpl();
+            hazelcastInstance.getCluster().addMembershipListener(membershipListener);
+        }
+
+        if (logPartitions) {
+            if (migrationListener == null) {
+                migrationListener = new MigrationListenerImpl();
+                hazelcastInstance.getPartitionService().addMigrationListener(migrationListener);
+            }
+        }
+
+        if (lifecycleListener == null) {
+            lifecycleListener = new LifecycleListenerImpl();
+            hazelcastInstance.getLifecycleService().addLifecycleListener(lifecycleListener);
+        }
+
         if (nodeExtension != null) {
-            nodeExtension.registerListener(new ClusterVersionListenerImpl());
+            if (clusterVersionListener == null) {
+                clusterVersionListener = new ClusterVersionListenerImpl();
+                nodeExtension.registerListener(clusterVersionListener);
+            }
         }
     }
 
@@ -170,7 +196,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         for (; ; ) {
             Object item = logQueue.poll();
-            if (item == null) {
+            if (item == null || !isActive()) {
                 return;
             }
 
@@ -188,6 +214,13 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
                 render(writer, version);
             }
         }
+    }
+
+    // The plugins are there to be used by the diagnostics service always. If the service disabled at runtime,
+    // the plugin stays, and so its listeners since there is no deregister method for listeners.
+    // To avoid the listeners to be called when the plugin is inactive.
+    private boolean shouldListenersListen() {
+        return enabled && isActive();
     }
 
     //for testing
@@ -336,14 +369,14 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     protected class ConnectionListenerImpl implements ConnectionListener {
         @Override
         public void connectionAdded(Connection connection) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(new ConnectionEvent(true, connection));
             }
         }
 
         @Override
         public void connectionRemoved(Connection connection) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(new ConnectionEvent(false, connection));
             }
         }
@@ -352,14 +385,14 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     protected class MembershipListenerImpl extends MembershipAdapter {
         @Override
         public void memberAdded(MembershipEvent event) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(event);
             }
         }
 
         @Override
         public void memberRemoved(MembershipEvent event) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(event);
             }
         }
@@ -368,28 +401,28 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     protected class MigrationListenerImpl implements MigrationListener {
         @Override
         public void migrationStarted(MigrationState state) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(state);
             }
         }
 
         @Override
         public void migrationFinished(MigrationState state) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(state);
             }
         }
 
         @Override
         public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(event);
             }
         }
 
         @Override
         public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(event);
             }
         }
@@ -398,7 +431,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     protected class ClusterVersionListenerImpl implements ClusterVersionListener {
         @Override
         public void onClusterVersionChange(Version newVersion) {
-            if (enabled) {
+            if (shouldListenersListen()) {
                 logQueue.add(newVersion);
             }
         }

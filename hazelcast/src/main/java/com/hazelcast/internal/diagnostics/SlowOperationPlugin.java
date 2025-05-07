@@ -57,12 +57,12 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
         super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(SlowOperationPlugin.class));
         this.operationService = nodeEngine.getOperationService();
         this.properties = nodeEngine.getProperties();
-        this.periodMillis = readPeriodMillis();
+        readProperties();
     }
 
     private long readPeriodMillis() {
         if (!properties.getBoolean(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
-            return DISABLED;
+            return NOT_SCHEDULED_PERIOD_MS;
         }
 
         return properties.getMillis(overrideProperty(PERIOD_SECONDS));
@@ -75,7 +75,6 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        this.periodMillis = readPeriodMillis();
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
@@ -87,7 +86,15 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
     }
 
     @Override
+    void readProperties() {
+        this.periodMillis = readPeriodMillis();
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         List<SlowOperationDTO> slowOperations = operationService.getSlowOperationDTOs();
         writer.startSection("SlowOperations");
 

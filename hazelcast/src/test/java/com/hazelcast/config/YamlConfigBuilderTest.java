@@ -5576,7 +5576,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                         hazelcast:
                           diagnostics:
                             enabled: %s
-                            max-rolled-file-size-mb: %d
+                            max-rolled-file-size-in-mb: %d
                             max-rolled-file-count: %d
                             include-epoch-time: %s
                             log-directory: %s

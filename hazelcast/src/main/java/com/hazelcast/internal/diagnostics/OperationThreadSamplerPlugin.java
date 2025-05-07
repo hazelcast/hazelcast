@@ -94,7 +94,8 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
         this.samplerPeriodMillis = nodeEngine.getProperties().getMillis(overrideProperty(SAMPLER_PERIOD_MILLIS));
         this.includeName = nodeEngine.getProperties().getBoolean(overrideProperty(INCLUDE_NAME));
@@ -107,7 +108,6 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " sampler-period-millis:" + samplerPeriodMillis);
 
@@ -119,11 +119,14 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
     public void onShutdown() {
         sampleThread.interrupt();
         super.onShutdown();
-        logger.info("Plugin:deactivated");
+        logger.info("Plugin:inactive");
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("OperationThreadSamples");
         write(writer, "Partition", partitionSpecificSamples);
         write(writer, "Generic", genericSamples);

@@ -109,6 +109,29 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
     }
 
     @Test
+    public void testSetDiagnosticsConfig_Succeeds_WhenPropsNull() {
+
+        DiagnosticsConfig diagnosticsConfig = getSampleConfig();
+        diagnosticsConfig.getPluginProperties().clear();
+        SetDiagnosticsConfigMessageTask task = createMessageTask(getSampleClientMessage(diagnosticsConfig));
+
+        task.run();
+
+        DiagnosticsConfig taskConfig = (DiagnosticsConfig) task.getConfig();
+
+        assertEquals(diagnosticsConfig.isEnabled(), taskConfig.isEnabled());
+        assertEquals(diagnosticsConfig.getOutputType(), taskConfig.getOutputType());
+        assertEquals(diagnosticsConfig.getLogDirectory(), taskConfig.getLogDirectory());
+        assertEquals(diagnosticsConfig.getFileNamePrefix(), taskConfig.getFileNamePrefix());
+        assertEquals(diagnosticsConfig.getMaxRolledFileCount(), taskConfig.getMaxRolledFileCount());
+        assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB());
+        assertEquals(diagnosticsConfig.isIncludeEpochTime(), taskConfig.isIncludeEpochTime());
+        assertEquals(diagnosticsConfig.getPluginProperties().size(), taskConfig.getPluginProperties().size());
+        assertEquals(diagnosticsConfig.getPluginProperties().get(OperationProfilerPlugin.PERIOD_SECONDS.getName()),
+                taskConfig.getPluginProperties().get(OperationProfilerPlugin.PERIOD_SECONDS.getName()));
+    }
+
+    @Test
     public void testSetDiagnosticsConfig_FailsOnClientCall() {
         when(mockClientEngine.getManagementTasksChecker().isTrusted(any())).thenReturn(false);
         ArgumentCaptor<ClientMessage> argumentCaptor = ArgumentCaptor.forClass(ClientMessage.class);

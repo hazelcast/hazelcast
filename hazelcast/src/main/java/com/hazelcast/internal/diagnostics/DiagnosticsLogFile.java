@@ -57,6 +57,7 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
     private final int maxRollingFileCount;
     private final int maxRollingFileSizeBytes;
     private AtomicBoolean closed = new AtomicBoolean(false);
+    private Object lock = new Object();
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
@@ -74,38 +75,40 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
 
     @Override
     public void write(DiagnosticsPlugin plugin) {
-        if (!closed.compareAndSet(false, false)) {
-            return;
-        }
-        try {
-            if (file == null) {
-                file = newFile(index);
-                printWriter = newWriter();
-                renderStaticPlugins();
+        synchronized (lock) {
+            if (!closed.compareAndSet(false, false)) {
+                return;
             }
+            try {
+                if (file == null) {
+                    file = newFile(index, false);
+                    printWriter = newWriter();
+                    renderStaticPlugins();
+                }
 
-            renderPlugin(plugin);
+                renderPlugin(plugin);
 
-            printWriter.flush();
-            if (file.length() >= maxRollingFileSizeBytes) {
-                rollover();
+                printWriter.flush();
+                if (file.length() >= maxRollingFileSizeBytes) {
+                    rollover();
+                }
+            } catch (IOException e) {
+                logger.warning("Failed to write to file:" + file.getAbsolutePath(), e);
+                close();
+            } catch (RuntimeException e) {
+                logger.warning("Failed to write file: " + file, e);
             }
-        } catch (IOException e) {
-            logger.warning("Failed to write to file:" + file.getAbsolutePath(), e);
-            close();
-        } catch (RuntimeException e) {
-            logger.warning("Failed to write file: " + file, e);
         }
     }
 
     @Override
     public void close() {
-        if (!closed.compareAndSet(false, true)) {
-            return;
+        synchronized (lock) {
+            if (!closed.compareAndSet(false, true)) {
+                return;
+            }
+            closeResource(printWriter);
         }
-        file = null;
-        closeResource(printWriter);
-        printWriter = null;
     }
 
     // just for testing
@@ -118,9 +121,11 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         return maxRollingFileSizeBytes;
     }
 
-    private File newFile(int index) {
+    private File newFile(int index, boolean silent) {
         createDirectoryIfDoesNotExist();
-        logger.info("Diagnostics log directory is [" + diagnostics.getLoggingDirectory() + "]");
+        if (!silent && index == 0) {
+            logger.info("Diagnostics log directory is [" + diagnostics.getLoggingDirectory() + "]");
+        }
         return new File(diagnostics.getLoggingDirectory(), format(fileName, index));
     }
 
@@ -162,7 +167,7 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         printWriter = null;
         file = null;
 
-        File file = newFile(index - maxRollingFileCount);
+        File file = newFile(index - maxRollingFileCount, true);
         deleteQuietly(file);
         index++;
     }

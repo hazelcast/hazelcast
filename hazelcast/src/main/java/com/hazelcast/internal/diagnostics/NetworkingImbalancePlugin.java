@@ -76,7 +76,8 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = this.networking == null ? 0 : properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
@@ -95,7 +96,6 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis);
     }
@@ -108,6 +108,9 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("NetworkingImbalance");
 
         writer.startSection("InputThreads");

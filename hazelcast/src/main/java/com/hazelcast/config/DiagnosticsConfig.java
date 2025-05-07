@@ -30,8 +30,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for diagnostics service.
@@ -95,8 +95,8 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     /**
      * Returns true if {@link Diagnostics} is enabled.
      *
-     * @since 6.0
      * @return true if enabled, false otherwise
+     * @since 6.0
      */
     public boolean isEnabled() {
         return enabled;
@@ -111,6 +111,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * For more detailed information, please check the METRICS_LEVEL.
      * <p>
      * The default is {@code false}.
+     *
      * @since 6.0
      */
     public DiagnosticsConfig setEnabled(boolean enabled) {
@@ -128,6 +129,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Every HazelcastInstance will get its own history of log files.
      * <p>
      * The default is 50.
+     *
      * @since 6.0
      */
     public int getMaxRolledFileSizeInMB() {
@@ -146,8 +148,8 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * The default is 50.
      */
     public DiagnosticsConfig setMaxRolledFileSizeInMB(int maxRolledFileSizeInMB) {
-        this.maxRolledFileSizeInMB = checkNotNegative(maxRolledFileSizeInMB,
-                "maxRolledFileSizeInMB must be positive");
+        this.maxRolledFileSizeInMB = checkPositive("maxRolledFileSizeInMB must be positive",
+                maxRolledFileSizeInMB);
         return this;
     }
 
@@ -159,6 +161,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * This property sets the maximum number of rolling files to keep on disk.
      * <p>
      * The default is 10.
+     *
      * @since 6.0
      */
     public int getMaxRolledFileCount() {
@@ -173,11 +176,12 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * This property sets the maximum number of rolling files to keep on disk.
      * <p>
      * The default is 10.
+     *
      * @since 6.0
      */
     public DiagnosticsConfig setMaxRolledFileCount(int maxRolledFileCount) {
-        this.maxRolledFileCount = checkNotNegative(maxRolledFileCount,
-                "maxRolledFileCount must be positive");
+        this.maxRolledFileCount = checkPositive("maxRolledFileCount must be positive",
+                maxRolledFileCount);
         return this;
     }
 
@@ -193,6 +197,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Configures if the epoch time should be included in the 'top' section.
      * This makes it easy to determine the time in epoch format and prevents
      * needing to parse the date-format section. The default is {@code true}.
+     *
      * @since 6.0
      */
     public DiagnosticsConfig setIncludeEpochTime(boolean includeEpochTime) {
@@ -204,6 +209,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Gets the output directory of the performance log files.
      * <p>
      * Defaults to the value of the 'user.dir' system property.
+     *
      * @since 6.0
      */
     public String getLogDirectory() {
@@ -214,10 +220,11 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Configures the output directory of the performance log files.
      * <p>
      * Defaults to the 'user.dir'.
+     *
      * @since 6.0
      */
     public DiagnosticsConfig setLogDirectory(@Nonnull String logDirectory) {
-        this.logDirectory = checkNotNull(logDirectory, "logDirectory must not be null");
+        this.logDirectory = checkHasText(logDirectory, "logDirectory must not be null");
         return this;
     }
 
@@ -225,6 +232,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Gets the prefix for the diagnostics file.
      * <p>
      * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
+     *
      * @since 6.0
      */
     public String getFileNamePrefix() {
@@ -235,10 +243,11 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Configures the prefix for the diagnostics file.
      * <p>
      * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
+     *
      * @since 6.0
      */
     public DiagnosticsConfig setFileNamePrefix(String fileNamePrefix) {
-        this.fileNamePrefix = checkHasText(fileNamePrefix, "fileNamePrefix must not be null");
+        this.fileNamePrefix = fileNamePrefix;
         return this;
     }
 
@@ -246,6 +255,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Gets the output for the diagnostics. The default value is
      * {@link DiagnosticsOutputType#FILE} which is a set of files managed by the
      * Hazelcast process.
+     *
      * @since 6.0
      */
     public DiagnosticsOutputType getOutputType() {
@@ -256,6 +266,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Configures the output for the diagnostics. The default value is
      * {@link DiagnosticsOutputType#FILE} which is a set of files managed by the
      * Hazelcast process.
+     *
      * @since 6.0
      */
     public DiagnosticsConfig setOutputType(@Nonnull DiagnosticsOutputType outputType) {
@@ -268,8 +279,9 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * diagnostic plugins.
      * <p>Note that the keys and values are not verified. Make sure that the keys and values
      * are valid and compatible with the diagnostic plugins.</p>
-     * @since 6.0
+     *
      * @return Plugin properties of the Diagnostic Configuration
+     * @since 6.0
      */
     public Map<String, String> getPluginProperties() {
         return this.pluginProperties;

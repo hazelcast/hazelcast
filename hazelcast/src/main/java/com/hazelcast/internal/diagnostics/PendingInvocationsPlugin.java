@@ -66,7 +66,8 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
         this.threshold = properties.getInteger(overrideProperty(THRESHOLD));
     }
@@ -78,7 +79,6 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " threshold:" + threshold);
     }
@@ -92,6 +92,9 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         clean();
         scan();
         render(writer);
@@ -128,7 +131,7 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
     }
 
     // just for testing
-     int getThreshold() {
+    int getThreshold() {
         return threshold;
     }
 }

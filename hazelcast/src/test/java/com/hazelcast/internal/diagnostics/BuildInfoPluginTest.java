@@ -44,7 +44,7 @@ public class BuildInfoPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testGetPeriodMillis() {
-        assertEquals(DiagnosticsPlugin.STATIC, plugin.getPeriodMillis());
+        assertEquals(DiagnosticsPlugin.RUN_ONCE_PERIOD_MS, plugin.getPeriodMillis());
     }
 
     @Test

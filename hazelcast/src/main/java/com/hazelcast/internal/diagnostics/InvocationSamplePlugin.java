@@ -74,9 +74,11 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
         this.invocationRegistry = operationService.getInvocationRegistry();
         this.nodeEngine = nodeEngine;
         readProperties();
+
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(overrideProperty(SAMPLE_PERIOD_SECONDS));
         this.thresholdMillis = props.getMillis(overrideProperty(SLOW_THRESHOLD_SECONDS));
@@ -90,7 +92,6 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: period-millis:" + samplePeriodMillis + " threshold-millis:" + thresholdMillis);
     }
@@ -103,6 +104,9 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         long now = Clock.currentTimeMillis();
 
         writer.startSection("Invocations");

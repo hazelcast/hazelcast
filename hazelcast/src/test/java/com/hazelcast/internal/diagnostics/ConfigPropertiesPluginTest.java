@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.STATIC;
+import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.RUN_ONCE_PERIOD_MS;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
@@ -46,7 +46,7 @@ public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testGetPeriodMillis() {
-        assertEquals(STATIC, plugin.getPeriodMillis());
+        assertEquals(RUN_ONCE_PERIOD_MS, plugin.getPeriodMillis());
     }
 
     @Test

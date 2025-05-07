@@ -49,8 +49,8 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
 
     public MemberHazelcastInstanceInfoPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(MemberHazelcastInstanceInfoPlugin.class));
-        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
         this.nodeEngine = nodeEngine;
+        readProperties();
     }
 
     @Override
@@ -60,7 +60,6 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
@@ -72,7 +71,15 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
     }
 
     @Override
+    void readProperties() {
+        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("HazelcastInstance");
 
         writer.writeKeyValueEntry("thisAddress", nodeEngine.getNode().getThisAddress().toString());

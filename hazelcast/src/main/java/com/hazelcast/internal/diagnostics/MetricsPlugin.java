@@ -64,12 +64,12 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         super(config, logger);
         this.metricsRegistry = metricsRegistry;
         this.properties = properties;
-        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        readProperties();
+
     }
 
     @Override
     public void onStart() {
-        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
@@ -81,12 +81,20 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     }
 
     @Override
+    void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+    }
+
+    @Override
     public long getPeriodMillis() {
         return periodMillis;
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         metricCollector.writer = writer;
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
@@ -103,21 +111,24 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            // MetricCollector is called from a different thread than the Plugin.run(),
+            // during shutdown although plugin is closed, it has no ability to close the metric collector.
+            // So we need to check if writer is null or not.
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), value);
             }
         }
 
         @Override
         public void collectDouble(MetricDescriptor descriptor, double value) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), value);
             }
         }
 
         @Override
         public void collectException(MetricDescriptor descriptor, Exception e) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(),
                         e.getClass().getName() + ':' + e.getMessage());
             }
@@ -125,7 +136,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
         @Override
         public void collectNoValue(MetricDescriptor descriptor) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), "NA");
             }
         }

@@ -27,9 +27,13 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.File;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -38,7 +42,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
+import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.NOT_SCHEDULED_PERIOD_MS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
@@ -175,7 +179,8 @@ public class Diagnostics {
     final ILogger logger;
     final LoggingService loggingService;
     final String hzName;
-    final HazelcastProperties hazelcastProperties;
+    // not final for testing purposes
+    HazelcastProperties hazelcastProperties;
 
 
     DiagnosticsLog diagnosticsLog;
@@ -195,7 +200,7 @@ public class Diagnostics {
     private File loggingDirectory;
     private String filePrefix;
     private boolean includeEpochTime;
-    private float maxRollingFileSizeMB;
+    private int maxRollingFileSizeMB;
     private int maxRollingFileCount;
     private ScheduledExecutorService scheduler;
     private final Object lifecycleLock = new Object();
@@ -215,7 +220,6 @@ public class Diagnostics {
         this.baseFileName = baseFileName;
         this.auditlogService = auditlogService;
         setConfig0(config);
-        copyPluginProperties(config);
     }
 
     public String getBaseFileNameWithTime() {
@@ -255,18 +259,6 @@ public class Diagnostics {
         return filePrefix;
     }
 
-    private void copyPluginProperties(DiagnosticsConfig config) {
-
-        if (config.getPluginProperties() == null || config.getPluginProperties().isEmpty()) {
-            return;
-        }
-
-        for (String prop : hazelcastProperties.keySet()) {
-            if (prop.startsWith(DIAGNOSTIC_PROPERTY_PREFIX)) {
-                config.getPluginProperties().put(prop, hazelcastProperties.get(prop));
-            }
-        }
-    }
 
     // just for testing (returns the current file the system is writing to)
     public File currentFile() throws UnsupportedOperationException {
@@ -301,7 +293,7 @@ public class Diagnostics {
      * <p>
      * This method is thread-safe.
      * <p>
-     * There is no checking for duplicate registration.
+     * The duplicated plugins will overwrite the previous one.
      * <p>
      * If the {@link Diagnostics} is disabled, the call is ignored.
      *
@@ -311,16 +303,22 @@ public class Diagnostics {
     public void register(DiagnosticsPlugin plugin) {
         checkNotNull(plugin, "plugin can't be null");
 
+        plugin.setProperties(config.getPluginProperties());
         long periodMillis = plugin.getPeriodMillis();
         if (periodMillis < -1) {
             throw new IllegalArgumentException(plugin + " can't return a periodMillis smaller than -1");
         }
 
-        // hold the plugin for possible later diagnostics service enablement at runtime.
-        pluginsMap.put(plugin.getClass(), plugin);
+        // this plugin's lifecycle managed statically. If Diagnostics enabled statically(first registration on nodeEngine
+        // while service is enabled), then register it. Otherwise, it cannot be enabled or disabled later at runtime.
+        if (isDynamicallyManagedPlugin(periodMillis, plugin)) {
+            pluginsMap.put(plugin.getClass(), plugin);
+        } else if (plugin.canBeEnabledDynamically()) {
+            pluginsMap.put(plugin.getClass(), plugin);
+        }
 
-        logger.finest(plugin.getClass() + " is " + (periodMillis == DISABLED ? "disabled" : "enabled"));
-        if (periodMillis == DISABLED) {
+        logger.finest(plugin.getClass() + " is " + (periodMillis == NOT_SCHEDULED_PERIOD_MS ? "disabled" : "enabled"));
+        if (periodMillis == NOT_SCHEDULED_PERIOD_MS) {
             return;
         }
 
@@ -328,8 +326,10 @@ public class Diagnostics {
             return;
         }
 
-        plugin.setProperties(config.getPluginProperties());
+        schedulePlugin0(plugin, periodMillis);
+    }
 
+    private void schedulePlugin0(DiagnosticsPlugin plugin, long periodMillis) {
         try {
             plugin.onStart();
         } catch (Throwable t) {
@@ -345,6 +345,14 @@ public class Diagnostics {
         } else {
             addStaticPlugin(plugin);
         }
+    }
+
+    private boolean isDynamicallyManagedPlugin(long periodMillis, DiagnosticsPlugin plugin) {
+        return !plugin.canBeEnabledDynamically()
+                && periodMillis > NOT_SCHEDULED_PERIOD_MS
+                // it should be the first registration
+                && !pluginsMap.containsKey(plugin.getClass())
+                && isEnabled();
     }
 
     private void addStaticPlugin(DiagnosticsPlugin plugin) {
@@ -368,18 +376,20 @@ public class Diagnostics {
 
         long startedTime = currentTimeMillis();
         baseFileNameWithTime = baseFileName + "-" + startedTime;
-
-        this.diagnosticsLog = newLog(this);
-        this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
-
-        String message = format("Diagnostics started at [%s]", startedTime);
+        Instant startedTimeInstant = Instant.ofEpochMilli(startedTime);
+        String message = format("Diagnostics started at [%s]-[%s] with configuration %s", startedTime,
+                startedTimeInstant.atZone(ZoneOffset.UTC), config);
         logger.info(message);
+
         if (auditlogService != null) {
             auditlogService.eventBuilder(AuditlogTypeIds.DIAGNOSTICS_LOGGING_START)
                     .message(message)
                     .addParameter("DiagnosticsConfig", config)
                     .log();
         }
+
+        this.diagnosticsLog = newLog(this);
+        this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
     }
 
     /**
@@ -388,6 +398,7 @@ public class Diagnostics {
      * it will override the config.
      * <p>
      * If the service is enabled, it can be disabled over this method with provided config.
+     * Unless there is a no NonDynamic Plugin, such as StoreLatencyPlugin
      * </p>
      * <p>
      * If the service is disabled, it can be enabled over this method with provided config.
@@ -425,12 +436,19 @@ public class Diagnostics {
                             .log();
                 }
             } else {
-                this.status.set(SERVICE_DISABLED);
+                // there is a non-dynamic plugin running and the service cannot be disabled.
+                if (isNonDynamicPluginExist()) {
+                    this.status.set(SERVICE_RESTARTING);
+                    diagnosticsConfig.setEnabled(true);
+                    logNonDynamicPluginWarnings();
+                } else {
+                    this.status.set(SERVICE_DISABLED);
+                }
             }
 
             cancelRunningPlugins();
-            closeLog();
             closeScheduler();
+            closeLog();
 
             setConfig0(diagnosticsConfig);
 
@@ -449,6 +467,29 @@ public class Diagnostics {
             start();
             scheduleRegisteredPlugins();
         }
+    }
+
+    private void logNonDynamicPluginWarnings() {
+        String nameOfNonDynamicPlugins = pluginsMap
+                .entrySet()
+                .stream()
+                .filter(entry -> !entry.getValue().canBeEnabledDynamically())
+                .map(entry -> entry.getKey().getName())
+                .reduce((first, second) -> first + ", " + second)
+                .orElse("none");
+        logger.warning("Diagnostics cannot be disabled dynamically since there are non dynamic plugins running."
+                + "They can be disabled only statically which requires node restart."
+                + "The service is going to restart with new configuration. You can disable or configure other plugins."
+                + "The running non dynamic plugins are: " + nameOfNonDynamicPlugins);
+    }
+
+    private boolean isNonDynamicPluginExist() {
+        for (DiagnosticsPlugin plugin : pluginsMap.values()) {
+            if (!plugin.canBeEnabledDynamically()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void closeScheduler() {
@@ -485,6 +526,8 @@ public class Diagnostics {
 
             status.set(SERVICE_SHUTDOWN);
 
+            cancelRunningPlugins();
+            closeScheduler();
             closeLog();
             closeScheduler();
         }
@@ -506,77 +549,53 @@ public class Diagnostics {
     }
 
     @SuppressWarnings({"NPathComplexity", "java:S3776", "CyclomaticComplexity", "MethodLength"})
-    private void setConfig0(DiagnosticsConfig config) {
+    private void setConfig0(DiagnosticsConfig newConfig) {
         // override config object if properties are set
-        boolean override = false;
-        StringBuilder sb = new StringBuilder("Diagnostics configs overridden by property: ");
+        Set<String> messages = new HashSet<>();
+
+        this.config = new DiagnosticsConfig();
 
         if (hazelcastProperties.containsKey(OUTPUT_TYPE)) {
             this.outputType = hazelcastProperties.getEnum(OUTPUT_TYPE, DiagnosticsOutputType.class);
-            override = true;
-            sb.append(OUTPUT_TYPE.getName()).append(" = ").append(outputType);
+            messages.add(OUTPUT_TYPE.getName() + " = " + outputType);
         } else {
-            this.outputType = config.getOutputType();
+            this.outputType = newConfig.getOutputType();
         }
 
         if (hazelcastProperties.containsKey(MAX_ROLLED_FILE_SIZE_MB)) {
-            this.maxRollingFileSizeMB = hazelcastProperties.getFloat(MAX_ROLLED_FILE_SIZE_MB);
-            override = true;
-            sb.append(MAX_ROLLED_FILE_SIZE_MB.getName()).append(" = ").append(maxRollingFileSizeMB);
+            this.maxRollingFileSizeMB = hazelcastProperties.getInteger(MAX_ROLLED_FILE_SIZE_MB);
+            messages.add(MAX_ROLLED_FILE_SIZE_MB.getName() + " = " + maxRollingFileSizeMB);
         } else {
-            this.maxRollingFileSizeMB = config.getMaxRolledFileSizeInMB();
+            this.maxRollingFileSizeMB = newConfig.getMaxRolledFileSizeInMB();
         }
 
         if (hazelcastProperties.containsKey(MAX_ROLLED_FILE_COUNT)) {
             this.maxRollingFileCount = hazelcastProperties.getInteger(MAX_ROLLED_FILE_COUNT);
-            override = true;
-            sb.append(MAX_ROLLED_FILE_COUNT.getName()).append(" = ").append(maxRollingFileCount);
+            messages.add(MAX_ROLLED_FILE_COUNT.getName() + " = " + maxRollingFileCount);
         } else {
-            this.maxRollingFileCount = config.getMaxRolledFileCount();
+            this.maxRollingFileCount = newConfig.getMaxRolledFileCount();
         }
 
         if (hazelcastProperties.containsKey(FILENAME_PREFIX)) {
-            this.filePrefix = hazelcastProperties.get(FILENAME_PREFIX.getName());
-            override = true;
-            sb.append(FILENAME_PREFIX.getName()).append(" = ").append(filePrefix);
+            this.filePrefix = hazelcastProperties.getString(FILENAME_PREFIX);
+            messages.add(FILENAME_PREFIX.getName() + " = " + filePrefix);
         } else {
-            this.filePrefix = config.getFileNamePrefix();
+            this.filePrefix = newConfig.getFileNamePrefix();
         }
 
         if (hazelcastProperties.containsKey(INCLUDE_EPOCH_TIME)) {
             this.includeEpochTime = hazelcastProperties.getBoolean(INCLUDE_EPOCH_TIME);
-            override = true;
-            sb.append(INCLUDE_EPOCH_TIME.getName()).append(" = ").append(includeEpochTime);
+            messages.add(INCLUDE_EPOCH_TIME.getName() + " = " + includeEpochTime);
         } else {
-            this.includeEpochTime = config.isIncludeEpochTime();
+            this.includeEpochTime = newConfig.isIncludeEpochTime();
         }
 
         if (hazelcastProperties.containsKey(DIRECTORY)) {
-            this.loggingDirectory = new File(hazelcastProperties.get(DIRECTORY.getName()));
-            override = true;
-            sb.append(DIRECTORY.getName()).append(" = ").append(loggingDirectory);
+            this.loggingDirectory = new File(hazelcastProperties.getString(DIRECTORY));
+            messages.add(DIRECTORY.getName() + " = " + loggingDirectory);
         } else {
-            this.loggingDirectory = new File(config.getLogDirectory());
+            this.loggingDirectory = new File(newConfig.getLogDirectory());
         }
-
-        if (hazelcastProperties.containsKey(INCLUDE_EPOCH_TIME)) {
-            this.includeEpochTime = hazelcastProperties.getBoolean(INCLUDE_EPOCH_TIME);
-            override = true;
-            sb.append(INCLUDE_EPOCH_TIME.getName()).append(" = ").append(includeEpochTime);
-        } else {
-            this.includeEpochTime = config.isIncludeEpochTime();
-        }
-
-        if (hazelcastProperties.containsKey(OUTPUT_TYPE)) {
-            this.outputType = hazelcastProperties.getEnum(OUTPUT_TYPE, DiagnosticsOutputType.class);
-            override = true;
-            sb.append(OUTPUT_TYPE.getName()).append(" = ").append(outputType);
-        } else {
-            this.outputType = config.getOutputType();
-        }
-
-        this.config = config;
-        copyPluginProperties(hazelcastProperties, config);
 
         if (hazelcastProperties.containsKey(ENABLED)) {
             boolean enabled = hazelcastProperties.getBoolean(ENABLED);
@@ -585,13 +604,35 @@ public class Diagnostics {
             } else {
                 status.set(SERVICE_DISABLED);
             }
-            override = true;
-            sb.append(ENABLED.getName()).append(" = ").append(enabled);
+            messages.add(ENABLED.getName() + " = " + enabled);
         } else {
-            status.set(config.isEnabled() ? SERVICE_ENABLED : SERVICE_DISABLED);
+            status.set(newConfig.isEnabled() ? SERVICE_ENABLED : SERVICE_DISABLED);
         }
 
-        if (override) {
+        // the config may be overridden by the properties, so we need to set it again
+        // these steps should be removed after properties deprecated.
+        this.config.setOutputType(outputType);
+        this.config.setMaxRolledFileSizeInMB(maxRollingFileSizeMB);
+        this.config.setMaxRolledFileCount(maxRollingFileCount);
+        this.config.setLogDirectory(loggingDirectory.getAbsolutePath());
+        this.config.setFileNamePrefix(filePrefix);
+        this.config.setIncludeEpochTime(includeEpochTime);
+        this.config.setEnabled(status.get() == SERVICE_ENABLED);
+        this.config.getPluginProperties().putAll(newConfig.getPluginProperties());
+        overridePluginProperties(messages);
+
+        if (isEnabled() && !messages.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Diagnostics configs overridden by property: {");
+            int i = 0;
+            int size = messages.size();
+            for (String message : messages) {
+                sb.append(message);
+                if (i < size - 1) {
+                    sb.append(", ");
+                }
+                i++;
+            }
+            sb.append("}");
             logger.info(sb.toString());
         }
     }
@@ -613,7 +654,7 @@ public class Diagnostics {
     private void cancelRunningPlugins() {
         logger.finest("Canceling the diagnostics plugins.");
         for (Map.Entry<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> entry : pluginsMap.entrySet()) {
-            if (pluginsFutureMap.containsKey(entry.getValue())) {
+            if (pluginsFutureMap.containsKey(entry.getValue()) && entry.getValue().canBeEnabledDynamically()) {
                 DiagnosticsPlugin plugin = entry.getValue();
                 ScheduledFuture<?> future = pluginsFutureMap.remove(plugin);
                 future.cancel(false);
@@ -625,17 +666,15 @@ public class Diagnostics {
         for (DiagnosticsPlugin plugin : staticTasks.get()) {
             plugin.onShutdown();
         }
+        staticTasks.set(new DiagnosticsPlugin[0]);
     }
 
-    private void copyPluginProperties(HazelcastProperties properties, DiagnosticsConfig config) {
-
-        if (config.getPluginProperties() == null || config.getPluginProperties().isEmpty()) {
-            return;
-        }
-
-        for (String prop : properties.keySet()) {
+    // override plugin properties from hazelcast properties to diagnostics config if any
+    private void overridePluginProperties(Set<String> messages) {
+        for (String prop : this.hazelcastProperties.keySet()) {
             if (prop.startsWith(DIAGNOSTIC_PROPERTY_PREFIX)) {
-                config.getPluginProperties().put(prop, properties.get(prop));
+                this.config.getPluginProperties().put(prop, this.hazelcastProperties.get(prop));
+                messages.add(prop + " = " + this.hazelcastProperties.get(prop));
             }
         }
     }

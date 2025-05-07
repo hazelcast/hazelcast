@@ -95,12 +95,12 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
     public StoreLatencyPlugin(DiagnosticsConfig config, ILogger logger, HazelcastProperties properties) {
         super(config, logger);
-
         this.properties = properties;
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
         this.resetPeriodMillis = properties.getMillis(overrideProperty(RESET_PERIOD_SECONDS));
         if (periodMillis == 0 || resetPeriodMillis == 0) {
@@ -111,13 +111,19 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     @Override
+    public boolean canBeEnabledDynamically() {
+        // this plugin cannot be managed dynamically at runtime, because it is not possible
+        // to create or remove probes after store loaders are created.
+        return false;
+    }
+
+    @Override
     public long getPeriodMillis() {
         return periodMillis;
     }
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " resetPeriod-millis:" + resetPeriodMillis);
     }
@@ -133,12 +139,17 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     @Override
     public void run(DiagnosticsLogWriter writer) {
         iteration++;
-        render(writer);
-        resetStatisticsIfNeeded(false);
+        if (isActive()) {
+            render(writer);
+            resetStatisticsIfNeeded(false);
+        }
     }
 
     private void render(DiagnosticsLogWriter writer) {
         for (ServiceProbes serviceProbes : metricsPerServiceMap.values()) {
+            if (!isActive()) {
+                return;
+            }
             serviceProbes.render(writer);
         }
     }

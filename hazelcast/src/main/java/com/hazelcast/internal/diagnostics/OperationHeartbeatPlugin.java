@@ -77,9 +77,11 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
         readProperties();
         this.expectedIntervalMillis = invocationMonitor.getHeartbeatBroadcastPeriodMillis();
         this.heartbeatPerMember = invocationMonitor.getHeartbeatPerMember();
+        readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
         this.maxDeviationPercentage = properties.getInteger(overrideProperty(MAX_DEVIATION_PERCENTAGE));
     }
@@ -91,7 +93,6 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " max-deviation:" + maxDeviationPercentage + "%");
     }
@@ -104,6 +105,9 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         long nowMillis = System.currentTimeMillis();
         for (Map.Entry<Address, AtomicLong> entry : heartbeatPerMember.entrySet()) {
             Address member = entry.getKey();
@@ -121,6 +125,9 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
                 writer.writeKeyValueEntry("now(ms)", nowMillis);
                 writer.writeKeyValueEntryAsDateTime("now(date-time)", nowMillis);
                 writer.endSection();
+            }
+            if (!isActive()) {
+                break;
             }
         }
 

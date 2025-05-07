@@ -91,10 +91,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDiagnosticsFilesRollOver() throws IOException, NoSuchFieldException, IllegalAccessException {
-
-        // Prepare the config for a lot of output
-        Config config = new Config();
+    public void testDiagnosticsFilesRollsOver() throws IOException, NoSuchFieldException, IllegalAccessException {
         File diagnosticsFolder = folder.newFolder();
         DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(true)
@@ -106,19 +103,37 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
                 .setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1")
                 .setProperty(InvocationProfilerPlugin.PERIOD_SECONDS.getName(), "1");
 
+        assertFilesRollingOver(diagnosticsConfig);
+
+    }
+
+    @Test
+    public void testDiagnosticsFilesRollsOverWithDefaultConfig() throws IOException, NoSuchFieldException, IllegalAccessException {
+        File diagnosticsFolder = folder.newFolder();
+        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setLogDirectory(diagnosticsFolder.getAbsolutePath());
+
+        assertFilesRollingOver(diagnosticsConfig);
+    }
+
+    public void assertFilesRollingOver(DiagnosticsConfig diagnosticsConfig) throws IOException, NoSuchFieldException, IllegalAccessException {
+
+        // Prepare the config for a lot of output
+        Config config = new Config();
+
+
         config.setDiagnosticsConfig(diagnosticsConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
 
         // Let's tweak the file size on LogFileWrite to speed up the test.
         Diagnostics diagnostics = TestUtil.getNode(instance).getNodeEngine().getDiagnostics();
-        DiagnosticsLogFile fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
-        Field field = DiagnosticsLogFile.class.getDeclaredField("maxRollingFileSizeBytes");
-        field.setAccessible(true);
-        field.set(fileLogger, 10_000); // 10 kilobyte
+        setRollingSizeToKB(diagnostics, 10_000);
+        DiagnosticsLogFile fileLogger;
         String fileNameOfFirstRun = diagnostics.getFileName();
 
         // Ensure configured amount of files are created
-        assertContainsFileEventually(diagnosticsFolder, diagnosticsConfig.getMaxRolledFileCount());
+        assertContainsFileEventually(diagnostics.getLoggingDirectory(), diagnosticsConfig.getMaxRolledFileCount());
 
         // now, let's decrease the rolling count. Since each run on diagnostics is a different "session",
         // previous files should be there
@@ -132,12 +147,11 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         // set the config for second phase
         instance.getConfig().setDiagnosticsConfig(diagnosticsConfig);
         // let's tweak the file size on LogFileWrite to speed up the test.
-        fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
-        field.set(fileLogger, 10_000); // 10 kilobyte
-        assertContainsFileEventually(diagnosticsFolder, totalExpectedFileCount);
+        setRollingSizeToKB(diagnostics, 10_000);
+        assertContainsFileEventually(diagnostics.getLoggingDirectory(), totalExpectedFileCount);
 
 
-        File[] logFiles = diagnosticsFolder.listFiles();
+        File[] logFiles = diagnostics.getLoggingDirectory().listFiles();
         String fileNameOfSecondRun = diagnostics.getFileName();
 
         // There should be files from two different "sessions" or runs
@@ -145,6 +159,13 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         List<String> fileNames = Arrays.stream(logFiles).map((file) -> file.getName()).toList();
         assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfFirstRun)));
         assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfSecondRun)));
+    }
+
+    private static void setRollingSizeToKB(Diagnostics diagnostics, int size) throws NoSuchFieldException, IllegalAccessException {
+        DiagnosticsLogFile fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
+        Field field = DiagnosticsLogFile.class.getDeclaredField("maxRollingFileSizeBytes");
+        field.setAccessible(true);
+        field.set(fileLogger, size); // 10 kilobyte
     }
 
     private void assertContainsFileEventually(final File dir) {

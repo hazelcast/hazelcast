@@ -1226,7 +1226,7 @@ public class DynamicConfigYamlGenerator {
         Map<String, Object> child = new LinkedHashMap<>();
 
         child.put("enabled", diagnosticsConfig.isEnabled());
-        child.put("max-rolled-file-size-mb", diagnosticsConfig.getMaxRolledFileSizeInMB());
+        child.put("max-rolled-file-size-in-mb", diagnosticsConfig.getMaxRolledFileSizeInMB());
         child.put("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount());
         child.put("include-epoch-time", diagnosticsConfig.isIncludeEpochTime());
         child.put("log-directory", diagnosticsConfig.getLogDirectory());

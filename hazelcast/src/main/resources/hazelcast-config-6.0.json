@@ -5519,7 +5519,7 @@
           "type": "boolean",
           "default": false
         },
-        "max-rolled-file-size-mb": {
+        "max-rolled-file-size-in-mb": {
           "type": "integer",
           "default": 50
         },

@@ -101,7 +101,8 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
         readProperties();
     }
 
-    private void readProperties() {
+    @Override
+    void readProperties() {
         this.periodMillis = props.getMillis(overrideProperty(PERIOD_SECONDS));
         this.threshold = props.getInteger(overrideProperty(THRESHOLD));
         this.samples = props.getInteger(overrideProperty(SAMPLES));
@@ -114,7 +115,6 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        readProperties();
         super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis + " threshold:" + threshold + " samples:" + samples);
     }
@@ -129,6 +129,9 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("EventQueues");
 
         int index = 1;

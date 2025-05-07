@@ -49,6 +49,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         Config config = new Config();
         plugin = new StoreLatencyPlugin(config.getDiagnosticsConfig(),
                 Logger.getLogger(StoreLatencyPlugin.class), properties);
+        plugin.onStart();
     }
 
     @Test

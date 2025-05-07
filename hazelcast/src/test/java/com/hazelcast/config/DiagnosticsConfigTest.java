@@ -71,9 +71,23 @@ public class DiagnosticsConfigTest {
     }
 
     @Test
+    public void TestDiagnosticsConfigSetNull() {
+        DiagnosticsConfig config = new DiagnosticsConfig();
+
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileCount(-1));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileSizeInMB(-1));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileSizeInMB(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileCount(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setLogDirectory(""));
+        config.setFileNamePrefix("");
+        config.setFileNamePrefix(null);
+        assertThrows(NullPointerException.class, () -> config.setOutputType(null));
+    }
+
+    @Test
     public void testNullAssigmentThrowsException() {
         DiagnosticsConfig config = new DiagnosticsConfig();
-        assertThrows(NullPointerException.class, () -> config.setLogDirectory(null));
+        assertThrows(IllegalArgumentException.class, () -> config.setLogDirectory(null));
         assertThrows(NullPointerException.class, () -> config.setOutputType(null));
     }
 

@@ -48,7 +48,7 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
     @Override
     public long getPeriodMillis() {
-        return STATIC;
+        return RUN_ONCE_PERIOD_MS;
     }
 
     @Override
@@ -62,6 +62,11 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     public void onShutdown() {
         super.onShutdown();
         logger.info("Plugin:inactive");
+    }
+
+    @Override
+    void readProperties() {
+        // nothing to read
     }
 
     private static String getInputArgs() {
@@ -79,6 +84,9 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     @Override
     @SuppressWarnings("unchecked")
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("SystemProperties");
 
         keys.clear();

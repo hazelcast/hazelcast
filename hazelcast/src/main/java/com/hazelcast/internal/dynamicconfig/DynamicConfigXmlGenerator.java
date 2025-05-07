@@ -937,7 +937,7 @@ public final class DynamicConfigXmlGenerator {
         DiagnosticsConfig diagnosticsConfig = config.getDiagnosticsConfig();
 
         gen.open(ConfigSections.DIAGNOSTICS.getName(), "enabled", diagnosticsConfig.isEnabled())
-                .node("max-rolled-file-size-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
+                .node("max-rolled-file-size-in-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
                 .node("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount())
                 .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
                 .node("log-directory", diagnosticsConfig.getLogDirectory())

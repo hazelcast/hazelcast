@@ -69,18 +69,20 @@ public class SetDiagnosticsConfigMessageTask
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:MethodLength"})
     protected IdentifiedDataSerializable getConfig() {
         DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(parameters.enabled)
-                .setOutputType(DiagnosticsOutputType.valueOf(parameters.outputType))
                 .setIncludeEpochTime(parameters.includeEpochTime)
-                .setMaxRolledFileSizeInMB(parameters.maxRolledFileSizeInMB)
+                .setOutputType(DiagnosticsOutputType.valueOf(parameters.outputType))
                 .setMaxRolledFileCount(parameters.maxRolledFileCount)
+                .setMaxRolledFileSizeInMB(parameters.maxRolledFileSizeInMB)
                 .setLogDirectory(parameters.logDirectory)
                 .setFileNamePrefix(parameters.fileNamePrefix);
 
-        diagnosticsConfig.getPluginProperties().putAll(parameters.properties);
+        if (parameters.properties != null && !parameters.properties.isEmpty()) {
+            diagnosticsConfig.getPluginProperties().putAll(parameters.properties);
+        }
+
         return diagnosticsConfig;
     }
 

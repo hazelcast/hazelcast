@@ -22,7 +22,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Plugin for the {@link Diagnostics}.
@@ -41,41 +41,43 @@ public abstract class DiagnosticsPlugin {
     /**
      * Indicates that a plugin should be run once.
      */
-    static final long STATIC = -1;
+    static final long RUN_ONCE_PERIOD_MS = -1;
 
     /**
-     * Indicates that the plugin is disabled.
+     * Indicates that the plugin is disabled and not going to be scheduled at all to run.
      */
-    static final long DISABLED = 0;
-    /**
-     * Indicates that the plugin is running.
-     */
-    static final int RUNNING = 1;
-    /**
-     * Indicates that the plugin is stopped.
-     */
-    static final int STOPPED = 0;
+    static final long NOT_SCHEDULED_PERIOD_MS = 0;
+
     protected final ILogger logger;
+    /**
+     * Indicates that weather plugin is scheduled to run or not.
+     */
+    final AtomicBoolean isActive = new AtomicBoolean(false);
     private DiagnosticsConfig diagnosticsConfig;
-    private Map<String, String> properties = new ConcurrentHashMap<>();
-    protected AtomicInteger isRunning = new AtomicInteger(STOPPED);
+    private final Map<String, String> properties = new ConcurrentHashMap<>();
+
 
     protected DiagnosticsPlugin(DiagnosticsConfig diagnosticsConfig, ILogger logger) {
         this.logger = logger;
         this.diagnosticsConfig = diagnosticsConfig;
-        setProperties(diagnosticsConfig.getPluginProperties());
+        setProperties(diagnosticsConfig.getPluginProperties(), false);
     }
 
-    protected void setRunning() {
-        isRunning.compareAndSet(STOPPED, RUNNING);
+    protected void setActive() {
+        isActive.set(true);
     }
 
-    protected void setStopped() {
-        isRunning.compareAndSet(RUNNING, STOPPED);
+    protected void setInactive() {
+        isActive.set(false);
     }
 
-    public boolean isRunning() {
-        return isRunning.compareAndSet(RUNNING, isRunning.get());
+    /**
+     * Indicates that plugin is scheduled to run.
+     *
+     * @return true if the plugin is scheduled to run, false otherwise.
+     */
+    public boolean isActive() {
+        return isActive.get();
     }
 
     /**
@@ -93,19 +95,44 @@ public abstract class DiagnosticsPlugin {
     public abstract long getPeriodMillis();
 
     public void onStart() {
-        setRunning();
+        setActive();
     }
 
     public void onShutdown() {
-        setStopped();
+        setInactive();
+    }
+
+    /**
+     * Indicates if the plugin can be enabled at runtime.
+     *
+     * @return true if the plugin can be enabled at runtime, false otherwise.
+     */
+    public boolean canBeEnabledDynamically() {
+        return true;
     }
 
     void setProperties(Map<String, String> props) {
-        if (!isRunning() && !this.properties.equals(props)) {
+        setProperties(props, true);
+    }
+
+    private void setProperties(Map<String, String> props, boolean refresh) {
+        if (!isActive() && !this.properties.equals(props)) {
             this.properties.clear();
             this.properties.putAll(props);
+            if (refresh) {
+                readProperties();
+            }
         }
     }
+
+    /**
+     * Reads the properties from the diagnostics config.
+     * <p>
+     * This method is called when the plugin is initialized and when the
+     * properties are set. The implementer should read its properties from the config.
+     * </p>
+     */
+    abstract void readProperties();
 
     /**
      * Overrides the property with the value from the diagnostics config if it is set.

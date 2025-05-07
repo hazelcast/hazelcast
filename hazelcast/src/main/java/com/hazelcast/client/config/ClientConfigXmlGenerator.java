@@ -156,7 +156,7 @@ public final class ClientConfigXmlGenerator {
 
     private static void diagnostics(XmlGenerator gen, DiagnosticsConfig diagnosticsConfig) {
         gen.open(ConfigSections.DIAGNOSTICS.getName(), "enabled", diagnosticsConfig.isEnabled())
-                .node("max-rolled-file-size-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
+                .node("max-rolled-file-size-in-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
                 .node("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount())
                 .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
                 .node("log-directory", diagnosticsConfig.getLogDirectory())

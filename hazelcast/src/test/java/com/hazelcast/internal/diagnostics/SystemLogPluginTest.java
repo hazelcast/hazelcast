@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
+import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.NOT_SCHEDULED_PERIOD_MS;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.ENABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.LOG_PARTITIONS;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -66,7 +66,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         plugin = new SystemLogPlugin(getNodeEngineImpl(instance));
         plugin.onStart();
 
-        assertEquals(DISABLED, plugin.getPeriodMillis());
+        assertEquals(NOT_SCHEDULED_PERIOD_MS, plugin.getPeriodMillis());
     }
 
     @Test
