@@ -110,7 +110,7 @@ public final class StripedExecutor implements Executor {
     public long processedCount() {
         long size = 0;
         for (Worker worker : workers) {
-            size += worker.processed.inc();
+            size += worker.processed.get();
         }
         return size;
     }
