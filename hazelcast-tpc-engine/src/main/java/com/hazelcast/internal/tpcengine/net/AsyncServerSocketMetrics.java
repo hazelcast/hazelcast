@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import java.lang.invoke.MethodHandles;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -25,16 +26,7 @@ import java.lang.invoke.VarHandle;
 @SuppressWarnings("checkstyle:ConstantName")
 public class AsyncServerSocketMetrics {
 
-    private static final VarHandle ACCEPTED;
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            ACCEPTED = l.findVarHandle(AsyncServerSocketMetrics.class, "accepted", long.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle ACCEPTED = ReflectionUtil.findVarHandle("accepted", long.class);
 
     private volatile long accepted;
 

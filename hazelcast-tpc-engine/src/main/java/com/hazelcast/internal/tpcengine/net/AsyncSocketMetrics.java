@@ -17,8 +17,8 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 /**
@@ -27,22 +27,10 @@ import java.lang.invoke.VarHandle;
 @SuppressWarnings("checkstyle:ConstantName")
 public class AsyncSocketMetrics {
 
-    private static final VarHandle BYTES_READ;
-    private static final VarHandle BYTES_WRITTEN;
-    private static final VarHandle WRITE_EVENTS;
-    private static final VarHandle READ_EVENTS;
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            BYTES_READ = l.findVarHandle(AsyncSocketMetrics.class, "bytesRead", long.class);
-            BYTES_WRITTEN = l.findVarHandle(AsyncSocketMetrics.class, "bytesWritten", long.class);
-            WRITE_EVENTS = l.findVarHandle(AsyncSocketMetrics.class, "writeEvents", long.class);
-            READ_EVENTS = l.findVarHandle(AsyncSocketMetrics.class, "readEvents", long.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle BYTES_READ = ReflectionUtil.findVarHandle("bytesRead", long.class);
+    private static final VarHandle BYTES_WRITTEN = ReflectionUtil.findVarHandle("bytesWritten", long.class);
+    private static final VarHandle WRITE_EVENTS = ReflectionUtil.findVarHandle("writeEvents", long.class);
+    private static final VarHandle READ_EVENTS = ReflectionUtil.findVarHandle("readEvents", long.class);
 
     private volatile long bytesRead;
     private volatile long bytesWritten;

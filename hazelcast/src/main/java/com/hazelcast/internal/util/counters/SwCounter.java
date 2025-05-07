@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.util.counters;
 
-import java.lang.invoke.MethodHandles;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -70,17 +71,7 @@ import java.lang.invoke.VarHandle;
  */
 public final class SwCounter implements Counter {
 
-    private static final VarHandle VALUE;
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            VALUE = l.findVarHandle(SwCounter.class, "value", long.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
+    private static final VarHandle VALUE = ReflectionUtil.findVarHandle("value", long.class);
 
     private volatile long value;
 

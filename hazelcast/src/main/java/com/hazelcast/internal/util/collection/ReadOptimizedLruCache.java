@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.util.collection;
 
-import java.lang.invoke.MethodHandles;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
+
 import java.lang.invoke.VarHandle;
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -155,17 +156,7 @@ public class ReadOptimizedLruCache<K, V> {
 
     // package-visible for tests
     static class ValueAndTimestamp<V> {
-        private static final VarHandle TIMESTAMP_VARHANDLE;
-
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-
-                TIMESTAMP_VARHANDLE = l.findVarHandle(ValueAndTimestamp.class, "timestamp", long.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static final VarHandle TIMESTAMP_VARHANDLE = ReflectionUtil.findVarHandle("timestamp", long.class);
 
         final V value;
         volatile long timestamp;

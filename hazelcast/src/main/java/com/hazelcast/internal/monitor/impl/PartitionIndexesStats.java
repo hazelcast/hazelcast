@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import java.lang.invoke.MethodHandles;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -28,23 +29,12 @@ import java.lang.invoke.VarHandle;
  */
 public class PartitionIndexesStats implements IndexesStats {
 
-    private static final VarHandle QUERY_COUNT;
-    private static final VarHandle INDEXED_QUERY_COUNT;
-    private static final VarHandle INDEXES_SKIPPED_QUERY_COUNT;
-    private static final VarHandle NO_MATCHING_INDEX_QUERY_COUNT;
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-
-            QUERY_COUNT = l.findVarHandle(PartitionIndexesStats.class, "queryCount", long.class);
-            INDEXED_QUERY_COUNT = l.findVarHandle(PartitionIndexesStats.class, "indexedQueryCount", long.class);
-            INDEXES_SKIPPED_QUERY_COUNT = l.findVarHandle(PartitionIndexesStats.class, "indexesSkippedQueryCount", long.class);
-            NO_MATCHING_INDEX_QUERY_COUNT = l.findVarHandle(PartitionIndexesStats.class, "noMatchingIndexQueryCount", long.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle QUERY_COUNT = ReflectionUtil.findVarHandle("queryCount", long.class);
+    private static final VarHandle INDEXED_QUERY_COUNT = ReflectionUtil.findVarHandle("indexedQueryCount", long.class);
+    private static final VarHandle INDEXES_SKIPPED_QUERY_COUNT =
+            ReflectionUtil.findVarHandle("indexesSkippedQueryCount", long.class);
+    private static final VarHandle NO_MATCHING_INDEX_QUERY_COUNT =
+            ReflectionUtil.findVarHandle("noMatchingIndexQueryCount", long.class);
 
     private volatile long queryCount;
     private volatile long indexedQueryCount;

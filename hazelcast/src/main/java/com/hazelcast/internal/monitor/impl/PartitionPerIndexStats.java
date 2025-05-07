@@ -17,11 +17,11 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.internal.util.Clock;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -35,42 +35,21 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  */
 public class PartitionPerIndexStats implements PerIndexStats {
 
-    private static final VarHandle ENTRY_COUNT;
-    private static final VarHandle QUERY_COUNT;
-    private static final VarHandle HIT_COUNT;
-    private static final VarHandle TOTAL_HIT_LATENCY;
-    private static final VarHandle TOTAL_NORMALIZED_HIT_CARDINALITY;
-    private static final VarHandle INSERT_COUNT;
-    private static final VarHandle TOTAL_INSERT_LATENCY;
-    private static final VarHandle UPDATE_COUNT;
-    private static final VarHandle TOTAL_UPDATE_LATENCY;
-    private static final VarHandle REMOVE_COUNT;
-    private static final VarHandle TOTAL_REMOVE_LATENCY;
-    private static final VarHandle MEMORY_COST;
+    private static final VarHandle ENTRY_COUNT = ReflectionUtil.findVarHandle("entryCount", long.class);
+    private static final VarHandle QUERY_COUNT = ReflectionUtil.findVarHandle("queryCount", long.class);
+    private static final VarHandle HIT_COUNT = ReflectionUtil.findVarHandle("hitCount", long.class);
+    private static final VarHandle TOTAL_HIT_LATENCY = ReflectionUtil.findVarHandle("totalHitLatency", long.class);
+    private static final VarHandle TOTAL_NORMALIZED_HIT_CARDINALITY =
+            ReflectionUtil.findVarHandle("totalNormalizedHitCardinality", long.class);
+    private static final VarHandle INSERT_COUNT = ReflectionUtil.findVarHandle("insertCount", long.class);
+    private static final VarHandle TOTAL_INSERT_LATENCY = ReflectionUtil.findVarHandle("totalInsertLatency", long.class);
+    private static final VarHandle UPDATE_COUNT = ReflectionUtil.findVarHandle("updateCount", long.class);
+    private static final VarHandle TOTAL_UPDATE_LATENCY = ReflectionUtil.findVarHandle("totalUpdateLatency", long.class);
+    private static final VarHandle REMOVE_COUNT = ReflectionUtil.findVarHandle("removeCount", long.class);
+    private static final VarHandle TOTAL_REMOVE_LATENCY = ReflectionUtil.findVarHandle("totalRemoveLatency", long.class);
+    private static final VarHandle MEMORY_COST = ReflectionUtil.findVarHandle("memoryCost", long.class);
     private static final AtomicLongFieldUpdater<PartitionPerIndexStats> INDEX_NOT_READY_QUERY_COUNT =
             newUpdater(PartitionPerIndexStats.class, "indexNotReadyQueryCount");
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-
-            ENTRY_COUNT = l.findVarHandle(PartitionPerIndexStats.class, "entryCount", long.class);
-            QUERY_COUNT = l.findVarHandle(PartitionPerIndexStats.class, "queryCount", long.class);
-            HIT_COUNT = l.findVarHandle(PartitionPerIndexStats.class, "hitCount", long.class);
-            TOTAL_HIT_LATENCY = l.findVarHandle(PartitionPerIndexStats.class, "totalHitLatency", long.class);
-            TOTAL_NORMALIZED_HIT_CARDINALITY =
-                    l.findVarHandle(PartitionPerIndexStats.class, "totalNormalizedHitCardinality", long.class);
-            INSERT_COUNT = l.findVarHandle(PartitionPerIndexStats.class, "insertCount", long.class);
-            TOTAL_INSERT_LATENCY = l.findVarHandle(PartitionPerIndexStats.class, "totalInsertLatency", long.class);
-            UPDATE_COUNT = l.findVarHandle(PartitionPerIndexStats.class, "updateCount", long.class);
-            TOTAL_UPDATE_LATENCY = l.findVarHandle(PartitionPerIndexStats.class, "totalUpdateLatency", long.class);
-            REMOVE_COUNT = l.findVarHandle(PartitionPerIndexStats.class, "removeCount", long.class);
-            TOTAL_REMOVE_LATENCY = l.findVarHandle(PartitionPerIndexStats.class, "totalRemoveLatency", long.class);
-            MEMORY_COST = l.findVarHandle(PartitionPerIndexStats.class, "memoryCost", long.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
 
     // Per-operation stats may be safely reused/shared for operations on
     // partitioned indexes since we know for sure only a single thread may

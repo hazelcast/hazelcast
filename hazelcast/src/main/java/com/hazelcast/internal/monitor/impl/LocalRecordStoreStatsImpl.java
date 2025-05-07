@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,32 +26,17 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 // written by single thread, can be read by multiple threads
 public class LocalRecordStoreStatsImpl
         implements LocalRecordStoreStats, IdentifiedDataSerializable, Versioned {
 
-    private static final VarHandle HITS;
-    private static final VarHandle EVICTION_COUNT;
-    private static final VarHandle EXPIRATION_COUNT;
-    private static final VarHandle LAST_ACCESS_TIME;
-    private static final VarHandle LAST_UPDATE_TIME;
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-
-            HITS = l.findVarHandle(LocalRecordStoreStatsImpl.class, "hits", long.class);
-            EVICTION_COUNT = l.findVarHandle(LocalRecordStoreStatsImpl.class, "evictionCount", long.class);
-            EXPIRATION_COUNT = l.findVarHandle(LocalRecordStoreStatsImpl.class, "expirationCount", long.class);
-            LAST_ACCESS_TIME = l.findVarHandle(LocalRecordStoreStatsImpl.class, "lastAccessTime", long.class);
-            LAST_UPDATE_TIME = l.findVarHandle(LocalRecordStoreStatsImpl.class, "lastUpdateTime", long.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle HITS = ReflectionUtil.findVarHandle("hits", long.class);
+    private static final VarHandle EVICTION_COUNT = ReflectionUtil.findVarHandle("evictionCount", long.class);
+    private static final VarHandle EXPIRATION_COUNT = ReflectionUtil.findVarHandle("expirationCount", long.class);
+    private static final VarHandle LAST_ACCESS_TIME = ReflectionUtil.findVarHandle("lastAccessTime", long.class);
+    private static final VarHandle LAST_UPDATE_TIME = ReflectionUtil.findVarHandle("lastUpdateTime", long.class);
 
     private volatile long hits;
     private volatile long lastAccessTime;

@@ -21,12 +21,12 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.jet.core.metrics.Metric;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.core.metrics.Unit;
 
 import javax.annotation.Nonnull;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,17 +107,7 @@ public class MetricsContext implements DynamicMetricsProvider {
 
     private static final class SingleWriterMetric extends AbstractMetric {
 
-        private static final VarHandle VALUE_VARHANDLE;
-
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-
-                VALUE_VARHANDLE = l.findVarHandle(SingleWriterMetric.class, "value", long.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static final VarHandle VALUE_VARHANDLE = ReflectionUtil.findVarHandle("value", long.class);
 
         private volatile long value;
 
