@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static org.junit.Assert.fail;
@@ -212,28 +211,15 @@ public final class TestUtil {
      * @return {@code true} if the port is available in UDP and TCP, {@code false} otherwise
      */
     public static boolean isPortAvailable(int port) {
-        ServerSocket ss = null;
-        DatagramSocket ds = null;
-        try {
-            ss = new ServerSocket(port);
+        try (ServerSocket ss = new ServerSocket(port)) {
             ss.setReuseAddress(true);
-            ds = new DatagramSocket(port);
-            ds.setReuseAddress(true);
-            return true;
+
+            try (DatagramSocket ds = new DatagramSocket(port)) {
+                ds.setReuseAddress(true);
+                return true;
+            }
         } catch (IOException e) {
             return false;
-        } finally {
-            // ServerSocket is not Closeable in Java 6, so we cannot use IOUtil.closeResource() yet
-            if (ds != null) {
-                ds.close();
-            }
-            try {
-                if (ss != null) {
-                    ss.close();
-                }
-            } catch (IOException e) {
-                ignore(e);
-            }
         }
     }
 

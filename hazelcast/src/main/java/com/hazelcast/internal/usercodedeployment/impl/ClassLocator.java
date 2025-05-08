@@ -110,8 +110,6 @@ public final class ClassLocator {
 
     public Class<?> defineClassFromClient(final String name, final byte[] classDef, Map<String, byte[]> bundledClassDefinitions) {
         // we need to acquire a classloading lock before defining a class
-        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
-        // mutexFactory abstract these differences away
         String mainClassName = extractMainClassName(name);
         Closeable classMutex = mutexFactory.mutexFor(mainClassName);
         try {
@@ -141,8 +139,6 @@ public final class ClassLocator {
 
     private Class<?> tryToGetClassFromRemote(String name) throws ClassNotFoundException {
         // we need to acquire a classloading lock before defining a class
-        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
-        // mutexFactory abstract these differences away
         String mainClassName = extractMainClassName(name);
         Closeable classMutex = mutexFactory.mutexFor(mainClassName);
         try {

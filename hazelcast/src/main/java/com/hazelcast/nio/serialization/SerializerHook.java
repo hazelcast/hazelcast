@@ -27,7 +27,7 @@ import java.util.ServiceLoader;
  * Both types of {@link Serializer}s are supported: {@link StreamSerializer} and
  * {@link ByteArraySerializer}. The serializers need to be registered using a file
  * named "com.hazelcast.SerializerHook" in META-INF/services. Those services files
- * are not registered using the standard Java 6+ {@link ServiceLoader}, but with a
+ * are not registered using the standard Java {@link ServiceLoader}, but with a
  * Hazelcast version that is capable of working with multiple class loaders to
  * support JEE and OSGi environments.
  *
