@@ -121,7 +121,7 @@
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
-        <mongodb.version>5.4.0</mongodb.version>
+        <mongodb.version>5.5.0</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.41.0</activemq-artemis.version>
