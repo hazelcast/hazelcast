@@ -1337,7 +1337,7 @@
             <distributionManagement>
                 <repository>
                     <id>devel-repository</id>
-                    <url>https://hazelcast.jfrog.io/artifactory/devel</url>
+                    <url>https://repository.hazelcast.com/devel</url>
                 </repository>
             </distributionManagement>
         </profile>
