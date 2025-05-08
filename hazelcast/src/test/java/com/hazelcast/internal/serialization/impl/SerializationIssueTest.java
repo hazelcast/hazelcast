@@ -579,8 +579,8 @@ public class SerializationIssueTest extends HazelcastTestSupport {
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {
 
-        private static final Set<String> WELL_KNOWN_TEST_CLASSES = new HashSet<>(asList(IObjectA.class.getName(),
-                IPrivateObjectB.class.getName(), IPrivateObjectC.class.getName()));
+        private static final Set<String> WELL_KNOWN_TEST_CLASSES = Set.of(IObjectA.class.getName(),
+                IPrivateObjectB.class.getName(), IPrivateObjectC.class.getName());
 
         private final Set<String> wellKnownClasses = new HashSet<>();
 

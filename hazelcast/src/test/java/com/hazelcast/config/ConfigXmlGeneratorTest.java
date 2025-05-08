@@ -74,10 +74,10 @@ import java.net.Socket;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.EventListener;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -87,7 +87,6 @@ import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECO
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static java.util.stream.IntStream.range;
@@ -626,7 +625,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                                 .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                         .setUsernamePasswordIdentityConfig("username", "password"))
                 .setMemberRealmConfig("mr", memberRealm)
-                .setClientPermissionConfigs(new HashSet<>(asList(
+                .setClientPermissionConfigs(Set.of(
                         new PermissionConfig()
                                 .setActions(newHashSet("read", "remove"))
                                 .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
@@ -644,7 +643,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 .setType(PermissionConfig.PermissionType.REPLICATEDMAP)
                                 .setName("rmap")
                                 .setPrincipal("monitor")
-                )));
+                ));
 
         cfg.setSecurityConfig(expectedConfig);
 

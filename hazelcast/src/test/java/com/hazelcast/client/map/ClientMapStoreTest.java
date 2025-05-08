@@ -55,7 +55,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -269,7 +268,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         IMap<String, String> map = node.getMap(MAP_NAME);
 
         //load not existent entries
-        Map<String, String> responseMap = map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+        Map<String, String> responseMap = map.getAll(Set.of("key1", "key2", "key3"));
         assertEquals(0, responseMap.size());
         assertEquals(0, map.size());
     }

@@ -40,7 +40,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -53,7 +52,6 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Sorts.ascending;
-import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -77,7 +75,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Parameters(name = "filter:{0} | projection: {1} | sort: {2} | map: {3}")
     public static Object[] filterProjectionSortMatrix() {
-        Set<Boolean> booleans = new HashSet<>(asList(true, false));
+        Set<Boolean> booleans = Set.of(true, false);
         return Sets.cartesianProduct(booleans, booleans, booleans, booleans).stream()
                    .map(tuple -> tuple.toArray(new Object[0]))
                    .toArray(Object[]::new);

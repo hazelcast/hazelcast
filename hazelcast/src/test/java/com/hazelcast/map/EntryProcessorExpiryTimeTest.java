@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -96,7 +95,7 @@ public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnKeys_sets_expiry_time_when_creating_new_entries() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), false,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), false,
                 new SetValueWithoutChangingExpiryTime<>(2), false, EXECUTE_ON_KEYS);
     }
 
@@ -108,13 +107,13 @@ public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnKeys_does_not_change_expiry_time_when_updating_entries() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), true,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), true,
                 new SetValueWithoutChangingExpiryTime<>(2), false, EXECUTE_ON_KEYS);
     }
 
     @Test
     public void executeOnEntries_does_not_change_expiry_time_when_updating_entries() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), true,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), true,
                 new SetValueWithoutChangingExpiryTime<>(2), false, EXECUTE_ON_ENTRIES);
     }
 
@@ -126,7 +125,7 @@ public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnKeys_sets_expiry_time_when_creating_new_entries_with_offloadable_EP() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), false,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), false,
                 new SetValueWithoutChangingExpiryTimeOffloadable<>(2), false, EXECUTE_ON_KEYS);
     }
 
@@ -138,25 +137,25 @@ public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnKeys_does_not_change_expiry_time_when_updating_entries_with_offloadable_EP() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), true,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), true,
                 new SetValueWithoutChangingExpiryTimeOffloadable<>(2), false, EXECUTE_ON_KEYS);
     }
 
     @Test
     public void executeOnEntries_does_not_change_expiry_time_when_updating_entries_with_offloadable_EP() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), true,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), true,
                 new SetValueWithoutChangingExpiryTimeOffloadable<>(2), false, EXECUTE_ON_ENTRIES);
     }
 
     @Test
     public void first_setValueWithoutChangingExpiryTime_then_setValue_shifts_expiry_time() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), true,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), true,
                 new First_SetValueWithoutChangingExpiryTime_Then_SetValue<>(2), true, EXECUTE_ON_KEYS);
     }
 
     @Test
     public void first_setValue_then_setValueWithoutChangingExpiryTime_does_not_shift_expiry_time() {
-        test(new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7)), true,
+        test(Set.of(1, 2, 3, 4, 5, 6, 7), true,
                 new First_SetValue_Then_SetValueWithoutChangingExpiryTime(2), false, EXECUTE_ON_ENTRIES);
     }
 

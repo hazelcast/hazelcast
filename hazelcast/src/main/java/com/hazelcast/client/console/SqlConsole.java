@@ -47,9 +47,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
@@ -601,7 +599,7 @@ public final class SqlConsole {
 
     private static class Constants {
 
-        static final Set<String> COMMAND_SET = new HashSet<>(Arrays.asList("clear", "exit", "help", "history"));
+        static final Set<String> COMMAND_SET = Set.of("clear", "exit", "help", "history");
         static final String EXIT_PROMPT = new AttributedStringBuilder()
                 .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                 .append("Exiting from SQL console")

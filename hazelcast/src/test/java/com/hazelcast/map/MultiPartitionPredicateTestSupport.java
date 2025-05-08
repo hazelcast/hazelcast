@@ -29,10 +29,8 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -110,7 +108,7 @@ public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSu
                 break;
             }
         }
-        partitionKeys = new HashSet<>(Arrays.asList(partitionKey1, partitionKey2, partitionKey3));
+        partitionKeys = Set.of(partitionKey1, partitionKey2, partitionKey3);
 
 
         predicate = Predicates.multiPartitionPredicate(partitionKeys, Predicates.alwaysTrue());

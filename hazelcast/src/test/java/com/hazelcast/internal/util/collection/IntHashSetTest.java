@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
@@ -281,7 +280,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray();
-        final Set<Object> fromArray = new HashSet<>(Arrays.asList(ary));
+        final Set<Object> fromArray = Set.of(ary);
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 
@@ -291,7 +290,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray(new Integer[0]);
-        final Set<Object> fromArray = new HashSet<>(Arrays.asList(ary));
+        final Set<Object> fromArray = Set.of(ary);
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 

@@ -59,7 +59,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,7 +66,6 @@ import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.internal.util.IterableUtil.size;
 import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -459,7 +457,7 @@ public class IndexTest {
         assertEquals(1, index.getRecords(555L, true, 555L, true).size());
         CachedQueryEntry<?, ?> record50 = newRecord(50L, 555L);
         index.putEntry(record50, null, record50, Index.OperationSource.USER);
-        assertEquals(new HashSet<QueryableEntry>(asList(record5, record50)), index.getRecords(555L));
+        assertEquals(Set.of(record5, record50), index.getRecords(555L));
 
         Map<Data, QueryableEntry> records = getRecordMap(index, 555L);
         assertNotNull(records);

@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -120,7 +119,7 @@ public class KafkaPartitionAssignmentTest {
             }
         }
 
-        assertEquals(new HashSet<>(asList(expectedAssignment)), actualAssignment);
+        assertEquals(Set.of(expectedAssignment), actualAssignment);
     }
 
     private static Tuple2<Integer, Integer> tp(int topicIndex, int partition) {

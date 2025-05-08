@@ -4305,7 +4305,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       more-ports: 2600-3500
                 """;
         Config actual = buildConfig(yaml);
-        assertEquals(new HashSet<>(asList("2500-3000", "2600-3500")), actual.getNetworkConfig().getOutboundPortDefinitions());
+        assertEquals(Set.of("2500-3000", "2600-3500"), actual.getNetworkConfig().getOutboundPortDefinitions());
     }
 
     @Test
@@ -4318,7 +4318,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       - 2500
                 """;
         Config actual = buildConfig(yaml);
-        assertEquals(new HashSet<>(asList("2500", "1234-1999")), actual.getNetworkConfig().getOutboundPortDefinitions());
+        assertEquals(Set.of("2500", "1234-1999"), actual.getNetworkConfig().getOutboundPortDefinitions());
     }
 
     @Override

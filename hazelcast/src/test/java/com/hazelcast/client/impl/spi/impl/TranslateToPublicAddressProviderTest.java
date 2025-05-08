@@ -43,9 +43,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertFalse;
@@ -102,7 +102,7 @@ public class TranslateToPublicAddressProviderTest {
 
         // when
         translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
-                new HashSet<>(asList(member("192.168.0.1"), member("127.0.0.1")))));
+                Set.of(member("192.168.0.1"), member("127.0.0.1"))));
         boolean result = translateProvider.getAsBoolean();
 
         // then
@@ -117,7 +117,7 @@ public class TranslateToPublicAddressProviderTest {
 
         // when
         translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
-                new HashSet<>(Collections.singletonList(member("localhost")))));
+                Set.of(member("localhost"))));
         boolean result = translateProvider.getAsBoolean();
 
         // then
@@ -176,8 +176,8 @@ public class TranslateToPublicAddressProviderTest {
 
         // when
         translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
-                new HashSet<>(asList(member(REACHABLE_HOST, UNREACHABLE_HOST),
-                        member(REACHABLE_HOST, UNREACHABLE_HOST)))));
+                Set.of(member(REACHABLE_HOST, UNREACHABLE_HOST),
+                        member(REACHABLE_HOST, UNREACHABLE_HOST))));
         boolean result = translateProvider.getAsBoolean();
 
         // then

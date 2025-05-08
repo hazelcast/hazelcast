@@ -1356,7 +1356,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         testMap.set(1L, new MyData(10));
         testMap.set(2L, new MyData(20));
 
-        testMap.executeOnKeys(new HashSet<>(asList(1L, 2L)), new MyProcessor());
+        testMap.executeOnKeys(Set.of(1L, 2L), new MyProcessor());
 
         Predicate<Long, MyData> betweenPredicate = Predicates.between("lastValue", 0, 10);
         Collection<MyData> values = testMap.values(betweenPredicate);

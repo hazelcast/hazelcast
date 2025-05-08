@@ -59,13 +59,12 @@ import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -169,7 +168,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void fillValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
-                    ? new HashSet<>(asList(excludeNames)) : null;
+                    ? Set.of(excludeNames) : null;
             fillAttributeValues(node, builder, epn);
             for (Node n : childElements(node)) {
                 String name = xmlToJavaName(cleanNodeName(n));
@@ -183,7 +182,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void fillAttributeValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
-                    ? new HashSet<>(asList(excludeNames)) : null;
+                    ? Set.of(excludeNames) : null;
             fillAttributeValues(node, builder, epn);
         }
 

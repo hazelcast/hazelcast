@@ -25,10 +25,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -86,10 +84,10 @@ public class ShardTrackerTest {
         addUndetected(SHARD2, 0);
         addUndetected(SHARD4, 0);
 
-        assertNew(set(SHARD0, SHARD2, SHARD5), SHARD0, 0, SHARD2, 1, SHARD5, 2);
-        assertNew(set(SHARD0, SHARD2, SHARD5));
-        assertNew(set(SHARD1, SHARD3, SHARD4), SHARD1, 0, SHARD3, 1, SHARD4, 2);
-        assertNew(set(SHARD1, SHARD3, SHARD4));
+        assertNew(Set.of(SHARD0, SHARD2, SHARD5), SHARD0, 0, SHARD2, 1, SHARD5, 2);
+        assertNew(Set.of(SHARD0, SHARD2, SHARD5));
+        assertNew(Set.of(SHARD1, SHARD3, SHARD4), SHARD1, 0, SHARD3, 1, SHARD4, 2);
+        assertNew(Set.of(SHARD1, SHARD3, SHARD4));
     }
 
     private void assertNew(Set<Shard> shards, Object... expectedValues) {
@@ -102,10 +100,6 @@ public class ShardTrackerTest {
 
     private void addUndetected(Shard shard, long timeMs) {
         tracker.addUndetected(shard.getShardId(), new BigInteger(shard.getHashKeyRange().getStartingHashKey()), timeMs);
-    }
-
-    private static Set<Shard> set(Shard... shards) {
-        return new HashSet<>(Arrays.asList(shards));
     }
 
     private static Shard shard(String id, long startHashKey, long endHashKey) {

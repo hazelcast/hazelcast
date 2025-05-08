@@ -70,7 +70,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -174,7 +173,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(randomName());
 
-        Map<String, String> responseMap = map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+        Map<String, String> responseMap = map.getAll(Set.of("key1", "key2", "key3"));
 
         assertEquals(0, responseMap.size());
         assertEquals(0, map.size());

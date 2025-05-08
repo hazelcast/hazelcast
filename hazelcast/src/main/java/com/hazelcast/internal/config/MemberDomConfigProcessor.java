@@ -177,7 +177,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1671,7 +1670,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         getIntegerValue("connection-timeout-seconds", getTextContent(att)));
             }
         }
-        Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
+        Set<String> memberTags = Set.of("interface", "member", "members");
         for (Node n : childElements(node)) {
             if (matches(cleanNodeName(n), "member-list")) {
                 handleMemberList(n, advancedNetworkConfig);

@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1153,7 +1152,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     @SafeVarargs
     private static <E> void assertEqualSets(Set<E> actual, E... expected) {
-        assertEquals(new HashSet<>(Arrays.asList(expected)), actual);
+        assertEquals(Set.of(expected), actual);
     }
 
 }

@@ -38,13 +38,11 @@ import org.junit.runner.RunWith;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -323,7 +321,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map.put(42, "value-42");
         map.put(65, "value-65");
 
-        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
+        Set<Integer> keys = Set.of(23, 65, 88);
         Map<Integer, Object> resultMap = adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
         assertEquals(2, resultMap.size());
         assertEquals("newValue-23", resultMap.get(23));
@@ -456,7 +454,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test(expected = MethodNotAvailableException.class)
     public void testInvokeAll() {
-        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
+        Set<Integer> keys = Set.of(23, 65, 88);
         adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 

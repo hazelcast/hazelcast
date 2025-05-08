@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -280,7 +279,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
 
     @Test(expected = MethodNotAvailableException.class)
     public void testInvokeAll() {
-        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
+        Set<Integer> keys = Set.of(23, 65, 88);
         adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 
