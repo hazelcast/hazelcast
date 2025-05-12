@@ -20,6 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -427,9 +428,10 @@ public class ExpirySystemImpl implements ExpirySystem {
     }
 
     // this method is overridden
+    @Nonnull
     @Override
-    public void destroy() {
-        getOrCreateExpireTimeByKeyMap(false).clear();
+    public Disposable createDisposable() {
+        return () -> getOrCreateExpireTimeByKeyMap(false).clear();
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
@@ -56,6 +57,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -72,6 +74,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -1641,23 +1644,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        clearPartition(false, true);
+        clearPartition(false, true, null);
     }
 
     @Override
-    public void clearPartition(boolean onShutdown, boolean onStorageDestroy) {
+    public void clearPartition(boolean onShutdown, boolean onStorageDestroy,
+                               @Nullable Queue<Disposable> disposables) {
         clearLockStore();
         mapDataStore.reset();
 
         if (onShutdown) {
             if (hasPooledMemoryAllocator()) {
-                destroyStorageImmediate(true, true);
+                destroyStorageImmediate(true, true, disposables);
             } else {
-                destroyStorageAfterClear(true, true);
+                destroyStorageAfterClear(true, true, disposables);
             }
         } else {
             if (onStorageDestroy) {
-                destroyStorageAfterClear(false, false);
+                destroyStorageAfterClear(false, false, disposables);
             } else {
                 clearStorage(false);
             }
@@ -1670,13 +1674,31 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    public void destroyStorageImmediate(boolean isDuringShutdown,
-                                        boolean internal) {
+    public void destroyStorageImmediate(boolean isDuringShutdown, boolean internal,
+                                        @Nullable Queue<Disposable> disposableQueue) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
-        expirySystem.destroy();
+        destroyExpirySystem(disposableQueue);
         destroyMetadataStore();
         // Destroy storage in the end
         storage.destroy(isDuringShutdown);
+    }
+
+    private void destroyExpirySystem(Queue<Disposable> disposableQueue) {
+        Disposable disposable = expirySystem.createDisposable();
+        // 1. We defer disposal only for maps with expiry enabled.
+        // Even if the IMap is HD-backed, we need to ensure it
+        // uses expiry. This is checked by comparing it against
+        // EMPTY_DISPOSABLE.
+        //
+        // 2. disposableQueue is non-null only during
+        // node shutdown; it is null during partition destruction.
+        if (disposable != ExpirySystem.EMPTY_DISPOSABLE
+                && inMemoryFormat == InMemoryFormat.NATIVE
+                && disposableQueue != null) {
+            disposableQueue.add(disposable);
+        } else {
+            disposable.dispose();
+        }
     }
 
     /**
@@ -1687,9 +1709,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @param isDuringShutdown {@link Storage#clear(boolean)}
      * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean)}}
      */
-    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal,
+                                         @Nullable Queue<Disposable> deferredDisposables) {
         clearStorage(isDuringShutdown);
-        destroyStorageImmediate(isDuringShutdown, internal);
+        destroyStorageImmediate(isDuringShutdown, internal, deferredDisposables);
     }
 
     private void clearStorage(boolean isDuringShutdown) {

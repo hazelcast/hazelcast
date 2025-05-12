@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
@@ -83,11 +84,13 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -192,7 +195,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.maxSuccessiveOffloadedOpRunNanos = nodeEngine.getProperties()
                 .getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
         this.expensiveInvocationReportingThreshold = nodeEngine.getProperties()
-                                                               .getInteger(EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD);
+                .getInteger(EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD);
         if (this.forceOffloadEnabled) {
             logger.info("Force offload is enabled for all maps. This "
                     + "means all map operations will run as if they have map-store configured. "
@@ -370,16 +373,22 @@ class MapServiceContextImpl implements MapServiceContext {
             return;
         }
 
+        Queue<Disposable> disposalQueue = new ArrayDeque<>();
         List<RecordStore> removedRecordStores = new ArrayList<>();
         Iterator<RecordStore> recordStoreIterator = container.getMaps().values().iterator();
         while (recordStoreIterator.hasNext()) {
             RecordStore recordStore = recordStoreIterator.next();
             if (predicate.test(recordStore)) {
+                // First, remove the record store to reduce the chance of access
+                // from non-partition threads. See `MapContainerImpl#hasNotExpired`,
+                // which may be called by query threads.
+                recordStoreIterator.remove();
+
                 recordStore.beforeOperation();
                 try {
                     boolean empty = recordStore.isEmpty();
 
-                    recordStore.clearPartition(onShutdown, onRecordStoreDestroy);
+                    recordStore.clearPartition(onShutdown, onRecordStoreDestroy, disposalQueue);
 
                     if (!empty) {
                         removedRecordStores.add(recordStore);
@@ -387,11 +396,16 @@ class MapServiceContextImpl implements MapServiceContext {
                 } finally {
                     recordStore.afterOperation();
                 }
-                recordStoreIterator.remove();
             }
         }
 
         postProcessNonEmptyRemovedRecordStores(removedRecordStores, partitionId, onShutdown);
+        processDisposalQueue(disposalQueue, partitionId, onShutdown);
+    }
+
+    protected void processDisposalQueue(Queue<Disposable> disposalQueue,
+                                        int partitionId, boolean onShutdown) {
+        // NOP
     }
 
     protected void postProcessNonEmptyRemovedRecordStores(List<RecordStore> removedRecordStores,
