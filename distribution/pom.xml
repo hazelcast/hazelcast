@@ -200,7 +200,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
-            <version>5.0</version>
+            <version>5.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.hazelcast</groupId>
