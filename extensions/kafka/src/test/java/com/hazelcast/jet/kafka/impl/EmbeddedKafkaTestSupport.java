@@ -21,7 +21,7 @@ import kafka.server.KafkaServer;
 import kafka.utils.TestUtils;
 import kafka.zk.EmbeddedZookeeper;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.utils.SystemTime;
+import org.apache.kafka.common.utils.Time;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,7 +58,7 @@ class EmbeddedKafkaTestSupport extends KafkaTestSupport {
         brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
         brokerProps.setProperty("group.initial.rebalance.delay.ms", "0");
         KafkaConfig config = new KafkaConfig(brokerProps);
-        kafkaServer = TestUtils.createServer(config, new SystemTime());
+        kafkaServer = TestUtils.createServer(config, Time.SYSTEM);
         brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
 
         return BROKER_HOST + ':' + brokerPort;

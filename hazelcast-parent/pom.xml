@@ -105,7 +105,7 @@
         Confluent depends on Kafka, and consideration should be given when upgrading
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
-        <kafka.version>3.8.1</kafka.version>
+        <kafka.version>3.9.0</kafka.version>
         <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
         <confluent.version>7.9.1</confluent.version>
         <kotlin.version>2.1.20</kotlin.version>
