@@ -64,7 +64,7 @@ public class AzureClientTest {
     @Test
     public void getAddressesCurrentSubscriptionCurrentResourceGroupCurrentScaleSetNoTag() {
         // given
-        given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
+        given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         AzureConfig azureConfig = AzureConfig.builder().setInstanceMetadataAvailable(true).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
@@ -79,7 +79,7 @@ public class AzureClientTest {
     @Test
     public void getAddressesCurrentSubscriptionCurrentResourceGroupCurrentScaleSetWithTag() {
         // given
-        given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
+        given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         AzureConfig azureConfig = AzureConfig.builder().setInstanceMetadataAvailable(true).setTag(TAG).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
@@ -101,7 +101,7 @@ public class AzureClientTest {
         String subscriptionId = "subscription-2";
         String resourceGroup = "resource-group-2";
         String scaleSet = "scale-set-2";
-        given(azureComputeApi.instances(subscriptionId, resourceGroup, scaleSet, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
+        given(azureComputeApi.instances(subscriptionId, resourceGroup, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         AzureConfig azureConfig = AzureConfig.builder()
                                        .setClientId(clientId)
