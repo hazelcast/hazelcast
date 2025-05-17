@@ -47,7 +47,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Discovery service that discover nodes via hazelcast.cloud
- * https://api.viridian.hazelcast.com/cluster/discovery?token=<TOKEN>
+ * https://api.cloud.hazelcast.com/cluster/discovery?token=<TOKEN>
  */
 public class HazelcastCloudDiscovery {
 
@@ -56,7 +56,7 @@ public class HazelcastCloudDiscovery {
      * Used for testing cloud discovery.
      */
     public static final HazelcastProperty CLOUD_URL_BASE_PROPERTY =
-            new HazelcastProperty("hazelcast.client.cloud.url", "https://api.viridian.hazelcast.com");
+            new HazelcastProperty("hazelcast.client.cloud.url", "https://api.cloud.hazelcast.com");
     private static final String CLOUD_URL_PATH = "/cluster/discovery?token=";
     private static final String PRIVATE_ADDRESS_PROPERTY = "private-address";
     private static final String PUBLIC_ADDRESS_PROPERTY = "public-address";
