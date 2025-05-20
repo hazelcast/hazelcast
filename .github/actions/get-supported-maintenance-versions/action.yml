@@ -14,4 +14,4 @@ runs:
   steps:
     - shell: ${{ env.shell }}
       id: get-maintenance-versions
-      run: echo "versions=['5.3', '5.4', '5.5']" >> ${GITHUB_OUTPUT}
+      run: echo "versions=['5.4', '5.5']" >> ${GITHUB_OUTPUT}
