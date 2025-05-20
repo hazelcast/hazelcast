@@ -190,6 +190,13 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         return res;
     }
 
+    @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "all updates to ongoingSnapshotId are synchronized")
+    void resetOngoingSnapshotId() {
+        ongoingSnapshotId--;
+    }
+
     /**
      * The ID of current successful snapshot. If {@link #NO_SNAPSHOT} then
      * no successful snapshot exists.

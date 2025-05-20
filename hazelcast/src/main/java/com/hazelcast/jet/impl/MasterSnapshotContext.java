@@ -209,16 +209,47 @@ class MasterSnapshotContext {
             long newSnapshotId = mc.jobExecutionRecord().ongoingSnapshotId();
             int snapshotFlags = requestedSnapshot.snapshotFlags();
             String mapName = requestedSnapshot.mapName();
-
+            boolean executionRecordUpdated = false;
             try {
                 mc.writeJobExecutionRecordSafe(false);
+                executionRecordUpdated = true;
                 mc.nodeEngine().getHazelcastInstance().getMap(mapName).clear();
             } catch (Exception e) {
-                logger.warning(String.format("Failed to start snapshot %d for %s",
-                        newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId)),
-                        e);
-                requestedSnapshot.completeFuture(e);
-                return;
+                var warning = String.format(
+                        "Failed to start snapshot %d for %s. ",
+                        newSnapshotId,
+                        jobNameAndExecutionId(mc.jobName(), localExecutionId)
+                );
+
+                if (requestedSnapshot.isExportOnly() && executionRecordUpdated) {
+                    // If the map clear operation fails, then cancel the snapshot.
+                    logger.warning(warning + "Failure during a clearing map. Cancel snapshot.", e);
+                    requestedSnapshot.completeFuture(e);
+                    return;
+                } else if (requestedSnapshot.isExportOnly()) {
+                    // Manual snapshot failed — ignore and move on.
+                    logger.warning(warning + "Ignore failure during a manual snapshot request.", e);
+                } else if (requestedSnapshot.isTerminal) {
+                    // If a final (terminal) automatic snapshot or a terminal snapshot during manual cancellation fails,
+                    // the job is forcefully restarted.
+                    // After restart, a new execution record will be created, so there is no need to reset the snapshot ID.
+                    // The snapshotInProgress flag will be cleared during the restart.
+                    logger().warning(warning + "Terminating job without performing snapshot with RESTART_FORCEFUL", e);
+                    mc.jobContext().handleTermination(TerminationMode.RESTART_FORCEFUL);
+                    requestedSnapshot.completeFuture(e);
+                    return;
+                } else {
+                    // Regular non-terminal snapshot failed — clean up, and schedule the next snapshot attempt.
+                    logger.warning(warning + "Reschedule a new snapshot without restarting the job.", e);
+                    performWithLock(() -> {
+                                mc.jobExecutionRecord().resetOngoingSnapshotId();
+                                snapshotInProgress = false;
+                            }
+                    );
+                    requestedSnapshot.completeFuture(e);
+                    mc.coordinationService().scheduleSnapshot(mc, mc.executionId());
+                    return;
+                }
             }
 
             logger.fine("Starting snapshot %d for %s, flags: %s, writing to: %s",
@@ -466,8 +497,8 @@ class MasterSnapshotContext {
 
     /**
      * @param phase1Error error from the phase-1. Null if phase-1 was successful.
-     * @param responses collected responses from the members
-     * @param startTime phase-1 start time
+     * @param responses   collected responses from the members
+     * @param startTime   phase-1 start time
      */
     private void onSnapshotPhase2Complete(
             String phase1Error,
@@ -490,7 +521,7 @@ class MasterSnapshotContext {
                     logger.log(
                             response.getValue() instanceof ExecutionNotFoundException ? Level.FINE : Level.WARNING,
                             SnapshotPhase2Operation.class.getSimpleName() + " for snapshot " + snapshotId + " in "
-                            + mc.jobIdString() + " failed on member: " + response, throwable);
+                                    + mc.jobIdString() + " failed on member: " + response, throwable);
                 }
             }
 
@@ -531,6 +562,15 @@ class MasterSnapshotContext {
 
             tryBeginSnapshot();
         });
+    }
+
+    private void performWithLock(Runnable runnable) {
+        try {
+            mc.lock();
+            runnable.run();
+        } finally {
+            mc.unlock();
+        }
     }
 
     CompletableFuture<Void> terminalSnapshotFuture() {

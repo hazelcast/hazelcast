@@ -70,6 +70,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -215,6 +216,7 @@ public class IndeterminateSnapshotTest {
          *                   or -1 if no snapshot is expected
          */
         protected static void assumeLastSnapshotPresent(int snapshotId) {
+            var s = SnapshotInstrumentationP.savedCounters.values();
             if (snapshotId >= 0) {
                 assumeThat(SnapshotInstrumentationP.savedCounters.values())
                         .as("Current snapshot is different than expected")
@@ -242,6 +244,19 @@ public class IndeterminateSnapshotTest {
         protected Job createJob(int numItems) {
             DAG dag = new DAG();
             Vertex source = dag.newVertex("source", throttle(() -> new SnapshotInstrumentationP(numItems), 1)).localParallelism(LOCAL_PARALLELISM);
+            Vertex sink = dag.newVertex("sink", Processors.noopP()).localParallelism(1);
+            dag.edge(between(source, sink));
+
+            return instances[0].getJet().newJob(dag, customizeJobConfig(new JobConfig()
+                    .setProcessingGuarantee(EXACTLY_ONCE)
+                    // trigger snapshot often to speed up test
+                    .setSnapshotIntervalMillis(1000)));
+        }
+
+        @Nonnull
+        protected Job createJob(int numItems, AtomicBoolean allowComplete) {
+            DAG dag = new DAG();
+            Vertex source = dag.newVertex("source", throttle(() -> new SnapshotInstrumentationP(numItems, allowComplete), 1)).localParallelism(LOCAL_PARALLELISM);
             Vertex sink = dag.newVertex("sink", Processors.noopP()).localParallelism(1);
             dag.edge(between(source, sink));
 
@@ -953,7 +968,7 @@ public class IndeterminateSnapshotTest {
         }
 
         @Nonnull
-        private IMap<Object, Object> getJobExecutionRecordIMap() {
+        public IMap<Object, Object> getJobExecutionRecordIMap() {
             // use last instance, 0 is master, 1 non-master - may be terminated during the test
             return instances[NODE_COUNT - 1].getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
         }
@@ -1194,19 +1209,22 @@ public class IndeterminateSnapshotTest {
             }
         }
 
-        public static class OnceFailedInterceptor extends MapInterceptorAdaptor {
+        public static class OnceFailedUpdateInterceptor extends MapInterceptorAdaptor {
 
             // This is not thread safe, but it is not a problem in this test
             private static volatile boolean firstRun = true;
 
             // This class is deserialized using JavaDefaultSerializers, so the constructor is not called.
             // However, be aware that using a different serializer might invoke the constructor and reset the state.
-            public OnceFailedInterceptor() {
+            public OnceFailedUpdateInterceptor() {
                 firstRun = true;
             }
 
             @Override
             public Object interceptPut(Object key, Object value) {
+                if (key == null) {
+                    return value;
+                }
                 if (firstRun) {
                     firstRun = false;
                     throw new IndeterminateOperationStateException("Once simulated lost IMap update");
@@ -1218,7 +1236,7 @@ public class IndeterminateSnapshotTest {
 
         private void singleIndeterminatePutLost() {
             // affects put and also executeOnKey
-            getJobExecutionRecordIMap().addInterceptor(new OnceFailedInterceptor());
+            getJobExecutionRecordIMap().addInterceptor(new OnceFailedUpdateInterceptor());
         }
 
         private String allIndeterminatePutsLost() {
@@ -1263,8 +1281,15 @@ public class IndeterminateSnapshotTest {
         public static volatile Consumer<Boolean> snapshotCommitFinishConsumer = b -> { };
         public static volatile boolean restoredFromSnapshot = false;
 
+        private static AtomicBoolean allowCompletion = new AtomicBoolean(true);
+
         SnapshotInstrumentationP(int numItems) {
             this.numItems = numItems;
+        }
+
+        SnapshotInstrumentationP(int numItems, AtomicBoolean allowCompletion) {
+            this.numItems = numItems;
+            SnapshotInstrumentationP.allowCompletion = allowCompletion;
         }
 
         /**
@@ -1280,6 +1305,7 @@ public class IndeterminateSnapshotTest {
             snapshotCommitPrepareConsumer = null;
             snapshotCommitFinishConsumer = b -> { };
             restoredFromSnapshot = false;
+            allowCompletion.set(true);
         }
 
         @Override
@@ -1293,7 +1319,8 @@ public class IndeterminateSnapshotTest {
             // emit current snapshot counter
             // finish when the requested number of items was emitted
             return tryEmit(10000 * (globalIndex + 1) + snapshotCounter)
-                    && snapshotCounter == numItems;
+                    && snapshotCounter == numItems
+                    && allowCompletion.get();
         }
 
         @Override
