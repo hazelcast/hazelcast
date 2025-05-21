@@ -745,6 +745,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setIncludeEpochTime(false)
                 .setLogDirectory("/logs")
                 .setFileNamePrefix("fileNamePrefix")
+                .setAutoOffDurationInMinutes(5)
                 .setOutputType(DiagnosticsOutputType.STDOUT);
 
         driver.getConfig().setDiagnosticsConfig(config);

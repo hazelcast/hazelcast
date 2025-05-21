@@ -1230,6 +1230,7 @@ public class DynamicConfigYamlGenerator {
         child.put("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount());
         child.put("include-epoch-time", diagnosticsConfig.isIncludeEpochTime());
         child.put("log-directory", diagnosticsConfig.getLogDirectory());
+        child.put("auto-off-timer-in-minutes", diagnosticsConfig.getAutoOffDurationInMinutes());
         if (diagnosticsConfig.getFileNamePrefix() != null) {
             child.put("file-name-prefix", diagnosticsConfig.getFileNamePrefix());
         }

@@ -977,6 +977,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setIncludeEpochTime(true)
                 .setLogDirectory("/logs")
                 .setFileNamePrefix("logs")
+                .setAutoOffDurationInMinutes(5)
                 .setOutputType(DiagnosticsOutputType.STDOUT);
         expectedConfig.getPluginProperties().put("hazelcast.diagnostics.prop1", "prop1");
 

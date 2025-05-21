@@ -5562,6 +5562,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setLogDirectory("/src/user")
                 .setFileNamePrefix("mylogs")
+                .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
         cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
@@ -5581,9 +5582,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                             include-epoch-time: %s
                             log-directory: %s
                             file-name-prefix: %s
+                            auto-off-timer-in-minutes: %d
                             output-type: %s
                         """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
-                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType());
+                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getAutoOffDurationInMinutes(), cfg.getOutputType());
 
 
         if (!cfg.getPluginProperties().isEmpty()) {

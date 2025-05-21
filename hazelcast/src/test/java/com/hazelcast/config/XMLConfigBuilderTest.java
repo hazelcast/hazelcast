@@ -5116,6 +5116,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setLogDirectory("/src/user")
                 .setFileNamePrefix("mylogs")
+                .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
         cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
@@ -5134,8 +5135,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                         <log-directory>%s</log-directory>
                         <file-name-prefix>%s</file-name-prefix>
                         <output-type>%s</output-type>
+                        <auto-off-timer-in-minutes>%d</auto-off-timer-in-minutes>
                         """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
-                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType());
+                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType(), cfg.getAutoOffDurationInMinutes());
 
 
         if (!cfg.getPluginProperties().isEmpty()) {

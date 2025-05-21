@@ -56,6 +56,7 @@ public class ClientDynamicClusterConfigTest extends DynamicConfigTest {
                 .setIncludeEpochTime(false)
                 .setLogDirectory("/logs")
                 .setFileNamePrefix("fileNamePrefix")
+                .setAutoOffDurationInMinutes(5)
                 .setOutputType(DiagnosticsOutputType.STDOUT);
 
         UnsupportedOperationException thrown =

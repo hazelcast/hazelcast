@@ -1284,12 +1284,25 @@
 
     <xs:complexType name="diagnostics">
         <xs:all>
-            <xs:element name="max-rolled-file-size-in-mb" type="xs:unsignedInt" minOccurs="0"/>
-            <xs:element name="max-rolled-file-count" type="xs:unsignedInt" minOccurs="0"/>
-            <xs:element name="include-epoch-time" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="max-rolled-file-size-in-mb" type="xs:unsignedInt" default="50" minOccurs="0"/>
+            <xs:element name="max-rolled-file-count" type="xs:unsignedInt" default="10" minOccurs="0"/>
+            <xs:element name="include-epoch-time" type="xs:boolean" default="true" minOccurs="0"/>
             <xs:element name="log-directory" type="xs:string" minOccurs="0"/>
             <xs:element name="file-name-prefix" type="xs:string" minOccurs="0"/>
-            <xs:element name="output-type" minOccurs="0">
+            <xs:element name="auto-off-timer-in-minutes" type="xs:int" default="15" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The time in minutes after the diagnostics will be automatically turned off.
+                        The value must be positive. You can set it to -1 to disable the auto-off timer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="output-type" default="FILE" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Output type of the diagnostics. Possible values are: FILE, STDOUT, LOGGER.
+                    </xs:documentation>
+                </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
                         <xs:enumeration value="FILE"/>

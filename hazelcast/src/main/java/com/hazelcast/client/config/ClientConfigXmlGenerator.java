@@ -161,7 +161,8 @@ public final class ClientConfigXmlGenerator {
                 .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
                 .node("log-directory", diagnosticsConfig.getLogDirectory())
                 .node("file-name-prefix", diagnosticsConfig.getFileNamePrefix())
-                .node("output-type", diagnosticsConfig.getOutputType());
+                .node("output-type", diagnosticsConfig.getOutputType())
+                .node("auto-off-timer-in-minutes", diagnosticsConfig.getAutoOffDurationInMinutes());
 
         if (!diagnosticsConfig.getPluginProperties().isEmpty()) {
             gen.open("plugin-properties");

@@ -899,6 +899,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setLogDirectory("/src/user")
                 .setFileNamePrefix("mylogs")
+                .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         String propKey = "hazelcast.diagnostics.prop1";
         originalConfig.getPluginProperties().put(propKey, "myprop1");
@@ -913,12 +914,13 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                             log-directory: %s
                             file-name-prefix: %s
                             output-type: %s
+                            auto-off-timer-in-minutes: %d
                             plugin-properties:
                                 %s: %s
                         """, originalConfig.isEnabled(), originalConfig.getMaxRolledFileSizeInMB(),
                 originalConfig.getMaxRolledFileCount(), originalConfig.isIncludeEpochTime(),
                 originalConfig.getLogDirectory(), originalConfig.getFileNamePrefix(), originalConfig.getOutputType(),
-                propKey, originalConfig.getPluginProperties().get(propKey));
+                originalConfig.getAutoOffDurationInMinutes(), propKey, originalConfig.getPluginProperties().get(propKey));
 
         DiagnosticsConfig buildConfig = buildConfig(yaml).getDiagnosticsConfig();
 

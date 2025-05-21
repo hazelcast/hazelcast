@@ -73,6 +73,7 @@ public class ClientDiagnosticsTest extends HazelcastTestSupport {
                 .setFileNamePrefix(fileNamePrefix)
                 .setMaxRolledFileCount(5)
                 .setMaxRolledFileSizeInMB(30)
+                .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         dConfig.getPluginProperties().putAll(getPluginProperties());
         clientConfig.setDiagnosticsConfig(dConfig);
@@ -89,6 +90,7 @@ public class ClientDiagnosticsTest extends HazelcastTestSupport {
         assertEquals(dConfig.getMaxRolledFileSizeInMB(), diagnosticsConfig.getMaxRolledFileSizeInMB());
         assertTrue(dConfig.isIncludeEpochTime());
         assertEquals(dConfig.getPluginProperties(), diagnosticsConfig.getPluginProperties());
+        assertEquals(dConfig.getAutoOffDurationInMinutes(), diagnosticsConfig.getAutoOffDurationInMinutes());
 
         File[] matchingFiles = temporaryFolder.getRoot().listFiles((dir, name) -> name.startsWith(fileNamePrefix));
         assert matchingFiles != null;

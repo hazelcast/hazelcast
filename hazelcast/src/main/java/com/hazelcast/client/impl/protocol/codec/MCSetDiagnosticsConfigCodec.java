@@ -34,10 +34,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Sets the diagnostics configuration on a running cluster.
+ * Sets the diagnostics configuration on a running cluster dynamically. It's a basically a dynamic configuration which can be done only by MC or Operator. Sending this
+ * request to a member is sufficient to set the diagnostics configuration on the whole cluster. If one of the members fails to set the configuration, 
+ * the request fails by throwing an IllegalStateException exception but the other members for which the invocation succeeded will have the new config applied. 
  */
 @SuppressWarnings("unused")
-@Generated("255882bf7dc0d0f5eac02114404338ee")
+@Generated("9f7631c886f73207ec0a0f6834d3f828")
 public final class MCSetDiagnosticsConfigCodec {
     //hex: 0x202700
     public static final int REQUEST_MESSAGE_TYPE = 2107136;
@@ -47,7 +49,8 @@ public final class MCSetDiagnosticsConfigCodec {
     private static final int REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET = REQUEST_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET = REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET = REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET = REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCSetDiagnosticsConfigCodec() {
@@ -82,7 +85,7 @@ public final class MCSetDiagnosticsConfigCodec {
         public int maxRolledFileCount;
 
         /**
-         * The output directory of the diagnostics log files
+         * The path of output directory for the diagnostics log files. It can be a relative path to the working directory or an absolute path
          */
         public java.lang.String logDirectory;
 
@@ -92,12 +95,17 @@ public final class MCSetDiagnosticsConfigCodec {
         public @Nullable java.lang.String fileNamePrefix;
 
         /**
-         * Properties for the diagnostic plugins
+         * Properties specific to DiagnosticsPlugin implementations
          */
         public @Nullable java.util.Map<java.lang.String, java.lang.String> properties;
+
+        /**
+         * The auto time off duration for the service in minutes. The value must be positive. Set -1 only if you want to disable the auto time off feature.
+         */
+        public int autoOffTimerInMinutes;
     }
 
-    public static ClientMessage encodeRequest(boolean enabled, java.lang.String outputType, boolean includeEpochTime, int maxRolledFileSizeInMB, int maxRolledFileCount, java.lang.String logDirectory, @Nullable java.lang.String fileNamePrefix, @Nullable java.util.Map<java.lang.String, java.lang.String> properties) {
+    public static ClientMessage encodeRequest(boolean enabled, java.lang.String outputType, boolean includeEpochTime, int maxRolledFileSizeInMB, int maxRolledFileCount, java.lang.String logDirectory, @Nullable java.lang.String fileNamePrefix, @Nullable java.util.Map<java.lang.String, java.lang.String> properties, int autoOffTimerInMinutes) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.SetDiagnosticsConfig");
@@ -108,6 +116,7 @@ public final class MCSetDiagnosticsConfigCodec {
         encodeBoolean(initialFrame.content, REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET, includeEpochTime);
         encodeInt(initialFrame.content, REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET, maxRolledFileSizeInMB);
         encodeInt(initialFrame.content, REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET, maxRolledFileCount);
+        encodeInt(initialFrame.content, REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET, autoOffTimerInMinutes);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, outputType);
         StringCodec.encode(clientMessage, logDirectory);
@@ -124,6 +133,7 @@ public final class MCSetDiagnosticsConfigCodec {
         request.includeEpochTime = decodeBoolean(initialFrame.content, REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET);
         request.maxRolledFileSizeInMB = decodeInt(initialFrame.content, REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET);
         request.maxRolledFileCount = decodeInt(initialFrame.content, REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET);
+        request.autoOffTimerInMinutes = decodeInt(initialFrame.content, REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET);
         request.outputType = StringCodec.decode(iterator);
         request.logDirectory = StringCodec.decode(iterator);
         request.fileNamePrefix = CodecUtil.decodeNullable(iterator, StringCodec::decode);

@@ -438,6 +438,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         dConfig.setOutputType(DiagnosticsOutputType.STDOUT);
         dConfig.setLogDirectory("random/directory");
         dConfig.setFileNamePrefix("randomPrefix");
+        dConfig.setAutoOffDurationInMinutes(5);
         dConfig.setIncludeEpochTime(false);
 
         diagnostics.setConfig(dConfig);

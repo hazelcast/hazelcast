@@ -35,10 +35,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -49,6 +50,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * The {@link Diagnostics} is a debugging tool that provides insight in all kinds
@@ -173,12 +175,20 @@ public class Diagnostics {
      */
     public static final int SERVICE_RESTARTING = 2;
 
+    /**
+     * The timeout for the diagnostics service to terminate.
+     */
+    public static final long TERMINATE_TIMEOUT_SECONDS = 30;
+
     public static final String DIAGNOSTIC_PROPERTY_PREFIX = "hazelcast.diagnostics.";
 
+    static final int AUTO_OFF_BACKOFF_SECONDS = 5;
     final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(new DiagnosticsPlugin[0]);
     final ILogger logger;
     final LoggingService loggingService;
     final String hzName;
+    // Accessible for testing
+    TimeUnit autoOffDurationUnit = MINUTES;
     // not final for testing purposes
     HazelcastProperties hazelcastProperties;
 
@@ -203,6 +213,8 @@ public class Diagnostics {
     private int maxRollingFileSizeMB;
     private int maxRollingFileCount;
     private ScheduledExecutorService scheduler;
+    private ScheduledExecutorService autoOffScheduler;
+    private ScheduledFuture<?> autoOffFuture;
     private final Object lifecycleLock = new Object();
     private final AuditlogService auditlogService;
 
@@ -389,7 +401,9 @@ public class Diagnostics {
         }
 
         this.diagnosticsLog = newLog(this);
-        this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(
+                new DiagnosticSchedulerThreadFactory("DiagnosticsSchedulerThread"));
+        scheduleAutoOff();
     }
 
     /**
@@ -461,6 +475,8 @@ public class Diagnostics {
                             .addParameter("DiagnosticsConfig", config)
                             .log();
                 }
+                // if the service is disabled, no need to wait for the auto off timer
+                cancelAutoOffFuture();
                 return;
             }
 
@@ -494,7 +510,21 @@ public class Diagnostics {
 
     private void closeScheduler() {
         if (scheduler != null) {
-            scheduler.shutdownNow();
+            scheduler.shutdown();
+            try {
+                scheduler.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                scheduler.shutdownNow();
+                logger.fine("Diagnostics scheduler was interrupted while shutting down.", e);
+            } finally {
+                scheduler = null;
+            }
+        }
+
+        if (autoOffScheduler != null) {
+            // autoOff doesn't require graceful shutdown
+            autoOffScheduler.shutdownNow();
         }
     }
 
@@ -513,11 +543,6 @@ public class Diagnostics {
         };
     }
 
-    public void restart(DiagnosticsConfig diagnosticsConfig) {
-
-        // set the config and restart the plugins
-    }
-
     public void shutdown() {
         synchronized (lifecycleLock) {
             if (status.get() == SERVICE_SHUTDOWN) {
@@ -529,7 +554,6 @@ public class Diagnostics {
             cancelRunningPlugins();
             closeScheduler();
             closeLog();
-            closeScheduler();
         }
     }
 
@@ -546,6 +570,11 @@ public class Diagnostics {
     @SuppressWarnings("unchecked")
     <P extends DiagnosticsPlugin> P getPluginInstance(Class<P> pluginClass) {
         return (P) pluginsMap.get(pluginClass);
+    }
+
+    //created for testing purposes
+    ScheduledFuture<?> getAutoOffFuture() {
+        return autoOffFuture;
     }
 
     @SuppressWarnings({"NPathComplexity", "java:S3776", "CyclomaticComplexity", "MethodLength"})
@@ -619,6 +648,7 @@ public class Diagnostics {
         this.config.setIncludeEpochTime(includeEpochTime);
         this.config.setEnabled(status.get() == SERVICE_ENABLED);
         this.config.getPluginProperties().putAll(newConfig.getPluginProperties());
+        this.config.setAutoOffDurationInMinutes(newConfig.getAutoOffDurationInMinutes());
         overridePluginProperties(messages);
 
         if (isEnabled() && !messages.isEmpty()) {
@@ -635,6 +665,76 @@ public class Diagnostics {
             sb.append("}");
             logger.info(sb.toString());
         }
+    }
+
+    /**
+     * Schedules the auto off timer if the timer is set to >0 and the service is Enabled. Each scheduling call will cancel
+     * the previous one if there is any. The scheduled auto off task will try to disable the diagnostics
+     * until interrupted or succeed.
+     * <p>
+     */
+    private void scheduleAutoOff() {
+        if (status.get() == SERVICE_SHUTDOWN) {
+            return;
+        }
+
+        cancelAutoOffFuture();
+
+        if (!(config.getAutoOffDurationInMinutes() > 0 && isEnabled())) {
+            return;
+        }
+
+        if (autoOffScheduler == null || autoOffScheduler.isShutdown()) {
+            autoOffScheduler = Executors.newSingleThreadScheduledExecutor(
+                    new DiagnosticSchedulerThreadFactory("DiagnosticsAutoOffThread"));
+        }
+
+        setAutoOffFuture0();
+    }
+
+    private void cancelAutoOffFuture() {
+        if (autoOffFuture != null) {
+            autoOffFuture.cancel(true);
+            autoOffFuture = null;
+            logger.info("Existing auto off future cancelled.");
+        }
+    }
+
+    /**
+     * This method should be called only by the auto off scheduler. It's seperated to reduce the cyclomatic complexity of the
+     * scheduleAutoOff method.
+     */
+    private void setAutoOffFuture0() {
+        logger.info(String.format("Diagnostics service is going to be disabled after %d %s.",
+                config.getAutoOffDurationInMinutes(), autoOffDurationUnit.name()));
+
+        autoOffFuture = autoOffScheduler.schedule(() -> {
+            if (!isEnabled()) {
+                logger.fine("Diagnostics service is already disabled. Skipping to schedule the auto off timer");
+                return;
+            }
+            int tryCount = 0;
+            // In case of failure, we will try to disable the diagnostics service.
+            // This is a safety measure to ensure that the diagnostics is disabled.
+            while (!Thread.currentThread().isInterrupted() && isEnabled()) {
+                try {
+                    DiagnosticsConfig dConfig = new DiagnosticsConfig(config);
+                    dConfig.setEnabled(false);
+                    setConfig(dConfig);
+                    break;
+                } catch (Exception e) {
+                    tryCount++;
+                    logger.warning("Auto off failed to disable diagnostics. Attempt #" + tryCount, e);
+                    try {
+                        TimeUnit.SECONDS.sleep(AUTO_OFF_BACKOFF_SECONDS);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        logger.fine("Auto off interrupted while sleeping. Exiting...");
+                        break;
+                    }
+                }
+            }
+        }, config.getAutoOffDurationInMinutes(), autoOffDurationUnit);
     }
 
     private void scheduleRegisteredPlugins() {
@@ -700,9 +800,15 @@ public class Diagnostics {
 
     private class DiagnosticSchedulerThreadFactory implements ThreadFactory {
 
+        private String name;
+
+        DiagnosticSchedulerThreadFactory(String name) {
+            this.name = name;
+        }
+
         @Override
         public Thread newThread(Runnable target) {
-            return new Thread(target, createThreadName(hzName, "DiagnosticsSchedulerThread"));
+            return new Thread(target, createThreadName(hzName, name));
         }
     }
 }

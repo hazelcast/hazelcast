@@ -77,7 +77,8 @@ public class SetDiagnosticsConfigMessageTask
                 .setMaxRolledFileCount(parameters.maxRolledFileCount)
                 .setMaxRolledFileSizeInMB(parameters.maxRolledFileSizeInMB)
                 .setLogDirectory(parameters.logDirectory)
-                .setFileNamePrefix(parameters.fileNamePrefix);
+                .setFileNamePrefix(parameters.fileNamePrefix)
+                .setAutoOffDurationInMinutes(parameters.autoOffTimerInMinutes);
 
         if (parameters.properties != null && !parameters.properties.isEmpty()) {
             diagnosticsConfig.getPluginProperties().putAll(parameters.properties);

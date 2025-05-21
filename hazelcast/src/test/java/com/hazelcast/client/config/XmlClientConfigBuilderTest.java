@@ -890,6 +890,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setLogDirectory("/src/user")
                 .setFileNamePrefix("mylogs")
+                .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         String propKey = "hazelcast.diagnostics.prop1";
         originalCfg.getPluginProperties().put(propKey, "myprop1");
@@ -905,10 +906,12 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                         <plugin-properties>
                             <property name="%s">%s</property>
                         </plugin-properties>
+                        <auto-off-timer-in-minutes>%d</auto-off-timer-in-minutes>
                         </diagnostics>
                         """ + HAZELCAST_CLIENT_END_TAG, originalCfg.isEnabled(), originalCfg.getMaxRolledFileSizeInMB(),
                 originalCfg.getMaxRolledFileCount(), originalCfg.isIncludeEpochTime(), originalCfg.getLogDirectory(),
-                originalCfg.getFileNamePrefix(), originalCfg.getOutputType(), propKey, originalCfg.getPluginProperties().get(propKey));
+                originalCfg.getFileNamePrefix(), originalCfg.getOutputType(), propKey, originalCfg.getPluginProperties().get(propKey),
+                originalCfg.getAutoOffDurationInMinutes());
 
         DiagnosticsConfig buildConfig = buildConfig(xml).getDiagnosticsConfig();
 

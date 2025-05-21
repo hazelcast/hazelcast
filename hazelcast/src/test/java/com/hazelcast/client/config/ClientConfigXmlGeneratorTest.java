@@ -802,6 +802,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setLogDirectory("/src/user")
                 .setFileNamePrefix("mylogs")
+                .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         originalConfig.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
         originalConfig.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");

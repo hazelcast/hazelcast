@@ -62,6 +62,7 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
         diagnosticsConfig.setMaxRolledFileCount(100);
         diagnosticsConfig.setMaxRolledFileSizeInMB(10);
         diagnosticsConfig.setIncludeEpochTime(true);
+        diagnosticsConfig.setAutoOffDurationInMinutes(5);
         diagnosticsConfig.getPluginProperties().putAll(properties);
 
         return diagnosticsConfig;
@@ -76,7 +77,8 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
                 diagnosticsConfig.getMaxRolledFileCount(),
                 diagnosticsConfig.getLogDirectory(),
                 diagnosticsConfig.getFileNamePrefix(),
-                diagnosticsConfig.getPluginProperties()
+                diagnosticsConfig.getPluginProperties(),
+                diagnosticsConfig.getAutoOffDurationInMinutes()
         );
     }
 
@@ -103,6 +105,7 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
         assertEquals(diagnosticsConfig.getMaxRolledFileCount(), taskConfig.getMaxRolledFileCount());
         assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB());
         assertEquals(diagnosticsConfig.isIncludeEpochTime(), taskConfig.isIncludeEpochTime());
+        assertEquals(diagnosticsConfig.getAutoOffDurationInMinutes(), taskConfig.getAutoOffDurationInMinutes());
         assertEquals(diagnosticsConfig.getPluginProperties().size(), taskConfig.getPluginProperties().size());
         assertEquals(diagnosticsConfig.getPluginProperties().get(OperationProfilerPlugin.PERIOD_SECONDS.getName()),
                 taskConfig.getPluginProperties().get(OperationProfilerPlugin.PERIOD_SECONDS.getName()));
@@ -127,6 +130,7 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
         assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB());
         assertEquals(diagnosticsConfig.isIncludeEpochTime(), taskConfig.isIncludeEpochTime());
         assertEquals(diagnosticsConfig.getPluginProperties().size(), taskConfig.getPluginProperties().size());
+        assertEquals(diagnosticsConfig.getAutoOffDurationInMinutes(), taskConfig.getAutoOffDurationInMinutes());
         assertEquals(diagnosticsConfig.getPluginProperties().get(OperationProfilerPlugin.PERIOD_SECONDS.getName()),
                 taskConfig.getPluginProperties().get(OperationProfilerPlugin.PERIOD_SECONDS.getName()));
     }

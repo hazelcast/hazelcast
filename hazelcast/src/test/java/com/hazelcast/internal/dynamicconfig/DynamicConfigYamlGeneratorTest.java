@@ -667,6 +667,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
                 .setIncludeEpochTime(true)
                 .setLogDirectory("/logs")
                 .setFileNamePrefix("logs")
+                .setAutoOffDurationInMinutes(5)
                 .setOutputType(DiagnosticsOutputType.STDOUT);
         diagnosticsConfig.getPluginProperties().put("hazelcast.diagnostics.prop1", "prop1");
         config.setDiagnosticsConfig(diagnosticsConfig);

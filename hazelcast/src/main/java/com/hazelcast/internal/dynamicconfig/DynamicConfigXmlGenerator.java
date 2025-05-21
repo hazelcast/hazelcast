@@ -943,6 +943,7 @@ public final class DynamicConfigXmlGenerator {
                 .node("log-directory", diagnosticsConfig.getLogDirectory())
                 .node("file-name-prefix", diagnosticsConfig.getFileNamePrefix())
                 .node("output-type", diagnosticsConfig.getOutputType())
+                .node("auto-off-timer-in-minutes", diagnosticsConfig.getAutoOffDurationInMinutes())
                 .appendProperties(diagnosticsConfig.getPluginProperties(), "plugin-properties");
         gen.close();
     }

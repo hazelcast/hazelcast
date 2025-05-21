@@ -1049,4 +1049,16 @@
           Enables or disables TPC-aware mode.
     -->
     <tpc enabled="true"/>
+    <diagnostics enabled="false">
+        <!--<file-name-prefix>YOUR_PREFIX_FOR_LOG_FILES</file-name-prefix>-->
+        <include-epoch-time>true</include-epoch-time>
+        <max-rolled-file-count>10</max-rolled-file-count>
+        <max-rolled-file-size-in-mb>50</max-rolled-file-size-in-mb>
+        <auto-off-timer-in-minutes>15</auto-off-timer-in-minutes>
+        <output-type>FILE</output-type>
+        <!--<log-directory>YOUR_OUTPUT_DIRECTORY</log-directory>-->
+        <plugin-properties>
+            <property name="hazelcast.diagnostics.networking-imbalance.seconds">0</property>
+        </plugin-properties>
+    </diagnostics>
 </hazelcast-client>

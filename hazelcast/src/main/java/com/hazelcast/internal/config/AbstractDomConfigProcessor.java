@@ -212,6 +212,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 diagnosticsConfig.setFileNamePrefix(n.getTextContent());
             } else if (matches("output-type", name)) {
                 diagnosticsConfig.setOutputType(DiagnosticsOutputType.valueOf(n.getTextContent()));
+            } else if (matches("auto-off-timer-in-minutes", name)) {
+                diagnosticsConfig.setAutoOffDurationInMinutes(parseInt(n.getTextContent()));
             } else if (matches("plugin-properties", name)) {
                 Map<String, Comparable> rawProperties = new HashMap<>();
                 fillProperties(n, rawProperties);

@@ -4127,3 +4127,15 @@ hazelcast:
         - name: index-1
           dimension: 2
           metric: DOT
+
+  diagnostics:
+    enabled: false
+    include-epoch-time: true
+    # file-name-prefix: 'YOUR_PREFIX_FOR_LOG_FILES'
+    # log-directory: 'YOUR_LOG_DIRECTORY'
+    max-rolled-file-count: 10
+    max-rolled-file-size-in-mb: 50
+    auto-off-timer-in-minutes: 15
+    output-type: 'FILE'
+    plugin-properties:
+      'hazelcast.diagnostics.invocation-profiler.period.seconds': '5'

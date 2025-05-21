@@ -18,6 +18,7 @@ package com.hazelcast.config;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -65,6 +66,11 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      */
     public static final boolean DEFAULT_ENABLED = false;
 
+    /**
+     * Default value of auto off timer for the diagnostics service in minutes.
+     */
+    public static final int DEFAULT_AUTO_OFF_DURATION_IN_MINUTES = -1;
+
     private boolean enabled;
     private int maxRolledFileSizeInMB = DEFAULT_MAX_ROLLED_FILE_SIZE;
     private int maxRolledFileCount = DEFAULT_MAX_ROLLED_FILE_COUNT;
@@ -73,6 +79,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     private String fileNamePrefix;
     private DiagnosticsOutputType outputType = DEFAULT_OUTPUT_TYPE;
     private Map<String, String> pluginProperties = new HashMap<>();
+    private int autoOffDurationInMinutes = DEFAULT_AUTO_OFF_DURATION_IN_MINUTES;
 
     public DiagnosticsConfig() {
     }
@@ -90,6 +97,39 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         this.fileNamePrefix = diagnosticsConfig.getFileNamePrefix();
         this.outputType = diagnosticsConfig.getOutputType();
         this.pluginProperties = diagnosticsConfig.pluginProperties;
+        this.autoOffDurationInMinutes = diagnosticsConfig.getAutoOffDurationInMinutes();
+    }
+
+    /**
+     * Gets the auto off time duration for the diagnostics service in minutes.
+     * <p>Auto off control is disabled by default.</p>
+     * <p>
+     * <b>The auto off feature will be enabled by default on next minor release.</b>
+     * </p>
+     *
+     * @since 6.0
+     */
+    public int getAutoOffDurationInMinutes() {
+        return autoOffDurationInMinutes;
+    }
+
+    /**
+     * Sets the auto off time duration for the diagnostics service in minutes.
+     * <p>Auto off control is disabled by default.</p>
+     * <p>
+     * <b>The auto off feature will be enabled by default on next minor release.</b>
+     * </p>
+     * <b>The given value must be positive. You can set it to -1 to disable the auto off timer.</b>
+     * </p>
+     *
+     * @since 6.0
+     */
+    public DiagnosticsConfig setAutoOffDurationInMinutes(int autoOffDurationInMinutes) {
+        Preconditions.checkState((autoOffDurationInMinutes == -1 || autoOffDurationInMinutes > 0),
+                "autoOffTimerInMinutes must be -1 or positive");
+
+        this.autoOffDurationInMinutes = autoOffDurationInMinutes;
+        return this;
     }
 
     /**
@@ -321,6 +361,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         out.writeString(fileNamePrefix);
         out.writeString(outputType.name());
         SerializationUtil.writeMapStringKey(pluginProperties, out);
+        out.writeInt(autoOffDurationInMinutes);
     }
 
     @Override
@@ -334,6 +375,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         outputType = DiagnosticsOutputType.valueOf(in.readString());
         Map<String, String> properties = SerializationUtil.readMapStringKey(in);
         pluginProperties = properties;
+        autoOffDurationInMinutes = in.readInt();
     }
 
     @Override
@@ -352,13 +394,14 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
                 && Objects.equals(logDirectory, that.logDirectory)
                 && Objects.equals(fileNamePrefix, that.fileNamePrefix)
                 && Objects.equals(outputType, that.outputType)
-                && Objects.equals(pluginProperties, that.pluginProperties);
+                && Objects.equals(pluginProperties, that.pluginProperties)
+                && autoOffDurationInMinutes == that.autoOffDurationInMinutes;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(enabled, maxRolledFileSizeInMB, maxRolledFileCount,
-                includeEpochTime, logDirectory, fileNamePrefix, outputType, pluginProperties);
+                includeEpochTime, logDirectory, fileNamePrefix, outputType, pluginProperties, autoOffDurationInMinutes);
     }
 
     @Override
@@ -382,6 +425,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
                 + ", logDirectory='" + logDirectory + '\''
                 + ", fileNamePrefix='" + fileNamePrefix + '\''
                 + ", outputType=" + outputType
+                + ", autoOffTimerInMinutes=" + autoOffDurationInMinutes
                 + ", properties='" + properties
                 + "'}";
     }

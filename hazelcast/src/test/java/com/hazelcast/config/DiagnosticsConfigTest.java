@@ -53,6 +53,7 @@ public class DiagnosticsConfigTest {
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setMaxRolledFileSizeInMB(99)
                 .setMaxRolledFileCount(89)
+                .setAutoOffDurationInMinutes(5)
                 .setEnabled(true);
         config.getPluginProperties().put("prop1", "prop1");
 
@@ -68,6 +69,7 @@ public class DiagnosticsConfigTest {
         assertEquals(config.getFileNamePrefix(), deserializedConfig.getFileNamePrefix());
         assertEquals(config.getOutputType(), deserializedConfig.getOutputType());
         assertEquals(config.isIncludeEpochTime(), deserializedConfig.isIncludeEpochTime());
+        assertEquals(config.getAutoOffDurationInMinutes(), deserializedConfig.getAutoOffDurationInMinutes());
     }
 
     @Test
@@ -79,6 +81,7 @@ public class DiagnosticsConfigTest {
         assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileSizeInMB(0));
         assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileCount(0));
         assertThrows(IllegalArgumentException.class, () -> config.setLogDirectory(""));
+        assertThrows(IllegalStateException.class, () -> config.setAutoOffDurationInMinutes(0));
         config.setFileNamePrefix("");
         config.setFileNamePrefix(null);
         assertThrows(NullPointerException.class, () -> config.setOutputType(null));

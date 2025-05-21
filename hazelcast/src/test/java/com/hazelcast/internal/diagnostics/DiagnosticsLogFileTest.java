@@ -99,6 +99,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
                 .setMaxRolledFileSizeInMB(1)
                 .setLogDirectory(diagnosticsFolder.getAbsolutePath())
                 .setFileNamePrefix("my-prefix")
+                .setAutoOffDurationInMinutes(5)
                 .setProperty(OperationProfilerPlugin.PERIOD_SECONDS.getName(), "1")
                 .setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1")
                 .setProperty(InvocationProfilerPlugin.PERIOD_SECONDS.getName(), "1");

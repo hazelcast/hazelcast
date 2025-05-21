@@ -5544,6 +5544,10 @@
             "LOGGER"
           ]
         },
+        "auto-off-timer-in-minutes": {
+          "type": "integer",
+          "default": 15
+        },
         "plugin-properties": {
           "type": "object",
           "additionalProperties": {
