@@ -16,12 +16,14 @@
 
 package com.hazelcast.map.impl.querycache.event;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,11 +35,18 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Holder for a collection of {@link QueryCacheEventData}.
+ * <p>
+ * The {@link Versioned} interface is used due to {@link DefaultQueryCacheEventData}
+ * requiring it, which is handled by the same {@link ObjectDataInput} as this class.
+ * The {@link DefaultQueryCacheEventData} class should not have implemented
+ * {@link Versioned} due to being annotated with {@link BinaryInterface}, so this
+ * needs to be corrected in the next major release. For now, this class will implement
+ * {@link Versioned} to avoid breaking serialization of the new field.
  *
  * @see QueryCacheEventData
  */
 @BinaryInterface
-public class BatchEventData implements Sequenced, EventData {
+public class BatchEventData implements Sequenced, EventData, Versioned {
 
     private String source;
     private Collection<QueryCacheEventData> events;
@@ -133,6 +142,8 @@ public class BatchEventData implements Sequenced, EventData {
             for (int i = 0; i < size; i++) {
                 QueryCacheEventData eventData = newQueryCacheEventDataBuilder(true).build();
                 eventData.readData(in);
+                assert in.getVersion().isLessThan(Versions.V5_4) || eventData.getMapName() != null
+                        : "Map name should not be null in version 5.4 and above";
 
                 events.add(eventData);
             }
