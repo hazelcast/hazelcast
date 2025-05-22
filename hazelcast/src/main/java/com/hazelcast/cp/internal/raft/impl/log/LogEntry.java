@@ -31,6 +31,7 @@ import java.io.IOException;
  * an integer index identifying its position in the log.
  */
 public class LogEntry implements IdentifiedDataSerializable {
+
     private int term;
     private long index;
     private Object operation;
@@ -42,6 +43,21 @@ public class LogEntry implements IdentifiedDataSerializable {
         this.term = term;
         this.index = index;
         this.operation = operation;
+    }
+
+    public LogEntry setSnapshotTerm(int term) {
+        this.term = term;
+        return this;
+    }
+
+    public LogEntry setIndex(long index) {
+        this.index = index;
+        return this;
+    }
+
+    public LogEntry setOperation(Object operation) {
+        this.operation = operation;
+        return this;
     }
 
     public long index() {

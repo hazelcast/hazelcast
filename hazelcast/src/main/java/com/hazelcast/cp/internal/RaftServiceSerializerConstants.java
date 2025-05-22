@@ -34,7 +34,7 @@ public abstract class RaftServiceSerializerConstants {
     public static final int APPEND_SUCCESS_RESPONSE_OP = 8;
     public static final int APPEND_FAILURE_RESPONSE_OP = 9;
     public static final int METADATA_RAFT_GROUP_SNAPSHOT = 10;
-    public static final int INSTALL_SNAPSHOT_OP = 11;
+    public static final int INSTALL_SNAPSHOT_REQUEST_OP = 11;
     public static final int DEFAULT_RAFT_GROUP_REPLICATE_OP = 12;
     public static final int CREATE_RAFT_GROUP_OP = 13;
     public static final int TRIGGER_DESTROY_RAFT_GROUP_OP = 14;
@@ -78,4 +78,5 @@ public abstract class RaftServiceSerializerConstants {
     public static final int UNSAFE_STATE_REPLICATE_OP = 52;
     public static final int GET_CP_OBJECT_INFOS_OP = 53;
     public static final int PUBLISH_CP_GROUP_INFO_OP = 54;
+    public static final int INSTALL_SNAPSHOT_RESPONSE_OP = 55;
 }

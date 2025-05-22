@@ -87,7 +87,12 @@ public interface RaftStateStore extends Closeable {
     void persistEntry(@Nonnull LogEntry entry) throws IOException;
 
     /**
-     * Persists the given snapshot entry.
+     * Persists the given snapshot chunk.
+     * <p>
+     * All chunks of a snapshot share the same snapshot index.
+     * <p>
+     * Below is an explanation of the general snapshotting
+     * process, which remains valid for the chunking approach:
      * <p>
      * After a snapshot is persisted at <em>index=i</em> and {@link #flushLogs()}
      * is called, the log entry at <em>index=i</em> and all the preceding
@@ -121,7 +126,18 @@ public interface RaftStateStore extends Closeable {
      * @see #persistEntry(LogEntry)
      * @see RaftAlgorithmConfig
      */
-    void persistSnapshot(@Nonnull SnapshotEntry entry) throws IOException;
+    void persistSnapshotChunk(Object snapshotChunk) throws IOException;
+
+    /**
+     * Deletes all snapshot chunks associated with the given snapshot index from disk storage.
+     * <p>
+     * This method is called by {@link SnapshotInstaller} when a more recent snapshot is detected,
+     * to clean up obsolete snapshot state and free up disk space.
+     *
+     * @param snapshotIndex the index of the snapshot whose chunks should be deleted.
+     * @throws IOException if an I/O error occurs while deleting the snapshot chunks
+     */
+    void deleteSnapshotChunks(long snapshotIndex) throws IOException;
 
     /**
      * Rolls back the log by deleting all entries starting with the given index.
@@ -149,5 +165,4 @@ public interface RaftStateStore extends Closeable {
      * @see #deleteEntriesFrom(long)
      */
     void flushLogs() throws IOException;
-
 }

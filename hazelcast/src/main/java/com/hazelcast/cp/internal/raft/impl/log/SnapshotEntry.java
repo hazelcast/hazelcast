@@ -32,7 +32,8 @@ import static java.util.Collections.unmodifiableCollection;
 /**
  * Represents a snapshot in the {@link RaftLog}.
  * <p>
- * Snapshot entry is sent to followers via {@link InstallSnapshot} RPC.
+ * The snapshot entry is sent to followers chunk by
+ * chunk using the {@link InstallSnapshotRequest} RPC.
  */
 public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializable {
 
@@ -42,7 +43,8 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     public SnapshotEntry() {
     }
 
-    public SnapshotEntry(int term, long index, Object operation, long groupMembersLogIndex,
+    public SnapshotEntry(int term, long index, Object operation,
+                         long groupMembersLogIndex,
                          Collection<RaftEndpoint> groupMembers) {
         super(term, index, operation);
         this.groupMembersLogIndex = groupMembersLogIndex;
@@ -85,7 +87,8 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     public String toString(boolean detailed) {
         return "SnapshotEntry{" + "term=" + term() + ", index=" + index()
                 + (detailed ? ", operation=" + operation() : "")
-                + ", groupMembersLogIndex=" + groupMembersLogIndex + ", groupMembers=" + groupMembers + '}';
+                + ", groupMembersLogIndex=" + groupMembersLogIndex
+                + ", groupMembers=" + groupMembers + '}';
     }
 
     @Override
