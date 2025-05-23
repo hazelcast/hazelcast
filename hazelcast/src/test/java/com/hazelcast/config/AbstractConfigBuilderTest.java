@@ -730,6 +730,8 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(8080, restConfig.getPort());
         assertEquals("realmName", restConfig.getSecurityRealm());
         assertEquals(500, restConfig.getTokenValidityDuration().toSeconds());
+        assertEquals(10, restConfig.getMaxLoginAttempts());
+        assertEquals(10, restConfig.getLockoutDuration().getSeconds());
         assertTrue(restConfig.getSsl().isEnabled());
         assertEquals(RestConfig.Ssl.ClientAuth.NEED, restConfig.getSsl().getClientAuth());
         assertEquals("TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256", restConfig.getSsl().getCiphers());

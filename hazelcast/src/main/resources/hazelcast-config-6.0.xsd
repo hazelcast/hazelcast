@@ -6727,6 +6727,25 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="lockout-duration-seconds" type="xs:int" minOccurs="0" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Duration in seconds for which account will be locked out after too many failed login attempts.
+
+                        Login attempts are remembered for the value of this field (each failed login resets the timer)
+                        and after max attempts is reached, the account will be locked for this duration as well.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-login-attempts" type="xs:int" minOccurs="0" default="5">
+                <xs:annotation>
+                    <xs:documentation>
+                        Returns after how many failed logins the account will be locked out.
+                        Login attempts are remembered for lockout-duration-seconds (each failed login resets the timer)
+                        and after max attempts is reached, the account will be locked for lockout-duration-seconds.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="false">
             <xs:annotation>

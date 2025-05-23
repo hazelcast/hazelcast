@@ -5206,6 +5206,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <port>8080</port>\n"
                 + "        <security-realm>realmName</security-realm>\n"
                 + "        <token-validity-seconds>500</token-validity-seconds>\n"
+                + "        <max-login-attempts>10</max-login-attempts>\n"
+                + "        <lockout-duration-seconds>10</lockout-duration-seconds>\n"
                 + "        <ssl enabled=\"true\">\n"
                 + "            <client-auth>NEED</client-auth>\n"
                 + "            <ciphers>TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256</ciphers>\n"

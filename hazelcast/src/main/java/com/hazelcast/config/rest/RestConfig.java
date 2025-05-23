@@ -16,19 +16,23 @@
 
 package com.hazelcast.config.rest;
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+
 /**
  * This class allows controlling the Hazelcast REST API feature.
  *
  * @since 5.4
  */
+@SuppressWarnings("UnusedReturnValue")
 public class RestConfig {
+
+    @SuppressWarnings("UnusedReturnValue")
     public static class Ssl {
 
         private boolean enabled;
@@ -502,7 +506,8 @@ public class RestConfig {
     private static final Duration DEFAULT_DURATION = Duration.of(DEFAULT_DURATION_MINUTES, ChronoUnit.MINUTES);
     private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.ofSeconds(TimeUnit.MILLISECONDS
             .toSeconds(Long.parseLong(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getDefaultValue())));
-    ;
+    private static final int DEFAULT_MAX_LOGING_ATTEMPTS = 5;
+
     /**
      * The HTTP request timeout. It sets the underlying server http request timeout.
      */
@@ -528,6 +533,22 @@ public class RestConfig {
     private Duration tokenValidityDuration = DEFAULT_DURATION;
 
     /**
+     * Duration for which account will be locked out after too many failed login attempts.
+     * <p>
+     * Login attempts are remembered for the value of this field (each failed login resets the timer)
+     * and after max attempts is reached, the account will be locked for this duration as well.
+     */
+    private Duration lockoutDuration = DEFAULT_DURATION;
+
+    /**
+     * Returns after how many failed logins the account will be locked out.
+     * <p>
+     * Login attempts are remembered for {@link #lockoutDuration} (each failed login resets the timer)
+     * and after max attempts is reached, the account will be locked for {@link #lockoutDuration}.
+     */
+    private int maxLoginAttempts = DEFAULT_MAX_LOGING_ATTEMPTS;
+
+    /**
      * SSL configuration.
      */
     private Ssl ssl = new Ssl();
@@ -540,8 +561,6 @@ public class RestConfig {
 
     /**
      * Return the HTTP request timeout.
-     *
-     * @return
      */
     public Duration getRequestTimeoutDuration() {
         return requestTimeoutDuration;
@@ -550,11 +569,10 @@ public class RestConfig {
     /**
      * Set the HTTP request timeout. Default is 120 seconds.
      * <b>WARNING:</b> The resolution for requestTimeoutDuration can not be more than a second.
-     * @param requestTimeoutDuration
      * @throws IllegalArgumentException if requestTimeoutDuration is negative
      */
     public void setRequestTimeoutDuration(Duration requestTimeoutDuration) {
-        this.requestTimeoutDuration = Preconditions.checkNotNegative(requestTimeoutDuration,
+        this.requestTimeoutDuration = checkNotNegative(requestTimeoutDuration,
                 "requestTimeoutDuration cannot be negative.");
     }
 
@@ -633,7 +651,7 @@ public class RestConfig {
      * @param tokenValidityDuration the duration for which the token should be valid.
      */
     public RestConfig setTokenValidityDuration(Duration tokenValidityDuration) {
-        this.tokenValidityDuration = Preconditions.checkNotNegative(tokenValidityDuration,
+        this.tokenValidityDuration = checkNotNegative(tokenValidityDuration,
                 "tokenValidityDuration cannot be negative.");
         return this;
     }
@@ -659,6 +677,50 @@ public class RestConfig {
     }
 
     /**
+     * Returns the duration for which account will be locked out.
+     *
+     * @since 6.0
+     */
+    public Duration getLockoutDuration() {
+        return lockoutDuration;
+    }
+
+    /**
+     * Sets the duration for which account will be locked out.
+     * @since 6.0
+     */
+    public RestConfig setLockoutDuration(Duration lockoutDuration) {
+        checkNotNegative(lockoutDuration, "lockoutDuration cannot be negative.");
+        this.lockoutDuration = lockoutDuration;
+        return this;
+    }
+
+    /**
+     * Returns after how many failed logins the account will be locked out.
+     * <p>
+     * Login attempts are remembered for {@link #lockoutDuration} (each failed login resets the timer)
+     * and after max attempts is reached, the account will be locked for {@link #lockoutDuration}.
+     *
+     * @since 6.0
+     */
+    public int getMaxLoginAttempts() {
+        return maxLoginAttempts;
+    }
+
+    /**
+     * Sets after how many failed logins the account will be locked out.
+     * 0 means unlimited login attempts.
+     * @since 6.0
+     */
+    public RestConfig setMaxLoginAttempts(int maxLoginAttempts) {
+        if (maxLoginAttempts < 0) {
+            throw new IllegalArgumentException("maxLoginAttempts cannot be negative.");
+        }
+        this.maxLoginAttempts = maxLoginAttempts;
+        return this;
+    }
+
+    /**
      * Returns a string representation of the RestConfig.
      *
      * @return a string representation of the RestConfig.
@@ -667,6 +729,7 @@ public class RestConfig {
     public String toString() {
         return "RestConfig{enabled=" + enabled + ", port=" + port + ", securityRealm='" + securityRealm + '\''
                 + ", tokenValidityDuration=" + tokenValidityDuration + ", ssl=" + ssl + ","
+                + ", maxLoginAttempts=" + maxLoginAttempts + ", lockoutDuration=" + lockoutDuration + ","
                 + " requestTimeoutDuration=" + requestTimeoutDuration + "}";
     }
 }

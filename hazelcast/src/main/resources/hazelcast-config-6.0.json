@@ -5347,6 +5347,16 @@
           "description": "The validity of the token in seconds.",
           "default": 300
         },
+        "lockout-duration-seconds": {
+          "type": "integer",
+          "description": "Duration in seconds for which account will be locked out after too many failed login attempts. Login attempts are remembered for the value of this field (each failed login resets the timer) and after max attempts is reached, the account will be locked for this duration as well.",
+          "default": 1
+        },
+        "max-login-attempts": {
+          "type": "integer",
+          "description": "Returns after how many failed logins the account will be locked out. Login attempts are remembered for lockout-duration-seconds (each failed login resets the timer) and after max attempts is reached, the account will be locked for lockout-duration-seconds.",
+          "default": 5
+        },
         "ssl": {
           "$ref": "#/definitions/RestSSLConfig"
         }

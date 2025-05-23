@@ -5273,6 +5273,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                     port: 8080
                     security-realm: realmName
                     token-validity-seconds: 500
+                    max-login-attempts: 10
+                    lockout-duration-seconds: 10
                     ssl:
                       enabled: true
                       client-auth: NEED

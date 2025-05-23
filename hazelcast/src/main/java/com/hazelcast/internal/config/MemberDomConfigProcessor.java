@@ -3677,6 +3677,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         final String securityRealmName = "security-realm";
         final String tokenValiditySecondsName = "token-validity-seconds";
         final String requestTimeoutSecondsName = "request-timeout-seconds";
+        final String maxLoginAttempts = "max-login-attempts";
+        final String lockoutDuration = "lockout-duration-seconds";
 
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
@@ -3692,8 +3694,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches(requestTimeoutSecondsName, childName)) {
                 restConfig.setRequestTimeoutDuration(Duration
                         .ofSeconds(getIntegerValue(requestTimeoutSecondsName, getTextContent(child))));
+            } else if (matches(maxLoginAttempts, childName)) {
+                restConfig.setMaxLoginAttempts(getIntegerValue(maxLoginAttempts, getTextContent(child)));
+            } else if (matches(lockoutDuration, childName)) {
+                int durationSeconds = getIntegerValue(lockoutDuration, getTextContent(child));
+                restConfig.setLockoutDuration(Duration.of(durationSeconds, SECONDS));
             }
-
         }
     }
 
