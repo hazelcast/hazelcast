@@ -506,7 +506,7 @@ public class RestConfig {
     private static final Duration DEFAULT_DURATION = Duration.of(DEFAULT_DURATION_MINUTES, ChronoUnit.MINUTES);
     private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.ofSeconds(TimeUnit.MILLISECONDS
             .toSeconds(Long.parseLong(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getDefaultValue())));
-    private static final int DEFAULT_MAX_LOGING_ATTEMPTS = 5;
+    private static final int DEFAULT_MAX_LOGIN_ATTEMPTS = 5;
 
     /**
      * The HTTP request timeout. It sets the underlying server http request timeout.
@@ -546,7 +546,7 @@ public class RestConfig {
      * Login attempts are remembered for {@link #lockoutDuration} (each failed login resets the timer)
      * and after max attempts is reached, the account will be locked for {@link #lockoutDuration}.
      */
-    private int maxLoginAttempts = DEFAULT_MAX_LOGING_ATTEMPTS;
+    private int maxLoginAttempts = DEFAULT_MAX_LOGIN_ATTEMPTS;
 
     /**
      * SSL configuration.

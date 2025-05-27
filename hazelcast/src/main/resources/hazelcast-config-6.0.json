@@ -5350,7 +5350,7 @@
         "lockout-duration-seconds": {
           "type": "integer",
           "description": "Duration in seconds for which account will be locked out after too many failed login attempts. Login attempts are remembered for the value of this field (each failed login resets the timer) and after max attempts is reached, the account will be locked for this duration as well.",
-          "default": 1
+          "default": 900
         },
         "max-login-attempts": {
           "type": "integer",
