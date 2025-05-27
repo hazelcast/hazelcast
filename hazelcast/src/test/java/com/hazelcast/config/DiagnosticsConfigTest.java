@@ -64,7 +64,7 @@ public class DiagnosticsConfigTest {
         assertEquals(config.isEnabled(), deserializedConfig.isEnabled());
         assertEquals(config.getPluginProperties(), deserializedConfig.getPluginProperties());
         assertEquals(config.getMaxRolledFileCount(), deserializedConfig.getMaxRolledFileCount());
-        assertEquals(config.getMaxRolledFileSizeInMB(), deserializedConfig.getMaxRolledFileSizeInMB());
+        assertEquals(config.getMaxRolledFileSizeInMB(), deserializedConfig.getMaxRolledFileSizeInMB(), 0);
         assertEquals(config.getLogDirectory(), deserializedConfig.getLogDirectory());
         assertEquals(config.getFileNamePrefix(), deserializedConfig.getFileNamePrefix());
         assertEquals(config.getOutputType(), deserializedConfig.getOutputType());

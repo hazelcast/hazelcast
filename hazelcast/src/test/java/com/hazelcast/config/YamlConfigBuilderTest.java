@@ -5564,7 +5564,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setLogDirectory("/src/user")
                 .setFileNamePrefix("mylogs")
-                .setAutoOffDurationInMinutes(5)
+                .setAutoOffDurationInMinutes(15)
                 .setIncludeEpochTime(true);
         cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
         cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
@@ -5575,6 +5575,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
+        // it must accept int value as a file size. Although float is an option, integer should be fine.
+        // So casted to int to show that.
         String yaml = String.format("""
                         hazelcast:
                           diagnostics:
@@ -5586,7 +5588,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                             file-name-prefix: %s
                             auto-off-timer-in-minutes: %d
                             output-type: %s
-                        """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
+                        """, cfg.isEnabled(), (int) cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
                 cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getAutoOffDurationInMinutes(), cfg.getOutputType());
 
 

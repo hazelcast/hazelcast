@@ -897,7 +897,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         String xml = String.format(HAZELCAST_CLIENT_START_TAG + """
                         <diagnostics enabled="%s">
-                        <max-rolled-file-size-in-mb>%d</max-rolled-file-size-in-mb>
+                        <max-rolled-file-size-in-mb>%f</max-rolled-file-size-in-mb>
                         <max-rolled-file-count>%d</max-rolled-file-count>
                         <include-epoch-time>%s</include-epoch-time>
                         <log-directory>%s</log-directory>

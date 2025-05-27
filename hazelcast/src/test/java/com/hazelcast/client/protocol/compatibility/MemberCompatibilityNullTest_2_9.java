@@ -7814,7 +7814,7 @@ public class MemberCompatibilityNullTest_2_9 {
         assertTrue(isEqual(aBoolean, parameters.enabled));
         assertTrue(isEqual(aString, parameters.outputType));
         assertTrue(isEqual(aBoolean, parameters.includeEpochTime));
-        assertTrue(isEqual(anInt, parameters.maxRolledFileSizeInMB));
+        assertTrue(isEqual(aFloat, parameters.maxRolledFileSizeInMB));
         assertTrue(isEqual(anInt, parameters.maxRolledFileCount));
         assertTrue(isEqual(aString, parameters.logDirectory));
         assertTrue(isEqual(null, parameters.fileNamePrefix));

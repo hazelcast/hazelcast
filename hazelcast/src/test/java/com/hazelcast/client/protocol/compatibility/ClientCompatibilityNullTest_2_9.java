@@ -6900,7 +6900,7 @@ public class ClientCompatibilityNullTest_2_9 {
     @Test
     public void test_MCSetDiagnosticsConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 876;
-        ClientMessage encoded = MCSetDiagnosticsConfigCodec.encodeRequest(aBoolean, aString, aBoolean, anInt, anInt, aString, null, null, anInt);
+        ClientMessage encoded = MCSetDiagnosticsConfigCodec.encodeRequest(aBoolean, aString, aBoolean, aFloat, anInt, aString, null, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

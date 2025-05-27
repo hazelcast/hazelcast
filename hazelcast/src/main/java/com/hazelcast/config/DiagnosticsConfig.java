@@ -72,7 +72,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     public static final int DEFAULT_AUTO_OFF_DURATION_IN_MINUTES = -1;
 
     private boolean enabled;
-    private int maxRolledFileSizeInMB = DEFAULT_MAX_ROLLED_FILE_SIZE;
+    private float maxRolledFileSizeInMB = DEFAULT_MAX_ROLLED_FILE_SIZE;
     private int maxRolledFileCount = DEFAULT_MAX_ROLLED_FILE_COUNT;
     private boolean includeEpochTime = DEFAULT_INCLUDE_EPOCH_TIME;
     private String logDirectory = DEFAULT_DIRECTORY;
@@ -172,7 +172,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      *
      * @since 6.0
      */
-    public int getMaxRolledFileSizeInMB() {
+    public float getMaxRolledFileSizeInMB() {
         return maxRolledFileSizeInMB;
     }
 
@@ -187,9 +187,9 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * <p>
      * The default is 50.
      */
-    public DiagnosticsConfig setMaxRolledFileSizeInMB(int maxRolledFileSizeInMB) {
-        this.maxRolledFileSizeInMB = checkPositive("maxRolledFileSizeInMB must be positive",
-                maxRolledFileSizeInMB);
+    public DiagnosticsConfig setMaxRolledFileSizeInMB(float maxRolledFileSizeInMB) {
+        this.maxRolledFileSizeInMB = checkPositive(maxRolledFileSizeInMB,
+                "maxRolledFileSizeInMB must be positive");
         return this;
     }
 
@@ -354,7 +354,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeInt(maxRolledFileSizeInMB);
+        out.writeFloat(maxRolledFileSizeInMB);
         out.writeInt(maxRolledFileCount);
         out.writeBoolean(includeEpochTime);
         out.writeString(logDirectory);
@@ -367,7 +367,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        maxRolledFileSizeInMB = in.readInt();
+        maxRolledFileSizeInMB = in.readFloat();
         maxRolledFileCount = in.readInt();
         includeEpochTime = in.readBoolean();
         logDirectory = in.readString();
@@ -388,7 +388,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         }
         DiagnosticsConfig that = (DiagnosticsConfig) o;
         return enabled == that.enabled
-                && maxRolledFileSizeInMB == that.maxRolledFileSizeInMB
+                && Float.compare(maxRolledFileSizeInMB, that.maxRolledFileSizeInMB) == 0
                 && maxRolledFileCount == that.maxRolledFileCount
                 && includeEpochTime == that.includeEpochTime
                 && Objects.equals(logDirectory, that.logDirectory)

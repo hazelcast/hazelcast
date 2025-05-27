@@ -33,7 +33,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,7 +41,6 @@ import static com.hazelcast.test.Accessors.getMetricsRegistry;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -59,7 +57,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     @Test
     public void testLogFileContent() {
-        setup(10_000_000);
+        setup(10);
         assertTrueEventually(() -> {
             String content = loadLogfile(diagnosticsLogFile.file);
             assertNotNull(content);
@@ -74,7 +72,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
     @Test
     public void testRollover() {
         // 200KB
-        setup(200_000);
+        setup(0.2f);
         // we register 50 probes to quickly fill up the diagnostics log file
         String id = generateRandomString(10000);
         LongProbeFunction<Object> probe = source -> 0;
@@ -105,30 +103,21 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
         });
     }
 
-    private void setup(int maxFileSizeKB) {
-        Config config = new Config()
-                .setProperty(Diagnostics.ENABLED.getName(), "true")
-                .setProperty(Diagnostics.MAX_ROLLED_FILE_COUNT.getName(), "3")
-                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
+    private void setup(float maxFileSizeMB) {
+        Config config = new Config();
+        config.getDiagnosticsConfig()
+                .setEnabled(true)
+                .setMaxRolledFileCount(3)
+                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1")
+                .setMaxRolledFileSizeInMB(maxFileSizeMB);
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
         diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
         diagnosticsLogFile = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
         metricsRegistry = getMetricsRegistry(hz);
-        setRollingSizeToByte(diagnostics, maxFileSizeKB);
     }
 
-    private static void setRollingSizeToByte(Diagnostics diagnostics, int size) {
-        try {
-            DiagnosticsLogFile fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
-            Field field = DiagnosticsLogFile.class.getDeclaredField("maxRollingFileSizeBytes");
-            field.setAccessible(true);
-            field.set(fileLogger, size);
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            fail(e.getMessage());
-        }
-    }
 
     private static String loadLogfile(File file) {
         if (file == null || !file.exists()) {

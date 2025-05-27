@@ -201,7 +201,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node n : childElements(node)) {
             String name = cleanNodeName(n);
             if (matches("max-rolled-file-size-in-mb", name)) {
-                diagnosticsConfig.setMaxRolledFileSizeInMB(parseInt(n.getTextContent()));
+                diagnosticsConfig.setMaxRolledFileSizeInMB(Float.parseFloat(n.getTextContent()));
             } else if (matches("max-rolled-file-count", name)) {
                 diagnosticsConfig.setMaxRolledFileCount(parseInt(n.getTextContent()));
             } else if (matches("include-epoch-time", name)) {

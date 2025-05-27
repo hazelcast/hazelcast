@@ -183,6 +183,21 @@ public final class Preconditions {
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
+     * @param value        the value tested to see if it is positive.
+     * @param errorMessage the message
+     * @return the value
+     * @throws java.lang.IllegalArgumentException if the value is not positive.
+     */
+    public static float checkPositive(float value, String errorMessage) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return value;
+    }
+
+    /**
+     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
+     *
      * @param paramName the name of the checked parameter that will be in exception message
      * @param value     the value tested to see if it is positive.
      * @return the value

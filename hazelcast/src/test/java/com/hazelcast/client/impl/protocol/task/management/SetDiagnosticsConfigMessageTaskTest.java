@@ -103,7 +103,7 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
         assertEquals(diagnosticsConfig.getLogDirectory(), taskConfig.getLogDirectory());
         assertEquals(diagnosticsConfig.getFileNamePrefix(), taskConfig.getFileNamePrefix());
         assertEquals(diagnosticsConfig.getMaxRolledFileCount(), taskConfig.getMaxRolledFileCount());
-        assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB());
+        assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB(), 0);
         assertEquals(diagnosticsConfig.isIncludeEpochTime(), taskConfig.isIncludeEpochTime());
         assertEquals(diagnosticsConfig.getAutoOffDurationInMinutes(), taskConfig.getAutoOffDurationInMinutes());
         assertEquals(diagnosticsConfig.getPluginProperties().size(), taskConfig.getPluginProperties().size());
@@ -127,7 +127,7 @@ public class SetDiagnosticsConfigMessageTaskTest extends ConfigMessageTaskTest<S
         assertEquals(diagnosticsConfig.getLogDirectory(), taskConfig.getLogDirectory());
         assertEquals(diagnosticsConfig.getFileNamePrefix(), taskConfig.getFileNamePrefix());
         assertEquals(diagnosticsConfig.getMaxRolledFileCount(), taskConfig.getMaxRolledFileCount());
-        assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB());
+        assertEquals(diagnosticsConfig.getMaxRolledFileSizeInMB(), taskConfig.getMaxRolledFileSizeInMB(), 0);
         assertEquals(diagnosticsConfig.isIncludeEpochTime(), taskConfig.isIncludeEpochTime());
         assertEquals(diagnosticsConfig.getPluginProperties().size(), taskConfig.getPluginProperties().size());
         assertEquals(diagnosticsConfig.getAutoOffDurationInMinutes(), taskConfig.getAutoOffDurationInMinutes());

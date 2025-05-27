@@ -32,7 +32,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
@@ -96,7 +95,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(true)
                 .setMaxRolledFileCount(5)
-                .setMaxRolledFileSizeInMB(1)
+                .setMaxRolledFileSizeInMB(0.01f)
                 .setLogDirectory(diagnosticsFolder.getAbsolutePath())
                 .setFileNamePrefix("my-prefix")
                 .setAutoOffDurationInMinutes(5)
@@ -113,7 +112,8 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         File diagnosticsFolder = folder.newFolder();
         DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(true)
-                .setLogDirectory(diagnosticsFolder.getAbsolutePath());
+                .setLogDirectory(diagnosticsFolder.getAbsolutePath())
+                .setMaxRolledFileSizeInMB(0.01f);
 
         assertFilesRollingOver(diagnosticsConfig);
     }
@@ -127,9 +127,8 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         config.setDiagnosticsConfig(diagnosticsConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        // Let's tweak the file size on LogFileWrite to speed up the test.
         Diagnostics diagnostics = TestUtil.getNode(instance).getNodeEngine().getDiagnostics();
-        setRollingSizeToKB(diagnostics, 10_000);
+
         DiagnosticsLogFile fileLogger;
         String fileNameOfFirstRun = diagnostics.getFileName();
 
@@ -147,8 +146,6 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
 
         // set the config for second phase
         instance.getConfig().setDiagnosticsConfig(diagnosticsConfig);
-        // let's tweak the file size on LogFileWrite to speed up the test.
-        setRollingSizeToKB(diagnostics, 10_000);
         assertContainsFileEventually(diagnostics.getLoggingDirectory(), totalExpectedFileCount);
 
 
@@ -162,12 +159,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfSecondRun)));
     }
 
-    private static void setRollingSizeToKB(Diagnostics diagnostics, int size) throws NoSuchFieldException, IllegalAccessException {
-        DiagnosticsLogFile fileLogger = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
-        Field field = DiagnosticsLogFile.class.getDeclaredField("maxRollingFileSizeBytes");
-        field.setAccessible(true);
-        field.set(fileLogger, size); // 10 kilobyte
-    }
+
 
     private void assertContainsFileEventually(final File dir) {
         assertContainsFileEventually(dir, 1);

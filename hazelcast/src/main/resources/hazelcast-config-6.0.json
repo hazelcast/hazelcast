@@ -5530,7 +5530,7 @@
           "default": false
         },
         "max-rolled-file-size-in-mb": {
-          "type": "integer",
+          "type": "number",
           "default": 50
         },
         "max-rolled-file-count": {

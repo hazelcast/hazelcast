@@ -6827,7 +6827,7 @@
 
     <xs:complexType name="diagnostics">
         <xs:all>
-            <xs:element name="max-rolled-file-size-in-mb" type="xs:unsignedInt" default="50" minOccurs="0"/>
+            <xs:element name="max-rolled-file-size-in-mb" type="xs:float" default="50" minOccurs="0"/>
             <xs:element name="max-rolled-file-count" type="xs:unsignedInt" default="10" minOccurs="0"/>
             <xs:element name="include-epoch-time" type="xs:boolean" default="true" minOccurs="0"/>
             <xs:element name="log-directory" type="xs:string" minOccurs="0"/>

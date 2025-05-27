@@ -210,7 +210,7 @@ public class Diagnostics {
     private File loggingDirectory;
     private String filePrefix;
     private boolean includeEpochTime;
-    private int maxRollingFileSizeMB;
+    private float maxRollingFileSizeMB;
     private int maxRollingFileCount;
     private ScheduledExecutorService scheduler;
     private ScheduledExecutorService autoOffScheduler;

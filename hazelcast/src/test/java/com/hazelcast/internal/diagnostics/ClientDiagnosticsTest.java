@@ -87,7 +87,7 @@ public class ClientDiagnosticsTest extends HazelcastTestSupport {
         assertEquals(dConfig.getLogDirectory(), diagnosticsConfig.getLogDirectory());
         assertEquals(dConfig.getFileNamePrefix(), diagnosticsConfig.getFileNamePrefix());
         assertEquals(dConfig.getMaxRolledFileCount(), diagnosticsConfig.getMaxRolledFileCount());
-        assertEquals(dConfig.getMaxRolledFileSizeInMB(), diagnosticsConfig.getMaxRolledFileSizeInMB());
+        assertEquals(dConfig.getMaxRolledFileSizeInMB(), diagnosticsConfig.getMaxRolledFileSizeInMB(), 0);
         assertTrue(dConfig.isIncludeEpochTime());
         assertEquals(dConfig.getPluginProperties(), diagnosticsConfig.getPluginProperties());
         assertEquals(dConfig.getAutoOffDurationInMinutes(), diagnosticsConfig.getAutoOffDurationInMinutes());
