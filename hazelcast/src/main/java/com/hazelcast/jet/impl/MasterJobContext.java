@@ -59,7 +59,6 @@ import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 
@@ -122,6 +121,7 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
 import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -775,7 +775,7 @@ public class MasterJobContext {
     }
 
     void cancelExecutionInvocations(long jobId, long executionId, TerminationMode mode, Runnable callback) {
-        mc.nodeEngine().getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () ->
+        mc.nodeEngine().getExecutionService().execute(ASYNC_EXECUTOR, () ->
                 mc.invokeOnParticipants(plan -> new TerminateExecutionOperation(jobId, executionId, mode),
                         responses -> {
                             if (responses.stream()
@@ -801,7 +801,7 @@ public class MasterJobContext {
             }
             mc.unlock();
           })
-          .thenComposeAsync(r -> completeVertices(failure))
+          .thenComposeAsync(r -> completeVertices(failure), mc.nodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR))
           .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
             final Runnable nonSynchronizedAction;
             try {
