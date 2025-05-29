@@ -91,3 +91,48 @@ set JAVA_OPTS=%JAVA_OPTS% -Dhazelcast.config="%HAZELCAST_HOME%\!HAZELCAST_CONFIG
 :: classpath
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*;%HAZELCAST_HOME%\bin\user-lib;%HAZELCAST_HOME%\bin\user-lib\*;%CLASSPATH%"
+
+REM Mask sensitive options in JAVA_OPTS
+set "maskKeys="
+set "filteredOpts="
+set "displayOpts="
+
+set "LINE_TO_PROCESS=%JAVA_OPTS%"
+:parse_loop
+for /f "tokens=1,* delims= " %%A in ("!LINE_TO_PROCESS!") do (
+    set "opt=%%A"
+    set "opt=!opt:"=!"
+    set "LINE_TO_PROCESS=%%B"
+
+    if "!opt!"=="!opt:-DmaskOpts=!" (
+        set "filteredOpts=!filteredOpts! !opt!"
+    ) else (
+        for /f "tokens=1* delims==" %%A in ("!opt!") do (
+            set "maskKeys=%%B"
+        )
+    )
+)
+if defined LINE_TO_PROCESS goto parse_loop
+
+set "LINE_TO_PROCESS=!filteredOpts!"
+:filter_loop
+for /f "tokens=1,* delims= " %%A in ("!LINE_TO_PROCESS!") do (
+    set "opt=%%A"
+    set "opt=!opt:"=!"
+    set "LINE_TO_PROCESS=%%B"
+
+    set "masked="
+    for %%K in (!maskKeys!) do (
+        echo !opt! | findstr /c:"-D%%K=" >nul
+        if !errorlevel! == 0 (
+            set "displayOpts=!displayOpts! -D%%K=****"
+            set "masked=true"
+        )
+    )
+
+    if not defined masked (
+        set "displayOpts=!displayOpts! !opt!"
+    )
+)
+if defined LINE_TO_PROCESS goto filter_loop
+
