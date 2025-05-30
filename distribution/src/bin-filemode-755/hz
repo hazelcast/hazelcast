@@ -97,7 +97,7 @@ if [ -z "$LOGGING_PATTERN" ]; then
   fi
 fi
 
-source ./utils.sh
+source "$SCRIPT_DIR"/utils.sh
 prepare_java_opts_with_masking
 
 if [[ "$1" != "--version" ]] && [[ "$1" != "-V" ]]; then
