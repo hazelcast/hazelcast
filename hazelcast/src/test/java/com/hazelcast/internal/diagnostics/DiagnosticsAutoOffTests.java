@@ -161,6 +161,36 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         });
     }
 
+    @Test
+    public void testAutoOffSkipped_whenNonDynamicPluginExist() {
+        // Non-dynamic plugins prevent Diagnostics to be disabled at runtime. They required the node to be restarted.
+        // So, auto off should be skipped because Diagnostics cannot be disabled.
+
+        DiagnosticsConfig dCfg = new DiagnosticsConfig();
+        dCfg.setEnabled(true);
+        dCfg.setAutoOffDurationInMinutes(1);
+        // Enable a non-dynamic plugin
+        dCfg.setProperty(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "30");
+
+        setup(dCfg);
+
+        assertTrueEventually(() -> {
+            assertTrue(diagnostics.isEnabled());
+            assertAutoOffNotSet(diagnostics);
+        });
+
+        // we can't disable but restart the service with new config
+        // It shouldn't schedule auto-off because Diagnostics cannot be disabled.
+        dCfg.setProperty(InvocationProfilerPlugin.PERIOD_SECONDS.getName(), "30");
+        setDynamicConfig(dCfg);
+
+        assertTrueEventually(() -> {
+            assertTrue(diagnostics.isEnabled());
+            assertAutoOffNotSet(diagnostics);
+        });
+    }
+
+
     private @NotNull StringBuilder captureLogs() {
         StringBuilder sbLogs = new StringBuilder();
         hz.getLoggingService().addLogListener(Level.ALL, logEvent -> {

@@ -335,6 +335,10 @@ public class Diagnostics {
         // while service is enabled), then register it. Otherwise, it cannot be enabled or disabled later at runtime.
         if (isDynamicallyManagedPlugin(periodMillis, plugin)) {
             pluginsMap.put(plugin.getClass(), plugin);
+            logger.warning("A non-dynamic plugin (" + plugin.getClass()
+                    + ") is registered. It will prevent to disable Diagnostics during lifetime of the node. "
+                    + "Auto off is cancelling...");
+            cancelAutoOffFuture("Reason: A non-dynamic plugin registered.");
         } else if (plugin.canBeEnabledDynamically()) {
             pluginsMap.put(plugin.getClass(), plugin);
         }
@@ -487,7 +491,7 @@ public class Diagnostics {
                             .log();
                 }
                 // if the service is disabled, no need to wait for the auto off timer
-                cancelAutoOffFuture();
+                cancelAutoOffFuture("Reason: Diagnostics service is disabled.");
                 return;
             }
 
@@ -497,6 +501,14 @@ public class Diagnostics {
     }
 
     private void logNonDynamicPluginWarnings() {
+        String nameOfNonDynamicPlugins = getNameOfNonDynamicPlugins();
+        logger.warning("Diagnostics cannot be disabled dynamically since there are non dynamic plugins running."
+                + "They can be disabled only statically which requires node restart."
+                + "The service is going to restart with new configuration. You can disable or configure other plugins."
+                + "The running non dynamic plugins are: " + nameOfNonDynamicPlugins);
+    }
+
+    private String getNameOfNonDynamicPlugins() {
         String nameOfNonDynamicPlugins = pluginsMap
                 .entrySet()
                 .stream()
@@ -504,10 +516,7 @@ public class Diagnostics {
                 .map(entry -> entry.getKey().getName())
                 .reduce((first, second) -> first + ", " + second)
                 .orElse("none");
-        logger.warning("Diagnostics cannot be disabled dynamically since there are non dynamic plugins running."
-                + "They can be disabled only statically which requires node restart."
-                + "The service is going to restart with new configuration. You can disable or configure other plugins."
-                + "The running non dynamic plugins are: " + nameOfNonDynamicPlugins);
+        return nameOfNonDynamicPlugins;
     }
 
     private boolean isNonDynamicPluginExist() {
@@ -689,7 +698,17 @@ public class Diagnostics {
             return;
         }
 
-        cancelAutoOffFuture();
+        // This checks useful on dynamic changes. If there is a non-dynamic plugin registered,
+        // auto off cannot be scheduled.
+        if (isNonDynamicPluginExist() && config.getAutoOffDurationInMinutes() > 0) {
+            String nameOfNonDynamicPlugins = getNameOfNonDynamicPlugins();
+            logger.warning("Auto off cannot be scheduled since there are non-dynamic plugins running."
+                    + "Skipping diagnostics auto off scheduling. Detected non-dynamic plugins: "
+                    + nameOfNonDynamicPlugins);
+            return;
+        }
+
+        cancelAutoOffFuture("Reason: Scheduling new auto off timer due to a new start.");
 
         if (!(config.getAutoOffDurationInMinutes() > 0 && isEnabled())) {
             return;
@@ -703,11 +722,11 @@ public class Diagnostics {
         setAutoOffFuture0();
     }
 
-    private void cancelAutoOffFuture() {
+    private void cancelAutoOffFuture(String reason) {
         if (autoOffFuture != null) {
             autoOffFuture.cancel(true);
             autoOffFuture = null;
-            logger.info("Existing auto off future cancelled.");
+            logger.info("Existing auto off future cancelled. " + reason);
         }
     }
 
@@ -729,6 +748,16 @@ public class Diagnostics {
             // This is a safety measure to ensure that the diagnostics is disabled.
             while (!Thread.currentThread().isInterrupted() && isEnabled()) {
                 try {
+                    // This check is important when service configured statically
+                    // since Diagnostics starts before plugins registration.
+                    // And, we don't know if there are non-dynamic plugins registered or not until here.
+                    if (isNonDynamicPluginExist() && config.getAutoOffDurationInMinutes() > 0) {
+                        String nameOfNonDynamicPlugins = getNameOfNonDynamicPlugins();
+                        logger.warning("Auto off cannot disable Diagnostics because there are non-dynamic plugins running."
+                                + "The auto off will be ignored. Detected non-dynamic plugins: " + nameOfNonDynamicPlugins);
+                        return;
+                    }
+
                     DiagnosticsConfig dConfig = new DiagnosticsConfig(config);
                     dConfig.setEnabled(false);
                     setConfig(dConfig);
@@ -757,7 +786,11 @@ public class Diagnostics {
                         .map(Class::getName)
                         .toArray(String[]::new)));
 
-        for (Map.Entry<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> entry : pluginsMap.entrySet()) {
+        Set<Map.Entry<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>> pluginsSnapshot =
+                new HashSet<>(pluginsMap.size());
+        pluginsSnapshot.addAll(pluginsMap.entrySet());
+
+        for (Map.Entry<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> entry : pluginsSnapshot) {
             register(entry.getValue());
         }
     }
