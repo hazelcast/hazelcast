@@ -49,7 +49,8 @@ public final class EventMetadata {
         CONFIG_UPDATE_STARTED(12),
         CONFIG_UPDATE_PROGRESS(13),
         CONFIG_UPDATE_FINISHED(14),
-        CONFIG_UPDATE_FAILED(15);
+        CONFIG_UPDATE_FAILED(15),
+        DIAGNOSTICS_CONFIG_UPDATED(16);
 
         private static final Map<Integer, EventType> CODE_MAPPING = stream(EventType.values())
                 .collect(toMap(EventType::getCode, eventType -> eventType));

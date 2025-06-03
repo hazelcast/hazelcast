@@ -21,8 +21,11 @@ import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiagnosticsOutputType;
+import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.management.events.DiagnosticsConfigUpdatedEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -217,6 +220,7 @@ public class Diagnostics {
     private ScheduledFuture<?> autoOffFuture;
     private final Object lifecycleLock = new Object();
     private final AuditlogService auditlogService;
+    private NodeEngine nodeEngine;
 
     public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
                        HazelcastProperties properties, DiagnosticsConfig config) {
@@ -224,13 +228,19 @@ public class Diagnostics {
     }
 
     public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
-                       HazelcastProperties properties, DiagnosticsConfig config, AuditlogService auditlogService) {
+                       HazelcastProperties properties, DiagnosticsConfig config,
+                       NodeEngine nodeEngine) {
         this.logger = loggingService.getLogger(Diagnostics.class);
         this.loggingService = loggingService;
         this.hzName = hzName;
         this.hazelcastProperties = properties;
         this.baseFileName = baseFileName;
-        this.auditlogService = auditlogService;
+        if (nodeEngine != null) {
+            this.auditlogService = nodeEngine.getNode().getNodeExtension().getAuditlogService();
+        } else {
+            this.auditlogService = null;
+        }
+        this.nodeEngine = nodeEngine;
         setConfig0(config);
     }
 
@@ -465,6 +475,7 @@ public class Diagnostics {
             closeLog();
 
             setConfig0(diagnosticsConfig);
+            emitMCConfigUpdatedEvent();
 
             if (status.get() == SERVICE_DISABLED) {
                 logger.info("Diagnostics disabled. To enable set DiagnosticsConfig over instance, config file, "
@@ -775,6 +786,16 @@ public class Diagnostics {
             if (prop.startsWith(DIAGNOSTIC_PROPERTY_PREFIX)) {
                 this.config.getPluginProperties().put(prop, this.hazelcastProperties.get(prop));
                 messages.add(prop + " = " + this.hazelcastProperties.get(prop));
+            }
+        }
+    }
+
+    private void emitMCConfigUpdatedEvent() {
+        // Client cannot trigger this event
+        if (nodeEngine != null) {
+            ManagementCenterService mcService = nodeEngine.getManagementCenterService();
+            if (mcService != null) {
+                mcService.log(new DiagnosticsConfigUpdatedEvent(this.config, nodeEngine.getLocalMember().getUuid()));
             }
         }
     }

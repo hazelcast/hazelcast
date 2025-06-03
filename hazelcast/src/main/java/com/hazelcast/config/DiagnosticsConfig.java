@@ -44,7 +44,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     /**
      * Default value of maximum rolled diagnostics output file size in MB.
      */
-    public static final int DEFAULT_MAX_ROLLED_FILE_SIZE = 50;
+    public static final float DEFAULT_MAX_ROLLED_FILE_SIZE = 50.0f;
     /**
      * Default value of maximum rolled diagnostics output file count.
      */
@@ -61,10 +61,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
      * Default value of output directory.
      */
     public static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
-    /**
-     * Default value of diagnostics whether enabled or not.
-     */
-    public static final boolean DEFAULT_ENABLED = false;
+
 
     /**
      * Default value of auto off timer for the diagnostics service in minutes.
@@ -373,8 +370,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         logDirectory = in.readString();
         fileNamePrefix = in.readString();
         outputType = DiagnosticsOutputType.valueOf(in.readString());
-        Map<String, String> properties = SerializationUtil.readMapStringKey(in);
-        pluginProperties = properties;
+        pluginProperties = SerializationUtil.readMapStringKey(in);
         autoOffDurationInMinutes = in.readInt();
     }
 
@@ -383,10 +379,9 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DiagnosticsConfig)) {
+        if (!(o instanceof DiagnosticsConfig that)) {
             return false;
         }
-        DiagnosticsConfig that = (DiagnosticsConfig) o;
         return enabled == that.enabled
                 && Float.compare(maxRolledFileSizeInMB, that.maxRolledFileSizeInMB) == 0
                 && maxRolledFileCount == that.maxRolledFileCount
@@ -425,7 +420,7 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
                 + ", logDirectory='" + logDirectory + '\''
                 + ", fileNamePrefix='" + fileNamePrefix + '\''
                 + ", outputType=" + outputType
-                + ", autoOffTimerInMinutes=" + autoOffDurationInMinutes
+                + ", autoOffDurationInMinutes=" + autoOffDurationInMinutes
                 + ", properties='" + properties
                 + "'}";
     }
