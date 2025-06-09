@@ -17,9 +17,10 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
@@ -27,8 +28,7 @@ import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
  * CachedDataRecordWithStats.
  */
 class CachedDataRecordWithStats extends DataRecordWithStats {
-    private static final AtomicReferenceFieldUpdater<CachedDataRecordWithStats, Object> CACHED_VALUE =
-            AtomicReferenceFieldUpdater.newUpdater(CachedDataRecordWithStats.class, Object.class, "cachedValue");
+    private static final VarHandle CACHED_VALUE = ReflectionUtil.findVarHandle("cachedValue", Object.class);
 
     private transient volatile Object cachedValue;
 

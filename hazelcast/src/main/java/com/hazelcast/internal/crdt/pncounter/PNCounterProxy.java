@@ -26,6 +26,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.crdt.pncounter.operations.AddOperation;
 import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
@@ -36,12 +37,12 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.crdt.pncounter.PNCounterService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.cloneAndReset;
@@ -50,11 +51,9 @@ import static com.hazelcast.spi.impl.operationservice.OperationAccessor.cloneAnd
  * Member proxy implementation for a {@link PNCounter}.
  */
 public class PNCounterProxy extends AbstractDistributedObject<PNCounterService> implements PNCounter {
-    /**
-     * Atomic field updater for the observed clock field
-     */
-    private static final AtomicReferenceFieldUpdater<PNCounterProxy, VectorClock> OBSERVED_TIMESTAMPS_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(PNCounterProxy.class, VectorClock.class, "observedClock");
+    /** @see #observedClock */
+    private static final VarHandle OBSERVED_TIMESTAMPS =
+            ReflectionUtil.findVarHandle("observedClock", VectorClock.class);
     private static final List<Address> EMPTY_ADDRESS_LIST = Collections.emptyList();
     /** The counter name */
     private final String name;
@@ -222,7 +221,7 @@ public class PNCounterProxy extends AbstractDistributedObject<PNCounterService> 
             if (currentClock != null && currentClock.isAfter(receivedVectorClock)) {
                 break;
             }
-            if (OBSERVED_TIMESTAMPS_UPDATER.compareAndSet(this, currentClock, receivedVectorClock)) {
+            if (OBSERVED_TIMESTAMPS.compareAndSet(this, currentClock, receivedVectorClock)) {
                 break;
             }
         }

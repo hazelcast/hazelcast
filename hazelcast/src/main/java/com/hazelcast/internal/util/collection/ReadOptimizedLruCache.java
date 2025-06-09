@@ -156,7 +156,7 @@ public class ReadOptimizedLruCache<K, V> {
 
     // package-visible for tests
     static class ValueAndTimestamp<V> {
-        private static final VarHandle TIMESTAMP_VARHANDLE = ReflectionUtil.findVarHandle("timestamp", long.class);
+        private static final VarHandle TIMESTAMP = ReflectionUtil.findVarHandle("timestamp", long.class);
 
         final V value;
         volatile long timestamp;
@@ -167,7 +167,7 @@ public class ReadOptimizedLruCache<K, V> {
         }
 
         public void touch() {
-            TIMESTAMP_VARHANDLE.setOpaque(this, System.nanoTime());
+            TIMESTAMP.setOpaque(this, System.nanoTime());
         }
     }
 }

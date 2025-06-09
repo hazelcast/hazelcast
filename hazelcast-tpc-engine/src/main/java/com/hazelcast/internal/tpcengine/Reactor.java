@@ -25,10 +25,12 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.lang.invoke.VarHandle;
 import java.util.BitSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -39,13 +41,11 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.tpcengine.Reactor.State.NEW;
 import static com.hazelcast.internal.tpcengine.Reactor.State.RUNNING;
 import static com.hazelcast.internal.tpcengine.Reactor.State.SHUTDOWN;
 import static com.hazelcast.internal.tpcengine.Reactor.State.TERMINATED;
-import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
  * A Reactor is an implementation of the reactor design pattern. So it listen to some
@@ -68,8 +68,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 @SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})
 public abstract class Reactor implements Executor {
 
-    protected static final AtomicReferenceFieldUpdater<Reactor, State> STATE
-            = newUpdater(Reactor.class, State.class, "state");
+    private static final VarHandle STATE = ReflectionUtil.findVarHandle("state", State.class);
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());

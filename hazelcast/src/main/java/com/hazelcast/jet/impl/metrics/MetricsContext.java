@@ -107,7 +107,7 @@ public class MetricsContext implements DynamicMetricsProvider {
 
     private static final class SingleWriterMetric extends AbstractMetric {
 
-        private static final VarHandle VALUE_VARHANDLE = ReflectionUtil.findVarHandle("value", long.class);
+        private static final VarHandle VALUE = ReflectionUtil.findVarHandle("value", long.class);
 
         private volatile long value;
 
@@ -117,27 +117,27 @@ public class MetricsContext implements DynamicMetricsProvider {
 
         @Override
         public void set(long newValue) {
-            VALUE_VARHANDLE.setOpaque(this, newValue);
+            VALUE.setOpaque(this, newValue);
         }
 
         @Override
         public void increment() {
-            VALUE_VARHANDLE.setOpaque(this, value + 1);
+            VALUE.setOpaque(this, value + 1);
         }
 
         @Override
         public void increment(long increment) {
-            VALUE_VARHANDLE.setOpaque(this, value + increment);
+            VALUE.setOpaque(this, value + increment);
         }
 
         @Override
         public void decrement() {
-            VALUE_VARHANDLE.setOpaque(this, value - 1);
+            VALUE.setOpaque(this, value - 1);
         }
 
         @Override
         public void decrement(long decrement) {
-            VALUE_VARHANDLE.setOpaque(this, value - decrement);
+            VALUE.setOpaque(this, value - decrement);
         }
 
         @Override

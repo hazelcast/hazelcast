@@ -33,6 +33,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -59,8 +60,8 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -98,9 +99,7 @@ import static java.util.logging.Level.WARNING;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class Invocation<T> extends BaseInvocation implements OperationResponseHandler {
-
-    private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
-            AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
+    private static final VarHandle RESPONSE_RECEIVED = ReflectionUtil.findVarHandle("responseReceived", Boolean.class);
 
     private static final long MIN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final int MAX_FAST_INVOCATION_COUNT = 5;

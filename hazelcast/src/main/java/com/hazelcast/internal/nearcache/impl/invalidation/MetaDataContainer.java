@@ -16,26 +16,24 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
+
+import java.lang.invoke.VarHandle;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
-import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
  * Contains one partitions' invalidation metadata.
  */
 public final class MetaDataContainer {
 
-    private static final AtomicLongFieldUpdater<MetaDataContainer> SEQUENCE
-            = newUpdater(MetaDataContainer.class, "sequence");
-    private static final AtomicLongFieldUpdater<MetaDataContainer> STALE_SEQUENCE
-            = newUpdater(MetaDataContainer.class, "staleSequence");
+    private static final VarHandle SEQUENCE = ReflectionUtil.findVarHandle("sequence", long.class);
+    private static final VarHandle STALE_SEQUENCE = ReflectionUtil.findVarHandle("staleSequence", long.class);
     private static final AtomicLongFieldUpdater<MetaDataContainer> MISSED_SEQUENCE_COUNT =
             newUpdater(MetaDataContainer.class, "missedSequenceCount");
-    private static final AtomicReferenceFieldUpdater<MetaDataContainer, UUID> UUID =
-            newUpdater(MetaDataContainer.class, java.util.UUID.class, "uuid");
+    private static final VarHandle UUID = ReflectionUtil.findVarHandle("uuid", java.util.UUID.class);
 
     /**
      * Sequence number of last received invalidation event
@@ -91,7 +89,7 @@ public final class MetaDataContainer {
     }
 
     public long getStaleSequence() {
-        return STALE_SEQUENCE.get(this);
+        return (long) STALE_SEQUENCE.get(this);
     }
 
     public boolean casStaleSequence(long lastKnownStaleSequence, long lastReceivedSequence) {

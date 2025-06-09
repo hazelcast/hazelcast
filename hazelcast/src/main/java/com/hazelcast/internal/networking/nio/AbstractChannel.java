@@ -21,8 +21,10 @@ import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 
 import java.io.IOException;
+import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -30,8 +32,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -47,12 +47,9 @@ public abstract class AbstractChannel implements Channel {
 
     private static final int FALSE = 0;
     private static final int TRUE = 1;
-    private static final AtomicIntegerFieldUpdater<AbstractChannel> CLOSED
-            = AtomicIntegerFieldUpdater.newUpdater(AbstractChannel.class, "closed");
-    private static final AtomicReferenceFieldUpdater<AbstractChannel, SocketAddress> LOCAL_ADDRESS
-            = AtomicReferenceFieldUpdater.newUpdater(AbstractChannel.class, SocketAddress.class, "localAddress");
-    private static final AtomicReferenceFieldUpdater<AbstractChannel, SocketAddress> REMOTE_ADDRESS
-            = AtomicReferenceFieldUpdater.newUpdater(AbstractChannel.class, SocketAddress.class, "remoteAddress");
+    private static final VarHandle CLOSED = ReflectionUtil.findVarHandle("closed", int.class);
+    private static final VarHandle LOCAL_ADDRESS = ReflectionUtil.findVarHandle("localAddress", SocketAddress.class);
+    private static final VarHandle REMOTE_ADDRESS = ReflectionUtil.findVarHandle("remoteAddress", SocketAddress.class);
 
     protected final SocketChannel socketChannel;
     protected final ILogger logger;

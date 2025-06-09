@@ -31,9 +31,10 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.lang.invoke.VarHandle;
 
 public abstract class AbstractLockOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation,
@@ -41,8 +42,7 @@ public abstract class AbstractLockOperation extends Operation
 
     public static final int ANY_THREAD = 0;
 
-    private static final AtomicLongFieldUpdater<AbstractLockOperation> REFERENCE_CALL_ID =
-            AtomicLongFieldUpdater.newUpdater(AbstractLockOperation.class, "referenceCallId");
+    private static final VarHandle REFERENCE_CALL_ID = ReflectionUtil.findVarHandle("referenceCallId", long.class);
 
     protected ObjectNamespace namespace;
     protected Data key;

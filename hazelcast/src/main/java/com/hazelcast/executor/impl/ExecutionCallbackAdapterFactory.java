@@ -19,14 +19,16 @@ package com.hazelcast.executor.impl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+
+import java.lang.invoke.VarHandle;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -36,10 +38,11 @@ import static java.lang.Boolean.TRUE;
 
 class ExecutionCallbackAdapterFactory {
 
-    //Updates the ExecutionCallbackAdapterFactory.done field. An AtomicBoolean is simpler, but creates another unwanted
-    //object. Using this approach, you don't create that object.
-    private static final AtomicReferenceFieldUpdater<ExecutionCallbackAdapterFactory, Boolean> DONE =
-            AtomicReferenceFieldUpdater.newUpdater(ExecutionCallbackAdapterFactory.class, Boolean.class, "done");
+    /**
+     * Updates the {@link #done} field. An AtomicBoolean is simpler, but creates another unwanted object.
+     * Using this approach, you don't create that object
+     */
+    private static final VarHandle DONE = ReflectionUtil.findVarHandle("done", Boolean.class);
 
     private final MultiExecutionCallback multiExecutionCallback;
     private final ConcurrentMap<Member, ValueWrapper> responses;

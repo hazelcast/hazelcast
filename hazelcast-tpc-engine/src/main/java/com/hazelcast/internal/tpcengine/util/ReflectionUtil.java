@@ -77,7 +77,8 @@ public final class ReflectionUtil {
 
             return l.findVarHandle(classContainingFieldDeclaration, fieldName, fieldType);
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(
+                    String.format("Unable to find a VarHandle for %s of type %s", fieldName, fieldType.getName()), e);
         }
     }
 }
