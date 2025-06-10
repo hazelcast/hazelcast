@@ -162,4 +162,25 @@
         <cve>CVE-2023-45142</cve>
         <cve>CVE-2023-47108</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - misidentifying Hazelcast as MongoDB
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-jet-mongodb@.*$</packageUrl>
+        <cve>CVE-2014-8180</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - misidentifying Hazelcast as MySQL
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-jet-cdc-mysql@.*$</packageUrl>
+        <cve>CVE-2017-15945</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - misidentifying test JAR as platform JAR
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet\.testjob-with-hz-bootstrap/testjob-with-hz-bootstrap@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
 </suppressions>
