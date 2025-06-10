@@ -27,7 +27,7 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
-import com.hazelcast.config.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -1373,7 +1373,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Nonnull
-    @Override
     public Config setDiagnosticsConfig(@Nonnull DiagnosticsConfig diagnosticsConfig) {
         Preconditions.isNotNull(diagnosticsConfig, "DiagnosticsConfig");
         configurationService.broadcastConfig(diagnosticsConfig);
@@ -1381,9 +1380,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Nonnull
-    @Override
     public DiagnosticsConfig getDiagnosticsConfig() {
-        DiagnosticsConfig dynamicDiagnosticsConfig = configurationService.getDiagnosticsConfig();
-        return dynamicDiagnosticsConfig != null ? dynamicDiagnosticsConfig : staticConfig.getDiagnosticsConfig();
+        return configurationService.getDiagnosticsConfig();
     }
+
 }

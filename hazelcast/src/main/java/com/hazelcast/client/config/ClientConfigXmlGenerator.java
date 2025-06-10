@@ -23,7 +23,6 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -50,7 +49,6 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
-import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -145,8 +143,6 @@ public final class ClientConfigXmlGenerator {
         sql(gen, clientConfig.getSqlConfig());
         // TPC
         tpc(gen, clientConfig.getTpcConfig());
-        //Diagnostics
-        diagnostics(gen, clientConfig.getDiagnosticsConfig());
 
         //close HazelcastClient
         gen.close();
@@ -154,27 +150,6 @@ public final class ClientConfigXmlGenerator {
         return format(xml.toString(), indent);
     }
 
-    private static void diagnostics(XmlGenerator gen, DiagnosticsConfig diagnosticsConfig) {
-        gen.open(ConfigSections.DIAGNOSTICS.getName(), "enabled", diagnosticsConfig.isEnabled())
-                .node("max-rolled-file-size-in-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
-                .node("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount())
-                .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
-                .node("log-directory", diagnosticsConfig.getLogDirectory())
-                .node("file-name-prefix", diagnosticsConfig.getFileNamePrefix())
-                .node("output-type", diagnosticsConfig.getOutputType())
-                .node("auto-off-timer-in-minutes", diagnosticsConfig.getAutoOffDurationInMinutes());
-
-        if (!diagnosticsConfig.getPluginProperties().isEmpty()) {
-            gen.open("plugin-properties");
-
-            for (Map.Entry<String, String> prop : diagnosticsConfig.getPluginProperties().entrySet()) {
-                gen.nodeIfContents("property", prop.getValue(), "name", prop.getKey());
-            }
-            gen.close();
-        }
-
-        gen.close();
-    }
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
         gen.open("network")

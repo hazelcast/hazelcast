@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -54,14 +52,9 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     private final HazelcastProperties properties;
     private long periodMillis;
 
-    public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
-    }
-
-    public MetricsPlugin(DiagnosticsConfig config, ILogger logger, MetricsRegistry metricsRegistry,
+    public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry,
                          HazelcastProperties properties) {
-        super(config, logger);
+        super(logger);
         this.metricsRegistry = metricsRegistry;
         this.properties = properties;
         readProperties();

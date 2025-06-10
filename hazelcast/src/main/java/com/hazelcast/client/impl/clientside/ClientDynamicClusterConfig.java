@@ -59,7 +59,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -1229,20 +1228,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config setVectorCollectionConfigs(Map<String, VectorCollectionConfig> vectorConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public DiagnosticsConfig getDiagnosticsConfig() {
-        throw new UnsupportedOperationException(
-                "Client config object does not support getting diagnostics configuration dynamically."
-        );
-    }
-
-    @Nonnull
-    @Override
-    public Config setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
-        throw new UnsupportedOperationException(
-                "Client config object does not support setting diagnostics configuration dynamically.");
     }
 
     @Override

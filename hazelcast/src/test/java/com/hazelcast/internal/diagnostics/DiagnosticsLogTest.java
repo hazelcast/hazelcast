@@ -105,11 +105,10 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     private void setup(float maxFileSizeMB) {
         Config config = new Config();
-        config.getDiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileCount(3)
-                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1")
-                .setMaxRolledFileSizeInMB(maxFileSizeMB);
+        config.setProperty(Diagnostics.ENABLED.getName(), "true");
+        config.setProperty(Diagnostics.MAX_ROLLED_FILE_COUNT.getName(), "3");
+        config.setProperty(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName(), String.valueOf(maxFileSizeMB));
+        config.setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
 
         HazelcastInstance hz = createHazelcastInstance(config);
 

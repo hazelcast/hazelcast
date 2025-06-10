@@ -16,9 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -34,13 +33,12 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
 
     private final InvocationRegistry invocationRegistry;
     private long periodMs;
-    private HazelcastProperties properties;
+    private final HazelcastProperties properties;
 
-    public InvocationProfilerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(InvocationProfilerPlugin.class));
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = operationService.getInvocationRegistry();
-        this.properties = nodeEngine.getProperties();
+    public InvocationProfilerPlugin(ILogger logger, InvocationRegistry invocationRegistry, HazelcastProperties props) {
+        super(logger);
+        this.invocationRegistry = invocationRegistry;
+        this.properties = props;
         readProperties();
     }
 

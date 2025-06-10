@@ -162,9 +162,6 @@
         },
         "vector-collection": {
           "$ref": "#/definitions/VectorCollection"
-        },
-        "diagnostics": {
-          "$ref": "#/definitions/Diagnostics"
         }
       }
     },
@@ -256,9 +253,6 @@
           "type": "boolean",
           "default": false,
           "description": "The cp-direct-to-leader-routing element lets you enable/disable direct-to-leader routing behaviour. This feature allows CP data structure operations to be sent directly to group leaders instead of using all members of the cluster. This functionality requires the cluster to have the appropriate Hazelcast Enterprise license, otherwise it will provide no benefit on the client. It is disabled by default. This option has no effect for SINGLE_MEMBER routing clients."
-        },
-        "diagnostics": {
-          "$ref": "#/definitions/Diagnostics"
         }
       }
     },
@@ -5520,50 +5514,6 @@
         "required": [
           "indexes"
         ]
-      }
-    },
-    "Diagnostics": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": false
-        },
-        "max-rolled-file-size-in-mb": {
-          "type": "number",
-          "default": 50
-        },
-        "max-rolled-file-count": {
-          "type": "integer",
-          "default": 10
-        },
-        "include-epoch-time": {
-          "type": "boolean",
-          "default": true
-        },
-        "log-directory": {
-          "type": "string"
-        },
-        "file-name-prefix": {
-          "type": "string"
-        },
-        "output-type": {
-          "enum": [
-            "FILE",
-            "STDOUT",
-            "LOGGER"
-          ]
-        },
-        "auto-off-timer-in-minutes": {
-          "type": "integer",
-          "default": 15
-        },
-        "plugin-properties": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
       }
     }
   }

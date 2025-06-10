@@ -32,8 +32,6 @@ import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -966,27 +964,6 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
         VectorCollectionConfig actual = decConfig.getVectorCollectionConfigOrNull(vectorCollection);
         assertThat(actual).usingRecursiveComparison().isEqualTo(originVectorCollectionConfig);
-    }
-
-    @Test
-    public void testDiagnostics() {
-        DiagnosticsConfig expectedConfig = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(30)
-                .setMaxRolledFileCount(5)
-                .setIncludeEpochTime(true)
-                .setLogDirectory("/logs")
-                .setFileNamePrefix("logs")
-                .setAutoOffDurationInMinutes(5)
-                .setOutputType(DiagnosticsOutputType.STDOUT);
-        expectedConfig.getPluginProperties().put("hazelcast.diagnostics.prop1", "prop1");
-
-        Config config = new Config().setDiagnosticsConfig(expectedConfig);
-
-        Config decConfig = getNewConfigViaGenerator(config);
-
-        DiagnosticsConfig actualConfig = decConfig.getDiagnosticsConfig();
-        assertEquals(expectedConfig, actualConfig);
     }
 
     // UTILITY - GENERATOR

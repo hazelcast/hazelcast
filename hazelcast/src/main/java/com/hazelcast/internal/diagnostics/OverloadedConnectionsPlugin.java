@@ -89,8 +89,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     private int samples;
 
     public OverloadedConnectionsPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(OverloadedConnectionsPlugin.class));
+        super(nodeEngine.getLogger(OverloadedConnectionsPlugin.class));
         this.nodeEngine = nodeEngine;
         this.serializationService = nodeEngine.getSerializationService();
         this.defaultFormat.setMinimumFractionDigits(3);

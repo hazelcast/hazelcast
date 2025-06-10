@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.TcpServer;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -56,16 +54,12 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     private long periodMillis;
 
 
-    public NetworkingImbalancePlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getProperties(),
-                getThreadingModel(nodeEngine),
-                nodeEngine.getLogger(NetworkingImbalancePlugin.class));
+    public NetworkingImbalancePlugin(ILogger logger, HazelcastProperties properties, Server server) {
+        this(logger, properties, getThreadingModel(server));
     }
 
-    public NetworkingImbalancePlugin(DiagnosticsConfig config, HazelcastProperties properties, Networking networking,
-                                     ILogger logger) {
-        super(config, logger);
+    public NetworkingImbalancePlugin(ILogger logger, HazelcastProperties properties, Networking networking) {
+        super(logger);
 
         if (networking instanceof NioNetworking nioNetworking) {
             this.networking = nioNetworking;
@@ -81,8 +75,7 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
         this.periodMillis = this.networking == null ? 0 : properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
-    private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
-        Server server = nodeEngine.getNode().getServer();
+    private static Networking getThreadingModel(Server server) {
         if (!(server instanceof TcpServer)) {
             return null;
         }

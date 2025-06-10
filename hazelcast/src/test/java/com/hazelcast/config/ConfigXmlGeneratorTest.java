@@ -1610,13 +1610,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertThat(generatedConfig).isEqualTo(vectorCollection);
     }
 
-    @Test
-    public void testDiagnosticsConfig() {
-        Config cfg = new Config();
-        DiagnosticsConfig generatedCfg = getNewConfigViaXMLGenerator(cfg).getDiagnosticsConfig();
-        assertThat(generatedCfg).isEqualTo(cfg.getDiagnosticsConfig());
-    }
-
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }

@@ -48,7 +48,7 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
 
 
     public MemberHazelcastInstanceInfoPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(MemberHazelcastInstanceInfoPlugin.class));
+        super(nodeEngine.getLogger(MemberHazelcastInstanceInfoPlugin.class));
         this.nodeEngine = nodeEngine;
         readProperties();
     }

@@ -19,7 +19,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -53,10 +53,10 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
     private final HazelcastProperties properties;
     private long periodMillis;
 
-    public SlowOperationPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(SlowOperationPlugin.class));
-        this.operationService = nodeEngine.getOperationService();
-        this.properties = nodeEngine.getProperties();
+    public SlowOperationPlugin(ILogger logger, OperationServiceImpl operationService, HazelcastProperties props) {
+        super(logger);
+        this.operationService = operationService;
+        this.properties = props;
         readProperties();
     }
 

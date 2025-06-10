@@ -18,6 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,7 +50,13 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
         hzFactory = createHazelcastInstanceFactory(2);
         hz = hzFactory.newHazelcastInstance(config);
-        plugin = new SystemLogPlugin(getNodeEngineImpl(hz));
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        plugin = new SystemLogPlugin(
+                nodeEngine.getLogger(SystemLogPlugin.class),
+                nodeEngine.getProperties(),
+                nodeEngine.getNode().getServer(),
+                hz,
+                nodeEngine.getNode().getNodeExtension());
         plugin.onStart();
     }
 
@@ -63,7 +70,13 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         config.setProperty(ENABLED.getName(), "false");
         HazelcastInstance instance = hzFactory.newHazelcastInstance(config);
 
-        plugin = new SystemLogPlugin(getNodeEngineImpl(instance));
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        plugin = new SystemLogPlugin(
+                nodeEngine.getLogger(SystemLogPlugin.class),
+                nodeEngine.getProperties(),
+                nodeEngine.getNode().getServer(),
+                instance,
+                nodeEngine.getNode().getNodeExtension());
         plugin.onStart();
 
         assertEquals(NOT_SCHEDULED_PERIOD_MS, plugin.getPeriodMillis());

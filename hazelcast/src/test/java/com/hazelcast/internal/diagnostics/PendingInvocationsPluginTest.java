@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.operation.EntryOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -46,8 +47,9 @@ public class PendingInvocationsPluginTest extends AbstractDiagnosticsPluginTest 
                 .setProperty(PendingInvocationsPlugin.THRESHOLD.getName(), "1");
 
         hz = createHazelcastInstance(config);
-
-        plugin = new PendingInvocationsPlugin(getNodeEngineImpl(hz));
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        plugin = new PendingInvocationsPlugin(nodeEngine.getLogger(PendingInvocationsPlugin.class),
+                nodeEngine.getOperationService().getInvocationRegistry(), nodeEngine.getProperties());
         plugin.onStart();
     }
 

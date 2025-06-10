@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbeImpl;
 import com.hazelcast.logging.Logger;
@@ -46,9 +45,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         Properties p = new Properties();
         p.put(StoreLatencyPlugin.PERIOD_SECONDS, "1");
         HazelcastProperties properties = new HazelcastProperties(p);
-        Config config = new Config();
-        plugin = new StoreLatencyPlugin(config.getDiagnosticsConfig(),
-                Logger.getLogger(StoreLatencyPlugin.class), properties);
+        plugin = new StoreLatencyPlugin(Logger.getLogger(StoreLatencyPlugin.class), properties);
         plugin.onStart();
     }
 

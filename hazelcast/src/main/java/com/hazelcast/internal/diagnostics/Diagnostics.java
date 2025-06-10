@@ -19,8 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.events.DiagnosticsConfigUpdatedEvent;
 import com.hazelcast.logging.ILogger;
@@ -64,8 +62,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public class Diagnostics {
 
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * Use the {@link Diagnostics} to see internal performance metrics and cluster
      * related information.
@@ -76,12 +74,11 @@ public class Diagnostics {
      * <p>
      * The default is {@code false}.
      */
-    @Deprecated(since = "6.0")
     public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.diagnostics.enabled", false);
 
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
      * eating too much disk space.
@@ -92,13 +89,12 @@ public class Diagnostics {
      * <p>
      * The default is 50.
      */
-    @Deprecated(since = "6.0")
     @SuppressWarnings("checkstyle:magicnumber")
     public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
             = new HazelcastProperty("hazelcast.diagnostics.max.rolled.file.size.mb", 50);
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
      * eating too much disk space.
@@ -108,55 +104,50 @@ public class Diagnostics {
      * The default is 10.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    @Deprecated(since = "6.0")
     public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
             = new HazelcastProperty("hazelcast.diagnostics.max.rolled.file.count", 10);
 
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * Configures if the epoch time should be included in the 'top' section.
      * This makes it easy to determine the time in epoch format and prevents
      * needing to parse the date-format section. The default is {@code true}.
      */
-    @Deprecated(since = "6.0")
     public static final HazelcastProperty INCLUDE_EPOCH_TIME =
             new HazelcastProperty("hazelcast.diagnostics.include.epoch", true);
 
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * Configures the output directory of the performance log files.
      * <p>
      * Defaults to the 'user.dir'.
      */
-    @Deprecated(since = "6.0")
     public static final HazelcastProperty DIRECTORY
             = new HazelcastProperty("hazelcast.diagnostics.directory", System.getProperty("user.dir"));
 
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * Configures the prefix for the diagnostics file.
      * <p>
      * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
      */
-    @Deprecated(since = "6.0")
     public static final HazelcastProperty FILENAME_PREFIX
             = new HazelcastProperty("hazelcast.diagnostics.filename.prefix");
 
     /**
-     * @deprecated Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
-     * over environment variables or over dynamic configuration. The property is deprecated.
+     * Configure the diagnostics over {@link Config} with {@link DiagnosticsConfig}, over config file,
+     * over environment variables or over dynamic configuration.
      * <p>
      * Configures the output for the diagnostics. The default value is
      * {@link DiagnosticsOutputType#FILE} which is a set of files managed by the
      * Hazelcast process.
      */
-    @Deprecated(since = "6.0")
     public static final HazelcastProperty OUTPUT_TYPE = new HazelcastProperty("hazelcast.diagnostics.stdout",
             DiagnosticsOutputType.FILE);
 
@@ -209,7 +200,7 @@ public class Diagnostics {
     // each start of the diagnostics service will create a new time stamp for that "session"
     private String baseFileNameWithTime;
     private DiagnosticsOutputType outputType;
-    private DiagnosticsConfig config;
+    private DiagnosticsConfig config = new DiagnosticsConfig();
     private File loggingDirectory;
     private String filePrefix;
     private boolean includeEpochTime;
@@ -223,13 +214,12 @@ public class Diagnostics {
     private NodeEngine nodeEngine;
 
     public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
-                       HazelcastProperties properties, DiagnosticsConfig config) {
-        this(baseFileName, loggingService, hzName, properties, config, null);
+                       HazelcastProperties properties) {
+        this(baseFileName, loggingService, hzName, properties, null);
     }
 
     public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
-                       HazelcastProperties properties, DiagnosticsConfig config,
-                       NodeEngine nodeEngine) {
+                       HazelcastProperties properties, NodeEngine nodeEngine) {
         this.logger = loggingService.getLogger(Diagnostics.class);
         this.loggingService = loggingService;
         this.hzName = hzName;
@@ -500,6 +490,10 @@ public class Diagnostics {
         }
     }
 
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return this.config;
+    }
+
     private void logNonDynamicPluginWarnings() {
         String nameOfNonDynamicPlugins = getNameOfNonDynamicPlugins();
         logger.warning("Diagnostics cannot be disabled dynamically since there are non dynamic plugins running."
@@ -612,7 +606,7 @@ public class Diagnostics {
         }
 
         if (hazelcastProperties.containsKey(MAX_ROLLED_FILE_SIZE_MB)) {
-            this.maxRollingFileSizeMB = hazelcastProperties.getInteger(MAX_ROLLED_FILE_SIZE_MB);
+            this.maxRollingFileSizeMB = hazelcastProperties.getFloat(MAX_ROLLED_FILE_SIZE_MB);
             messages.add(MAX_ROLLED_FILE_SIZE_MB.getName() + " = " + maxRollingFileSizeMB);
         } else {
             this.maxRollingFileSizeMB = newConfig.getMaxRolledFileSizeInMB();
@@ -659,7 +653,6 @@ public class Diagnostics {
         }
 
         // the config may be overridden by the properties, so we need to set it again
-        // these steps should be removed after properties deprecated.
         this.config.setOutputType(outputType);
         this.config.setMaxRolledFileSizeInMB(maxRollingFileSizeMB);
         this.config.setMaxRolledFileCount(maxRollingFileCount);

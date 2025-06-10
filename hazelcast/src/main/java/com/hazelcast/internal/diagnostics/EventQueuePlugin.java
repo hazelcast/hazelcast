@@ -22,11 +22,9 @@ import com.hazelcast.collection.impl.collection.CollectionEvent;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.event.EntryEventData;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -86,15 +84,10 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     private int threshold;
     private int samples;
     private int eventCount;
-    private HazelcastProperties props;
+    private final HazelcastProperties props;
 
-    public EventQueuePlugin(NodeEngineImpl nodeEngine, StripedExecutor eventExecutor) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(EventQueuePlugin.class),
-                eventExecutor, nodeEngine.getProperties());
-    }
-
-    public EventQueuePlugin(DiagnosticsConfig config, ILogger logger, StripedExecutor eventExecutor, HazelcastProperties props) {
-        super(config, logger);
+    public EventQueuePlugin(ILogger logger, StripedExecutor eventExecutor, HazelcastProperties props) {
+        super(logger);
         this.defaultFormat.setMinimumFractionDigits(3);
         this.eventExecutor = eventExecutor;
         this.props = props;

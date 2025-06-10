@@ -19,8 +19,6 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
@@ -655,24 +653,6 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         config.setVectorCollectionConfigs(vectorCollection);
         var generatedConfig = getNewConfigViaGenerator(config).getVectorCollectionConfigs();
         assertThat(generatedConfig.entrySet()).containsExactlyInAnyOrderElementsOf(vectorCollection.entrySet());
-    }
-
-    @Test
-    public void testDiagnosticsConfig() {
-        Config config = new Config();
-        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(30)
-                .setMaxRolledFileCount(5)
-                .setIncludeEpochTime(true)
-                .setLogDirectory("/logs")
-                .setFileNamePrefix("logs")
-                .setAutoOffDurationInMinutes(5)
-                .setOutputType(DiagnosticsOutputType.STDOUT);
-        diagnosticsConfig.getPluginProperties().put("hazelcast.diagnostics.prop1", "prop1");
-        config.setDiagnosticsConfig(diagnosticsConfig);
-        Config actual = getNewConfigViaGenerator(config);
-        assertEquals(config.getDiagnosticsConfig(), actual.getDiagnosticsConfig());
     }
 
     @Override

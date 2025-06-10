@@ -274,7 +274,7 @@ public class NodeEngineImpl implements NodeEngine {
         String name = "diagnostics-" + addressString;
 
         return new Diagnostics(name, loggingService, getHazelcastInstance().getName(),
-                node.getProperties(), getConfig().getDiagnosticsConfig(), this);
+                node.getProperties(), this);
     }
 
     @Override

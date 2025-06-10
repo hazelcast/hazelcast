@@ -15,6 +15,8 @@
  */
 package com.hazelcast.config;
 
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsOutputType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;

@@ -28,7 +28,6 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -72,7 +71,6 @@ import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
-import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.query.impl.IndexUtils;
@@ -931,20 +929,5 @@ public final class DynamicConfigXmlGenerator {
         gen.node("merge-policy", config.getMergePolicyConfig().getPolicy(),
                         "batch-size", config.getMergePolicyConfig().getBatchSize())
                 .node("split-brain-protection-ref", config.getSplitBrainProtectionName());
-    }
-
-    public static void diagnosticsXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
-        DiagnosticsConfig diagnosticsConfig = config.getDiagnosticsConfig();
-
-        gen.open(ConfigSections.DIAGNOSTICS.getName(), "enabled", diagnosticsConfig.isEnabled())
-                .node("max-rolled-file-size-in-mb", diagnosticsConfig.getMaxRolledFileSizeInMB())
-                .node("max-rolled-file-count", diagnosticsConfig.getMaxRolledFileCount())
-                .node("include-epoch-time", diagnosticsConfig.isIncludeEpochTime())
-                .node("log-directory", diagnosticsConfig.getLogDirectory())
-                .node("file-name-prefix", diagnosticsConfig.getFileNamePrefix())
-                .node("output-type", diagnosticsConfig.getOutputType())
-                .node("auto-off-timer-in-minutes", diagnosticsConfig.getAutoOffDurationInMinutes())
-                .appendProperties(diagnosticsConfig.getPluginProperties(), "plugin-properties");
-        gen.close();
     }
 }

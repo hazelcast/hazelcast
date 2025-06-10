@@ -17,13 +17,13 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.sort;
 
@@ -34,16 +34,16 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
 
     private final HazelcastProperties properties;
     private final List<String> keyList = new ArrayList<>();
+    private NodeEngineImpl nodeEngine;
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(ConfigPropertiesPlugin.class),
+        this(nodeEngine.getLogger(ConfigPropertiesPlugin.class),
                 nodeEngine.getProperties());
+        this.nodeEngine = nodeEngine;
     }
 
-    public ConfigPropertiesPlugin(DiagnosticsConfig config,
-                                  ILogger logger, HazelcastProperties properties) {
-        super(config, logger);
+    public ConfigPropertiesPlugin(ILogger logger, HazelcastProperties properties) {
+        super(logger);
         this.properties = properties;
     }
 
@@ -83,10 +83,12 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
             String value = properties.get(key);
             writer.writeKeyValueEntry(key, value);
         }
-        for (String key : getConfig().getPluginProperties().keySet()) {
-            String value = getConfig().getPluginProperties().get(key);
-            writer.writeKeyValueEntry(key, value);
+
+        Map<String, String> pluginProperties = nodeEngine.getDiagnostics().getDiagnosticsConfig().getPluginProperties();
+        for (Map.Entry<String, String> entry : pluginProperties.entrySet()) {
+            writer.writeKeyValueEntry(entry.getKey(), entry.getValue());
         }
+
         writer.endSection();
     }
 }

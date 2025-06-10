@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.config.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;

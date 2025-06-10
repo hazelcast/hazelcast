@@ -18,10 +18,9 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ItemCounter;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -66,20 +65,17 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
     private int maxCount;
     private final ItemCounter<String> slowOccurrences = new ItemCounter<>();
     private final ItemCounter<String> occurrences = new ItemCounter<>();
-    private final NodeEngineImpl nodeEngine;
+    private final HazelcastProperties props;
 
-    public InvocationSamplePlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(InvocationSamplePlugin.class));
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = operationService.getInvocationRegistry();
-        this.nodeEngine = nodeEngine;
+    public InvocationSamplePlugin(ILogger logger, InvocationRegistry invocationRegistry, HazelcastProperties props) {
+        super(logger);
+        this.invocationRegistry = invocationRegistry;
+        this.props = props;
         readProperties();
-
     }
 
     @Override
     void readProperties() {
-        HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(overrideProperty(SAMPLE_PERIOD_SECONDS));
         this.thresholdMillis = props.getMillis(overrideProperty(SLOW_THRESHOLD_SECONDS));
         this.maxCount = props.getInteger(overrideProperty(SLOW_MAX_COUNT));

@@ -202,7 +202,6 @@ import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.DATA_CONNECTION;
-import static com.hazelcast.internal.config.ConfigSections.DIAGNOSTICS;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
@@ -414,8 +413,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleRest(node);
         } else if (matches(VECTOR.getName(), nodeName)) {
             handleVector(node);
-        } else if (matches(DIAGNOSTICS.getName(), nodeName)) {
-            handleDiagnostics(node, config.getDiagnosticsConfig());
         } else {
             return true;
         }

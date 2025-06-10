@@ -18,8 +18,8 @@ package com.hazelcast.internal.diagnostics;
 
 
 import com.hazelcast.internal.util.LatencyDistribution;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Map;
@@ -45,22 +45,22 @@ public class OperationProfilerPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.diagnostics.operation-profiler.period.seconds", 5, SECONDS);
 
-    private final OperationServiceImpl operationService;
     private final ConcurrentMap<Class, LatencyDistribution> opLatencyDistribution;
-    private final NodeEngineImpl nodeEngine;
     private long periodMillis;
+    private final HazelcastProperties props;
 
-    public OperationProfilerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(OperationProfilerPlugin.class));
-        this.operationService = nodeEngine.getOperationService();
-        this.nodeEngine = nodeEngine;
-        this.opLatencyDistribution = this.operationService.getOpLatencyDistributions();
+    public OperationProfilerPlugin(ILogger logger,
+                                   ConcurrentMap<Class, LatencyDistribution> opLatencyDistribution,
+                                   HazelcastProperties props) {
+        super(logger);
+        this.opLatencyDistribution = opLatencyDistribution;
+        this.props = props;
         readProperties();
     }
 
     @Override
     void readProperties() {
-        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
+        this.periodMillis = props.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override

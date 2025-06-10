@@ -999,15 +999,3 @@ hazelcast-client:
   #     Enables or disables TPC-aware mode.
   tpc:
     enabled: true
-
-  diagnostics:
-    enabled: false
-    include-epoch-time: true
-    max-rolled-file-count: 10
-    max-rolled-file-size-in-mb: 50
-    # file-name-prefix: 'YOUR_PREFIX_FOR_LOG_FILES'
-    # log-directory: 'YOUR_LOG_DIRECTORY'
-    auto-off-timer-in-minutes: 15
-    output-type: 'FILE'
-    plugin-properties:
-      'hazelcast.diagnostics.networking-imbalance.seconds': '0'

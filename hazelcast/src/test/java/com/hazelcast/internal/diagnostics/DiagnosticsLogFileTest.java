@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -62,21 +61,6 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDiagnosticsDirectoryIsCreatedWhenDoesNotExistOverConfig() throws IOException {
-        Config config = new Config();
-        File parentFolder = folder.newFolder();
-
-        // this directory does not exist, we want Hazelcast to create it
-        File diagnosticsFolder = new File(parentFolder, "newdir");
-
-        config.getDiagnosticsConfig().setEnabled(true);
-        config.getDiagnosticsConfig().setLogDirectory(diagnosticsFolder.getAbsolutePath());
-
-        createHazelcastInstance(config);
-        assertContainsFileEventually(diagnosticsFolder);
-    }
-
-    @Test
     public void testDiagnosticsFileCreatedWhenDirectoryExist() throws IOException {
         Config config = new Config();
         File diagnosticsFolder = folder.newFolder();
@@ -90,7 +74,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDiagnosticsFilesRollsOver() throws IOException, NoSuchFieldException, IllegalAccessException {
+    public void testDiagnosticsFilesRollsOver() throws IOException {
         File diagnosticsFolder = folder.newFolder();
         DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(true)
@@ -108,7 +92,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDiagnosticsFilesRollsOverWithDefaultConfig() throws IOException, NoSuchFieldException, IllegalAccessException {
+    public void testDiagnosticsFilesRollsOverWithDefaultConfig() throws IOException {
         File diagnosticsFolder = folder.newFolder();
         DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(true)
@@ -118,18 +102,16 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         assertFilesRollingOver(diagnosticsConfig);
     }
 
-    public void assertFilesRollingOver(DiagnosticsConfig diagnosticsConfig) throws IOException, NoSuchFieldException, IllegalAccessException {
+    public void assertFilesRollingOver(DiagnosticsConfig diagnosticsConfig) {
 
         // Prepare the config for a lot of output
         Config config = new Config();
 
-
-        config.setDiagnosticsConfig(diagnosticsConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
 
         Diagnostics diagnostics = TestUtil.getNode(instance).getNodeEngine().getDiagnostics();
+        diagnostics.setConfig(diagnosticsConfig);
 
-        DiagnosticsLogFile fileLogger;
         String fileNameOfFirstRun = diagnostics.getFileName();
 
         // Ensure configured amount of files are created
@@ -145,7 +127,7 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         totalExpectedFileCount += diagnosticsConfig.getMaxRolledFileCount();
 
         // set the config for second phase
-        instance.getConfig().setDiagnosticsConfig(diagnosticsConfig);
+        diagnostics.setConfig(diagnosticsConfig);
         assertContainsFileEventually(diagnostics.getLoggingDirectory(), totalExpectedFileCount);
 
 
@@ -154,7 +136,8 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
 
         // There should be files from two different "sessions" or runs
         assertNotEquals(fileNameOfFirstRun, fileNameOfSecondRun);
-        List<String> fileNames = Arrays.stream(logFiles).map((file) -> file.getName()).toList();
+        assert logFiles != null;
+        List<String> fileNames = Arrays.stream(logFiles).map(File::getName).toList();
         assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfFirstRun)));
         assertTrue(fileNames.stream().anyMatch(fileName -> fileName.contains(fileNameOfSecondRun)));
     }

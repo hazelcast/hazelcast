@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -53,14 +52,11 @@ public abstract class DiagnosticsPlugin {
      * Indicates that weather plugin is scheduled to run or not.
      */
     final AtomicBoolean isActive = new AtomicBoolean(false);
-    private DiagnosticsConfig diagnosticsConfig;
     private final Map<String, String> properties = new ConcurrentHashMap<>();
 
 
-    protected DiagnosticsPlugin(DiagnosticsConfig diagnosticsConfig, ILogger logger) {
+    protected DiagnosticsPlugin(ILogger logger) {
         this.logger = logger;
-        this.diagnosticsConfig = diagnosticsConfig;
-        setProperties(diagnosticsConfig.getPluginProperties(), false);
     }
 
     protected void setActive() {
@@ -146,10 +142,6 @@ public abstract class DiagnosticsPlugin {
 
         property.setSystemProperty(value);
         return property;
-    }
-
-    DiagnosticsConfig getConfig() {
-        return this.diagnosticsConfig;
     }
 
     public abstract void run(DiagnosticsLogWriter writer);

@@ -38,7 +38,7 @@ public class BuildInfoPluginTest extends AbstractDiagnosticsPluginTest {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new BuildInfoPlugin(getNodeEngineImpl(hz));
+        plugin = new BuildInfoPlugin(getNodeEngineImpl(hz).getLogger(BuildInfoPlugin.class));
         plugin.onStart();
     }
 

@@ -30,8 +30,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsOutputType;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -748,10 +748,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setAutoOffDurationInMinutes(5)
                 .setOutputType(DiagnosticsOutputType.STDOUT);
 
-        driver.getConfig().setDiagnosticsConfig(config);
+        ((DynamicConfigurationAwareConfig) driver.getConfig()).setDiagnosticsConfig(config);
         assertConfigurationsEqualOnAllMembers(config);
     }
-
 
     private void assertConfigurationsEqualOnAllMembers(DataConnectionConfig expectedConfig) {
         assertConfigurationsEqualOnAllMembers(expectedConfig, Config::getDataConnectionConfig);
@@ -819,7 +818,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     private void assertConfigurationsEqualOnAllMembers(DiagnosticsConfig diagnosticsConfig) {
         for (HazelcastInstance instance : members) {
-            DiagnosticsConfig registeredConfig = instance.getConfig().getDiagnosticsConfig();
+            DiagnosticsConfig registeredConfig = ((DynamicConfigurationAwareConfig) instance.getConfig()).getDiagnosticsConfig();
             assertThat(registeredConfig).isEqualTo(diagnosticsConfig);
         }
     }

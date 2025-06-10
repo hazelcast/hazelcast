@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.internal.util.ItemCounter;
@@ -58,11 +57,10 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
     private long periodMillis;
     private int threshold;
 
-    public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = operationService.getInvocationRegistry();
-        properties = nodeEngine.getProperties();
+    public PendingInvocationsPlugin(ILogger logger, InvocationRegistry invocationRegistry, HazelcastProperties props) {
+        super(logger);
+        this.invocationRegistry = invocationRegistry;
+        properties = props;
         readProperties();
     }
 

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
-
-import com.hazelcast.internal.diagnostics.Diagnostics;
+package com.hazelcast.internal.diagnostics;
 
 /**
  * Defines the output type for Hazelcast diagnostics.
@@ -49,5 +47,5 @@ public enum DiagnosticsOutputType {
      * @see Diagnostics#INCLUDE_EPOCH_TIME
      * @since 6.0
      */
-    LOGGER;
+    LOGGER
 }

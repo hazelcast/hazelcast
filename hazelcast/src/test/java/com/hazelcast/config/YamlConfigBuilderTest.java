@@ -5553,59 +5553,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
     }
 
-    @Override
-    @Test
-    public void testDiagnosticsConfig() {
-
-        DiagnosticsConfig cfg = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(60)
-                .setMaxRolledFileCount(15)
-                .setOutputType(DiagnosticsOutputType.STDOUT)
-                .setLogDirectory("/src/user")
-                .setFileNamePrefix("mylogs")
-                .setAutoOffDurationInMinutes(15)
-                .setIncludeEpochTime(true);
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
-
-        DiagnosticsConfig cfgBuild = buildConfig(getDiagnosticsConfig(cfg)).getDiagnosticsConfig();
-
-        assertThat(cfgBuild).isEqualTo(cfg);
-    }
-
-    private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
-        // it must accept int value as a file size. Although float is an option, integer should be fine.
-        // So casted to int to show that.
-        String yaml = String.format("""
-                        hazelcast:
-                          diagnostics:
-                            enabled: %s
-                            max-rolled-file-size-in-mb: %d
-                            max-rolled-file-count: %d
-                            include-epoch-time: %s
-                            log-directory: %s
-                            file-name-prefix: %s
-                            auto-off-timer-in-minutes: %d
-                            output-type: %s
-                        """, cfg.isEnabled(), (int) cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
-                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getAutoOffDurationInMinutes(), cfg.getOutputType());
-
-
-        if (!cfg.getPluginProperties().isEmpty()) {
-            yaml += """
-                        plugin-properties:
-                    """;
-        }
-
-        for (Map.Entry entry : cfg.getPluginProperties().entrySet()) {
-            yaml += String.format("""
-                            %s: %s
-                    """, entry.getKey(), entry.getValue());
-        }
-        return yaml;
-    }
-
     private String simpleVectorCollectionBackupCountConfig(int count) {
         return simpleVectorCollectionBackupCountConfig("backup-count", count);
     }

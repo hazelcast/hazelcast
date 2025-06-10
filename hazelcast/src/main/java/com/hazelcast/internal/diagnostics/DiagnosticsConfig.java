@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.config;
+
+package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.ObjectDataInput;

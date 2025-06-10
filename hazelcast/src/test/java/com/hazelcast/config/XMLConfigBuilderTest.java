@@ -5107,57 +5107,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
     }
 
-    @Override
-    public void testDiagnosticsConfig() {
-        DiagnosticsConfig cfg = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(60)
-                .setMaxRolledFileCount(15)
-                .setOutputType(DiagnosticsOutputType.STDOUT)
-                .setLogDirectory("/src/user")
-                .setFileNamePrefix("mylogs")
-                .setAutoOffDurationInMinutes(5)
-                .setIncludeEpochTime(true);
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
-
-        DiagnosticsConfig cfgBuild = buildConfig(getDiagnosticsConfig(cfg)).getDiagnosticsConfig();
-
-        assertThat(cfgBuild).isEqualTo(cfg);
-    }
-
-    private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
-        String xml = String.format(HAZELCAST_START_TAG + """
-                        <diagnostics enabled="%s">
-                        <max-rolled-file-size-in-mb>%f</max-rolled-file-size-in-mb>
-                        <max-rolled-file-count>%d</max-rolled-file-count>
-                        <include-epoch-time>%s</include-epoch-time>
-                        <log-directory>%s</log-directory>
-                        <file-name-prefix>%s</file-name-prefix>
-                        <output-type>%s</output-type>
-                        <auto-off-timer-in-minutes>%d</auto-off-timer-in-minutes>
-                        """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
-                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType(), cfg.getAutoOffDurationInMinutes());
-
-
-        if (!cfg.getPluginProperties().isEmpty()) {
-            xml += "<plugin-properties>";
-        }
-
-        for (Map.Entry entry : cfg.getPluginProperties().entrySet()) {
-            xml += String.format("""
-                            <property name="%s">%s</property>
-                    """, entry.getKey(), entry.getValue());
-        }
-
-        if (!cfg.getPluginProperties().isEmpty()) {
-            xml += "</plugin-properties></diagnostics>" + HAZELCAST_END_TAG;
-        } else {
-            xml += "</diagnostics>" + HAZELCAST_END_TAG;
-        }
-        return xml;
-    }
-
     private String simpleVectorCollectionBackupCountConfig(int count) {
         return simpleVectorCollectionBackupCountConfig("backup-count", count);
     }

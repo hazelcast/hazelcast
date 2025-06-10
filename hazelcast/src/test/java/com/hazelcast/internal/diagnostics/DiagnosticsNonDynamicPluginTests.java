@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -54,10 +53,10 @@ public class DiagnosticsNonDynamicPluginTests extends AbstractDiagnosticsPluginT
 
         properties.put(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "10");
         properties.put(StoreLatencyPlugin.RESET_PERIOD_SECONDS.getName(), "15");
+        properties.put(Diagnostics.ENABLED.getName(), "true");
 
         Config config = new Config();
-        config.getDiagnosticsConfig().setEnabled(true);
-        config.getDiagnosticsConfig().getPluginProperties().putAll(properties);
+        properties.forEach(config::setProperty);
 
         Properties sourceProps = new Properties();
         sourceProps.putAll(properties);

@@ -86,8 +86,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
     private SampleThread sampleThread;
 
     public OperationThreadSamplerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
+        super(nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
         this.nodeEngine = nodeEngine;
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.executor = operationService.getOperationExecutor();

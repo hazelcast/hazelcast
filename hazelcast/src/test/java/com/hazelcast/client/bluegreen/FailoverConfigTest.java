@@ -65,7 +65,7 @@ public class FailoverConfigTest {
                 "getUserContext", "setMetricsConfig", "load", "setBackupAckToClientEnabled", "isBackupAckToClientEnabled",
                 "getMetricsConfig", "getSqlConfig", "setSqlConfig", "equals", "hashCode", "toString", "setInstanceTrackingConfig",
                 "getInstanceTrackingConfig", "getTpcConfig", "setTpcConfig", "isCPDirectToLeaderRoutingEnabled",
-                "setCPDirectToLeaderRoutingEnabled", "getDiagnosticsConfig", "setDiagnosticsConfig");
+                "setCPDirectToLeaderRoutingEnabled");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (Modifier.isPrivate(method.getModifiers())) {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -24,7 +23,6 @@ import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -87,14 +85,8 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
     private long iteration;
 
-    public StoreLatencyPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(StoreLatencyPlugin.class),
-                nodeEngine.getProperties());
-    }
-
-    public StoreLatencyPlugin(DiagnosticsConfig config, ILogger logger, HazelcastProperties properties) {
-        super(config, logger);
+    public StoreLatencyPlugin(ILogger logger, HazelcastProperties properties) {
+        super(logger);
         this.properties = properties;
         readProperties();
     }

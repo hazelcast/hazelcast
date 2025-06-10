@@ -17,8 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.networking.nio.NioNetworking;
@@ -44,7 +42,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,9 +65,8 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     HazelcastProperties expectedHzProperties;
 
     public enum ConfigSources {
-        Props,
-        Config,
-        Both
+        PROPS,
+        NONE
     }
 
     @Parameterized.Parameter
@@ -84,7 +80,6 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     @Before
     public void setup() {
         Config config = new Config();
-        config.getDiagnosticsConfig().setEnabled(false);
         config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED.getName(), "true");
 
         setDefaultProperties();
@@ -101,21 +96,8 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     }
 
     private void setPropertiesByTestCase(Config config) {
-        if (configSource == ConfigSources.Config) {
-            config.getDiagnosticsConfig().getPluginProperties().putAll(properties);
-        } else if (configSource == ConfigSources.Props) {
+        if (configSource == ConfigSources.PROPS) {
             setAsProperty(config);
-        } else if (configSource == ConfigSources.Both) {
-            // system properties take precedence
-            setAsProperty(config);
-
-            Map<String, String> corruptedProperties = new HashMap<>();
-            for (Map.Entry<String, String> entry : properties.entrySet()) {
-                corruptedProperties.put(entry.getKey(),
-                        (entry.getValue().equals("true") || entry.getValue().equals("false")) ? "false" : "999");
-            }
-            // this should be ignored since system properties take precedence
-            config.getDiagnosticsConfig().getPluginProperties().putAll(corruptedProperties);
         }
     }
 
@@ -226,7 +208,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     @Test
     public void testDiagnosticsDynamicallyEnabled_butPluginsDisabled() {
         // props cannot be overridden by config object at runtime
-        Assume.assumeTrue(configSource == ConfigSources.Config);
+        Assume.assumeTrue(configSource == ConfigSources.NONE);
 
         enableDiagnostics();
         assertInvocationSamplePlugin(true);
@@ -244,7 +226,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertOverloadedConnectionsPlugin(true);
         assertPendingInvocationsPlugin(true);
         assertSlowOperationPlugin(true);
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(true);
         assertSystemPropertiesPlugin(true);
 
@@ -269,13 +251,14 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertOverloadedConnectionsPlugin(false);
         assertPendingInvocationsPlugin(false);
         assertSlowOperationPlugin(false);
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(false);
         assertSystemPropertiesPlugin(true);
     }
 
     @Test
     public void testDiagnosticsDynamicallyEnabled() {
+        Assume.assumeTrue(configSource == ConfigSources.PROPS);
         assertInvocationSamplePlugin(false);
         assertBuildInfoPlugin(false);
         assertConfigPropertiesPlugin(false);
@@ -291,7 +274,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertOverloadedConnectionsPlugin(false);
         assertPendingInvocationsPlugin(false);
         assertSlowOperationPlugin(false);
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(false);
         assertSystemPropertiesPlugin(false);
 
@@ -312,7 +295,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertPendingInvocationsPlugin(true);
         assertSlowOperationPlugin(true);
         // store latency cannot be enabled dynamically
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(true);
         assertSystemPropertiesPlugin(true);
 
@@ -332,7 +315,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertOverloadedConnectionsPlugin(false);
         assertPendingInvocationsPlugin(false);
         assertSlowOperationPlugin(false);
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(false);
         assertSystemPropertiesPlugin(false);
 
@@ -342,7 +325,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     public void testDiagnosticsDynamicallyUpdateProps() {
         // this test is only valid over dynamic updates
         // diagnostics cannot be configured over system properties dynamically
-        Assume.assumeTrue(configSource == ConfigSources.Config);
+        Assume.assumeTrue(configSource == ConfigSources.NONE);
 
         enableDiagnostics();
         assertInvocationSamplePlugin(true);
@@ -360,7 +343,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertOverloadedConnectionsPlugin(true);
         assertPendingInvocationsPlugin(true);
         assertSlowOperationPlugin(true);
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(true);
         assertSystemPropertiesPlugin(true);
 
@@ -381,7 +364,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertOverloadedConnectionsPlugin(true);
         assertPendingInvocationsPlugin(true);
         assertSlowOperationPlugin(true);
-        assertStoreLatencyPlugin(false);
+        assertStoreLatencyPlugin();
         assertSystemLogPlugin(false);
         assertSystemPropertiesPlugin(true);
     }
@@ -413,11 +396,11 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     }
 
     @Test
-    public void testOverriddenPropertiesLogged() throws NoSuchFieldException, IllegalAccessException {
+    public void testOverriddenPropertiesLogged() {
 
         StringBuilder sb = new StringBuilder();
         hz.getLoggingService().addLogListener(Level.INFO,
-                (message) -> sb.append(message.getLogRecord().getMessage()).append(System.lineSeparator()));
+                message -> sb.append(message.getLogRecord().getMessage()).append(System.lineSeparator()));
 
         DiagnosticsConfig dConfig = new DiagnosticsConfig();
         properties.put(Diagnostics.FILENAME_PREFIX.getName(), "hz-prefix");
@@ -448,22 +431,22 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
             assertContains(log, "Diagnostics configs overridden by property:");
 
             assertContains(log, Diagnostics.FILENAME_PREFIX.getName() + " = "
-                    + properties.get(Diagnostics.FILENAME_PREFIX.getName()));
+                                + properties.get(Diagnostics.FILENAME_PREFIX.getName()));
 
             assertContains(log, Diagnostics.INCLUDE_EPOCH_TIME.getName() + " = "
-                    + properties.get(Diagnostics.INCLUDE_EPOCH_TIME.getName()));
+                                + properties.get(Diagnostics.INCLUDE_EPOCH_TIME.getName()));
 
             assertContains(log, Diagnostics.MAX_ROLLED_FILE_COUNT.getName() + " = "
-                    + properties.get(Diagnostics.MAX_ROLLED_FILE_COUNT.getName()));
+                                + properties.get(Diagnostics.MAX_ROLLED_FILE_COUNT.getName()));
 
             assertContains(log, Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName() + " = "
-                    + properties.get(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName()));
+                                + properties.get(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName()));
 
             assertContains(log, Diagnostics.DIRECTORY.getName() + " = "
-                    + properties.get(Diagnostics.DIRECTORY.getName()));
+                                + properties.get(Diagnostics.DIRECTORY.getName()));
 
             assertContains(log, Diagnostics.OUTPUT_TYPE.getName() + " = "
-                    + properties.get(Diagnostics.OUTPUT_TYPE.getName()));
+                                + properties.get(Diagnostics.OUTPUT_TYPE.getName()));
         });
     }
 
@@ -575,13 +558,13 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
     }
 
     void assertConfigPropertiesPlugin(boolean status) {
-        ConfigPropertiesPlugin plugin = (ConfigPropertiesPlugin) getPlugin(ConfigPropertiesPlugin.class);
+        ConfigPropertiesPlugin plugin = getPlugin(ConfigPropertiesPlugin.class);
         assertEquals(status, plugin.isActive());
         assertEquals(DiagnosticsPlugin.RUN_ONCE_PERIOD_MS, plugin.getPeriodMillis());
     }
 
     void assertInvocationProfilerPlugin(boolean status) {
-        InvocationProfilerPlugin plugin = (InvocationProfilerPlugin) getPlugin(InvocationProfilerPlugin.class);
+        InvocationProfilerPlugin plugin = getPlugin(InvocationProfilerPlugin.class);
 
         HazelcastProperty samplePeriod = new HazelcastProperty(InvocationProfilerPlugin.PERIOD_SECONDS.getName(),
                 Integer.valueOf(properties.get(InvocationProfilerPlugin.PERIOD_SECONDS.getName())),
@@ -689,7 +672,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         } else {
             // networking is null
             assertEquals(0, plugin.getPeriodMillis());
-            assertEquals(false, plugin.isActive());
+            assertFalse(plugin.isActive());
         }
 
         if (plugin.isActive()) {
@@ -728,7 +711,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
                 TimeUnit.MILLISECONDS);
 
         HazelcastProperty includeName = new HazelcastProperty(OperationThreadSamplerPlugin.INCLUDE_NAME.getName(),
-                Boolean.valueOf(properties.get(OperationThreadSamplerPlugin.INCLUDE_NAME.getName())));
+                Boolean.parseBoolean(properties.get(OperationThreadSamplerPlugin.INCLUDE_NAME.getName())));
 
         assertEquals(status, plugin.isActive());
         assertEquals(expectedHzProperties.getMillis(period), plugin.getPeriodMillis());
@@ -805,7 +788,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         }
     }
 
-    void assertStoreLatencyPlugin(boolean status) {
+    void assertStoreLatencyPlugin() {
         StoreLatencyPlugin plugin = getPlugin(StoreLatencyPlugin.class);
 
         // Since these tests are targeted dynamic updates, StoreLatencyPlugin will be null always.
@@ -817,10 +800,10 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         SystemLogPlugin plugin = getPlugin(SystemLogPlugin.class);
 
         HazelcastProperty enabled = new HazelcastProperty(SystemLogPlugin.ENABLED.getName(),
-                Boolean.valueOf(properties.get(SystemLogPlugin.ENABLED.getName())));
+                Boolean.parseBoolean(properties.get(SystemLogPlugin.ENABLED.getName())));
 
         HazelcastProperty logPartitions = new HazelcastProperty(SystemLogPlugin.LOG_PARTITIONS.getName(),
-                Boolean.valueOf(properties.get(SystemLogPlugin.LOG_PARTITIONS.getName())));
+                Boolean.parseBoolean(properties.get(SystemLogPlugin.LOG_PARTITIONS.getName())));
 
         assertEquals(status, plugin.isActive());
         assertEquals(expectedHzProperties.getBoolean(logPartitions), plugin.getLogPartitions());
@@ -841,7 +824,7 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
 
     private <P extends DiagnosticsPlugin> P getPlugin(Class<P> clazz) {
         // have to use reflection since the service will return null when it's not enabled.
-        Method getPluginInstanceMethod = null;
+        Method getPluginInstanceMethod;
         try {
             getPluginInstanceMethod = Diagnostics.class.getDeclaredMethod("getPluginInstance", Class.class);
             getPluginInstanceMethod.setAccessible(true);

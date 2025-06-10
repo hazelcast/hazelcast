@@ -19,8 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -76,11 +74,11 @@ public class ClientDiagnosticsTest extends HazelcastTestSupport {
                 .setAutoOffDurationInMinutes(5)
                 .setIncludeEpochTime(true);
         dConfig.getPluginProperties().putAll(getPluginProperties());
-        clientConfig.setDiagnosticsConfig(dConfig);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
-        DiagnosticsConfig diagnosticsConfig = clientImpl.getClientConfig().getDiagnosticsConfig();
+        clientImpl.getDiagnostics().setConfig(dConfig);
+        DiagnosticsConfig diagnosticsConfig = clientImpl.getDiagnostics().getDiagnosticsConfig();
 
         assertTrue(diagnosticsConfig.isEnabled());
         assertEquals(dConfig.getOutputType(), diagnosticsConfig.getOutputType());

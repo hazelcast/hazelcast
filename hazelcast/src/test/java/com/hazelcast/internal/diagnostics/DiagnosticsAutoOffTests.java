@@ -16,7 +16,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -43,10 +42,13 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
     Diagnostics diagnostics;
 
     public void setup(DiagnosticsConfig diagnosticsConfig) {
-        Config config = new Config();
-        config.setDiagnosticsConfig(diagnosticsConfig);
+        setup(diagnosticsConfig, new Config());
+    }
+
+    public void setup(DiagnosticsConfig diagnosticsConfig, Config config) {
         hz = createHazelcastInstance(config);
         diagnostics = TestUtil.getNode(hz).getNodeEngine().getDiagnostics();
+        diagnostics.setConfig(diagnosticsConfig);
         // shorten the auto-off timer for the test, won't work when statically enabled.
         diagnostics.autoOffDurationUnit = TimeUnit.SECONDS;
     }
@@ -156,9 +158,7 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         assertFalse(diagnostics.isEnabled());
         assertAutoOffNotSet(diagnostics);
 
-        assertTrueEventually(() -> {
-            assertContains(sbLogs.toString(), "Existing auto off future cancelled.");
-        });
+        assertTrueEventually(() -> assertContains(sbLogs.toString(), "Existing auto off future cancelled."));
     }
 
     @Test
@@ -169,10 +169,13 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         DiagnosticsConfig dCfg = new DiagnosticsConfig();
         dCfg.setEnabled(true);
         dCfg.setAutoOffDurationInMinutes(1);
-        // Enable a non-dynamic plugin
-        dCfg.setProperty(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "30");
 
-        setup(dCfg);
+        Config config = new Config();
+        // Enable a non-dynamic plugin
+        config.setProperty(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "30");
+        // Enable the diagnostics
+        config.setProperty(Diagnostics.ENABLED.getName(), "true");
+        setup(dCfg, config);
 
         assertTrueEventually(() -> {
             assertTrue(diagnostics.isEnabled());

@@ -18,7 +18,6 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,8 +57,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Config config = new Config().setProperty(Diagnostics.FILENAME_PREFIX.getName(), "foobar");
         HazelcastProperties hzProperties = new HazelcastProperties(config);
 
-        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties,
-                config.getDiagnosticsConfig());
+        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties);
         assertStartsWith("foobar-diagnostics", diagnostics.getFileName());
     }
 
@@ -68,8 +66,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Config config = new Config();
         HazelcastProperties hzProperties = new HazelcastProperties(config);
 
-        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties,
-                config.getDiagnosticsConfig());
+        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties);
         assertStartsWith("diagnostics", diagnostics.getFileName());
     }
 
@@ -149,18 +146,20 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         assertEquals(DiagnosticsOutputType.LOGGER, DiagnosticsOutputType.valueOf("LOGGER"));
 
         Config config = new Config();
-        config.getDiagnosticsConfig()
+        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
                 .setEnabled(true)
                 .setOutputType(DiagnosticsOutputType.FILE);
         Diagnostics diagnostics = newDiagnostics(config);
+        diagnostics.setConfig(diagnosticsConfig);
         assertEquals(DiagnosticsLogFile.class, diagnostics.newLog(diagnostics).getClass());
-        config.getDiagnosticsConfig()
+        diagnosticsConfig = new DiagnosticsConfig()
                 .setOutputType(DiagnosticsOutputType.STDOUT);
         diagnostics = newDiagnostics(config);
+        diagnostics.setConfig(diagnosticsConfig);
         assertEquals(DiagnosticsStdout.class, diagnostics.newLog(diagnostics).getClass());
-        config.getDiagnosticsConfig()
-                .setOutputType(DiagnosticsOutputType.LOGGER);
+        diagnosticsConfig.setOutputType(DiagnosticsOutputType.LOGGER);
         diagnostics = newDiagnostics(config);
+        diagnostics.setConfig(diagnosticsConfig);
         assertEquals(DiagnosticsLogger.class, diagnostics.newLog(diagnostics).getClass());
     }
 
@@ -168,6 +167,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
     public void test_enabledAfterStart() throws Exception {
 
         Config config = new Config();
+        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig();
         Diagnostics diagnostics = newDiagnostics(config);
 
         diagnostics.start();
@@ -178,8 +178,8 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         assertGreaterOrEquals("Static plugin registered", 0, diagnostics.staticTasks.get().length);
 
         // enable diagnostics at runtime
-        config.getDiagnosticsConfig().setEnabled(true);
-        diagnostics.setConfig(config.getDiagnosticsConfig());
+        diagnosticsConfig.setEnabled(true);
+        diagnostics.setConfig(diagnosticsConfig);
 
         assertPluginsWhenDiagnosticsEnabled(diagnostics);
     }
@@ -188,9 +188,9 @@ public class DiagnosticsTest extends HazelcastTestSupport {
     @Test
     public void test_disabledAfterStart() throws Exception {
         Config config = new Config();
-        config.getDiagnosticsConfig().setEnabled(true);
         Diagnostics diagnostics = newDiagnostics(config);
         diagnostics.start();
+        diagnostics.setConfig(new DiagnosticsConfig().setEnabled(true));
         registerSomePlugins(diagnostics);
 
         verify(diagnostics.getPluginInstance(BuildInfoPlugin.class), times(1)).onStart();
@@ -198,8 +198,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         verify(diagnostics.getPluginInstance(InvocationSamplePlugin.class), times(0)).onShutdown();
         verify(diagnostics.getPluginInstance(InvocationSamplePlugin.class), times(1)).onStart();
 
-        config.getDiagnosticsConfig().setEnabled(false);
-        diagnostics.setConfig(config.getDiagnosticsConfig());
+        diagnostics.setConfig(new DiagnosticsConfig().setEnabled(false));
 
         verify(diagnostics.getPluginInstance(BuildInfoPlugin.class), times(1)).onStart();
         // static plugins runs once hence no future
@@ -258,8 +257,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
         String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 
-        return new Diagnostics(name, mockLoggingService(), "hz", new HazelcastProperties(config),
-                config.getDiagnosticsConfig());
+        return new Diagnostics(name, mockLoggingService(), "hz", new HazelcastProperties(config));
     }
 
     private LoggingService mockLoggingService() {

@@ -4248,16 +4248,4 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="132">PutIfAbsentMergePolicy</merge-policy>
     </vector-collection>
-    <diagnostics enabled="false">
-        <!--<file-name-prefix>YOUR_PREFIX_FOR_LOG_FILES</file-name-prefix>-->
-        <include-epoch-time>true</include-epoch-time>
-        <max-rolled-file-count>10</max-rolled-file-count>
-        <max-rolled-file-size-in-mb>50</max-rolled-file-size-in-mb>
-        <auto-off-timer-in-minutes>15</auto-off-timer-in-minutes>
-        <output-type>FILE</output-type>
-        <!--<log-directory>YOUR_OUTPUT_DIRECTORY</log-directory>-->
-        <plugin-properties>
-            <property name="hazelcast.diagnostics.invocation-profiler.period.seconds">5</property>
-        </plugin-properties>
-    </diagnostics>
 </hazelcast>

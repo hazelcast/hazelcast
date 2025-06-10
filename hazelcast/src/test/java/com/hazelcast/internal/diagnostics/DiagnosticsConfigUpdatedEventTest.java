@@ -15,9 +15,8 @@
  */
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.DiagnosticsConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.events.DiagnosticsConfigUpdatedEvent;
@@ -109,7 +108,6 @@ public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPlugin
 
         for (Event event : events) {
             if (event instanceof DiagnosticsConfigUpdatedEvent dcEvent) {
-                DiagnosticsConfigUpdatedEvent diagnosticsEvent = (DiagnosticsConfigUpdatedEvent) event;
                 JsonObject eventCfg = dcEvent.toJson();
 
                 assertEquals(expCfg.isEnabled(), eventCfg.getBoolean("enabled", false));
@@ -135,6 +133,6 @@ public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPlugin
     }
 
     private void setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
-        hazelcastInstances[0].getConfig().setDiagnosticsConfig(diagnosticsConfig);
+        ((DynamicConfigurationAwareConfig) hazelcastInstances[0].getConfig()).setDiagnosticsConfig(diagnosticsConfig);
     }
 }

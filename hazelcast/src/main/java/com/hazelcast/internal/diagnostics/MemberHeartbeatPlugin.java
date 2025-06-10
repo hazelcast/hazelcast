@@ -20,7 +20,8 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -63,23 +64,24 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     private static final float HUNDRED = 100f;
 
-    private final NodeEngineImpl nodeEngine;
+    private final ClusterService clusterService;
+    private final HazelcastProperties properties;
     private long periodMillis;
     private int maxDeviationPercentage;
     private boolean mainSectionStarted;
 
 
-    public MemberHeartbeatPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getLogger(MemberHeartbeatPlugin.class));
-        this.nodeEngine = nodeEngine;
+    public MemberHeartbeatPlugin(ILogger logger, ClusterService clusterService, HazelcastProperties props) {
+        super(logger);
+        this.clusterService = clusterService;
+        this.properties = props;
         readProperties();
     }
 
     @Override
     void readProperties() {
-        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
-        this.maxDeviationPercentage = nodeEngine.getProperties().getInteger(overrideProperty(MAX_DEVIATION_PERCENTAGE));
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.maxDeviationPercentage = properties.getInteger(overrideProperty(MAX_DEVIATION_PERCENTAGE));
     }
 
     @Override
@@ -104,13 +106,12 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
         if (!isActive()) {
             return;
         }
-        ClusterService cs = nodeEngine.getClusterService();
-        if (!(cs instanceof ClusterServiceImpl)) {
+        if (!(clusterService instanceof ClusterServiceImpl)) {
             // Let's be lenient during testing if a mocked cluster service is encountered.
             // we don't want to cause problems
             return;
         }
-        render(writer, (ClusterServiceImpl) cs);
+        render(writer, (ClusterServiceImpl) clusterService);
     }
 
     //for testing

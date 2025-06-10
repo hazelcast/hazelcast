@@ -19,7 +19,6 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -33,7 +32,6 @@ import com.hazelcast.config.YamlConfigBuilderTest;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
@@ -888,43 +886,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals(RoutingMode.MULTI_MEMBER, clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingMode());
         assertEquals(ClusterRoutingConfig.DEFAULT_ROUTING_STRATEGY,
                 clientConfig.getNetworkConfig().getClusterRoutingConfig().getRoutingStrategy());
-    }
-
-    @Override
-    public void testDiagnosticsConfig() {
-        DiagnosticsConfig originalConfig = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(60)
-                .setMaxRolledFileCount(15)
-                .setOutputType(DiagnosticsOutputType.STDOUT)
-                .setLogDirectory("/src/user")
-                .setFileNamePrefix("mylogs")
-                .setAutoOffDurationInMinutes(5)
-                .setIncludeEpochTime(true);
-        String propKey = "hazelcast.diagnostics.prop1";
-        originalConfig.getPluginProperties().put(propKey, "myprop1");
-
-        String yaml = String.format("""
-                        hazelcast-client:
-                          diagnostics:
-                            enabled: %s
-                            max-rolled-file-size-in-mb: %f
-                            max-rolled-file-count: %d
-                            include-epoch-time: %s
-                            log-directory: %s
-                            file-name-prefix: %s
-                            output-type: %s
-                            auto-off-timer-in-minutes: %d
-                            plugin-properties:
-                                %s: %s
-                        """, originalConfig.isEnabled(), originalConfig.getMaxRolledFileSizeInMB(),
-                originalConfig.getMaxRolledFileCount(), originalConfig.isIncludeEpochTime(),
-                originalConfig.getLogDirectory(), originalConfig.getFileNamePrefix(), originalConfig.getOutputType(),
-                originalConfig.getAutoOffDurationInMinutes(), propKey, originalConfig.getPluginProperties().get(propKey));
-
-        DiagnosticsConfig buildConfig = buildConfig(yaml).getDiagnosticsConfig();
-
-        assertThat(originalConfig).isEqualTo(buildConfig);
     }
 
     public static ClientConfig buildConfig(String yaml) {

@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * A {@link DiagnosticsPlugin} that displays the build info.
@@ -29,12 +27,8 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
 
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
-    public BuildInfoPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(), nodeEngine.getLogger(BuildInfoPlugin.class));
-    }
-
-    public BuildInfoPlugin(DiagnosticsConfig diagnosticsConfig, ILogger logger) {
-        super(diagnosticsConfig, logger);
+    public BuildInfoPlugin(ILogger logger) {
+        super(logger);
     }
 
     @Override

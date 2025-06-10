@@ -112,7 +112,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         EventServiceImpl eventService = (EventServiceImpl) nodeEngine.getEventService();
 
-        plugin = new EventQueuePlugin(nodeEngine, eventService.getEventExecutor());
+        plugin = new EventQueuePlugin(nodeEngine.getLogger(EventQueuePlugin.class), eventService.getEventExecutor(), nodeEngine.getProperties());
         plugin.onStart();
 
         itemCounter = plugin.getOccurrenceMap();

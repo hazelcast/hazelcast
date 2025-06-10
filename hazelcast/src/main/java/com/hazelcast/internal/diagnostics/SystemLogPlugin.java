@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -34,7 +33,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.version.Version;
@@ -94,30 +92,19 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     private MigrationListenerImpl migrationListener;
     private LifecycleListenerImpl lifecycleListener;
 
-    public SystemLogPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getConfig().getDiagnosticsConfig(),
-                nodeEngine.getProperties(),
-                nodeEngine.getNode().getServer(),
-                nodeEngine.getHazelcastInstance(),
-                nodeEngine.getLogger(SystemLogPlugin.class),
-                nodeEngine.getNode().getNodeExtension());
-    }
-
-    public SystemLogPlugin(DiagnosticsConfig config,
-                           HazelcastProperties properties,
+    public SystemLogPlugin(HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
                            ILogger logger) {
-        this(config, properties, connectionObservable, hazelcastInstance, logger, null);
+        this(logger, properties, connectionObservable, hazelcastInstance, null);
     }
 
-    public SystemLogPlugin(DiagnosticsConfig config,
+    public SystemLogPlugin(ILogger logger,
                            HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
-                           ILogger logger,
                            NodeExtension nodeExtension) {
-        super(config, logger);
+        super(logger);
         this.connectionObservable = connectionObservable;
         this.hazelcastInstance = hazelcastInstance;
         this.thisAddress = getThisAddress(hazelcastInstance);
@@ -236,14 +223,11 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     private void render(DiagnosticsLogWriter writer, MembershipEvent event) {
         switch (event.getEventType()) {
-            case MembershipEvent.MEMBER_ADDED:
-                writer.startSection("MemberAdded");
-                break;
-            case MembershipEvent.MEMBER_REMOVED:
-                writer.startSection("MemberRemoved");
-                break;
-            default:
+            case MembershipEvent.MEMBER_ADDED -> writer.startSection("MemberAdded");
+            case MembershipEvent.MEMBER_REMOVED -> writer.startSection("MemberRemoved");
+            default -> {
                 return;
+            }
         }
         writer.writeKeyValueEntry("member", event.getMember().getAddress().toString());
 
