@@ -479,7 +479,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     private URL getJdbcConnectorURL() throws URISyntaxException {
         ClassLoader classLoader = getClass().getClassLoader();
-        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
+        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.8.4.zip";
         URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
         assert resource != null;
         assertThat(new File(resource.toURI())).exists();

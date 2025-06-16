@@ -102,7 +102,7 @@ public final class ReflectionUtils {
             throw new JetException(String.format("Default constructor of %s class %s is not accessible", type, typeName));
         } catch (InvocationTargetException e) {
             throw new JetException(
-                    String.format("%s class %s failed on construction: %s", type, typeName, e.getMessage()));
+                    String.format("%s class %s failed on construction: %s", type, typeName, e.getMessage()), e);
         } catch (Exception e) {
             throw new JetException(e);
         }

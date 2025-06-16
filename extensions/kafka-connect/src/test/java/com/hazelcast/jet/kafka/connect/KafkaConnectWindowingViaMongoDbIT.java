@@ -150,7 +150,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
         jobConfig.addClass(TestUtil.class);
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         jobConfig.setSnapshotIntervalMillis(1500);
-        jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.10.0-all.jar"));
+        jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.16.0-all.jar"));
         return jobConfig;
     }
 
