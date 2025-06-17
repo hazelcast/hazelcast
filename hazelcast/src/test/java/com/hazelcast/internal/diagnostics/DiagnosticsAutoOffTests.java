@@ -41,31 +41,16 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
     private HazelcastInstance hz;
     Diagnostics diagnostics;
 
-    public void setup(DiagnosticsConfig diagnosticsConfig) {
-        setup(diagnosticsConfig, new Config());
-    }
-
-    public void setup(DiagnosticsConfig diagnosticsConfig, Config config) {
+    public void setup(Config config) {
         hz = createHazelcastInstance(config);
         diagnostics = TestUtil.getNode(hz).getNodeEngine().getDiagnostics();
-        diagnostics.setConfig(diagnosticsConfig);
         // shorten the auto-off timer for the test, won't work when statically enabled.
         diagnostics.autoOffDurationUnit = TimeUnit.SECONDS;
     }
 
     @Test
-    public void testDiagnosticsTurnedOffAutomatically_whenEnabledStatically() {
-        setup(new DiagnosticsConfig()
-                .setEnabled(true).setAutoOffDurationInMinutes(1));
-
-        assertTrue(diagnostics.isEnabled());
-        assertDiagnosticsTurnedOffAutomatically();
-    }
-
-    @Test
     public void testDiagnosticsTurnedOffAutomatically_whenEnabledDynamically() {
-        setup(new DiagnosticsConfig()
-                .setEnabled(false));
+        setup(new Config());
         setDynamicConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(3));
 
         assertTrue(diagnostics.isEnabled());
@@ -74,8 +59,7 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testDiagnosticsTurnedOffAutomatically_whenEnabledDynamicallyManyTimes() {
-        setup(new DiagnosticsConfig()
-                .setEnabled(false));
+        setup(new Config());
 
         setDynamicConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(1));
         assertTrue(diagnostics.isEnabled());
@@ -91,18 +75,19 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
     }
 
     @Test
-    public void testDiagnosticsStays_whenAutoOffDisabledStatically() {
-        setup(new DiagnosticsConfig()
-                .setEnabled(true).setAutoOffDurationInMinutes(-1));
+    public void testDiagnosticsStays_autoOffDisabledByDefault_overStaticConfig() {
+        Config config = new Config();
+        config.setProperty(Diagnostics.ENABLED.getName(), "true");
+        setup(config);
 
         assertAutoOffNotSet(diagnostics);
         assertTrue(diagnostics.isEnabled());
     }
 
     @Test
-    public void testDiagnosticsStays_autoOffDisabledByDefault() {
-        setup(new DiagnosticsConfig()
-                .setEnabled(true));
+    public void testDiagnosticsStays_autoOffDisabledByDefault_overDynamicConfig() {
+        setup(new Config());
+        setDynamicConfig(new DiagnosticsConfig().setEnabled(true));
 
         assertAutoOffNotSet(diagnostics);
         assertTrue(diagnostics.isEnabled());
@@ -110,8 +95,7 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testDiagnosticsStays_whenAutoOffDisabledDynamically() {
-        setup(new DiagnosticsConfig()
-                .setEnabled(false).setAutoOffDurationInMinutes(-1));
+        setup(new Config());
 
         setDynamicConfig(new DiagnosticsConfig()
                 .setEnabled(true).setAutoOffDurationInMinutes(-1));
@@ -122,10 +106,11 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testAutoOff_doesNotFail() {
-        setup(new DiagnosticsConfig().setEnabled(false).setAutoOffDurationInMinutes(3));
-
+        setup(new Config());
         // Capture logs
         StringBuilder sbLogs = captureLogs();
+
+        setDynamicConfig(new DiagnosticsConfig().setEnabled(false).setAutoOffDurationInMinutes(3));
 
         var mockDiagnostics = Mockito.spy(diagnostics);
 
@@ -148,7 +133,8 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testAutoOff_cancelledWhenDiagnosticsDisabled() {
-        setup(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(1));
+        setup(new Config());
+        setDynamicConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(1));
 
         // Capture logs
         StringBuilder sbLogs = captureLogs();
@@ -166,33 +152,24 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         // Non-dynamic plugins prevent Diagnostics to be disabled at runtime. They required the node to be restarted.
         // So, auto off should be skipped because Diagnostics cannot be disabled.
 
-        DiagnosticsConfig dCfg = new DiagnosticsConfig();
-        dCfg.setEnabled(true);
-        dCfg.setAutoOffDurationInMinutes(1);
-
         Config config = new Config();
         // Enable a non-dynamic plugin
         config.setProperty(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "30");
         // Enable the diagnostics
         config.setProperty(Diagnostics.ENABLED.getName(), "true");
-        setup(dCfg, config);
+        setup(config);
 
         assertTrueEventually(() -> {
             assertTrue(diagnostics.isEnabled());
             assertAutoOffNotSet(diagnostics);
         });
 
-        // we can't disable but restart the service with new config
-        // It shouldn't schedule auto-off because Diagnostics cannot be disabled.
-        dCfg.setProperty(InvocationProfilerPlugin.PERIOD_SECONDS.getName(), "30");
-        setDynamicConfig(dCfg);
-
-        assertTrueEventually(() -> {
-            assertTrue(diagnostics.isEnabled());
-            assertAutoOffNotSet(diagnostics);
+        // non-dynamic plugins can be set only over static config. So that we cannot set config dynamically since
+        // first config is done over static config.
+        assertThrows(IllegalStateException.class, () -> {
+            diagnostics.setConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(1));
         });
     }
-
 
     private @NotNull StringBuilder captureLogs() {
         StringBuilder sbLogs = new StringBuilder();

@@ -66,7 +66,9 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
 
     public enum ConfigSources {
         PROPS,
-        NONE
+        NONE,
+        DisabledStatically,
+        EnabledStatically
     }
 
     @Parameterized.Parameter
@@ -82,21 +84,23 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         Config config = new Config();
         config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED.getName(), "true");
 
+        if (configSource == ConfigSources.DisabledStatically) {
+            properties.put(Diagnostics.ENABLED.getName(), "false");
+        } else if (configSource == ConfigSources.EnabledStatically) {
+            properties.put(Diagnostics.ENABLED.getName(), "true");
+        }
+
         setDefaultProperties();
 
         setPropertiesByTestCase(config);
 
         hz = createHazelcastInstance(config);
         diagnostics = TestUtil.getNode(hz).getNodeEngine().getDiagnostics();
-
-        // source of truth for expected configs
-        Properties sourceProps = new Properties();
-        sourceProps.putAll(properties);
-        expectedHzProperties = new HazelcastProperties(sourceProps);
     }
 
     private void setPropertiesByTestCase(Config config) {
-        if (configSource == ConfigSources.PROPS) {
+        if (configSource == ConfigSources.PROPS || configSource == ConfigSources.DisabledStatically
+                || configSource == ConfigSources.EnabledStatically) {
             setAsProperty(config);
         }
     }
@@ -371,6 +375,9 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testOutputChanges() throws IOException {
+        Assume.assumeFalse(configSource == ConfigSources.DisabledStatically
+                || configSource == ConfigSources.EnabledStatically);
+
         DiagnosticsConfig dConfig = new DiagnosticsConfig();
         dConfig.setOutputType(DiagnosticsOutputType.STDOUT);
         dConfig.setEnabled(true);
@@ -397,6 +404,8 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testOverriddenPropertiesLogged() {
+        Assume.assumeFalse(configSource == ConfigSources.DisabledStatically
+                || configSource == ConfigSources.EnabledStatically);
 
         StringBuilder sb = new StringBuilder();
         hz.getLoggingService().addLogListener(Level.INFO,
@@ -431,23 +440,43 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
             assertContains(log, "Diagnostics configs overridden by property:");
 
             assertContains(log, Diagnostics.FILENAME_PREFIX.getName() + " = "
-                                + properties.get(Diagnostics.FILENAME_PREFIX.getName()));
+                    + properties.get(Diagnostics.FILENAME_PREFIX.getName()));
 
             assertContains(log, Diagnostics.INCLUDE_EPOCH_TIME.getName() + " = "
-                                + properties.get(Diagnostics.INCLUDE_EPOCH_TIME.getName()));
+                    + properties.get(Diagnostics.INCLUDE_EPOCH_TIME.getName()));
 
             assertContains(log, Diagnostics.MAX_ROLLED_FILE_COUNT.getName() + " = "
-                                + properties.get(Diagnostics.MAX_ROLLED_FILE_COUNT.getName()));
+                    + properties.get(Diagnostics.MAX_ROLLED_FILE_COUNT.getName()));
 
             assertContains(log, Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName() + " = "
-                                + properties.get(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName()));
+                    + properties.get(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName()));
 
             assertContains(log, Diagnostics.DIRECTORY.getName() + " = "
-                                + properties.get(Diagnostics.DIRECTORY.getName()));
+                    + properties.get(Diagnostics.DIRECTORY.getName()));
 
             assertContains(log, Diagnostics.OUTPUT_TYPE.getName() + " = "
-                                + properties.get(Diagnostics.OUTPUT_TYPE.getName()));
+                    + properties.get(Diagnostics.OUTPUT_TYPE.getName()));
         });
+    }
+
+    @Test
+    public void testStaticEnabled_cannotDisabledDynamically() {
+        Assume.assumeTrue(configSource == ConfigSources.EnabledStatically);
+        // If service is enabled or disabled explicitly over system properties a.k.a. static config,
+        // then dynamic config cannot be applied.
+
+        assertThrows(IllegalStateException.class,
+                () -> diagnostics.setConfig(new DiagnosticsConfig().setEnabled(false)));
+    }
+
+    @Test
+    public void testStaticDisabled_cannotEnabledDynamically() {
+        Assume.assumeTrue(configSource == ConfigSources.DisabledStatically);
+        // If service is enabled or disabled explicitly over system properties a.k.a. static config,
+        // then dynamic config cannot be applied.
+
+        assertThrows(IllegalStateException.class,
+                () -> diagnostics.setConfig(new DiagnosticsConfig().setEnabled(true)));
     }
 
     private void disablePlugins() {

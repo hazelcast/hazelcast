@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the request fails by throwing an IllegalStateException exception but the other members for which the invocation succeeded will have the new config applied. 
  */
 @SuppressWarnings("unused")
-@Generated("0e35fe1c667688e43b3930e9e5f74dd4")
+@Generated("155e57bd842accafaf4193fc80b23ffc")
 public final class MCSetDiagnosticsConfigCodec {
     //hex: 0x202700
     public static final int REQUEST_MESSAGE_TYPE = 2107136;
@@ -49,8 +49,8 @@ public final class MCSetDiagnosticsConfigCodec {
     private static final int REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET = REQUEST_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET = REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET = REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET + FLOAT_SIZE_IN_BYTES;
-    private static final int REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET = REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_AUTO_OFF_DURATION_IN_MINUTES_FIELD_OFFSET = REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_AUTO_OFF_DURATION_IN_MINUTES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCSetDiagnosticsConfigCodec() {
@@ -102,10 +102,10 @@ public final class MCSetDiagnosticsConfigCodec {
         /**
          * The auto time off duration for the service in minutes. The value must be positive. Set -1 only if you want to disable the auto time off feature.
          */
-        public int autoOffTimerInMinutes;
+        public int autoOffDurationInMinutes;
     }
 
-    public static ClientMessage encodeRequest(boolean enabled, java.lang.String outputType, boolean includeEpochTime, float maxRolledFileSizeInMB, int maxRolledFileCount, java.lang.String logDirectory, @Nullable java.lang.String fileNamePrefix, @Nullable java.util.Map<java.lang.String, java.lang.String> properties, int autoOffTimerInMinutes) {
+    public static ClientMessage encodeRequest(boolean enabled, java.lang.String outputType, boolean includeEpochTime, float maxRolledFileSizeInMB, int maxRolledFileCount, java.lang.String logDirectory, @Nullable java.lang.String fileNamePrefix, @Nullable java.util.Map<java.lang.String, java.lang.String> properties, int autoOffDurationInMinutes) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.SetDiagnosticsConfig");
@@ -116,7 +116,7 @@ public final class MCSetDiagnosticsConfigCodec {
         encodeBoolean(initialFrame.content, REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET, includeEpochTime);
         encodeFloat(initialFrame.content, REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET, maxRolledFileSizeInMB);
         encodeInt(initialFrame.content, REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET, maxRolledFileCount);
-        encodeInt(initialFrame.content, REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET, autoOffTimerInMinutes);
+        encodeInt(initialFrame.content, REQUEST_AUTO_OFF_DURATION_IN_MINUTES_FIELD_OFFSET, autoOffDurationInMinutes);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, outputType);
         StringCodec.encode(clientMessage, logDirectory);
@@ -133,7 +133,7 @@ public final class MCSetDiagnosticsConfigCodec {
         request.includeEpochTime = decodeBoolean(initialFrame.content, REQUEST_INCLUDE_EPOCH_TIME_FIELD_OFFSET);
         request.maxRolledFileSizeInMB = decodeFloat(initialFrame.content, REQUEST_MAX_ROLLED_FILE_SIZE_IN_MB_FIELD_OFFSET);
         request.maxRolledFileCount = decodeInt(initialFrame.content, REQUEST_MAX_ROLLED_FILE_COUNT_FIELD_OFFSET);
-        request.autoOffTimerInMinutes = decodeInt(initialFrame.content, REQUEST_AUTO_OFF_TIMER_IN_MINUTES_FIELD_OFFSET);
+        request.autoOffDurationInMinutes = decodeInt(initialFrame.content, REQUEST_AUTO_OFF_DURATION_IN_MINUTES_FIELD_OFFSET);
         request.outputType = StringCodec.decode(iterator);
         request.logDirectory = StringCodec.decode(iterator);
         request.fileNamePrefix = CodecUtil.decodeNullable(iterator, StringCodec::decode);

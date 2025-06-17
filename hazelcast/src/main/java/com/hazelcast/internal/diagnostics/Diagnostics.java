@@ -266,12 +266,6 @@ public class Diagnostics {
         return maxRollingFileCount;
     }
 
-    // for testing
-    String getFilePrefix() {
-        return filePrefix;
-    }
-
-
     // just for testing (returns the current file the system is writing to)
     public File currentFile() throws UnsupportedOperationException {
         if (outputType != DiagnosticsOutputType.FILE) {
@@ -325,10 +319,7 @@ public class Diagnostics {
         // while service is enabled), then register it. Otherwise, it cannot be enabled or disabled later at runtime.
         if (isDynamicallyManagedPlugin(periodMillis, plugin)) {
             pluginsMap.put(plugin.getClass(), plugin);
-            logger.warning("A non-dynamic plugin (" + plugin.getClass()
-                    + ") is registered. It will prevent to disable Diagnostics during lifetime of the node. "
-                    + "Auto off is cancelling...");
-            cancelAutoOffFuture("Reason: A non-dynamic plugin registered.");
+            cancelAutoOffFuture("Reason: A non-dynamic plugin " + plugin.getClass() + " registered.");
         } else if (plugin.canBeEnabledDynamically()) {
             pluginsMap.put(plugin.getClass(), plugin);
         }
@@ -385,8 +376,13 @@ public class Diagnostics {
 
     public void start() {
         if (status.get() == SERVICE_DISABLED) {
-            logger.info("\"Diagnostics disabled. To enable set DiagnosticsConfig over instance, config file, "
-                    + "Management Center or Operator.");
+            if (isConfiguredStatically()) {
+                logger.info("Diagnostics service is disabled statically. You cannot start it at runtime dynamically. "
+                        + "In order to enable it, you need to set property `hazelcast.diagnostics.enabled=true` or remove"
+                        + " this property usage for dynamic enablement.");
+            } else {
+                logger.info("Diagnostics service is disabled. You can enable it over Management Center or Operator dynamically.");
+            }
             return;
         }
 
@@ -413,10 +409,11 @@ public class Diagnostics {
     /**
      * Sets diagnostics config on the service. The new config will take an effect immediately. Please note that
      * if there is diagnostics config provided over environment variables or system properties
-     * it will override the config.
+     * it will override the config. If ENABLED property is set, it will throw {@link IllegalStateException}
+     * since the diagnostics service is configured statically, and cannot be configured dynamically.
      * <p>
      * If the service is enabled, it can be disabled over this method with provided config.
-     * Unless there is a no NonDynamic Plugin, such as StoreLatencyPlugin
+     * Unless there is a no NonDynamic Plugin enabled, such as {@link StoreLatencyPlugin}
      * </p>
      * <p>
      * If the service is disabled, it can be enabled over this method with provided config.
@@ -435,9 +432,13 @@ public class Diagnostics {
                 return;
             }
 
+            if (isConfiguredStatically()) {
+                String msg = "Diagnostics service is configured statically. You cannot set a configuration at runtime.";
+                throw new IllegalStateException(msg);
+            }
+
             if (currentStatus == SERVICE_RESTARTING) {
                 String msg = "Diagnostics service is restarting already. You can't set a configuration at this stage.";
-                logger.warning(msg);
                 // throw to inform API caller
                 throw new IllegalStateException(msg);
             }
@@ -454,14 +455,7 @@ public class Diagnostics {
                             .log();
                 }
             } else {
-                // there is a non-dynamic plugin running and the service cannot be disabled.
-                if (isNonDynamicPluginExist()) {
-                    this.status.set(SERVICE_RESTARTING);
-                    diagnosticsConfig.setEnabled(true);
-                    logNonDynamicPluginWarnings();
-                } else {
-                    this.status.set(SERVICE_DISABLED);
-                }
+                this.status.set(SERVICE_DISABLED);
             }
 
             cancelRunningPlugins();
@@ -472,8 +466,7 @@ public class Diagnostics {
             emitMCConfigUpdatedEvent();
 
             if (status.get() == SERVICE_DISABLED) {
-                logger.info("Diagnostics disabled. To enable set DiagnosticsConfig over instance, config file, "
-                        + "Management Center or Operator.");
+                logger.info("Diagnostics disabled. To enable, set over Management Center or Operator.");
                 if (auditlogService != null) {
                     auditlogService.eventBuilder(AuditlogTypeIds.DIAGNOSTICS_LOGGING_DISABLE)
                             .message("Diagnostics disabled")
@@ -490,16 +483,23 @@ public class Diagnostics {
         }
     }
 
-    public DiagnosticsConfig getDiagnosticsConfig() {
-        return this.config;
+    /**
+     * Checks if the diagnostics service is configured statically.
+     * <p>
+     * If the diagnostics service is configured statically, it means that the service
+     * is enabled/disabled over the config file, environment variables or system properties.
+     * <p>
+     * If the diagnostics service is configured dynamically, it means that the service
+     * is enabled by the {@link DiagnosticsConfig} which means Management Center or Operator.
+     *
+     * @return {@code true} if the diagnostics service is configured statically, {@code false} otherwise.
+     */
+    public boolean isConfiguredStatically() {
+        return hazelcastProperties.containsKey(ENABLED);
     }
 
-    private void logNonDynamicPluginWarnings() {
-        String nameOfNonDynamicPlugins = getNameOfNonDynamicPlugins();
-        logger.warning("Diagnostics cannot be disabled dynamically since there are non dynamic plugins running."
-                + "They can be disabled only statically which requires node restart."
-                + "The service is going to restart with new configuration. You can disable or configure other plugins."
-                + "The running non dynamic plugins are: " + nameOfNonDynamicPlugins);
+    public DiagnosticsConfig getDiagnosticsConfig() {
+        return this.config;
     }
 
     private String getNameOfNonDynamicPlugins() {
@@ -681,13 +681,13 @@ public class Diagnostics {
     }
 
     /**
-     * Schedules the auto off timer if the timer is set to >0 and the service is Enabled. Each scheduling call will cancel
-     * the previous one if there is any. The scheduled auto off task will try to disable the diagnostics
-     * until interrupted or succeed.
+     * Schedules the auto off timer if the timer is set to >0 and the service is Enabled dynamically.
+     * Each scheduling call will cancel the previous one if there is any. The scheduled auto off task will
+     * try to disable the diagnostics until interrupted or succeed.
      * <p>
      */
     private void scheduleAutoOff() {
-        if (status.get() == SERVICE_SHUTDOWN) {
+        if (status.get() == SERVICE_SHUTDOWN || isConfiguredStatically()) {
             return;
         }
 

@@ -24,6 +24,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,23 +71,9 @@ public class DiagnosticsNonDynamicPluginTests extends AbstractDiagnosticsPluginT
     public void testOnlyStaticLifecyclePlugins_runsOnStaticEnablement() {
         assertTrue(diagnostics.isEnabled());
         assertStoreLatencyPlugin(true);
-        diagnostics.setConfig(new DiagnosticsConfig().setEnabled(false));
-        assertStoreLatencyPlugin(true);
-        assertTrue(diagnostics.isEnabled());
-    }
-
-    @Test
-    public void testOnlyStaticLifecyclePlugins_updatesProperties() {
-        assertTrue(diagnostics.isEnabled());
-        assertStoreLatencyPlugin(true);
-
-        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig();
-        diagnosticsConfig.setEnabled(true);
-        properties.put(StoreLatencyPlugin.PERIOD_SECONDS.getName(), "20");
-        diagnosticsConfig.getPluginProperties().putAll(properties);
-
-        diagnostics.setConfig(diagnosticsConfig);
-
+        Assert.assertThrows(IllegalStateException.class, () -> {
+            diagnostics.setConfig(new DiagnosticsConfig().setEnabled(false));
+        });
         assertStoreLatencyPlugin(true);
         assertTrue(diagnostics.isEnabled());
     }

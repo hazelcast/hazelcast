@@ -139,6 +139,7 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCDemoteDataMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetDiagnosticsConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
@@ -454,6 +455,7 @@ import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetMessag
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCacheConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCardinalityEstimatorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDataConnectionConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetDiagnosticsConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.SetDiagnosticsConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
@@ -1608,8 +1610,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddWanReplicationConfigTask(cm, node, con));
         factories.put(DynamicConfigAddUserCodeNamespaceConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddUserCodeNamespaceConfigMessageTask(cm, node, con));
-        factories.put(MCSetDiagnosticsConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new SetDiagnosticsConfigMessageTask(cm, node, con));
     }
 
     private void initializeFlakeIdGeneratorTaskFactories() {
@@ -1691,6 +1691,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
         factories.put(MCDemoteDataMemberCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new DemoteDataMemberMessageTask(cm, node, con));
+        factories.put(MCGetDiagnosticsConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new GetDiagnosticsConfigMessageTask(cm, node, con));
+        factories.put(MCSetDiagnosticsConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SetDiagnosticsConfigMessageTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {
