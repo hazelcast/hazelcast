@@ -607,7 +607,8 @@ public class Diagnostics {
 
         if (hazelcastProperties.containsKey(MAX_ROLLED_FILE_SIZE_MB)) {
             this.maxRollingFileSizeMB = hazelcastProperties.getFloat(MAX_ROLLED_FILE_SIZE_MB);
-            messages.add(MAX_ROLLED_FILE_SIZE_MB.getName() + " = " + maxRollingFileSizeMB);
+            messages.add(MAX_ROLLED_FILE_SIZE_MB.getName() + " = "
+                    + hazelcastProperties.get(MAX_ROLLED_FILE_SIZE_MB.getName()));
         } else {
             this.maxRollingFileSizeMB = newConfig.getMaxRolledFileSizeInMB();
         }
