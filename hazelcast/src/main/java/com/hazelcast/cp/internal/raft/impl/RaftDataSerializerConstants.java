@@ -33,7 +33,7 @@ public abstract class RaftDataSerializerConstants {
     public static final int APPEND_FAILURE_RESPONSE = 7;
     public static final int LOG_ENTRY = 8;
     public static final int SNAPSHOT_ENTRY = 9;
-    public static final int INSTALL_SNAPSHOT_REQUEST = 10;
+    public static final int V55_INSTALL_SNAPSHOT = 10;
     public static final int DESTROY_RAFT_GROUP_COMMAND = 11;
     public static final int UPDATE_RAFT_GROUP_MEMBERS_COMMAND = 12;
     public static final int TRIGGER_LEADER_ELECTION = 13;
@@ -42,4 +42,5 @@ public abstract class RaftDataSerializerConstants {
     public static final int KEY_VALUE_DATA_CHUNK = 16;
     public static final int VALUE_DATA_CHUNK = 17;
     public static final int INSTALL_SNAPSHOT_RESPONSE = 18;
+    public static final int INSTALL_SNAPSHOT_REQUEST = 19;
 }
