@@ -21,12 +21,12 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -171,7 +171,7 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         });
     }
 
-    private @NotNull StringBuilder captureLogs() {
+    private @Nonnull StringBuilder captureLogs() {
         StringBuilder sbLogs = new StringBuilder();
         hz.getLoggingService().addLogListener(Level.ALL, logEvent -> {
             sbLogs.append(logEvent.getLogRecord().getMessage());

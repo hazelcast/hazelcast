@@ -25,7 +25,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.IMap;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -78,7 +77,7 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         }
     }
 
-    protected static @NotNull Pipeline getPipeline(StreamSource<ChangeRecord> source, IList<CustomerInfo> results) {
+    protected static @Nonnull Pipeline getPipeline(StreamSource<ChangeRecord> source, IList<CustomerInfo> results) {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
                 .withIngestionTimestamps()
@@ -94,7 +93,7 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         return pipeline;
     }
 
-    protected static @NotNull List<CustomerInfo> addedRecords() {
+    protected static @Nonnull List<CustomerInfo> addedRecords() {
         return List.of(
                 new CustomerInfo(UPDATE, new Customer(1004, "Anne Marie", "Kretchmar", "annek@noanswer.org")),
                 new CustomerInfo(INSERT, new Customer(1005, "Jason", "Bourne", "jason@bourne.org")),

@@ -29,12 +29,12 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.sql.SqlResult;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -606,7 +606,7 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
         }
 
         @Override
-        public int compareTo(@NotNull final PAKey o) {
+        public int compareTo(@Nonnull final PAKey o) {
             return hashCode() - o.hashCode();
         }
 

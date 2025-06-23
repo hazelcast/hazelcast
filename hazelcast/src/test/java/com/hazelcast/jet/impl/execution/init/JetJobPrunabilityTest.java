@@ -34,8 +34,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -43,6 +41,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.List;
 import java.util.Map;
@@ -261,7 +260,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         }
 
         @Override
-        public void init(@NotNull Context context) throws Exception {
+        public void init(@Nonnull Context context) throws Exception {
             assertEquals(expectedTotalParallelism, context.totalParallelism());
         }
 
@@ -271,7 +270,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
             return wrappingPms.getRequiredPermission();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Map<String, String> getTags() {
             return wrappingPms.getTags();
@@ -289,7 +288,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         @Nonnull
         @Override
-        public Function<? super Address, ? extends ProcessorSupplier> get(@NotNull List<Address> addresses) {
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return wrappingPms.get(addresses);
         }
 
