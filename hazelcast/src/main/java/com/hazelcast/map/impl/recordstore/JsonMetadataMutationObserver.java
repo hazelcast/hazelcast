@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.query.impl.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -63,7 +63,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     @Override
     public void onUpdateRecord(@Nonnull Data key, @Nonnull Record record,
                                Object oldValue, Object newValue, boolean backup) {
-        updateValueMetadataIfNecessary(key, oldValue, newValue);
+        updateValueMetadataIfNecessary(key, newValue);
     }
 
     @Override
@@ -121,13 +121,13 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
     @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     private void updateValueMetadataIfNecessary(Data dataKey,
-                                                Object oldValue, Object updateValue) {
+                                                Object updateValue) {
         Object valueMetadata = null;
         try {
-            if (oldValue instanceof Data) {
-                valueMetadata = metadataInitializer.createFromData(serializationService.toData(updateValue));
+            if (updateValue instanceof Data data) {
+                valueMetadata = metadataInitializer.createFromData(data);
             } else {
-                valueMetadata = metadataInitializer.createFromObject(serializationService.toObject(updateValue));
+                valueMetadata = metadataInitializer.createFromObject(updateValue);
             }
         } catch (IOException e) {
             // silently ignore exception. Json string is allowed to be invalid.
