@@ -53,14 +53,7 @@
         <notes><![CDATA[
         False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_7@.*$</packageUrl>
-        <cpe>cpe:/a:apache:hadoop</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_21@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf.*$</packageUrl>
         <cpe>cpe:/a:apache:hadoop</cpe>
     </suppress>
     <suppress>
