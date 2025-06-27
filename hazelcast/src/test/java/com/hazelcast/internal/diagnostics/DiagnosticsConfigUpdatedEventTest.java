@@ -23,6 +23,7 @@ import com.hazelcast.internal.management.events.DiagnosticsConfigUpdatedEvent;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,14 +41,17 @@ import static org.junit.Assert.assertTrue;
 
 public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPluginTest {
 
-    private HazelcastInstance[] hazelcastInstances;
+    private List<HazelcastInstance> hazelcastInstances = new ArrayList<>();
+    private TestHazelcastInstanceFactory instanceFactory;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
     public void setup() {
-        hazelcastInstances = createHazelcastInstances(3);
+        instanceFactory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = instanceFactory.newInstances(regularInstanceConfig(), 3);
+        hazelcastInstances.addAll(Arrays.asList(instances));
     }
 
     @Test
@@ -64,7 +68,7 @@ public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPlugin
                 .setIncludeEpochTime(true);
 
         // assert for enabled
-        CountDownLatch latchForEnabled = new CountDownLatch(hazelcastInstances.length);
+        CountDownLatch latchForEnabled = new CountDownLatch(hazelcastInstances.size());
         List<Event> eventsForEnabled = new ArrayList<>();
         setListener(latchForEnabled, eventsForEnabled);
         setDiagnosticsConfig(diagnosticsConfig);
@@ -72,12 +76,50 @@ public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPlugin
 
 
         // assert for disabled
-        CountDownLatch latchForDisabled = new CountDownLatch(hazelcastInstances.length);
+        CountDownLatch latchForDisabled = new CountDownLatch(hazelcastInstances.size());
         List<Event> eventsForDisabled = new ArrayList<>();
         setListener(latchForDisabled, eventsForDisabled);
         diagnosticsConfig.setEnabled(false);
         setDiagnosticsConfig(diagnosticsConfig);
         assertEventEmittedEventually(diagnosticsConfig, latchForDisabled, eventsForDisabled);
+    }
+
+    @Test
+    public void testDiagnosticsConfigUpdatedEvent_whenNewMemberJoins() throws IOException {
+
+        DiagnosticsConfig diagnosticsConfig = null;
+        try {
+            diagnosticsConfig = new DiagnosticsConfig()
+                    .setEnabled(true)
+                    .setAutoOffDurationInMinutes(1)
+                    .setProperty(NetworkingImbalancePlugin.PERIOD_SECONDS.getName(), "100")
+                    .setLogDirectory(folder.newFolder().getAbsolutePath())
+                    .setFileNamePrefix("hz")
+                    .setMaxRolledFileSizeInMB(9)
+                    .setOutputType(DiagnosticsOutputType.FILE)
+                    .setIncludeEpochTime(true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // assert for enabled
+        CountDownLatch latchForEnabled = new CountDownLatch(hazelcastInstances.size());
+        List<Event> eventsForEnabled = new ArrayList<>();
+        setListener(latchForEnabled, eventsForEnabled);
+        setDiagnosticsConfig(diagnosticsConfig);
+
+        assertEventEmittedEventually(diagnosticsConfig, latchForEnabled, eventsForEnabled);
+
+        // Add new member and combine the list
+        hazelcastInstances.add(instanceFactory.newHazelcastInstance(regularInstanceConfig()));
+
+        assertTrueEventually(() -> assertAllInSafeState(hazelcastInstances));
+
+        // verify all members have diagnostics enabled
+        for (HazelcastInstance hazelcastInstance : hazelcastInstances) {
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
+            assertTrue(hazelcastInstance.getName() + " not enabled the diagnostics.", nodeEngine.getDiagnostics().isEnabled());
+        }
     }
 
     private void setListener(CountDownLatch latch, List<Event> events) {
@@ -98,7 +140,7 @@ public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPlugin
             Thread.currentThread().interrupt();
         }
 
-        List<String> uuids = new ArrayList<>(Arrays.stream(hazelcastInstances)
+        List<String> uuids = new ArrayList<>(hazelcastInstances.stream()
                 .map(Accessors::getNodeEngineImpl)
                 .map(nodeEngine -> nodeEngine.getLocalMember().getUuid().toString())
                 .toList());
@@ -133,6 +175,6 @@ public class DiagnosticsConfigUpdatedEventTest extends AbstractDiagnosticsPlugin
     }
 
     private void setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
-        ((DynamicConfigurationAwareConfig) hazelcastInstances[0].getConfig()).setDiagnosticsConfig(diagnosticsConfig);
+        ((DynamicConfigurationAwareConfig) hazelcastInstances.get(0).getConfig()).setDiagnosticsConfig(diagnosticsConfig);
     }
 }

@@ -23,7 +23,6 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -48,6 +47,7 @@ import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -200,6 +200,10 @@ public class ClusterWideConfigurationService implements
             Collection<? extends IdentifiedDataSerializable> values = entry.values();
             all.addAll(values);
         }
+        // since diagnostics config is single, cannot be managed in allConfigurations
+        if (diagnosticsConfig != null) {
+            all.add(diagnosticsConfig);
+        }
         return all.toArray(new IdentifiedDataSerializable[0]);
     }
 
@@ -218,6 +222,8 @@ public class ClusterWideConfigurationService implements
         for (Map<?, ?> entry : allConfigurations) {
             entry.clear();
         }
+        // since diagnostics config is single, cannot be managed in allConfigurations
+        diagnosticsConfig = null;
     }
 
     @Override
