@@ -661,7 +661,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.21.2</version>
+                <version>1.21.3</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
