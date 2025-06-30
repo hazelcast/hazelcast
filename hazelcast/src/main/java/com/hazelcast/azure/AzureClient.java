@@ -87,7 +87,7 @@ class AzureClient {
         LOGGER.finest("Fetching instances for subscription '%s' and resourceGroup '%s'",
                 subscriptionId, resourceGroup);
         Collection<AzureAddress> addresses = azureComputeApi.instances(subscriptionId, resourceGroup,
-                scaleSet, tag, accessToken);
+                tag, accessToken);
         LOGGER.finest("Found the following instances for project '%s' and zone '%s': %s",
                 subscriptionId, resourceGroup,
                 addresses);
