@@ -54,18 +54,21 @@ class AzureComputeApi {
         this.endpoint = endpoint;
     }
 
-    Collection<AzureAddress> instances(String subscriptionId, String resourceGroup, String scaleSet,
-                                       Tag tag, String accessToken) {
+    Collection<AzureAddress> instances(String subscriptionId, String resourceGroup, Tag tag, String accessToken) {
+        String urlForPrivateIpList = String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
+                + "/networkInterfaces?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
         String privateIpResponse = RestClient
-                .create(urlForPrivateIpList(subscriptionId, resourceGroup, scaleSet))
+                .create(urlForPrivateIpList)
                 .withHeader("Authorization", String.format("Bearer %s", accessToken))
                 .get()
                 .getBody();
 
         Map<String, AzureNetworkInterface> networkInterfaces = parsePrivateIpResponse(privateIpResponse);
 
+        String urlForPublicIpList = String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
+                + "/publicIPAddresses?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
         String publicIpResponse = RestClient
-                .create(urlForPublicIpList(subscriptionId, resourceGroup, scaleSet))
+                .create(urlForPublicIpList)
                 .withHeader("Authorization", String.format("Bearer %s", accessToken))
                 .get()
                 .getBody();
@@ -81,17 +84,6 @@ class AzureComputeApi {
         }
 
         return addresses;
-    }
-
-    private String urlForPrivateIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isNullOrEmptyAfterTrim(scaleSet)) {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
-                    + "/networkInterfaces?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
-        } else {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
-                            + "/virtualMachineScaleSets/%s/networkInterfaces?api-version=%s",
-                    endpoint, subscriptionId, resourceGroup, scaleSet, API_VERSION_SCALE_SET);
-        }
     }
 
     private Map<String, AzureNetworkInterface> parsePrivateIpResponse(String response) {
@@ -117,17 +109,6 @@ class AzureComputeApi {
             }
         }
         return interfaces;
-    }
-
-    private String urlForPublicIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isNullOrEmptyAfterTrim(scaleSet)) {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
-                    + "/publicIPAddresses?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
-        } else {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
-                            + "/virtualMachineScaleSets/%s/publicIPAddresses?api-version=%s",
-                    endpoint, subscriptionId, resourceGroup, scaleSet, API_VERSION_SCALE_SET);
-        }
     }
 
     private Map<String, String> parsePublicIpResponse(String response) {
