@@ -56,6 +56,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.timeout;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -376,7 +377,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         put(map, 1, 2);
         Mockito.verify(secondInterceptor).interceptPut(1, -2);
-        Mockito.verify(secondInterceptor).afterPut(-2);
+        Mockito.verify(secondInterceptor, timeout(ASSERT_TRUE_EVENTUALLY_TIMEOUT)).afterPut(-2);
         // This check is in place to maintain inherited tests compatibility, as EntryProcessor invokes interceptGet.
         Mockito.verify(secondInterceptor, Mockito.atLeast(0)).interceptGet(any());
         Mockito.verifyNoMoreInteractions(secondInterceptor);
