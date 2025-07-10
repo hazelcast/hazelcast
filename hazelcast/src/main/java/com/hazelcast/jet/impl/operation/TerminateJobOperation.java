@@ -31,7 +31,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * job. See also {@link TerminateExecutionOperation}, which is sent from
  * coordinator to members to terminate execution.
  */
-public class TerminateJobOperation extends AsyncJobOperation {
+public class TerminateJobOperation extends AsyncMasterAwareJobOperation {
 
     private TerminationMode terminationMode;
     private boolean isLightJob;
@@ -73,5 +73,10 @@ public class TerminateJobOperation extends AsyncJobOperation {
         super.readInternal(in);
         terminationMode = TerminationMode.values()[in.readByte()];
         isLightJob = in.readBoolean();
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return !isLightJob;
     }
 }

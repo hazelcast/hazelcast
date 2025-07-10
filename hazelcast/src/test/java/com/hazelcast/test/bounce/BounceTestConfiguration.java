@@ -34,6 +34,7 @@ public class BounceTestConfiguration {
     private final boolean avoidOverlappingTerminations;
     private final int bouncingIntervalSeconds;
     private final long maximumStaleSeconds;
+    private final boolean hasSteadyMember;
 
     /**
      * Indicates whether the test will be driven by member or client HazelcastInstances
@@ -61,7 +62,7 @@ public class BounceTestConfiguration {
     BounceTestConfiguration(int clusterSize, DriverType driverType,
                             Supplier<Config> memberConfigSupplier, int driverCount,
                             DriverFactory driverFactory, boolean useTerminate, boolean avoidOverlappingTerminations,
-                            int bouncingIntervalSeconds, long maximumStaleSeconds) {
+                            int bouncingIntervalSeconds, long maximumStaleSeconds, boolean hasSteadyMember) {
         this.clusterSize = clusterSize;
         this.driverType = driverType;
         this.memberConfigSupplier = memberConfigSupplier;
@@ -71,6 +72,7 @@ public class BounceTestConfiguration {
         this.avoidOverlappingTerminations = avoidOverlappingTerminations;
         this.bouncingIntervalSeconds = bouncingIntervalSeconds;
         this.maximumStaleSeconds = maximumStaleSeconds;
+        this.hasSteadyMember = hasSteadyMember;
     }
 
     public int getClusterSize() {
@@ -107,5 +109,9 @@ public class BounceTestConfiguration {
 
     public long getMaximumStaleSeconds() {
         return maximumStaleSeconds;
+    }
+
+    public boolean hasSteadyMember() {
+        return hasSteadyMember;
     }
 }

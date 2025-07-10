@@ -27,7 +27,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class SubmitJobOperation extends AsyncJobOperation {
+public class SubmitJobOperation extends AsyncMasterAwareJobOperation {
     private transient Object deserializedJobDefinition;
     private transient JobConfig deserializedJobConfig;
 
@@ -38,6 +38,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
     private Subject subject;
 
     public SubmitJobOperation() {
+        super();
     }
 
     public SubmitJobOperation(
@@ -99,5 +100,10 @@ public class SubmitJobOperation extends AsyncJobOperation {
         serializedJobConfig = IOUtil.readData(in);
         isLightJob = in.readBoolean();
         subject = in.readObject();
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return !isLightJob;
     }
 }

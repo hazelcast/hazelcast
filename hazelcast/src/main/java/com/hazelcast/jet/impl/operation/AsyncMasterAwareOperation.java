@@ -16,31 +16,23 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-
-import java.util.concurrent.CompletableFuture;
+import com.hazelcast.internal.cluster.impl.MasterNodeChangedException;
 
 /**
- * Resumes the execution of a suspended job.
+ * An abstract class for asynchronous operations that are aware of the master node.
+ * It ensures that the operation is executed on the master node if required.
  */
-public class ResumeJobOperation extends AsyncMasterOnlyJobOperation {
-
-    public ResumeJobOperation() {
-    }
-
-    public ResumeJobOperation(long jobId) {
-        super(jobId);
-    }
+public abstract class AsyncMasterAwareOperation extends AsyncOperation implements MasterAwareOperation {
 
     @Override
-    public CompletableFuture<Void> doRun() {
-        JetServiceBackend service = getJetServiceBackend();
-        return service.getJobCoordinationService().resumeJob(jobId());
+    public void beforeRun() throws Exception {
+         if (isRequireMasterExecution() && !isMaster()) {
+             throw new MasterNodeChangedException("This operation can only be executed on the master node.");
+        }
+        super.beforeRun();
     }
 
-    @Override
-    public int getClassId() {
-        return JetInitDataSerializerHook.RESUME_JOB_OP;
+    private boolean isMaster() {
+        return getNodeEngine().getClusterService().isMaster();
     }
 }

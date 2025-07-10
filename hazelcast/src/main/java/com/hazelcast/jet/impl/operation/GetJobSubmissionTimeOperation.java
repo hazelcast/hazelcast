@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class GetJobSubmissionTimeOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
+public class GetJobSubmissionTimeOperation extends AsyncMasterAwareJobOperation implements AllowedDuringPassiveState {
 
     private boolean isLightJob;
 
@@ -56,5 +56,10 @@ public class GetJobSubmissionTimeOperation extends AsyncJobOperation implements 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         isLightJob = in.readBoolean();
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return !isLightJob;
     }
 }

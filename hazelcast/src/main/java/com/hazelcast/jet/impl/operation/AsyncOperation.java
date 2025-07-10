@@ -44,7 +44,7 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
 public abstract class AsyncOperation extends Operation implements SelfResponseOperation, IdentifiedDataSerializable {
 
     @Override
-    public void beforeRun() {
+    public void beforeRun() throws Exception {
         JetServiceBackend service = getJetServiceBackend();
         service.getLiveOperationRegistry().register(this);
     }

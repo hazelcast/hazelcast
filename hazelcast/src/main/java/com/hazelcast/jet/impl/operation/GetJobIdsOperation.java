@@ -41,7 +41,7 @@ import static com.hazelcast.jet.Util.idToString;
  *     <li>get a single job id (if {@link #onlyJobId} != MIN_VALUE)
  * </ul>
  */
-public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringPassiveState {
+public class GetJobIdsOperation extends AsyncMasterAwareOperation implements AllowedDuringPassiveState {
 
     public static final long ALL_JOBS = Long.MIN_VALUE;
 
@@ -78,6 +78,13 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         super.readInternal(in);
         onlyName = in.readString();
         onlyJobId = in.readLong();
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        // TODO: Temporary solution.
+        // A complete fix will be implemented as part of HZG-409.
+        return onlyName != null;
     }
 
     public static final class GetJobIdsResult implements IdentifiedDataSerializable {

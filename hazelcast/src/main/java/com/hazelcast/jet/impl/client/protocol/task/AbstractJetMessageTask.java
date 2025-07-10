@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -26,7 +25,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.security.permission.JobPermission;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -91,21 +89,21 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
-        Address address;
         if (getLightJobCoordinator() != null) {
             MemberImpl member = nodeEngine.getClusterService().getMember(getLightJobCoordinator());
             if (member == null) {
                 throw new TopologyChangedException("Light job coordinator left the cluster");
             }
-            address = member.getAddress();
-        } else {
-            address = nodeEngine.getMasterAddress();
-            if (address == null) {
-                throw new RetryableHazelcastException("master not yet known");
-            }
+            return nodeEngine.getOperationService().createInvocationBuilder(
+                    JetServiceBackend.SERVICE_NAME,
+                    operation,
+                    member.getAddress()
+            );
         }
-        return nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                operation, address);
+        return nodeEngine.getOperationService().createMasterInvocationBuilder(
+                JetServiceBackend.SERVICE_NAME,
+                operation
+        );
     }
 
     protected JetServiceBackend getJetServiceBackend() {

@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class JoinSubmittedJobOperation extends AsyncJobOperation {
+public class JoinSubmittedJobOperation extends AsyncMasterAwareJobOperation {
 
     private boolean isLightJob;
 
@@ -59,5 +59,10 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         isLightJob = in.readBoolean();
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return !isLightJob;
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.MasterNodeChangedException;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -1477,7 +1478,11 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
-            throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
+            sneakyThrow(
+                    new MasterNodeChangedException(
+                            error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress()
+                    )
+            );
         }
     }
 

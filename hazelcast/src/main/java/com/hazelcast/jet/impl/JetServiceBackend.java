@@ -441,8 +441,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void beforeClusterStateChange(ClusterState requestedState) {
         if (requestedState == PASSIVE) {
             try {
-                nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                                new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
+                nodeEngine.getOperationService().createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME,
+                                new PrepareForPassiveClusterOperation())
                         .invoke().get();
             } catch (InterruptedException | ExecutionException e) {
                 throw rethrow(e);

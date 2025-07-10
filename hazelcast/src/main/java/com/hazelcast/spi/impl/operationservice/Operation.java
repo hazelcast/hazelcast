@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -603,7 +604,10 @@ public abstract class Operation implements DataSerializable, Tenantable {
      * @return <code>ExceptionAction</code>
      */
     public ExceptionAction onMasterInvocationException(Throwable throwable) {
-        if (throwable instanceof WrongTargetException || throwable instanceof MemberLeftException) {
+        if (throwable instanceof WrongTargetException
+                || throwable instanceof MemberLeftException
+                || throwable instanceof HazelcastInstanceNotActiveException
+        ) {
             return RETRY_INVOCATION;
         }
         return onInvocationException(throwable);
