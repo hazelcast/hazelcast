@@ -1478,10 +1478,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
-            sneakyThrow(
-                    new MasterNodeChangedException(
-                            error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress()
-                    )
+            throw new MasterNodeChangedException(
+                    error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress()
             );
         }
     }

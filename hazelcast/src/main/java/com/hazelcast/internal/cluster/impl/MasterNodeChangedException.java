@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.core.MemberLeftException;
-
 /**
  * Exception indicating that the master node of the cluster has changed during the process.
  * <p>
@@ -26,7 +24,7 @@ import com.hazelcast.core.MemberLeftException;
  * <p>
  * This exception is used to trigger retries.
  */
-public class MasterNodeChangedException extends MemberLeftException {
+public class MasterNodeChangedException extends ClusterTopologyChangedException {
 
     public MasterNodeChangedException() {
     }
