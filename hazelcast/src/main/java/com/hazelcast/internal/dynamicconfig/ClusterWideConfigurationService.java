@@ -201,8 +201,9 @@ public class ClusterWideConfigurationService implements
             all.addAll(values);
         }
         // since diagnostics config is single, cannot be managed in allConfigurations
-        if (diagnosticsConfig != null) {
-            all.add(diagnosticsConfig);
+        DiagnosticsConfig effectiveDiagnosticsConfig = getDiagnosticsConfig();
+        if (effectiveDiagnosticsConfig != null) {
+            all.add(effectiveDiagnosticsConfig);
         }
         return all.toArray(new IdentifiedDataSerializable[0]);
     }
@@ -261,8 +262,7 @@ public class ClusterWideConfigurationService implements
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config,
-                                                                  BiFunction<ClusterService, IdentifiedDataSerializable,
-                                                                  DynamicConfigOperationSupplier> dynamicConfigOpGenerator) {
+        BiFunction<ClusterService, IdentifiedDataSerializable, DynamicConfigOperationSupplier> dynamicConfigOpGenerator) {
         checkConfigVersion(config);
         // we create a defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
@@ -652,6 +652,11 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public DiagnosticsConfig getDiagnosticsConfig() {
+        // it's not null, so it's set before (not reset), so that get the effective one.
+        if (diagnosticsConfig != null) {
+            // Diagnostics config might be set to disable by its auto-off, and it should be reflected to here.
+            diagnosticsConfig = ((NodeEngineImpl) nodeEngine).getDiagnostics().getDiagnosticsConfig();
+        }
         return diagnosticsConfig;
     }
 

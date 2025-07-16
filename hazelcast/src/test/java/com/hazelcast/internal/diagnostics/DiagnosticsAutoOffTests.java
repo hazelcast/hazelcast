@@ -19,6 +19,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -40,9 +41,10 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
 
     private HazelcastInstance hz;
     Diagnostics diagnostics;
+    TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     public void setup(Config config) {
-        hz = createHazelcastInstance(config);
+        hz = factory.newHazelcastInstance(config);
         diagnostics = TestUtil.getNode(hz).getNodeEngine().getDiagnostics();
         // shorten the auto-off timer for the test, won't work when statically enabled.
         diagnostics.autoOffDurationUnit = TimeUnit.SECONDS;
@@ -169,6 +171,31 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         assertThrows(IllegalStateException.class, () -> {
             diagnostics.setConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(1));
         });
+    }
+
+    @Test
+    public void testAfterAutoOff_newJoinerReceivesDisabledConfig() {
+        // After enabling diagnostics config along with auto-off, and diagnostics turned off automatically, if a
+        // new member joins, it should receive the config as disabled.
+        setup(new Config());
+
+        // Enable diagnostics with auto-off for 5 secs
+        setDynamicConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(5));
+        assertTrue(diagnostics.isEnabled());
+
+        // Auto off should disable diagnostics after 5 secs
+        assertTrueEventually(() -> {
+            assertFalse(diagnostics.isEnabled());
+            assertTrue(diagnostics.getAutoOffFuture() == null || diagnostics.getAutoOffFuture().isDone());
+        });
+
+        // Create a new member to join the cluster
+        HazelcastInstance newMember = factory.newHazelcastInstance(new Config());
+        assertAllInSafeState(factory.getAllHazelcastInstances());
+
+        // The new member should receive the diagnostics config as disabled
+        Diagnostics newMemberDiagnostics = TestUtil.getNode(newMember).getNodeEngine().getDiagnostics();
+        assertFalse(newMemberDiagnostics.isEnabled());
     }
 
     private @Nonnull StringBuilder captureLogs() {
