@@ -331,6 +331,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 .setReconnectBehavior(reconnectBehavior)
                 .setShouldStateBeResetOnReconnect(resetStateOnReconnect)
                 .setSnapshotMode(INITIAL)
+                .setCustomProperty("plugin.name", "pgoutput")
                 .build();
     }
 

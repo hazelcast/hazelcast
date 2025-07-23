@@ -64,6 +64,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
                 .setDatabaseName(DATABASE_NAME)
+                .setCustomProperty("plugin.name", "pgoutput")
                 .setReconnectBehavior(RetryStrategies.indefinitely(1000));
     }
 
