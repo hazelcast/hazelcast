@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PartialContextTest extends AppContextTestBase {
 
     @Test
+    @Override
     void testMap() {
         assertThat((Object) map1).isNull();
         assertThat((Object) testMap).isNotNull();

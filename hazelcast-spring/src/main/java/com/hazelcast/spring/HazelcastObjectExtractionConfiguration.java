@@ -41,6 +41,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -139,6 +140,11 @@ public class HazelcastObjectExtractionConfiguration {
                     .register(hazelcastConfiguration.getCPSubsystemConfig().getSemaphoreConfigs(), ISemaphore.class,
                               (i, n) -> i.getCPSubsystem().getSemaphore(n))
             ;
+        }
+
+        @Override
+        public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory)
+                throws BeansException {
         }
     }
 

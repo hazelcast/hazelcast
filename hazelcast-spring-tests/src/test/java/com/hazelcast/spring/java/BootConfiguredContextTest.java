@@ -35,6 +35,7 @@ public class BootConfiguredContextTest
         extends AppContextTestBase {
 
     @Test
+    @Override
     void testMap() {
         assertThat((Object) map1).isNotNull();
         assertThat((Object) testMap).isNotNull();
