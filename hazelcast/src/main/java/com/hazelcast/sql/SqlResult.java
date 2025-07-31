@@ -109,7 +109,10 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * Returns the number of rows updated by the statement or -1 if this result
      * is a row set. In case the result doesn't contain rows but the update
      * count isn't applicable or known, 0 is returned.
+     *
+     * @deprecated since 5.6, this method always returns {@code 0} for DML statements and should not be used.
      */
+    @Deprecated(since = "5.6", forRemoval = true)
     long updateCount();
 
     /**
