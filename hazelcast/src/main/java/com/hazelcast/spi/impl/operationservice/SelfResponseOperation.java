@@ -21,7 +21,7 @@ package com.hazelcast.spi.impl.operationservice;
  * method internally, meaning they are safe to invoke when a {@link java.util.concurrent.Future}
  * is returned, despite {@link Operation#returnsResponse()} returning {@code False}.
  *
- * @since 6.0
+ * @since 5.5
  */
 public interface SelfResponseOperation {
 }

@@ -19,7 +19,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 /**
  * A {@link Runnable} that declares checked exception.
- * @since 6.0
+ * @since 5.5
  */
 @FunctionalInterface
 public interface ThrowingRunnable extends Runnable {

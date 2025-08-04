@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 /**
  * A {@link Consumer} that declares checked exception.
  * @param <T> type of consumed item
- * @since 6.0
+ * @since 5.5
  */
 @FunctionalInterface
 public interface ThrowingConsumer<T> extends Consumer<T> {
