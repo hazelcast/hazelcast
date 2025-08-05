@@ -301,7 +301,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Increments throw count of {@link QueryResultSizeExceededException}
      *
-     * @since 5.5
+     * @since 6.0
      */
     default void incrementQueryResultSizeExceededCount() {
         // no-op for most classes, except IMap
@@ -310,7 +310,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Get throw count of {@link QueryResultSizeExceededException}
      *
-     * @since 5.5
+     * @since 6.0
      */
     default long getQueryResultSizeExceededCount() {
         return 0L;
