@@ -23,11 +23,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.Serial;
 
 import static java.util.Objects.requireNonNull;
 
 public class AggregateOpAggregator<T, A, R> implements Aggregator<T, R>, IdentifiedDataSerializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private AggregateOperation1<? super T, A, ? extends R> aggrOp;
     private A accumulator;
 

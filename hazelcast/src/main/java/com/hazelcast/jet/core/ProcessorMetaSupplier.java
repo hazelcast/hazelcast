@@ -628,7 +628,8 @@ public interface ProcessorMetaSupplier extends Serializable {
     @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
     @SerializableByConvention
     class SpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         protected ProcessorSupplier supplier;
         protected Address memberAddress;
 
@@ -712,7 +713,8 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     class RandomMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         private ProcessorSupplier supplier;
 
         RandomMemberPms() {
@@ -771,6 +773,9 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         @Override
         @Nonnull
         public Collection<? extends Processor> get(int count) {

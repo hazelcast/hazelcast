@@ -42,6 +42,8 @@ import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_SEQUENCE
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_TIMESTAMP;
 
 public class InitialShardIterators implements IdentifiedDataSerializable, Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private List<Specification> specifications = new ArrayList<>();
 

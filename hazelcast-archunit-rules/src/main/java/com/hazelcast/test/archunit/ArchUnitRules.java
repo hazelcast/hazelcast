@@ -39,7 +39,6 @@ public final class ArchUnitRules {
             .areNotEnums()
             .and().doNotHaveModifier(JavaModifier.ABSTRACT)
             .and().implement(Serializable.class)
-            .and().doNotImplement("com.hazelcast.nio.serialization.DataSerializable")
             .should(haveValidSerialVersionUid())
             .allowEmptyShould(true);
 

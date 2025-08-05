@@ -27,12 +27,14 @@ import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ProcessorSupplierFromSimpleSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private SupplierEx<? extends Processor> simpleSupplier;
 
     // for deserialization

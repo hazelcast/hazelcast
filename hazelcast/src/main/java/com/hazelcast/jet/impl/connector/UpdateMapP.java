@@ -34,6 +34,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,11 +80,12 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
         pendingInPartition[partitionId]++;
     }
 
-    @SuppressFBWarnings(value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
-        justification = "the class is never java-serialized")
+    @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
     public static class ApplyFnEntryProcessor<K, V, T>
             implements EntryProcessor<K, V, Void>, IdentifiedDataSerializable,
             SerializationServiceAware {
+        @Serial
+        private static final long serialVersionUID = 1L;
         private Map<Data, Object> keysToUpdate;
         private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
         private SerializationService serializationService;

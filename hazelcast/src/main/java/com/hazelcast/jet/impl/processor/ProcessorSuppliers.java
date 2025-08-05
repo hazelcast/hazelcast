@@ -27,9 +27,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.Serial;
 
 public final class ProcessorSuppliers {
     public static class AggregatePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
         private AggregateOperation<A, R> aggrOp;
 
         public AggregatePSupplier() {
@@ -66,6 +69,8 @@ public final class ProcessorSuppliers {
     }
 
     public static class ProcessorMapPSupplier<T, R> implements IdentifiedDataSerializable, SupplierEx<Processor> {
+        @Serial
+        private static final long serialVersionUID = 1L;
         private FunctionEx<? super T, ? extends R> mapFn;
 
         public ProcessorMapPSupplier() {

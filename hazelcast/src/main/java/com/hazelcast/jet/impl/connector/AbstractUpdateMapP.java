@@ -40,6 +40,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -211,7 +212,8 @@ public abstract class AbstractUpdateMapP<T, K, V> extends AsyncHazelcastWriterP 
 
     public static class ApplyValuesEntryProcessor<K, V>
             implements EntryProcessor<K, V, Void>, IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         private Map<Data, Object> keysToUpdate;
 
         public ApplyValuesEntryProcessor() { //needed for (de)serialization

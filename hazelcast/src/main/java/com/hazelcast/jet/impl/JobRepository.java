@@ -54,6 +54,7 @@ import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -750,7 +751,8 @@ public class JobRepository {
     public static final class UpdateJobExecutionRecordEntryProcessor implements
             EntryProcessor<Long, JobExecutionRecord, Object>,
             IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         private long jobId;
         @SuppressFBWarnings(value = "SE_BAD_FIELD",
                 justification = "this class is not going to be java-serialized")
@@ -811,7 +813,8 @@ public class JobRepository {
 
     public static class FilterJobResultByNamePredicate
             implements Predicate<Long, JobResult>, IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         private String name;
 
         public FilterJobResultByNamePredicate() {
