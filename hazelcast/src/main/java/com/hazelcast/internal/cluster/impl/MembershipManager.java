@@ -118,7 +118,7 @@ public class MembershipManager {
      */
     private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef = new AtomicReference<>(Collections.emptyMap());
 
-    private final Set<MemberImpl> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<MemberImpl> suspectedMembers = ConcurrentHashMap.newKeySet();
     private final int mastershipClaimTimeoutSeconds;
     private final boolean partialDisconnectionDetectionEnabled;
     private final PartialDisconnectionHandler partialDisconnectionHandler;

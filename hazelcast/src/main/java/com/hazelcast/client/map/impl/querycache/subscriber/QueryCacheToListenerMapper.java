@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class QueryCacheToListenerMapper {
 
     private static final ConstructorFunction<String, Collection<ListenerInfo>> LISTENER_SET_CONSTRUCTOR
-            = arg -> Collections.newSetFromMap(new ConcurrentHashMap<>());
+            = arg -> ConcurrentHashMap.newKeySet();
 
     private final ConcurrentMap<String, Collection<ListenerInfo>> registrations;
 

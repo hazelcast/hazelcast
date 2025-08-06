@@ -16,13 +16,9 @@
 
 package com.hazelcast.config.security;
 
-import static java.util.Collections.newSetFromMap;
-import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toCollection;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -213,8 +209,7 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
         public UserDto(@Nonnull String password, @Nonnull String... roles) {
             this.password = requireNonEmpty(password, "Password can't be empty");
             requireNonNull(roles, "Roles can't be null");
-            this.roles = unmodifiableSet(
-                    Arrays.stream(roles).collect(toCollection(() -> newSetFromMap(new ConcurrentHashMap<>()))));
+            this.roles = Set.of(roles);
         }
 
         @Override

@@ -161,7 +161,7 @@ public class MigrationManagerImpl implements MigrationManager {
     private boolean triggerRepartitioningWhenClusterStateAllowsMigration;
     private final int maxParallelMigrations;
     private final AtomicInteger migrationCount = new AtomicInteger();
-    private final Set<MigrationInfo> finalizingMigrationsRegistry = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<MigrationInfo> finalizingMigrationsRegistry = ConcurrentHashMap.newKeySet();
     private final Executor asyncExecutor;
 
     /**

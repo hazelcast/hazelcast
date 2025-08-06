@@ -18,7 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.internal.util.counters.MwCounter;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,7 +32,7 @@ public class ClientEndpointStatistics {
     private final MwCounter connectionsOpened = MwCounter.newMwCounter();
     private final MwCounter connectionsClosed = MwCounter.newMwCounter();
     private final MwCounter totalConnectionDuration = MwCounter.newMwCounter();
-    private final Set<String> clientVersions = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<String> clientVersions = ConcurrentHashMap.newKeySet();
 
     public void incrementConnectionsOpenedCount() {
         connectionsOpened.inc();

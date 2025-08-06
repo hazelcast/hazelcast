@@ -32,7 +32,6 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -463,7 +462,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     protected Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> createConcurrentSet() {
-        return Collections.newSetFromMap(new ConcurrentHashMap<>());
+        return ConcurrentHashMap.newKeySet();
     }
 
     public CacheConfiguration<K, V> setKeyType(Class<K> keyType) {

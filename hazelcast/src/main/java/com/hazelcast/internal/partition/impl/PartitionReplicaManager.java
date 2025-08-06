@@ -61,7 +61,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_SYNC_REQUEST_COUNTER;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static java.lang.String.format;
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Maintains the version values for the partition replicas and manages the replica-related operations for partitions
@@ -135,7 +134,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncTimeoutScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler,
                 new ReplicaSyncTimeoutProcessor(), ScheduleType.POSTPONE);
 
-        replicaSyncRequests = newSetFromMap(new ConcurrentHashMap<>(partitionCount));
+        replicaSyncRequests = ConcurrentHashMap.newKeySet(partitionCount);
     }
 
     /**

@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
@@ -368,7 +367,7 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             TEST_NAME_TO_INVOKED_MEMBER_UUIDS
-                    .computeIfAbsent(testName, k -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
+                    .computeIfAbsent(testName, k -> ConcurrentHashMap.newKeySet())
                     .add(getNodeEngine().getLocalMember().getUuid());
             super.run();
         }

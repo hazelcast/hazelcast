@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_SEGMENT_LISTENER_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_SEGMENT_PUBLICATION_COUNT;
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Segment of the event service. Each segment is responsible for a single service and
@@ -135,7 +134,7 @@ public class EventServiceSegment<S> {
         Collection<Registration> listenerList = registrations.get(topic);
         if (listenerList == null && forceCreate) {
             ConstructorFunction<String, Collection<Registration>> func
-                    = key -> newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
+                    = key -> ConcurrentHashMap.newKeySet();
             return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
         }
         return listenerList;

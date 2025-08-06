@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static java.util.Collections.newSetFromMap;
 
 import java.util.Objects;
 import java.util.Set;
@@ -34,7 +33,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     private boolean dataAccessEnabled = true;
 
-    private final Set<String> trustedInterfaces = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<String> trustedInterfaces = ConcurrentHashMap.newKeySet();
 
     public ManagementCenterConfig() {
     }

@@ -49,8 +49,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.newSetFromMap;
-
 /**
  * Serialization service that intercepts and samples serialized objects.
  * Employed to gather samples of serialized objects used in member-to-member communication during test suite
@@ -63,7 +61,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     static final ConcurrentMap<String, List<byte[]>> SERIALIZED_SAMPLES_PER_CLASS_NAME =
             new ConcurrentHashMap<>(1000);
     // cache classes for which samples have already been captured
-    static final Set<String> SAMPLED_CLASSES = newSetFromMap(new ConcurrentHashMap<>(1000));
+    static final Set<String> SAMPLED_CLASSES = ConcurrentHashMap.newKeySet(1000);
     static final ConcurrentMap<String, Schema> SAMPLED_CLASSES_SCHEMAS = new ConcurrentHashMap<>(1000);
 
     private static final int MAX_SERIALIZED_SAMPLES_PER_CLASS = 5;

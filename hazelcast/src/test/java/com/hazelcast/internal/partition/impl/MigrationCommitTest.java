@@ -39,7 +39,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -771,7 +770,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     private static class CollectMigrationTaskOnCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
-        private final Set<MigrationInfo> migrations = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<MigrationInfo> migrations = ConcurrentHashMap.newKeySet();
 
         private volatile boolean commit;
         private volatile HazelcastInstance instance;

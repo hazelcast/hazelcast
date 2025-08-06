@@ -40,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
 import static com.hazelcast.test.Accessors.getOperationService;
-import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
 
-    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<>());
+    private static final Set<String> backupRunning = ConcurrentHashMap.newKeySet();
 
     // we use 20 seconds so we don't get spurious build failures
     private static final int COMPLETION_TIMEOUT_SECONDS = 20;

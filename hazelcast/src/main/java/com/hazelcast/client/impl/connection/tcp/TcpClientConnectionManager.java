@@ -1448,7 +1448,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      */
     private class ConnectToAllClusterMembersTask implements Runnable {
 
-        private final Set<UUID> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<UUID> connectingAddresses = ConcurrentHashMap.newKeySet();
 
         @Override
         public void run() {

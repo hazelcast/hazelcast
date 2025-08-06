@@ -68,7 +68,6 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.internal.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
-import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -111,7 +110,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     private final int balancerIntervalSeconds;
     private final int inputThreadCount;
     private final int outputThreadCount;
-    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<NioChannel> channels = ConcurrentHashMap.newKeySet();
     private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;

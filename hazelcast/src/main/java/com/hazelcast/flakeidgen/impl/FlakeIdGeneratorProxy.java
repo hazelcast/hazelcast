@@ -39,7 +39,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Thread.currentThread;
-import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class FlakeIdGeneratorProxy
@@ -77,7 +76,7 @@ public class FlakeIdGeneratorProxy
      * Set of member UUIDs of which we know have node IDs out of range. These members are never again used
      * to generate unique IDs, because this error is unrecoverable.
      */
-    private final Set<UUID> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<UUID> outOfRangeMembers = ConcurrentHashMap.newKeySet();
 
     FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service, UUID source) {
         super(nodeEngine, service);

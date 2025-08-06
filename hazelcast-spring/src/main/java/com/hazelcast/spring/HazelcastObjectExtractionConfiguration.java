@@ -53,7 +53,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,7 +70,7 @@ public class HazelcastObjectExtractionConfiguration {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastObjectExtractionConfiguration.class);
 
-    private static Set<Class<?>> registeredConfigClasses = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private static Set<Class<?>> registeredConfigClasses = ConcurrentHashMap.newKeySet();
 
     @ConditionalOnMissingBean(ExposeHazelcastObjects.Configuration.class)
     public static class ExposeConf {

@@ -84,7 +84,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -121,7 +120,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private final TaskletExecutionService taskletExecutionService;
     private final JobClassLoaderService jobClassloaderService;
 
-    private final Set<Long> executionContextJobIds = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<Long> executionContextJobIds = ConcurrentHashMap.newKeySet();
 
     // key: executionId
     private final ConcurrentMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();

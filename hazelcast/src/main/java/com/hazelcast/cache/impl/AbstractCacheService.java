@@ -92,7 +92,6 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "ClassFanOutComplexity", "MethodCount"})
@@ -130,7 +129,7 @@ public abstract class AbstractCacheService implements ICacheService,
                     CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
 
     protected final ConstructorFunction<String, Set<Closeable>> cacheResourcesConstructorFunction =
-            name -> newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
+            name -> ConcurrentHashMap.newKeySet();
 
     // mutex factory ensures each Set<Closeable> of cache resources is only constructed and inserted in resources map once
     protected final ContextMutexFactory cacheResourcesMutexFactory = new ContextMutexFactory();

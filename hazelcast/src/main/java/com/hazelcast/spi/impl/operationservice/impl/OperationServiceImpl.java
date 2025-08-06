@@ -84,7 +84,6 @@ import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_MAX_RETRY_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -114,7 +113,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
     // operations are added/removed using the {@link Offload} functionality.
     @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS)
-    final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<>());
+    final Set<Operation> asyncOperations = ConcurrentHashMap.newKeySet();
     final ConcurrentMap<Class, LatencyDistribution> opLatencyDistributions;
 
     final InvocationRegistry invocationRegistry;
