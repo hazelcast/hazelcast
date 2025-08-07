@@ -348,6 +348,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Data key = entry.getKey();
             Record record = entry.getValue();
 
+            assert key != null : "Got null key from storage iterator";
+            assert record != null : "Got null record from storage iterator";
+
             if (includeExpiredRecords
                     || hasExpired(key, now, backup) == ExpiryReason.NOT_EXPIRED) {
                 consumer.accept(key, record);

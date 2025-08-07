@@ -200,7 +200,8 @@ public class PartitionWideEntryOperation extends MapOperation
         recordStore.forEach((key, record) -> {
             Data dataKey = toHeapData(key);
 
-            Data response = operator.operateOnKey(dataKey).getResult();
+            // for native use variant that does not expire entries (see comment below)
+            Data response = operator.operateOnKeyValueDuringScan(dataKey, record.getValue()).getResult();
             if (response != null) {
                 responses.add(dataKey, response);
             }
