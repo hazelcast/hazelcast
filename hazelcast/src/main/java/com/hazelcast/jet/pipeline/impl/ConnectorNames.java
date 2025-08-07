@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline;
+package com.hazelcast.jet.pipeline.impl;
 
 /**
  * Includes builtin connector names for phone home purposes. These connectors live in {@link Sources} and {@link Sinks}

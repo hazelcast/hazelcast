@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 public interface ConnectorNameAware {
     /**
      * The connector name in the phone home data. that'll be used in the phone homes.
-     * See {@link com.hazelcast.jet.pipeline.ConnectorNames}
+     * See {@link com.hazelcast.jet.pipeline.impl.ConnectorNames}
      */
     @Nullable String getConnectorName();
 }
