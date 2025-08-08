@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns statistics of the task
  */
 @SuppressWarnings("unused")
-@Generated("a02b73163560bc35984d5823d3e36b7c")
+@Generated("ff17c393f7b2058f189e982c48d96b4a")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -55,7 +55,7 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
     private ScheduledExecutorGetStatsFromMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -98,7 +98,7 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * never blocks,and returns immediately.
  */
 @SuppressWarnings("unused")
-@Generated("e04a1bded6422e1f6675389b33af01d3")
+@Generated("1424df6151234f97adf66c6ff765e6e9")
 public final class MapForceUnlockCodec {
     //hex: 0x013300
     public static final int REQUEST_MESSAGE_TYPE = 78592;
@@ -51,7 +51,7 @@ public final class MapForceUnlockCodec {
     private MapForceUnlockCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the results mapped by each key in the map.
  */
 @SuppressWarnings("unused")
-@Generated("aa5ee72a7c6f1b238d7152cf614f86ce")
+@Generated("67631d635b0428c04b5508b3bc94cb2d")
 public final class MapExecuteWithPredicateCodec {
     //hex: 0x013100
     public static final int REQUEST_MESSAGE_TYPE = 78080;
@@ -50,7 +50,7 @@ public final class MapExecuteWithPredicateCodec {
     private MapExecuteWithPredicateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

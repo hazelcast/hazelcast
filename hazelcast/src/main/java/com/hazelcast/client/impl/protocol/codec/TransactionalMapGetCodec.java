@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the value for the specified key, or null if this map does not contain this key.
  */
 @SuppressWarnings("unused")
-@Generated("97697f976552b717cb6364a3c90a849a")
+@Generated("6a307b009112ca0dce8cb8844fac7a2b")
 public final class TransactionalMapGetCodec {
     //hex: 0x0E0200
     public static final int REQUEST_MESSAGE_TYPE = 918016;
@@ -51,7 +51,7 @@ public final class TransactionalMapGetCodec {
     private TransactionalMapGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

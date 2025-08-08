@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * value in the map. You should put the modified value back to make changes visible to all nodes.
  */
 @SuppressWarnings("unused")
-@Generated("acdd4d8e68da52a3186a2061fc64dd7d")
+@Generated("8a7ceb9406baabbec9cacb47b84f2bdd")
 public final class MapGetCodec {
     //hex: 0x010200
     public static final int REQUEST_MESSAGE_TYPE = 66048;
@@ -51,7 +51,7 @@ public final class MapGetCodec {
     private MapGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

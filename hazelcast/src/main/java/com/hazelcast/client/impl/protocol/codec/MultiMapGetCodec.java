@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the map are NOT reflected in the collection, and vice-versa.
  */
 @SuppressWarnings("unused")
-@Generated("4397fee1ba0fda7a123aaac6983cdc70")
+@Generated("89453d9d2f25f359e56276ca7248a394")
 public final class MultiMapGetCodec {
     //hex: 0x020200
     public static final int REQUEST_MESSAGE_TYPE = 131584;
@@ -51,7 +51,7 @@ public final class MultiMapGetCodec {
     private MultiMapGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

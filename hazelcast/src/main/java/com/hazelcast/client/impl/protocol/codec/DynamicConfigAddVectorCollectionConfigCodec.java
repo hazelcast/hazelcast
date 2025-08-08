@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a new vector collection configuration to a running cluster.
  */
 @SuppressWarnings("unused")
-@Generated("d43f7b6044aeff86e4d9eba48be499cb")
+@Generated("0ebf257b3a3112080840e7cc961bcdf8")
 public final class DynamicConfigAddVectorCollectionConfigCodec {
     //hex: 0x1B1400
     public static final int REQUEST_MESSAGE_TYPE = 1774592;
@@ -52,7 +52,7 @@ public final class DynamicConfigAddVectorCollectionConfigCodec {
     private DynamicConfigAddVectorCollectionConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

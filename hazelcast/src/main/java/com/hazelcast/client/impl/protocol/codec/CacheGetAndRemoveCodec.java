@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
 @SuppressWarnings("unused")
-@Generated("493c3a18736614b8feb7fd7a20e33e86")
+@Generated("2167455b1b45431ad2ebe3cfe1234525")
 public final class CacheGetAndRemoveCodec {
     //hex: 0x130A00
     public static final int REQUEST_MESSAGE_TYPE = 1247744;
@@ -50,7 +50,7 @@ public final class CacheGetAndRemoveCodec {
     private CacheGetAndRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

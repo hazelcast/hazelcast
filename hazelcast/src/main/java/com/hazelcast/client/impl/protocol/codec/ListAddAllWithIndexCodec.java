@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
 @SuppressWarnings("unused")
-@Generated("523b20a47567bcdd1d7c896e9b3c9a19")
+@Generated("fc0dacea76f3819c92e9ae8659643076")
 public final class ListAddAllWithIndexCodec {
     //hex: 0x050E00
     public static final int REQUEST_MESSAGE_TYPE = 331264;
@@ -55,7 +55,7 @@ public final class ListAddAllWithIndexCodec {
     private ListAddAllWithIndexCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

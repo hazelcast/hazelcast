@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
 @SuppressWarnings("unused")
-@Generated("44ab3a7d96ba525d3728245f3add9bdd")
+@Generated("3ba80f2048c4418bdd7fff3cf1ffc6d1")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -61,7 +61,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
     private CacheAddNearCacheInvalidationListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

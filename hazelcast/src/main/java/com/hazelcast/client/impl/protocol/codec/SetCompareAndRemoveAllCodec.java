@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * asymmetric set difference of the two sets.
  */
 @SuppressWarnings("unused")
-@Generated("bdd1dd0efe30807972ec19f33ca7ee31")
+@Generated("93610f190354b3fd40580eb40c984196")
 public final class SetCompareAndRemoveAllCodec {
     //hex: 0x060700
     public static final int REQUEST_MESSAGE_TYPE = 395008;
@@ -52,7 +52,7 @@ public final class SetCompareAndRemoveAllCodec {
     private SetCompareAndRemoveAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

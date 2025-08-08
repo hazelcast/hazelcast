@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and disposes the result of the execution with the given sequence
  */
 @SuppressWarnings("unused")
-@Generated("b2d3c5327b4b070aed7a00928a0d6827")
+@Generated("61010254901cbae9ffda78a8775f1689")
 public final class DurableExecutorRetrieveAndDisposeResultCodec {
     //hex: 0x180600
     public static final int REQUEST_MESSAGE_TYPE = 1574400;
@@ -50,7 +50,7 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
     private DurableExecutorRetrieveAndDisposeResultCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

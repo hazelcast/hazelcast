@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
 @SuppressWarnings("unused")
-@Generated("7a137f8646e567531d81b582d6b43667")
+@Generated("44edaff7aaa41d1360ce64a32f62b606")
 public final class ReplicatedMapPutCodec {
     //hex: 0x0D0100
     public static final int REQUEST_MESSAGE_TYPE = 852224;
@@ -52,7 +52,7 @@ public final class ReplicatedMapPutCodec {
     private ReplicatedMapPutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

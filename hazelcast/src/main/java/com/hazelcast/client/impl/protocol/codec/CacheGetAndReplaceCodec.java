@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * store the value of the key to any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("de1b5234ada5d5ecc87fb3a8bfc702b8")
+@Generated("298ec897247ee7fb62f302272fac903e")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x130B00
     public static final int REQUEST_MESSAGE_TYPE = 1248000;
@@ -53,7 +53,7 @@ public final class CacheGetAndReplaceCodec {
     private CacheGetAndReplaceCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

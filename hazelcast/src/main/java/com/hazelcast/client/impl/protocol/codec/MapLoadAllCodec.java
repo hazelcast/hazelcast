@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
 @SuppressWarnings("unused")
-@Generated("224e5915e4358af17b358fd5ba3b9d16")
+@Generated("91accf66ba4179c0b24f73967ba3cd71")
 public final class MapLoadAllCodec {
     //hex: 0x012000
     public static final int REQUEST_MESSAGE_TYPE = 73728;
@@ -50,7 +50,7 @@ public final class MapLoadAllCodec {
     private MapLoadAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

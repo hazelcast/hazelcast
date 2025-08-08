@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
 @SuppressWarnings("unused")
-@Generated("50c9fd55ac310adab70ea3cbbfb327dc")
+@Generated("965fbb8100ba493c148cac61a2077ab1")
 public final class MapAddNearCacheInvalidationListenerCodec {
     //hex: 0x013F00
     public static final int REQUEST_MESSAGE_TYPE = 81664;
@@ -62,7 +62,7 @@ public final class MapAddNearCacheInvalidationListenerCodec {
     private MapAddNearCacheInvalidationListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

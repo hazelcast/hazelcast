@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * member with the default timeout of 300 seconds that is reset after each fetch. Sending endEntryViewIteration or timing out will release the resource.
  */
 @SuppressWarnings("unused")
-@Generated("71e03942357569b192e85ab7313129cc")
+@Generated("ed312865d0067c8a7025baba1769635e")
 public final class ReplicatedMapFetchEntryViewsCodec {
     //hex: 0x0D1400
     public static final int REQUEST_MESSAGE_TYPE = 857088;
@@ -56,7 +56,7 @@ public final class ReplicatedMapFetchEntryViewsCodec {
     private ReplicatedMapFetchEntryViewsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -116,7 +116,7 @@ public final class ReplicatedMapFetchEntryViewsCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

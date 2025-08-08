@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("2a5557d5226481bf3d68fd4ef9d8a2ec")
+@Generated("bf6b05458e519a19fe6b791be7fe7df3")
 public final class JetJoinSubmittedJobCodec {
     //hex: 0xFE0500
     public static final int REQUEST_MESSAGE_TYPE = 16647424;
@@ -50,7 +50,7 @@ public final class JetJoinSubmittedJobCodec {
     private JetJoinSubmittedJobCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

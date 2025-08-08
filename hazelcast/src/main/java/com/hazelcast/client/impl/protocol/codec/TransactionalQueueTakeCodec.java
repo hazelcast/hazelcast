@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
 @SuppressWarnings("unused")
-@Generated("cd5f89c7d71c83a4328d4efbc83c58ab")
+@Generated("eb740d4a109080d7b942c38d15885436")
 public final class TransactionalQueueTakeCodec {
     //hex: 0x120200
     public static final int REQUEST_MESSAGE_TYPE = 1180160;
@@ -51,7 +51,7 @@ public final class TransactionalQueueTakeCodec {
     private TransactionalQueueTakeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

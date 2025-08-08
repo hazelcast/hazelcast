@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then ILLEGAL_MONITOR_STATE is thrown.
  */
 @SuppressWarnings("unused")
-@Generated("84a248186cd5a5a8f1a773cc1157817b")
+@Generated("c5be1c3e427a820b17a4c0924f8cbeb8")
 public final class MapUnlockCodec {
     //hex: 0x011300
     public static final int REQUEST_MESSAGE_TYPE = 70400;
@@ -54,7 +54,7 @@ public final class MapUnlockCodec {
     private MapUnlockCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

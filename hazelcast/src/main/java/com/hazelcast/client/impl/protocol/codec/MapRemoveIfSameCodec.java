@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
 @SuppressWarnings("unused")
-@Generated("7450f06cb744273f7e07f8f59d068793")
+@Generated("276ff04cbd9ca3fd5fde759699d7244f")
 public final class MapRemoveIfSameCodec {
     //hex: 0x010800
     public static final int REQUEST_MESSAGE_TYPE = 67584;
@@ -51,7 +51,7 @@ public final class MapRemoveIfSameCodec {
     private MapRemoveIfSameCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

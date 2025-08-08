@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
  */
 @SuppressWarnings("unused")
-@Generated("9d7093c7f00f37c610b719827f9066c5")
+@Generated("1eb588f32fbd5f49a2e79a01fdf30034")
 public final class MapDeleteCodec {
     //hex: 0x010900
     public static final int REQUEST_MESSAGE_TYPE = 67840;
@@ -56,7 +56,7 @@ public final class MapDeleteCodec {
     private MapDeleteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -100,7 +100,7 @@ public final class MapDeleteCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Finalizes the commit of XA transaction with the given xid.
  */
 @SuppressWarnings("unused")
-@Generated("70b2221a462e23efb38b048ade9a76c8")
+@Generated("7db185c0cb9896d2c1053e5addf0de22")
 public final class XATransactionFinalizeCodec {
     //hex: 0x140300
     public static final int REQUEST_MESSAGE_TYPE = 1311488;
@@ -50,7 +50,7 @@ public final class XATransactionFinalizeCodec {
     private XATransactionFinalizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

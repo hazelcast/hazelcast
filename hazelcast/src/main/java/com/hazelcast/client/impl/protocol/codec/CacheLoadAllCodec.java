@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Loads all the keys into the CacheRecordStore in batch.
  */
 @SuppressWarnings("unused")
-@Generated("2ad1b01087e77c3853db663674e82842")
+@Generated("d66a9e038b236cdfebf282f13519316d")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -50,7 +50,7 @@ public final class CacheLoadAllCodec {
     private CacheLoadAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

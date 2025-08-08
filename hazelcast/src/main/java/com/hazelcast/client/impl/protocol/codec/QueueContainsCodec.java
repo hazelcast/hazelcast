@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * contains at least one element e such that value.equals(e)
  */
 @SuppressWarnings("unused")
-@Generated("ac0a8d51cff36be663a01ed3360fd08c")
+@Generated("8a743394ffebe6291538c9d44fc027e0")
 public final class QueueContainsCodec {
     //hex: 0x030B00
     public static final int REQUEST_MESSAGE_TYPE = 199424;
@@ -51,7 +51,7 @@ public final class QueueContainsCodec {
     private QueueContainsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

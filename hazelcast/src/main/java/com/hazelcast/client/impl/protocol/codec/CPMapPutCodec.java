@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the key-value into the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("933b389482b09fc44696306419a19dd1")
+@Generated("6fba5f4fcaaef5466220728b5d328d28")
 public final class CPMapPutCodec {
     //hex: 0x230200
     public static final int REQUEST_MESSAGE_TYPE = 2294272;
@@ -49,7 +49,7 @@ public final class CPMapPutCodec {
     private CPMapPutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

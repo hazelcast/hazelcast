@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new multimap config is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("32917f5c435af47613e55a949ead5129")
+@Generated("43e1ef17076b562b34032751f8e98cea")
 public final class DynamicConfigAddMultiMapConfigCodec {
     //hex: 0x1B0100
     public static final int REQUEST_MESSAGE_TYPE = 1769728;
@@ -56,7 +56,7 @@ public final class DynamicConfigAddMultiMapConfigCodec {
     private DynamicConfigAddMultiMapConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

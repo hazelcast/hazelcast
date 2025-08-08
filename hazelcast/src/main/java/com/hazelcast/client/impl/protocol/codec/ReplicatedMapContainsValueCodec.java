@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This operation will probably require time linear in the map size for most implementations of the Map interface.
  */
 @SuppressWarnings("unused")
-@Generated("924d33096567ec0c6390366f9bedcefe")
+@Generated("30565386c72a0be17b0d560e4c974d38")
 public final class ReplicatedMapContainsValueCodec {
     //hex: 0x0D0500
     public static final int REQUEST_MESSAGE_TYPE = 853248;
@@ -51,7 +51,7 @@ public final class ReplicatedMapContainsValueCodec {
     private ReplicatedMapContainsValueCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

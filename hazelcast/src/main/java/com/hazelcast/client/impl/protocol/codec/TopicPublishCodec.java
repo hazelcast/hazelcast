@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Publishes the message to all subscribers of this topic
  */
 @SuppressWarnings("unused")
-@Generated("19706577fbeeae2fd24bae6b12a1ac82")
+@Generated("3d49b74959f8ad1889a20a556c9c0d3b")
 public final class TopicPublishCodec {
     //hex: 0x040100
     public static final int REQUEST_MESSAGE_TYPE = 262400;
@@ -49,7 +49,7 @@ public final class TopicPublishCodec {
     private TopicPublishCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

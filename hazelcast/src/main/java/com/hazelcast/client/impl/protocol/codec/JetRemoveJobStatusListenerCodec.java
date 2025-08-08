@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * added before, this call does no change in the cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("49831da1e13040b1ce9a1a4ca1223d3b")
+@Generated("a0cc530c7c30aaf6ecd6ccca042b69cb")
 public final class JetRemoveJobStatusListenerCodec {
     //hex: 0xFE1400
     public static final int REQUEST_MESSAGE_TYPE = 16651264;
@@ -53,7 +53,7 @@ public final class JetRemoveJobStatusListenerCodec {
     private JetRemoveJobStatusListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

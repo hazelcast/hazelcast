@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Remove item from transactional set.
  */
 @SuppressWarnings("unused")
-@Generated("e35c58c7250b1d31ecfecdb44f30b72a")
+@Generated("41eb3d13abffd6a4596c0fdfba750b01")
 public final class TransactionalSetRemoveCodec {
     //hex: 0x100200
     public static final int REQUEST_MESSAGE_TYPE = 1049088;
@@ -52,7 +52,7 @@ public final class TransactionalSetRemoveCodec {
     private TransactionalSetRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

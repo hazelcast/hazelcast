@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the current metadata of a cluster.
  */
 @SuppressWarnings("unused")
-@Generated("545afbe60c8e41dbea988cf422f55c0c")
+@Generated("9b4c6d96479ea8a29f10fa0a252d63ba")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -63,7 +63,7 @@ public final class MCGetClusterMetadataCodec {
         return clientMessage;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

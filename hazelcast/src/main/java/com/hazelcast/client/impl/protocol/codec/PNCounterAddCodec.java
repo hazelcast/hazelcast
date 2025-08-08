@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * message may act as a proxy.
  */
 @SuppressWarnings("unused")
-@Generated("f7971408248ae293e327d64320a65c2d")
+@Generated("056ba342a8a8b451d538daa1ca6b39d0")
 public final class PNCounterAddCodec {
     //hex: 0x1D0200
     public static final int REQUEST_MESSAGE_TYPE = 1901056;
@@ -62,7 +62,7 @@ public final class PNCounterAddCodec {
     private PNCounterAddCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -121,7 +121,7 @@ public final class PNCounterAddCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

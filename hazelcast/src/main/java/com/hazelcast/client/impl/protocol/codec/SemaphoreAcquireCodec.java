@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and lies dormant until other threads release enough permits.
  */
 @SuppressWarnings("unused")
-@Generated("9bfc7023411ff8351a265c49cef23b0f")
+@Generated("b68699bf8048b48f2a9b4de134cc0ba0")
 public final class SemaphoreAcquireCodec {
     //hex: 0x0C0200
     public static final int REQUEST_MESSAGE_TYPE = 786944;
@@ -58,7 +58,7 @@ public final class SemaphoreAcquireCodec {
     private SemaphoreAcquireCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

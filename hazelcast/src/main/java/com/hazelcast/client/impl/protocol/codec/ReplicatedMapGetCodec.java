@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
  */
 @SuppressWarnings("unused")
-@Generated("3cd02855286d462ea256ee051b766757")
+@Generated("77244221ba8fc142a7c1b75c42c338f9")
 public final class ReplicatedMapGetCodec {
     //hex: 0x0D0600
     public static final int REQUEST_MESSAGE_TYPE = 853504;
@@ -52,7 +52,7 @@ public final class ReplicatedMapGetCodec {
     private ReplicatedMapGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

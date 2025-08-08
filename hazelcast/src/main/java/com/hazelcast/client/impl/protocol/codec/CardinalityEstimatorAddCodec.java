@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * use to feed hash values into the estimator.
  */
 @SuppressWarnings("unused")
-@Generated("3c8e9fc0d68f7570f143ff68f98ef418")
+@Generated("ec9a3ed76c9a0769c7f5828c5b3ce14c")
 public final class CardinalityEstimatorAddCodec {
     //hex: 0x190100
     public static final int REQUEST_MESSAGE_TYPE = 1638656;
@@ -51,7 +51,7 @@ public final class CardinalityEstimatorAddCodec {
     private CardinalityEstimatorAddCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * elements, returns Integer.MAX_VALUE.
  */
 @SuppressWarnings("unused")
-@Generated("28178b684406b64220c6da5bfe55030d")
+@Generated("c701f3815aa770744d3f86ea7d19a821")
 public final class TransactionalQueueSizeCodec {
     //hex: 0x120500
     public static final int REQUEST_MESSAGE_TYPE = 1180928;
@@ -53,7 +53,7 @@ public final class TransactionalQueueSizeCodec {
     private TransactionalQueueSizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * extends its session expiration time.
  */
 @SuppressWarnings("unused")
-@Generated("06714b4e2f866256eb8727edaf912c86")
+@Generated("e3fe30c225bf30625da0e001a5f4dc47")
 public final class CPSessionHeartbeatSessionCodec {
     //hex: 0x1F0300
     public static final int REQUEST_MESSAGE_TYPE = 2032384;
@@ -51,7 +51,7 @@ public final class CPSessionHeartbeatSessionCodec {
     private CPSessionHeartbeatSessionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

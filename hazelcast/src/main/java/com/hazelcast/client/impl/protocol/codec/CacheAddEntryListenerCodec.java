@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * will be notified for, see the documentation of the type field of the Cache event below.
  */
 @SuppressWarnings("unused")
-@Generated("d95200e3eb03ad90aefe42c7db867d64")
+@Generated("ce6d6db71a25ca54fc80312f2d315442")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;
@@ -58,7 +58,7 @@ public final class CacheAddEntryListenerCodec {
     private CacheAddEntryListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

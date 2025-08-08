@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("8df89a8c494ba584f4ca7602c382b524")
+@Generated("ea645d4eb20d689a0913d68ac239367b")
 public final class ReplicatedMapRemoveEntryListenerCodec {
     //hex: 0x0D0E00
     public static final int REQUEST_MESSAGE_TYPE = 855552;
@@ -52,7 +52,7 @@ public final class ReplicatedMapRemoveEntryListenerCodec {
     private ReplicatedMapRemoveEntryListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

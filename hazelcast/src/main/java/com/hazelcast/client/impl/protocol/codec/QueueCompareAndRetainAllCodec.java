@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * In other words, removes from this collection all of its elements that are not contained in the specified collection.
  */
 @SuppressWarnings("unused")
-@Generated("069a5ba6ab27a5705301317a36c29913")
+@Generated("f85b57162eee4d6b5f41abd3e2055c5f")
 public final class QueueCompareAndRetainAllCodec {
     //hex: 0x030E00
     public static final int REQUEST_MESSAGE_TYPE = 200192;
@@ -51,7 +51,7 @@ public final class QueueCompareAndRetainAllCodec {
     private QueueCompareAndRetainAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

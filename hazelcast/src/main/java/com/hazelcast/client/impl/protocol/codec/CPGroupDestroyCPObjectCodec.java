@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CP group
  */
 @SuppressWarnings("unused")
-@Generated("9898e3a8d3e9614530750eb53359d62f")
+@Generated("c84126bc315b180837afdee9cdce5fc5")
 public final class CPGroupDestroyCPObjectCodec {
     //hex: 0x1E0200
     public static final int REQUEST_MESSAGE_TYPE = 1966592;
@@ -50,7 +50,7 @@ public final class CPGroupDestroyCPObjectCodec {
     private CPGroupDestroyCPObjectCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

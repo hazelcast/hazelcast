@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
 @SuppressWarnings("unused")
-@Generated("85d1a0f233af4bc37d9cff4617ba8de4")
+@Generated("46b8b43869313d581bb5772eb53a3678")
 public final class MapReplaceIfSameCodec {
     //hex: 0x010500
     public static final int REQUEST_MESSAGE_TYPE = 66816;
@@ -51,7 +51,7 @@ public final class MapReplaceIfSameCodec {
     private MapReplaceIfSameCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Deletes the value associated with the key in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("748d604817c2e83cb539c228d2c70106")
+@Generated("5611c409ef3a4cc7e57b1c6eadd3ae5b")
 public final class CPMapDeleteCodec {
     //hex: 0x230500
     public static final int REQUEST_MESSAGE_TYPE = 2295040;
@@ -49,7 +49,7 @@ public final class CPMapDeleteCodec {
     private CPMapDeleteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

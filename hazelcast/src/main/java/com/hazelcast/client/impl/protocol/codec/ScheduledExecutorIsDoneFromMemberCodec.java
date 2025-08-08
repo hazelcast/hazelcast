@@ -35,10 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  * Checks whether a task is done.
- * @see {@link java.util.concurrent.Future#cancel(boolean)}
+ * @see java.util.concurrent.Future#cancel(boolean)
  */
 @SuppressWarnings("unused")
-@Generated("014a9c826bf6ffa8ad4d9aa875373bfc")
+@Generated("b06ffe3e3beba1fff93acfe91612e6e3")
 public final class ScheduledExecutorIsDoneFromMemberCodec {
     //hex: 0x1A0E00
     public static final int REQUEST_MESSAGE_TYPE = 1707520;
@@ -52,7 +52,7 @@ public final class ScheduledExecutorIsDoneFromMemberCodec {
     private ScheduledExecutorIsDoneFromMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

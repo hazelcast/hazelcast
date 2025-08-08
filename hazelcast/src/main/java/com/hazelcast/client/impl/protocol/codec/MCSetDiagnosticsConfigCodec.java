@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the request fails by throwing an IllegalStateException exception but the other members for which the invocation succeeded will have the new config applied. 
  */
 @SuppressWarnings("unused")
-@Generated("155e57bd842accafaf4193fc80b23ffc")
+@Generated("1255ae5dc7d028ba56b4ce5bdafc661a")
 public final class MCSetDiagnosticsConfigCodec {
     //hex: 0x202700
     public static final int REQUEST_MESSAGE_TYPE = 2107136;
@@ -56,7 +56,7 @@ public final class MCSetDiagnosticsConfigCodec {
     private MCSetDiagnosticsConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

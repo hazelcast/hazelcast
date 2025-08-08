@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Closes the given session forcefully on the given CP group.
  */
 @SuppressWarnings("unused")
-@Generated("d40265c356cce461eb10d0d546169e1c")
+@Generated("2e164e88f54fab359e0e6529ad2e0488")
 public final class MCForceCloseCPSessionCodec {
     //hex: 0x202400
     public static final int REQUEST_MESSAGE_TYPE = 2106368;
@@ -51,7 +51,7 @@ public final class MCForceCloseCPSessionCodec {
     private MCForceCloseCPSessionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

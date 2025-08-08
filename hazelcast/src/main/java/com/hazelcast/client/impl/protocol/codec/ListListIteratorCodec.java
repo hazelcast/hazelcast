@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * specified index minus one.
  */
 @SuppressWarnings("unused")
-@Generated("1269bbe05e9dd9d56a6125e8d9e9163c")
+@Generated("05b346c674a705d0edeca02ad6dd8b1c")
 public final class ListListIteratorCodec {
     //hex: 0x051700
     public static final int REQUEST_MESSAGE_TYPE = 333568;
@@ -53,7 +53,7 @@ public final class ListListIteratorCodec {
     private ListListIteratorCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

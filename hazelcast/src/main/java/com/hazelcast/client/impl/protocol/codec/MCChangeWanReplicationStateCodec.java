@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Stop, pause or resume WAN replication for the given WAN replication and publisher
  */
 @SuppressWarnings("unused")
-@Generated("7f841c475c187bda21e07b06c7db9cda")
+@Generated("f861b61d066519a9451c48039fb157be")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -50,7 +50,7 @@ public final class MCChangeWanReplicationStateCodec {
     private MCChangeWanReplicationStateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

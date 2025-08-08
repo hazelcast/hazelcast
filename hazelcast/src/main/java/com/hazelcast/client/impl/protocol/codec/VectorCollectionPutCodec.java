@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts a document into the Vector Collection.
  */
 @SuppressWarnings("unused")
-@Generated("322b19560ee1c4cdf5f723b0a66a2989")
+@Generated("ea2773f1d8a8cd9b0e03683abfcf8b41")
 public final class VectorCollectionPutCodec {
     //hex: 0x240100
     public static final int REQUEST_MESSAGE_TYPE = 2359552;
@@ -49,7 +49,7 @@ public final class VectorCollectionPutCodec {
     private VectorCollectionPutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

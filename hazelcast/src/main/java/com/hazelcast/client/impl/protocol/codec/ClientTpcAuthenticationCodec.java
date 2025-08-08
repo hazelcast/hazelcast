@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to TPC channels.
  */
 @SuppressWarnings("unused")
-@Generated("96675622c84d70f6bce817eff206106a")
+@Generated("99287ae4297090491dde997c094dfec4")
 public final class ClientTpcAuthenticationCodec {
     //hex: 0x001600
     public static final int REQUEST_MESSAGE_TYPE = 5632;
@@ -50,7 +50,7 @@ public final class ClientTpcAuthenticationCodec {
     private ClientTpcAuthenticationCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("61f15dcce07982bc4ffb175c2842d996")
+@Generated("0f4eb33539d134d400840f8f4841fd6e")
 public final class JetExistsDistributedObjectCodec {
     //hex: 0xFE0C00
     public static final int REQUEST_MESSAGE_TYPE = 16649216;
@@ -49,7 +49,7 @@ public final class JetExistsDistributedObjectCodec {
     private JetExistsDistributedObjectCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

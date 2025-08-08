@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
 @SuppressWarnings("unused")
-@Generated("917ba7cb84e9320a4c92a3e780d8bce0")
+@Generated("b27e24e5ad4daed8caf2b974137c56bf")
 public final class MapIsLockedCodec {
     //hex: 0x011200
     public static final int REQUEST_MESSAGE_TYPE = 70144;
@@ -50,7 +50,7 @@ public final class MapIsLockedCodec {
     private MapIsLockedCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

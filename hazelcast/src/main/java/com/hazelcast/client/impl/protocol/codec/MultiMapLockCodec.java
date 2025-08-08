@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * unlocked N times before another thread can acquire it.
  */
 @SuppressWarnings("unused")
-@Generated("90cfb795ea222e1ef06307aa13b031df")
+@Generated("defe8c56c1e2cbe5ea6b5dc73a991c17")
 public final class MultiMapLockCodec {
     //hex: 0x021000
     public static final int REQUEST_MESSAGE_TYPE = 135168;
@@ -56,7 +56,7 @@ public final class MultiMapLockCodec {
     private MultiMapLockCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

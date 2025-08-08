@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiate WAN sync for a specific map or all maps
  */
 @SuppressWarnings("unused")
-@Generated("19c3663b9ad68a225b0a0c49909b391d")
+@Generated("8832119482b99bc74762a59649f34510")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;
@@ -51,7 +51,7 @@ public final class MCWanSyncMapCodec {
     private MCWanSyncMapCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

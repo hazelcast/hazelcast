@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Acquires all available permits at once and returns immediately.
  */
 @SuppressWarnings("unused")
-@Generated("cdb8d433b01814e9f3fd9f0fcce19e3a")
+@Generated("7a3c90464501cd6b042a30e39218a9cf")
 public final class SemaphoreDrainCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;
@@ -53,7 +53,7 @@ public final class SemaphoreDrainCodec {
     private SemaphoreDrainCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * A snapshot is used to retrieve the result.
  */
 @SuppressWarnings("unused")
-@Generated("3133a1545e6f03b81fa73aecca9ea8a4")
+@Generated("0459fda8ecc107a1377d8b2c2fcb5c4d")
 public final class CPSubsystemGetCPObjectInfosCodec {
     //hex: 0x220600
     public static final int REQUEST_MESSAGE_TYPE = 2229760;
@@ -51,7 +51,7 @@ public final class CPSubsystemGetCPObjectInfosCodec {
     private CPSubsystemGetCPObjectInfosCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
  */
 @SuppressWarnings("unused")
-@Generated("3cfced942fb935c19cfcfc7d9105e831")
+@Generated("7ffd360ec605a59a2daf40ce0db31211")
 public final class MapPutIfAbsentWithMaxIdleCodec {
     //hex: 0x014600
     public static final int REQUEST_MESSAGE_TYPE = 83456;
@@ -53,7 +53,7 @@ public final class MapPutIfAbsentWithMaxIdleCodec {
     private MapPutIfAbsentWithMaxIdleCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

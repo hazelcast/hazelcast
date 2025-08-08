@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The message is used to transfer the declarative pipeline definition and the related resource files from client to the server.
  */
 @SuppressWarnings("unused")
-@Generated("108bff674377ff4e06cd0a23bf8b109b")
+@Generated("34e3628f150d272e665bcc971be9990e")
 public final class ExperimentalPipelineSubmitCodec {
     //hex: 0xFD0100
     public static final int REQUEST_MESSAGE_TYPE = 16580864;
@@ -51,7 +51,7 @@ public final class ExperimentalPipelineSubmitCodec {
     private ExperimentalPipelineSubmitCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

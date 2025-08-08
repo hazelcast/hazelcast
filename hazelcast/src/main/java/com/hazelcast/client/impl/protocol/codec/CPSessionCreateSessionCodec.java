@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a session for the caller on the given CP group.
  */
 @SuppressWarnings("unused")
-@Generated("637c8134a4d51a2f20f60e6a99fcbb95")
+@Generated("f224b146dde4ccbda400e064ea9e1db5")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -52,7 +52,7 @@ public final class CPSessionCreateSessionCodec {
     private CPSessionCreateSessionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -89,7 +89,7 @@ public final class CPSessionCreateSessionCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

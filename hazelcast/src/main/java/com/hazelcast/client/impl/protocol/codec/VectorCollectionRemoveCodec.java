@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the mapping for a key from this VectorCollection.
  */
 @SuppressWarnings("unused")
-@Generated("5edf43b1b655f5abe2636899efdd2ad0")
+@Generated("edea40700a9e4412610b1e288f3c8cfc")
 public final class VectorCollectionRemoveCodec {
     //hex: 0x240500
     public static final int REQUEST_MESSAGE_TYPE = 2360576;
@@ -49,7 +49,7 @@ public final class VectorCollectionRemoveCodec {
     private VectorCollectionRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

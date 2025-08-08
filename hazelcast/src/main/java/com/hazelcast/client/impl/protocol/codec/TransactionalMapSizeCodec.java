@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of entries in this map.
  */
 @SuppressWarnings("unused")
-@Generated("d31cae7206f1c02b4573a27a071654c4")
+@Generated("acf792256cc2466a4a0952ab25a5c26e")
 public final class TransactionalMapSizeCodec {
     //hex: 0x0E0400
     public static final int REQUEST_MESSAGE_TYPE = 918528;
@@ -52,7 +52,7 @@ public final class TransactionalMapSizeCodec {
     private TransactionalMapSizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a user code namespace configuration.
  */
 @SuppressWarnings("unused")
-@Generated("4d2ef3e58c311c5cdc9af8e1453b264d")
+@Generated("9541270e89c6db8ff189727f00c619f6")
 public final class DynamicConfigAddUserCodeNamespaceConfigCodec {
     //hex: 0x1B1300
     public static final int REQUEST_MESSAGE_TYPE = 1774336;
@@ -49,7 +49,7 @@ public final class DynamicConfigAddUserCodeNamespaceConfigCodec {
     private DynamicConfigAddUserCodeNamespaceConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

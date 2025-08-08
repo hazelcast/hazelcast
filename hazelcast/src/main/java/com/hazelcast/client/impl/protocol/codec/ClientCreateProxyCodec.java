@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a cluster-wide proxy with the given name and service.
  */
 @SuppressWarnings("unused")
-@Generated("428709d00987723f3369a492e7721992")
+@Generated("99fb01a20aafc6cfb7dbeff7a0174436")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
@@ -49,7 +49,7 @@ public final class ClientCreateProxyCodec {
     private ClientCreateProxyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

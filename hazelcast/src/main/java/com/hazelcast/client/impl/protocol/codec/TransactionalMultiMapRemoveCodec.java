@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given key value pair from the multimap.
  */
 @SuppressWarnings("unused")
-@Generated("0e8d39b45f82132e630801e2519f27ef")
+@Generated("d3f17d48297d649416928fd56c381827")
 public final class TransactionalMultiMapRemoveCodec {
     //hex: 0x0F0300
     public static final int REQUEST_MESSAGE_TYPE = 983808;
@@ -51,7 +51,7 @@ public final class TransactionalMultiMapRemoveCodec {
     private TransactionalMultiMapRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

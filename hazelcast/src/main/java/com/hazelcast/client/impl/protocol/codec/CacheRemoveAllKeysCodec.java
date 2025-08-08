@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
 @SuppressWarnings("unused")
-@Generated("4c9c1cd9465e9bdb30fe23b460bcfa69")
+@Generated("a2d694bf389b863768f941236e5c7efd")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x130300
     public static final int REQUEST_MESSAGE_TYPE = 1245952;
@@ -52,7 +52,7 @@ public final class CacheRemoveAllKeysCodec {
     private CacheRemoveAllKeysCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

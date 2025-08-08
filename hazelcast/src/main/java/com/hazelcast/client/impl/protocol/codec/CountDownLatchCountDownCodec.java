@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null. If the current count equals zero, then nothing happens.
  */
 @SuppressWarnings("unused")
-@Generated("af69d3e5f6cef60f094233e705e88757")
+@Generated("f90f8bff798be1a53f4a279b7d172160")
 public final class CountDownLatchCountDownCodec {
     //hex: 0x0B0300
     public static final int REQUEST_MESSAGE_TYPE = 721664;
@@ -55,7 +55,7 @@ public final class CountDownLatchCountDownCodec {
     private CountDownLatchCountDownCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a publisher that includes value for the cache events it sends.
  */
 @SuppressWarnings("unused")
-@Generated("f038e79bd1ee943ee7784d0bb3ba467a")
+@Generated("c25343a5e3f01fdea1fe30e929ad6743")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;
@@ -54,7 +54,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
     private ContinuousQueryPublisherCreateWithValueCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

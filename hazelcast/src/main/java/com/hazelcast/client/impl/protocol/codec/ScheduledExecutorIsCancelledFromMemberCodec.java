@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task as identified from the given handler is already cancelled.
  */
 @SuppressWarnings("unused")
-@Generated("ea6d38205bb9947b81e137eb059557dd")
+@Generated("e3d33ffa5a32ff89bc1a8df75649e938")
 public final class ScheduledExecutorIsCancelledFromMemberCodec {
     //hex: 0x1A0C00
     public static final int REQUEST_MESSAGE_TYPE = 1707008;
@@ -51,7 +51,7 @@ public final class ScheduledExecutorIsCancelledFromMemberCodec {
     private ScheduledExecutorIsCancelledFromMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the end of the transaction (either commit or rollback).
  */
 @SuppressWarnings("unused")
-@Generated("179b4e62581fd57e4f47d00b7c14384d")
+@Generated("8a996c614fecf6455fa59455ed6aae32")
 public final class TransactionalMapGetForUpdateCodec {
     //hex: 0x0E0300
     public static final int REQUEST_MESSAGE_TYPE = 918272;
@@ -52,7 +52,7 @@ public final class TransactionalMapGetForUpdateCodec {
     private TransactionalMapGetForUpdateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

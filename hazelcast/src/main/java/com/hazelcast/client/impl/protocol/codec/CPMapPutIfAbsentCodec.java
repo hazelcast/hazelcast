@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the key-value into the specified map if the key is not currently associated with a value.
  */
 @SuppressWarnings("unused")
-@Generated("d4d480940813c99659da23bb3a4d4cb2")
+@Generated("e1e73850aff0c503df67d33fab2fdad4")
 public final class CPMapPutIfAbsentCodec {
     //hex: 0x230700
     public static final int REQUEST_MESSAGE_TYPE = 2295552;
@@ -49,7 +49,7 @@ public final class CPMapPutIfAbsentCodec {
     private CPMapPutIfAbsentCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cache with the given name on a member with the given address.
  */
 @SuppressWarnings("unused")
-@Generated("2e4390a40f0bd130744b9dfb093b0528")
+@Generated("a6f4b4e4a4723a29981fef2bf580d366")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;
@@ -53,7 +53,7 @@ public final class CacheManagementConfigCodec {
     private CacheManagementConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

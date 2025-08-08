@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * held by the caller after a successful unlock() call, false otherwise.
  */
 @SuppressWarnings("unused")
-@Generated("b700da33c6de2542ea6fe1e6e81d921e")
+@Generated("f9e767abbd7837808f4be44b80450093")
 public final class FencedLockUnlockCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;
@@ -57,7 +57,7 @@ public final class FencedLockUnlockCodec {
     private FencedLockUnlockCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

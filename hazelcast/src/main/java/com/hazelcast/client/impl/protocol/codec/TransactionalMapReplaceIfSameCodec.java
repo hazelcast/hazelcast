@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * accessible only in the current transaction context until the transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("b8b579cc0bf604419f9335d0215582e3")
+@Generated("23332736eb44bcdd908f896ab00a502d")
 public final class TransactionalMapReplaceIfSameCodec {
     //hex: 0x0E0A00
     public static final int REQUEST_MESSAGE_TYPE = 920064;
@@ -53,7 +53,7 @@ public final class TransactionalMapReplaceIfSameCodec {
     private TransactionalMapReplaceIfSameCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

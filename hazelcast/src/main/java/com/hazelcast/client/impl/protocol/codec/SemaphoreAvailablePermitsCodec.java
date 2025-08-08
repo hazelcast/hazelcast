@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of available permits.
  */
 @SuppressWarnings("unused")
-@Generated("da9915a50e4b8dacbf4c11961fad9acc")
+@Generated("f75caf2bf435064ba378d97c09291365")
 public final class SemaphoreAvailablePermitsCodec {
     //hex: 0x0C0600
     public static final int REQUEST_MESSAGE_TYPE = 787968;
@@ -50,7 +50,7 @@ public final class SemaphoreAvailablePermitsCodec {
     private SemaphoreAvailablePermitsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

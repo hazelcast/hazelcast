@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches invalidation metadata from partitions of map.
  */
 @SuppressWarnings("unused")
-@Generated("8d54a47c749d779550286dc57e213f25")
+@Generated("4c798cf57b088bf57ecdd8d8ebaa2c5d")
 public final class MapFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x013D00
     public static final int REQUEST_MESSAGE_TYPE = 81152;
@@ -50,7 +50,7 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
     private MapFetchNearCacheInvalidationMetadataCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -86,7 +86,7 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

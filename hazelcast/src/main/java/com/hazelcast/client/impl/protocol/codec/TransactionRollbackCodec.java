@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Rollbacks the transaction with the given id.
  */
 @SuppressWarnings("unused")
-@Generated("db47d092cea6d0ef74dbe5d6fdeba138")
+@Generated("cbd02cb63b940f961daf74a766cf2bed")
 public final class TransactionRollbackCodec {
     //hex: 0x150300
     public static final int REQUEST_MESSAGE_TYPE = 1377024;
@@ -51,7 +51,7 @@ public final class TransactionRollbackCodec {
     private TransactionRollbackCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

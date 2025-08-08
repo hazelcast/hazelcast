@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes the query cache with the given name for a specific map publishable.
  */
 @SuppressWarnings("unused")
-@Generated("d55c4537f06716f48d739f82556498a0")
+@Generated("d4c1a7acfe77c4857c6b46c65e3a389e")
 public final class ContinuousQueryMadePublishableCodec {
     //hex: 0x160300
     public static final int REQUEST_MESSAGE_TYPE = 1442560;
@@ -50,7 +50,7 @@ public final class ContinuousQueryMadePublishableCodec {
     private ContinuousQueryMadePublishableCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

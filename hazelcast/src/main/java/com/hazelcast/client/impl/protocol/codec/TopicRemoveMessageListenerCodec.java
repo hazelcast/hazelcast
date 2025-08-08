@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
 @SuppressWarnings("unused")
-@Generated("d35c249fe95c3d3ee4f208d4c0023d24")
+@Generated("0d00801908bcef6ef31a5a0d34eeed74")
 public final class TopicRemoveMessageListenerCodec {
     //hex: 0x040300
     public static final int REQUEST_MESSAGE_TYPE = 262912;
@@ -51,7 +51,7 @@ public final class TopicRemoveMessageListenerCodec {
     private TopicRemoveMessageListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

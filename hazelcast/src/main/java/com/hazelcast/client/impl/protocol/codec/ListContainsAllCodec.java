@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this list contains all of the elements of the specified collection.
  */
 @SuppressWarnings("unused")
-@Generated("f289ca4b179040ea8227f854733728c4")
+@Generated("0ea7e97e95c9d14a124e3c36d7e1fbf8")
 public final class ListContainsAllCodec {
     //hex: 0x050300
     public static final int REQUEST_MESSAGE_TYPE = 328448;
@@ -50,7 +50,7 @@ public final class ListContainsAllCodec {
     private ListContainsAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

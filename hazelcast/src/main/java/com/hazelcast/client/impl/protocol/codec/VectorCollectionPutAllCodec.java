@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The API implementation using this request may need to send multiple of these request messages for different partitions.
  */
 @SuppressWarnings("unused")
-@Generated("cf1365a26235fbd4418758a030548506")
+@Generated("1fe00fbe65f35c69d1e01fc24fd10b55")
 public final class VectorCollectionPutAllCodec {
     //hex: 0x240300
     public static final int REQUEST_MESSAGE_TYPE = 2360064;
@@ -53,7 +53,7 @@ public final class VectorCollectionPutAllCodec {
     private VectorCollectionPutAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

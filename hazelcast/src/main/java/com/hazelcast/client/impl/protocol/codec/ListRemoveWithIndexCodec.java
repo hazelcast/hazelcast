@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
 @SuppressWarnings("unused")
-@Generated("014272b21fcd67a526afad94822050b0")
+@Generated("fa1e34ce1d17b81c24fade426503b871")
 public final class ListRemoveWithIndexCodec {
     //hex: 0x051200
     public static final int REQUEST_MESSAGE_TYPE = 332288;
@@ -51,7 +51,7 @@ public final class ListRemoveWithIndexCodec {
     private ListRemoveWithIndexCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

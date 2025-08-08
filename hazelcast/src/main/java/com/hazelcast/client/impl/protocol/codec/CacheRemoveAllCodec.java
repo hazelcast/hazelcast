@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
  */
 @SuppressWarnings("unused")
-@Generated("af8af23fa493bc679cf837ac610c1a4d")
+@Generated("89fd5acd2c8742619d38b3fe56116920")
 public final class CacheRemoveAllCodec {
     //hex: 0x130400
     public static final int REQUEST_MESSAGE_TYPE = 1246208;
@@ -53,7 +53,7 @@ public final class CacheRemoveAllCodec {
     private CacheRemoveAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

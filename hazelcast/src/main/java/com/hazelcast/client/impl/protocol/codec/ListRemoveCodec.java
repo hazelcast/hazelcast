@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
  */
 @SuppressWarnings("unused")
-@Generated("1bbfc9c61411ca86c2deb819ed3474cd")
+@Generated("414299acc19b34dda779009624a50c37")
 public final class ListRemoveCodec {
     //hex: 0x050500
     public static final int REQUEST_MESSAGE_TYPE = 328960;
@@ -52,7 +52,7 @@ public final class ListRemoveCodec {
     private ListRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
  */
 @SuppressWarnings("unused")
-@Generated("5d736f5a01bf6d2a3c947fa2aa18343d")
+@Generated("b3b05307822a81d180e5a18b99bca64a")
 public final class ListAddListenerCodec {
     //hex: 0x050B00
     public static final int REQUEST_MESSAGE_TYPE = 330496;
@@ -58,7 +58,7 @@ public final class ListAddListenerCodec {
     private ListAddListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

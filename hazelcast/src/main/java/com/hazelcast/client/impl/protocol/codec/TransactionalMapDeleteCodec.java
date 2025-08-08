@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to be deleted will be removed from only the current transaction context until the transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("86b49ad8c7824f6d3f36cd7aba94caa4")
+@Generated("8ff38e6a997fa80f82dda750fb61acc7")
 public final class TransactionalMapDeleteCodec {
     //hex: 0x0E0C00
     public static final int REQUEST_MESSAGE_TYPE = 920576;
@@ -53,7 +53,7 @@ public final class TransactionalMapDeleteCodec {
     private TransactionalMapDeleteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

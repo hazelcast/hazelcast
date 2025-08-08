@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
 @SuppressWarnings("unused")
-@Generated("bb24235f357b92e0f62a21f4e7e48b19")
+@Generated("5f126c3c7f81bb0f6246c43f789b3ce4")
 public final class MapEvictCodec {
     //hex: 0x011E00
     public static final int REQUEST_MESSAGE_TYPE = 73216;
@@ -52,7 +52,7 @@ public final class MapEvictCodec {
     private MapEvictCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

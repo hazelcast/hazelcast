@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a listener to be notified for the events fired on the underlying map on all nodes.
  */
 @SuppressWarnings("unused")
-@Generated("fcde256d037cbfe85d29a8695215cab1")
+@Generated("1026b72331afea5bfc39e3bb9d6b5635")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;
@@ -59,7 +59,7 @@ public final class ContinuousQueryAddListenerCodec {
     private ContinuousQueryAddListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies given MC config (client filter list).
  */
 @SuppressWarnings("unused")
-@Generated("aec1b39c110cf71bae90ce81979cf7f0")
+@Generated("0cb9cbc09123b69053db084118a13a4a")
 public final class MCApplyMCConfigCodec {
     //hex: 0x200D00
     public static final int REQUEST_MESSAGE_TYPE = 2100480;
@@ -50,7 +50,7 @@ public final class MCApplyMCConfigCodec {
     private MCApplyMCConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

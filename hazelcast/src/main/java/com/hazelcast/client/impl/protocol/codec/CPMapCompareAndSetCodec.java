@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * newValue.
  */
 @SuppressWarnings("unused")
-@Generated("b63d2a3212100a13a139a7e289a68585")
+@Generated("476e8ea31a401c0210d87d7a74894341")
 public final class CPMapCompareAndSetCodec {
     //hex: 0x230600
     public static final int REQUEST_MESSAGE_TYPE = 2295296;
@@ -51,7 +51,7 @@ public final class CPMapCompareAndSetCodec {
     private CPMapCompareAndSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

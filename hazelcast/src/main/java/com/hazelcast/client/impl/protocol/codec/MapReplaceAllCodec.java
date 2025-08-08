@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * or the function throws an exception.
  */
 @SuppressWarnings("unused")
-@Generated("698070eb2beb015fb446bf9381574d62")
+@Generated("e822daee746db5278ccf465eb974b70c")
 public final class MapReplaceAllCodec {
     //hex: 0x014800
     public static final int REQUEST_MESSAGE_TYPE = 83968;
@@ -51,7 +51,7 @@ public final class MapReplaceAllCodec {
     private MapReplaceAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

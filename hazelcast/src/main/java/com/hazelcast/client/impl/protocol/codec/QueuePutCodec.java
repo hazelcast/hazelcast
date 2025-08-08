@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
 @SuppressWarnings("unused")
-@Generated("1cf83e9e2d92945c3ba351a9a5eb5427")
+@Generated("8ee18b8b4f54702b3a2268eca39456e4")
 public final class QueuePutCodec {
     //hex: 0x030200
     public static final int REQUEST_MESSAGE_TYPE = 197120;
@@ -49,7 +49,7 @@ public final class QueuePutCodec {
     private QueuePutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

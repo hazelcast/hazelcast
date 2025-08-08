@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the cache configuration with the given name from members.
  */
 @SuppressWarnings("unused")
-@Generated("d9a60806bd4d3c2e5beb4b012fb73896")
+@Generated("4bb33e0e5be10113c3095ff81574cc70")
 public final class CacheGetConfigCodec {
     //hex: 0x130C00
     public static final int REQUEST_MESSAGE_TYPE = 1248256;
@@ -49,7 +49,7 @@ public final class CacheGetConfigCodec {
     private CacheGetConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Invocation has no additional effect if already shut down.
  */
 @SuppressWarnings("unused")
-@Generated("4b73bdcfd014ff8f039c2f6e484f8278")
+@Generated("3d002ca39aba5859c976dd30103e5bc6")
 public final class ScheduledExecutorShutdownCodec {
     //hex: 0x1A0100
     public static final int REQUEST_MESSAGE_TYPE = 1704192;
@@ -51,7 +51,7 @@ public final class ScheduledExecutorShutdownCodec {
     private ScheduledExecutorShutdownCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
