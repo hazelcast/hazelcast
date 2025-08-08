@@ -122,7 +122,6 @@ import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
@@ -538,78 +537,85 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         ((LightMasterContext) mc).requestTermination(userInitiated);
     }
 
-    /**
-     * Return the job IDs of jobs with the given name, sorted by
-     * {active/completed, creation time}, active & newest first.
-     */
-    public CompletableFuture<GetJobIdsResult> getJobIds(@Nullable String onlyName, long onlyJobId) {
-        if (onlyName != null) {
-            assertIsMaster("Cannot query list of job IDs by name on non-master node");
-        }
 
+    public CompletableFuture<GetJobIdsResult> getJobIdById(long jobId) {
         return submitToCoordinatorThread(() -> {
-            if (onlyJobId != ALL_JOBS) {
-                Object lmc = lightMasterContexts.get(onlyJobId);
-                if (lmc != null && lmc != UNINITIALIZED_LIGHT_JOB_MARKER) {
-                    return new GetJobIdsResult(onlyJobId, true);
-                }
-
-                if (isMaster()) {
-                    try {
-                        callWithJob(onlyJobId, mc -> null, jobResult -> null, jobRecord -> null, null)
-                                .get();
-                    } catch (ExecutionException e) {
-                        if (e.getCause() instanceof JobNotFoundException) {
-                            return GetJobIdsResult.EMPTY;
-                        }
-                        throw e;
-                    }
-                    return new GetJobIdsResult(onlyJobId, false);
-                }
-                return GetJobIdsResult.EMPTY;
+            Object lmc = lightMasterContexts.get(jobId);
+            if (lmc != null && lmc != UNINITIALIZED_LIGHT_JOB_MARKER) {
+                return new GetJobIdsResult(jobId, true);
             }
+            if (isMaster()) {
+                try {
+                    callWithJob(jobId, mc -> null, jobResult -> null, jobRecord -> null, null)
+                            .get();
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof JobNotFoundException) {
+                        return GetJobIdsResult.EMPTY;
+                    }
+                    throw e;
+                }
+                return new GetJobIdsResult(jobId, false);
+            }
+            return GetJobIdsResult.EMPTY;
+        });
+    }
 
+    public CompletableFuture<GetJobIdsResult> getLightJobIds() {
+        return submitToCoordinatorThread(() -> {
+            List<Tuple2<Long, Boolean>> result = new ArrayList<>();
+            for (Object ctx : lightMasterContexts.values()) {
+                if (ctx != UNINITIALIZED_LIGHT_JOB_MARKER) {
+                    result.add(tuple2(((LightMasterContext) ctx).getJobId(), true));
+                }
+            }
+            return new GetJobIdsResult(result);
+        });
+    }
+
+    public CompletableFuture<GetJobIdsResult> getAllJobsId() {
+        return submitToCoordinatorThread(() -> {
             List<Tuple2<Long, Boolean>> result = new ArrayList<>();
 
-            // add light jobs - only if no name is requested, light jobs can't have a name
-            if (onlyName == null) {
-                for (Object ctx : lightMasterContexts.values()) {
-                    if (ctx != UNINITIALIZED_LIGHT_JOB_MARKER) {
-                        result.add(tuple2(((LightMasterContext) ctx).getJobId(), true));
-                    }
+            // add light jobs
+            for (Object ctx : lightMasterContexts.values()) {
+                if (ctx != UNINITIALIZED_LIGHT_JOB_MARKER) {
+                    result.add(tuple2(((LightMasterContext) ctx).getJobId(), true));
                 }
             }
-
             // add normal jobs - only on master
             if (isMaster()) {
-                if (onlyName != null) {
-                    // we first need to collect to a map where the jobId is the key to eliminate possible duplicates
-                    // in JobResult and also to be able to sort from newest to oldest
-                    Map<Long, Long> jobs = new HashMap<>();
-                    for (MasterContext ctx : masterContexts.values()) {
-                        if (onlyName.equals(ctx.jobConfig().getName())) {
-                            jobs.put(ctx.jobId(), Long.MAX_VALUE);
-                        }
-                    }
-
-                    for (JobResult jobResult : jobRepository.getJobResults(onlyName)) {
-                        jobs.put(jobResult.getJobId(), jobResult.getCreationTime());
-                    }
-
-                    jobs.entrySet().stream()
-                            .sorted(
-                                    comparing(Entry<Long, Long>::getValue)
-                                            .thenComparing(Entry::getKey)
-                                            .reversed()
-                            )
-                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
-                } else {
-                    for (Long jobId : jobRepository.getAllJobIds()) {
-                        result.add(tuple2(jobId, false));
-                    }
+                for (Long jobId : jobRepository.getAllJobIds()) {
+                    result.add(tuple2(jobId, false));
                 }
             }
 
+            return new GetJobIdsResult(result);
+        });
+    }
+
+    public CompletableFuture<GetJobIdsResult> getNormalJobIdsByName(@Nonnull String name) {
+        return submitToCoordinatorThread(() -> {
+            List<Tuple2<Long, Boolean>> result = new ArrayList<>();
+            // we first need to collect to a map where the jobId is the key to eliminate possible duplicates
+            // in JobResult and also to be able to sort from newest to oldest
+            Map<Long, Long> jobs = new HashMap<>();
+            for (MasterContext ctx : masterContexts.values()) {
+                if (name.equals(ctx.jobConfig().getName())) {
+                    jobs.put(ctx.jobId(), Long.MAX_VALUE);
+                }
+            }
+
+            for (JobResult jobResult : jobRepository.getJobResults(name)) {
+                jobs.put(jobResult.getJobId(), jobResult.getCreationTime());
+            }
+
+            jobs.entrySet().stream()
+                    .sorted(
+                            comparing(Entry<Long, Long>::getValue)
+                                    .thenComparing(Entry::getKey)
+                                    .reversed()
+                    )
+                    .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
             return new GetJobIdsResult(result);
         });
     }

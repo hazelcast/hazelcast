@@ -19,6 +19,9 @@ package com.hazelcast.jet.job;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -34,13 +37,15 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class JobOperationFaultBounceTest {
 
-    private static final int TEST_DURATION_SECONDS = 60;
+    private static final int TEST_DURATION_SECONDS = 30;
 
     @Rule
     public BounceMemberRule bounceMemberRule =
@@ -61,8 +66,37 @@ public class JobOperationFaultBounceTest {
     @Test
     public void submitOperation() {
         var client = bounceMemberRule.getNextTestDriver();
-        Runnable[] tasks = new Runnable[1];
-        tasks[0] = () -> startJob(client, false);
+        Runnable[] tasks = new Runnable[] {
+                () -> startJob(client, false)
+        };
+        bounceMemberRule.testRepeatedly(tasks, TEST_DURATION_SECONDS);
+    }
+
+    @Test
+    public void clientGetJobs() {
+        var client = bounceMemberRule.getNextTestDriver();
+        Runnable[] tasks = new Runnable[] {
+            () -> client.getJet().getJob("job")
+        };
+        bounceMemberRule.testRepeatedly(tasks, TEST_DURATION_SECONDS);
+    }
+
+    @Test
+    public void clientGetAllJobs() {
+        var client = bounceMemberRule.getNextTestDriver();
+
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new TestProcessors.MockP().streaming());
+
+        var job = client.getJet().newJob(streamingDag);
+        assertTrueEventually(() -> assertEquals("Job should be running", JobStatus.RUNNING, job.getStatus()));
+
+        Runnable[] tasks = new Runnable[] {
+                () -> {
+                    var jobs = client.getJet().getJobs();
+                    assertEquals("Expected exactly one job", 1, jobs.size());
+                }
+        };
         bounceMemberRule.testRepeatedly(tasks, TEST_DURATION_SECONDS);
     }
 

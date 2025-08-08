@@ -34,9 +34,11 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -182,6 +184,46 @@ public final class InvocationUtil {
         ParallelOperationInvoker invoker
                 = new ParallelOperationInvoker(nodeEngine, operationSupplier, maxRetries, memberFilter);
         return invoker.invoke();
+    }
+
+
+    /**
+     * Invokes the given operation on all members of the cluster and aggregates the results using the provided functions.
+     *
+     * <p>This method sends the same operation to all members of the cluster.
+     * Each response is first processed by the {@code mapFunction}, which map the result to another one.
+     * Once all member responses are processed, the {@code reduceFunction}
+     * is applied to aggregate the results into a single final value.</p>
+     *
+     * Depending on how the operation handles exceptions,
+     * some of them might not be passed to the map function and will be retried instead.
+     * The mapFunction and reduceFunction are executed on the sender side
+     * and do not support the exception handling logic of the operation.
+     * <p>
+     * This method does not guarantee that the cluster is in a stable state.
+     *
+     * @param <T> the type of individual member result
+     * @param <R> the type of the final aggregated result
+     * @param nodeEngine nodeEngine instance
+     * @param operationSupplier a supplier that creates a new {@link Operation} instance to send to each member
+     * @param mapFunction a function that handles each individual result or exception from a member
+     * @param reduceFunction a function that aggregates all mapped results into a final result
+     * @return a {@link CompletableFuture} that completes with the aggregated result when all member operations are complete
+     */
+    public static <T, R> CompletableFuture<R> invokeAndReduceOnAllClusterMembers(
+            NodeEngine nodeEngine,
+            Supplier<Operation> operationSupplier,
+            BiFunction<T, Throwable, T> mapFunction,
+            Function<Map<Member, T>, R> reduceFunction
+    ) {
+        var members = nodeEngine.getClusterService().getMembers();
+        var invocation = new InvokeAndReduceOnMembers<>(
+                members,
+                operationSupplier,
+                nodeEngine.getOperationService(),
+                mapFunction,
+                reduceFunction);
+        return invocation.invokeAsync();
     }
 
     private static class InvokeOnMemberFunction implements Function<Member, InternalCompletableFuture<Object>> {

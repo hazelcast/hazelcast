@@ -756,11 +756,11 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         doInvoke(false);
     }
 
-    Address getTargetAddress() {
+    public Address getTargetAddress() {
         return targetAddress;
     }
 
-    Member getTargetMember() {
+    public Member getTargetMember() {
         return targetMember;
     }
 

@@ -17,38 +17,37 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.internal.util.InvocationUtil.invokeAndReduceOnAllClusterMembers;
+import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static java.util.Collections.singleton;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Member-side {@code JetInstance} implementation
@@ -76,74 +75,82 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Map<Address, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
-        Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
-        // if onlyName != null, only send the operation to master. Light jobs cannot have a name
-        Collection<Member> targetMembers = onlyName == null
-                ? nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)
-                : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
+    protected Map<Address, GetJobIdsResult> getAllJobs() {
+        return getJobsById(null);
+    }
 
-        GetJobIdsOperation masterOperation = new GetJobIdsOperation(onlyName, onlyJobId);
-
+    @Override
+    protected GetJobIdsResult getJobByName(String name) {
+        GetJobIdsOperation masterOperation = new GetJobIdsOperation(name, ALL_JOBS, false);
         CompletableFuture<GetJobIdsResult> masterFuture = nodeEngine
                 .getOperationService()
                 .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, masterOperation)
                 .invoke();
-
-        for (Member member : targetMembers) {
-            GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
-            futures.put(member.getAddress(), nodeEngine
-                    .getOperationService()
-                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
-                    .invoke());
-        }
-
-        Map<Address, GetJobIdsResult> res = new HashMap<>(futures.size());
-        for (Entry<Address, CompletableFuture<GetJobIdsResult>> en : futures.entrySet()) {
-            GetJobIdsResult result;
-            try {
-                result = en.getValue().get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                result = GetJobIdsResult.EMPTY;
-            } catch (ExecutionException e) {
-                // If we don't get a response from a non-master member, it can contain only light jobs - we ignore that
-                // member's failure, because these jobs are not as important. If we don't get response from the master,
-                // we report it to the user.
-                if (isOrHasCause(e, MemberLeftException.class) || isOrHasCause(e, TargetNotMemberException.class)) {
-                    result = GetJobIdsResult.EMPTY;
-                } else {
-                    throw new RuntimeException("Error when getting job IDs: " + e, e);
-                }
-            }
-
-            res.put(en.getKey(), result);
-        }
-
-        res.put(null, filterNonLightJobs(masterFuture));
-        return res;
+        return getJobIdsResultSafe(masterFuture);
     }
 
-    private GetJobIdsResult filterNonLightJobs(CompletableFuture<GetJobIdsResult> masterFuture) {
-        GetJobIdsResult result;
+    @Override
+    protected Map<Address, GetJobIdsResult> getJobsById(@Nullable Long jobId) {
+        long jobIdParameter = requireNonNullElse(jobId, ALL_JOBS);
+        GetJobIdsOperation masterOperation = new GetJobIdsOperation(null, jobIdParameter, false);
+
+        Invocation<GetJobIdsResult> masterInvocation = nodeEngine
+                .getOperationService()
+                .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, masterOperation)
+                .build();
+
+        CompletableFuture<GetJobIdsResult> masterFuture = masterInvocation.invoke();
+
+        Supplier<Operation> operationSupplier = () -> new GetJobIdsOperation(
+                null,
+                jobIdParameter,
+                true
+        );
+
+        CompletableFuture<Map<Address, GetJobIdsResult>> allMembersFuture = invokeAndReduceOnAllClusterMembers(
+                nodeEngine,
+                operationSupplier,
+                (result, e) -> {
+                    if (e == null) {
+                        return result;
+                    }
+                    if (isOrHasCause(e, MemberLeftException.class)
+                            || isOrHasCause(e, TargetNotMemberException.class)
+                            || isOrHasCause(e, HazelcastInstanceNotActiveException.class)) {
+                        return GetJobIdsResult.EMPTY;
+                    }
+                    if (isOrHasCause(e, InterruptedException.class)) {
+                        return GetJobIdsResult.EMPTY;
+                    }
+                    throw new JetException("Error when getting job IDs: " + e, e);
+                },
+                memberMap -> memberMap.entrySet().stream()
+                        .collect(toMap(
+                                        en -> en.getKey().getAddress(),
+                                        en -> (GetJobIdsResult) en.getValue()
+                                )
+                        )
+        );
+
+        var masterResult = getJobIdsResultSafe(masterFuture);
         try {
-            result = masterFuture.get();
+            Map<Address, GetJobIdsResult> allMemberResults = allMembersFuture.get();
+            allMemberResults.put(masterInvocation.getTargetAddress(), masterResult);
+            return allMemberResults;
+        } catch (InterruptedException | ExecutionException e) {
+            throw rethrow(e);
+        }
+    }
+
+    private GetJobIdsResult getJobIdsResultSafe(CompletableFuture<GetJobIdsResult> future) {
+        try {
+            return future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return GetJobIdsResult.EMPTY;
-        } catch (Exception e) {
-            // We do not ignore any exception from master.
+        } catch (ExecutionException e) {
             throw rethrow(e);
         }
-        List<Tuple2<Long, Boolean>> nonLightJobs = new ArrayList<>();
-        for (int i = 0; i < result.getJobIds().length; i++) {
-            long jobId = result.getJobIds()[i];
-            if (result.getIsLightJobs()[i]) {
-                continue;
-            }
-            nonLightJobs.add(tuple2(jobId, false));
-        }
-        return new GetJobIdsResult(nonLightJobs);
     }
 
     @Override

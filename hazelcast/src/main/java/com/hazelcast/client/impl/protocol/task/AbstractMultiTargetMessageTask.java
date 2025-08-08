@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
@@ -68,7 +67,10 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
                                                         .setResultDeserialized(false);
 
             InvocationFuture<Object> invocationFuture = builder.invoke();
-            invocationFuture.whenCompleteAsync(new SingleTargetCallback(target, callback), CALLER_RUNS);
+            invocationFuture.whenCompleteAsync(
+                    (result, throwable) -> callback.notify(target, throwable == null ? result : throwable),
+                    CALLER_RUNS
+            );
         }
 
         return finalResult;
@@ -115,22 +117,6 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
                     finalResult.completeExceptionally(throwable);
                 }
             }
-        }
-    }
-
-    private final class SingleTargetCallback implements BiConsumer<Object, Throwable> {
-
-        final Member target;
-        final MultiTargetCallback parent;
-
-        private SingleTargetCallback(Member target, MultiTargetCallback parent) {
-            this.target = target;
-            this.parent = parent;
-        }
-
-        @Override
-        public void accept(Object object, Throwable throwable) {
-            parent.notify(target, throwable == null ? object : throwable);
         }
     }
 }

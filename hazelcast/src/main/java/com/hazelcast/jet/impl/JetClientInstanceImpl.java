@@ -81,14 +81,29 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return client.getClientClusterService().getMasterMember().getUuid();
     }
 
-    @Override
-    public Map<UUID, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
+    private Map<UUID, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 JetGetJobIdsCodec.encodeRequest(onlyName, onlyJobId == null ? ALL_JOBS : onlyJobId),
                 resp -> {
                     Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
                     return serializationService.toObject(responseSerialized);
                 });
+    }
+
+    protected GetJobIdsResult getJobByName(String onlyName) {
+        var result = getJobsInt(onlyName, null);
+        // Only normal jobs can have a name.
+        // Since information about normal jobs is requested from the master node only, a single result is expected.
+        assert result.size() == 1 : "Exactly one result is expected";
+        return result.values().stream().findFirst().orElseThrow();
+    }
+
+    protected Map<UUID, GetJobIdsResult> getJobsById(Long onlyJobId) {
+        return getJobsInt(null, onlyJobId);
+    }
+
+    protected Map<UUID, GetJobIdsResult> getAllJobs() {
+        return getJobsInt(null, null);
     }
 
     @Nonnull
