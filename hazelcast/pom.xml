@@ -953,7 +953,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>7.0.0</version>
+            <version>7.0.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
