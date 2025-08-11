@@ -25,10 +25,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 
-import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
-
 @NotThreadSafe
 public class RuntimeContext {
+    /**
+     * Unknown value
+     */
+    @Deprecated(forRemoval = true, since = "5.6")
+    public static final long UNKNOWN = -1;
 
     private final Map<String, StatefulSetInfo> statefulSets = new HashMap<>();
     private StatefulSetInfo merged;
@@ -55,9 +58,10 @@ public class RuntimeContext {
 
         @Nonnull
         public static StatefulSetInfo from(@Nonnull JsonObject statefulSet) {
-            int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", UNKNOWN);
-            int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", UNKNOWN);
-            int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", UNKNOWN);
+            int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", ClusterTopologyIntentTracker.UNKNOWN);
+            int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas",
+                    ClusterTopologyIntentTracker.UNKNOWN);
+            int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", ClusterTopologyIntentTracker.UNKNOWN);
             return new StatefulSetInfo(specReplicas, readyReplicas, replicas);
         }
     }
@@ -74,7 +78,9 @@ public class RuntimeContext {
 
     private int sum(ToIntFunction<StatefulSetInfo> fieldExtractor) {
         return statefulSets.values().stream().mapToInt(fieldExtractor)
-                .reduce((a, b) -> a == UNKNOWN || b == UNKNOWN ? UNKNOWN : a + b).orElse(UNKNOWN);
+                .reduce((a, b) -> a == ClusterTopologyIntentTracker.UNKNOWN || b == ClusterTopologyIntentTracker.UNKNOWN
+                                          ? ClusterTopologyIntentTracker.UNKNOWN : a + b)
+                .orElse(ClusterTopologyIntentTracker.UNKNOWN);
     }
 
     /**
