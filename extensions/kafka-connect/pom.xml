@@ -251,7 +251,7 @@
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
-            <version>6.7.1.RELEASE</version>
+            <version>6.8.0.RELEASE</version>
             <scope>test</scope>
         </dependency>
         <!-- AWS SQS-->
