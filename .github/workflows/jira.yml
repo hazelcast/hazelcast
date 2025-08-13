@@ -19,16 +19,16 @@ jobs:
           JIRA_LABEL: Java
           ISSUE_TYPE: Bug
   createGuardiansJiraIssue:
-    if: "${{ github.event.label.name == 'Action: Create HZG Jira' }}"
+    if: "${{ github.event.label.name == 'Action: Create CTT Jira' }}"
     runs-on: ubuntu-latest
     steps:
-      - name: Create HZG Jira Test Failure issue
+      - name: Create CTT Jira Test Failure issue
         uses: hazelcast/github-jira-tool-action@v6
         with:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          TARGET_JIRA_PROJECT: HZG
+          TARGET_JIRA_PROJECT: CTT
           ISSUE_TYPE: Test Failure
           JIRA_LABEL: from-gh
           # Custom fields must be provided with their IDs, which can be found using the following:
