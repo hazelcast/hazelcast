@@ -208,7 +208,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.56.v20240826</version>
+                <version>9.4.57.v20241219</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -304,6 +304,10 @@
                     <exclusion>
                         <groupId>org.apache.curator</groupId>
                         <artifactId>curator-framework</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk18on</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
