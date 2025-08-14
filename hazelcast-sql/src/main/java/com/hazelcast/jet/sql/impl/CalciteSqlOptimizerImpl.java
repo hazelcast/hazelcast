@@ -353,6 +353,7 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                 .collect(toList());
 
         Mapping mapping;
+        // RU_COMPAT 5.2
         if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)
                 && (node.dataConnectionNameWithoutSchema() != null || node.objectType() != null)) {
             throw new HazelcastException("Cannot create a mapping with a data connection or an object type " +

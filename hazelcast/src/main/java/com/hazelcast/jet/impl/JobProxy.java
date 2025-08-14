@@ -260,6 +260,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     public static void checkJobStatusListenerSupported(NodeEngine nodeEngine) {
+        // RU_COMPAT 5.2
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(V5_3)) {
             throw new UnsupportedOperationException("Job status listener is not supported.");
         }
