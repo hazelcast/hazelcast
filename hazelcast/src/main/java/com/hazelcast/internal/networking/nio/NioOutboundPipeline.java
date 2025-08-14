@@ -124,6 +124,10 @@ public final class NioOutboundPipeline
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter priorityFramesWritten = newSwCounter();
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = INFO, unit = BYTES)
+    private final SwCounter writeQueuePendingBytes = newSwCounter();
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
+    private final SwCounter priorityWriteQueuePendingBytes = newSwCounter();
 
     private volatile long lastWriteTime;
 
@@ -171,24 +175,6 @@ public final class NioOutboundPipeline
         return lastWriteTime;
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
-    public long bytesPending() {
-        return bytesPending(writeQueue);
-    }
-
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
-    public long priorityBytesPending() {
-        return bytesPending(priorityWriteQueue);
-    }
-
-    private long bytesPending(Queue<OutboundFrame> writeQueue) {
-        long bytesPending = 0;
-        for (OutboundFrame frame : writeQueue) {
-            bytesPending += frame.getFrameLength();
-        }
-        return bytesPending;
-    }
-
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS, unit = MS, level = INFO)
     private long idleTimeMillis() {
         return max(currentTimeMillis() - lastWriteTime, 0);
@@ -201,9 +187,13 @@ public final class NioOutboundPipeline
 
     public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
-            priorityWriteQueue.offer(frame);
+            if (priorityWriteQueue.offer(frame)) {
+                priorityWriteQueuePendingBytes.inc(frame.getFrameLength());
+            }
         } else {
-            writeQueue.offer(frame);
+            if (writeQueue.offer(frame)) {
+                writeQueuePendingBytes.inc(frame.getFrameLength());
+            }
         }
 
         // take care of the scheduling.
@@ -292,8 +282,10 @@ public final class NioOutboundPipeline
                 return null;
             }
             normalFramesWritten.inc();
+            writeQueuePendingBytes.inc(-frame.getFrameLength());
         } else {
             priorityFramesWritten.inc();
+            priorityWriteQueuePendingBytes.inc(-frame.getFrameLength());
         }
 
         return frame;
@@ -445,6 +437,8 @@ public final class NioOutboundPipeline
     void drainWriteQueues() {
         writeQueue.clear();
         priorityWriteQueue.clear();
+        writeQueuePendingBytes.set(0);
+        priorityWriteQueuePendingBytes.set(0);
     }
 
     long bytesWritten() {
