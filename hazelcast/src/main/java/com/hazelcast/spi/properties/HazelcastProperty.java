@@ -195,4 +195,12 @@ public final class HazelcastProperty {
     public String toString() {
         return name;
     }
+
+    /**
+     * Clears the value of this property
+     */
+    @Deprecated(since = "6.0", forRemoval = true)
+    public void clearSystemProperty() {
+        System.clearProperty(name);
+    }
 }
