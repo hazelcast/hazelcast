@@ -559,7 +559,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Override
     public void incrementQueryResultSizeExceededCount() {
         QUERY_LIMITER_HIT_COUNT.incrementAndGet(this);
     }

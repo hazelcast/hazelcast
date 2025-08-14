@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -75,7 +75,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
     private final transient long resultLimit;
     private final transient boolean orderAndLimitExpected;
     private final transient Projection projection;
-    private final transient LocalMapStats mapStats;
+    private final transient LocalMapStatsImpl mapStats;
 
     private transient long resultSize;
 
@@ -135,7 +135,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
      *                              to account query size limit hits
      */
     public QueryResult(IterationType iterationType, Projection projection, SerializationService serializationService,
-                       long resultLimit, boolean orderAndLimitExpected, @Nullable LocalMapStats mapStats) {
+                       long resultLimit, boolean orderAndLimitExpected, @Nullable LocalMapStatsImpl mapStats) {
         this.iterationType = iterationType;
         this.projection = projection;
         this.ss = serializationService;
