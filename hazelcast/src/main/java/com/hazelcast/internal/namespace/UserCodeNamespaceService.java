@@ -198,4 +198,12 @@ public interface UserCodeNamespaceService extends StatisticsAwareService<LocalUs
         ConfigAccessor.addNamespaceConfigLocally(namespacesConfig, namespaceConfig);
         addNamespace(namespaceConfig.getName(), ConfigAccessor.getResourceDefinitions(namespaceConfig));
     }
+
+    /**
+     * Method to transform a null namespace into the default namespace if available
+     *
+     * @param namespace the namespace to transform.
+     * @return the original namespace if non-{@code null}, the default namespace if it exists, otherwise {@code null}
+     */
+    String transformNamespace(@Nullable String namespace);
 }

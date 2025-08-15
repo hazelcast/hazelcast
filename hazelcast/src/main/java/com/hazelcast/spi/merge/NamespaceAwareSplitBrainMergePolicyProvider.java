@@ -67,9 +67,20 @@ public final class NamespaceAwareSplitBrainMergePolicyProvider extends SplitBrai
         if (isPredefinedMergePolicy(className)) {
             return mergePolicyMap.get(className);
         }
+        // namespace == null and default namespace exists => use the default namespace
+        // namespace == null and no default namespace exists => try adding without a namespace using default class loader
+        namespace = nodeEngine.getNamespaceService().transformNamespace(namespace);
         ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, namespace);
         var mergePolicyClass = validateAndGetClass(className, classLoader);
-        return getOrPutIfAbsent(mergePolicyMap, className, n -> createSplitBrainMergePolicy(mergePolicyClass, classLoader));
+        var key = getCacheKey(namespace, className);
+        return getOrPutIfAbsent(mergePolicyMap, key, n -> createSplitBrainMergePolicy(mergePolicyClass, classLoader));
+    }
+
+    private String getCacheKey(String namespace, String className) {
+        if (namespace == null) {
+            return className;
+        }
+        return namespace + ":" + className;
     }
 
     private Class<SplitBrainMergePolicy> validateAndGetClass(String className, ClassLoader classLoader) {
@@ -87,4 +98,15 @@ public final class NamespaceAwareSplitBrainMergePolicyProvider extends SplitBrai
             throw new InvalidConfigurationException("Invalid SplitBrainMergePolicy: " + clazz.getName(), e);
         }
     }
+
+    public void clearNamespaceCache(String namespace) {
+        // Some classes may be added with a null namespace using the default class loader.
+        // We treat these classes the same as predefined ones and do not delete them.
+        if (namespace == null) {
+            return;
+        }
+        var prefix = getCacheKey(namespace, "");
+        mergePolicyMap.keySet().removeIf(key -> key.startsWith(prefix));
+    }
+
 }

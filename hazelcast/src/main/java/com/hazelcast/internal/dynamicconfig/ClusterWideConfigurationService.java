@@ -368,6 +368,8 @@ public class ClusterWideConfigurationService implements
             currentConfig = namespaceConfigs.put(config.getName(), config);
             // ensure that the namespace is registered and added to the config.
             nodeEngine.getNamespaceService().addNamespaceConfig(nodeEngine.getConfig().getNamespacesConfig(), config);
+            // If a new namespace is added with the same name, delete all objects related to the previous namespace
+            nodeEngine.getSplitBrainMergePolicyProvider().clearNamespaceCache(config.getName());
             if (isNamespaceReferencedWithHRPersistence(nodeEngine, config)) {
                 listener.onConfigRegistered(config);
             }

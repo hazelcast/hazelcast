@@ -111,4 +111,7 @@ public class SplitBrainMergePolicyProvider {
     protected boolean isPredefinedMergePolicy(String policy) {
         return OUT_OF_THE_BOX_MERGE_POLICIES.containsKey(policy);
     }
+
+    public void clearNamespaceCache(String namespace) {
+    }
 }
