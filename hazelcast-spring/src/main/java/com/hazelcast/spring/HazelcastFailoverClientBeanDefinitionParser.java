@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -60,7 +61,8 @@ public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelc
         return springXmlBuilder.handleMultipleClusterAwareClient(element);
     }
 
-    private static class SpringXmlBuilder extends SpringXmlBuilderHelper {
+    @PrivateApi
+    class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
