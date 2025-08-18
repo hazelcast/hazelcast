@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
  * Registers both out-of-the-box merge policies, identified by their fully qualified and simple class names,
  * and custom merge policies based on the user-defined namespace container name.
  *
- * @since 6.0
+ * @since 5.6
  */
 public final class NamespaceAwareSplitBrainMergePolicyProvider extends SplitBrainMergePolicyProvider {
 

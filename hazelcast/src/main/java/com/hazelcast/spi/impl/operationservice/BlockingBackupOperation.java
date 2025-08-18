@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.PartitionMigrationEvent;
  * SPI for blocking backup operations
  * @see BlockingOperation
  * @see BackupOperation
- * @since 6.0
+ * @since 5.6
  */
 public interface BlockingBackupOperation extends AsynchronouslyExecutingBackupOperation {
 

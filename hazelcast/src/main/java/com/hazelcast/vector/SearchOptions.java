@@ -53,7 +53,7 @@ public interface SearchOptions {
 
     /**
      * @return SearchOptionsBuilder with the same settings
-     * @since 6.0
+     * @since 5.6
      */
     SearchOptionsBuilder toBuilder();
 

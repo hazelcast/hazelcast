@@ -1396,7 +1396,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *
      * @return the User Code Namespace associated with this job if it is configured, or
      * {@code null} if one has not been set.
-     * @since 6.0
+     * @since 5.6
      */
     @Nullable
     public String getUserCodeNamespace() {
@@ -1409,7 +1409,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * job, then the job will have access to resources from the UCN during execution.
      *
      * @param namespace the User Code Namespace to use with this Jet job
-     * @since 6.0
+     * @since 5.6
      */
     public void setUserCodeNamespace(String namespace) {
         this.arguments.put(JobConfigArguments.KEY_USER_CODE_NAMESPACE, namespace);

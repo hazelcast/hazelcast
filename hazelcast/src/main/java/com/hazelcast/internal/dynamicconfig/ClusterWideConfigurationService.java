@@ -85,7 +85,7 @@ import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.cluster.Versions.V5_5;
-import static com.hazelcast.internal.cluster.Versions.V6_0;
+import static com.hazelcast.internal.cluster.Versions.V5_6;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -734,7 +734,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(WanReplicationConfig.class, V5_4);
         configToVersion.put(UserCodeNamespaceConfig.class, V5_4);
         configToVersion.put(VectorCollectionConfig.class, V5_5);
-        configToVersion.put(DiagnosticsConfig.class, V6_0);
+        configToVersion.put(DiagnosticsConfig.class, V5_6);
 
         return Collections.unmodifiableMap(configToVersion);
     }

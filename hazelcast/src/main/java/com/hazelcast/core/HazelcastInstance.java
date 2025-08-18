@@ -470,7 +470,7 @@ public interface HazelcastInstance {
      *
      * @return DataConnection service
      * @throws UnsupportedOperationException when requested on the client side
-     * @since 6.0
+     * @since 5.6
      */
     @Nonnull
     DataConnectionService getDataConnectionService();

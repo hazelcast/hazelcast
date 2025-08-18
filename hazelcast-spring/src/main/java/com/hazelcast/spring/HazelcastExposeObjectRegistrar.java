@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 
 /**
  * Configuration used by {@link ExposeHazelcastObjects} to dynamically register its configuration.
- * @since 6.0
+ * @since 5.6
  */
 public final class HazelcastExposeObjectRegistrar implements ImportBeanDefinitionRegistrar {
 

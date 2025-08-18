@@ -2000,7 +2000,7 @@ public final class ClusterProperty {
      * Currently only implemented for client invocations of the following methods:
      * {@link IMap#entrySet()}, and {@link IMap#values()}.
      *
-     * @since 6.0
+     * @since 5.6
      */
     public static final HazelcastProperty EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD
             = new HazelcastProperty("hazelcast.expensive.imap.invocation.reporting.threshold", 100);

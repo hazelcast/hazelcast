@@ -90,7 +90,7 @@ public class GetJobIdsOperation extends AsyncMasterAwareOperation implements All
         out.writeString(onlyName);
         out.writeLong(onlyJobId);
         // RU_COMPAT_5_5
-        if (out.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_6)) {
             out.writeBoolean(includeOnlyLightJobs);
         }
     }
@@ -101,7 +101,7 @@ public class GetJobIdsOperation extends AsyncMasterAwareOperation implements All
         onlyName = in.readString();
         onlyJobId = in.readLong();
         // RU_COMPAT_5_5
-        if (in.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_6)) {
             includeOnlyLightJobs = in.readBoolean();
             // Execution on the master is required only when a named normal job or all jobs are requested
             isRequiredMasterExecution = onlyName != null || !includeOnlyLightJobs;

@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  *
  * @see BlockingOperation
  * @see Offload
- * @since 6.0
+ * @since 5.6
  */
 public interface AsynchronouslyExecutingBackupOperation {
     /**

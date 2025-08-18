@@ -301,7 +301,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Get throw count of {@link QueryResultSizeExceededException}
      *
-     * @since 6.0
+     * @since 5.6
      */
     default long getQueryResultSizeExceededCount() {
         return 0L;

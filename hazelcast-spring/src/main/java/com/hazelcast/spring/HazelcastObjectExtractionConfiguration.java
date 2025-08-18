@@ -61,7 +61,7 @@ import java.util.function.Supplier;
 
 /**
  * Configuration used by {@link ExposeHazelcastObjects} to dynamically register all Hazelcast objects as Spring beans.
- * @since 6.0
+ * @since 5.6
  */
 @Configuration(proxyBeanMethods = false)
 @AutoConfiguration

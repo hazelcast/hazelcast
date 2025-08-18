@@ -35,7 +35,7 @@ public record Hint<T>(String name, Function<String, T> parser) {
     }
 
     /**
-     * @since 6.0
+     * @since 5.6
      */
     public boolean isPresent(SearchOptions options) {
         return options.getHints().containsKey(name);

@@ -51,7 +51,7 @@ import static java.util.Collections.emptySet;
  * </ul>
  *
  * If there is already a bean named the same as some Hazelcast object, the bean with Hazelcast object will not be registered.
- * @since 6.0
+ * @since 5.6
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
