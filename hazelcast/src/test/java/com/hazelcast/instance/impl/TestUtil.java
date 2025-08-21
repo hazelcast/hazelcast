@@ -19,9 +19,11 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.impl.IntervalFunctions;
 import com.hazelcast.partition.Partition;
@@ -171,6 +173,32 @@ public final class TestUtil {
                 ++i;
             }
         }
+    }
+
+    /**
+     * Sets up current thread to be able to support User Code Namespaces for given instance.
+     * Useful when namespace-aware methods are invoked not on partition threads
+     * but directly in test thread. Should not be invoked from Hazelcast instance threads
+     * which should have this setup done automatically.
+     *
+     * @implNote This method is {@link com.hazelcast.test.annotation.CompatibilityTest}-aware and sets up
+     *           UCN thread locals from appropriate classloader.
+     *
+     * @param hz the Hazelcast instance
+     */
+    public static void setupNamespacesForCurrentThread(HazelcastInstance hz) {
+        assert !(Thread.currentThread() instanceof HazelcastManagedThread) : "Should not be invoked on Hazelcast threads";
+
+        if (isProxyClass(hz.getClass())) {
+            // This is a shortcut.
+            // Currently, onThreadStart only sets up the NodeEngineThreadLocalContext which is exactly what we need.
+            // If it starts doing too much, NodeEngineThreadLocalContext.declareNodeEngineReference
+            // from appropriate HazelcastAPIDelegatingClassloader will have to be invoked reflectively.
+            HazelcastStarter.getNode(hz).getNodeExtension().onThreadStart(Thread.currentThread());
+        } else {
+            NodeEngineThreadLocalContext.declareNodeEngineReference(getNode(hz).getNodeEngine());
+        }
+
     }
 
     /**

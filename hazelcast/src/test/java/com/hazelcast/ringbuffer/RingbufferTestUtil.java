@@ -17,6 +17,7 @@
 package com.hazelcast.ringbuffer;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -64,6 +65,9 @@ final class RingbufferTestUtil {
      * @return a {@link Collection} with the backup items
      */
     static Collection<Object> getBackupRingbuffer(HazelcastInstance backupInstance, int partitionId, String ringbufferName) {
+        // Backup may be owned by instance with previous version, need to setup namespaces for it as well.
+        // It does not really matter which particular NodeEngine is used as long as it is from the same Hazelcast version.
+        TestUtil.setupNamespacesForCurrentThread(backupInstance);
         NodeEngineImpl nodeEngine = getNodeEngineImpl(backupInstance);
         RingbufferService service = nodeEngine.getService(RingbufferService.SERVICE_NAME);
         RingbufferContainer container = service.getContainerOrNull(partitionId, getRingbufferNamespace(ringbufferName));
