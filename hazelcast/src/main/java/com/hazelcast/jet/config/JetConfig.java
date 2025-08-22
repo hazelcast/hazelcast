@@ -186,13 +186,13 @@ public class JetConfig {
      * Sets whether lossless job restart is enabled for the node. With lossless
      * restart you can restart the whole cluster without losing the jobs and
      * their state. The feature is implemented on top of the Hot Restart
-     * feature of Hazelcast IMDG which persists the data to disk.
+     * feature of Hazelcast Platform which persists the data to disk.
      * <p>
      * If enabled, you have to also configure Hot Restart:
      * <pre>{@code
-     *    JetConfig jetConfig = new JetConfig();
-     *    jetConfig.getInstanceConfig().setLosslessRestartEnabled(true);
-     *    jetConfig.getHazelcastConfig().getHotRestartPersistenceConfig()
+     *    Config config = new Config();
+     *    config.getJetConfig().setEnabled(true).setLosslessRestartEnabled(true);
+     *    config.getPersistenceConfig()
      *        .setEnabled(true)
      *        .setBaseDir(new File("/mnt/hot-restart"))
      *        .setParallelism(2);
@@ -202,7 +202,7 @@ public class JetConfig {
      * will also have Hot Restart storage enabled.
      * <p>
      * Feature is disabled by default. If you enable this option in open-source
-     * Hazelcast Jet, the member will fail to start, you need Jet Enterprise to
+     * Hazelcast, the member will fail to start, you need Hazelcast Enterprise to
      * run it and obtain a license from Hazelcast.
      *
      * @since 5.0
