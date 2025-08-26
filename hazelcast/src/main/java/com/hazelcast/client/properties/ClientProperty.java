@@ -242,10 +242,10 @@ public final class ClientProperty {
      * {@link #METRICS_COLLECTION_FREQUENCY} (5 seconds) will be used instead
      * of {@link #STATISTICS_PERIOD_SECONDS} (3 seconds), when not set
      * explicitly.
-     * @deprecated since 4.0. Use {@link #METRICS_ENABLED}
+     * @deprecated Use {@link #METRICS_ENABLED}
      * ({@code "hazelcast.client.metrics.enabled"}) instead.
      */
-    @Deprecated
+    @Deprecated(since = "4.0")
     public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
             false);
 
@@ -255,10 +255,10 @@ public final class ClientProperty {
      * The values set here is used as {@link #METRICS_COLLECTION_FREQUENCY} as instead.
      * If both this and {@link #METRICS_COLLECTION_FREQUENCY} are configured,
      * this is ignored.
-     * @deprecated since 4.0. Use {@link #METRICS_COLLECTION_FREQUENCY}
+     * @deprecated Use {@link #METRICS_COLLECTION_FREQUENCY}
      * ({@code "hazelcast.client.metrics.collection.frequency"}) instead.
      */
-    @Deprecated
+    @Deprecated(since = "4.0")
     public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 

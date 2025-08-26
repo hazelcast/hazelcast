@@ -40,7 +40,7 @@ import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static java.lang.String.format;
 
 /**
- * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @deprecated "User Code Deployment" is replaced by the "User Code Namespaces" feature
  * @see UserCodeNamespaceService
  */
 @Deprecated(since = "5.4", forRemoval = true)

@@ -247,12 +247,13 @@ public interface Cluster {
     Version getClusterVersion();
 
     /**
-     * @deprecated since 5.0
      * Use {@link Cluster#getPersistenceService()} instead.
      * <p>
      * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
+     *
+     * @deprecated
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     HotRestartService getHotRestartService();
 
     /**

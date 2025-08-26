@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  * @deprecated After 5.0 Jet was merged into core Hazelcast product. Use
  * the {@link Hazelcast} class as the entry point.
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public final class Jet {
 
     private Jet() {
@@ -43,36 +43,36 @@ public final class Jet {
 
     /**
      * @since Jet 4.0
-     * @deprecated since 5.0
+     * @deprecated
      * Please use {@link Hazelcast#bootstrappedInstance()} and then get
      * {@link JetService} from the created {@link HazelcastInstance}
      * by using {@link HazelcastInstance#getJet()}}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     public static JetInstance bootstrappedInstance() {
         return (JetInstance) Hazelcast.bootstrappedInstance().getJet();
     }
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Please use {@link Hazelcast#newHazelcastInstance()} and then get
      * {@link JetService} from the created {@link HazelcastInstance}
      * by using {@link HazelcastInstance#getJet()}}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     public static JetInstance newJetInstance() {
         return (JetInstance) Hazelcast.newHazelcastInstance().getJet();
     }
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link Hazelcast#newHazelcastInstance(Config)} and then get
      * {@link JetService} from the created {@link HazelcastInstance} by
      * using {@link HazelcastInstance#getJet()}}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     public static JetInstance newJetInstance(@Nonnull JetConfig config) {
         Preconditions.checkNotNull(config, "config");
@@ -82,24 +82,24 @@ public final class Jet {
     }
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastClient#newHazelcastClient()} and then get
      * {@link JetService} from the created {@link HazelcastInstance}
      * client by using {@link HazelcastInstance#getJet()}}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     public static JetInstance newJetClient() {
         return (JetInstance) HazelcastClient.newHazelcastClient().getJet();
     }
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastClient#newHazelcastClient(ClientConfig)} and
      * then get {@link JetService} from the created {@link
      * HazelcastInstance} client by using {@link HazelcastInstance#getJet()}}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     public static JetInstance newJetClient(@Nonnull ClientConfig config) {
         Preconditions.checkNotNull(config, "config");
@@ -107,24 +107,24 @@ public final class Jet {
     }
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastClient#newHazelcastFailoverClient()} and
      * then get {@link JetService} from the created {@link HazelcastInstance}
      * client by using {@link HazelcastInstance#getJet()}}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     public static JetInstance newJetFailoverClient() {
         return (JetInstance) HazelcastClient.newHazelcastFailoverClient().getJet();
     }
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastClient#newHazelcastFailoverClient(ClientFailoverConfig)}
      * and then get {@link JetService} from the created {@link HazelcastInstance}
      * client by using {@link HazelcastInstance#getJet()}}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     public static JetInstance newJetFailoverClient(@Nonnull ClientFailoverConfig config) {
         Preconditions.checkNotNull(config, "config");

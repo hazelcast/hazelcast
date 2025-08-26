@@ -20,7 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 /**
- * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @deprecated "User Code Deployment" is replaced by the "User Code Namespaces" feature
  * @see com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader
  */
 @Deprecated(since = "5.4", forRemoval = true)

@@ -19,15 +19,15 @@ package com.hazelcast.hotrestart;
 import com.hazelcast.persistence.PersistenceService;
 
 /**
- * @deprecated since 5.0 because of renaming purposes.
+ * @deprecated because of renaming purposes.
  * Please use {@link com.hazelcast.persistence.PersistenceService} instead.
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public interface HotRestartService extends PersistenceService {
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link PersistenceService#isBackupEnabled()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     boolean isHotBackupEnabled();
 }

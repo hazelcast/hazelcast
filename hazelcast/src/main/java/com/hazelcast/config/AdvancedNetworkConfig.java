@@ -172,7 +172,7 @@ public class AdvancedNetworkConfig {
      * @param restServerEndpointConfig the server socket endpoint configuration
      * @return this object for fluent chaining
      *
-     * @deprecated since 5.5, use RestConfig instead. Will be removed at 6.0.
+     * @deprecated use RestConfig instead. Will be removed at 6.0.
      * @see RestConfig
      */
     @Deprecated(since = "5.5", forRemoval = true)

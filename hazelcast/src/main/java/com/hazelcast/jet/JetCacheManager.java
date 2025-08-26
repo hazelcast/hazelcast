@@ -20,17 +20,17 @@ import com.hazelcast.cache.ICache;
 
 /**
  * @since Jet 3.0
- * @deprecated since 5.0
+ * @deprecated
  * Use {@link com.hazelcast.core.ICacheManager} instead.
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public interface JetCacheManager {
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link com.hazelcast.core.ICacheManager#getCache(String)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     <K, V> ICache<K, V> getCache(String name);
 }

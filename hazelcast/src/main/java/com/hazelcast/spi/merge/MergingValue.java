@@ -34,11 +34,11 @@ public interface MergingValue<V> extends MergingView {
      * {@code Exception} being raised.
      *
      * @return the deserialized merging value
-     * @deprecated since 5.4 - this method name is too ambiguous and does
+     * @deprecated this method name is too ambiguous and does
      * not convey its functionality well (it deserializes the value) - so
      * it is being replaced by {@link #getDeserializedValue()}.
      */
-    @Deprecated
+    @Deprecated(since = "5.4")
     default V getValue() {
         return getDeserializedValue();
     }

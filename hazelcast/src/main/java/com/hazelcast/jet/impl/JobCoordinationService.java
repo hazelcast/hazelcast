@@ -770,9 +770,9 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     /**
      * Return a summary of all jobs
      *
-     * @deprecated Since 5.3, to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
+     * @deprecated to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
      */
-    @Deprecated
+    @Deprecated(since = "5.3", forRemoval = true)
     public CompletableFuture<List<JobSummary>> getJobSummaryList() {
         return getJobAndSqlSummaryList().thenApply(jobAndSqlSummaries -> jobAndSqlSummaries.stream()
                 .map(this::toJobSummary)

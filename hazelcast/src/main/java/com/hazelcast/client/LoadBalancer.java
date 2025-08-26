@@ -52,9 +52,9 @@ public interface LoadBalancer {
      *
      * @throws UnsupportedOperationException if the operation is not supported by this instance
      * @since 4.2
-     * @deprecated Since 5.0, the method is unused
+     * @deprecated the method is unused
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     default Member nextDataMember() {
         throw new UnsupportedOperationException();
     }
@@ -64,9 +64,9 @@ public interface LoadBalancer {
      *
      * @see #nextDataMember()
      * @since 4.2
-     * @deprecated Since 5.0, the method is unused
+     * @deprecated the method is unused
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     default boolean canGetNextDataMember() {
         return false;
     }

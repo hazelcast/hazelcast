@@ -32,9 +32,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * General configuration options pertaining to a Jet instance.
  *
  * @since Jet 3.0
- * @deprecated since 5.0, use {@link JetConfig} instead.
+ * @deprecated use {@link JetConfig} instead.
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public class InstanceConfig {
 
     /**

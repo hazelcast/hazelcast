@@ -92,9 +92,9 @@ public class NativeMemoryConfig {
 
     /**
      * Returns size of the native memory region.
-     * @deprecated Since 5.2, use {@link #getCapacity()} instead.
+     * @deprecated use {@link #getCapacity()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.2")
     public MemorySize getSize() {
         return new MemorySize(capacity.getValue(), capacity.getUnit());
     }
@@ -108,9 +108,9 @@ public class NativeMemoryConfig {
      *
      * @param capacity memory size
      * @return this {@link NativeMemoryConfig} instance
-     * @deprecated Since 5.2, use {@link #setCapacity(Capacity)} instead.
+     * @deprecated use {@link #setCapacity(Capacity)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.2")
     public NativeMemoryConfig setSize(MemorySize capacity) {
         this.capacity = isNotNull(capacity, "size");
         return this;
@@ -281,11 +281,11 @@ public class NativeMemoryConfig {
      * is thrown.
      *
      * @see PersistentMemoryConfig#getDirectoryConfigs()
-     * @deprecated Since 4.1 multiple persistent memory directories are
+     * @deprecated multiple persistent memory directories are
      * supported. Please use {@link PersistentMemoryConfig#getDirectoryConfigs()}
      * instead.
      */
-    @Deprecated
+    @Deprecated(since = "4.1")
     @Nullable
     public String getPersistentMemoryDirectory() {
         List<PersistentMemoryDirectoryConfig> directoryConfigs = persistentMemoryConfig.getDirectoryConfigs();
@@ -308,13 +308,13 @@ public class NativeMemoryConfig {
      * @return this {@link NativeMemoryConfig} instance
      * @see #getPersistentMemoryConfig()
      * @see PersistentMemoryConfig#addDirectoryConfig(PersistentMemoryDirectoryConfig)
-     * @deprecated Since 4.1 multiple persistent memory directories are
+     * @deprecated multiple persistent memory directories are
      * supported. Please use {@link #setPersistentMemoryConfig(PersistentMemoryConfig)}
      * or {@link PersistentMemoryConfig#addDirectoryConfig(PersistentMemoryDirectoryConfig)}
      * instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "4.1")
     public NativeMemoryConfig setPersistentMemoryDirectory(@Nullable String directory) {
         if (directory != null) {
             this.persistentMemoryConfig.setDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));

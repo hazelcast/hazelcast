@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  * that encapsulates {@link HazelcastInstance}. Please use {@link
  * JetService} instead.
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public interface JetInstance extends JetService {
 
     /**
@@ -46,93 +46,93 @@ public interface JetInstance extends JetService {
      *
      * @since Jet 3.0
      *
-     * @deprecated since 5.0
+     * @deprecated
      * Because we first access to {@link HazelcastInstance} and then
      * {@link JetService} from the product's entry point -{@link Hazelcast}-,
      * we don't need to this back reference anymore. This class made
      * sense when the entry point was {@link Jet}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     HazelcastInstance getHazelcastInstance();
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getName()} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     String getName();
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getCluster()} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     Cluster getCluster();
 
     /**
      * @since Jet 4.4
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getSql()} instead.
      */
     @Beta
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     SqlService getSql();
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getMap(String)} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     <K, V> IMap<K, V> getMap(@Nonnull String name);
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getReplicatedMap(String)} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name);
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getList(String)} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     <E> IList<E> getList(@Nonnull String name);
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getReliableTopic(String)} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0")
     <E> ITopic<E> getReliableTopic(@Nonnull String name);
 
     /**
      * @since Jet 3.0
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#getCacheManager()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     @Nonnull
     JetCacheManager getCacheManager();
 
     /**
-     * @deprecated since 5.0
+     * @deprecated
      * Use {@link HazelcastInstance#shutdown()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     void shutdown();
 }

@@ -154,7 +154,7 @@ public class ClientNetworkConfig {
     /**
      * See {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
      *
-     * @deprecated since 5.5, this option is superseded by {@link ClusterRoutingConfig#getRoutingMode()}
+     * @deprecated this option is superseded by {@link ClusterRoutingConfig#getRoutingMode()}
      * @return true if client is smart
      */
     @Deprecated(since = "5.5")
@@ -173,7 +173,7 @@ public class ClientNetworkConfig {
      * <p>
      * Default value is {@code true}.
      *
-     * @deprecated since 5.5, this option is superseded by {@link ClusterRoutingConfig#setRoutingMode(RoutingMode)}}.
+     * @deprecated this option is superseded by {@link ClusterRoutingConfig#setRoutingMode(RoutingMode)}}.
      * @param smartRouting true if smart routing should be enabled.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
