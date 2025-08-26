@@ -19,51 +19,33 @@ package com.hazelcast.version;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.version.MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
 public class MemberVersionTest {
-
-    private static final String VERSION_3_8_SNAPSHOT_STRING = "3.8-SNAPSHOT";
-    private static final String VERSION_3_8_1_RC1_STRING = "3.8.1-RC1";
-    private static final String VERSION_3_8_1_BETA_1_STRING = "3.8.1-beta-1";
-    private static final String VERSION_3_8_BETA_2_STRING = "3.8-beta-2";
-    private static final String VERSION_3_8_2_STRING = "3.8.2";
-    private static final String VERSION_3_9_0_STRING = "3.9.0";
-    private static final String VERSION_UNKNOWN_STRING = "0.0.0";
-
-    private static final MemberVersion VERSION_3_8 = MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING);
-    private static final MemberVersion VERSION_3_8_1 = MemberVersion.of(VERSION_3_8_1_RC1_STRING);
-    private static final MemberVersion VERSION_3_8_2 = MemberVersion.of(VERSION_3_8_2_STRING);
-    private static final MemberVersion VERSION_3_9 = MemberVersion.of(VERSION_3_9_0_STRING);
 
     private MemberVersion version = MemberVersion.of(3, 8, 0);
     private MemberVersion versionSameAttributes = MemberVersion.of(3, 8, 0);
     private MemberVersion versionOtherMajor = MemberVersion.of(4, 8, 0);
-    private MemberVersion versionOtherMinor = MemberVersion.of(3, 7, 0);
-    private MemberVersion versionOtherPath = MemberVersion.of(3, 8, 1);
+    private MemberVersion versionOtherMinor = MemberVersion.of(3, 9, 0);
+    private MemberVersion versionOtherPatch = MemberVersion.of(3, 8, 1);
 
     @Test
     public void testIsUnknown() {
         assertTrue(MemberVersion.UNKNOWN.isUnknown());
-        assertFalse(MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING).isUnknown());
-        assertFalse(MemberVersion.of(VERSION_3_8_1_RC1_STRING).isUnknown());
-        assertFalse(MemberVersion.of(VERSION_3_8_1_BETA_1_STRING).isUnknown());
-        assertFalse(MemberVersion.of(VERSION_3_8_BETA_2_STRING).isUnknown());
-        assertFalse(MemberVersion.of(VERSION_3_8_2_STRING).isUnknown());
     }
 
     @Test
@@ -71,36 +53,21 @@ public class MemberVersionTest {
         assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(0, 0, 0));
     }
 
-    @Test
-    public void testVersionOf_whenVersionStringIsSnapshot() {
-        MemberVersion expected = MemberVersion.of(3, 8, 0);
-        assertEquals(expected, MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING));
-    }
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', useHeadersInDisplayName = true, textBlock = """
+                Version String    | Major | Minor | Patch
+                3.8-SNAPSHOT      | 3     | 8     | 0
+                3.8-beta-2        | 3     | 8     | 0
+                3.8.1-beta-1      | 3     | 8     | 1
+                3.8.1-beta-2      | 3     | 8     | 1
+                3.8.1-RC1         | 3     | 8     | 1
+                3.8.2             | 3     | 8     | 2
+            """)
+    public void testVersionOf(String version, int major, int minor, int patch) {
+        MemberVersion parsed = MemberVersion.of(version);
 
-    @Test
-    public void testVersionOf_whenVersionStringIsBeta() {
-        assertEquals(MemberVersion.of(3, 8, 0), MemberVersion.of(VERSION_3_8_BETA_2_STRING));
-        assertEquals(MemberVersion.of(3, 8, 1), MemberVersion.of(VERSION_3_8_1_BETA_1_STRING));
-    }
-
-    @Test
-    public void test_constituents_whenVersionStringIsBeta() {
-        final MemberVersion expected = MemberVersion.of(VERSION_3_8_BETA_2_STRING);
-        assertEquals(3, expected.getMajor());
-        assertEquals(8, expected.getMinor());
-        assertEquals(0, expected.getPatch());
-    }
-
-    @Test
-    public void testVersionOf_whenVersionStringIsRC() {
-        MemberVersion expected = MemberVersion.of(3, 8, 1);
-        assertEquals(expected, MemberVersion.of(VERSION_3_8_1_RC1_STRING));
-    }
-
-    @Test
-    public void testVersionOf_whenVersionStringIsRelease() {
-        MemberVersion expected = MemberVersion.of(3, 8, 2);
-        assertEquals(expected, MemberVersion.of(VERSION_3_8_2_STRING));
+        assertEquals(MemberVersion.of(major, minor, patch), parsed);
+        assertFalse(parsed.isUnknown());
     }
 
     @Test
@@ -112,14 +79,11 @@ public class MemberVersionTest {
         assertEquals(2, expected.getPatch());
     }
 
-    @Test
-    public void testVersionOf_whenVersionStringIsUnknown() {
-        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(VERSION_UNKNOWN_STRING));
-    }
-
-    @Test
-    public void testVersionOf_whenVersionStringIsNull() {
-        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(null));
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = "0.0.0")
+    public void testVersionOf_unknown(String version) {
+        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(version));
     }
 
     @Test
@@ -132,40 +96,37 @@ public class MemberVersionTest {
 
         assertNotEquals(version, versionOtherMajor);
         assertNotEquals(version, versionOtherMinor);
-        assertNotEquals(version, versionOtherPath);
+        assertNotEquals(version, versionOtherPatch);
     }
 
     @Test
     public void testHashCode() {
-        assertEquals(version.hashCode(), version.hashCode());
-        assertEquals(version.hashCode(), versionSameAttributes.hashCode());
+        assertThat(version).hasSameHashCodeAs(version);
+        assertThat(version).hasSameHashCodeAs(versionSameAttributes);
 
         assumeDifferentHashCodes();
-        assertNotEquals(version.hashCode(), versionOtherMajor.hashCode());
-        assertNotEquals(version.hashCode(), versionOtherMinor.hashCode());
-        assertNotEquals(version.hashCode(), versionOtherPath.hashCode());
+        assertThat(version).doesNotHaveSameHashCodeAs(versionOtherMajor);
+        assertThat(version).doesNotHaveSameHashCodeAs(versionOtherMinor);
+        assertThat(version).doesNotHaveSameHashCodeAs(versionOtherPatch);
     }
 
     @Test
     public void testCompareTo() {
-        assertTrue(VERSION_3_8.compareTo(VERSION_3_8) == 0);
-        assertTrue(VERSION_3_8.compareTo(VERSION_3_8_1) < 0);
-        assertTrue(VERSION_3_8.compareTo(VERSION_3_8_2) < 0);
-        assertTrue(VERSION_3_8.compareTo(VERSION_3_9) < 0);
+        assertThat(version).isEqualByComparingTo(version);
+        assertThat(version).isLessThan(versionOtherMinor);
+        assertThat(version).isLessThan(versionOtherPatch);
 
-        assertTrue(VERSION_3_9.compareTo(VERSION_3_8) > 0);
-        assertTrue(VERSION_3_9.compareTo(VERSION_3_8_1) > 0);
-        assertTrue(VERSION_3_9.compareTo(VERSION_3_8_2) > 0);
+        assertThat(versionOtherMinor).isGreaterThan(version);
+        assertThat(versionOtherMinor).isGreaterThan(versionOtherPatch);
     }
 
     @Test
     public void testMajorMinorVersionComparator() {
-        assertEquals(0, MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8, VERSION_3_8_1));
-        assertEquals(0, MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8, VERSION_3_8_2));
-        assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_9, VERSION_3_8) > 0);
-        assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8, VERSION_3_9) < 0);
-        assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_9, VERSION_3_8_1) > 0);
-        assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8_1, VERSION_3_9) < 0);
+        assertEquals(0, MAJOR_MINOR_VERSION_COMPARATOR.compare(version, versionOtherPatch));
+        assertThat(MAJOR_MINOR_VERSION_COMPARATOR.compare(versionOtherMinor, version)).isPositive();
+        assertThat(MAJOR_MINOR_VERSION_COMPARATOR.compare(version, versionOtherMinor)).isNegative();
+        assertThat(MAJOR_MINOR_VERSION_COMPARATOR.compare(versionOtherMinor, versionOtherPatch)).isPositive();
+        assertThat(MAJOR_MINOR_VERSION_COMPARATOR.compare(versionOtherPatch, versionOtherMinor)).isNegative();
     }
 
     @Test
@@ -203,6 +164,7 @@ public class MemberVersionTest {
 
     @Test
     public void toStringTest() {
-        assertEquals("3.8.2", MemberVersion.of(3, 8, 2).toString());
+        String version = "3.8.2";
+        assertEquals(version, MemberVersion.of(version).toString());
     }
 }
