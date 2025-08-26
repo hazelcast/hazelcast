@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.hazelcast.jet.avro.AvroSinks.AVRO_SINK_CONNECTOR_NAME;
 import static com.hazelcast.jet.avro.AvroSources.AVRO_SOURCE_CONNECTOR_NAME;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -72,6 +73,17 @@ public final class AvroProcessors {
         FunctionEx<? super Path, ? extends Stream<T>> readFileFn =
                 dataFileReadFn(directory, datumReaderSupplier, mapOutputFn);
         return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, true, readFileFn, AVRO_SOURCE_CONNECTOR_NAME);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link AvroSinks#files}.
+     */
+    @Nonnull
+    public static <D> ProcessorMetaSupplier writeFilesP(
+            @Nonnull String directoryName,
+            @Nonnull Schema schema,
+            @Nonnull SupplierEx<DatumWriter<D>> datumWriterSupplier) {
+        return writeFilesP(directoryName, schema, datumWriterSupplier, AVRO_SINK_CONNECTOR_NAME);
     }
 
     /**

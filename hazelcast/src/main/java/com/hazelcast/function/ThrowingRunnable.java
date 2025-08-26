@@ -38,4 +38,13 @@ public interface ThrowingRunnable extends Runnable {
             throw ExceptionUtil.sneakyThrow(e);
         }
     }
+
+    /**
+     * Wraps given {@link Runnable} into {@link ThrowingRunnable}.
+     * @since 5.6
+     */
+    static ThrowingRunnable wrap(Runnable step) {
+        return step::run;
+    }
+
 }
