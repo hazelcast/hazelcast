@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 
 /**
- * The {@link Object[]} serializer
+ * The {@code Object[]} serializer
  */
 public class ArrayStreamSerializer implements StreamSerializer<Object[]> {
     @Override

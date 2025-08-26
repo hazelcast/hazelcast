@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_CONTAINSALL}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListContainsAllCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListContainsAllMessageTask
         extends AbstractListMessageTask<ListContainsAllCodec.RequestParameters> {

@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ITERATOR}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueIteratorMessageTask
         extends AbstractQueueMessageTask<String> {

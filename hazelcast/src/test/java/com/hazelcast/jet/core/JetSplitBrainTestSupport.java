@@ -56,7 +56,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     /**
      * If new nodes have been created during split brain via
-     * {@link #createHazelcastInstanceInBrain(HazelcastInstance[], HazelcastInstance[], boolean)}, then their joiners
+     * {@link SplitBrainTestSupport#createHazelcastInstanceInBrain(int)}, then their joiners
      * are initialized with the other brain's addresses being blacklisted.
      */
     private boolean unblacklistHint;

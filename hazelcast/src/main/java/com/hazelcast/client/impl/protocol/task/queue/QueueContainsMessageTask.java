@@ -32,7 +32,7 @@ import static java.util.Collections.singleton;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CONTAINS}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueContainsCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueContainsMessageTask
         extends AbstractQueueMessageTask<QueueContainsCodec.RequestParameters> {

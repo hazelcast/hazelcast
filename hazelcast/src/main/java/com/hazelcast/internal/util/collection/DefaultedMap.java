@@ -34,10 +34,10 @@ import static java.util.stream.Collectors.toMap;
  * <li> forwarding operations that have a default implementation in {@link Map}
  *      to the delegated map, which can increase performance if the delegated
  *      map has a custom implementation, and
- * <li> using {@link #getOrDefault(K, V)} to implement {@link #getOrDefault(K)}.
+ * <li> using {@link #getOrDefault(Object, Object)} to implement {@link #getOrDefault(Object)}.
  *
  * @see <a href="https://github.com/hazelcast/hazelcast/pull/25269#discussion_r1320823362">
- *      DefaultedMap vs. switch
+ *      DefaultedMap vs. switch</a>
  */
 public class DefaultedMap<K, V> implements Map<K, V> {
     private final Map<K, V> map;

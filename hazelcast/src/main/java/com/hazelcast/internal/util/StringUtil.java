@@ -103,7 +103,7 @@ public final class StringUtil {
     /**
      * Check if any String from the provided Strings
      * @param values the strings to check
-     * @return true if at least one string of the {@param values} are not {@code null} and not blank
+     * @return true if at least one string of the {@code values} are not {@code null} and not blank
      */
     public static boolean isAnyNullOrEmptyAfterTrim(String... values) {
         if (values == null) {

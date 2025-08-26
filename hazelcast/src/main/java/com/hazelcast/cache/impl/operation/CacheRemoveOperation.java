@@ -24,12 +24,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Operation implementation for cache remove functionality.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, UUID, UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, UUID, UUID, int)
  */
 public class CacheRemoveOperation extends MutatingCacheOperation {
 

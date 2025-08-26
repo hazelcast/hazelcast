@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 
 /**
  * Uses basic map functionality with different configuration than existing ones.
- * Actually, it tests {@link ObjectRecord#getValue()} and {@link ObjectRecord#setValue(Object)}.
+ * Actually, it tests {@link ObjectRecordWithStats#getValue()} and {@link ObjectRecordWithStats#setValue(Object)}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

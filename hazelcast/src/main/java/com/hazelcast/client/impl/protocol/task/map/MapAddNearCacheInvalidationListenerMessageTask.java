@@ -31,11 +31,7 @@ import com.hazelcast.spi.impl.eventservice.EventFilter;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Clients which are AWARE of eventual consistent Near Cache should call this task.
- *
- * @see Pre38MapAddNearCacheEntryListenerMessageTask
- */
+/** Clients which are AWARE of eventual consistent Near Cache should call this task. */
 public class MapAddNearCacheInvalidationListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheInvalidationListenerCodec.RequestParameters> {
 

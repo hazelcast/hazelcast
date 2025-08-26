@@ -58,7 +58,7 @@ public final class ReflectionsHelper {
      * from multi-release JARs, which has prefix {@code META-INF/versions/{n}/}.
      *
      * @see JarFile#getJarEntry
-     * @see <a href="https://openjdk.org/jeps/238"> JEP 238: Multi-Release JAR Files
+     * @see <a href="https://openjdk.org/jeps/238">JEP 238: Multi-Release JAR Files</a>
      */
     private static final Pattern VERSIONED_CLASS_PREFIX = Pattern.compile("META-INF/versions/\\d+/$");
 

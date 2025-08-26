@@ -33,7 +33,7 @@ import java.util.HashSet;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_COMPAREANDRETAINALL}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListCompareAndRetainAllCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListCompareAndRetainAllMessageTask
         extends AbstractListMessageTask<ListCompareAndRetainAllCodec.RequestParameters> {

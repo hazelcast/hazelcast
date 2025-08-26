@@ -155,7 +155,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
 
     /**
-     * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
+     * @see MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
     private final boolean forceOffloadEnabled;

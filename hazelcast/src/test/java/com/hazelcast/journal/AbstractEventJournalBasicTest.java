@@ -690,7 +690,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
      *                      May be {@code null} in which case the event is returned without being
      *                      projected
      * @param <K>           the data structure entry key type
-     * @param <V>the        data structure entry value type
+     * @param <V>           the data structure entry value type
      * @param <PROJ_TYPE>   the return type of the projection. It is equal to the journal event type
      *                      if the projection is {@code null} or it is the identity projection
      * @return the future with the filtered and projected journal items
@@ -719,7 +719,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
      *                      May be {@code null} in which case the event is returned without being
      *                      projected
      * @param <K>           the data structure entry key type
-     * @param <V>the        data structure entry value type
+     * @param <V>           the data structure entry value type
      * @param <PROJ_TYPE>   the return type of the projection. It is equal to the journal event type
      *                      if the projection is {@code null} or it is the identity projection
      * @return the future with the filtered and projected journal items

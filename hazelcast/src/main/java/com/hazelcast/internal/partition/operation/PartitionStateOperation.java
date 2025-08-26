@@ -35,7 +35,6 @@ import java.io.IOException;
  * Sent from the master to publish or sync the partition table state to all cluster members.
  *
  * @see InternalPartitionServiceImpl#publishPartitionRuntimeState
- * @see InternalPartitionServiceImpl#syncPartitionRuntimeState
  */
 public final class PartitionStateOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 

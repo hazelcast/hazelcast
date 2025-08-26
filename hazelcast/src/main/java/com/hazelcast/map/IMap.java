@@ -882,7 +882,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *      CompletionStage<Void> future = map.putAllAsync(map);
      *      future.thenRunAsync(() -> System.out.println("All the entries are added"));
      * }</pre>
-     *  {@inheritDoc}
      * <p>
      * No atomicity guarantees are given. It could be that in case of failure
      * some of the key/value-pairs get written, while others are not.

@@ -56,7 +56,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Responsible for connecting to the Kubernetes API.
  *
  * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/">
- *      Kubernetes API
+ *      Kubernetes API</a>
  */
 class KubernetesClient {
     static final String SERVICE_TYPE_LOADBALANCER = "LoadBalancer";
@@ -177,7 +177,7 @@ class KubernetesClient {
      * @return all POD addresses
      *
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">
-     *      Kubernetes Endpoint API
+     *      Kubernetes Endpoint API</a>
      */
     List<Endpoint> endpoints() {
         try {
@@ -197,7 +197,7 @@ class KubernetesClient {
      * @return all POD addresses from the specified {@code namespace} filtered by the labels
      *
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">
-     *      Kubernetes Endpoint API
+     *      Kubernetes Endpoint API</a>
      */
     List<Endpoint> endpointsByServiceLabel(String serviceLabels, String serviceLabelValues) {
         try {
@@ -217,7 +217,7 @@ class KubernetesClient {
      * @return all POD addresses from the specified {@code namespace} and the given {@code endpointName}
      *
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">
-     *      Kubernetes Endpoint API
+     *      Kubernetes Endpoint API</a>
      */
     List<Endpoint> endpointsByName(String endpointName) {
         try {
@@ -238,7 +238,7 @@ class KubernetesClient {
      * @return all POD addresses from the specified {@code namespace} filtered by the labels
      *
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">
-     *      Kubernetes Endpoint API
+     *      Kubernetes Endpoint API</a>
      */
     List<Endpoint> endpointsByPodLabel(String podLabels, String podLabelValues) {
         try {
@@ -260,7 +260,7 @@ class KubernetesClient {
      * @return zone name
      *
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11">
-     *      Kubernetes Endpoint API
+     *      Kubernetes Endpoint API</a>
      */
     String zone(String podName) {
         String nodeUrlString = String.format("%s/api/v1/nodes/%s", kubernetesMaster, nodeName(podName));
@@ -274,7 +274,7 @@ class KubernetesClient {
      * @return Node name
      *
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11">
-     *      Kubernetes Endpoint API
+     *      Kubernetes Endpoint API</a>
      */
     String nodeName(String podName) {
         String podUrlString = String.format("%s/api/v1/namespaces/%s/pods/%s", kubernetesMaster, namespace, podName);
@@ -962,7 +962,7 @@ class KubernetesClient {
 
         /**
          * @see <a href="https://github.com/kubernetes/apimachinery/blob/master/pkg/watch/watch.go">
-         *      Watch Event Specification
+         *      Watch Event Specification</a>
          */
         void onWatchEventReceived(String message) {
             if (LOGGER.isFinestEnabled()) {

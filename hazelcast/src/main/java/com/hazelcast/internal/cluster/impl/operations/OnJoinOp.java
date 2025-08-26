@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -87,7 +88,7 @@ public class OnJoinOp
     }
 
     /**
-     * Used in {@link ClusterJoinManager#startJoin()} to prevent
+     * Used in {@link ClusterJoinManager#startJoin(MemberInfo, OnJoinOp)} to prevent
      * quadratic complexity during batched cluster joining
      *
      * @param skippedForBroadcast Set of {@link Address} to skip broadcasting

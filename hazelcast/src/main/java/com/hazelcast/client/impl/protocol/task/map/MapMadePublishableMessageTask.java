@@ -30,7 +30,7 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_MADEPUBLISHABLE}
+ * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MapMadePublishableMessageTask
         extends AbstractAllPartitionsMessageTask<ContinuousQueryMadePublishableCodec.RequestParameters> {

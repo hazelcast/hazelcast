@@ -67,9 +67,6 @@ public abstract class OperationRunner {
      * Runs the provided packet.
      *
      * @param packet the packet to execute
-     * @return {@code true} if this packet was not executed and should be retried at a later time,
-     * {@code false} if the packet should not be retried, either because it
-     * timed out or has run successfully
      * @throws Exception if there was an exception raised while processing the packet
      */
     public abstract void run(Packet packet) throws Exception;

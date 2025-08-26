@@ -35,7 +35,7 @@ import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_READMANY}
+ * {@link com.hazelcast.client.impl.protocol.codec.RingbufferReadManyCodec#REQUEST_MESSAGE_TYPE}
  */
 public class RingbufferReadManyMessageTask
         extends AbstractRingbufferMessageTask<RingbufferReadManyCodec.RequestParameters> {

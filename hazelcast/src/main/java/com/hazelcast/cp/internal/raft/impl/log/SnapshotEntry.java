@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import static java.util.Collections.unmodifiableCollection;
 
 /**
- * Represents a snapshot in the {@link RaftLog}.
+ * Represents a snapshot in the {@code RaftLog}.
  * <p>
  * The snapshot entry is sent to followers chunk by
  * chunk using the {@link InstallSnapshotRequest} RPC.

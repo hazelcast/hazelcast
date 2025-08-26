@@ -161,9 +161,6 @@ public final class LongHashSet implements Set<Long> {
         return value instanceof Long l && contains(l.longValue());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean contains(final long value) {
         int index = longHash(value, mask);
 
@@ -309,9 +306,6 @@ public final class LongHashSet implements Set<Long> {
         return iterator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void copy(final LongHashSet obj) {
         // NB: mask also implies the length is the same
         if (this.mask != obj.mask) {

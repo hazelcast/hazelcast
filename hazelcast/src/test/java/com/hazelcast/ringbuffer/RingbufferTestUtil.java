@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +58,7 @@ final class RingbufferTestUtil {
      * Returns all backup items of a {@link Ringbuffer} by a given ringbuffer name.
      * <p>
      * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
-     * Use {@link getBackupInstance} to retrieve the backup instance for a given replica index.
+     * Use {@link Accessors#getBackupInstance(HazelcastInstance[], int, int)} to retrieve the backup instance for a given replica index.
      *
      * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
      * @param partitionId    the partition ID of the ringbuffer

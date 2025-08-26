@@ -37,7 +37,7 @@ import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_GET}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapGetMessageTask
         extends AbstractMultiMapPartitionMessageTask<MultiMapGetCodec.RequestParameters> {

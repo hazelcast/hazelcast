@@ -252,7 +252,7 @@ public class ClusterJoinManager {
      * @param joinMessage the {@link JoinMessage} received from another node.
      * @return {@code true} if packet version of join message matches this node's packet version and configurations
      * are found to be compatible, otherwise {@code false}.
-     * @throws Exception in case any exception occurred while checking compatibility
+     * @throws RuntimeException in case any exception occurred while checking compatibility
      * @see ConfigCheck
      */
     public boolean validateJoinMessage(JoinMessage joinMessage) {
@@ -263,7 +263,7 @@ public class ClusterJoinManager {
             ConfigCheck newMemberConfigCheck = joinMessage.getConfigCheck();
             ConfigCheck clusterConfigCheck = node.createConfigCheck();
             return clusterConfigCheck.isCompatible(newMemberConfigCheck);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.warning(format("Invalid join request from %s, cause: %s", joinMessage.getAddress(), e.getMessage()));
             throw e;
         }

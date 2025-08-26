@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * This class manages the replicated map iterations that have pagination support.
  * <p>
- * This class's methods for creating an iterator ({@link IteratorWithCursorManager#createIterator(Iterator)}),
+ * This class's methods for creating an iterator ({@link IteratorWithCursorManager#createIterator(Iterator, UUID)}),
  * progressing an iterator {@link IteratorWithCursorManager#iterate(UUID, int)} and cleaning up an iterator accessed concurrently
  * All replicated map's iterators are managed via this class.
  * @param <T>

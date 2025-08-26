@@ -65,7 +65,7 @@ public class IndexImplTest {
     }
 
     /**
-     * Assert {@link CachedQueryEntry.getKey} <em>isn't</em> called (i.e. the key isn't deserialized) when an entry is added,
+     * Assert {@link CachedQueryEntry#getKey()} <em>isn't</em> called (i.e. the key isn't deserialized) when an entry is added,
      * thanks to the {@link #index}
      */
     @Test

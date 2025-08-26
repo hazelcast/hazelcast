@@ -238,9 +238,9 @@ public final class ClusterProperty {
      * </ul>
      *
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
-     ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
-     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     * @see <a href=
+     *      "https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
+     *      jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
      */
     public static final HazelcastProperty SOCKET_KEEP_INTERVAL
             = new HazelcastProperty("hazelcast.socket.keep.interval", 75);
@@ -256,8 +256,6 @@ public final class ClusterProperty {
      *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
      *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
      * </ul>
-     *
-     * @return the configured value of Keep-Alive probe count.
      * @since 5.3.0
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>

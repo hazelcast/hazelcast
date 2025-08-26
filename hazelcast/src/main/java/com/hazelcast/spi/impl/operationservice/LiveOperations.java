@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 
 /**
  * {@link InvocationMonitor} passes instances of this type to each {@link LiveOperationsTracker}

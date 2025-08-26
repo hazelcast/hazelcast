@@ -30,7 +30,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_COMPAREANDREMOVEALL}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueCompareAndRemoveAllMessageTask
         extends AbstractQueueMessageTask<QueueCompareAndRemoveAllCodec.RequestParameters> {

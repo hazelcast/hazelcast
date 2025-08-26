@@ -25,7 +25,7 @@ package com.hazelcast.internal.eviction;
 public interface EvictionListener<A, E extends Evictable> {
 
     /**
-     * Empty {@link} EvictionListener
+     * Empty {@link EvictionListener}
      */
     EvictionListener NO_LISTENER = null;
 

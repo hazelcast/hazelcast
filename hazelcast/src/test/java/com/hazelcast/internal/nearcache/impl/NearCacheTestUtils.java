@@ -307,17 +307,17 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     /**
      * Asserts the state and class of a {@link NearCacheRecord} and its value.
      *
-     * @param record         the {@link NearCacheRecord}
+     * @param cacheRecord    the {@link NearCacheRecord}
      * @param key            the key for the {@link NearCacheRecord}
      * @param inMemoryFormat the {@link InMemoryFormat} of the Near Cache
      */
-    public static void assertNearCacheRecord(NearCacheRecord record, int key, InMemoryFormat inMemoryFormat) {
-        assertNotNull(format("NearCacheRecord for key %d could not be found", key), record);
-        assertEquals(format("RecordState of NearCacheRecord for key %d should be READ_PERMITTED (%s)", key, record),
-                READ_PERMITTED, record.getReservationId());
+    public static void assertNearCacheRecord(NearCacheRecord cacheRecord, int key, InMemoryFormat inMemoryFormat) {
+        assertNotNull(format("NearCacheRecord for key %d could not be found", key), cacheRecord);
+        assertEquals(format("RecordState of NearCacheRecord for key %d should be READ_PERMITTED (%s)", key, cacheRecord),
+                READ_PERMITTED, cacheRecord.getReservationId());
 
-        Class<? extends NearCacheRecord> recordClass = record.getClass();
-        Class<?> recordValueClass = record.getValue().getClass();
+        Class<? extends NearCacheRecord> recordClass = cacheRecord.getClass();
+        Class<?> recordValueClass = cacheRecord.getValue().getClass();
         switch (inMemoryFormat) {
             case OBJECT:
                 assertTrue(

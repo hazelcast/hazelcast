@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -55,7 +56,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandle
  * to a pool of ResponseThreads.</li>
  * </ol>
  * <p>
- * {@see InboundResponseHandlerSupplier}.
+ * @see InboundResponseHandlerSupplier
  */
 public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMessage>> {
 

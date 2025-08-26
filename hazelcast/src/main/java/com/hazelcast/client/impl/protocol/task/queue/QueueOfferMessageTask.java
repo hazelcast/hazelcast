@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_OFFER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueOfferCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueOfferMessageTask
         extends AbstractQueueMessageTask<QueueOfferCodec.RequestParameters> {

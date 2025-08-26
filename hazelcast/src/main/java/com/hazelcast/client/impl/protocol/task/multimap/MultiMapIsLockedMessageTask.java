@@ -34,7 +34,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ISLOCKED}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapIsLockedCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapIsLockedMessageTask
         extends AbstractPartitionMessageTask<MultiMapIsLockedCodec.RequestParameters> {

@@ -23,7 +23,7 @@ public final class SerializerHookConstants {
     /**
      * Start of reserved space for Jet-specific serializers.
      * Any ID greater than this number might be used by some other Hazelcast serializer.
-     * For more information, {@see SerializationConstants}
+     * For more information, see {@link SerializationConstants}
      */
     public static final int JET_RESERVED_SPACE_START = SerializationConstants.JET_SERIALIZER_FIRST;
 

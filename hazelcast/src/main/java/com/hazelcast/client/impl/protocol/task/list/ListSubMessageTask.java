@@ -32,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_SUB}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListSubCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListSubMessageTask
         extends AbstractListMessageTask<ListSubCodec.RequestParameters> {

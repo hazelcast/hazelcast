@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * Represents an entry in the {@link RaftLog}.
+ * Represents an entry in the {@code RaftLog}.
  * Each log entry stores a state machine command along with the term number
  * when the entry was received by the leader. The term numbers in log entries
  * are used to detect inconsistencies between logs. Each log entry also has

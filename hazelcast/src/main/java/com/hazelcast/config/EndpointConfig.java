@@ -393,27 +393,25 @@ public class EndpointConfig implements NamedConfig {
      *
      * @return the configured value of Keep-Alive interval time.
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
-     ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
-     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     * @see <a href=
+     *      "https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
+     *      jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
      */
     public int getSocketKeepIntervalSeconds() {
         return socketKeepIntervalSeconds;
     }
 
     /**
-     * Set the number of seconds between keep-alive probes. Notice that this is the number of seconds between probes
-     * after the initial {@link #setSocketKeepIdleSeconds(int) keep-alive idle time} has passed.
-     * Valid values are 1 to 32767.
+     * Set the number of seconds between keep-alive probes. Notice that this is the number of seconds between probes after the
+     * initial {@link #setSocketKeepIdleSeconds(int) keep-alive idle time} has passed. Valid values are 1 to 32767.
      * <p/>
-     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
-     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
-     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}. Requires a recent JDK 8, JDK
+     * 11 or greater version that includes the required <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
-ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
-     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     * @see <a href=
+     *      "https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
+     *      jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
      */
     public EndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
         Preconditions.checkPositive("socketKeepIntervalSeconds", socketKeepIntervalSeconds);

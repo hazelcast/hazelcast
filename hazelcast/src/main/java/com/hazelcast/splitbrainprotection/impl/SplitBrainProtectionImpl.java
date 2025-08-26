@@ -203,8 +203,8 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
 
     /**
      * Returns if split brain protection is needed for this operation.
-     * The split brain protection is determined by the {@link SplitBrainProtectionConfig#type} and by the type of the operation -
-     * {@link ReadonlyOperation} or {@link MutatingOperation}.
+     * The split brain protection is determined by the {@link SplitBrainProtectionConfig#getProtectOn()} and by the type of the
+     * operation - {@link ReadonlyOperation} or {@link MutatingOperation}.
      *
      * @param op the operation which is to be executed
      * @return if this split brain protection should be consulted for this operation
