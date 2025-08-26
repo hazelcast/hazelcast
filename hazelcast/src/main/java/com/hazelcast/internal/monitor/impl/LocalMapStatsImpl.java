@@ -345,12 +345,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
-    public long getValuesCallsCount() {
+    public long getValuesCallCount() {
         return valuesCount;
     }
 
     @Override
-    public long getEntrySetCallsCount() {
+    public long getEntrySetCallCount() {
         return entrySetCount;
     }
 

@@ -270,12 +270,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
-    public long getValuesCallsCount() {
+    public long getValuesCallCount() {
         return valuesCount;
     }
 
     @Override
-    public long getEntrySetCallsCount() {
+    public long getEntrySetCallCount() {
         return entrySetCount;
     }
 
