@@ -46,7 +46,6 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-
 import java.net.HttpURLConnection;
 import java.util.Map;
 
@@ -118,9 +117,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings({"ResultOfMethodCallIgnored"})
     public void testMapMetrics() {
         instance.getMap("hazelcast");
-        instance.getMap("phonehome");
         MapConfig config = node.getConfig().getMapConfig("hazelcast");
         config.setReadBackupData(true);
         config.getMapStoreConfig().setClassName(DelayMapStore.class.getName()).setEnabled(true);
@@ -131,6 +130,10 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         config.getAttributeConfigs().add(new AttributeConfig("hz", AttributeExtractor.class.getName()));
         config.getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         config.setInMemoryFormat(InMemoryFormat.NATIVE);
+
+        IMap<String, String> phoneHomeMap = instance.getMap("phonehome");
+        phoneHomeMap.entrySet();
+        phoneHomeMap.values();
 
         phoneHome.phoneHome(false);
 
@@ -144,7 +147,11 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withRequestBody(containingParam("mpwact" /*MAP_COUNT_WITH_WAN_REPLICATION*/, 1))
                 .withRequestBody(containingParam("mpaocct" /*MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE*/, 1))
                 .withRequestBody(containingParam("mpevct" /*MAP_COUNT_USING_EVICTION*/, 1))
-                .withRequestBody(containingParam("mpnmct" /*MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT*/, 1)));
+                .withRequestBody(containingParam("mpnmct" /*MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT*/, 1))
+                .withRequestBody(containingParam("mpvaluesct" /*TOTAL_MAP_VALUES_CALLS*/, 1))
+                .withRequestBody(containingParam("mpentriesct" /*TOTAL_MAP_ENTRYSET_CALLS*/, 1))
+                .withRequestBody(containingParam("mpqslh" /*TOTAL_MAP_QUERY_SIZE_LIMITER_HITS*/, 0))
+        );
     }
 
     @Test
