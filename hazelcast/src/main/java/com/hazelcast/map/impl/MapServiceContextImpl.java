@@ -386,7 +386,9 @@ class MapServiceContextImpl implements MapServiceContext {
 
                 recordStore.beforeOperation();
                 try {
-                    boolean empty = recordStore.isEmpty();
+                    // isEmpty can throw an exception here if there are any active loads on the recordStore
+                    @SuppressWarnings({"SizeReplaceableByIsEmpty"})
+                    boolean empty = recordStore.size() == 0;
 
                     recordStore.clearPartition(onShutdown, onRecordStoreDestroy, disposalQueue);
 
