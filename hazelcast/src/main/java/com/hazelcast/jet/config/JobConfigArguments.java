@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.config;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Some constants for the {@link JobConfig#getArgument(String)} method.
  */
@@ -65,6 +67,7 @@ public final class JobConfigArguments {
      * <p>
      * By default, this key will not exist and a User Code Namespace will not be used.
      */
+    @PrivateApi
     public static final String KEY_USER_CODE_NAMESPACE = "__jet.userCodeNamespace";
 
     private JobConfigArguments() {
