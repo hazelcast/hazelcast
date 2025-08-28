@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("9966ccfa724404d3ab0e1cd195dfc832")
+@Generated("f2081de15a539617c1dfe367ef651af8")
 public final class CacheGetAllCodec {
     //hex: 0x130900
     public static final int REQUEST_MESSAGE_TYPE = 1247488;
@@ -83,7 +83,7 @@ public final class CacheGetAllCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, expiryPolicy);
         return clientMessage;
     }
 
@@ -94,7 +94,7 @@ public final class CacheGetAllCodec {
         iterator.next();
         request.name = StringCodec.decode(iterator);
         request.keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expiryPolicy = DataCodec.decodeNullable(iterator);
         return request;
     }
 

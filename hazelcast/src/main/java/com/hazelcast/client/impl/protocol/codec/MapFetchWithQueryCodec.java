@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * that match the predicate and applies the projection logic on them.
  */
 @SuppressWarnings("unused")
-@Generated("706c7eea9ecbd1aeda6f53b3b0a31815")
+@Generated("0128d4f9e2f8fe2e57d5cec789212f01")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;
@@ -129,7 +129,7 @@ public final class MapFetchWithQueryCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encodeContainsNullable(clientMessage, results, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, results, DataCodec::encodeNullable);
         EntryListIntegerIntegerCodec.encode(clientMessage, iterationPointers);
         return clientMessage;
     }
@@ -139,7 +139,7 @@ public final class MapFetchWithQueryCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.results = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        response.results = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decodeNullable);
         response.iterationPointers = EntryListIntegerIntegerCodec.decode(iterator);
         return response;
     }

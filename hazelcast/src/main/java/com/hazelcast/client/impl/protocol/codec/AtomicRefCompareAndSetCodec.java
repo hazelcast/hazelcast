@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Alters the currently stored value by applying a function on it.
  */
 @SuppressWarnings("unused")
-@Generated("fa281677685d56bbffaed59ff6ffde60")
+@Generated("66aadb1b178a1a39e6d72da1324009fe")
 public final class AtomicRefCompareAndSetCodec {
     //hex: 0x0A0200
     public static final int REQUEST_MESSAGE_TYPE = 655872;
@@ -85,8 +85,8 @@ public final class AtomicRefCompareAndSetCodec {
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, oldValue, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, newValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, oldValue);
+        DataCodec.encodeNullable(clientMessage, newValue);
         return clientMessage;
     }
 
@@ -97,8 +97,8 @@ public final class AtomicRefCompareAndSetCodec {
         iterator.next();
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
-        request.oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.newValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.oldValue = DataCodec.decodeNullable(iterator);
+        request.newValue = DataCodec.decodeNullable(iterator);
         return request;
     }
 

@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and no projection is applied.
  */
 @SuppressWarnings("unused")
-@Generated("ad05e285ff2b29cc7f309953c91e8b48")
+@Generated("2201628642aa389390096ca2db32ec63")
 public final class MapEventJournalReadCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
@@ -108,8 +108,8 @@ public final class MapEventJournalReadCodec {
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, predicate, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, projection, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, predicate);
+        DataCodec.encodeNullable(clientMessage, projection);
         return clientMessage;
     }
 
@@ -121,8 +121,8 @@ public final class MapEventJournalReadCodec {
         request.minSize = decodeInt(initialFrame.content, REQUEST_MIN_SIZE_FIELD_OFFSET);
         request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.predicate = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.projection = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.predicate = DataCodec.decodeNullable(iterator);
+        request.projection = DataCodec.decodeNullable(iterator);
         return request;
     }
 

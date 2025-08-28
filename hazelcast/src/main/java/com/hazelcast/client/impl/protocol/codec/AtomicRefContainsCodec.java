@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks if the reference contains the value.
  */
 @SuppressWarnings("unused")
-@Generated("91b2c442abdfc885226b1959660882b2")
+@Generated("0e3893a2296603e323035a902630e2ee")
 public final class AtomicRefContainsCodec {
     //hex: 0x0A0300
     public static final int REQUEST_MESSAGE_TYPE = 656128;
@@ -80,7 +80,7 @@ public final class AtomicRefContainsCodec {
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, value);
         return clientMessage;
     }
 
@@ -91,7 +91,7 @@ public final class AtomicRefContainsCodec {
         iterator.next();
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
-        request.value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.value = DataCodec.decodeNullable(iterator);
         return request;
     }
 

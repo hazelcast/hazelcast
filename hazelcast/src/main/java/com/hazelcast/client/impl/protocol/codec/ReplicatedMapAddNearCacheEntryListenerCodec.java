@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a near cache entry listener for this map. This listener will be notified when an entry is added/removed/updated/evicted/expired etc. so that the near cache entries can be invalidated.
  */
 @SuppressWarnings("unused")
-@Generated("48319bd66486aba2701be96e549147b1")
+@Generated("c947926608c82d71d7005665447312d5")
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     //hex: 0x0D1200
     public static final int REQUEST_MESSAGE_TYPE = 856576;
@@ -132,10 +132,10 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
         encodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET, numberOfAffectedEntries);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, oldValue, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, mergingValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, key);
+        DataCodec.encodeNullable(clientMessage, value);
+        DataCodec.encodeNullable(clientMessage, oldValue);
+        DataCodec.encodeNullable(clientMessage, mergingValue);
         return clientMessage;
     }
 
@@ -149,10 +149,10 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
                 int eventType = decodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET);
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ENTRY_UUID_FIELD_OFFSET);
                 int numberOfAffectedEntries = decodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET);
-                com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.internal.serialization.Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.internal.serialization.Data mergingValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data key = DataCodec.decodeNullable(iterator);
+                com.hazelcast.internal.serialization.Data value = DataCodec.decodeNullable(iterator);
+                com.hazelcast.internal.serialization.Data oldValue = DataCodec.decodeNullable(iterator);
+                com.hazelcast.internal.serialization.Data mergingValue = DataCodec.decodeNullable(iterator);
                 handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                 return;
             }

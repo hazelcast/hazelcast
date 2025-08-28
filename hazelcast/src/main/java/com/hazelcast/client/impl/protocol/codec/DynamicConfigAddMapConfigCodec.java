@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("cb4057345041667e66cc2e0a8f5bdc31")
+@Generated("469569aa001ec205ed76ea67e7b456cd")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -297,7 +297,7 @@ public final class DynamicConfigAddMapConfigCodec {
         ListMultiFrameCodec.encodeNullable(clientMessage, attributeConfigs, AttributeConfigCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, queryCacheConfigs, QueryCacheConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, partitioningStrategyClassName, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, partitioningStrategyImplementation, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, partitioningStrategyImplementation);
         CodecUtil.encodeNullable(clientMessage, hotRestartConfig, HotRestartConfigCodec::encode);
         CodecUtil.encodeNullable(clientMessage, eventJournalConfig, EventJournalConfigCodec::encode);
         CodecUtil.encodeNullable(clientMessage, merkleTreeConfig, MerkleTreeConfigCodec::encode);
@@ -341,7 +341,7 @@ public final class DynamicConfigAddMapConfigCodec {
         request.attributeConfigs = ListMultiFrameCodec.decodeNullable(iterator, AttributeConfigCodec::decode);
         request.queryCacheConfigs = ListMultiFrameCodec.decodeNullable(iterator, QueryCacheConfigHolderCodec::decode);
         request.partitioningStrategyClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        request.partitioningStrategyImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.partitioningStrategyImplementation = DataCodec.decodeNullable(iterator);
         request.hotRestartConfig = CodecUtil.decodeNullable(iterator, HotRestartConfigCodec::decode);
         request.eventJournalConfig = CodecUtil.decodeNullable(iterator, EventJournalConfigCodec::decode);
         request.merkleTreeConfig = CodecUtil.decodeNullable(iterator, MerkleTreeConfigCodec::decode);

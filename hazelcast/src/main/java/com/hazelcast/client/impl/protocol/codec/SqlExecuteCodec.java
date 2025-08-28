@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Starts execution of an SQL query (as of 4.2).
  */
 @SuppressWarnings("unused")
-@Generated("5f2f0935e123d5d58792d036d25e33dd")
+@Generated("ad5c3fab7c858d41ecb1edd7be130cd4")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -123,7 +123,7 @@ public final class SqlExecuteCodec {
         encodeBoolean(initialFrame.content, REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET, skipUpdateStatistics);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, sql);
-        ListMultiFrameCodec.encodeContainsNullable(clientMessage, parameters, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, parameters, DataCodec::encodeNullable);
         CodecUtil.encodeNullable(clientMessage, schema, StringCodec::encode);
         SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
@@ -143,7 +143,7 @@ public final class SqlExecuteCodec {
             request.isSkipUpdateStatisticsExists = false;
         }
         request.sql = StringCodec.decode(iterator);
-        request.parameters = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        request.parameters = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decodeNullable);
         request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queryId = SqlQueryIdCodec.decode(iterator);
         return request;

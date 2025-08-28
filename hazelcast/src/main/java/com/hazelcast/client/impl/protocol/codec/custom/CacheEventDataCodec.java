@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("48f7b5c17ff192612d9ca07756aceb2f")
+@Generated("982863f61741d5c318f846bb86abe32a")
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_FIELD_OFFSET = 0;
     private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -43,9 +43,9 @@ public final class CacheEventDataCodec {
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, cacheEventData.getName());
-        CodecUtil.encodeNullable(clientMessage, cacheEventData.getDataKey(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, cacheEventData.getDataValue(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, cacheEventData.getDataOldValue(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, cacheEventData.getDataKey());
+        DataCodec.encodeNullable(clientMessage, cacheEventData.getDataValue());
+        DataCodec.encodeNullable(clientMessage, cacheEventData.getDataOldValue());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -59,9 +59,9 @@ public final class CacheEventDataCodec {
         boolean oldValueAvailable = decodeBoolean(initialFrame.content, OLD_VALUE_AVAILABLE_FIELD_OFFSET);
 
         java.lang.String name = StringCodec.decode(iterator);
-        com.hazelcast.internal.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data dataValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data dataOldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data dataKey = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data dataValue = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data dataOldValue = DataCodec.decodeNullable(iterator);
 
         fastForwardToEndFrame(iterator);
 

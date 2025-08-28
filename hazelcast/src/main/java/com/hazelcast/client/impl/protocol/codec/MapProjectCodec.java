@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the projection logic on all map entries and returns the result
  */
 @SuppressWarnings("unused")
-@Generated("55e65f6ee9b6a13e2bdf950ff1da6a76")
+@Generated("cb10b2f1a20f9b0c90b871e147192e60")
 public final class MapProjectCodec {
     //hex: 0x013B00
     public static final int REQUEST_MESSAGE_TYPE = 80640;
@@ -93,7 +93,7 @@ public final class MapProjectCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encodeContainsNullable(clientMessage, response, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, response, DataCodec::encodeNullable);
         return clientMessage;
     }
 
@@ -104,6 +104,6 @@ public final class MapProjectCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        return ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decodeNullable);
     }
 }

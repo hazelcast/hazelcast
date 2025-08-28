@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
 @SuppressWarnings("unused")
-@Generated("3ba80f2048c4418bdd7fff3cf1ffc6d1")
+@Generated("6635af2d39138672a20db73fb101371f")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -128,7 +128,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, key);
         return clientMessage;
     }
 
@@ -159,7 +159,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
                 java.util.UUID partitionUuid = decodeUUID(initialFrame.content, EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
                 long sequence = decodeLong(initialFrame.content, EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET);
                 java.lang.String name = StringCodec.decode(iterator);
-                com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data key = DataCodec.decodeNullable(iterator);
                 handleCacheInvalidationEvent(name, key, sourceUuid, partitionUuid, sequence);
                 return;
             }

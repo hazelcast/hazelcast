@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
 @SuppressWarnings("unused")
-@Generated("f9a9f30cf2dc18ee44a2c226ff2e991d")
+@Generated("f3cff7d05bedc60d614946ae60e73e39")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;
@@ -102,7 +102,7 @@ public final class RingbufferReadManyCodec {
         encodeInt(initialFrame.content, REQUEST_MAX_COUNT_FIELD_OFFSET, maxCount);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, filter, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, filter);
         return clientMessage;
     }
 
@@ -114,7 +114,7 @@ public final class RingbufferReadManyCodec {
         request.minCount = decodeInt(initialFrame.content, REQUEST_MIN_COUNT_FIELD_OFFSET);
         request.maxCount = decodeInt(initialFrame.content, REQUEST_MAX_COUNT_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.filter = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.filter = DataCodec.decodeNullable(iterator);
         return request;
     }
 

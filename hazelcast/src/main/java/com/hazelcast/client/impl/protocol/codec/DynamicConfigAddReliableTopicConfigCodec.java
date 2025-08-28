@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("32dbd731efccbc7badc1925f9809435f")
+@Generated("693adc46ea7985eb34c6454889856c2e")
 public final class DynamicConfigAddReliableTopicConfigCodec {
     //hex: 0x1B0D00
     public static final int REQUEST_MESSAGE_TYPE = 1772800;
@@ -114,7 +114,7 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, topicOverloadPolicy);
-        CodecUtil.encodeNullable(clientMessage, executor, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, executor);
         CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
@@ -128,7 +128,7 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
         request.name = StringCodec.decode(iterator);
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.topicOverloadPolicy = StringCodec.decode(iterator);
-        request.executor = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.executor = DataCodec.decodeNullable(iterator);
         if (iterator.hasNext()) {
             request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
             request.isUserCodeNamespaceExists = true;

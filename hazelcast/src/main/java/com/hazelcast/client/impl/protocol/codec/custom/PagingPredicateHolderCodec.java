@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("a2b902e072b4348647b320c40b5aa849")
+@Generated("715aa05270314ace31cf409b0b52ce2d")
 public final class PagingPredicateHolderCodec {
     private static final int PAGE_SIZE_FIELD_OFFSET = 0;
     private static final int PAGE_FIELD_OFFSET = PAGE_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -45,9 +45,9 @@ public final class PagingPredicateHolderCodec {
         clientMessage.add(initialFrame);
 
         AnchorDataListHolderCodec.encode(clientMessage, pagingPredicateHolder.getAnchorDataListHolder());
-        CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getPredicateData(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getComparatorData(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getPartitionKeyData(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, pagingPredicateHolder.getPredicateData());
+        DataCodec.encodeNullable(clientMessage, pagingPredicateHolder.getComparatorData());
+        DataCodec.encodeNullable(clientMessage, pagingPredicateHolder.getPartitionKeyData());
         ListMultiFrameCodec.encodeNullable(clientMessage, pagingPredicateHolder.getPartitionKeysData(), DataCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -63,9 +63,9 @@ public final class PagingPredicateHolderCodec {
         byte iterationTypeId = decodeByte(initialFrame.content, ITERATION_TYPE_ID_FIELD_OFFSET);
 
         com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataListHolder = AnchorDataListHolderCodec.decode(iterator);
-        com.hazelcast.internal.serialization.Data predicateData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data comparatorData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data partitionKeyData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data predicateData = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data comparatorData = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data partitionKeyData = DataCodec.decodeNullable(iterator);
         boolean isPartitionKeysDataExists = false;
         java.util.List<com.hazelcast.internal.serialization.Data> partitionKeysData = null;
         if (!iterator.peekNext().isEndFrame()) {

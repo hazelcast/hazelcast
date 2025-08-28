@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the key-value into the specified map if the key is not currently associated with a value.
  */
 @SuppressWarnings("unused")
-@Generated("e1e73850aff0c503df67d33fab2fdad4")
+@Generated("2c7f0be250b62ab9c2061b5e5c9aa175")
 public final class CPMapPutIfAbsentCodec {
     //hex: 0x230700
     public static final int REQUEST_MESSAGE_TYPE = 2295552;
@@ -107,7 +107,7 @@ public final class CPMapPutIfAbsentCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -118,6 +118,6 @@ public final class CPMapPutIfAbsentCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

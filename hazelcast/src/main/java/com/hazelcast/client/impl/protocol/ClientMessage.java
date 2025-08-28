@@ -29,6 +29,7 @@ import java.util.Objects;
  * Any request parameter, response or event data will be carried in
  * the payload.
  *
+ * <pre>
  * client-message               = message-first-frame *var-sized-param
  * message-first-frame          = frame-length flags message-type correlation-id *fix-sized-param
  * first-frame-flags            = %b1 %b1 %b0 13unused ; begin-fragment:1 end-fragment:1 final:0 ......
@@ -95,6 +96,7 @@ import java.util.Objects;
  * ;int32                   = 32BIT
  * ;int64                   = 64BIT
  * ;UUID                    = int64 int64
+ * </pre>
  */
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class ClientMessage implements OutboundFrame {
@@ -517,7 +519,7 @@ public final class ClientMessage implements OutboundFrame {
         }
 
         public int getSize() {
-            return SIZE_OF_FRAME_LENGTH_AND_FLAGS + content.length;
+            return SIZE_OF_FRAME_LENGTH_AND_FLAGS + (content != null ? content.length : 0);
         }
 
         @Override

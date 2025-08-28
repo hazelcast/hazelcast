@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Copies all the mappings from the specified map to this cache with the given expiry policy.
  */
 @SuppressWarnings("unused")
-@Generated("55eb6c31e72fd45dbf82cc18fc61ee36")
+@Generated("9dc17ecf056387fc0ffb0a548cd20a24")
 public final class CachePutAllCodec {
     //hex: 0x131B00
     public static final int REQUEST_MESSAGE_TYPE = 1252096;
@@ -88,7 +88,7 @@ public final class CachePutAllCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, expiryPolicy);
         return clientMessage;
     }
 
@@ -99,7 +99,7 @@ public final class CachePutAllCodec {
         request.completionId = decodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
-        request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expiryPolicy = DataCodec.decodeNullable(iterator);
         return request;
     }
 

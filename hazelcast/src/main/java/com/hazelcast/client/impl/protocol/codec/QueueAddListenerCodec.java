@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
 @SuppressWarnings("unused")
-@Generated("b7eba70f0ba30e09a42b914b0c2635b4")
+@Generated("7764551dabdd1c6123d7d6347ce9ffbc")
 public final class QueueAddListenerCodec {
     //hex: 0x031100
     public static final int REQUEST_MESSAGE_TYPE = 200960;
@@ -130,7 +130,7 @@ public final class QueueAddListenerCodec {
         encodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET, eventType);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, item, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, item);
         return clientMessage;
     }
 
@@ -143,7 +143,7 @@ public final class QueueAddListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET);
                 int eventType = decodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET);
-                com.hazelcast.internal.serialization.Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data item = DataCodec.decodeNullable(iterator);
                 handleItemEvent(item, uuid, eventType);
                 return;
             }

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically removes the mapping for a key only if currently mapped to the given value.
  */
 @SuppressWarnings("unused")
-@Generated("0ca0c4917c250355aa558d1f6813926b")
+@Generated("707861a3ffd2499408d8b0b690b86deb")
 public final class CacheRemoveCodec {
     //hex: 0x131600
     public static final int REQUEST_MESSAGE_TYPE = 1250816;
@@ -88,7 +88,7 @@ public final class CacheRemoveCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
-        CodecUtil.encodeNullable(clientMessage, currentValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, currentValue);
         return clientMessage;
     }
 
@@ -99,7 +99,7 @@ public final class CacheRemoveCodec {
         request.completionId = decodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
-        request.currentValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.currentValue = DataCodec.decodeNullable(iterator);
         return request;
     }
 

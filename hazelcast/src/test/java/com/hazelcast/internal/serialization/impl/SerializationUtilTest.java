@@ -54,7 +54,20 @@ public class SerializationUtilTest {
 
     @Test
     public void testIsNullData() {
+        // non-canonical null representation
         Assert.assertTrue(SerializationUtil.isNullData(new HeapData()));
+    }
+
+    @Test
+    public void testIsNullDataEmptyArray() {
+        // non-canonical null representation
+        Assert.assertTrue(SerializationUtil.isNullData(new HeapData(new byte[0])));
+    }
+
+    @Test
+    public void testIsNullDataZeroArray() {
+        // non-canonical null representation
+        Assert.assertTrue(SerializationUtil.isNullData(new HeapData(new byte[8])));
     }
 
     @Test(expected = Error.class)

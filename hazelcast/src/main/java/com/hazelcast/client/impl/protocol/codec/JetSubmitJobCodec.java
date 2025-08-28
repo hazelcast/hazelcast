@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("e1284daacdde09da1749639b6b62d1e4")
+@Generated("c5bdca1570c0967a8972bd79f1d131cd")
 public final class JetSubmitJobCodec {
     //hex: 0xFE0100
     public static final int REQUEST_MESSAGE_TYPE = 16646400;
@@ -88,7 +88,7 @@ public final class JetSubmitJobCodec {
         encodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET, lightJobCoordinator);
         clientMessage.add(initialFrame);
         DataCodec.encode(clientMessage, dag);
-        CodecUtil.encodeNullable(clientMessage, jobConfig, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, jobConfig);
         return clientMessage;
     }
 
@@ -104,7 +104,7 @@ public final class JetSubmitJobCodec {
             request.isLightJobCoordinatorExists = false;
         }
         request.dag = DataCodec.decode(iterator);
-        request.jobConfig = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.jobConfig = DataCodec.decodeNullable(iterator);
         return request;
     }
 

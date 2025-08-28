@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the given value
  */
 @SuppressWarnings("unused")
-@Generated("4f526c5121e3611fa42df1dedad1dd65")
+@Generated("c8e369fa7a063dd1bd38550e516cd8ed")
 public final class AtomicRefSetCodec {
     //hex: 0x0A0500
     public static final int REQUEST_MESSAGE_TYPE = 656640;
@@ -86,7 +86,7 @@ public final class AtomicRefSetCodec {
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, newValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, newValue);
         return clientMessage;
     }
 
@@ -97,7 +97,7 @@ public final class AtomicRefSetCodec {
         request.returnOldValue = decodeBoolean(initialFrame.content, REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET);
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
-        request.newValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.newValue = DataCodec.decodeNullable(iterator);
         return request;
     }
 
@@ -107,7 +107,7 @@ public final class AtomicRefSetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -119,6 +119,6 @@ public final class AtomicRefSetCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

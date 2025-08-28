@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
 @SuppressWarnings("unused")
-@Generated("965fbb8100ba493c148cac61a2077ab1")
+@Generated("1fdbbd9a7d2370fad961f3d9bec37caf")
 public final class MapAddNearCacheInvalidationListenerCodec {
     //hex: 0x013F00
     public static final int REQUEST_MESSAGE_TYPE = 81664;
@@ -135,7 +135,7 @@ public final class MapAddNearCacheInvalidationListenerCodec {
         encodeLong(initialFrame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET, sequence);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, key);
         return clientMessage;
     }
 
@@ -164,7 +164,7 @@ public final class MapAddNearCacheInvalidationListenerCodec {
                 java.util.UUID sourceUuid = decodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_SOURCE_UUID_FIELD_OFFSET);
                 java.util.UUID partitionUuid = decodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
                 long sequence = decodeLong(initialFrame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET);
-                com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data key = DataCodec.decodeNullable(iterator);
                 handleIMapInvalidationEvent(key, sourceUuid, partitionUuid, sequence);
                 return;
             }
