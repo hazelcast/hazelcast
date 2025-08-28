@@ -65,6 +65,8 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         this.fileName = diagnostics.getFileName() + "-%03d.log";
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.isIncludeEpochTime(), diagnostics.logger);
 
+        createDirectoryIfDoesNotExist();
+
         this.maxRollingFileCount = diagnostics.getMaxRollingFileCount();
         // we accept a float, so it becomes easier to testing to create a small file
         this.maxRollingFileSizeBytes = round(
@@ -136,10 +138,15 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
                 throw new InvalidConfigurationException("Configured path for diagnostics log file '" + dir
                         + "' exists, but it's not a directory");
             }
+
+            if (!canWriteToDirectory(dir)) {
+                throw new InvalidConfigurationException("Cannot write to diagnostics log directory '" + dir
+                        + "'. Check filesystem permissions.");
+            }
         } else {
             if (!dir.mkdirs()) {
                 throw new InvalidConfigurationException("Error while creating a directory '" + dir
-                        + "' for diagnostics log files. Are you having sufficient rights on the filesystem?");
+                        + "' for diagnostics log files. Check filesystem permissions.");
             }
         }
     }
@@ -170,5 +177,22 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         File file = newFile(index - maxRollingFileCount, true);
         deleteQuietly(file);
         index++;
+    }
+
+    private boolean canWriteToDirectory(File dir) {
+        if (!dir.isDirectory() || !dir.canWrite()) {
+            return false;
+        }
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("writetest", ".tmp", dir);
+            return true;
+        } catch (IOException e) {
+            return false;
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
     }
 }

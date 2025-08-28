@@ -19,6 +19,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.events.DiagnosticsConfigUpdatedEvent;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
@@ -390,6 +391,8 @@ public class Diagnostics {
         long startedTime = currentTimeMillis();
         baseFileNameWithTime = baseFileName + "-" + startedTime;
         Instant startedTimeInstant = Instant.ofEpochMilli(startedTime);
+        this.diagnosticsLog = newLog(this);
+
         String message = format("Diagnostics started at [%s]-[%s] with configuration %s", startedTime,
                 startedTimeInstant.atZone(ZoneOffset.UTC), config);
         logger.info(message);
@@ -401,7 +404,6 @@ public class Diagnostics {
                     .log();
         }
 
-        this.diagnosticsLog = newLog(this);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new DiagnosticSchedulerThreadFactory("DiagnosticsSchedulerThread"));
         scheduleAutoOff();
@@ -464,7 +466,6 @@ public class Diagnostics {
             closeLog();
 
             setConfig0(diagnosticsConfig);
-            emitMCConfigUpdatedEvent();
 
             if (status.get() == SERVICE_DISABLED) {
                 logger.info("Diagnostics disabled. To enable, set over Management Center or Operator.");
@@ -476,11 +477,33 @@ public class Diagnostics {
                 }
                 // if the service is disabled, no need to wait for the auto off timer
                 cancelAutoOffFuture("Reason: Diagnostics service is disabled.");
+                emitMCConfigUpdatedEvent();
                 return;
             }
 
-            start();
+            startOrFail(diagnosticsConfig);
+            emitMCConfigUpdatedEvent();
             scheduleRegisteredPlugins();
+
+        }
+    }
+
+    private void startOrFail(DiagnosticsConfig diagnosticsConfig) {
+        try {
+            start();
+        } catch (InvalidConfigurationException t) {
+            // if the diagnostics service cannot be started, it will be disabled
+            logger.warning("Diagnostics service cannot be started with the provided configuration: "
+                    + diagnosticsConfig, t);
+            this.status.set(SERVICE_DISABLED);
+            this.config.setEnabled(false);
+            if (auditlogService != null) {
+                auditlogService.eventBuilder(AuditlogTypeIds.DIAGNOSTICS_LOGGING_DISABLE)
+                        .message("Diagnostics disabled due to invalid configuration")
+                        .addParameter("DiagnosticsConfig", config)
+                        .log();
+            }
+            throw t;
         }
     }
 

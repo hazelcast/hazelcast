@@ -17,6 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,12 +32,16 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -44,6 +49,9 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @Rule
+    public TemporaryFolder restrictedFolder = new TemporaryFolder();
 
     @Test
     public void testDiagnosticsDirectoryIsCreatedWhenDoesNotExist() throws IOException {
@@ -102,6 +110,49 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
         assertFilesRollingOver(diagnosticsConfig);
     }
 
+    @Test
+    public void testDiagnosticsFileFailsIfNoWritePermissions_dynamically() throws IOException {
+        // file permissions are not supported on Windows, so we skip this test
+        assumeFalse(System.getProperty("os.name").toLowerCase().contains("win"));
+
+        File diagnosticsFolder = restrictedFolder.newFolder();
+        // remove write permissions
+        makeitReadonly(diagnosticsFolder);
+
+        assert !diagnosticsFolder.canWrite();
+
+        DiagnosticsConfig diagnosticsConfig = new DiagnosticsConfig()
+                .setEnabled(true)
+                .setLogDirectory(diagnosticsFolder.getAbsolutePath())
+                .setMaxRolledFileSizeInMB(0.01f);
+
+        HazelcastInstance instance = createHazelcastInstance(new Config());
+        Diagnostics diagnostics = TestUtil.getNode(instance).getNodeEngine().getDiagnostics();
+
+        assertThrows(InvalidConfigurationException.class, () -> {
+            diagnostics.setConfig(diagnosticsConfig);
+        });
+    }
+
+    @Test
+    public void testDiagnosticsFileFailsIfNoWritePermissions_statically() throws IOException {
+        // file permissions are not supported on Windows, so we skip this test
+        assumeFalse(System.getProperty("os.name").toLowerCase().contains("win"));
+
+        File diagnosticsFolder = restrictedFolder.newFolder();
+        // remove write permissions
+        makeitReadonly(diagnosticsFolder);
+
+        Config config = new Config();
+        config.setProperty("hazelcast.diagnostics.enabled", "true");
+        config.setProperty("hazelcast.diagnostics.directory", diagnosticsFolder.getAbsolutePath());
+
+        assertThrows(InvalidConfigurationException.class, () -> {
+            createHazelcastInstance(config);
+        });
+    }
+
+
     public void assertFilesRollingOver(DiagnosticsConfig diagnosticsConfig) {
 
         // Prepare the config for a lot of output
@@ -143,7 +194,6 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
     }
 
 
-
     private void assertContainsFileEventually(final File dir) {
         assertContainsFileEventually(dir, 1);
     }
@@ -157,5 +207,20 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
             assertNotNull(files);
             assertTrue(files.length >= minFileCount);
         });
+    }
+
+    private void makeitReadonly(File readOnlyDir) {
+        Path readOnlyPath = readOnlyDir.toPath();
+
+        try {
+            // UNIX-like systems: set Posix permissions
+            Files.setPosixFilePermissions(readOnlyPath, PosixFilePermissions.fromString("r-xr-xr-x"));
+        } catch (UnsupportedOperationException e) {
+            // Windows: set as read-only
+            readOnlyDir.setReadOnly();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }
