@@ -25,9 +25,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.HashSet;
 import java.util.Set;
-
-import static java.util.Collections.emptySet;
 
 /**
  * Annotation that instruments Spring to expose Hazelcast objects as beans.
@@ -89,10 +88,8 @@ public @interface ExposeHazelcastObjects {
      */
     Class<?>[] excludeByType() default {};
 
-    record Configuration (Set<String> includeByName, Set<String> excludeByName, Set<Class<?>> include, Set<Class<?>> exclude) {
-
-        private static final Configuration EMPTY_CONFIGURATION =
-                new Configuration(emptySet(), emptySet(), emptySet(), emptySet());
+    record Configuration (Set<String> includeByName, Set<String> excludeByName,
+                          Set<Class<?>> includeByType, Set<Class<?>> excludeByType) {
 
         static Configuration toConfiguration(@Nonnull AnnotationMetadata importingClassMetadata) {
             var metadata =  importingClassMetadata.getAnnotations().get(ExposeHazelcastObjects.class);
@@ -101,20 +98,30 @@ public @interface ExposeHazelcastObjects {
             }
             String[] includeByName = metadata.getValue("includeByName", String[].class).orElse(new String[0]);
             String[] excludeByName = metadata.getValue("excludeByName", String[].class).orElse(new String[0]);
-            Class<?>[] include = metadata.getValue("include", Class[].class).orElse(new Class<?>[0]);
-            Class<?>[] exclude = metadata.getValue("exclude", Class[].class).orElse(new Class<?>[0]);
-            return new Configuration(Set.of(includeByName), Set.of(excludeByName), Set.of(include), Set.of(exclude));
+            Class<?>[] includeByType = metadata.getValue("includeByType", Class[].class).orElse(new Class<?>[0]);
+            Class<?>[] excludeByType = metadata.getValue("excludeByType", Class[].class).orElse(new Class<?>[0]);
+            return new Configuration(Set.of(includeByName), Set.of(excludeByName), Set.of(includeByType), Set.of(excludeByType));
         }
 
         public static Configuration empty() {
-            return EMPTY_CONFIGURATION;
+            return new Configuration(new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>());
         }
 
         boolean canInclude(String beanName) {
             return (includeByName.isEmpty() || includeByName.contains(beanName)) && !excludeByName.contains(beanName);
         }
+
         boolean canInclude(Class<?> beanClass) {
-            return (include.isEmpty() || include.contains(beanClass)) && !exclude.contains(beanClass);
+            var includedByType = this.includeByType.stream().anyMatch(beanClass::isAssignableFrom);
+            var excludedByType = this.excludeByType.stream().anyMatch(beanClass::isAssignableFrom);
+            return (includeByType.isEmpty() || includedByType) && !excludedByType;
+        }
+
+        void includeOther(Configuration other) {
+            includeByName.addAll(other.includeByName());
+            excludeByName.addAll(other.excludeByName());
+            includeByType.addAll(other.includeByType());
+            excludeByType.addAll(other.excludeByType());
         }
     }
 

@@ -19,26 +19,23 @@ package com.hazelcast.spring.java;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spring.CustomSpringExtension;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.sql.SqlService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 public abstract class AppContextTestBase {
 
     @Autowired
     private HazelcastInstance instance;
 
     @Autowired
-    private JetService jet;
+    protected JetService jet;
 
     @Autowired
     private SqlService sqlService;
@@ -51,8 +48,12 @@ public abstract class AppContextTestBase {
     @Qualifier(value = "testMap")
     protected IMap<String, String> testMap;
 
+    @Autowired(required = false)
+    @Qualifier(value = "ringbuffer")
+    protected Ringbuffer<String> ringbuffer;
+
     @Autowired
-    private ApplicationContext applicationContext;
+    protected ApplicationContext applicationContext;
 
     @Test
     void testServices() {

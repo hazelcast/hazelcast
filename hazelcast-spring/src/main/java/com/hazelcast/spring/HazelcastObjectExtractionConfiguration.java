@@ -15,40 +15,17 @@
  */
 package com.hazelcast.spring;
 
-import com.hazelcast.cache.ICache;
-import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.collection.IList;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ISet;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.CPMap;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.IMap;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
-import com.hazelcast.sql.SqlService;
-import com.hazelcast.topic.ITopic;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -65,106 +42,48 @@ import java.util.function.Supplier;
  */
 @Configuration(proxyBeanMethods = false)
 @AutoConfiguration
-@AutoConfigureAfter(HazelcastAutoConfiguration.class)
+@AutoConfigureAfter({HazelcastAutoConfiguration.class, HazelcastExposeObjectRegistrar.class})
 public class HazelcastObjectExtractionConfiguration {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastObjectExtractionConfiguration.class);
 
-    private static Set<Class<?>> registeredConfigClasses = ConcurrentHashMap.newKeySet();
-
-    @ConditionalOnMissingBean(ExposeHazelcastObjects.Configuration.class)
-    public static class ExposeConf {
-        @Bean
-        public ExposeHazelcastObjects.Configuration hzInternalBeanInfo() {
-            return ExposeHazelcastObjects.Configuration.empty();
-        }
-    }
+    private static final Set<Class<?>> REGISTERED_CONFIG_CLASSES = ConcurrentHashMap.newKeySet();
 
     @Bean
     @Nonnull
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    public static BeanDefinitionRegistryPostProcessor hzInternalBeanExposer(
-            @Nonnull HazelcastInstance hazelcastInstance,
-            @Nonnull ExposeHazelcastObjects.Configuration exposeConf) {
-        return new Exporter(hazelcastInstance, exposeConf);
+    public static BeanDefinitionRegistryPostProcessor hzInternalBeanExposer(@Nonnull HazelcastInstance hazelcastInstance,
+                                                                            ApplicationContext applicationContext) {
+        ExposeHazelcastObjects.Configuration hzBeanExportConf = ExposeHazelcastObjects.Configuration.empty();
+        if (applicationContext.containsBean("hzBeanExportConf")) {
+            hzBeanExportConf = applicationContext.getBean("hzBeanExportConf", ExposeHazelcastObjects.Configuration.class);
+        }
+        return new BeanExporter(hazelcastInstance, hzBeanExportConf);
     }
 
     @Nonnull
     public Set<Class<?>> registeredTypesOfBeans() {
-        return Set.copyOf(registeredConfigClasses);
+        return Set.copyOf(REGISTERED_CONFIG_CLASSES);
     }
 
-    private record Exporter(HazelcastInstance hazelcastInstance, ExposeHazelcastObjects.Configuration exposeConf)
-            implements BeanDefinitionRegistryPostProcessor {
+    record RegistrationChain(HazelcastInstance hazelcastInstance,
+                             BeanDefinitionRegistry registry,
+                             ExposeHazelcastObjects.Configuration configuration) {
 
-        @Override
-        public void postProcessBeanDefinitionRegistry(@Nonnull BeanDefinitionRegistry registry)
-                throws BeansException {
-
-            final Config hazelcastConfiguration = hazelcastInstance.getConfig();
-
-            new Registration(hazelcastInstance, registry, exposeConf)
-                    .register(registry, "jetService", JetService.class, (hz, n) -> hz.getJet())
-                    .register(registry, "sqlService", SqlService.class, (hz, n) -> hz.getSql())
-
-                    .register(hazelcastConfiguration.getMapConfigs(), IMap.class, HazelcastInstance::getMap)
-                    .register(hazelcastConfiguration.getQueueConfigs(), IQueue.class, HazelcastInstance::getQueue)
-                    .register(hazelcastConfiguration.getFlakeIdGeneratorConfigs(), FlakeIdGenerator.class,
-                              HazelcastInstance::getFlakeIdGenerator)
-                    .register(hazelcastConfiguration.getMultiMapConfigs(), MultiMap.class, HazelcastInstance::getMultiMap)
-                    .register(hazelcastConfiguration.getPNCounterConfigs(), PNCounter.class, HazelcastInstance::getPNCounter)
-                    .register(hazelcastConfiguration.getReliableTopicConfigs(), ITopic.class, HazelcastInstance::getReliableTopic)
-                    .register(hazelcastConfiguration.getReplicatedMapConfigs(), ReplicatedMap.class,
-                              HazelcastInstance::getReplicatedMap)
-                    .register(hazelcastConfiguration.getRingbufferConfigs(), Ringbuffer.class, HazelcastInstance::getRingbuffer)
-                    .register(hazelcastConfiguration.getSetConfigs(), ISet.class, HazelcastInstance::getSet)
-                    .register(hazelcastConfiguration.getTopicConfigs(), ITopic.class, HazelcastInstance::getTopic)
-                    .register(hazelcastConfiguration.getScheduledExecutorConfigs(), IScheduledExecutorService.class,
-                              HazelcastInstance::getScheduledExecutorService)
-                    .register(hazelcastConfiguration.getDurableExecutorConfigs(), DurableExecutorService.class,
-                              HazelcastInstance::getDurableExecutorService)
-                    .register(hazelcastConfiguration.getExecutorConfigs(), IExecutorService.class,
-                              HazelcastInstance::getExecutorService)
-                    .register(hazelcastConfiguration.getListConfigs(), IList.class,
-                              HazelcastInstance::getList)
-                    .register(hazelcastConfiguration.getCacheConfigs(), ICache.class,
-                              (i, n) -> i.getCacheManager().getCache(n))
-                    .register(hazelcastConfiguration.getCardinalityEstimatorConfigs(), CardinalityEstimator.class,
-                              HazelcastInstance::getCardinalityEstimator)
-
-                    .register(hazelcastConfiguration.getCPSubsystemConfig().getCpMapConfigs(), CPMap.class,
-                              (i, n) -> i.getCPSubsystem().getMap(n))
-                    .register(hazelcastConfiguration.getCPSubsystemConfig().getLockConfigs(), FencedLock.class,
-                              (i, n) -> i.getCPSubsystem().getLock(n))
-                    .register(hazelcastConfiguration.getCPSubsystemConfig().getSemaphoreConfigs(), ISemaphore.class,
-                              (i, n) -> i.getCPSubsystem().getSemaphore(n))
-            ;
-        }
-
-        @Override
-        public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory)
-                throws BeansException {
-        }
-    }
-
-    private record Registration (HazelcastInstance hazelcastInstance,
-                                 BeanDefinitionRegistry registry,
-                                 ExposeHazelcastObjects.Configuration configuration) {
-
-        <T> Registration register(final Map<String, ?> conf,
-                                                           final Class<T> clazz,
-                                                           final BiFunction<HazelcastInstance, String, T> supplierProvider) {
+        RegistrationChain register(final Map<String, ?> conf,
+                                   final Class<?> clazz,
+                                   final BiFunction<HazelcastInstance, String, Object> supplierProvider) {
             for (Map.Entry<String, ?> entry : conf.entrySet()) {
                 register(registry, entry.getKey(), clazz, supplierProvider);
             }
-            registeredConfigClasses.add(clazz);
+            REGISTERED_CONFIG_CLASSES.add(clazz);
             return this;
         }
 
-        <T> Registration register(final BeanDefinitionRegistry registry,
-                                                           final String name,
-                                                           final Class<T> clazz,
-                                                           final BiFunction<HazelcastInstance, String, T> supplierProvider) {
+        RegistrationChain register(final BeanDefinitionRegistry registry,
+                                   final String name,
+                                   final Class<?> clazz,
+                                   final BiFunction<HazelcastInstance, String, Object> supplierProvider) {
             boolean containsBeanDefinition = registry.containsBeanDefinition(name);
             boolean canIncludeByName = configuration.canInclude(name);
             boolean canIncludeByType = configuration.canInclude(clazz);
@@ -183,15 +102,17 @@ public class HazelcastObjectExtractionConfiguration {
                 }
             }
             if (!containsBeanDefinition && canIncludeByName && canIncludeByType) {
-                final Supplier<T> supplier = () -> supplierProvider.apply(hazelcastInstance, name);
-                var builder = BeanDefinitionBuilder.rootBeanDefinition(clazz, supplier)
-                                                   .setLazyInit(true);
+                final Supplier<Object> supplier = () -> supplierProvider.apply(hazelcastInstance, name);
+                RootBeanDefinition beanDefinition = new RootBeanDefinition();
+                beanDefinition.setTargetType(clazz);
+                beanDefinition.setInstanceSupplier(supplier);
+                beanDefinition.setLazyInit(true);
                 if (DistributedObject.class.isAssignableFrom(clazz)) {
-                    builder.setDestroyMethodName("destroy");
+                    beanDefinition.setDestroyMethodName("destroy");
                 }
-                registry.registerBeanDefinition(name, builder.getBeanDefinition());
+                registry.registerBeanDefinition(name, beanDefinition);
             }
-            registeredConfigClasses.add(clazz);
+            REGISTERED_CONFIG_CLASSES.add(clazz);
             return this;
         }
     }
