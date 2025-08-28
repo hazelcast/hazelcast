@@ -85,7 +85,7 @@
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.4</avro.version>
         <aws.sdk.version>1.12.788</aws.sdk.version>
-        <aws.sdk2.version>2.32.27</aws.sdk2.version>
+        <aws.sdk2.version>2.32.31</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
