@@ -161,7 +161,7 @@ public class PartitionContainerImpl implements PartitionContainer {
 
     @Override
     public RecordStore getRecordStore(String name, boolean skipLoadingOnCreate) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, skipLoadingOnCreate
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, contextMutexFactory, skipLoadingOnCreate
                 ? recordStoreConstructorSkipLoading : recordStoreConstructor);
     }
 
