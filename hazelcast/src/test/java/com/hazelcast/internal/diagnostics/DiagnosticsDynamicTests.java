@@ -233,6 +233,8 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
         assertStoreLatencyPlugin();
         assertSystemLogPlugin(true);
         assertSystemPropertiesPlugin(true);
+        assertGreaterOrEquals("Diagnostics dynamically enabled count",
+                diagnostics.getMetricCollector().getDynamicallyEnabledCount().get(), 1);
 
         // The service will be enabled, but the plugins will not
         disablePlugins();

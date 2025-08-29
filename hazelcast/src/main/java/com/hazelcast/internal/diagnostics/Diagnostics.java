@@ -214,6 +214,7 @@ public class Diagnostics {
     private final Object lifecycleLock = new Object();
     private final AuditlogService auditlogService;
     private NodeEngine nodeEngine;
+    private final DiagnosticsMetricCollector metricCollector = new DiagnosticsMetricCollector();
 
     public Diagnostics(String baseFileName, LoggingService loggingService, String hzName,
                        HazelcastProperties properties) {
@@ -266,6 +267,10 @@ public class Diagnostics {
 
     public int getMaxRollingFileCount() {
         return maxRollingFileCount;
+    }
+
+    public DiagnosticsMetricCollector getMetricCollector() {
+        return metricCollector;
     }
 
     // just for testing (returns the current file the system is writing to)
@@ -491,6 +496,8 @@ public class Diagnostics {
     private void startOrFail(DiagnosticsConfig diagnosticsConfig) {
         try {
             start();
+            scheduleRegisteredPlugins();
+            metricCollector.incrementDynamicallyEnabledCount();
         } catch (InvalidConfigurationException t) {
             // if the diagnostics service cannot be started, it will be disabled
             logger.warning("Diagnostics service cannot be started with the provided configuration: "
@@ -779,6 +786,7 @@ public class Diagnostics {
                     DiagnosticsConfig dConfig = new DiagnosticsConfig(config);
                     dConfig.setEnabled(false);
                     setConfig(dConfig);
+                    metricCollector.incrementAutoOffDisabledCount();
                     break;
                 } catch (Exception e) {
                     tryCount++;

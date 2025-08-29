@@ -175,7 +175,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
         // plugins registered but not scheduled since diagnostics is not enabled
         assertPluginsWhenDiagnosticsDisabled(diagnostics);
-        assertGreaterOrEquals("Static plugin registered", 0, diagnostics.staticTasks.get().length);
+        assertGreaterOrEquals("Static plugin registered", diagnostics.staticTasks.get().length, 0);
 
         // enable diagnostics at runtime
         diagnosticsConfig.setEnabled(true);
@@ -213,7 +213,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         assertNotNull(diagnostics.getPluginInstance(BuildInfoPlugin.class));
         assertNotNull(diagnostics.getPluginInstance(InvocationSamplePlugin.class));
         // static plugins runs once hence no future
-        assertGreaterOrEquals("Static not plugin registered", 1, diagnostics.staticTasks.get().length);
+        assertGreaterOrEquals("Static plugin not registered", diagnostics.staticTasks.get().length, 1);
         assertNull(diagnostics.getFutureOf(BuildInfoPlugin.class));
         // dynamic plugin runs periodically, future is not null
         assertNotNull(diagnostics.getFutureOf(InvocationSamplePlugin.class));

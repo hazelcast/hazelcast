@@ -225,6 +225,7 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(() -> {
             assertFalse(ds.isEnabled());
             assertTrue(ds.getAutoOffFuture() == null || ds.getAutoOffFuture().isDone());
+            assertGreaterOrEquals("AutoOff Metric", ds.getMetricCollector().getAutoOffDisabledCount().get(), 1);
         });
     }
 
