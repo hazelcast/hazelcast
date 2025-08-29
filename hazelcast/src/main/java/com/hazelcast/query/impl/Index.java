@@ -131,7 +131,6 @@ public interface Index {
     Set<QueryableEntry> evaluate(Predicate predicate);
 
     /**
-     * @param value      value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
@@ -140,7 +139,6 @@ public interface Index {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending);
 
     /**
-     * @param value            value
      * @param descending       whether the entries should come in the descending order.
      *                         {@code true} means a descending order,
      *                         {@code false} means an ascending order.
@@ -169,7 +167,6 @@ public interface Index {
 
     /**
      * @param comparison comparison type
-     * @param value      value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
@@ -179,7 +176,6 @@ public interface Index {
 
     /**
      * @param comparison       comparison type
-     * @param value            value
      * @param descending       whether the entries should come in the descending order.
      *                         {@code true} means a descending order,
      *                         {@code false} means an ascending order.

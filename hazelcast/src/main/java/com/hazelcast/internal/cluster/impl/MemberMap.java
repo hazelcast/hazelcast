@@ -78,7 +78,6 @@ public final class MemberMap {
     /**
      * Creates a new {@code MemberMap} including given members.
      *
-     * @param members members
      * @return a new {@code MemberMap}
      */
     static MemberMap createNew(MemberImpl... members) {
@@ -88,8 +87,6 @@ public final class MemberMap {
     /**
      * Creates a new {@code MemberMap} including given members.
      *
-     * @param version version
-     * @param members members
      * @return a new {@code MemberMap}
      */
     static MemberMap createNew(int version, MemberImpl... members) {

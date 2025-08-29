@@ -201,8 +201,6 @@ public class Capacity {
     /**
      * Utility method to create a pretty format representation of given capacity with a specified unit.
      *
-     * @param capacity capacity
-     * @param unit unit
      * @return pretty format representation of given capacity
      */
     public static String toPrettyString(long capacity, MemoryUnit unit) {

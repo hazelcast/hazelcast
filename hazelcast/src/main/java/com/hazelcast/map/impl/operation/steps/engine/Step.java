@@ -38,7 +38,6 @@ public interface Step<S> {
     /**
      * Idempotent next step finder.
      *
-     * @param state state
      * @return next step or null if there is no next step.
      * @implSpec This implementation always throws
      * {@code UnsupportedOperationException}.

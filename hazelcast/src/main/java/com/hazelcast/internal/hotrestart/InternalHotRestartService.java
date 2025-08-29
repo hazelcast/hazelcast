@@ -146,7 +146,6 @@ public interface InternalHotRestartService {
     /**
      * Waits until partition replicas (primaries and backups) get in sync.
      *
-     * @param timeout timeout
      * @param unit time unit
      * @param supplier the {@link SafeStateCheckOperation} supplier
      * @throws IllegalStateException when timeout happens or a member leaves the cluster while waiting

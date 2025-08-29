@@ -49,7 +49,6 @@ public interface ClusterFailureDetector {
     /**
      * Returns suspicion level about a given member. Returned value is mostly implementation dependent.
      * <code>0</code> indicates no suspicion at all.
-     * @param member member
      * @param timestamp timestamp in milliseconds
      * @return suspicion level
      */

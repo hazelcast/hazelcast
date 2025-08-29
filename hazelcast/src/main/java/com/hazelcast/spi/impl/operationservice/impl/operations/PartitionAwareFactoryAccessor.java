@@ -25,7 +25,6 @@ public final class PartitionAwareFactoryAccessor {
     }
 
     /**
-     * @param operationFactory operationFactory
      * @return extracted {@code PartitionAwareOperationFactory} from supplied operation factory or null
      */
     public static PartitionAwareOperationFactory extractPartitionAware(OperationFactory operationFactory) {

@@ -334,7 +334,6 @@ public class MigrationManagerImpl implements MigrationManager {
      * Removes the current {@code activeMigration} if the {@code migration} is the same
      * and returns {@code true} if removed.
      *
-     * @param migration migration
      */
     private boolean removeActiveMigration(MigrationInfo migration) {
         MigrationInfo activeMigration =

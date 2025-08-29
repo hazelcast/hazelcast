@@ -55,7 +55,6 @@ public interface FragmentedMigrationAwareService extends MigrationAwareService {
     /**
      * Returns true if namespace is known by this service, false otherwise
      *
-     * @param namespace namespace
      * @return true if namespace is known by this service, false otherwise
      */
     boolean isKnownServiceNamespace(ServiceNamespace namespace);

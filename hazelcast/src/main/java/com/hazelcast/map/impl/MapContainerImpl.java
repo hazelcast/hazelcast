@@ -294,7 +294,6 @@ public class MapContainerImpl implements MapContainer {
      * Used to get index registry of one
      * of global or partitioned indexes.
      *
-     * @param partitionId partitionId
      * @return by default always returns global-index
      * registry otherwise return partitioned-index registry
      */

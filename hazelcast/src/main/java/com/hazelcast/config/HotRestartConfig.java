@@ -81,7 +81,6 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
     /**
      * Sets whether disk write should be followed by an {@code fsync()} system call.
      *
-     * @param fsync fsync
      * @return this HotRestartConfig
      */
     public HotRestartConfig setFsync(boolean fsync) {

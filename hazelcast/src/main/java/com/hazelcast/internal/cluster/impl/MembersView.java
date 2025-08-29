@@ -76,8 +76,6 @@ public final class MembersView implements IdentifiedDataSerializable {
     /**
      * Creates a new {@code MemberMap} including given members.
      *
-     * @param version version
-     * @param members members
      * @return a new {@code MemberMap}
      */
     public static MembersView createNew(int version, Collection<MemberImpl> members) {

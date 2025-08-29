@@ -38,7 +38,6 @@ public abstract class PartitionAwareOperationFactory implements OperationFactory
      * If {@link PartitionAwareOperationFactory} needs to have runner-side state different from caller-side one,
      * this method can be used to create it. Otherwise, stateful factories may cause JMM problems.
      *
-     * @param nodeEngine nodeEngine
      * @param partitions the partitions provided to an operation which use this
      *                   factory. The operation factory may decide to use this
      *                   externally provided partition set if it doesn't manage

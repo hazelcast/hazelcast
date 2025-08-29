@@ -146,14 +146,12 @@ public interface IndexStore {
     Iterator<QueryableEntry> getSqlRecordIterator(boolean descending);
 
     /**
-     * @param value value
      * @return iterator over index entries that are equal to the given value
      */
     Iterator<QueryableEntry> getSqlRecordIterator(@Nonnull Comparable value);
 
     /**
      * @param comparison comparison type
-     * @param value value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
@@ -176,7 +174,6 @@ public interface IndexStore {
 
     /**
      * Get records for given value. Value can be {@link AbstractIndex#NULL}.
-     * @param value         value
      * @param descending    whether the entries should come in the descending order.
      *                      {@code true} means a descending order,
      *                      {@code false} means an ascending order.
@@ -221,7 +218,6 @@ public interface IndexStore {
      * or {@code NULLS LAST}. In such case 2 scans have to be used.
      *
      * @param comparison comparison type
-     * @param value value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.

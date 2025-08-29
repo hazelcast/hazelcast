@@ -93,7 +93,6 @@ public interface PartitionReplicaVersionManager {
      * {@link ServiceNamespaceAware} then {@link ServiceNamespaceAware#getServiceNamespace()}
      * will be used. Otherwise {@link NonFragmentedServiceNamespace} will be returned.
      *
-     * @param operation operation
      * @return service namespace for operation
      */
     ServiceNamespace getServiceNamespace(Operation operation);

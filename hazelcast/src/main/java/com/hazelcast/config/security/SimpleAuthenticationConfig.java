@@ -44,7 +44,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Adds one user to the configuration.
      *
-     * @param username username
      * @param password user's password
      * @param roles roles assigned to the user
      * @return this object
@@ -57,7 +56,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Adds one user to the configuration.
      *
-     * @param username username
      * @param userDto user's attributes
      * @return this object
      */
@@ -109,7 +107,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Return the configured password for given username.
      *
-     * @param username username
      * @return user's password or null if such user doesn't exist
      */
     public String getPassword(@Nonnull String username) {
@@ -120,7 +117,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Returns role names assigned to the given user.
      *
-     * @param username username
      * @return configured roles or null if the user doesn't exist
      */
     public Set<String> getRoles(@Nonnull String username) {

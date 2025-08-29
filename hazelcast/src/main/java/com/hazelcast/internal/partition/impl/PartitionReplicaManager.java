@@ -382,7 +382,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * scheduled synchronization, clear the ongoing sync flag and release a synchronization permit.
      *
      * @param partitionId  the partition being synchronized
-     * @param namespace    namespace
      * @param replicaIndex the index of the replica being synchronized
      */
     // called in operation threads
