@@ -116,15 +116,20 @@ public class ClientRoutingModePhoneHomeTest extends HazelcastTestSupport {
         // terminate ALL_MEMBERS routing client
         client1.shutdown();
 
-        newPhoneHome(instance);
-        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("1");
-        assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("0");
+        assertTrueEventually(() -> {
+            newPhoneHome(instance);
+            assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("1");
+            assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("0");
+        });
 
         // terminate SINGLE_MEMBER routing client
         client2.shutdown();
 
-        newPhoneHome(instance);
-        assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("0");
+        assertTrueEventually(() -> {
+            newPhoneHome(instance);
+            assertThat(get(SINGLE_MEMBER_CLIENTS_COUNT)).isEqualTo("0");
+            assertThat(get(ALL_MEMBERS_CLIENTS_COUNT)).isEqualTo("0");
+        });
     }
 
     private String get(Metric metric) {
