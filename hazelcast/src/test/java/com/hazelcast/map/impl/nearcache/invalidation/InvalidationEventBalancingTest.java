@@ -36,12 +36,14 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -50,11 +52,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.spi.properties.ClusterProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.stream.Collectors.toSet;
@@ -90,30 +92,43 @@ class InvalidationEventBalancingTest
         HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(createMemberConfig());
         IMap<Long, String> testMap = hz.getMap(testMapName);
 
-        int invalidationCount = 500;
-        CountDownLatch invalidationWaitLatch = new CountDownLatch(eventThreadCount * invalidationCount);
+        int targetBatchInvalidationCount = 500;
+        int totalInvalidationsPerListener = Math.multiplyExact(targetBatchInvalidationCount, invalidationBatchSize);
+        int totalInvalidations = Math.multiplyExact(totalInvalidationsPerListener, eventThreadCount);
+
+        CountDownLatch invalidationWaitLatch = new CountDownLatch(totalInvalidations);
         List<InvalidationEventThreadTracker> listeners = IntStream.range(0, eventThreadCount).mapToObj(
                 i -> new InvalidationEventThreadTracker(invalidationWaitLatch)).toList();
 
         registerListenerPerEventThread(getNodeEngineImpl(hz).getEventService(), listeners);
 
-        for (long k = 0; k < invalidationCount * invalidationBatchSize; k++) {
+        for (long k = 0; k < totalInvalidationsPerListener; k++) {
+            // Invalidation happens as part of the operation after the response returned, so they can
+            // happen concurrently even with sequential synchronous puts like this.
             testMap.put(k, "" + k);
         }
 
         waitForInvalidations(invalidationWaitLatch);
 
-        for (InvalidationEventThreadTracker listener : listeners) {
-            AssertionError e = listener.error.get();
-            if (e != null) {
-                throw e;
-            }
+        SoftAssertions assertionBundle = new SoftAssertions();
+
+        Set<Thread> eventThreads = new HashSet<>();
+        for (int i = 0; i < listeners.size(); i++) {
+            InvalidationEventThreadTracker listener = listeners.get(i);
+            String tag = "listener" + i;
+            assertionBundle.assertThat(listener.invalidationCount.get()).as("Count for " + tag)
+                           .isEqualTo(totalInvalidationsPerListener);
+            eventThreads.addAll(listener.invalidationsPerThread.keySet());
         }
+        assertionBundle.assertThat(eventThreads.size()).isEqualTo(eventThreadCount);
+
+        assertionBundle.assertAll();
     }
 
     private Config createMemberConfig() {
-        return smallInstanceConfig().setProperty("" + EVENT_THREAD_COUNT, "" + eventThreadCount)
-                                    .setProperty("" + MAP_INVALIDATION_MESSAGE_BATCH_SIZE, "" + invalidationBatchSize);
+        return smallInstanceConfig().setProperty(EVENT_THREAD_COUNT.getName(), "" + eventThreadCount)
+                                    .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "" + invalidationBatchSize)
+                                    .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "5");
     }
 
     private void waitForInvalidations(CountDownLatch waitLatch) {
@@ -150,8 +165,7 @@ class InvalidationEventBalancingTest
 
         final CountDownLatch invalidationWaitLatch;
         final ConcurrentMap<Thread, Integer> invalidationsPerThread = new ConcurrentHashMap<>();
-        final ConcurrentMap<UUID, AtomicLong> partitionSequences = new ConcurrentHashMap<>();
-        final AtomicReference<AssertionError> error = new AtomicReference<>();
+        final AtomicInteger invalidationCount = new AtomicInteger();
 
         InvalidationEventThreadTracker(CountDownLatch invalidationWaitLatch) {
             this.invalidationWaitLatch = invalidationWaitLatch;
@@ -161,24 +175,10 @@ class InvalidationEventBalancingTest
         public void onEvent(Object event) {
             if (event instanceof BatchNearCacheInvalidation batchInvalidation) {
                 invalidationsPerThread.put(Thread.currentThread(), 1);
-                if (invalidationsPerThread.size() > 1) {
-                    error.compareAndSet(null,
-                            new AssertionError("onEvent invoked on more than one thread: " + invalidationsPerThread));
+                for (Invalidation ignored : batchInvalidation.getInvalidations()) {
+                    invalidationCount.incrementAndGet();
+                    invalidationWaitLatch.countDown();
                 }
-
-                for (Invalidation invalidation : batchInvalidation.getInvalidations()) {
-                    UUID partitionId = invalidation.getPartitionUuid();
-                    long sequence = invalidation.getSequence();
-                    long expectedCurrentSequence = sequence - 1;
-                    AtomicLong existingPartitionSequence = partitionSequences.computeIfAbsent(partitionId,
-                            k -> new AtomicLong(expectedCurrentSequence));
-                    if (!existingPartitionSequence.compareAndSet(expectedCurrentSequence, sequence)) {
-                        error.compareAndSet(null, new AssertionError(
-                                "Partition sequence value missed, could not increment from " + existingPartitionSequence));
-                    }
-                }
-
-                invalidationWaitLatch.countDown();
             }
         }
     }

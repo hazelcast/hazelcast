@@ -112,6 +112,10 @@ public class BatchInvalidator extends Invalidator {
             invalidationQueue.release();
         }
 
+        // Sending the invalidations after releasing the lock is a trade-off between queue inflation
+        // and delivery ordering. We accept a higher likelihood that invalidations will arrive out of
+        // order to the listener in exchange for lower latency on draining the queue when it exceeds
+        // the batch size.
         sendInvalidations(dataStructureName, invalidations);
     }
 
