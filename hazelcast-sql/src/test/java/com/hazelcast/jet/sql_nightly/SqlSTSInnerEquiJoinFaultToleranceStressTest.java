@@ -44,17 +44,26 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
@@ -80,6 +89,8 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
     protected int eventsToProcess = eventsPerSink * sinkCount;
 
     private static KafkaTestSupport kafkaTestSupport;
+    private static final Duration STREAM_FETCH_TIMEOUT = Duration.ofMinutes(2);
+    private static final int TOPIC_PARTITION_COUNT = 5;
     private volatile Throwable ex;
 
     private final Map<String, Integer> resultSet = new HashMap<>();
@@ -136,7 +147,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
         // Kafka source definition
         sourceTopic = "source_topic_" + SqlTestSupport.randomName();
-        kafkaTestSupport.createTopic(sourceTopic, 5);
+        kafkaTestSupport.createTopic(sourceTopic, TOPIC_PARTITION_COUNT);
         sqlService.execute("CREATE MAPPING " + sourceTopic + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
@@ -151,7 +162,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
         // Kafka sink topic definition
         sinkTopic = "sink_topic_" + SqlTestSupport.randomName();
-        kafkaTestSupport.createTopic(sinkTopic, 5);
+        kafkaTestSupport.createTopic(sinkTopic, TOPIC_PARTITION_COUNT);
         sqlService.execute("CREATE MAPPING " + sinkTopic
                 + " TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + " OPTIONS ( "
@@ -163,9 +174,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
         // Left & right sides of the JOIN
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), 3))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), " + getAllowedLag() + "))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), 4))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), " + getAllowedLag() + "))");
 
         jobRestarter = new JobRestarter(coordinator);
         jobRestarter.start();
@@ -198,8 +209,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
-//    @Ignore
-    @Test(timeout = 1_200_000L)
+    @Test(timeout = 900_000L)
     public void stressTest() throws Exception {
         // https://hazelcast.atlassian.net/browse/HZ-3187
         if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
@@ -208,7 +218,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         sqlService.execute(setupFetchingQuery());
 
         try (SqlResult result = sqlService.execute("SELECT * FROM " + sinkTopic)) {
-            for (SqlRow sqlRow : result) {
+            var notBlockingResult = new NotBlockingIterator<>(result.iterator(), STREAM_FETCH_TIMEOUT);
+            while (notBlockingResult.hasNext()) {
+                SqlRow sqlRow = notBlockingResult.next();
                 String s = sqlRow.getObject(1);
                 resultSet.merge(s, 1, Integer::sum);
                 if (resultSet.size() == expectedEventsCount) {
@@ -216,6 +228,10 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 }
             }
         }
+
+        assertThat(resultSet.size())
+                .as("Unexpected result count")
+                .isEqualTo(expectedEventsCount);
 
         Job job = coordinator.getJet().getJob(JOB_NAME);
         jobRestarter.finish();
@@ -253,6 +269,10 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 " OPTIONS ('processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500')" +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
+    }
+
+    protected int getAllowedLag() {
+        return 1;
     }
 
     class JobRestarter extends Thread {
@@ -315,4 +335,45 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
             ex = e;
         }
     }
+
+
+    public static class NotBlockingIterator<T> implements Iterator<T> {
+
+        private final Iterator<T> delegate;
+        private final ExecutorService executor;
+        private final Duration timeout;
+
+        public NotBlockingIterator(Iterator<T> delegate, Duration timeout) {
+            this.delegate = delegate;
+            this.executor = Executors.newSingleThreadExecutor();
+            this.timeout = timeout;
+        }
+
+        @Override
+        public boolean hasNext() {
+            Future<Boolean> f = executor.submit(delegate::hasNext);
+            try {
+                return f.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                f.cancel(true);
+                return false;
+            } catch (Exception ee) {
+                throw rethrow(ee);
+            }
+        }
+
+        @Override
+        public T next() {
+            Future<T> f = executor.submit(delegate::next);
+            try {
+                return f.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                f.cancel(true);
+                throw new NoSuchElementException();
+            } catch (Exception ee) {
+                throw rethrow(ee);
+            }
+        }
+    }
+
 }
