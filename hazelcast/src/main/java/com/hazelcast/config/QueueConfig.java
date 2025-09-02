@@ -102,18 +102,18 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     }
 
     /**
-     * Returns the TTL (time to live) for emptying the Queue.
+     * Returns the TTL (time to live) for emptying the Queue (in seconds).
      *
-     * @return the TTL (time to live) for emptying the Queue
+     * @return the TTL (time to live) for emptying the Queue (in seconds)
      */
     public int getEmptyQueueTtl() {
         return emptyQueueTtl;
     }
 
     /**
-     * Sets the TTL (time to live) for emptying the Queue.
+     * Sets the TTL (time to live) for emptying the Queue (in seconds).
      *
-     * @param emptyQueueTtl set the TTL (time to live) for emptying the Queue to this value
+     * @param emptyQueueTtl set the TTL (time to live) for emptying the Queue (in seconds) to this value
      * @return the Queue configuration
      */
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
