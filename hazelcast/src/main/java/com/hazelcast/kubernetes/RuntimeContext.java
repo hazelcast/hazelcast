@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.DEFAULT_STATUS_REPLICA_COUNT;
+
 /**
  * Models the state of a Kubernetes StatefulSet(s).
  * Note that this class is not thread-safe when instantiated using {@link #RuntimeContext()} or
@@ -155,9 +157,8 @@ public class RuntimeContext {
         @Nonnull
         public static StatefulSetInfo from(@Nonnull JsonObject statefulSet) {
             int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", ClusterTopologyIntentTracker.UNKNOWN);
-            int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas",
-                    ClusterTopologyIntentTracker.UNKNOWN);
-            int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", ClusterTopologyIntentTracker.UNKNOWN);
+            int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", DEFAULT_STATUS_REPLICA_COUNT);
+            int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", DEFAULT_STATUS_REPLICA_COUNT);
             return new StatefulSetInfo(specReplicas, readyReplicas, replicas);
         }
     }

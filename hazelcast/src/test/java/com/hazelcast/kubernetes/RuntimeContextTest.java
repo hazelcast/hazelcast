@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import org.junit.jupiter.api.Test;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.DEFAULT_STATUS_REPLICA_COUNT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -115,8 +116,8 @@ public class RuntimeContextTest {
             @Nonnull
             public static StatefulSetInfo from(@Nonnull JsonObject statefulSet) {
                 int specReplicas = statefulSet.get("spec").asObject().getInt("replicas", ClusterTopologyIntentTracker.UNKNOWN);
-                int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", ClusterTopologyIntentTracker.UNKNOWN);
-                int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", ClusterTopologyIntentTracker.UNKNOWN);
+                int readyReplicas = statefulSet.get("status").asObject().getInt("readyReplicas", DEFAULT_STATUS_REPLICA_COUNT);
+                int replicas = statefulSet.get("status").asObject().getInt("currentReplicas", DEFAULT_STATUS_REPLICA_COUNT);
                 return new StatefulSetInfo(specReplicas, readyReplicas, replicas);
             }
         }

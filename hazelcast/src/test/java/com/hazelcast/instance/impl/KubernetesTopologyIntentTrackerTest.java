@@ -21,12 +21,12 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatchers;
 
 import java.util.Properties;
@@ -34,17 +34,24 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntent.CLUSTER_SHUTDOWN;
+import static com.hazelcast.instance.impl.ClusterTopologyIntent.CLUSTER_STABLE;
+import static com.hazelcast.instance.impl.ClusterTopologyIntent.CLUSTER_START;
+import static com.hazelcast.instance.impl.ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN;
+import static com.hazelcast.instance.impl.ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT;
 import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
+@ParallelJVMTest
 public class KubernetesTopologyIntentTrackerTest {
 
     private final Properties properties = new Properties();
@@ -66,8 +73,7 @@ public class KubernetesTopologyIntentTrackerTest {
     public void testConstructor_whenClusterAutoStateStrategyActive() {
         properties.setProperty(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName(), "ACTIVE");
         Node node = setupMockNode();
-        assertThrows(InvalidConfigurationException.class,
-                () -> new KubernetesTopologyIntentTracker(node));
+        assertThrows(InvalidConfigurationException.class, () -> new KubernetesTopologyIntentTracker(node));
     }
 
     @Test
@@ -121,5 +127,76 @@ public class KubernetesTopologyIntentTrackerTest {
         clusterTopologyIntentTracker.onMembershipChange();
         // ensure wait thread completed
         future.get(15, TimeUnit.SECONDS);
+    }
+
+    @ParameterizedTest(name = "{index}: prevSpec={0}, updatedSpec={1}, "
+            + "prevReady={2}, updatedReady={3}, "
+            + "prevCurrent={4}, updatedCurrent={5}, "
+            + "expected={6}")
+    @MethodSource("updateCases")
+    public void testClusterTopologyIntentUpdate(
+            int p1, int p2, int p3, int p4, int p5, int p6,
+            ClusterTopologyIntent expectedIntent
+    ) {
+        clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(setupMockNode());
+        clusterTopologyIntentTracker.update(p1, p2, p3, p4, p5, p6);
+        assertThat(clusterTopologyIntentTracker.getClusterTopologyIntent())
+                .isEqualTo(expectedIntent);
+    }
+
+    static Stream<Arguments> updateCases() {
+        return Stream.of(
+                // Initial unknown -> handleInitialUpdate.
+                Arguments.of(
+                        UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, IN_MANAGED_CONTEXT_UNKNOWN
+                ),
+                Arguments.of(
+                        UNKNOWN, UNKNOWN, UNKNOWN, 0, UNKNOWN, 0, IN_MANAGED_CONTEXT_UNKNOWN
+                ),
+                // Initial unknown, but some replicas still unknown (first update)
+                Arguments.of(
+                        UNKNOWN, 1, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, CLUSTER_START
+                ),
+                Arguments.of(
+                        UNKNOWN, 1, UNKNOWN, 0, UNKNOWN, 0, CLUSTER_START
+                ),
+                // updated replica = 0 -> full cluster shutdown
+                Arguments.of(
+                        1, 0, 1, UNKNOWN, 1, UNKNOWN, CLUSTER_SHUTDOWN
+                ),
+                // previous Replicas == updated Replicas
+                Arguments.of(
+                        1, 1, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, NOT_IN_MANAGED_CONTEXT
+                ),
+                Arguments.of(
+                        1, 1, UNKNOWN, 0, UNKNOWN, 0, NOT_IN_MANAGED_CONTEXT
+                ),
+                Arguments.of(
+                        1, 1, 0, UNKNOWN, 0, UNKNOWN, NOT_IN_MANAGED_CONTEXT
+                ),
+                Arguments.of(
+                        1, 1, 1, UNKNOWN, 1, UNKNOWN, NOT_IN_MANAGED_CONTEXT
+                ),
+                Arguments.of(
+                        1, 1, 1, 0, 1, 0, NOT_IN_MANAGED_CONTEXT
+                ),
+                Arguments.of(
+                        1, 1, UNKNOWN, 1, UNKNOWN, 1, CLUSTER_STABLE
+                ),
+                Arguments.of(
+                        1, 1, 0, 1, 0, 1, CLUSTER_STABLE
+                ),
+                // Stable cluster (spec equal, ready == spec)
+                Arguments.of(
+                        3, 3, 2, 3, 2, 3, ClusterTopologyIntent.CLUSTER_STABLE
+                ),
+                // scaling
+                Arguments.of(
+                        2, 3, 2, UNKNOWN, 2, UNKNOWN, ClusterTopologyIntent.SCALING
+                ),
+                Arguments.of(
+                        2, 3, 2, 0, 2, 0, ClusterTopologyIntent.SCALING
+                )
+        );
     }
 }
