@@ -101,6 +101,9 @@ public class ReplicatedMapAntiEntropyTest extends ReplicatedMapAbstractTest {
             return 8778;
         }
 
+        @Override
+        public void destroy() {
+        }
     }
 
     class PutOperationWithNoReplication extends PutOperation {

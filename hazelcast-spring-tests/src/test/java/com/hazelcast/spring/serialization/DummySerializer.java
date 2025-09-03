@@ -38,4 +38,7 @@ public class DummySerializer implements StreamSerializer<DummySerializableObject
         return 123;
     }
 
+    @Override
+    public void destroy() {
+    }
 }

@@ -40,4 +40,7 @@ public class CustomStreamSerializer implements StreamSerializer<CustomStreamSeri
         return ReferenceObjects.CUSTOM_STREAM_SERIALIZABLE_ID;
     }
 
+    @Override
+    public void destroy() {
+    }
 }
