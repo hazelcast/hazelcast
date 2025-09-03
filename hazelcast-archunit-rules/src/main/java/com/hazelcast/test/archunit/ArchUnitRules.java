@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.test.archunit.BackupOperationShouldNotImplementMutatingOperation.notImplementMutatingOperation;
 import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
 import static com.hazelcast.test.archunit.MatchersUsageCondition.notUseHamcrestMatchers;
-import static com.hazelcast.test.archunit.MixTestAnnotationsCondition.notMixJUnit4AndJUnit5Annotations;
+import static com.hazelcast.test.archunit.MixTestAnnotationsCondition.notMixDifferentJUnitVersionsAnnotations;
 import static com.hazelcast.test.archunit.OperationShouldNotImplementReadonlyAndMutatingOperation.notImplementReadonlyAndMutatingOperation;
 import static com.hazelcast.test.archunit.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
@@ -61,7 +61,7 @@ public final class ArchUnitRules {
      */
     public static final ArchRule NO_JUNIT_MIXING = classes()
             .that().haveSimpleNameEndingWith("Test")
-            .should(notMixJUnit4AndJUnit5Annotations());
+            .should(notMixDifferentJUnitVersionsAnnotations());
 
     /** @see TestsHaveRunnersCondition */
     public static final ArchRule TESTS_HAVE_RUNNNERS = classes().that()

@@ -34,8 +34,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.config.IndexType.SORTED;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {

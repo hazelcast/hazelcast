@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.test.UserCodeUtil.pathRelativeToBinariesFolder;
 import static java.util.Collections.singletonList;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.fail;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 

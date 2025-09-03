@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
-
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
@@ -34,9 +33,9 @@ import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallI
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setInvocationTime;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

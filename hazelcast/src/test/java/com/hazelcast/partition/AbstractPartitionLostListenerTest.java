@@ -45,7 +45,7 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getOngoingRepl
 import static com.hazelcast.internal.partition.TestPartitionUtils.getOwnedReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getScheduledReplicaSyncRequests;
 import static com.hazelcast.test.Accessors.getNode;
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {

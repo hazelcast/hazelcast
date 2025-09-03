@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 

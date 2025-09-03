@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
-import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

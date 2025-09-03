@@ -44,7 +44,7 @@ import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_
 import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

@@ -16,56 +16,75 @@
 
 package com.hazelcast.test.archunit;
 
+import com.tngtech.archunit.core.domain.AccessTarget.MethodCallTarget;
+import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-import java.lang.annotation.Annotation;
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
-    private static final Set<Class<? extends Annotation>> JUNIT_4_ANNOTATION_CLASSES = Set.of(
-            Test.class,
-            Before.class,
-            After.class,
-            BeforeClass.class,
-            AfterClass.class);
-    private static final Set<Class<? extends Annotation>> JUNIT_5_ANNOTATION_CLASSES = Set.of(
-            org.junit.jupiter.api.Test.class,
-            org.junit.jupiter.api.BeforeEach.class,
-            org.junit.jupiter.api.AfterEach.class,
-            org.junit.jupiter.api.BeforeAll.class,
-            org.junit.jupiter.api.AfterAll.class
-    );
+    private static final Set<String> JUNIT_PACKAGES = Stream.of(
+            // JUnit 3
+            junit.framework.TestCase.class,
+            // JUnit 4
+            org.junit.Test.class,
+            // JUnit 5
+            org.junit.jupiter.api.Test.class)
+            .map(Class::getPackage)
+            .map(Package::getName)
+            .collect(Collectors.toSet());
 
     public MixTestAnnotationsCondition() {
-        super("Do not mix Junit4 and Junit5 annotations");
+        super("Do not mix different JUnit version references in the same Class");
     }
-
 
     @Override
     public void check(JavaClass item, ConditionEvents events) {
-        boolean hasJUnit4Annotation = item.getMethods().stream()
-                .anyMatch(method -> JUNIT_4_ANNOTATION_CLASSES.stream()
-                        .anyMatch(method::isAnnotatedWith));
+        Set<String> junitReferences = Stream.concat(getAnnotationsForClass(item), getMethodReferencesInClass(item))
+                .map(JavaClass::getPackageName)
+                .distinct()
+                .filter(JUNIT_PACKAGES::contains)
+                .collect(Collectors.toSet());
 
-        boolean hasJUnit5Annotation = item.getMethods().stream()
-                .anyMatch(method -> JUNIT_5_ANNOTATION_CLASSES.stream()
-                        .anyMatch(method::isAnnotatedWith));
-
-        if (hasJUnit4Annotation && hasJUnit5Annotation) {
-            String message = String.format("Class %s mixes JUnit 4 and JUnit 5 annotations.", item.getName());
+        // If the class contains multiple _different_ JUnit packages
+        if (junitReferences.size() > 1) {
+            String message =
+                    String.format("Class %s mixes different JUnit version references %s.", item.getName(), junitReferences);
             events.add(SimpleConditionEvent.violated(item, message));
         }
     }
 
-    public static ArchCondition<JavaClass> notMixJUnit4AndJUnit5Annotations() {
+    /** @return a {@link Stream} of the {@link Class}' annotating {@code item} */
+    private static Stream<JavaClass> getAnnotationsForClass(JavaClass item) {
+        Stream<JavaAnnotation<JavaClass>> classAnnotations = item.getAnnotations()
+                .stream();
+
+        Stream<JavaAnnotation<JavaMethod>> methodAnnotations = item.getMethods()
+                .stream()
+                .map(JavaMethod::getAnnotations)
+                .flatMap(Collection::stream);
+
+        return Stream.concat(classAnnotations, methodAnnotations)
+                .map(JavaAnnotation::getRawType);
+    }
+
+    /** @return a {@link Stream} of {@link Class}' containing methods called from {@code item} */
+    private static Stream<JavaClass> getMethodReferencesInClass(JavaClass item) {
+        return item.getMethodCallsFromSelf()
+                .stream()
+                .map(JavaMethodCall::getTarget)
+                .map(MethodCallTarget::getOwner);
+    }
+
+    public static ArchCondition<JavaClass> notMixDifferentJUnitVersionsAnnotations() {
         return new MixTestAnnotationsCondition();
     }
 }

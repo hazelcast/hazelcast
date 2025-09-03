@@ -36,7 +36,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)

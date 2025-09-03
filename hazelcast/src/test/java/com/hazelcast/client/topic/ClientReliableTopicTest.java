@@ -32,7 +32,6 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -277,7 +276,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         }
 
         assertOpenEventually(messageArrived);
-        TestCase.assertTrue(topic.removeMessageListener(id));
+        assertTrue(topic.removeMessageListener(id));
     }
 
     @Test

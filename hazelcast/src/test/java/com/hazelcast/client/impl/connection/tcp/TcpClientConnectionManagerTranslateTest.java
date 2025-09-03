@@ -46,7 +46,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.UUID;
 
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
