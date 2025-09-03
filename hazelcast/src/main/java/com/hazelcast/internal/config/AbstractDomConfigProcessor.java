@@ -44,6 +44,8 @@ import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.Node;
 
+import javax.annotation.Nonnull;
+
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -92,6 +94,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         this.strict = strict;
     }
 
+    @Nonnull
     protected String getTextContent(Node node) {
         return DomConfigHelper.getTextContent(node, domLevel3).trim();
     }

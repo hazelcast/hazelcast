@@ -57,7 +57,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.internal.util.StringUtil.trim;
 
 @SuppressWarnings({
         "checkstyle:CyclomaticComplexity",
@@ -566,7 +565,7 @@ public final class SqlConsole {
                 }
             }
 
-            if (Constants.COMMAND_SET.contains(lowerCaseInternal(trim(line)))) {
+            if (Constants.COMMAND_SET.contains(lowerCaseInternal(line.strip()))) {
                 return;
             }
             // These EOFError exceptions are captured in LineReader's

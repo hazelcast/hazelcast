@@ -17,7 +17,6 @@
 package com.hazelcast.config.security;
 
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
-import static com.hazelcast.internal.util.StringUtil.trim;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import java.util.Base64;
@@ -68,13 +67,13 @@ public enum TokenEncoding {
     }
 
     public static TokenEncoding getTokenEncoding(String label) {
-        label = trim(label);
-        if (label == null) {
-            return DEFAULT;
-        }
-        for (TokenEncoding item : TokenEncoding.values()) {
-            if (item.toString().equals(label)) {
-                return item;
+        if (label != null) {
+            label = label.strip();
+            for (TokenEncoding item : TokenEncoding.values()) {
+                if (item.toString()
+                        .equals(label)) {
+                    return item;
+                }
             }
         }
         return DEFAULT;

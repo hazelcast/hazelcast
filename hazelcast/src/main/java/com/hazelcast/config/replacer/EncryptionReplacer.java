@@ -21,6 +21,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.annotation.Nullable;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.xpath.XPath;
@@ -222,6 +223,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
         }
     }
 
+    @Nullable
     private static String getTextContent(Node node) {
         try {
             return node.getTextContent();
@@ -230,6 +232,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
         }
     }
 
+    @Nullable
     private static String getTextContentOld(Node node) {
         Node child = node.getFirstChild();
         if (child != null) {

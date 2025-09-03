@@ -16,12 +16,13 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.util.Objects;
 import java.util.Properties;
 
-import javax.annotation.Nonnull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Configuration base for config types with a factory class and its properties.
@@ -29,13 +30,14 @@ import javax.annotation.Nonnull;
  * @param <T> final child type
  */
 public abstract class AbstractBaseFactoryWithPropertiesConfig<T extends AbstractBaseFactoryWithPropertiesConfig<T>> {
-
+    @Nullable
     protected String factoryClassName;
     protected Properties properties = new Properties();
 
     /**
      * Returns the factory class name.
      */
+    @Nullable
     public String getFactoryClassName() {
         return factoryClassName;
     }

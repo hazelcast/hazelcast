@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -252,7 +254,8 @@ public final class StringUtil {
      * @param input string to trim
      * @return {@code null} if provided value was {@code null}, input with removed leading and trailing whitespaces
      */
-    public static String trim(String input) {
+    @Nullable
+    public static String trim(@Nullable String input) {
         if (input == null) {
             return null;
         }
@@ -265,11 +268,12 @@ public final class StringUtil {
      * @param input string to split
      * @return {@code null} if provided value was {@code null}, split parts otherwise (trimmed)
      */
-    public static String[] splitByComma(String input, boolean allowEmpty) {
+    @Nullable
+    public static String[] splitByComma(@Nullable String input, boolean allowEmpty) {
         if (input == null) {
             return null;
         }
-        String[] splitWithEmptyValues = trim(input).split("\\s*,\\s*", -1);
+        String[] splitWithEmptyValues = input.strip().split("\\s*,\\s*", -1);
         return allowEmpty ? splitWithEmptyValues : subtraction(splitWithEmptyValues, new String[]{""});
     }
 

@@ -16,8 +16,6 @@
 
 package com.hazelcast.config.security;
 
-import static com.hazelcast.internal.util.StringUtil.trim;
-
 import javax.naming.directory.SearchControls;
 
 /**
@@ -60,13 +58,13 @@ public enum LdapSearchScope {
     }
 
     public static LdapSearchScope getSearchScope(String label) {
-        label = trim(label);
-        if (label == null) {
-            return DEFAULT;
-        }
-        for (LdapSearchScope scope : LdapSearchScope.values()) {
-            if (scope.toString().equals(label)) {
-                return scope;
+        if (label != null) {
+            label = label.strip();
+            for (LdapSearchScope scope : LdapSearchScope.values()) {
+                if (scope.toString()
+                        .equals(label)) {
+                    return scope;
+                }
             }
         }
         return DEFAULT;
