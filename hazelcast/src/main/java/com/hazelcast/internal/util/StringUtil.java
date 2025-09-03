@@ -245,17 +245,8 @@ public final class StringUtil {
         }
     }
 
-
-    /**
-     * Trim whitespaces using the more aggressive approach of {@link String#strip()}.
-     * This method removes leading and trailing whitespaces, including a broader set of Unicode whitespace characters,
-     * compared to {@link String#trim()}.
-     *
-     * @param input string to trim
-     * @return {@code null} if provided value was {@code null}, input with removed leading and trailing whitespaces
-     */
-    @Nullable
-    public static String trim(@Nullable String input) {
+    /** A {@code null}-safe version of {@link String#strip()} */
+    public static String strip(@Nullable String input) {
         if (input == null) {
             return null;
         }
