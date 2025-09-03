@@ -142,8 +142,8 @@ public class BatchEventData implements Sequenced, EventData, Versioned {
             for (int i = 0; i < size; i++) {
                 QueryCacheEventData eventData = newQueryCacheEventDataBuilder(true).build();
                 eventData.readData(in);
-                assert in.getVersion().isLessThan(Versions.V5_4) || eventData.getMapName() != null
-                        : "Map name should not be null in version 5.4 and above";
+                assert in.getVersion().isLessThan(Versions.V5_4) || eventData.getMapName() != null : String
+                        .format("Map name should not be null in version %s and above", Versions.V5_4);
 
                 events.add(eventData);
             }

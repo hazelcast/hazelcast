@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -356,8 +357,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
         // RU_COMPAT 5.2
         if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)
                 && (node.dataConnectionNameWithoutSchema() != null || node.objectType() != null)) {
-            throw new HazelcastException("Cannot create a mapping with a data connection or an object type " +
-                    "until the cluster is upgraded to 5.3");
+            throw new HazelcastException(String.format(
+                    "Cannot create a mapping with a data connection or an object type until the cluster is upgraded to %s",
+                    Versions.V5_3));
         }
         mapping = new Mapping(
                 node.nameWithoutSchema(),
