@@ -370,6 +370,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = hz.getMap(name);
         put(map, 1, 1);
+        assertEquals(1, get(map, 1));
 
         map.addInterceptor(new NegativePutInterceptor());
         var secondInterceptor = Mockito.mock(MapInterceptor.class);
