@@ -111,7 +111,7 @@
         <confluent.version>7.9.1</confluent.version>
         <kotlin.version>2.2.10</kotlin.version>
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
-        <parquet.version>1.15.2</parquet.version>
+        <parquet.version>1.16.0</parquet.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -759,6 +759,12 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-jvm</artifactId>
                 <version>5.1.0</version>
+            </dependency>
+            <!-- Resolves convergence between hazelcast-sql (via calcite) & hazelcast-jet-files-azure (via parquet) -->
+            <dependency>
+                <groupId>org.locationtech.jts</groupId>
+                <artifactId>jts-core</artifactId>
+                <version>1.20.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
