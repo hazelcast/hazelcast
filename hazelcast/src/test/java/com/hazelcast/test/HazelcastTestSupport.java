@@ -113,8 +113,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1377,7 +1377,8 @@ public abstract class HazelcastTestSupport {
      * @param actual   actual value which is used for assert
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
-        assertEquals(format(message, expected, actual), expected, actual);
+        assertThat(actual).as(message, expected, actual)
+                .isEqualTo(expected);
     }
 
     /**
@@ -1389,7 +1390,8 @@ public abstract class HazelcastTestSupport {
      * @param actual   actual value which is used for assert
      */
     public static void assertNotEqualsStringFormat(String message, Object expected, Object actual) {
-        assertNotEquals(format(message, expected, actual), expected, actual);
+        assertThat(actual).as(message, expected, actual)
+                .isNotEqualTo(expected);
     }
 
     /** @see org.assertj.core.api.AbstractLongAssert#isBetween(Long, Long) */
@@ -1629,8 +1631,9 @@ public abstract class HazelcastTestSupport {
     public static void assumeConfiguredByteOrder(InternalSerializationService serializationService,
                                                  ByteOrder assumedByteOrder) {
         ByteOrder configuredByteOrder = serializationService.getByteOrder();
-        assumeTrue(format("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder),
-                configuredByteOrder.equals(assumedByteOrder));
+        assumeThat(configuredByteOrder)
+                .as("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder)
+                .isEqualTo(assumedByteOrder);
     }
 
     /**
