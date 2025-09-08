@@ -25,6 +25,7 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -57,6 +58,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -124,10 +126,11 @@ public final class NioOutboundPipeline
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter priorityFramesWritten = newSwCounter();
+
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = INFO, unit = BYTES)
-    private final SwCounter writeQueuePendingBytes = newSwCounter();
+    private final MwCounter writeQueuePendingBytes = newMwCounter();
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
-    private final SwCounter priorityWriteQueuePendingBytes = newSwCounter();
+    private final MwCounter priorityWriteQueuePendingBytes = newMwCounter();
 
     private volatile long lastWriteTime;
 

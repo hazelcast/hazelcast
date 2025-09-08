@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES;
@@ -36,10 +38,45 @@ import static org.mockito.Mockito.mock;
 
 @QuickTest
 class NioOutboundPipelineProbeTest {
+
+    @Test
+    void testMultipleThreadsWriting()
+            throws InterruptedException {
+        NioOutboundPipeline underTest = createDummyPipeline();
+        int threadCount = 5;
+        int framesPerThread = 100000;
+        List<Thread> writeThreads = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            writeThreads.add(new Thread(() -> writeRandomSizedFrames(underTest, framesPerThread)));
+            writeThreads.get(i).start();
+        }
+        for (Thread t : writeThreads) {
+            t.join();
+        }
+
+        for (int i = 0; i < threadCount * framesPerThread; i++) {
+            assertThat(underTest.get()).isNotNull();
+        }
+        assertThat(underTest.get()).isNull();
+        Counter pendingBytes = getCounterInstance(underTest, NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES);
+        assertThat(pendingBytes.get()).isEqualTo(0L);
+        Counter pendingPriorityBytes = getCounterInstance(underTest,
+                NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES);
+        assertThat(pendingPriorityBytes.get()).isEqualTo(0L);
+    }
+
+    private void writeRandomSizedFrames(NioOutboundPipeline pipeline, int frameCount) {
+        Random rng = ThreadLocalRandom.current();
+        for (int n = 0; n < frameCount; n++) {
+            int size = rng.nextInt(1024, 4096);
+            pipeline.write(new DummyFrame(n % 2 == 0, size));
+        }
+    }
+
     @Test
     void testPendingBytesGauge() {
-        NioOutboundPipeline underTest = new NioOutboundPipeline(mock(NioChannel.class), mock(NioThread.class), null, null, null,
-                ConcurrencyDetection.createDisabled(), false, false);
+        NioOutboundPipeline underTest = createDummyPipeline();
 
         Counter pendingBytes = getCounterInstance(underTest, NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES);
         Counter pendingPriorityBytes = getCounterInstance(underTest,
@@ -69,6 +106,11 @@ class NioOutboundPipelineProbeTest {
             assertThat(pendingBytes.get()).as("Pending bytes after removing frame %s", frame).isEqualTo(expectedPending);
             assertThat(pendingPriorityBytes.get()).as("Priority pending bytes after removing frame %s", frame).isEqualTo(expectedPriorityPending);
         }
+    }
+
+    private NioOutboundPipeline createDummyPipeline() {
+        return new NioOutboundPipeline(mock(NioChannel.class), mock(NioThread.class), null, null, null,
+                ConcurrencyDetection.createDisabled(), false, false);
     }
 
     private record DummyFrame(boolean isUrgent, int frameLength)
