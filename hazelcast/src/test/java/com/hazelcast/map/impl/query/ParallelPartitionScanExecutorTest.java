@@ -82,7 +82,7 @@ public class ParallelPartitionScanExecutorTest {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ReflectionUtils.setFieldValueReflectively(runner, "partitionService", partitionService);
         ParallelPartitionScanExecutor executor = executor(runner);
-        Predicate<Object, Object> predicate = Predicates.equal("attribute", 1);
+        Predicate predicate = Predicates.equal("attribute", 1);
         QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
 
         executor.execute("Map", predicate, asList(1, 2, 3), queryResult);
@@ -94,7 +94,7 @@ public class ParallelPartitionScanExecutorTest {
     public void execute_fail() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
-        Predicate<Object, Object> predicate = Predicates.equal("attribute", 1);
+        Predicate predicate = Predicates.equal("attribute", 1);
         QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
 
         doThrow(new QueryException()).when(runner).run(anyString(), eq(predicate), anyInt(), isA(QueryResult.class));
@@ -108,7 +108,7 @@ public class ParallelPartitionScanExecutorTest {
     public void execute_fail_retryable() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
-        Predicate<Object, Object> predicate = Predicates.equal("attribute", 1);
+        Predicate predicate = Predicates.equal("attribute", 1);
         QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
 
         doThrow(new RetryableHazelcastException()).when(runner).run(anyString(), eq(predicate), anyInt(), isA(QueryResult.class));

@@ -89,7 +89,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void runFullQuery() {
-        Predicate<Object, Object> predicate = Predicates.equal("this", value);
+        Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of()
                 .mapName(map.getName())
                 .predicate(predicate)
@@ -106,7 +106,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     @Test
     public void verifyIndexedQueryFailureWhileMigrating() {
         map.addIndex(IndexType.HASH, "this");
-        EqualPredicate predicate = new EqualPredicate("this", value);
+        Predicate predicate = new EqualPredicate("this", value);
 
         mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
 
@@ -124,7 +124,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     public void verifyIndexedQueryFailureWhileMigratingInFlight() {
         map.addIndex(IndexType.HASH, "this");
 
-        EqualPredicate predicate = new EqualPredicate("this", value) {
+        Predicate predicate = new EqualPredicate("this", value) {
             @Override
             public Set<QueryableEntry> filter(QueryContext queryContext) {
                 // start a new migration while executing an indexed query
@@ -145,7 +145,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void verifyFullScanFailureWhileMigrating() {
-        EqualPredicate predicate = new EqualPredicate("this", value);
+        Predicate predicate = new EqualPredicate("this", value);
 
         mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
 
@@ -161,7 +161,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void verifyFullScanFailureWhileMigratingInFlight() {
-        EqualPredicate predicate = new EqualPredicate("this", value) {
+        Predicate predicate = new EqualPredicate("this", value) {
             @Override
             protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
                 // start a new migration while executing a full scan

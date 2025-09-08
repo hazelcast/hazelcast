@@ -22,8 +22,8 @@ import java.io.Serializable;
 
 public class CustomAttribute implements Serializable, Comparable<CustomAttribute> {
 
-    private final int age;
-    private final long height;
+    private int age;
+    private long height;
 
     public CustomAttribute(int age, long height) {
         this.age = age;
@@ -48,7 +48,11 @@ public class CustomAttribute implements Serializable, Comparable<CustomAttribute
         if (age != that.age) {
             return false;
         }
-        return height == that.height;
+        if (height != that.height) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override

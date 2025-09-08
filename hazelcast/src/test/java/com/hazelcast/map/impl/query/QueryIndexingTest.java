@@ -50,7 +50,7 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryIndexingTest extends HazelcastTestSupport {
 
-    private final int count = 2000;
+    private int count = 2000;
     private Map<Integer, Employee> employees;
 
     private TestHazelcastInstanceFactory nodeFactory;
