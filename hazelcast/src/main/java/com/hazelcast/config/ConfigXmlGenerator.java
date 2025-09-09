@@ -205,6 +205,7 @@ public class ConfigXmlGenerator {
         namespacesConfiguration(gen, config);
         restServerConfiguration(gen, config);
         vectorCollectionXmlGenerator(gen, config);
+        memberAttributesXmlGenerator(gen, config);
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();
@@ -1314,6 +1315,17 @@ public class ConfigXmlGenerator {
                 .node("trust-certificate", ssl.getTrustCertificate())
                 .node("trust-certificate-key", ssl.getTrustCertificatePrivateKey())
                 .close();
+    }
+
+    private void memberAttributesXmlGenerator(XmlGenerator gen, Config config) {
+        MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
+        if (!memberAttributeConfig.getAttributes().isEmpty()) {
+            gen.open("member-attributes");
+            for (Map.Entry<String, String> attribute : memberAttributeConfig.getAttributes().entrySet()) {
+                gen.node("attribute", attribute.getValue(), "name", attribute.getKey());
+            }
+            gen.close();
+        }
     }
 
     public static void namespaceConfigurations(XmlGenerator gen, Config config) {
