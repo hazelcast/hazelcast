@@ -71,7 +71,9 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
         if (!unlocked) {
             // we can not check for retry here, hence just throw the exception
             String ownerInfo = lockStore.getOwnerInfo(key);
-            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
+            throw new IllegalMonitorStateException(
+                    String.format("Current thread is not owner of the lock! Key: %s, TID: %d, Name: %s, Owner info: %s",
+                            key, threadId, namespace.getObjectName(), ownerInfo));
         } else {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
