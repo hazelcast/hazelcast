@@ -215,7 +215,7 @@ hazelcast-client:
   native-memory:
     enabled: false
     allocator-type: POOLED
-    size:
+    capacity:
       unit: MEGABYTES
       value: 128
     min-block-size: 1

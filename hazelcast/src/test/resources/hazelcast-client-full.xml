@@ -241,7 +241,7 @@
     </serialization>
 
     <native-memory enabled="false" allocator-type="POOLED">
-        <size unit="MEGABYTES" value="128"/>
+        <capacity unit="MEGABYTES" value="128"/>
         <min-block-size>1</min-block-size>
         <page-size>1</page-size>
         <metadata-space-percentage>40.5</metadata-space-percentage>

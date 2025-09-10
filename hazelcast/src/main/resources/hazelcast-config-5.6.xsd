@@ -3471,7 +3471,10 @@
             <xs:element name="size" type="capacity" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Deprecated, use 'capacity' instead.
+                        Deprecated, use 'capacity' instead. If 'capacity' and 'size' are both defined, the last config in the xml overrides the previous setting. E.g. if you have a setting like:
+                        <capacity unit="GIGABYTES" value="50"/>
+                        <size unit="GIGABYTES" value="20"/>
+                        then, the last config value of 20GB will be effective.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

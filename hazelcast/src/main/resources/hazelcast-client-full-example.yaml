@@ -518,9 +518,9 @@ hazelcast-client:
   # * POOLED: Manages memory blocks in thread local pools.
   #
   # It has the following sub-elements:
-  # - "size":
-  #     Size of the total native memory to allocate. You can give the size using its "value" attribute and the unit
-  #     using its "unit" attribute. Unit can be bytes, kilobytes, megabytes and gigabytes. Default value is 128 and
+  # - "capacity":
+  #     SDefines the total native memory capacity to allocate. You can give the size using its "value" attribute and the unit
+  #     using its "unit" attribute. Unit can be bytes, kilobytes, megabytes and gigabytes. Default value is 512 and
   #     default unit is MEGABYTES.
   # - "min-block-size":
   #     Minimum size of the blocks in bytes to split and fragment a page block to assign to an allocation request.
@@ -535,7 +535,7 @@ hazelcast-client:
   native-memory:
     enabled: false
     allocator-type: POOLED
-    size:
+    capacity:
       unit: MEGABYTES
       value: 128
     min-block-size: 1

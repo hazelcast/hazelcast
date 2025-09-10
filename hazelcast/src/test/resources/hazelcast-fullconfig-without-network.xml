@@ -662,7 +662,7 @@
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
-        <size unit="MEGABYTES" value="256"/>
+        <capacity unit="MEGABYTES" value="256"/>
         <min-block-size>128</min-block-size>
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
