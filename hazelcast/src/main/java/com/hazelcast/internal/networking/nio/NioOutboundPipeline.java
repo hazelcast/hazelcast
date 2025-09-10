@@ -129,7 +129,7 @@ public final class NioOutboundPipeline
 
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = INFO, unit = BYTES)
     private final MwCounter writeQueuePendingBytes = newMwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = INFO, unit = BYTES)
     private final MwCounter priorityWriteQueuePendingBytes = newMwCounter();
 
     private volatile long lastWriteTime;
