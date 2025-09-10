@@ -21,7 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.6.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.7.xsd">
 
     <hz:client id="client">
         <hz:network connection-timeout="1000">

@@ -23,7 +23,7 @@
         http://www.springframework.org/schema/cache
         http://www.springframework.org/schema/cache/spring-cache.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.6.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.7.xsd">
 
     <cache:annotation-driven cache-manager="cacheManager"/>
 
