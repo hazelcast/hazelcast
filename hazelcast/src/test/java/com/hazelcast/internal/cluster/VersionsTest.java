@@ -26,11 +26,11 @@ import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Objects;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertUtilityConstructor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuickTest
 public class VersionsTest {
@@ -68,15 +68,15 @@ public class VersionsTest {
 
     @Test
     void testCurrentVersion() {
-        assertNotNull(Versions.CURRENT_CLUSTER_VERSION);
-        assertNotNull(getPreviousClusterVersion());
-
         assertNotEquals(getPreviousClusterVersion(), Versions.CURRENT_CLUSTER_VERSION);
     }
 
-    /** @see #PREVIOUS_CLUSTER_VERSION */
+    /**
+     * Returns {@link Versions#CURRENT_CLUSTER_VERSION}'s {@link Version#previousMinor}, falling back to
+     * {@link #PREVIOUS_CLUSTER_VERSION} if not possible
+     */
     @Nonnull
     public static final Version getPreviousClusterVersion() {
-        return PREVIOUS_CLUSTER_VERSION.get();
+        return Objects.requireNonNullElseGet(Versions.CURRENT_CLUSTER_VERSION.previousMinor(), PREVIOUS_CLUSTER_VERSION::get);
     }
 }
