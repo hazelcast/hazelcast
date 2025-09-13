@@ -163,8 +163,11 @@
                                 implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
                             <transformer
                                 implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                            <transformer
-                                implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
+                            <transformer implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
+                                <manifestEntries>
+                                    <Multi-Release>true</Multi-Release>
+                                </manifestEntries>
+                            </transformer>
                         </transformers>
                         <filters>
                             <filter>
