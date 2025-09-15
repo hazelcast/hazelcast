@@ -75,7 +75,7 @@
         <hazelcast.lts.version>5.5</hazelcast.lts.version>
 
         <!--used also as a dependency version in hazelcast-build-utils module-->
-        <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
+        <maven.shade.plugin.version>3.6.1</maven.shade.plugin.version>
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
