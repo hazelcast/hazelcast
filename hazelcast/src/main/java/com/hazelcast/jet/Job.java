@@ -143,6 +143,9 @@ public interface Job {
      * status from the job coordinator. For light jobs it returns only {@link
      * JobStatus#RUNNING RUNNING}, {@link JobStatus#COMPLETED COMPLETED} or
      * {@link JobStatus#FAILED FAILED}.
+     * {@link JobStatus#RUNNING RUNNING} for light jobs may indicate either
+     * that the job is running or that it is still in the process of starting.
+     *
      */
     @Nonnull
     JobStatus getStatus();
