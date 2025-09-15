@@ -573,6 +573,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     }
 
     public CompletableFuture<GetJobIdsResult> getAllJobsId() {
+        assertIsMaster("This method is allowed to run only on the master node!");
         return submitToCoordinatorThread(() -> {
             List<Tuple2<Long, Boolean>> result = new ArrayList<>();
 
@@ -582,11 +583,9 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                     result.add(tuple2(((LightMasterContext) ctx).getJobId(), true));
                 }
             }
-            // add normal jobs - only on master
-            if (isMaster()) {
-                for (Long jobId : jobRepository.getAllJobIds()) {
-                    result.add(tuple2(jobId, false));
-                }
+            // add normal jobs
+            for (Long jobId : jobRepository.getAllJobIds()) {
+                result.add(tuple2(jobId, false));
             }
 
             return new GetJobIdsResult(result);
