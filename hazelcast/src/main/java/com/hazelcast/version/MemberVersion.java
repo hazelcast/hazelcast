@@ -20,6 +20,9 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import javax.annotation.Nonnull;
+
 import com.hazelcast.internal.util.StringUtil;
 
 import java.io.IOException;
@@ -184,6 +187,7 @@ public final class MemberVersion
     /**
      * @return a {@link Version} initialized with this {@code MemberVersion}'s major.minor version.
      */
+    @Nonnull
     public Version asVersion() {
         return Version.of(major, minor);
     }

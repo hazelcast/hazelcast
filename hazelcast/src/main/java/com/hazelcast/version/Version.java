@@ -21,10 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.internal.util.StringUtil;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -258,10 +256,5 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
      */
     private int pack() {
         return (major << 8 & 0xff00) | (minor & 0xff);
-    }
-
-    @PrivateApi
-    public @Nullable Version previousMinor() {
-        return minor == 0 ? null : Version.of(major, minor - 1);
     }
 }
