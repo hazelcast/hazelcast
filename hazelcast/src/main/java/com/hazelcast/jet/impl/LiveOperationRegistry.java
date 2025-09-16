@@ -27,12 +27,10 @@ public class LiveOperationRegistry {
     // memberAddress -> callId -> operation
     private final ConcurrentHashMap<Address, Map<Long, Operation>> liveOperations = new ConcurrentHashMap<>();
 
-    public void register(Operation operation) {
+    public boolean register(Operation operation) {
         Map<Long, Operation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
                 key -> new ConcurrentHashMap<>());
-        if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
-            throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
-        }
+        return callIds.putIfAbsent(operation.getCallId(), operation) == null;
     }
 
     public void deregister(Operation operation) {
