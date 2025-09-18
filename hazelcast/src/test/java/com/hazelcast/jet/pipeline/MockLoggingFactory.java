@@ -27,7 +27,7 @@ import java.util.logging.Level;
 
 public class MockLoggingFactory implements LoggerFactory {
 
-    static List<String> capturedMessages = new ArrayList<>();
+    public static List<String> capturedMessages = new ArrayList<>();
 
     @Override
     public ILogger getLogger(String name) {

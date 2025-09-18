@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.recordstore.expiry;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -63,8 +62,7 @@ public class ExpirySystemTest {
     private ExpirationManager expirationManager;
     @Mock
     private HazelcastProperties hazelcastProperties;
-    @Mock
-    private ClearExpiredRecordsTask clearExpiredRecordsTask;
+
     @Mock
     private MapClearExpiredRecordsTask mapClearExpiredRecordsTask;
     @Mock
@@ -76,7 +74,6 @@ public class ExpirySystemTest {
 
     @Before
     public void setUp() {
-        when(expirationManager.getTask()).thenReturn(clearExpiredRecordsTask);
         when(mapServiceContext.getExpirationManager()).thenReturn(expirationManager);
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
