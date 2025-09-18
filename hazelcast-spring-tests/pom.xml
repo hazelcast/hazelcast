@@ -138,13 +138,14 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
+                <spring.boot.version>3.5.5</spring.boot.version>
                 <org.springframework.version>6.2.0</org.springframework.version>
             </properties>
         </profile>
         <profile>
             <id>spring-5</id>
             <properties>
-                <spring.boot.version>3.5.5</spring.boot.version>
+                <spring.boot.version>2.7.18</spring.boot.version>
                 <org.springframework.version>5.3.39</org.springframework.version>
                 <javax.annotation.version>1.3.2</javax.annotation.version>
             </properties>
