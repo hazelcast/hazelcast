@@ -25,12 +25,23 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:cluster-name>client-network-default</hz:cluster-name>
+            <hz:network port="5701" public-address="127.0.0.1"/>
         </hz:config>
     </hz:hazelcast>
 
     <hz:client id="client">
         <hz:cluster-name>client-network-default</hz:cluster-name>
-        <hz:network/>
+        <hz:network>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:5702</hz:member>
+            <hz:member>127.0.0.1:5703</hz:member>
+            <hz:member>127.0.0.1:5704</hz:member>
+            <hz:member>127.0.0.1:5705</hz:member>
+            <hz:member>127.0.0.1:5706</hz:member>
+            <hz:member>127.0.0.1:5707</hz:member>
+            <hz:member>127.0.0.1:5708</hz:member>
+            <hz:member>127.0.0.1:5709</hz:member>
+        </hz:network>
     </hz:client>
 
 </beans>
