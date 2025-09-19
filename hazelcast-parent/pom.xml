@@ -71,6 +71,11 @@
 
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
 
+        <!--
+        References the previously released version, used for compatibility tests
+        We typically expect compatibility between sequential minor versions
+        Patch version is unimportant due to semver - so for best coverage, deliberately use the oldest
+        -->
         <hazelcast.previous.version>5.5.4</hazelcast.previous.version>
         <hazelcast.lts.version>5.5</hazelcast.lts.version>
 
