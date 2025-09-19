@@ -84,9 +84,12 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
             writer.writeKeyValueEntry(key, value);
         }
 
-        Map<String, String> pluginProperties = nodeEngine.getDiagnostics().getDiagnosticsConfig().getPluginProperties();
-        for (Map.Entry<String, String> entry : pluginProperties.entrySet()) {
-            writer.writeKeyValueEntry(entry.getKey(), entry.getValue());
+        // If diagnostics belong to client, then there is no nodeEngine.
+        if (nodeEngine != null) {
+            Map<String, String> pluginProperties = nodeEngine.getDiagnostics().getDiagnosticsConfig().getPluginProperties();
+            for (Map.Entry<String, String> entry : pluginProperties.entrySet()) {
+                writer.writeKeyValueEntry(entry.getKey(), entry.getValue());
+            }
         }
 
         writer.endSection();

@@ -203,7 +203,7 @@ public class Diagnostics {
     private String baseFileNameWithTime;
     private DiagnosticsOutputType outputType;
     private DiagnosticsConfig config = new DiagnosticsConfig();
-    private File loggingDirectory;
+    private File loggingDirectory = new File(DIAGNOSTIC_PROPERTY_PREFIX);
     private String filePrefix;
     private boolean includeEpochTime;
     private float maxRollingFileSizeMB;
