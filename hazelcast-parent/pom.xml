@@ -129,7 +129,7 @@
         <bytebuddy.version>1.17.7</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
-        <spring.boot.version>3.5.5</spring.boot.version>
+        <spring.boot.version>3.5.6</spring.boot.version>
         <system-stubs.version>2.1.8</system-stubs.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
