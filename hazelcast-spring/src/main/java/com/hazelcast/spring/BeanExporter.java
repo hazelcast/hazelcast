@@ -40,6 +40,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 
@@ -118,5 +119,12 @@ final class BeanExporter
             LOGGER.fine("Javax Cache class '%s' not found, skipping adding ICache beans", cacheClassName);
             return false;
         }
+    }
+
+    @Override
+    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory)
+            throws BeansException {
+        // Required for Spring 5 compatibility.
+        // Do not remove this override while Spring 5 compatibility is still supported.
     }
 }
