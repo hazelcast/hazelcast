@@ -176,6 +176,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -834,6 +835,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         void handleAdvancedNetwork(Node node) {
+            final Set<String> singletonElements = Set.of(
+                    "join",
+                    "failure-detector",
+                    "member-address-provider",
+                    "member-server-socket-endpoint-config",
+                    "client-server-socket-endpoint-config",
+                    "rest-server-socket-endpoint-config",
+                    "memcache-server-socket-endpoint-config"
+            );
+
+            final Set<String> seen = new HashSet<>(singletonElements.size());
+
             BeanDefinitionBuilder advNetworkConfigBuilder = createBeanBuilder(AdvancedNetworkConfig.class);
             AbstractBeanDefinition beanDefinition = advNetworkConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, advNetworkConfigBuilder);
@@ -841,28 +854,46 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (getBooleanValue(enabled)) {
                 hasAdvancedNetworkEnabled = true;
             }
+
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                if ("join".equals(nodeName)) {
-                    handleJoin(child, advNetworkConfigBuilder);
-                } else if ("member-address-provider".equals(nodeName)) {
-                    handleMemberAddressProvider(child, advNetworkConfigBuilder);
-                } else if ("failure-detector".equals(nodeName)) {
-                    handleFailureDetector(child, advNetworkConfigBuilder);
-                } else if ("wan-endpoint-config".equals(nodeName)) {
-                    handleWanEndpointConfig(child);
-                } else if ("member-server-socket-endpoint-config".equals(nodeName)) {
-                    handleMemberServerSocketEndpointConfig(child);
-                } else if ("client-server-socket-endpoint-config".equals(nodeName)) {
-                    handleClientServerSocketEndpointConfig(child);
-                } else if ("wan-server-socket-endpoint-config".equals(nodeName)) {
-                    handleWanServerSocketEndpointConfig(child);
-                } else if ("rest-server-socket-endpoint-config".equals(nodeName)) {
-                    handleRestServerSocketEndpointConfig(child);
-                } else if ("memcache-server-socket-endpoint-config".equals(nodeName)) {
-                    handleMemcacheServerSocketEndpointConfig(child);
+                if (singletonElements.contains(nodeName) && !seen.add(nodeName)) {
+                    throw new InvalidConfigurationException("At most one " + nodeName
+                            + " is allowed under <advanced-network>.");
+                }
+                switch (nodeName) {
+                    case "join":
+                        handleJoin(child, advNetworkConfigBuilder);
+                        break;
+                    case "member-address-provider":
+                        handleMemberAddressProvider(child, advNetworkConfigBuilder);
+                        break;
+                    case "failure-detector":
+                        handleFailureDetector(child, advNetworkConfigBuilder);
+                        break;
+                    case "wan-endpoint-config":
+                        handleWanEndpointConfig(child);
+                        break;
+                    case "wan-server-socket-endpoint-config":
+                        handleWanServerSocketEndpointConfig(child);
+                        break;
+                    case "member-server-socket-endpoint-config":
+                        handleMemberServerSocketEndpointConfig(child);
+                        break;
+                    case "client-server-socket-endpoint-config":
+                        handleClientServerSocketEndpointConfig(child);
+                        break;
+                    case "rest-server-socket-endpoint-config":
+                        handleRestServerSocketEndpointConfig(child);
+                        break;
+                    case "memcache-server-socket-endpoint-config":
+                        handleMemcacheServerSocketEndpointConfig(child);
+                        break;
+                    default:
+                        break;
                 }
             }
+
             advNetworkConfigBuilder.addPropertyValue("endpointConfigs", endpointConfigsMap);
             configBuilder.addPropertyValue("advancedNetworkConfig", beanDefinition);
         }

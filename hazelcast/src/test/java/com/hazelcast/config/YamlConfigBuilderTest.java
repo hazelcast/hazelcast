@@ -4295,6 +4295,84 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     }
 
+    @Override
+    @Test
+    public void testMultipleClientEndpointConfigs_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              client-server-socket-endpoint-config: {}
+              client-server-socket-endpoint-config: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleRestEndpointConfigs_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              rest-server-socket-endpoint-config: {}
+              rest-server-socket-endpoint-config: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemcacheEndpointConfigs_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              memcache-server-socket-endpoint-config: {}
+              memcache-server-socket-endpoint-config: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleJoinElements_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              join: {}
+              join: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleFailureDetectorElements_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              failure-detector: {}
+              failure-detector: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemberAddressProviderElements_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              member-address-provider: {}
+              member-address-provider: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
     @Test
     public void outboundPorts_asObject_ParsingTest() {
         String yaml = """

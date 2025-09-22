@@ -49,7 +49,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -4274,7 +4273,94 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Ignore("XSD validation allows multiple config, no programmatic validation is implemented")
+    @Test
+    public void testMultipleClientEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <client-server-socket-endpoint-config name=\"client-1\"/>"
+                + "  <client-server-socket-endpoint-config name=\"client-2\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleRestEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <rest-server-socket-endpoint-config name=\"rest-1\"/>"
+                + "  <rest-server-socket-endpoint-config name=\"rest-2\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemcacheEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <memcache-server-socket-endpoint-config name=\"mc-1\"/>"
+                + "  <memcache-server-socket-endpoint-config name=\"mc-2\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleJoinElements_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <join><auto-detection enabled=\"true\"/></join>"
+                + "  <join><auto-detection enabled=\"false\"/></join>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleFailureDetectorElements_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <failure-detector enabled=\"true\"/>"
+                + "  <failure-detector enabled=\"false\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemberAddressProviderElements_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <member-address-provider enabled=\"true\">"
+                + "    <class-name>com.acme.DummyProvider</class-name>"
+                + "  </member-address-provider>"
+                + "  <member-address-provider enabled=\"true\">"
+                + "    <class-name>com.acme.DummyProvider</class-name>"
+                + "  </member-address-provider>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
     @Test
     public void testMultipleMemberEndpointConfigs_throwsException() {
         String xml = HAZELCAST_START_TAG

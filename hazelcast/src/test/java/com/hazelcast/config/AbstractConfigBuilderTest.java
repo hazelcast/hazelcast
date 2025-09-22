@@ -521,6 +521,24 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testNetworkConfigUnambiguous_whenAdvancedNetworkDisabled();
 
     @Test
+    public abstract void testMultipleClientEndpointConfigs_throwsException();
+
+    @Test
+    public abstract void testMultipleRestEndpointConfigs_throwsException();
+
+    @Test
+    public abstract void testMultipleMemcacheEndpointConfigs_throwsException();
+
+    @Test
+    public abstract void testMultipleJoinElements_throwsException();
+
+    @Test
+    public abstract void testMultipleFailureDetectorElements_throwsException();
+
+    @Test
+    public abstract void testMultipleMemberAddressProviderElements_throwsException();
+
+    @Test
     public abstract void testMultipleMemberEndpointConfigs_throwsException();
 
     @Test
