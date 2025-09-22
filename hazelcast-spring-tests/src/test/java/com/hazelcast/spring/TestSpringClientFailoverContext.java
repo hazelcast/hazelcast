@@ -17,13 +17,10 @@
 package com.hazelcast.spring;
 
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.core.Hazelcast;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,12 +39,6 @@ class TestSpringClientFailoverContext {
 
     @Autowired
     private ApplicationContext applicationContext;
-
-    @AfterEach
-    public void afterEach() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     void testBlueGreenClient() {
