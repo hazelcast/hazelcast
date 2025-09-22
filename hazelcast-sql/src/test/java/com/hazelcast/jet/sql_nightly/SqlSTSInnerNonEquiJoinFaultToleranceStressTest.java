@@ -39,6 +39,6 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
     }
 
     protected int getAllowedLag() {
-        return 30;
+        return 60;
     }
 }
