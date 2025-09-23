@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +64,17 @@ public class JobOperationFaultBounceTest {
         return smallInstanceConfig();
     }
 
+    @Before
+    public void before() {
+        var client = bounceMemberRule.getNextTestDriver();
+
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new TestProcessors.MockP().streaming());
+
+        var job = client.getJet().newJob(streamingDag);
+        assertTrueEventually(() -> assertEquals("Job should be running", JobStatus.RUNNING, job.getStatus()));
+    }
+
     @Test
     public void submitOperation() {
         var client = bounceMemberRule.getNextTestDriver();
@@ -84,13 +96,6 @@ public class JobOperationFaultBounceTest {
     @Test
     public void clientGetAllJobs() {
         var client = bounceMemberRule.getNextTestDriver();
-
-        DAG streamingDag = new DAG();
-        streamingDag.newVertex("v", () -> new TestProcessors.MockP().streaming());
-
-        var job = client.getJet().newJob(streamingDag);
-        assertTrueEventually(() -> assertEquals("Job should be running", JobStatus.RUNNING, job.getStatus()));
-
         Runnable[] tasks = new Runnable[] {
                 () -> {
                     var jobs = client.getJet().getJobs();
