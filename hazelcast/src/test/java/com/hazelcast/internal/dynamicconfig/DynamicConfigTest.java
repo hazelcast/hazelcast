@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.internal.diagnostics.DiagnosticsOutputType;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -92,6 +93,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -743,7 +745,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMaxRolledFileSizeInMB(30)
                 .setMaxRolledFileCount(5)
                 .setIncludeEpochTime(false)
-                .setLogDirectory("/logs")
+                .setLogDirectory(Path.of(Diagnostics.DIRECTORY.getDefaultValue(), "logs").toString())
                 .setFileNamePrefix("fileNamePrefix")
                 .setAutoOffDurationInMinutes(5)
                 .setOutputType(DiagnosticsOutputType.STDOUT);
