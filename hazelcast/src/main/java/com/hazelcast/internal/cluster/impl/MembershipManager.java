@@ -570,6 +570,11 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             MembersViewMetadata localMembersViewMetadata = createLocalMembersViewMetadata();
+            if (localMembersViewMetadata.getMasterAddress() == null) {
+                throw new IllegalStateException(String.format(
+                        "Member received explicit suspicion from %s when no master configured. Caller member view: %s, local "
+                                + "member view: %s", suspectedAddress, expectedMembersViewMetadata, localMembersViewMetadata));
+            }
             if (!localMembersViewMetadata.equals(expectedMembersViewMetadata)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Ignoring explicit suspicion of " + suspectedAddress
