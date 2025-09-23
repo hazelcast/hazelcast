@@ -736,7 +736,8 @@
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
+                            <stagingProfileId>com.hazelcast</stagingProfileId>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         </configuration>
                     </plugin>

@@ -174,12 +174,12 @@
             will *also* deploy to it's own staging destination, configured in
             //project//plugin[artifactId='nexus-staging-maven-plugin']/configuration/nexusUrl
             (i.e. Maven central) -->
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
         </repository>
         <snapshotRepository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
@@ -1467,7 +1467,7 @@
         <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
