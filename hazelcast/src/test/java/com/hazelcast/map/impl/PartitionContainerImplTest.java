@@ -39,11 +39,8 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -59,7 +56,7 @@ public class PartitionContainerImplTest
 
     private PartitionContainerImpl container;
     private RecordStore recordStore;
-    private ConcurrentHashMap<String, RecordStore> map;
+    private final TestConcurrentHashMap<String, RecordStore> map = new TestConcurrentHashMap<>();
 
     @Before
     public void preparePartitionContainerMocksForConstructorAndGetRecord() {
@@ -73,7 +70,6 @@ public class PartitionContainerImplTest
         config.setMapConfigs(Map.of(MAP_NAME, new MapConfig()));
         when(engine.getConfig()).thenReturn(config);
 
-        map = Mockito.spy(new ConcurrentHashMap<>());
         try (MockedStatic<MapUtil> mapUtils = Mockito.mockStatic(MapUtil.class)) {
             mapUtils.when(() -> MapUtil.createConcurrentHashMap(anyInt())).thenReturn(map);
             container = new PartitionContainerImpl(mapService, 0);
@@ -118,8 +114,8 @@ public class PartitionContainerImplTest
     public void getRecordStore_sameMap_notOverrideStore() {
         container.getRecordStore(MAP_NAME);
         container.getRecordStore(MAP_NAME);
-        verify(map).put(eq(MAP_NAME), any());
-        verify(map, times(3)).get(MAP_NAME);
+        assertEquals(3, map.getCount);
+        assertEquals(1, map.putCount);
         assertTrue(container.getMaps().containsKey(MAP_NAME));
         assertEquals(1, container.getAllRecordStores().size());
     }
@@ -147,10 +143,27 @@ public class PartitionContainerImplTest
         threadWithLoad.start();
         latch.await();
 
-        verify(map, times(1)).put(eq(MAP_NAME), any());
-        verify(map, atLeast(3)).get(MAP_NAME);
+        assertTrue(map.getCount >= 3);
+        assertEquals(1, map.putCount);
         assertTrue(container.getMaps().containsKey(MAP_NAME));
         assertEquals(1, container.getAllRecordStores().size());
+    }
+
+    static class TestConcurrentHashMap<K, V> extends ConcurrentHashMap<K, V> {
+        private int putCount = 0;
+        private int getCount = 0;
+
+        @Override
+        public V put(K key, V value) {
+            putCount++;
+            return super.put(key, value);
+        }
+
+        @Override
+        public V get(Object key) {
+            getCount++;
+            return super.get(key);
+        }
     }
 
 }
