@@ -28,12 +28,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doThrow;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -107,29 +108,39 @@ public class DiagnosticsAutoOffTests extends AbstractDiagnosticsPluginTest {
     }
 
     @Test
-    public void testAutoOff_doesNotFail() {
+    public void testAutoOff_doesNotFail() throws Exception {
         setup(new Config());
         // Capture logs
         StringBuilder sbLogs = captureLogs();
 
-        setDynamicConfig(new DiagnosticsConfig().setEnabled(false).setAutoOffDurationInMinutes(3));
+        setDynamicConfig(new DiagnosticsConfig().setEnabled(false));
+        Diagnostics mockDiagnostics = Mockito.spy(diagnostics);
 
-        var mockDiagnostics = Mockito.spy(diagnostics);
+        // Throw once only when disabling. All other calls are real.
+        CountDownLatch threwOnce = new CountDownLatch(1);
+        AtomicBoolean thrown = new AtomicBoolean(false);
+        Mockito.doAnswer(inv -> {
+            DiagnosticsConfig cfg = inv.getArgument(0);
+            if (!cfg.isEnabled() && thrown.compareAndSet(false, true)) {
+                threwOnce.countDown();
+                throw new RuntimeException("Test_SetConfig_Failed");
+            }
+            return inv.callRealMethod();
+        }).when(mockDiagnostics).setConfig(Mockito.any(DiagnosticsConfig.class));
 
-        // Arrange that the setConfig method throws an exception
-        assertAutoOffNotSet(mockDiagnostics);
-        mockDiagnostics.setConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(5));
-        doThrow(new RuntimeException("Test_SetConfig_Failed")).when(mockDiagnostics).setConfig(Mockito.any());
+        mockDiagnostics.setConfig(new DiagnosticsConfig().setEnabled(true).setAutoOffDurationInMinutes(3));
+
+        assertTrue("disable attempt never happened",
+                threwOnce.await(5, TimeUnit.SECONDS));
 
         assertTrueEventually(() -> {
             assertTrue(mockDiagnostics.isEnabled());
             assertFalse(mockDiagnostics.getAutoOffFuture().isDone());
             assertContains(sbLogs.toString(), "Test_SetConfig_Failed");
             assertContains(sbLogs.toString(), "Auto off failed to disable diagnostics.");
-        }, 15);
+        }, 10);
 
-        // When everything is ok, the auto off should work.
-        Mockito.reset(mockDiagnostics);
+        // Eventually we succeed and diagnostics is off
         assertDiagnosticsTurnedOffAutomatically(mockDiagnostics);
     }
 
