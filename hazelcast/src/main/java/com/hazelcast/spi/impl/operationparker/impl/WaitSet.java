@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -149,9 +150,13 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
                 && event.getNewReplicaIndex() > 0;
 
         if (logger.isFinestEnabled() && it.hasNext()) {
+            // the queue may become empty concurrently after initial check of it.hasNext()
+            // need to reasonably handle such situation
+            var headKey = Optional.ofNullable(queue.peek()).map(e -> ((BlockingOperation) e.getOperation()).getWaitKey())
+                    .orElse(null);
             logger.finest("onPartitionMigrate processes parked operations for partitionId=%d "
                             + " for migration %s key=%s backup still needed %s",
-                    partitionId, event, ((BlockingOperation) queue.peek().getOperation()).getWaitKey(), backupStillNeeded);
+                    partitionId, event, headKey, backupStillNeeded);
         }
         while (it.hasNext()) {
             if (Thread.currentThread().isInterrupted()) {
@@ -213,9 +218,13 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         int partitionId = syncEvent.partitionId();
 
         if (logger.isFinestEnabled() && it.hasNext()) {
+            // the queue may become empty concurrently after initial check of it.hasNext()
+            // need to reasonably handle such situation
+            var headKey = Optional.ofNullable(queue.peek()).map(e -> ((BlockingOperation) e.getOperation()).getWaitKey())
+                    .orElse(null);
             logger.finest("onReplicaSync processes parked operations for partitionId=%d "
                             + " for sync %s key=%s",
-                    partitionId, syncEvent, ((BlockingOperation) queue.peek().getOperation()).getWaitKey());
+                    partitionId, syncEvent, headKey);
         }
         while (it.hasNext()) {
             if (Thread.currentThread().isInterrupted()) {
