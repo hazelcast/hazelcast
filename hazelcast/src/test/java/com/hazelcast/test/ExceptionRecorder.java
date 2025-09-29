@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 import static java.lang.System.lineSeparator;
@@ -46,6 +47,7 @@ public class ExceptionRecorder implements LogListener {
     private final HazelcastInstance[] instances;
 
     private final Collection<Throwable> throwables = synchronizedCollection(EvictingQueue.create(100));
+    private final List<Predicate<Throwable>> exclusions = new ArrayList<>();
 
     public ExceptionRecorder(HazelcastInstance instance, Level level) {
         this(new HazelcastInstance[]{instance}, level);
@@ -69,14 +71,40 @@ public class ExceptionRecorder implements LogListener {
         }
     }
 
+    /**
+     * Ignore certain exceptions when invoking {@link #assertNoExceptions()}
+     * @param predicate an exception to ignore
+     * @return this ExceptionRecorder
+     */
+    public ExceptionRecorder ignore(Predicate<Throwable> predicate) {
+        if (predicate != null) {
+            exclusions.add(predicate);
+        }
+        return this;
+    }
+
     public final void assertNoExceptions() {
-        if (throwables.isEmpty()) {
+        List<Throwable> snapshot = exceptionsLogged();
+        if (snapshot.isEmpty()) {
             return;
         }
-        String message = throwables.stream()
+
+        // Apply any configured exclusions
+        List<Throwable> relevant = exclusions.isEmpty()
+                ? snapshot
+                : snapshot.stream()
+                .filter(t -> exclusions.stream().noneMatch(p -> p.test(t)))
+                .toList();
+
+        if (relevant.isEmpty()) {
+            return;
+        }
+
+        String message = relevant.stream()
                 .map(ExceptionUtil::toString)
                 .distinct()
                 .collect(joining(lineSeparator() + "-".repeat(20) + lineSeparator()));
+
         throw new AssertionError("Expected no exception, but found: " + lineSeparator() + message);
     }
 
