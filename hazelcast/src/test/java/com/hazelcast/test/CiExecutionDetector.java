@@ -19,16 +19,17 @@ package com.hazelcast.test;
 import static java.lang.System.getenv;
 
 /**
- * Attempt to detect whether code is a test running on Jenkins.
+ * Attempt to detect whether code is a test running on CI environment (Jenkins, GitHub actions etc.)
  */
-public final class JenkinsDetector {
+public final class CiExecutionDetector {
 
-    private JenkinsDetector() {
+    private CiExecutionDetector() {
     }
 
-    public static boolean isOnJenkins() {
-        return getenv("JENKINS_URL") != null
-                && getenv("BUILD_NUMBER") != null
-                && getenv("NODE_NAME") != null;
+    public static boolean isOnCi() {
+        return "true".equals(getenv("CI"))
+                || getenv("JENKINS_URL") != null
+                    && getenv("BUILD_NUMBER") != null
+                    && getenv("NODE_NAME") != null;
     }
 }

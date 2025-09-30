@@ -23,8 +23,8 @@ import org.junit.runners.model.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.test.CiExecutionDetector.isOnCi;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -83,7 +83,7 @@ public class JitterRule implements TestRule {
             case ENABLED:
                 return true;
             case JENKINS:
-                return isOnJenkins();
+                return isOnCi();
             default:
                 throw new IllegalArgumentException("Unknown mode: " + mode);
         }

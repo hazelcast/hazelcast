@@ -75,7 +75,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         final String threadDumpOnFailure = System.getProperty("hazelcast.test.threadDumpOnFailure");
         THREAD_DUMP_ON_FAILURE = threadDumpOnFailure != null
-                ? Boolean.parseBoolean(threadDumpOnFailure) : JenkinsDetector.isOnJenkins();
+                ? Boolean.parseBoolean(threadDumpOnFailure) : CiExecutionDetector.isOnCi();
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 

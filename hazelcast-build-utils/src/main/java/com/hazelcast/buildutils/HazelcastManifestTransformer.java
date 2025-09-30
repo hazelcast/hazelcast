@@ -17,10 +17,9 @@
 package com.hazelcast.buildutils;
 
 import aQute.lib.osgi.Instruction;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +42,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static org.codehaus.plexus.util.IOUtil.close;
 import static org.codehaus.plexus.util.StringUtils.join;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * This transformer implementation is used to merge MANIFEST and OSGi
@@ -51,7 +51,7 @@ import static org.codehaus.plexus.util.StringUtils.join;
  */
 public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastManifestTransformer.class);
+    private static final Logger LOGGER = getLogger(HazelcastManifestTransformer.class);
 
     private static final String VERSION_PREFIX = "version=";
     private static final String RESOLUTION_PREFIX = "resolution:=";
@@ -226,7 +226,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                LOGGER.fine("Compiled import instruction '%s' -> %s", packageInstruction, instruction);
+                LOGGER.debug("Compiled import instruction '{}' -> {}", packageInstruction, instruction);
                 importOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -236,7 +236,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                LOGGER.fine("Compiled export instruction '%s' -> %s", packageInstruction, instruction);
+                LOGGER.debug("Compiled export instruction '{}' -> {}", packageInstruction, instruction);
                 exportOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -247,7 +247,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         for (Map.Entry<String, PackageDefinition> entry : exportedPackages.entrySet()) {
             String definition = entry.getValue().buildDefinition(false);
             exports.add(definition);
-            LOGGER.fine("Adding shaded export -> %s", definition);
+            LOGGER.debug("Adding shaded export -> {}", definition);
         }
         return exports;
     }
@@ -264,9 +264,9 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (overridden != null) {
                 String definition = overridden.buildDefinition(true);
                 imports.add(definition);
-                LOGGER.fine("Adding shaded import -> %s", definition);
+                LOGGER.debug("Adding shaded import -> {}", definition);
             } else {
-                LOGGER.fine("Removing shaded import -> %s", entry.getValue().packageName);
+                LOGGER.debug("Removing shaded import -> {}", entry.getValue().packageName);
             }
         }
         return imports;
@@ -276,13 +276,11 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         for (InstructionDefinition instructionDefinition : importOverrideInstructions) {
             Instruction instruction = instructionDefinition.instruction;
             if (instruction.matches(packageDefinition.packageName)) {
+                LOGGER.debug("Instruction '{}' -> package '{}'", instruction, packageDefinition.packageName);
                 // is remove instruction?
                 if (instruction.isNegated()) {
-                    LOGGER.fine("Instruction '%s' -> package '%s'", instruction, packageDefinition.packageName);
                     return null;
                 }
-
-                LOGGER.fine("Instruction '%s' -> package '%s'", instruction, packageDefinition.packageName);
 
                 PackageDefinition override = instructionDefinition.packageDefinition;
                 String packageName = packageDefinition.packageName;
