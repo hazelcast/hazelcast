@@ -92,7 +92,7 @@ public class ClientDiagnosticsTest extends HazelcastTestSupport {
 
         File[] matchingFiles = temporaryFolder.getRoot().listFiles((dir, name) -> name.startsWith(fileNamePrefix));
         assert matchingFiles != null;
-        assertTrue(matchingFiles.length > 0);
+        assertTrueEventually(() -> assertTrue(matchingFiles.length > 0));
     }
 
     private Map<String, String> getPluginProperties() {
