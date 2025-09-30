@@ -190,7 +190,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
             IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
 
-            assertEquals(indexConfigs.length, indexes.getIndexes().length);
+            assertTrueEventually(() -> assertEquals(indexConfigs.length, indexes.getIndexes().length));
 
             for (IndexConfig indexConfig : indexConfigs) {
                 String expectedName = getExpectedName(indexConfig);
