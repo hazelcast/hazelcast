@@ -65,7 +65,7 @@ public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
             }
 
             // Has "ParallelJVMTest" tag
-            if ((classToTest.isAnnotatedWith("com.hazelcast.test.annotation.ParallelJVMTest"))
+            if (classToTest.isAnnotatedWith("com.hazelcast.test.annotation.ParallelJVMTest")
                     || (classToTest.isAnnotatedWith(Category.class) && Arrays
                             .stream(classToTest.getAnnotationOfType(Category.class)
                                     .value())
