@@ -56,6 +56,8 @@ import static java.util.stream.Collectors.joining;
  */
 public class MetricsService implements ManagedService, LiveOperationsTracker {
     public static final String SERVICE_NAME = "hz:impl:metricsService";
+    // Timeout for pending reads in milliseconds (60 seconds)
+    private static final long PENDING_READ_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(60);
 
     private final NodeEngine nodeEngine;
     private final ILogger logger;
@@ -184,15 +186,31 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
         tryCompleteRead(future, startSequence);
 
+        // Schedule timeout to prevent memory leak if metrics collection stops
+        scheduleReadTimeout(future, startSequence);
+
         return future;
+    }
+
+    private void scheduleReadTimeout(CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future, long sequence) {
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.schedule(() -> {
+            if (!future.isDone()) {
+                logger.warning("Metrics read operation timed out after " + PENDING_READ_TIMEOUT_MS + "ms for sequence: "
+                        + sequence + ". Completing with empty slice to prevent memory leak.");
+                // Try to complete with current data, or use tryCompleteRead which will handle it properly
+                tryCompleteRead(future, sequence);
+            }
+        }, PENDING_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
     private void tryCompleteRead(CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future, long sequence) {
         try {
             RingbufferSlice<Map.Entry<Long, byte[]>> slice = metricsJournal.copyFrom(sequence);
-            if (!slice.isEmpty()) {
-                future.complete(slice);
-            }
+            // Always complete the future, even with empty slice.
+            // This prevents memory leak in LiveOperationRegistry when requesting sequence == tail.
+            // Empty slice is a valid response meaning "no data available yet at this sequence".
+            future.complete(slice);
         } catch (ConcurrentArrayRingbuffer.SequenceOutOfBoundsException e) {
             logger.fine("Error reading from metrics journal, sequence: " + sequence + "."
                     + " In case of persistence-enabled member restart, this error is handled by MC gracefully.", e);
