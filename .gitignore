@@ -29,6 +29,7 @@ reports/
 *.jfr
 .mvn/wrapper/maven-wrapper.jar
 .checkstyle
+.flattened-pom.xml
 
 # Hadoop files
 *.crc
