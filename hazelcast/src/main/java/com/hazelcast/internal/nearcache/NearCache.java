@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link NearCache} is the contract point to store keys and values in underlying
@@ -44,11 +45,27 @@ public interface NearCache<K, V> extends InitializingObject {
      */
     int DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS = 5;
 
+    /**
+     * Default maximum on the number of entries we will look at per doExpiration call
+     */
+    int DEFAULT_EXPIRATION_BATCH_SIZE = 500_000;
+
+    /**
+     * Default maximum time limit for each doExpiration call to run for
+     */
+    long DEFAULT_EXPIRATION_TIME_LIMIT_MILLIS = 500L;
+
     String PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS
             = "hazelcast.internal.nearcache.expiration.task.initial.delay.seconds";
 
     String PROP_EXPIRATION_TASK_PERIOD_SECONDS
             = "hazelcast.internal.nearcache.expiration.task.period.seconds";
+
+    String PROP_EXPIRATION_TASK_MAX_BATCH_SIZE
+            = "hazelcast.internal.nearcache.expiration.max.batch.size";
+
+    String PROP_EXPIRATION_TASK_LIMIT_MILLIS
+            = "hazelcast.internal.nearcache.expiration.task.limit.millis";
 
     HazelcastProperty TASK_INITIAL_DELAY_SECONDS
             = new HazelcastProperty(PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS,
@@ -57,6 +74,12 @@ public interface NearCache<K, V> extends InitializingObject {
     HazelcastProperty TASK_PERIOD_SECONDS
             = new HazelcastProperty(PROP_EXPIRATION_TASK_PERIOD_SECONDS,
             DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
+
+    HazelcastProperty EXPIRATION_TASK_MAX_BATCH_SIZE
+            = new HazelcastProperty(PROP_EXPIRATION_TASK_MAX_BATCH_SIZE, DEFAULT_EXPIRATION_BATCH_SIZE);
+
+    HazelcastProperty EXPIRATION_TASK_LIMIT_MILLIS = new HazelcastProperty(PROP_EXPIRATION_TASK_LIMIT_MILLIS,
+            DEFAULT_EXPIRATION_TIME_LIMIT_MILLIS, TimeUnit.MILLISECONDS);
 
     /**
      * Indicates how a near cache is updated.
