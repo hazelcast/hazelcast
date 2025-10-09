@@ -25,7 +25,7 @@ import java.io.IOException;
  */
 @FunctionalInterface
 @SuppressWarnings("JavadocType")
-public interface TypedStreamDeserializer<T>  {
+public interface TypedStreamDeserializer<T> {
     /**
      * Reads object from objectDataInputStream
      *
