@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 @FunctionalInterface
 @SuppressWarnings("JavadocType")
-public interface TypedByteArrayDeserializer<T>  {
+public interface TypedByteArrayDeserializer<T> {
     /**
      * Reads object from objectDataInputStream
      *
