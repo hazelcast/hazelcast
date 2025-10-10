@@ -84,7 +84,7 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
-        <checkstyle.version>11.1.0</checkstyle.version>
+        <checkstyle.version>12.0.0</checkstyle.version>
         <docker.maven.plugin.version>0.46.0</docker.maven.plugin.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
@@ -202,6 +202,7 @@
             -->
 
             <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
+            <!-- When upgrades Jackson, update version in jet-files-hz-hadoop-cp-image module too. -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
@@ -711,7 +712,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.69.0</version>
+                <version>26.70.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -787,7 +788,7 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-jvm</artifactId>
-                <version>5.2.0</version>
+                <version>5.2.1</version>
             </dependency>
             <!-- Resolves convergence between hazelcast-sql (via calcite) & hazelcast-jet-files-azure (via parquet) -->
             <dependency>
