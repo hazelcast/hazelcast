@@ -908,7 +908,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
     @Test
     public void testReplaceAllWithLambdaFunction() {
-        IMap<String, Integer>  map = client.getMap(randomString());
+        IMap<String, Integer> map = client.getMap(randomString());
         map.put("k1", 1);
         map.put("k2", 2);
         map.replaceAll((k, v) -> v * 10);
