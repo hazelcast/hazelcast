@@ -202,6 +202,7 @@
             -->
 
             <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
+            <!-- When upgrades Jackson, update version in jet-files-hz-hadoop-cp-image module too. -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
