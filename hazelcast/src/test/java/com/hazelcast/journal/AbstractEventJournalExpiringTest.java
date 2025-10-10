@@ -20,9 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.CompletionStage;
@@ -32,19 +35,26 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_JOURNAL_CLEANUP_THRESHOLD;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 /**
  * Base class for implementing data-structure specific event journal test where the journal is expiring.
  *
  * @param <EJ_TYPE> the type of the event journal event
  */
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends HazelcastTestSupport {
     private static final Random RANDOM = new Random();
+    private static final int JOURNAL_CAPACITY_PER_PARTITION = 1_000;
+    private static final float TEST_MAP_JOURNAL_CLEANUP_THRESHOLD = 0.5f;
+    private static final int JOURNAL_TTL_SECOND = 1;
 
     protected HazelcastInstance[] instances;
 
     private int partitionId;
-    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<>();
-    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
+    private final TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<>();
+    private final Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
 
     private void init() {
         instances = createInstances();
@@ -52,16 +62,16 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         warmUpPartitions(instances);
     }
 
-    @Override
     protected Config getConfig() {
-        int defaultPartitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
         Config config = smallInstanceConfig();
+        int defaultPartitionCount = Integer.parseInt(config.getProperty(ClusterProperty.PARTITION_COUNT.getName()));
+        config.setProperty(MAP_JOURNAL_CLEANUP_THRESHOLD.getName(), String.valueOf(TEST_MAP_JOURNAL_CLEANUP_THRESHOLD));
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
-                .setTimeToLiveSeconds(1)
-                .setCapacity(500 * defaultPartitionCount);
+                .setTimeToLiveSeconds(JOURNAL_TTL_SECOND)
+                .setCapacity(JOURNAL_CAPACITY_PER_PARTITION * defaultPartitionCount);
 
-        config.getMapConfig("default").setEventJournalConfig(eventJournalConfig);
+        config.getMapConfig("default").setBackupCount(1).setEventJournalConfig(eventJournalConfig);
         config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
         return config;
     }
@@ -86,7 +96,41 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         }
     }
 
-    private void readFromJournal(final EventJournalTestContext<String, Integer, EJ_TYPE> context,
+    @Test
+    public void backupCleanupWhenExpired() throws Throwable {
+        init();
+        final EventJournalTestContext<String, String, EJ_TYPE> context = createContext();
+
+        String key = generateKeyForPartition(instances[0], partitionId);
+        String val = "value";
+        context.dataAdapter.put(key, val);
+
+        final AtomicReference<Throwable> exception = new AtomicReference<>();
+        readFromJournal(context, exception, 0);
+
+        var cleanupThresholdStart = (int) (JOURNAL_CAPACITY_PER_PARTITION * (1 - TEST_MAP_JOURNAL_CLEANUP_THRESHOLD));
+        for (int i = 0; i < cleanupThresholdStart + 1; i++) {
+            context.dataAdapter.put(key, val);
+            if (exception.get() != null) {
+                throw exception.get();
+            }
+        }
+
+        // wait values expire and trigger cleanup by adding one more item
+        sleepSeconds(JOURNAL_TTL_SECOND * 2);
+        context.dataAdapter.put(key, val);
+
+        // one of these two journal is the owner, the other is the backup
+        var journalNode1 = getRingBufferContainer(getMapName(), partitionId, instances[0]);
+        var journalNode2 = getRingBufferContainer(getMapName(), partitionId, instances[1]);
+
+        // value added as trigger of cleanup + 1 remaining value
+        var expectedCapacity = JOURNAL_CAPACITY_PER_PARTITION - 1;
+        assertThat(journalNode1.remainingCapacity()).isGreaterThanOrEqualTo(expectedCapacity);
+        assertThat(journalNode2.remainingCapacity()).isGreaterThanOrEqualTo(expectedCapacity);
+    }
+
+    private <K, V> void readFromJournal(final EventJournalTestContext<K, V, EJ_TYPE> context,
                                  final AtomicReference<Throwable> exception,
                                  long seq) {
         readFromEventJournal(context.dataAdapter, seq, 128, partitionId, TRUE_PREDICATE,
@@ -101,6 +145,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         });
     }
 
+    protected abstract <K, V> RingbufferContainer<K, V> getRingBufferContainer(String name, int partitionId, HazelcastInstance instance);
 
     /**
      * Returns a random key belonging to the partition with ID {@link #partitionId}.
@@ -162,4 +207,6 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
      * @return a {@link EventJournalTestContext} used by the event journal tests
      */
     protected abstract <K, V> EventJournalTestContext<K, V, EJ_TYPE> createContext();
+
+    protected abstract String getMapName();
 }

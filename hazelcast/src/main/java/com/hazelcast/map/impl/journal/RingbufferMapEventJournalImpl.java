@@ -179,6 +179,7 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         if (eventContainer == null) {
             return;
         }
+        eventContainer.maybeCleanup();
         InternalEventJournalMapEvent event
                 = new InternalEventJournalMapEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
