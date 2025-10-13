@@ -10,6 +10,9 @@
     </parent>
 
     <artifactId>distribution-it</artifactId>
+    <name>distribution-it</name>
+    <description>Hazelcast Distribution Integration Tests</description>
+    <url>https://www.hazelcast.com/</url>
 
     <properties>
         <jaxb.version>2.3.1</jaxb.version>
