@@ -388,7 +388,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         IMap<String, Integer> itemToHowManyProc = instance.getMap("itemToHowManyProc" + randomName());
         mappedValueStage
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
-                        (ctx, item) ->  tuple2(item, ctx))
+                        (ctx, item) -> tuple2(item, ctx))
                 .setLocalParallelism(localParallelism)
                 .groupingKey(Entry::getKey)
                 .mapStateful(AtomicInteger::new, (state, key, item) -> {
