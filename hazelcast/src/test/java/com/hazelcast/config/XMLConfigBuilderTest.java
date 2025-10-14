@@ -891,7 +891,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <backup-count>1</backup-count>"
                 + "    <async-backup-count>0</async-backup-count>"
                 + "    <time-to-live-seconds>0</time-to-live-seconds>"
-                + "    <max-idle-seconds>0</max-idle-seconds>    "
+                + "    <max-idle-seconds>0</max-idle-seconds>"
                 + "    <eviction eviction-policy=\"NONE\" max-size-policy=\"per_partition\" size=\"0\"/>"
                 + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "</map>"
@@ -916,7 +916,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"expiry\">"
                 + "    <time-to-live-seconds>2147483647</time-to-live-seconds>"
-                + "    <max-idle-seconds>2147483647</max-idle-seconds>    "
+                + "    <max-idle-seconds>2147483647</max-idle-seconds>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
 
