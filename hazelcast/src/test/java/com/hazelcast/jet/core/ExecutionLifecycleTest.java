@@ -203,7 +203,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_pmsInitThrowsNonSerializable_then_jobFails() {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier).setInitError(NON_SERIALIZABLE_EXCEPTION)));
 
@@ -219,7 +219,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_pmsNonCooperativeInitThrowsNonSerializable_then_jobFails()
             throws InterruptedException, ExecutionException {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)
                         .initBlocks()
@@ -241,7 +241,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_pmsCloseThrowsNonSerializable_then_jobSucceeds() {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)
                         .setCloseError(NON_SERIALIZABLE_EXCEPTION)));
@@ -254,7 +254,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_pmsNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds()
             throws InterruptedException, ExecutionException {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)
                         .closeBlocks()
@@ -333,7 +333,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psInitThrowsNonSerializable_then_jobFails() {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT)
                 .setInitError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
@@ -351,7 +351,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws ExecutionException,
             InterruptedException {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT)
                 .initBlocks()
                 .setInitError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",
@@ -373,7 +373,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psCloseThrowsNonSerializable_then_jobSucceeds() throws Exception {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT)
                 .setCloseError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
@@ -393,7 +393,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() throws Exception {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+        SupplierEx<ProcessorSupplier> supplier = () -> new MockPS(MockP::new, MEMBER_COUNT)
                 .closeBlocks()
                 .setCloseError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",

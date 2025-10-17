@@ -276,7 +276,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 try {
                     ClassLoader processorCl = isLightJob ?
                             null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
-                    doWithClassLoader(processorCl, () ->  processorSupplier.close(error));
+                    doWithClassLoader(processorCl, () -> processorSupplier.close(error));
                 } catch (Throwable e) {
                     logger.severe(jobNameAndExecutionId()
                             + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);

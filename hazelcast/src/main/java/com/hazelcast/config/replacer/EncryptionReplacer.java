@@ -128,7 +128,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
     public static final void main(String... args) throws Exception {
         if (args == null || args.length < 1 || args.length > 2) {
             System.err.println("Usage:");
-            System.err.println("\tjava -D<propertyName>=<propertyValue>  " + EncryptionReplacer.class.getName()
+            System.err.println("\tjava -D<propertyName>=<propertyValue> " + EncryptionReplacer.class.getName()
                     + " \"<String To Encrypt>\" [iterations]");
             System.err.println();
             System.err.println("The replacer configuration can be loaded either from hazelcast/hazelcast-client XML file:");
