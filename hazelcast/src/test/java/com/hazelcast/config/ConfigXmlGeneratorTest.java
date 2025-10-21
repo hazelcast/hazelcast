@@ -1626,7 +1626,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         return getNewConfigViaXMLGenerator(config, true);
     }
 
-    private static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
+    static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
         LOGGER.fine("\n%s", xml);
