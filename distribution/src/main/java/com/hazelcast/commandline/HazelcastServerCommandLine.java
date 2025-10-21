@@ -37,6 +37,8 @@ import static picocli.CommandLine.Option;
         + "%n%nGlobal options are:%n",
         versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
 public class HazelcastServerCommandLine {
+    @Option(names = "--full-stack-traces", scope = CommandLine.ScopeType.INHERIT)
+    boolean printFullStackTraces;
 
     private final RunnableEx start;
 

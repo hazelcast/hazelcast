@@ -29,9 +29,10 @@ class ExceptionHandler implements CommandLine.IExecutionExceptionHandler {
     public int handleExecutionException(Exception exception, CommandLine commandLine, CommandLine.ParseResult parseResult) {
         PrintWriter errorWriter = commandLine.getErr();
         CommandLine.Help.ColorScheme colorScheme = commandLine.getColorScheme();
+        HazelcastServerCommandLine cmd = commandLine.getParent().getCommand();
 
         // Print exception
-        String stackTrace = ExceptionUtil.toString(exception);
+        String stackTrace = cmd.printFullStackTraces ? ExceptionUtil.toString(exception) : exception.getMessage();
         errorWriter.println(colorScheme.errorText(stackTrace));
 
         // Print usage
