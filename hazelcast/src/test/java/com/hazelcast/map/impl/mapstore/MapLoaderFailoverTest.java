@@ -131,7 +131,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoading() throws Exception {
         PausingMapLoader<Integer, Integer> pausingLoader = new PausingMapLoader<>(mapLoader, 5000);
         HazelcastInstance[] nodes
-                = nodeFactory.newInstances(() ->  newConfig(1, pausingLoader), 3);
+                = nodeFactory.newInstances(() -> newConfig(1, pausingLoader), 3);
         HazelcastInstance hz3 = nodes[2];
 
         String mapName = generateKeyOwnedBy(hz3);
