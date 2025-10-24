@@ -1494,7 +1494,7 @@
             </activation>
             <properties>
                 <!-- should only be Spring 6 -->
-                <spring.boot.version>3.5.6</spring.boot.version>
+                <spring.boot.version>3.5.7</spring.boot.version>
                 <org.springframework.version>6.2.7</org.springframework.version>
             </properties>
         </profile>
