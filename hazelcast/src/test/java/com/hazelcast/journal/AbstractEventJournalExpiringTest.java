@@ -35,7 +35,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.hazelcast.spi.properties.ClusterProperty.MAP_JOURNAL_CLEANUP_THRESHOLD;
+import static com.hazelcast.spi.properties.ClusterProperty.EVENT_JOURNAL_CLEANUP_THRESHOLD;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
@@ -47,6 +47,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends HazelcastTestSupport {
     private static final Random RANDOM = new Random();
     private static final int JOURNAL_CAPACITY_PER_PARTITION = 1_000;
+    private static final int PARTITION_COUNT = 11;
     private static final float TEST_MAP_JOURNAL_CLEANUP_THRESHOLD = 0.5f;
     private static final int JOURNAL_TTL_SECOND = 1;
 
@@ -64,16 +65,16 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
 
     protected Config getConfig() {
         Config config = smallInstanceConfig();
-        int defaultPartitionCount = Integer.parseInt(config.getProperty(ClusterProperty.PARTITION_COUNT.getName()));
-        config.setProperty(MAP_JOURNAL_CLEANUP_THRESHOLD.getName(), String.valueOf(TEST_MAP_JOURNAL_CLEANUP_THRESHOLD));
-        EventJournalConfig eventJournalConfig = new EventJournalConfig()
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(EVENT_JOURNAL_CLEANUP_THRESHOLD.getName(), String.valueOf(TEST_MAP_JOURNAL_CLEANUP_THRESHOLD));
+        return config;
+    }
+
+    protected final EventJournalConfig getEventJournalConfig() {
+        return new EventJournalConfig()
                 .setEnabled(true)
                 .setTimeToLiveSeconds(JOURNAL_TTL_SECOND)
-                .setCapacity(JOURNAL_CAPACITY_PER_PARTITION * defaultPartitionCount);
-
-        config.getMapConfig("default").setBackupCount(1).setEventJournalConfig(eventJournalConfig);
-        config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
-        return config;
+                .setCapacity(JOURNAL_CAPACITY_PER_PARTITION * PARTITION_COUNT);
     }
 
     @Test
@@ -121,8 +122,8 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         context.dataAdapter.put(key, val);
 
         // one of these two journal is the owner, the other is the backup
-        var journalNode1 = getRingBufferContainer(getMapName(), partitionId, instances[0]);
-        var journalNode2 = getRingBufferContainer(getMapName(), partitionId, instances[1]);
+        var journalNode1 = getRingBufferContainer(getName(), partitionId, instances[0]);
+        var journalNode2 = getRingBufferContainer(getName(), partitionId, instances[1]);
 
         // value added as trigger of cleanup + 1 remaining value
         var expectedCapacity = JOURNAL_CAPACITY_PER_PARTITION - 1;
@@ -208,5 +209,5 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
      */
     protected abstract <K, V> EventJournalTestContext<K, V, EJ_TYPE> createContext();
 
-    protected abstract String getMapName();
+    protected abstract String getName();
 }

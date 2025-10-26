@@ -41,7 +41,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
 import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 import static com.hazelcast.internal.namespace.NamespaceUtil.runWithNamespace;
-import static com.hazelcast.spi.properties.ClusterProperty.MAP_JOURNAL_CLEANUP_THRESHOLD;
+import static com.hazelcast.spi.properties.ClusterProperty.EVENT_JOURNAL_CLEANUP_THRESHOLD;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -152,7 +152,9 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         this.userCodeNamespace = config.getUserCodeNamespace();
         this.serializationService = nodeEngine.getSerializationService();
         initRingbufferStore(NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace()), nodeEngine);
-        this.cleanupThreshold = (int) (config.getCapacity() * nodeEngine.getProperties().getFloat(MAP_JOURNAL_CLEANUP_THRESHOLD));
+        this.cleanupThreshold = (int) (
+                config.getCapacity() * nodeEngine.getProperties().getFloat(EVENT_JOURNAL_CLEANUP_THRESHOLD)
+        );
     }
 
     private void initRingbufferStore(ClassLoader classLoader, NodeEngine nodeEngine) {

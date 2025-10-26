@@ -212,6 +212,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
         if (eventContainer == null) {
             return;
         }
+        eventContainer.maybeCleanup();
         InternalEventJournalCacheEvent event
                 = new InternalEventJournalCacheEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
