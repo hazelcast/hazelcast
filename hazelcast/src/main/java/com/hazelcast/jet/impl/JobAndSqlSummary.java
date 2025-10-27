@@ -23,24 +23,27 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class JobAndSqlSummary {
-    private final boolean isLightJob;
-    private final long jobId;
-    private final long executionId;
-    private final String nameOrId;
-    private final JobStatus status;
-    private final long submissionTime;
-    private final long completionTime;
-    private final String failureText;
-    private final SqlSummary sqlSummary;
-    private final String suspensionCause;
+    protected boolean isLightJob;
+    protected long jobId;
+    protected long executionId;
+    protected String nameOrId;
+    protected JobStatus status;
+    protected long submissionTime;
+    protected long completionTime;
+    protected String failureText;
+    protected SqlSummary sqlSummary;
+    protected String suspensionCause;
     /**
      * True, if the job has been cancelled based on a user request, false
      * otherwise (also while the job is running).
      */
-    private final boolean userCancelled;
+    protected boolean userCancelled;
+
+    public JobAndSqlSummary() {
+    }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public JobAndSqlSummary(
+    protected JobAndSqlSummary(
             boolean isLightJob,
             long jobId,
             long executionId,
@@ -135,7 +138,7 @@ public class JobAndSqlSummary {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !JobAndSqlSummary.class.isAssignableFrom(o.getClass())) {
             return false;
         }
         JobAndSqlSummary that = (JobAndSqlSummary) o;

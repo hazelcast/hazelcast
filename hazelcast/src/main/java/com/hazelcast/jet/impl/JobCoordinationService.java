@@ -787,9 +787,9 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     /**
      * Return a summary of all jobs with sql data
      */
-    public CompletableFuture<List<JobAndSqlSummary>> getJobAndSqlSummaryList() {
+    public CompletableFuture<List<JobAndSqlSummaryIds>> getJobAndSqlSummaryList() {
         return submitToCoordinatorThread(() -> {
-            Map<Long, JobAndSqlSummary> jobs = new HashMap<>();
+            Map<Long, JobAndSqlSummaryIds> jobs = new HashMap<>();
             if (isMaster()) {
                 // running jobs
                 jobRepository.getJobRecords().stream()
@@ -804,7 +804,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                             // Pre-review note : volatile read at supplier, should not read under lock path.
                             // Q: Any other better way to get executionRecord?
                             JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(r.getJobId());
-                            return new JobAndSqlSummary(
+                            return new JobAndSqlSummaryIds(
                                     false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
                                     r.getCompletionTime(), r.getFailureText(), getSqlSummary(r.getJobConfig()),
                                     executionRecord == null || executionRecord.getSuspensionCause() == null ? null :
@@ -825,7 +825,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         });
     }
 
-    private JobAndSqlSummary getJobAndSqlSummary(LightMasterContext lmc) {
+    private JobAndSqlSummaryIds getJobAndSqlSummary(LightMasterContext lmc) {
         SqlSummary sqlSummary = getSqlSummary(lmc.getJobConfig());
 
         // For simplicity, we assume here that light job is running iff LightMasterContext exists:
@@ -851,7 +851,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         // In such scenario finished job will be reported as running.
         //
         // Note: suspensionCause is not supported for light jobs.
-        return new JobAndSqlSummary(
+        return new JobAndSqlSummaryIds(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
                 RUNNING, lmc.getStartTime(), 0, null, sqlSummary, null,
                 false);
@@ -1384,7 +1384,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).size();
     }
 
-    private JobAndSqlSummary getJobAndSqlSummary(JobRecord record) {
+    private JobAndSqlSummaryIds getJobAndSqlSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
         JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
@@ -1416,7 +1416,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             userCancelled = status == FAILED &&
                     maybeTerminationRequest.map(TerminationRequest::isUserInitiated).orElse(false);
         }
-        return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
+        return new JobAndSqlSummaryIds(false, record.getJobId(), execId, record.getJobNameOrId(), status,
                 record.getCreationTime(), 0, null, getSqlSummary(record.getConfig()), suspensionCause,
                 userCancelled);
     }
