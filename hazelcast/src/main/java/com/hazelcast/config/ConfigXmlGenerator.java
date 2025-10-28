@@ -613,9 +613,6 @@ public class ConfigXmlGenerator {
 
     private void advancedNetworkConfigXmlGenerator(XmlGenerator gen, Config config) {
         AdvancedNetworkConfig netCfg = config.getAdvancedNetworkConfig();
-        if (!netCfg.isEnabled()) {
-            return;
-        }
 
         gen.open("advanced-network", "enabled", netCfg.isEnabled());
 
@@ -802,24 +799,25 @@ public class ConfigXmlGenerator {
 
     protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
                                                      AbstractBaseFactoryWithPropertiesConfig<?> factoryWithProps) {
-        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig cfgWithEnabled) {
-            gen.open(elementName, "enabled", cfgWithEnabled.isEnabled());
-        } else {
-            gen.open(elementName);
-        }
         if (factoryWithProps != null) {
+            if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig cfgWithEnabled) {
+                gen.open(elementName, "enabled", cfgWithEnabled.isEnabled());
+            } else {
+                gen.open(elementName);
+            }
             gen.node("factory-class-name", factoryWithProps.getFactoryClassName())
                     .appendProperties(factoryWithProps.getProperties());
+            gen.close();
         }
-        gen.close();
     }
 
     private static void socketInterceptorConfigXmlGenerator(XmlGenerator gen, SocketInterceptorConfig socket) {
-        gen.open("socket-interceptor", "enabled", socket != null && socket.isEnabled());
-        if (socket != null) {
-            gen.node("class-name", classNameOrImplClass(socket.getClassName(), socket.getImplementation()))
-                    .appendProperties(socket.getProperties());
+        if (socket == null) {
+            return;
         }
+        gen.open("socket-interceptor", "enabled", socket.isEnabled());
+        gen.node("class-name", classNameOrImplClass(socket.getClassName(), socket.getImplementation()))
+                .appendProperties(socket.getProperties());
         gen.close();
     }
 

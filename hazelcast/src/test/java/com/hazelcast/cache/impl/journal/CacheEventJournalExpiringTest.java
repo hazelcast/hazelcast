@@ -13,65 +13,63 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hazelcast.cache.impl.journal;
 
-package com.hazelcast.map.impl.journal;
-
+import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.journal.AbstractEventJournalExpiringTest;
 import com.hazelcast.journal.EventJournalTestContext;
-import com.hazelcast.map.EventJournalMapEvent;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
+import javax.cache.spi.CachingProvider;
+
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
-@RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class MapEventJournalExpiringTest<K, V> extends AbstractEventJournalExpiringTest<EventJournalMapEvent> {
+public class CacheEventJournalExpiringTest<K, V> extends AbstractEventJournalExpiringTest<EventJournalCacheEvent> {
 
-    private static final String MAP_NAME = "mappy";
+    private static final String CACHE_NAME = "cachey";
+    private AbstractHazelcastCacheManager cacheManager;
 
     @Override
     protected Config getConfig() {
         Config defConfig = super.getConfig();
-        defConfig.getMapConfig(MAP_NAME)
-                .setBackupCount(1)
-                .setInMemoryFormat(getInMemoryFormat())
-                .setEventJournalConfig(getEventJournalConfig());
+        var cacheConfig = defConfig.getCacheConfig(CACHE_NAME);
+        cacheConfig.setEventJournalConfig(getEventJournalConfig());
         return defConfig;
     }
 
-    protected InMemoryFormat getInMemoryFormat() {
-        return MapConfig.DEFAULT_IN_MEMORY_FORMAT;
-    }
-
     @Override
-    protected EventJournalTestContext<K, V, EventJournalMapEvent<K, V>> createContext() {
+    protected EventJournalTestContext<K, V, EventJournalCacheEvent<K, V>> createContext() {
+        CachingProvider cachingProvider = createServerCachingProvider(getRandomInstance());
+        cacheManager = (AbstractHazelcastCacheManager) cachingProvider.getCacheManager();
+
         return new EventJournalTestContext<>(
-                new EventJournalMapDataStructureAdapter<>(getRandomInstance().getMap(MAP_NAME)),
+                new EventJournalCacheDataStructureAdapter<>(cacheManager.getCache(CACHE_NAME)),
                 null,
-                new EventJournalMapEventAdapter<>()
+                new EventJournalCacheEventAdapter<>()
         );
     }
 
+    @Override
     protected String getName() {
-        return MAP_NAME;
+        return CACHE_NAME;
     }
 
-    protected  RingbufferContainer<?, ?> getRingBufferContainer(String name, int partitionId, HazelcastInstance instance) {
+    protected RingbufferContainer<?, ?> getRingBufferContainer(String name, int partitionId, HazelcastInstance instance) {
         var serviceName = RingbufferService.SERVICE_NAME;
+        var fullName = cacheManager.getCacheNameWithPrefix(name);
         final RingbufferService service = getNodeEngine(instance).getService(serviceName);
-        final ObjectNamespace ns = MapService.getObjectNamespace(name);
+        final ObjectNamespace ns = CacheService.getObjectNamespace(fullName);
 
         RingbufferContainer<?, ?> ringbuffer = service.getContainerOrNull(partitionId, ns);
         if (ringbuffer == null) {

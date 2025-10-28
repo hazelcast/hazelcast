@@ -823,7 +823,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return transformToSetWithNamespace(result, predicate, iterationType, uniqueResult, false);
     }
 
-    private <T> Set<T>  transformToSetWithNamespace(QueryResult result, Predicate predicate,
+    private <T> Set<T> transformToSetWithNamespace(QueryResult result, Predicate predicate,
                                             IterationType iterationType, boolean unique, boolean binary) {
         return NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getUserCodeNamespace(),
                 () -> transformToSet(serializationService, result, predicate, iterationType, unique, binary));

@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.JobStatusEvent;
+import com.hazelcast.jet.impl.JobAndSqlSummaryIds;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
@@ -122,6 +123,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int UPLOAD_JOB_METADATA_OP = 52;
     public static final int UPLOAD_JOB_MULTIPART_OP = 53;
     public static final int UPDATE_JOB_CONFIG_OP = 54;
+    public static final int JOB_AND_SQL_SUMMARY = 55;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -190,6 +192,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                 case UPLOAD_JOB_METADATA_OP -> new UploadJobMetaDataOperation();
                 case UPLOAD_JOB_MULTIPART_OP -> new UploadJobMultiPartOperation();
                 case GET_JOB_USER_CANCELLED_OP -> new IsJobUserCancelledOperation();
+                case JOB_AND_SQL_SUMMARY -> new JobAndSqlSummaryIds();
                 default -> throw new IllegalArgumentException("Unknown type id " + typeId);
             };
         }

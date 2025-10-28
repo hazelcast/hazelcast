@@ -235,7 +235,7 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
 
     private void assertThrows(Class<? extends Exception> expectedExceptionClass,
                               ConsumerEx<IMap<Object, Object>> method) {
-        softly.assertThatThrownBy(() ->  method.accept(getDriver().getMap(MAP_NAME)))
+        softly.assertThatThrownBy(() -> method.accept(getDriver().getMap(MAP_NAME)))
                 .isInstanceOfAny(NullPointerException.class, expectedExceptionClass);
     }
 

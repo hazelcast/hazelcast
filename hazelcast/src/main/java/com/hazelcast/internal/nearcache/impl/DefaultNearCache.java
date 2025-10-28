@@ -91,9 +91,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         }
         switch (inMemoryFormat) {
             case BINARY:
-                return new NearCacheDataRecordStore<>(name, nearCacheConfig, serializationService, classLoader);
+                return new NearCacheDataRecordStore<>(name, nearCacheConfig, serializationService, classLoader, properties);
             case OBJECT:
-                return new NearCacheObjectRecordStore<>(name, nearCacheConfig, serializationService, classLoader);
+                return new NearCacheObjectRecordStore<>(name, nearCacheConfig, serializationService, classLoader, properties);
             default:
                 throw new IllegalArgumentException("Invalid in memory format: " + inMemoryFormat);
         }

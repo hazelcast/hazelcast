@@ -45,7 +45,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.JobAndSqlSummaryIds;
 import com.hazelcast.jet.impl.SqlSummary;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
@@ -320,7 +320,7 @@ public final class CustomTypeFactory {
         return new SqlSummary(query, unbounded);
     }
 
-    public static JobAndSqlSummary createJobAndSqlSummary(
+    public static JobAndSqlSummaryIds createJobAndSqlSummary(
             boolean lightJob,
             long jobId,
             long executionId,
@@ -335,7 +335,7 @@ public final class CustomTypeFactory {
             boolean isUserCancelledExists,
             boolean userCancelled
     ) {
-        return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
+        return new JobAndSqlSummaryIds(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
                 completionTime, failureText, sqlSummary, isSuspensionCauseExists ? suspensionCause : null,
                 isUserCancelledExists ? userCancelled : false);
     }

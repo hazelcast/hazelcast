@@ -18,6 +18,7 @@ package com.hazelcast.commandline;
 
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import org.apache.commons.io.output.NullOutputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,10 +29,13 @@ import picocli.CommandLine;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.commandline.HazelcastServerCommandLine.createPrintWriter;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -42,6 +46,9 @@ class HazelcastServerCommandLineTest {
 
     @Mock
     private RunnableEx start;
+
+    @Mock
+    private RuntimeException exception;
 
     @BeforeEach
     void setUp() {
@@ -95,11 +102,26 @@ class HazelcastServerCommandLineTest {
             CommandLine cmd = new CommandLine(new HazelcastServerCommandLine())
                     .setOut(createPrintWriter(System.out)).setErr(createPrintWriter(errorPrintStream))
                     .setTrimQuotes(true).setExecutionExceptionHandler(new ExceptionHandler());
-            cmd.execute("start");
+            cmd.execute("start", "--full-stack-traces");
 
             String string = outputStreamCaptor.toString(StandardCharsets.UTF_8);
             assertThat(string).contains("org.apache.logging.log4j.core.config.ConfigurationException: "
                     + "No type attribute provided for Layout on Appender STDOUT");
         }
+    }
+
+    @Test
+    void test_fullstacktrace() throws Exception {
+        //given
+        doThrow(exception).when(start).run();
+
+        //when
+        CommandLine cmd = new CommandLine(hazelcastServerCommandLine)
+                .setExecutionExceptionHandler(new ExceptionHandler())
+                .setErr(new PrintWriter(NullOutputStream.INSTANCE));
+        cmd.execute("start", "--full-stack-traces");
+
+        //then
+        verify(exception).printStackTrace(any(PrintWriter.class));
     }
 }

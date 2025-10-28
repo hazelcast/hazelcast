@@ -84,7 +84,7 @@ class AdvancedNetworkAddressPicker
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
         Map<EndpointQualifier, Address> pubAddressMap = new HashMap<>(pickers.size());
-        for (Map.Entry<EndpointQualifier, AddressPicker>  entry : pickers.entrySet()) {
+        for (Map.Entry<EndpointQualifier, AddressPicker> entry : pickers.entrySet()) {
             pubAddressMap.put(entry.getKey(), entry.getValue().getPublicAddress(entry.getKey()));
         }
 
@@ -94,7 +94,7 @@ class AdvancedNetworkAddressPicker
     @Override
     public Map<EndpointQualifier, Address> getBindAddressMap() {
         Map<EndpointQualifier, Address> bindAddressMap = new HashMap<>(pickers.size());
-        for (Map.Entry<EndpointQualifier, AddressPicker>  entry : pickers.entrySet()) {
+        for (Map.Entry<EndpointQualifier, AddressPicker> entry : pickers.entrySet()) {
             bindAddressMap.put(entry.getKey(), entry.getValue().getBindAddress(entry.getKey()));
         }
 
@@ -109,7 +109,7 @@ class AdvancedNetworkAddressPicker
     @Override
     public Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels() {
         Map<EndpointQualifier, ServerSocketChannel> channels = new HashMap<>(pickers.size());
-        for (Map.Entry<EndpointQualifier, AddressPicker>  entry : pickers.entrySet()) {
+        for (Map.Entry<EndpointQualifier, AddressPicker> entry : pickers.entrySet()) {
             channels.put(entry.getKey(), entry.getValue().getServerSocketChannel(entry.getKey()));
         }
 

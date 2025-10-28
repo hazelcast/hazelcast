@@ -76,7 +76,7 @@
         We typically expect compatibility between sequential minor versions
         Patch version is unimportant due to semver - so for best coverage, deliberately use the oldest
         -->
-        <hazelcast.previous.version>5.5.4</hazelcast.previous.version>
+        <hazelcast.previous.version>5.6.0</hazelcast.previous.version>
         <hazelcast.lts.version>5.5</hazelcast.lts.version>
 
         <!--used also as a dependency version in hazelcast-build-utils module-->
@@ -84,13 +84,13 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
-        <checkstyle.version>11.1.0</checkstyle.version>
+        <checkstyle.version>12.1.1</checkstyle.version>
         <docker.maven.plugin.version>0.46.0</docker.maven.plugin.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.4</avro.version>
-        <aws.sdk.version>1.12.791</aws.sdk.version>
-        <aws.sdk2.version>2.34.8</aws.sdk2.version>
+        <aws.sdk.version>1.12.792</aws.sdk.version>
+        <aws.sdk2.version>2.36.2</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -104,7 +104,6 @@
         <hadoop.version>3.4.2</hadoop.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.30.6</jline.version>
-        <jms.api.version>3.1.0</jms.api.version>
         <json-surfer.version>0.12</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
@@ -114,7 +113,7 @@
         <kafka.version>3.9.1</kafka.version>
         <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
         <confluent.version>7.9.1</confluent.version>
-        <kotlin.version>2.2.20</kotlin.version>
+        <kotlin.version>2.2.21</kotlin.version>
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <parquet.version>1.16.0</parquet.version>
 
@@ -127,11 +126,11 @@
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
-        <mongodb.version>5.6.0</mongodb.version>
+        <mongodb.version>5.6.1</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.42.0</activemq-artemis.version>
-        <bytebuddy.version>1.17.7</bytebuddy.version>
+        <activemq-artemis.version>2.43.0</activemq-artemis.version>
+        <bytebuddy.version>1.17.8</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -177,12 +176,12 @@
             will *also* deploy to it's own staging destination, configured in
             //project//plugin[artifactId='nexus-staging-maven-plugin']/configuration/nexusUrl
             (i.e. Maven central) -->
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
         </repository>
         <snapshotRepository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
@@ -202,6 +201,7 @@
             -->
 
             <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
+            <!-- When upgrades Jackson, update version in jet-files-hz-hadoop-cp-image module too. -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
@@ -435,12 +435,12 @@
             <dependency>
                 <groupId>com.microsoft.sqlserver</groupId>
                 <artifactId>mssql-jdbc</artifactId>
-                <version>13.2.0.jre11</version>
+                <version>13.2.1.jre11</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
-                <version>9.4.0</version>
+                <version>9.5.0</version>
             </dependency>
             <dependency>
                 <groupId>com.zendesk</groupId>
@@ -455,7 +455,7 @@
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc11</artifactId>
-                <version>23.9.0.25.07</version>
+                <version>23.26.0.0.0</version>
                 <scope>test</scope>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
@@ -468,16 +468,6 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.5.14</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.auto.value</groupId>
-                <artifactId>auto-value-annotations</artifactId>
-                <version>1.11.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.nimbusds</groupId>
-                <artifactId>nimbus-jose-jwt</artifactId>
-                <version>10.5</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
@@ -512,7 +502,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.7-5</version>
+                <version>1.5.7-6</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -587,13 +577,6 @@
                 <artifactId>janino</artifactId>
                 <version>${janino.version}</version>
             </dependency>
-            <!-- Force higher version, compatible with M1 -->
-            <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
-            <dependency>
-                <groupId>net.java.dev.jna</groupId>
-                <artifactId>jna</artifactId>
-                <version>5.18.1</version>
-            </dependency>
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
@@ -612,11 +595,6 @@
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
                 <version>${bytebuddy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>3.30.2-GA</version>
             </dependency>
             <dependency>
                 <groupId>org.junit</groupId>
@@ -641,7 +619,7 @@
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.1.1</version>
+                <version>4.2</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -651,7 +629,7 @@
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <version>4.9.6</version>
+                <version>4.9.8</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -667,7 +645,7 @@
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.42.0</version>
+                <version>2.43.0</version>
             </dependency>
             <dependency>
                 <groupId>info.picocli</groupId>
@@ -711,7 +689,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.69.0</version>
+                <version>26.71.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -725,11 +703,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.perfmark</groupId>
-                <artifactId>perfmark-api</artifactId>
-                <version>0.27.0</version>
             </dependency>
 
             <dependency>
@@ -757,7 +730,7 @@
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
-                <version>6.0.1</version>
+                <version>5.28.10</version>
             </dependency>
             <dependency>
                 <groupId>org.jctools</groupId>
@@ -787,7 +760,7 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-jvm</artifactId>
-                <version>5.1.0</version>
+                <version>5.2.1</version>
             </dependency>
             <!-- Resolves convergence between hazelcast-sql (via calcite) & hazelcast-jet-files-azure (via parquet) -->
             <dependency>
@@ -823,7 +796,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -918,7 +891,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.13</version>
+                    <version>0.8.14</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1111,7 +1084,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.2</version>
                 </plugin>
                 <plugin>
                     <groupId>pl.project13.maven</groupId>
@@ -1126,7 +1099,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>12.1.6</version>
+                    <version>12.1.8</version>
                     <configuration>
                         <format>ALL</format>
                         <skipProvidedScope>true</skipProvidedScope>
@@ -1226,7 +1199,7 @@
                     <dependency>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>extra-enforcer-rules</artifactId>
-                        <version>1.10.0</version>
+                        <version>1.11.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -1263,6 +1236,29 @@
                         <version>${checkstyle.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.7.3</version>
+                <configuration>
+                    <flattenMode>ossrh</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -1478,7 +1474,7 @@
             </activation>
             <properties>
                 <!-- should only be Spring 6 -->
-                <spring.boot.version>3.5.6</spring.boot.version>
+                <spring.boot.version>3.5.7</spring.boot.version>
                 <org.springframework.version>6.2.7</org.springframework.version>
             </properties>
         </profile>
@@ -1520,7 +1516,7 @@
         <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>

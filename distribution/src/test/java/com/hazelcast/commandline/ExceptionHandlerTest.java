@@ -26,6 +26,7 @@ import picocli.CommandLine;
 import java.io.PrintWriter;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,8 +49,13 @@ class ExceptionHandlerTest {
     @Mock
     private CommandLine.Help.ColorScheme colorScheme;
 
+    private HazelcastServerCommandLine cmd;
+
     @BeforeEach
     void setup() {
+        cmd = new HazelcastServerCommandLine();
+        when(commandLine.getParent()).thenReturn(commandLine);
+        when(commandLine.getCommand()).thenReturn(cmd);
         when(commandLine.getErr()).thenReturn(errorWriter);
         when(commandLine.getColorScheme()).thenReturn(colorScheme);
     }
@@ -57,10 +63,24 @@ class ExceptionHandlerTest {
 
     @Test
     void test_handleExecutionException_withoutExceptionMessage() {
+        // given
+        cmd.printFullStackTraces = true;
         // when
         new ExceptionHandler().handleExecutionException(exception, commandLine, parseResult);
         // then
         verify(exception, times(1)).printStackTrace(any(PrintWriter.class));
+        verify(commandLine, times(1)).usage(errorWriter, colorScheme);
+    }
+
+    @Test
+    void test_handleExecutionException_withExceptionMessage() {
+        // given
+        cmd.printFullStackTraces = false;
+        // when
+        new ExceptionHandler().handleExecutionException(exception, commandLine, parseResult);
+        // then
+        verify(exception, never()).printStackTrace(any(PrintWriter.class));
+        verify(exception, times(1)).getMessage();
         verify(commandLine, times(1)).usage(errorWriter, colorScheme);
     }
 }

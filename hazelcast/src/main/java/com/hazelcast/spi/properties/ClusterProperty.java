@@ -1316,6 +1316,32 @@ public final class ClusterProperty {
     public static final HazelcastProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY
             = new HazelcastProperty("hazelcast.map.write.behind.queue.capacity", 50000);
 
+    /**
+     * The cleanup threshold for the event journal, expressed as a fraction of its capacity.
+     * <p>
+     * When the remaining capacity of the event journal drops below this threshold,
+     * a cleanup task may be triggered to remove <b>expired</b> events and reclaim space.
+     * Cleanup triggered by put operation.
+     * Cleanup is performed only if the journal has a configured
+     * {@link com.hazelcast.config.EventJournalConfig#setTimeToLiveSeconds(int) time-to-live (TTL)} value,
+     * since only expired items are eligible for removal.
+     * <p>
+     * For example, with the value of {@code 0.3}, cleanup triggers by put operation when
+     * less than 30% of the total journal capacity remains available.
+     * <p>
+     * This property affects the event journal used by both IMap and ICache.
+     * This property helps balance memory usage and cleanup frequency.
+     * Setting a lower value delays cleanup (potentially increasing memory pressure),
+     * while a higher value triggers cleanup more aggressively.
+     * <p>
+     * Applicable only when {@code timeToLiveSeconds > 0}.
+     * Default value: {@code 1f}, meaning cleanup is triggered after each put operation.
+     *
+     * @since 5.7
+     */
+    public static final HazelcastProperty EVENT_JOURNAL_CLEANUP_THRESHOLD
+            = new HazelcastProperty("hazelcast.journal.cleanup.threshold", 1f);
+
     /*
      * INVOCATION / OPERATION SYSTEM PROPERTIES
      */

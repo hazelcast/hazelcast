@@ -264,7 +264,7 @@ class PythonServiceContext {
         }
     }
 
-    public BiFunctionEx<String, Integer, ? extends ManagedChannelBuilder<?>>    channelFn() {
+    public BiFunctionEx<String, Integer, ? extends ManagedChannelBuilder<?>> channelFn() {
         return channelFn;
     }
 }
