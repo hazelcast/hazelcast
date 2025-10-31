@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.test.ClientTestSupport;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -35,11 +36,13 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
@@ -61,16 +64,19 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSupport {
+public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSupport {
 
-    private HazelcastInstance instance;
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private HazelcastInstance member;
+    private HazelcastInstance client;
+    private HazelcastClientInstanceImpl clientImpl;
     private NodeEngineImpl nodeEngine;
-    private OperationServiceImpl operationService;
     private MetricsService metricsService;
+    private UUID memberUuid;
 
     @Before
     public void setUp() {
-        // Create Hazelcast instance with metrics enabled
+        // Create Hazelcast member with metrics enabled
         // Use VERY SLOW collection to simulate the problem
         Config config = new Config();
         config.getMetricsConfig().setEnabled(true);
@@ -78,17 +84,18 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSup
         config.getMetricsConfig().getManagementCenterConfig().setEnabled(true);
         config.getMetricsConfig().getManagementCenterConfig().setRetentionSeconds(60); // Very small - only 1 minute
 
-        instance = createHazelcastInstance(config);
-        nodeEngine = getNode(instance).getNodeEngine();
-        operationService = nodeEngine.getOperationService();
+        member = factory.newHazelcastInstance(config);
+        client = factory.newHazelcastClient();
+
+        clientImpl = getHazelcastClientInstanceImpl(client);
+        nodeEngine = getNode(member).getNodeEngine();
         metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
+        memberUuid = member.getCluster().getLocalMember().getUuid();
     }
 
     @After
     public void tearDown() {
-        if (instance != null) {
-            instance.shutdown();
-        }
+        factory.terminateAll();
     }
 
     /**
@@ -98,106 +105,42 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSup
      */
     @Test
     public void testMemoryLeak_whenRequestingFutureSequenceWithinRetention() throws Exception {
-        System.out.println("\n=== TEST: Verify Fix for Issue #26463 ===\n");
-
-        // Print heap size to verify VM options
-        Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory() / (1024 * 1024);
-        long totalMemory = runtime.totalMemory() / (1024 * 1024);
-        System.out.println("JVM Max Memory: " + maxMemory + " MB");
-        System.out.println("JVM Total Memory: " + totalMemory + " MB");
-        System.out.println();
-
-        // Step 1: Force initial metrics collection
-        System.out.println("Step 1: Triggering initial metrics collection...");
+        // Force initial metrics collection
         forceMetricsCollection();
         sleepSeconds(1);
 
-        // Step 2: Get current state
+        // Get current state
         int initialSize = getLiveOperationRegistrySize();
-        System.out.println("Initial LiveOperationRegistry size: " + initialSize);
 
-        long currentTailSequence = getCurrentHeadSequence(); // This is actually tail!
-        System.out.println("Current tail sequence: " + currentTailSequence);
+        // Get the tail sequence (nextSequence - the sequence that hasn't been written yet)
+        long tailSequence = getCurrentTailSequence();
 
-        // Step 3: Request sequence that equals tail (empty slice, no exception)
-        // When we request sequence == tail:
-        // - copyFrom() returns empty slice (line 77)
-        // - future.complete() is NOT called (line 193-195)
-        // - Operation remains in LiveOperationRegistry forever!
-        long futureSequence = currentTailSequence; // Request tail itself
-        System.out.println("Requesting tail sequence: " + futureSequence);
-        System.out.println("(This will return empty slice without completing the future)");
+        // THIS IS THE BUG SCENARIO FROM ISSUE #26463:
+        // Client requests metrics with sequence == tail
+        // Before the fix: future never completes → operation leaks in LiveOperationRegistry
+        // After the fix: future.complete() is called even for empty slice → operation is cleaned up
 
-        int numberOfOperations = 1; // Only 1 operation to minimize memory usage
+        // Send request using client with sequence == tail (as described in the issue)
+        ClientMessage request = MCReadMetricsCodec.encodeRequest(memberUuid, tailSequence);
+        ClientInvocation invocation = new ClientInvocation(clientImpl, request, null);
 
-        // Step 4: Send operations that will get stuck
-        for (int i = 0; i < numberOfOperations; i++) {
-            ReadMetricsOperation operation = new ReadMetricsOperation(futureSequence);
-
-            System.out.println("About to invoke operation " + i + "...");
-            InternalCompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future =
-                operationService.invokeOnTarget(
-                    MetricsService.SERVICE_NAME,
-                    operation,
-                    nodeEngine.getThisAddress()
-                );
-            System.out.println("Operation " + i + " invoked, future isDone=" + future.isDone());
-
-            // Add callback to detect when future completes
-            future.whenComplete((result, error) -> {
-                if (error != null) {
-                    System.out.println(">>> Future completed with ERROR: " + error.getClass().getSimpleName() + ": " + error.getMessage());
-                } else {
-                    System.out.println(">>> Future completed with result: " + (result != null ? result.elements().size() + " elements" : "null"));
-                }
-            });
-
-            // Try to get with short timeout - should timeout because data doesn't exist
-            try {
-                RingbufferSlice<Map.Entry<Long, byte[]>> result = future.get(500, TimeUnit.MILLISECONDS);
-                System.out.println("Operation " + i + " completed unexpectedly with " + result.elements().size() + " elements!");
-            } catch (TimeoutException e) {
-                // Expected - operation is waiting for future data
-                System.out.println("Operation " + i + " is pending (timeout - expected)");
-            } catch (Exception e) {
-                System.out.println("Operation " + i + " failed with: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-                e.printStackTrace();
-            }
+        // Try to get with short timeout - should complete with empty slice or timeout
+        try {
+            invocation.invoke().get(500, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            // Expected - operation is waiting for future data
         }
 
-        // Step 5: Wait a bit for operations to settle
+        // Wait for operations to settle
         sleepSeconds(2);
 
-        // Step 6: Check if operations leaked
+        // Check if operations leaked on the member side
         int afterSize = getLiveOperationRegistrySize();
-        System.out.println("\nAfter " + numberOfOperations + " operations:");
-        System.out.println("LiveOperationRegistry size: " + afterSize);
-
         int leakedOperations = afterSize - initialSize;
-        System.out.println("Leaked operations: " + leakedOperations);
 
-        // Step 7: Print diagnostic info
-        printLiveOperationRegistryState();
-
-        // Step 8: Verify the FIX - operations should be cleaned up now!
-        if (leakedOperations == 0) {
-            System.out.println("\n=== ✅ BUG FIXED! ===");
-            System.out.println("Number of operations sent: " + numberOfOperations);
-            System.out.println("Number of operations leaked: " + leakedOperations);
-            System.out.println("\nFix verification:");
-            System.out.println("1. Requested sequence=" + futureSequence + " (equals tail)");
-            System.out.println("2. ConcurrentArrayRingbuffer.copyFrom() returned EMPTY slice");
-            System.out.println("3. MetricsService.tryCompleteRead() NOW calls future.complete() even for empty slice");
-            System.out.println("4. doSendResponse() was called");
-            System.out.println("5. deregister() was executed");
-            System.out.println("6. Operations properly cleaned from LiveOperationRegistry");
-            System.out.println("\nIssue #26463 is FIXED!");
-        } else {
-            System.out.println("\n=== ❌ FIX VERIFICATION FAILED ===");
-            System.out.println("Number of operations sent: " + numberOfOperations);
-            System.out.println("Number of operations leaked: " + leakedOperations);
-            System.out.println("The fix did not work - operations are still leaking!");
+        // Verify the FIX - operations should be cleaned up now!
+        if (leakedOperations != 0) {
+            printLiveOperationRegistryState();
             fail("Fix verification failed: " + leakedOperations + " operations leaked. "
                 + "Expected 0 leaked operations after the fix.");
         }
@@ -209,72 +152,48 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSup
      */
     @Test
     public void testNoLeak_whenMetricsAreCollected() throws Exception {
-        System.out.println("\n=== TEST: No Leak When Metrics Collected (Control) ===\n");
-
-        // Reconfigure for fast collection
-        Config config = new Config();
-        config.getMetricsConfig().setEnabled(true);
-        config.getMetricsConfig().setCollectionFrequencySeconds(2); // Fast!
-        config.getMetricsConfig().getManagementCenterConfig().setEnabled(true);
-
-        // Recreate instance with fast config
-        if (instance != null) {
-            instance.shutdown();
+        // Force multiple metrics collections to ensure we have data
+        for (int i = 0; i < 3; i++) {
+            forceMetricsCollection();
+            sleepSeconds(1);
         }
-        instance = createHazelcastInstance(config);
-        nodeEngine = getNode(instance).getNodeEngine();
-        operationService = nodeEngine.getOperationService();
-        metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
-
-        // Wait for initial collection
-        System.out.println("Waiting for initial metrics collection...");
-        sleepSeconds(3);
 
         int initialSize = getLiveOperationRegistrySize();
-        System.out.println("Initial size: " + initialSize);
 
-        // Request current metrics (should exist)
-        ReadMetricsOperation operation = new ReadMetricsOperation(0);
-        InternalCompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future =
-            operationService.invokeOnTarget(
-                MetricsService.SERVICE_NAME,
-                operation,
-                nodeEngine.getThisAddress()
-            );
+        // Request metrics from sequence 0 using client (should have data now)
+        ClientMessage request = MCReadMetricsCodec.encodeRequest(memberUuid, 0);
+        ClientInvocation invocation = new ClientInvocation(clientImpl, request, null);
 
-        RingbufferSlice<Map.Entry<Long, byte[]>> result = future.get(5, TimeUnit.SECONDS);
-        System.out.println("Received " + result.elements().size() + " metric entries - OK");
+        ClientMessage response = invocation.invoke().get(5, TimeUnit.SECONDS);
+        MCReadMetricsCodec.ResponseParameters params = MCReadMetricsCodec.decodeResponse(response);
+        assertFalse("Expected at least one metric entry", params.elements.isEmpty());
 
         sleepSeconds(1);
 
         int afterSize = getLiveOperationRegistrySize();
-        System.out.println("After size: " + afterSize);
 
-        if (afterSize == initialSize) {
-            System.out.println("\n=== ✅ CONTROL TEST PASSED ===");
-            System.out.println("No leak when metrics are properly collected");
-        } else {
+        if (afterSize != initialSize) {
             fail("Unexpected leak in control test: " + (afterSize - initialSize) + " operations leaked");
         }
     }
 
     // ==================== Helper Methods ====================
 
-    private long getCurrentHeadSequence() throws Exception {
-        // Try to read from sequence 0 and get the next sequence
-        ReadMetricsOperation op = new ReadMetricsOperation(0);
-        InternalCompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future =
-            operationService.invokeOnTarget(
-                MetricsService.SERVICE_NAME,
-                op,
-                nodeEngine.getThisAddress()
-            );
-
+    /**
+     * Get the current tail sequence (nextSequence - the next sequence that hasn't been written yet).
+     * This is used to reproduce the bug scenario where client requests metrics with sequence == tail.
+     */
+    private long getCurrentTailSequence() throws Exception {
+        // Read from sequence 0 and get nextSequence (tail)
         try {
-            RingbufferSlice<Map.Entry<Long, byte[]>> slice = future.get(2, TimeUnit.SECONDS);
-            return slice.nextSequence();
+            ClientMessage request = MCReadMetricsCodec.encodeRequest(memberUuid, 0);
+            ClientInvocation invocation = new ClientInvocation(clientImpl, request, null);
+            ClientMessage response = invocation.invoke().get(2, TimeUnit.SECONDS);
+            MCReadMetricsCodec.ResponseParameters params = MCReadMetricsCodec.decodeResponse(response);
+            // nextSequence is the tail - the next sequence that hasn't been written yet
+            return params.nextSequence;
         } catch (Exception e) {
-            // If failed, assume head is 0
+            // If failed, assume tail is 0
             return 0;
         }
     }
@@ -284,12 +203,16 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSup
         try {
             metricsService.collectMetrics();
         } catch (Exception e) {
-            System.out.println("Could not force metrics collection: " + e.getMessage());
+            // Ignore - metrics collection may fail if not fully initialized
         }
     }
 
     private int getLiveOperationRegistrySize() throws Exception {
-        LiveOperationRegistry registry = metricsService.getLiveOperationRegistry();
+        return getLiveOperationRegistrySize(metricsService);
+    }
+
+    private int getLiveOperationRegistrySize(MetricsService service) throws Exception {
+        LiveOperationRegistry registry = service.getLiveOperationRegistry();
 
         Field liveOperationsField = LiveOperationRegistry.class.getDeclaredField("liveOperations");
         liveOperationsField.setAccessible(true);
@@ -307,8 +230,7 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSup
     }
 
     private void printLiveOperationRegistryState() throws Exception {
-        System.out.println("\n--- LiveOperationRegistry State ---");
-
+        // Diagnostic method for debugging - called only on test failure
         LiveOperationRegistry registry = metricsService.getLiveOperationRegistry();
         Field liveOperationsField = LiveOperationRegistry.class.getDeclaredField("liveOperations");
         liveOperationsField.setAccessible(true);
@@ -317,16 +239,15 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends HazelcastTestSup
         ConcurrentHashMap<?, Map<Long, ?>> liveOperations =
             (ConcurrentHashMap<?, Map<Long, ?>>) liveOperationsField.get(registry);
 
-        System.out.println("Number of addresses: " + liveOperations.size());
+        // Information will be available in test failure output
+        int totalOps = 0;
+        for (Map<Long, ?> ops : liveOperations.values()) {
+            totalOps += ops.size();
+        }
 
-        liveOperations.forEach((address, ops) -> {
-            System.out.println("  Address: " + address);
-            System.out.println("    Active operations: " + ops.size());
-            ops.forEach((callId, op) -> {
-                System.out.println("      CallId: " + callId
-                    + ", Operation: " + op.getClass().getSimpleName());
-            });
-        });
-        System.out.println("-----------------------------------\n");
+        // This will appear in test logs when the test fails
+        if (totalOps > 0) {
+            fail("Found " + totalOps + " leaked operations across " + liveOperations.size() + " addresses");
+        }
     }
 }
