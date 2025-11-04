@@ -85,12 +85,12 @@
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
         <checkstyle.version>12.1.1</checkstyle.version>
-        <docker.maven.plugin.version>0.46.0</docker.maven.plugin.version>
+        <docker.maven.plugin.version>0.47.0</docker.maven.plugin.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.4</avro.version>
-        <aws.sdk.version>1.12.792</aws.sdk.version>
-        <aws.sdk2.version>2.36.2</aws.sdk2.version>
+        <aws.sdk.version>1.12.793</aws.sdk.version>
+        <aws.sdk2.version>2.37.1</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -129,7 +129,7 @@
         <mongodb.version>5.6.1</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.43.0</activemq-artemis.version>
+        <activemq-artemis.version>2.44.0</activemq-artemis.version>
         <bytebuddy.version>1.17.8</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
@@ -205,7 +205,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.20.0</version>
+                <version>2.20.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -599,7 +599,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>6.0.0</version>
+                <version>6.0.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -619,7 +619,7 @@
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.2</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
