@@ -1559,17 +1559,6 @@
             </snapshots>
         </repository>
         <repository>
-            <id>snapshot-internal</id>
-            <name>Hazelcast Internal Snapshots</name>
-            <url>https://repository.hazelcast.com/snapshot-internal/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
             <id>confluent</id>
             <url>https://packages.confluent.io/maven/</url>
             <releases>
