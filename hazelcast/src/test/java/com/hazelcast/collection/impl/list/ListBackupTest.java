@@ -51,6 +51,13 @@ public class ListBackupTest extends AbstractCollectionBackupTest {
         testBackupMigrationInternal();
     }
 
+    @Test
+    public void testAsyncBackupCount() {
+        config.getListConfig("testAsyncBackupCount")
+              .setBackupCount(1)
+              .setAsyncBackupCount(4);
+    }
+
     @Override
     protected Collection<Integer> getHazelcastCollection(HazelcastInstance instance, String name) {
         return instance.getList(name);
