@@ -304,13 +304,7 @@ public class Node {
                 if (tmpLogger == null) {
                     tmpLogger = Logger.getLogger(Node.class);
                 }
-                if (tmpLogger.isFineEnabled()) {
-                    // Log full stack trace at fine/debug level
-                    tmpLogger.fine("Node creation failed", e);
-                } else if (tmpLogger.isSevereEnabled()) {
-                    // Log just the message at severe level
-                    tmpLogger.severe("Node creation failed" + System.lineSeparator() + e.getMessage());
-                }
+                tmpLogger.severe("Node creation failed", e);
             } catch (Exception e1) {
                 e.addSuppressed(e1);
             }
