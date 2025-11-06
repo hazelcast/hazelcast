@@ -137,6 +137,8 @@ class MockServer implements Server {
             }
             Node targetNode = server.nodeRegistry.getNode(address);
             if (targetNode == null || isTargetLeft(targetNode)) {
+                server.logger.warning("Invoking suspect address for: " + address
+                        + ". Target node is null or target node has left.");
                 suspectAddress(address);
                 return null;
             }
@@ -213,6 +215,8 @@ class MockServer implements Server {
 
             if (!connectionFromRemoteToLocal.isAlive()) {
                 // targetNode is not alive anymore.
+                server.logger.warning("Invoking suspect address for: " + remoteAddress
+                        + ". Target node is not alive anymore.");
                 suspectAddress(remoteAddress);
                 return null;
             }
@@ -225,6 +229,8 @@ class MockServer implements Server {
             if (!connectionFromLocalToRemote.isAlive()) {
                 // If connection is not alive after inserting it into connection map,
                 // that means remote node is being stopping during connection creation.
+                server.logger.warning("Invoking suspect address for: " + remoteAddress
+                        + ". Remote node shut down during connection establishment.");
                 suspectAddress(remoteAddress);
             }
             return connectionFromLocalToRemote;
