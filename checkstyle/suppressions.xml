@@ -122,6 +122,8 @@
 
     <!-- Instance -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]instance[\\/]"/>
+    <suppress checks="FileLength"
+              files="com[\\/]hazelcast[\\/]instance[\\/]impl[\\/]EnterpriseNodeExtension"/>
 
     <!-- SPI -->
     <suppress checks="FileLength"
