@@ -231,6 +231,15 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
             scheduledFuture.cancel(false);
         }
 
+        // Complete all pending reads to prevent memory leak on shutdown
+        // The scheduled timeout tasks may not execute if ExecutionService is already stopping
+        pendingReads.forEach((future, sequence) -> {
+            if (!future.isDone()) {
+                tryCompleteRead(future, sequence);
+            }
+        });
+        pendingReads.clear();
+
         publishers.forEach(MetricsPublisher::shutdown);
     }
 
