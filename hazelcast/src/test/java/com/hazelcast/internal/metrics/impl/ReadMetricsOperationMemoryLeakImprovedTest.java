@@ -24,6 +24,7 @@ import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,7 +43,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -105,9 +108,11 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
      */
     @Test
     public void testMemoryLeak_whenRequestingFutureSequenceWithinRetention() throws Exception {
-        // Force initial metrics collection
+        // Force initial metrics collection and wait for it to be added to journal
         forceMetricsCollection();
-        sleepSeconds(1);
+        assertTrueEventually(() ->
+            assertTrue("Metrics journal should have data after collection", getCurrentTailSequence() > 0)
+        );
 
         // Get current state
         int initialSize = getLiveOperationRegistrySize();
@@ -131,19 +136,12 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
             // Expected - operation is waiting for future data
         }
 
-        // Wait for operations to settle
-        sleepSeconds(2);
-
-        // Check if operations leaked on the member side
-        int afterSize = getLiveOperationRegistrySize();
-        int leakedOperations = afterSize - initialSize;
-
-        // Verify the FIX - operations should be cleaned up now!
-        if (leakedOperations != 0) {
-            printLiveOperationRegistryState();
-            fail("Fix verification failed: " + leakedOperations + " operations leaked. "
-                + "Expected 0 leaked operations after the fix.");
-        }
+        // Wait for operations to be cleaned up deterministically
+        int expectedSize = initialSize;
+        assertTrueEventually(() -> {
+            int currentSize = getLiveOperationRegistrySize();
+            assertEquals("Operations should be cleaned up after the fix", expectedSize, currentSize);
+        });
     }
 
     /**
@@ -152,11 +150,11 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
      */
     @Test
     public void testNoLeak_whenMetricsAreCollected() throws Exception {
-        // Force multiple metrics collections to ensure we have data
-        for (int i = 0; i < 3; i++) {
-            forceMetricsCollection();
-            sleepSeconds(1);
-        }
+        // Force metrics collection to ensure we have data
+        forceMetricsCollection();
+        assertTrueEventually(() ->
+            assertTrue("Metrics journal should have data", getCurrentTailSequence() > 0)
+        );
 
         int initialSize = getLiveOperationRegistrySize();
 
@@ -168,13 +166,12 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
         MCReadMetricsCodec.ResponseParameters params = MCReadMetricsCodec.decodeResponse(response);
         assertFalse("Expected at least one metric entry", params.elements.isEmpty());
 
-        sleepSeconds(1);
-
-        int afterSize = getLiveOperationRegistrySize();
-
-        if (afterSize != initialSize) {
-            fail("Unexpected leak in control test: " + (afterSize - initialSize) + " operations leaked");
-        }
+        // Wait for operations to be cleaned up deterministically
+        int expectedSize = initialSize;
+        assertTrueEventually(() -> {
+            int currentSize = getLiveOperationRegistrySize();
+            assertEquals("Operations should be cleaned up in normal scenario", expectedSize, currentSize);
+        });
     }
 
     // ==================== Helper Methods ====================
@@ -182,20 +179,25 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
     /**
      * Get the current tail sequence (nextSequence - the next sequence that hasn't been written yet).
      * This is used to reproduce the bug scenario where client requests metrics with sequence == tail.
+     * Uses reflection to access metricsJournal directly instead of making a client request.
      */
     private long getCurrentTailSequence() throws Exception {
-        // Read from sequence 0 and get nextSequence (tail)
-        try {
-            ClientMessage request = MCReadMetricsCodec.encodeRequest(memberUuid, 0);
-            ClientInvocation invocation = new ClientInvocation(clientImpl, request, null);
-            ClientMessage response = invocation.invoke().get(2, TimeUnit.SECONDS);
-            MCReadMetricsCodec.ResponseParameters params = MCReadMetricsCodec.decodeResponse(response);
-            // nextSequence is the tail - the next sequence that hasn't been written yet
-            return params.nextSequence;
-        } catch (Exception e) {
-            // If failed, assume tail is 0
-            return 0;
+        // Access metricsJournal directly via reflection instead of making client request
+        Field metricsJournalField = MetricsService.class.getDeclaredField("metricsJournal");
+        metricsJournalField.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        ConcurrentArrayRingbuffer<Map.Entry<Long, byte[]>> journal =
+            (ConcurrentArrayRingbuffer<Map.Entry<Long, byte[]>>) metricsJournalField.get(metricsService);
+
+        if (journal == null) {
+            return 0; // No journal yet (MC not enabled)
         }
+
+        // Access tail field from ringbuffer via reflection
+        Field tailField = ConcurrentArrayRingbuffer.class.getDeclaredField("tail");
+        tailField.setAccessible(true);
+        return (Long) tailField.get(journal);
     }
 
     private void forceMetricsCollection() {
