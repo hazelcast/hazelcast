@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.jet.TestedVersions.MONGO_IMAGE;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -60,7 +61,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, NightlyTest.class})
 public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
-    private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.5");
     private static MongoDBContainer mongoContainer;
     private static MongoClient mongoClient;
 
@@ -84,7 +84,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
     @BeforeClass
     public static void setupClass() {
         assumeDockerEnabled();
-        mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+        mongoContainer = new MongoDBContainer(MONGO_IMAGE);
         mongoContainer.start();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());
     }
@@ -150,7 +150,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
         jobConfig.addClass(TestUtil.class);
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         jobConfig.setSnapshotIntervalMillis(1500);
-        jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.10.0-all.jar"));
+        jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.16.0-all.jar"));
         return jobConfig;
     }
 

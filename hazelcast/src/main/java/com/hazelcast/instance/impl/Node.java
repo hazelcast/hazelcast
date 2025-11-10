@@ -66,8 +66,8 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
-import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -277,7 +277,7 @@ public class Node {
             metricsRegistry.provideMetrics(nodeExtension);
             localAddressRegistry = new LocalAddressRegistry(this, addressPicker);
             server = nodeContext.createServer(this, serverSocketRegistry, localAddressRegistry);
-            healthMonitor = new HealthMonitor(this);
+            healthMonitor = nodeExtension.createHealthMonitor();
             clientEngine = hasClientServerSocket() ? nodeExtension.createClientEngine() : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
             if (properties.getBoolean(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE)
@@ -616,7 +616,7 @@ public class Node {
                     try {
                         boolean success = service.onShutdown(maxWaitSeconds, TimeUnit.SECONDS);
                         if (success) {
-                            logger.fine("Graceful shutdown completed for " + service);
+                            logger.fine("Graceful shutdown completed for %s", service);
                         } else {
                             logger.warning("Graceful shutdown failed for " + service);
                         }

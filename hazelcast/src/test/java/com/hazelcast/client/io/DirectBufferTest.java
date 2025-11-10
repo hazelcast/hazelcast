@@ -88,10 +88,10 @@ public class DirectBufferTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        config.setProperty(SOCKET_BUFFER_DIRECT.getName(), "" + memberDirectBuffer);
+        config.setProperty(SOCKET_BUFFER_DIRECT.getName(), String.valueOf(memberDirectBuffer));
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(SOCKET_CLIENT_BUFFER_DIRECT.getName(), "" + clientDirectBuffer);
+        clientConfig.setProperty(SOCKET_CLIENT_BUFFER_DIRECT.getName(), String.valueOf(clientDirectBuffer));
 
         server = Hazelcast.newHazelcastInstance(config);
         client = HazelcastClient.newHazelcastClient(clientConfig);

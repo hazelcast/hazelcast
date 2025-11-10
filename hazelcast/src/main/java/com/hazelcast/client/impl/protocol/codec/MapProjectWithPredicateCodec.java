@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
 @SuppressWarnings("unused")
-@Generated("bf4307eeb75d67c1722fea1fa640e661")
+@Generated("2c9e35d29297cb1fa4bba0832adb9e6c")
 public final class MapProjectWithPredicateCodec {
     //hex: 0x013C00
     public static final int REQUEST_MESSAGE_TYPE = 80896;
@@ -49,7 +49,6 @@ public final class MapProjectWithPredicateCodec {
     private MapProjectWithPredicateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -100,7 +99,7 @@ public final class MapProjectWithPredicateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encodeContainsNullable(clientMessage, response, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, response, DataCodec::encodeNullable);
         return clientMessage;
     }
 
@@ -111,6 +110,6 @@ public final class MapProjectWithPredicateCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        return ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decodeNullable);
     }
 }

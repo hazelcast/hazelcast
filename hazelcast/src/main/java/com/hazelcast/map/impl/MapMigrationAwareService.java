@@ -391,7 +391,7 @@ class MapMigrationAwareService
                     Object value = Records.getValueOrCachedValue(record, serializationService);
                     entry.init(key, value);
                     indexRegistry.removeEntry(entry, Index.OperationSource.SYSTEM);
-                }, false);
+                }, false, true);
             } finally {
                 recordStore.afterOperation();
             }

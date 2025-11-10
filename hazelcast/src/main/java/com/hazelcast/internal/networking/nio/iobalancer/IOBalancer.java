@@ -161,10 +161,9 @@ public class IOBalancer {
                 long min = loadImbalance.minimumLoad;
                 long max = loadImbalance.maximumLoad;
                 if (max == Long.MIN_VALUE) {
-                    logger.finest("There is at most 1 pipeline associated with each thread. "
-                            + "There is nothing to balance");
+                    logger.finest("There is at most 1 pipeline associated with each thread. %s", "There is nothing to balance");
                 } else {
-                    logger.finest("No imbalance has been detected. Max. load: " + max + " Min load: " + min + ".");
+                    logger.finest("No imbalance has been detected. Max. load: %s Min load: %s.", max, min);
                 }
             }
         }
@@ -195,7 +194,7 @@ public class IOBalancer {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("I/O Balancer is enabled. Scanning every " + balancerIntervalSeconds + " seconds for imbalances.");
+            logger.finest("I/O Balancer is enabled. Scanning every %s seconds for imbalances.", balancerIntervalSeconds);
         }
 
         return true;
@@ -234,7 +233,7 @@ public class IOBalancer {
         @Override
         public void run() {
             if (logger.isFinestEnabled()) {
-                logger.finest("Removing pipelines: " + inboundPipeline + ", " + outboundPipeline);
+                logger.finest("Removing pipelines: %s, %s", inboundPipeline, outboundPipeline);
             }
 
             inLoadTracker.removePipeline(inboundPipeline);
@@ -255,7 +254,7 @@ public class IOBalancer {
         @Override
         public void run() {
             if (logger.isFinestEnabled()) {
-                logger.finest("Adding pipelines: " + inboundPipeline + ", " + outboundPipeline);
+                logger.finest("Adding pipelines: %s, %s", inboundPipeline, outboundPipeline);
             }
 
             inLoadTracker.addPipeline(inboundPipeline);

@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * Base test class for testing CRDT thread safety and replication behaviour.
- * The test will spawn up to {@value CONCURRENCY} threads that will perform
+ * The test will spawn up to {@value #CONCURRENCY} threads that will perform
  * mutation on the provided hazelcast instance and it will additionally
  * "bounce" the hazelcast instances. This means that it rotates through the
  * instance collection, shutting down members and replacing them with new

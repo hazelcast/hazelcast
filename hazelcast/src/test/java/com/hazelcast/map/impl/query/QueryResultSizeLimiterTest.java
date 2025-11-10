@@ -17,9 +17,12 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -28,7 +31,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,10 +47,12 @@ import static com.hazelcast.spi.properties.ClusterProperty.QUERY_RESULT_SIZE_LIM
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -59,6 +63,8 @@ public class QueryResultSizeLimiterTest {
     private static final int PARTITION_COUNT = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
 
     private final Map<Integer, Integer> localPartitions = new HashMap<>();
+
+    private final LocalMapStatsImpl localMapStats = mock(LocalMapStatsImpl.class);
 
     private QueryResultSizeLimiter limiter;
 
@@ -183,13 +189,17 @@ public class QueryResultSizeLimiterTest {
         limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
-    @Test(expected = QueryResultSizeExceededException.class)
+    @Test
     public void testLocalPreCheckEnabledWitTwoPartitionsOverLimit() {
         int[] partitionsSizes = {1062, 1063};
         populatePartitions(partitionsSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        assertThrows(QueryResultSizeExceededException.class,
+                () -> limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME));
+
+        verify(localMapStats).incrementQueryResultSizeExceededCount();
+
     }
 
     @Test
@@ -254,6 +264,11 @@ public class QueryResultSizeLimiterTest {
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(mapServiceContext.getRecordStore(anyInt(), anyString())).thenReturn(recordStore);
         when(mapServiceContext.getCachedOwnedPartitions()).thenReturn(new PartitionIdSet(PARTITION_COUNT, localPartitions.keySet()));
+
+        LocalMapStatsProvider localMapStatsProvider = mock(LocalMapStatsProvider.class);
+        when(mapServiceContext.getLocalMapStatsProvider()).thenReturn(localMapStatsProvider);
+        when(localMapStatsProvider.hasLocalMapStatsImpl(anyString())).thenReturn(true);
+        when(localMapStatsProvider.getLocalMapStatsImpl(anyString())).thenReturn(localMapStats);
 
         limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResultSizeLimiterTest.class));
     }

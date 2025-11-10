@@ -41,8 +41,8 @@ import java.util.Collection;
 import static com.hazelcast.client.config.RoutingMode.ALL_MEMBERS;
 import static com.hazelcast.client.config.RoutingMode.MULTI_MEMBER;
 import static com.hazelcast.client.config.RoutingMode.SINGLE_MEMBER;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

@@ -17,11 +17,13 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
 
+import java.lang.invoke.VarHandle;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,10 +77,8 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class LocalMapStatsImpl implements LocalMapStats {
-    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
-            newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
-    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_UPDATE_TIME =
-            newUpdater(LocalMapStatsImpl.class, "lastUpdateTime");
+    private static final VarHandle LAST_ACCESS_TIME = ReflectionUtil.findVarHandle("lastAccessTime", long.class);
+    private static final VarHandle LAST_UPDATE_TIME = ReflectionUtil.findVarHandle("lastUpdateTime", long.class);
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> NUMBER_OF_OTHER_OPERATIONS =
             newUpdater(LocalMapStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> NUMBER_OF_EVENTS =
@@ -107,14 +107,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "totalSetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_REMOVE_LATENCIES =
             newUpdater(LocalMapStatsImpl.class, "totalRemoveLatenciesNanos");
-    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_GET_LATENCY =
-            newUpdater(LocalMapStatsImpl.class, "maxGetLatency");
-    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_PUT_LATENCY =
-            newUpdater(LocalMapStatsImpl.class, "maxPutLatency");
-    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_SET_LATENCY =
-            newUpdater(LocalMapStatsImpl.class, "maxSetLatency");
-    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
-            newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
+    private static final VarHandle MAX_GET_LATENCY = ReflectionUtil.findVarHandle("maxGetLatency", long.class);
+    private static final VarHandle MAX_PUT_LATENCY = ReflectionUtil.findVarHandle("maxPutLatency", long.class);
+    private static final VarHandle MAX_SET_LATENCY = ReflectionUtil.findVarHandle("maxSetLatency", long.class);
+    private static final VarHandle MAX_REMOVE_LATENCY = ReflectionUtil.findVarHandle("maxRemoveLatency", long.class);
 
     private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats =
             new ConcurrentHashMap<>();
@@ -349,12 +345,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
-    public long getValuesCallsCount() {
+    public long getValuesCallCount() {
         return valuesCount;
     }
 
     @Override
-    public long getEntrySetCallsCount() {
+    public long getEntrySetCallCount() {
         return entrySetCount;
     }
 
@@ -563,7 +559,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Override
     public void incrementQueryResultSizeExceededCount() {
         QUERY_LIMITER_HIT_COUNT.incrementAndGet(this);
     }

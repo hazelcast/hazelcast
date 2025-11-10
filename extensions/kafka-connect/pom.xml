@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>5.7.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -94,7 +94,7 @@
                         </goals>
                         <configuration>
                             <url>
-                                https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip
+                                https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-jdbc-10.8.4.zip
                             </url>
                             <unpack>false</unpack>
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
@@ -155,7 +155,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://repository.hazelcast.com/download/tests/mongo-kafka-connect-1.10.0-all.jar
+                            <url>https://repository.hazelcast.com/download/tests/mongo-kafka-connect-1.16.0-all.jar
                             </url>
                             <unpack>false</unpack>
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
@@ -181,6 +181,12 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
+            <version>${kafka.version}</version>
+        </dependency>
+        <!-- This jar is often used by connectors; was transitively included in Kafka < 3.9, now it must be explicit -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
         </dependency>
 
@@ -221,7 +227,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.7.9</version>
+            <version>3.9.1</version>
             <scope>test</scope>
         </dependency>
         <!-- Neo4J-->
@@ -245,7 +251,7 @@
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
-            <version>6.5.5.RELEASE</version>
+            <version>6.8.1.RELEASE</version>
             <scope>test</scope>
         </dependency>
         <!-- AWS SQS-->

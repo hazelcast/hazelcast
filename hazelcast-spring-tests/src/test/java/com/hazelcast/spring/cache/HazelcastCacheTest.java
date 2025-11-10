@@ -32,10 +32,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
@@ -163,27 +161,26 @@ class HazelcastCacheTest {
 
     @Test
     void testCacheRetrieveWithNull() {
-        assertThrows(NullPointerException.class, () -> cache.retrieve(null));
+        assertThrows(NullPointerException.class, () -> cache.get(null).get());
     }
 
     @Test
-    void testCacheRetrieveWithRandomKey() throws ExecutionException, InterruptedException {
+    void testCacheRetrieveWithRandomKey() {
         String key = createRandomKey();
-        CompletableFuture<?> resultFuture = cache.retrieve(key);
+        Cache.ValueWrapper valueWrapper = cache.get(key);
 
-        assertNotNull(resultFuture);
-        assertNull(resultFuture.get());
+        assertNull(valueWrapper);
     }
 
     @Test
-    void testCacheRetrieveWithExistingKey() throws ExecutionException, InterruptedException {
+    void testCacheRetrieveWithExistingKey() {
         String key = createRandomKey();
         cache.put(key, "test");
 
-        CompletableFuture<?> resultFuture = cache.retrieve(key);
+        Cache.ValueWrapper valueWrapper = cache.get(key);
 
-        assertNotNull(resultFuture);
-        assertThat(resultFuture.get()).isEqualTo("test");
+        assertNotNull(valueWrapper);
+        assertThat(valueWrapper.get()).isEqualTo("test");
     }
 
     private String createRandomKey() {

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("978872ab1cc6f85099dc7ca972101033")
+@Generated("3645370a849656980a7bc2424557d6ea")
 public final class JetExportSnapshotCodec {
     //hex: 0xFE0A00
     public static final int REQUEST_MESSAGE_TYPE = 16648704;
@@ -50,7 +50,6 @@ public final class JetExportSnapshotCodec {
     private JetExportSnapshotCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

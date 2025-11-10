@@ -57,9 +57,9 @@ abstract class MethodProbe implements ProbeFunction {
     /**
      * {@link MethodHandle} used to access primitives to avoid boxing, specifically to reduce redundant object creation.
      * <p>
-     * E.G. for a method that returns {@link long}, when typically invoked via reflection, an {@link Object} would instead be
-     * returned. The {@link long} would be boxed to {@link Long}, and then immediately unboxed again back to a {@link long} for
-     * returning from {@link LongProbeFunction#get(S)}.
+     * E.G. for a method that returns {@code long}, when typically invoked via reflection, an {@link Object} would instead be
+     * returned. The {@code long} would be boxed to {@link Long}, and then immediately unboxed again back to a {@code long} for
+     * returning from {@link LongProbeFunction#get(Object)}.
      * <p>
      * Faster than basic reflection, but slower than a {@link LambdaMetafactory} generated accessor.
      */
@@ -78,7 +78,7 @@ abstract class MethodProbe implements ProbeFunction {
     /**
      * A {@link Function} used to access instance methods returning objects (reference types)
      * <p>
-     * {@link Function#apply(T)}'s parameter is the instance to retrieve the value from.
+     * {@link Function#apply(Object)}'s parameter is the instance to retrieve the value from.
      *
      * @see #staticAccessor
      */

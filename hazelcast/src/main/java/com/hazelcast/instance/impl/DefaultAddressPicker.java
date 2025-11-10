@@ -124,7 +124,7 @@ class DefaultAddressPicker
                 logger.info("Using public address: " + publicAddress);
             } else {
                 publicAddress = bindAddress;
-                logger.finest("Using public address the same as the bind address: " + publicAddress);
+                logger.finest("Using public address the same as the bind address: %s", publicAddress);
             }
         } catch (Exception e) {
             ServerSocketChannel serverSocketChannel = getServerSocketChannel(endpointQualifier);

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * NOT reflected in the collection, and vice-versa.
  */
 @SuppressWarnings("unused")
-@Generated("35c11d15e2bfa5402b610bd6872faaa1")
+@Generated("27590b5c7d4ec4608e048bbaed820c96")
 public final class MultiMapRemoveEntryCodec {
     //hex: 0x021500
     public static final int REQUEST_MESSAGE_TYPE = 136448;
@@ -52,7 +52,6 @@ public final class MultiMapRemoveEntryCodec {
     private MultiMapRemoveEntryCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

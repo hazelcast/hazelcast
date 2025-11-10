@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_LASTINDEXOF}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListLastIndexOfCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListLastIndexOfMessageTask
         extends AbstractListMessageTask<ListLastIndexOfCodec.RequestParameters> {

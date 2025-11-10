@@ -407,11 +407,15 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(valueHalfFullCost > valueEmptyCost && valueHalfFullCost < valueFullCost);
 
         // 'force' some extra pages to be allocated
-        for (int i = 10000; i < 15000; ++i) {
+        for (int i = 10000; i < 20000; ++i) {
             map.put(i, i);
         }
-        assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
-        assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
+        assertThat(keyStats().getMemoryCost())
+                .as("full cost: %d, half cost: %d, empty cost: %d", keyFullCost, keyHalfFullCost, keyEmptyCost)
+                .isGreaterThan(keyHalfFullCost);
+        assertThat(valueStats().getMemoryCost())
+                .as("full cost: %d, half cost: %d, empty cost: %d", valueFullCost, valueHalfFullCost, valueEmptyCost)
+                .isGreaterThan(valueHalfFullCost);
 
         for (int i = 0; i < 5000; ++i) {
             map.set(i, i * i);

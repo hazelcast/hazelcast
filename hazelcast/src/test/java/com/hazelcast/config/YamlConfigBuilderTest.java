@@ -4295,6 +4295,84 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     }
 
+    @Override
+    @Test
+    public void testMultipleClientEndpointConfigs_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              client-server-socket-endpoint-config: {}
+              client-server-socket-endpoint-config: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleRestEndpointConfigs_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              rest-server-socket-endpoint-config: {}
+              rest-server-socket-endpoint-config: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemcacheEndpointConfigs_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              memcache-server-socket-endpoint-config: {}
+              memcache-server-socket-endpoint-config: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleJoinElements_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              join: {}
+              join: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleFailureDetectorElements_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              failure-detector: {}
+              failure-detector: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemberAddressProviderElements_throwsException() {
+        String yaml = """
+            hazelcast:
+            advanced-network:
+              member-address-provider: {}
+              member-address-provider: {}""";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
     @Test
     public void outboundPorts_asObject_ParsingTest() {
         String yaml = """
@@ -4305,7 +4383,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       more-ports: 2600-3500
                 """;
         Config actual = buildConfig(yaml);
-        assertEquals(new HashSet<>(asList("2500-3000", "2600-3500")), actual.getNetworkConfig().getOutboundPortDefinitions());
+        assertEquals(Set.of("2500-3000", "2600-3500"), actual.getNetworkConfig().getOutboundPortDefinitions());
     }
 
     @Test
@@ -4318,7 +4396,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       - 2500
                 """;
         Config actual = buildConfig(yaml);
-        assertEquals(new HashSet<>(asList("2500", "1234-1999")), actual.getNetworkConfig().getOutboundPortDefinitions());
+        assertEquals(Set.of("2500", "1234-1999"), actual.getNetworkConfig().getOutboundPortDefinitions());
     }
 
     @Override
@@ -5273,6 +5351,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                     port: 8080
                     security-realm: realmName
                     token-validity-seconds: 500
+                    max-login-attempts: 10
+                    lockout-duration-seconds: 10
                     ssl:
                       enabled: true
                       client-auth: NEED
@@ -5549,55 +5629,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 """;
 
         Config config = buildConfig(yaml);
-    }
-
-    @Override
-    @Test
-    public void testDiagnosticsConfig() {
-
-        DiagnosticsConfig cfg = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(60)
-                .setMaxRolledFileCount(15)
-                .setOutputType(DiagnosticsOutputType.STDOUT)
-                .setLogDirectory("/src/user")
-                .setFileNamePrefix("mylogs")
-                .setIncludeEpochTime(true);
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
-
-        DiagnosticsConfig cfgBuild = buildConfig(getDiagnosticsConfig(cfg)).getDiagnosticsConfig();
-
-        assertThat(cfgBuild).isEqualTo(cfg);
-    }
-
-    private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
-        String yaml = String.format("""
-                        hazelcast:
-                          diagnostics:
-                            enabled: %s
-                            max-rolled-file-size-mb: %d
-                            max-rolled-file-count: %d
-                            include-epoch-time: %s
-                            log-directory: %s
-                            file-name-prefix: %s
-                            output-type: %s
-                        """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
-                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType());
-
-
-        if (!cfg.getPluginProperties().isEmpty()) {
-            yaml += """
-                        plugin-properties:
-                    """;
-        }
-
-        for (Map.Entry entry : cfg.getPluginProperties().entrySet()) {
-            yaml += String.format("""
-                            %s: %s
-                    """, entry.getKey(), entry.getValue());
-        }
-        return yaml;
     }
 
     private String simpleVectorCollectionBackupCountConfig(int count) {

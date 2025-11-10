@@ -542,7 +542,7 @@ public class HTTPCommunicator {
 
     private void logRequest(String method, String url) {
         if (logger != null && logger.isFineEnabled()) {
-            logger.fine("Sending " + method + " request to " + url);
+            logger.fine("Sending %s request to %s", method, url);
         }
     }
 

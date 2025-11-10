@@ -443,7 +443,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             } else {
                 ILogger logger = getLogger();
                 if (logger.isFineEnabled()) {
-                    logger.fine("Received false response from migration destination -> " + migrationInfo);
+                    logger.fine("Received false response from migration destination -> %s", migrationInfo);
                 }
                 completeMigration(false);
             }

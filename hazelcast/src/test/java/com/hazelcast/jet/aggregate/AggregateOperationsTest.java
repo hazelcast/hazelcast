@@ -40,9 +40,9 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -371,7 +371,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_toSet() {
         validateOpWithoutDeduct(
-                toSet(), identity(), 1, 2, singleton(1), new HashSet<>(asList(1, 2)), new HashSet<>(asList(1, 2)));
+                toSet(), identity(), 1, 2, singleton(1), Set.of(1, 2), Set.of(1, 2));
     }
 
     @Test

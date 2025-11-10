@@ -108,7 +108,7 @@ public class SqlConfig {
      * Allows to configure reflection protection filter.
      * Enable the configuration of restrictions on class usage in SQL mapping and UDT.
      *
-     * @param JavaSerializationFilterConfig the filter config to set (may be {@code null})
+     * @param javaReflectionFilterConfig the filter config to set (may be {@code null})
      */
     public void setJavaReflectionFilterConfig(JavaSerializationFilterConfig javaReflectionFilterConfig) {
         this.javaReflectionFilterConfig = javaReflectionFilterConfig;

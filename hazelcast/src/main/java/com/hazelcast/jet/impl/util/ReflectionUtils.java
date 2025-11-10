@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.JetException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
@@ -102,7 +101,7 @@ public final class ReflectionUtils {
             throw new JetException(String.format("Default constructor of %s class %s is not accessible", type, typeName));
         } catch (InvocationTargetException e) {
             throw new JetException(
-                    String.format("%s class %s failed on construction: %s", type, typeName, e.getMessage()));
+                    String.format("%s class %s failed on construction: %s", type, typeName, e.getMessage()), e);
         } catch (Exception e) {
             throw new JetException(e);
         }
@@ -275,8 +274,8 @@ public final class ReflectionUtils {
     }
 
     @Nonnull
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
-            "False positive on try-with-resources as of JDK11")
+//    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
+//            "False positive on try-with-resources as of JDK11")
     public static Collection<Class<?>> nestedClassesOf(Class<?>... classes) {
         ClassGraph classGraph = new ClassGraph()
                 .enableClassInfo()
@@ -301,8 +300,8 @@ public final class ReflectionUtils {
     }
 
     @Nonnull
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
-            "False positive on try-with-resources as of JDK11")
+//    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
+//            "False positive on try-with-resources as of JDK11")
     public static Resources resourcesOf(String... packages) {
         String[] paths = stream(packages).map(ReflectionUtils::toPath).toArray(String[]::new);
         ClassGraph classGraph = new ClassGraph()

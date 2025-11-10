@@ -22,7 +22,6 @@ import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.TcpServer;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -51,13 +50,15 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     private static final double HUNDRED = 100d;
 
     private final NioNetworking networking;
-    private final long periodMillis;
+    private final HazelcastProperties properties;
+    private long periodMillis;
 
-    public NetworkingImbalancePlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingImbalancePlugin.class));
+
+    public NetworkingImbalancePlugin(ILogger logger, HazelcastProperties properties, Server server) {
+        this(logger, properties, getThreadingModel(server));
     }
 
-    public NetworkingImbalancePlugin(HazelcastProperties properties, Networking networking, ILogger logger) {
+    public NetworkingImbalancePlugin(ILogger logger, HazelcastProperties properties, Networking networking) {
         super(logger);
 
         if (networking instanceof NioNetworking nioNetworking) {
@@ -65,11 +66,16 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
         } else {
             this.networking = null;
         }
-        this.periodMillis = this.networking == null ? 0 : properties.getMillis(PERIOD_SECONDS);
+        this.properties = properties;
+        readProperties();
     }
 
-    private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
-        Server server = nodeEngine.getNode().getServer();
+    @Override
+    void readProperties() {
+        this.periodMillis = this.networking == null ? 0 : properties.getMillis(overrideProperty(PERIOD_SECONDS));
+    }
+
+    private static Networking getThreadingModel(Server server) {
         if (!(server instanceof TcpServer)) {
             return null;
         }
@@ -83,11 +89,21 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis);
     }
 
     @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("NetworkingImbalance");
 
         writer.startSection("InputThreads");

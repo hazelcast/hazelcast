@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +48,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         counter.add("key1", 1);
         counter.add("key2", 1);
 
-        assertEquals(new HashSet<>(asList("key1", "key2")), counter.keySet());
+        assertEquals(Set.of("key1", "key2"), counter.keySet());
     }
 
     @Test

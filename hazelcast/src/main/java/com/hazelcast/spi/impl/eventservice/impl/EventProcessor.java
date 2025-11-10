@@ -87,7 +87,7 @@ public class EventProcessor implements StripedRunnable {
         if (registration == null) {
             if (eventService.nodeEngine.isRunning()) {
                 if (eventService.logger.isFinestEnabled()) {
-                    eventService.logger.finest("No registration found for " + serviceName + " / " + id);
+                    eventService.logger.finest("No registration found for %s / %s", serviceName, id);
                 }
             }
             return null;

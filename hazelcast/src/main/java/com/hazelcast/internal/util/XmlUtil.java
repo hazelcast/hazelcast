@@ -155,7 +155,7 @@ public final class XmlUtil {
                 transformerFactory.setAttribute("indent-number", indent);
             } catch (IllegalArgumentException e) {
                 if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Failed to set indent-number attribute; cause: " + e.getMessage());
+                    LOGGER.finest("Failed to set indent-number attribute; cause: %s", e.getMessage());
                 }
             }
             Transformer transformer = transformerFactory.newTransformer();
@@ -172,7 +172,7 @@ public final class XmlUtil {
                 transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
             } catch (IllegalArgumentException e) {
                 if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Failed to set indent-amount property; cause: " + e.getMessage());
+                    LOGGER.finest("Failed to set indent-amount property; cause: %s", e.getMessage());
                 }
             }
             transformer.transform(xmlInput, xmlOutput);

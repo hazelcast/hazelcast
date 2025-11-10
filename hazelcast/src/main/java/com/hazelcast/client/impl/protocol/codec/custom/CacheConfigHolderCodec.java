@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("705b43e6a31e8cf1dc1486405639aeef")
+@Generated("5e0b95f82c7e559ff2bf62a4ca180393")
 public final class CacheConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -62,8 +62,8 @@ public final class CacheConfigHolderCodec {
         CodecUtil.encodeNullable(clientMessage, cacheConfigHolder.getWanReplicationRef(), WanReplicationRefCodec::encode);
         StringCodec.encode(clientMessage, cacheConfigHolder.getKeyClassName());
         StringCodec.encode(clientMessage, cacheConfigHolder.getValueClassName());
-        CodecUtil.encodeNullable(clientMessage, cacheConfigHolder.getCacheLoaderFactory(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, cacheConfigHolder.getCacheWriterFactory(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, cacheConfigHolder.getCacheLoaderFactory());
+        DataCodec.encodeNullable(clientMessage, cacheConfigHolder.getCacheWriterFactory());
         DataCodec.encode(clientMessage, cacheConfigHolder.getExpiryPolicyFactory());
         CodecUtil.encodeNullable(clientMessage, cacheConfigHolder.getHotRestartConfig(), HotRestartConfigCodec::encode);
         CodecUtil.encodeNullable(clientMessage, cacheConfigHolder.getEventJournalConfig(), EventJournalConfigCodec::encode);
@@ -100,8 +100,8 @@ public final class CacheConfigHolderCodec {
         com.hazelcast.config.WanReplicationRef wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
         java.lang.String keyClassName = StringCodec.decode(iterator);
         java.lang.String valueClassName = StringCodec.decode(iterator);
-        com.hazelcast.internal.serialization.Data cacheLoaderFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data cacheWriterFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data cacheLoaderFactory = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data cacheWriterFactory = DataCodec.decodeNullable(iterator);
         com.hazelcast.internal.serialization.Data expiryPolicyFactory = DataCodec.decode(iterator);
         com.hazelcast.config.HotRestartConfig hotRestartConfig = CodecUtil.decodeNullable(iterator, HotRestartConfigCodec::decode);
         com.hazelcast.config.EventJournalConfig eventJournalConfig = CodecUtil.decodeNullable(iterator, EventJournalConfigCodec::decode);

@@ -138,7 +138,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -310,13 +309,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // OverridePropertyRule can't be used here since the Spring context
         // with the Hazelcast instance is created before the rules
         System.clearProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName());
-        HazelcastInstanceFactory.terminateAll();
     }
 
 
     @AfterAll
     static void stop() {
-        HazelcastInstanceFactory.terminateAll();
         System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "1");
     }
 

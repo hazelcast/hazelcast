@@ -23,13 +23,13 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-parent</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>5.7.0-SNAPSHOT</version>
         <relativePath>hazelcast-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>6.0.0-SNAPSHOT</version>
+    <version>5.7.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -736,7 +736,8 @@
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
+                            <stagingProfileId>com.hazelcast</stagingProfileId>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         </configuration>
                     </plugin>
@@ -1068,13 +1069,13 @@
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-jupiter</artifactId>
-            <version>2.1.7</version>
+            <version>${system-stubs.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-junit4</artifactId>
-            <version>2.1.7</version>
+            <version>${system-stubs.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -1110,8 +1111,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -1128,13 +1129,12 @@
         <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
             <artifactId>equalsverifier</artifactId>
-            <version>3.19.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>11.0.2</version>
+            <version>11.0.13</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

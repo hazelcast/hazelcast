@@ -76,7 +76,6 @@ public interface SecurityContext {
      *
      * @param configuration JAAS configuration object
      * @param clusterName cluster name
-     * @param credentials credentials
      * @param remoteAddress address of the HTTP client
      * @return {@link LoginContext}
      * @throws LoginException in case of any exceptional case

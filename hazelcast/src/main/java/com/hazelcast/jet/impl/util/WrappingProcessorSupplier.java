@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Collection;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -35,7 +36,8 @@ import static com.hazelcast.jet.impl.util.Util.toList;
  * with one that will wrap its processors using {@code wrapperSupplier}.
  */
 public final class WrappingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private ProcessorSupplier wrapped;
     private FunctionEx<Processor, Processor> wrapperSupplier;
 

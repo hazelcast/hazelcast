@@ -25,7 +25,7 @@ import java.util.Map;
  * A {@code VectorValues} instance contains the vectors that describe a {@link VectorDocument}.
  * {@code VectorValues} may come in different forms:
  * <ul>
- *     <li>When a single vector index is defined in a {@link VectorCollection}, then a plain
+ *     <li>When a single vector index is defined in a {@code VectorCollection}, then a plain
  *     {@code float[]} can be used, as defined in {@link SingleVectorValues}</li>
  *     <li>When more than one vector index is defined, then the vector representation of a
  *     {@link VectorDocument} requires a mapping from index name to the associated
@@ -45,7 +45,7 @@ public interface VectorValues {
     }
 
     /**
-     * Provides a mapping from index name to vector, supplying vectors for a {@link VectorCollection}
+     * Provides a mapping from index name to vector, supplying vectors for a {@code VectorCollection}
      * with multiple indexes defined.
      */
     interface MultiIndexVectorValues extends VectorValues {
@@ -53,7 +53,7 @@ public interface VectorValues {
     }
 
     /**
-     * Returns a {@code VectorValues} object suitable for supplying a single vector to a {@link VectorCollection}
+     * Returns a {@code VectorValues} object suitable for supplying a single vector to a {@code VectorCollection}
      * configured with one vector index.
      *
      * @param vector the vector

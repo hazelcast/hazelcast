@@ -25,7 +25,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
-import org.junit.jupiter.api.Tag;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -40,12 +40,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static com.hazelcast.test.annotation.QuickTest.QUICK_TEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
-@Tag(QUICK_TEST)
+@QuickTest
 @WireMockTest
 class StsDetermineRootNameTest {
 

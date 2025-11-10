@@ -15,6 +15,8 @@
  */
 package com.hazelcast.config;
 
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsOutputType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -53,6 +55,7 @@ public class DiagnosticsConfigTest {
                 .setOutputType(DiagnosticsOutputType.STDOUT)
                 .setMaxRolledFileSizeInMB(99)
                 .setMaxRolledFileCount(89)
+                .setAutoOffDurationInMinutes(5)
                 .setEnabled(true);
         config.getPluginProperties().put("prop1", "prop1");
 
@@ -63,17 +66,33 @@ public class DiagnosticsConfigTest {
         assertEquals(config.isEnabled(), deserializedConfig.isEnabled());
         assertEquals(config.getPluginProperties(), deserializedConfig.getPluginProperties());
         assertEquals(config.getMaxRolledFileCount(), deserializedConfig.getMaxRolledFileCount());
-        assertEquals(config.getMaxRolledFileSizeInMB(), deserializedConfig.getMaxRolledFileSizeInMB());
+        assertEquals(config.getMaxRolledFileSizeInMB(), deserializedConfig.getMaxRolledFileSizeInMB(), 0);
         assertEquals(config.getLogDirectory(), deserializedConfig.getLogDirectory());
         assertEquals(config.getFileNamePrefix(), deserializedConfig.getFileNamePrefix());
         assertEquals(config.getOutputType(), deserializedConfig.getOutputType());
         assertEquals(config.isIncludeEpochTime(), deserializedConfig.isIncludeEpochTime());
+        assertEquals(config.getAutoOffDurationInMinutes(), deserializedConfig.getAutoOffDurationInMinutes());
+    }
+
+    @Test
+    public void TestDiagnosticsConfigSetNull() {
+        DiagnosticsConfig config = new DiagnosticsConfig();
+
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileCount(-1));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileSizeInMB(-1));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileSizeInMB(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxRolledFileCount(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setLogDirectory(""));
+        assertThrows(IllegalStateException.class, () -> config.setAutoOffDurationInMinutes(0));
+        config.setFileNamePrefix("");
+        config.setFileNamePrefix(null);
+        assertThrows(NullPointerException.class, () -> config.setOutputType(null));
     }
 
     @Test
     public void testNullAssigmentThrowsException() {
         DiagnosticsConfig config = new DiagnosticsConfig();
-        assertThrows(NullPointerException.class, () -> config.setLogDirectory(null));
+        assertThrows(IllegalArgumentException.class, () -> config.setLogDirectory(null));
         assertThrows(NullPointerException.class, () -> config.setOutputType(null));
     }
 

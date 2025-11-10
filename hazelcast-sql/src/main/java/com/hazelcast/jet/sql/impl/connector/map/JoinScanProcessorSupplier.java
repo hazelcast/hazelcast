@@ -34,7 +34,6 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -49,10 +48,10 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 
-@SuppressFBWarnings(
-        value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
-        justification = "the class is never java-serialized"
-)
+//@SuppressFBWarnings(
+//        value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
+//        justification = "the class is never java-serialized"
+//)
 final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
     private JetJoinInfo joinInfo;

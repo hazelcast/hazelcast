@@ -28,6 +28,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -446,4 +447,11 @@ public interface NodeExtension {
     default Object getLicense() {
         return null;
     }
+
+    /**
+     * Creates and implementation of the {@link HealthMonitor} depending on Hazelcast edition.
+     *
+     * @return a new {@link HealthMonitor} instance for this member
+     */
+    HealthMonitor createHealthMonitor();
 }

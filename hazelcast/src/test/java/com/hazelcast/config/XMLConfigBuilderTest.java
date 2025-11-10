@@ -49,7 +49,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -892,7 +891,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <backup-count>1</backup-count>"
                 + "    <async-backup-count>0</async-backup-count>"
                 + "    <time-to-live-seconds>0</time-to-live-seconds>"
-                + "    <max-idle-seconds>0</max-idle-seconds>    "
+                + "    <max-idle-seconds>0</max-idle-seconds>"
                 + "    <eviction eviction-policy=\"NONE\" max-size-policy=\"per_partition\" size=\"0\"/>"
                 + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "</map>"
@@ -917,7 +916,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"expiry\">"
                 + "    <time-to-live-seconds>2147483647</time-to-live-seconds>"
-                + "    <max-idle-seconds>2147483647</max-idle-seconds>    "
+                + "    <max-idle-seconds>2147483647</max-idle-seconds>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
 
@@ -4274,7 +4273,94 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Ignore("XSD validation allows multiple config, no programmatic validation is implemented")
+    @Test
+    public void testMultipleClientEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <client-server-socket-endpoint-config name=\"client-1\"/>"
+                + "  <client-server-socket-endpoint-config name=\"client-2\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleRestEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <rest-server-socket-endpoint-config name=\"rest-1\"/>"
+                + "  <rest-server-socket-endpoint-config name=\"rest-2\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemcacheEndpointConfigs_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <memcache-server-socket-endpoint-config name=\"mc-1\"/>"
+                + "  <memcache-server-socket-endpoint-config name=\"mc-2\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleJoinElements_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <join><auto-detection enabled=\"true\"/></join>"
+                + "  <join><auto-detection enabled=\"false\"/></join>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleFailureDetectorElements_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <failure-detector enabled=\"true\"/>"
+                + "  <failure-detector enabled=\"false\"/>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemberAddressProviderElements_throwsException() {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <member-address-provider enabled=\"true\">"
+                + "    <class-name>com.acme.DummyProvider</class-name>"
+                + "  </member-address-provider>"
+                + "  <member-address-provider enabled=\"true\">"
+                + "    <class-name>com.acme.DummyProvider</class-name>"
+                + "  </member-address-provider>"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(xml);
+    }
+
+    @Override
     @Test
     public void testMultipleMemberEndpointConfigs_throwsException() {
         String xml = HAZELCAST_START_TAG
@@ -5107,55 +5193,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
     }
 
-    @Override
-    public void testDiagnosticsConfig() {
-        DiagnosticsConfig cfg = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(60)
-                .setMaxRolledFileCount(15)
-                .setOutputType(DiagnosticsOutputType.STDOUT)
-                .setLogDirectory("/src/user")
-                .setFileNamePrefix("mylogs")
-                .setIncludeEpochTime(true);
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
-        cfg.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
-
-        DiagnosticsConfig cfgBuild = buildConfig(getDiagnosticsConfig(cfg)).getDiagnosticsConfig();
-
-        assertThat(cfgBuild).isEqualTo(cfg);
-    }
-
-    private String getDiagnosticsConfig(DiagnosticsConfig cfg) {
-        String xml = String.format(HAZELCAST_START_TAG + """
-                        <diagnostics enabled="%s">
-                        <max-rolled-file-size-mb>%d</max-rolled-file-size-mb>
-                        <max-rolled-file-count>%d</max-rolled-file-count>
-                        <include-epoch-time>%s</include-epoch-time>
-                        <log-directory>%s</log-directory>
-                        <file-name-prefix>%s</file-name-prefix>
-                        <output-type>%s</output-type>
-                        """, cfg.isEnabled(), cfg.getMaxRolledFileSizeInMB(), cfg.getMaxRolledFileCount(), cfg.isIncludeEpochTime(),
-                cfg.getLogDirectory(), cfg.getFileNamePrefix(), cfg.getOutputType());
-
-
-        if (!cfg.getPluginProperties().isEmpty()) {
-            xml += "<plugin-properties>";
-        }
-
-        for (Map.Entry entry : cfg.getPluginProperties().entrySet()) {
-            xml += String.format("""
-                            <property name="%s">%s</property>
-                    """, entry.getKey(), entry.getValue());
-        }
-
-        if (!cfg.getPluginProperties().isEmpty()) {
-            xml += "</plugin-properties></diagnostics>" + HAZELCAST_END_TAG;
-        } else {
-            xml += "</diagnostics>" + HAZELCAST_END_TAG;
-        }
-        return xml;
-    }
-
     private String simpleVectorCollectionBackupCountConfig(int count) {
         return simpleVectorCollectionBackupCountConfig("backup-count", count);
     }
@@ -5204,6 +5241,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <port>8080</port>\n"
                 + "        <security-realm>realmName</security-realm>\n"
                 + "        <token-validity-seconds>500</token-validity-seconds>\n"
+                + "        <max-login-attempts>10</max-login-attempts>\n"
+                + "        <lockout-duration-seconds>10</lockout-duration-seconds>\n"
                 + "        <ssl enabled=\"true\">\n"
                 + "            <client-auth>NEED</client-auth>\n"
                 + "            <ciphers>TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256</ciphers>\n"

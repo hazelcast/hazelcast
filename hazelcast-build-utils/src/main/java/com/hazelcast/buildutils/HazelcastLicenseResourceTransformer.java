@@ -69,7 +69,7 @@ public class HazelcastLicenseResourceTransformer implements ReproducibleResource
         processResource(resource, is, relocators, 0);
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
+    @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:JavadocVariable"})
     static class LicenseHolder {
         public static final byte[] LICENSE;
 

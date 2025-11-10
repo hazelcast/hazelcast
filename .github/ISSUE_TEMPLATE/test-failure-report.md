@@ -2,7 +2,7 @@
 name: test-failure report
 about: Template for test failures in testsuite
 title: INSERT_FULL_TEST_NAME_HERE
-labels: ['Type: Test-Failure']
+labels: ['Type: Test Failure']
 assignees: ''
 
 ---

@@ -16,12 +16,23 @@
 
 package com.hazelcast.test.annotation;
 
+import org.junit.jupiter.api.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Annotates tests which are too slow for the PR builder.
  * <p>
  * Will be executed in nightly builds and for code coverage measurements.
  *
- * @see {@link QuickTest}
+ * @see QuickTest
  */
-public final class SlowTest {
+@Retention(RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.test.annotation.SlowTest")
+public @interface SlowTest {
 }

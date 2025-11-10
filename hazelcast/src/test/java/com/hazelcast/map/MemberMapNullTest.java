@@ -23,6 +23,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,16 +57,37 @@ public class MemberMapNullTest extends AbstractMapNullTest {
 
     @Override
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public void testNullability() {
-        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, ""));
-        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null));
-        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, "", -1, TimeUnit.SECONDS));
-        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null, -1, TimeUnit.SECONDS));
+        super.testNullability();
+    }
+
+    @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    protected void testNullability(Object key, Object value) {
+        super.testNullability(key, value);
+
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(key, ""));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", value));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(key, "", -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", value, -1, TimeUnit.SECONDS));
         assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, null));
-        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, "", -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
-        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null, -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(key, "", -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", value, -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
         assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, null, -1, TimeUnit.SECONDS));
         assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, TimeUnit.SECONDS, -1, null));
+    }
+
+    @Test
+    @Ignore("Needs additional validation in member proxy - HZG-446")
+    @Override
+    public void testNullabilityNullHeapData() {
+        super.testNullabilityNullHeapData();
+    }
+
+    @Test
+    @Ignore("Needs additional validation in member proxy - HZG-446")
+    @Override
+    public void testNullabilityEmptyHeapData() {
+        super.testNullabilityEmptyHeapData();
     }
 }

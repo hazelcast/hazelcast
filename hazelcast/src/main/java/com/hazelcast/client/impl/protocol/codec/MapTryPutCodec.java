@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * thus the put operation is not successful.
  */
 @SuppressWarnings("unused")
-@Generated("1ed76f559a51c1b4bd733c6c1f2bfa5a")
+@Generated("382e85c4670e297484b652c8203831df")
 public final class MapTryPutCodec {
     //hex: 0x010C00
     public static final int REQUEST_MESSAGE_TYPE = 68608;
@@ -54,7 +54,6 @@ public final class MapTryPutCodec {
     private MapTryPutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

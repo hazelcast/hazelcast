@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the value associated with the key in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("c12c08bec10643ff471c3302278dc8d5")
+@Generated("f0f3b3bfcfa7717ff9f61b3f5573c584")
 public final class CPMapRemoveCodec {
     //hex: 0x230400
     public static final int REQUEST_MESSAGE_TYPE = 2294784;
@@ -49,7 +49,6 @@ public final class CPMapRemoveCodec {
     private CPMapRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -100,7 +99,7 @@ public final class CPMapRemoveCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -111,6 +110,6 @@ public final class CPMapRemoveCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

@@ -5,49 +5,12 @@ on:
     types: labeled
 
 jobs:
-  createJiraIssue:
-    if: ${{ github.event.label.name == 'to-jira' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Identify team name
-        id: get-team
-        uses: actions/github-script@v7
-        with:
-          result-encoding: string
-          script: |
-            const labels = ${{ toJson(github.event.issue.labels) }}
-            const teamLabel = labels.find(label => label.name.includes('Team: '))?.name || ""
-            const team = teamLabel.replace('Team: ','')
-            console.log("Team: " + team)
-            return team
-      - name: Identify issue type
-        id: get-issue-type
-        uses: actions/github-script@v7
-        with:
-          result-encoding: string
-          script: |
-            const labels = ${{ toJson(github.event.issue.labels) }}
-            const issueType = labels.some(label => label.name.includes('Test-Failure')) 
-              ? "Test Failure" 
-              : "Bug"
-            console.log("Issue type: " + issueType)  
-            return issueType           
-      - name: Create jira issue
-        uses: hazelcast/github-jira-tool-action@v5
-        with:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          TARGET_JIRA_PROJECT: HZ
-          ISSUE_TYPE: ${{ steps.get-issue-type.outputs.result }}
-          JIRA_LABEL: from-gh
-          TEAM_NAME: ${{ steps.get-team.outputs.result }}
   createClientJiraIssue:
-    if: ${{ github.event.label.name == 'to-client-jira' }}
+    if: "${{ github.event.label.name == 'Action: Create Client Jira' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Create jira issue
-        uses: hazelcast/github-jira-tool-action@v5
+        uses: hazelcast/github-jira-tool-action@v6
         with:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
@@ -56,16 +19,16 @@ jobs:
           JIRA_LABEL: Java
           ISSUE_TYPE: Bug
   createGuardiansJiraIssue:
-    if: ${{ github.event.label.name == 'tf-to-hzg' }}
+    if: "${{ github.event.label.name == 'Action: Create CTT Jira' }}"
     runs-on: ubuntu-latest
     steps:
-      - name: Create HZG Jira Test Failure issue
+      - name: Create CTT Jira Test Failure issue
         uses: hazelcast/github-jira-tool-action@v6
         with:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          TARGET_JIRA_PROJECT: HZG
+          TARGET_JIRA_PROJECT: CTT
           ISSUE_TYPE: Test Failure
           JIRA_LABEL: from-gh
           # Custom fields must be provided with their IDs, which can be found using the following:

@@ -69,7 +69,7 @@ import static org.junit.Assert.assertTrue;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
-    private final Random random = new Random();
+    private Random random = new Random();
 
     private TestHazelcastInstanceFactory nodeFactory;
     private ExecutorService executor;

@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hazelcast.internal.cluster.Versions.V6_0;
+import static com.hazelcast.internal.cluster.Versions.V5_6;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -167,7 +167,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      *
      * @return the backupCount for this {@code VectorCollection}
      * @see #getAsyncBackupCount()
-     * @since 6.0
+     * @since 5.6
      */
     public int getBackupCount() {
         return backupCount;
@@ -181,7 +181,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      * @param backupCount the number of synchronous backups to set for this {@code VectorCollection}
      * @return the updated {@link VectorCollectionConfig}
      * @see #setAsyncBackupCount(int)
-     * @since 6.0
+     * @since 5.6
      */
     public VectorCollectionConfig setBackupCount(final int backupCount) {
         this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
@@ -193,7 +193,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      *
      * @return the asynchronous backup count
      * @see #setBackupCount(int)
-     * @since 6.0
+     * @since 5.6
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
@@ -209,7 +209,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      *                                  backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
-     * @since 6.0
+     * @since 5.6
      */
     public VectorCollectionConfig setAsyncBackupCount(int asyncBackupCount) {
         this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
@@ -220,7 +220,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
      * Returns the total number of backups: backupCount plus asyncBackupCount.
      *
      * @return the total number of backups: synchronous + asynchronous
-     * @since 6.0
+     * @since 5.6
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
@@ -229,7 +229,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     /**
      * {@inheritDoc}
      *
-     * @since 6.0
+     * @since 5.6
      */
     @Override
     public String getSplitBrainProtectionName() {
@@ -239,7 +239,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     /**
      * {@inheritDoc}
      *
-     * @since 6.0
+     * @since 5.6
      */
     @Override
     public VectorCollectionConfig setSplitBrainProtectionName(@Nullable String splitBrainProtectionName) {
@@ -250,7 +250,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     /**
      * {@inheritDoc}
      *
-     * @since 6.0
+     * @since 5.6
      */
     @Override
     public MergePolicyConfig getMergePolicyConfig() {
@@ -260,7 +260,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     /**
      * {@inheritDoc}
      *
-     * @since 6.0
+     * @since 5.6
      */
     @Override
     public VectorCollectionConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
@@ -272,7 +272,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         // RU_COMPAT_5_5
-        if (out.getVersion().isGreaterOrEqual(V6_0)) {
+        if (out.getVersion().isGreaterOrEqual(V5_6)) {
             out.writeInt(backupCount);
             out.writeInt(asyncBackupCount);
             out.writeString(splitBrainProtectionName);
@@ -287,7 +287,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
         vectorIndexConfigs.clear();
         name = in.readString();
         // RU_COMPAT_5_5
-        if (in.getVersion().isGreaterOrEqual(V6_0)) {
+        if (in.getVersion().isGreaterOrEqual(V5_6)) {
             backupCount = in.readInt();
             asyncBackupCount = in.readInt();
             splitBrainProtectionName = in.readString();
@@ -374,7 +374,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
 
     /**
      *
-     * @since 6.0
+     * @since 5.6
      */
     @Override
     @Nullable
@@ -384,7 +384,7 @@ public class VectorCollectionConfig implements NamedConfig, IdentifiedDataSerial
 
     /**
      *
-     * @since 6.0
+     * @since 5.6
      */
     @Override
     public VectorCollectionConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {

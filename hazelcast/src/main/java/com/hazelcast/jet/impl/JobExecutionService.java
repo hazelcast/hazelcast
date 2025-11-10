@@ -83,7 +83,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
-import static java.util.Collections.newSetFromMap;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -120,7 +120,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private final TaskletExecutionService taskletExecutionService;
     private final JobClassLoaderService jobClassloaderService;
 
-    private final Set<Long> executionContextJobIds = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<Long> executionContextJobIds = ConcurrentHashMap.newKeySet();
 
     // key: executionId
     private final ConcurrentMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
@@ -537,7 +537,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         }
                         executionCompleted.inc();
                         executionContextJobIds.remove(executionContext.jobId());
-                        logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
+                        logger.fine("Completed execution of %s", executionContext.jobNameAndExecutionId());
                     }));
         } else {
             return completedFuture(null);
@@ -586,17 +586,18 @@ public class JobExecutionService implements DynamicMetricsProvider {
                                     return metrics;
                                   }
                                   throw sneakyThrow(e);
-                              })
+                              }),
+                              nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR)
                       )
                       .thenCompose(stage -> stage)
                       .whenComplete((metrics, e) -> {
                           if (ExceptionUtil.isOrHasCause(e, CancellationException.class)) {
-                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
+                              logger.fine("Execution of %s was cancelled", execCtx.jobNameAndExecutionId());
                           } else if (e != null) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
                                       + " completed with failure", e);
                           } else {
-                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
+                              logger.fine("Execution of %s completed", execCtx.jobNameAndExecutionId());
                           }
                       });
     }
@@ -667,8 +668,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     for (long executionId : r) {
                         ExecutionContext execCtx = executionContexts.get(executionId);
                         if (execCtx != null) {
-                            logger.fine("Terminating light job " + idToString(executionId)
-                                    + " because the coordinator doesn't know it");
+                            logger.fine("Terminating light job %s because the coordinator doesn't know it",
+                                    idToString(executionId));
                             terminateExecution0(execCtx, CANCEL_FORCEFUL, new CancellationException());
                         }
                     }

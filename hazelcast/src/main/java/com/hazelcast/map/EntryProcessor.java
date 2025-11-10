@@ -65,7 +65,6 @@ import java.util.Map.Entry;
  * Since Hazelcast 4.1, an instance of {@link ExtendedMapEntry} is provided as argument in {@link #process(Map.Entry)}
  * method:
  * <pre>
- * {@code
  * class IncrementWithOptionalTtl implements EntryProcessor<Integer, Integer, Void> {
  *     private final long ttlSeconds;
  *

@@ -79,7 +79,9 @@ public class DataProducer {
                             .executeUpdate();
                     assert updated == 1;
                     producedItems.incrementAndGet();
+                    connection.commit();
                 } catch (Throwable t) {
+                    connection.rollback();
                     error = t;
                 } finally {
                     semaphore.release();
@@ -92,6 +94,7 @@ public class DataProducer {
         if (connection == null) {
             try {
                 connection = DriverManager.getConnection(jdbcUrl);
+                connection.setAutoCommit(false);
                 cleaner.register(connection, unchecked(() -> connection.close()));
             } catch (SQLException e) {
                 throw new RuntimeException(e);

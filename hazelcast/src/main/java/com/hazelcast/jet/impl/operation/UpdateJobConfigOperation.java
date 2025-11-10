@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class UpdateJobConfigOperation extends AsyncJobOperation {
+public class UpdateJobConfigOperation extends AsyncMasterOnlyJobOperation {
     private DeltaJobConfig deltaConfig;
 
     public UpdateJobConfigOperation() {

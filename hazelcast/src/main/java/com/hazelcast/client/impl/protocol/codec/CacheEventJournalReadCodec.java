@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and no projection is applied.
  */
 @SuppressWarnings("unused")
-@Generated("093a7aa312c6fafaae3eac4d772655c9")
+@Generated("a4919e4262b8dee68b2f31bdac81e43f")
 public final class CacheEventJournalReadCodec {
     //hex: 0x132000
     public static final int REQUEST_MESSAGE_TYPE = 1253376;
@@ -61,7 +61,6 @@ public final class CacheEventJournalReadCodec {
     private CacheEventJournalReadCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -108,8 +107,8 @@ public final class CacheEventJournalReadCodec {
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, predicate, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, projection, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, predicate);
+        DataCodec.encodeNullable(clientMessage, projection);
         return clientMessage;
     }
 
@@ -121,12 +120,11 @@ public final class CacheEventJournalReadCodec {
         request.minSize = decodeInt(initialFrame.content, REQUEST_MIN_SIZE_FIELD_OFFSET);
         request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.predicate = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.projection = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.predicate = DataCodec.decodeNullable(iterator);
+        request.projection = DataCodec.decodeNullable(iterator);
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -42,7 +41,6 @@ public class PartitionTableView {
 
     private long stamp;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionTableView(InternalPartition[] partitions) {
         this.partitions = partitions;
     }

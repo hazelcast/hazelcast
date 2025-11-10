@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
@@ -41,24 +44,39 @@ import static com.hazelcast.jet.Util.idToString;
  *     <li>get a single job id (if {@link #onlyJobId} != MIN_VALUE)
  * </ul>
  */
-public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringPassiveState {
+public class GetJobIdsOperation extends AsyncMasterAwareOperation implements AllowedDuringPassiveState, Versioned {
 
     public static final long ALL_JOBS = Long.MIN_VALUE;
 
     private String onlyName;
-    private long onlyJobId = ALL_JOBS;
+    private long onlyJobId;
+    private boolean includeOnlyLightJobs;
+    private transient boolean isRequiredMasterExecution;
 
     public GetJobIdsOperation() {
     }
 
-    public GetJobIdsOperation(String onlyName, Long onlyJobId) {
+    // Possible combinations of input arguments:
+    // - If onlyName != null, then onlyJobId and includeOnlyLightJobs are not applicable.
+    // - If onlyJobId != null and onlyJobId != ALL_JOBS, then includeOnlyLightJobs is not applicable.
+    public GetJobIdsOperation(String onlyName, long onlyJobId, boolean includeOnlyLightJobs) {
         this.onlyName = onlyName;
-        this.onlyJobId = onlyJobId == null ? ALL_JOBS : onlyJobId;
+        this.onlyJobId = onlyJobId;
+        this.includeOnlyLightJobs = includeOnlyLightJobs;
     }
 
     @Override
     public CompletableFuture<GetJobIdsResult> doRun() {
-        return getJobCoordinationService().getJobIds(onlyName, onlyJobId);
+        if (onlyName != null) {
+            return getJobCoordinationService().getNormalJobIdsByName(onlyName);
+        }
+        if (onlyJobId != ALL_JOBS) {
+            return getJobCoordinationService().getJobIdById(onlyJobId);
+        }
+        if (includeOnlyLightJobs) {
+            return getJobCoordinationService().getLightJobIds();
+        }
+        return getJobCoordinationService().getAllJobsId();
     }
 
     @Override
@@ -71,6 +89,10 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         super.writeInternal(out);
         out.writeString(onlyName);
         out.writeLong(onlyJobId);
+        // RU_COMPAT_5_5
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_6)) {
+            out.writeBoolean(includeOnlyLightJobs);
+        }
     }
 
     @Override
@@ -78,6 +100,25 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         super.readInternal(in);
         onlyName = in.readString();
         onlyJobId = in.readLong();
+        // RU_COMPAT_5_5
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_6)) {
+            includeOnlyLightJobs = in.readBoolean();
+            // Execution on the master is required only when a named normal job or all jobs are requested
+            isRequiredMasterExecution = onlyName != null || !includeOnlyLightJobs;
+        } else {
+            includeOnlyLightJobs = false;
+            isRequiredMasterExecution = onlyName != null;
+        }
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return isRequiredMasterExecution;
+    }
+
+    @Override
+    public String getServiceName() {
+        return JetServiceBackend.SERVICE_NAME;
     }
 
     public static final class GetJobIdsResult implements IdentifiedDataSerializable {
@@ -86,15 +127,14 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         private long[] jobIds;
 
         /**
-         * The coordinator for each job. If null, it's a normal job - the current
-         * master is the coordinator.
-         * <p>
-         * The indexes match those of {@link #jobIds}.
+         * Indicates whether each job is a light job.
+         * The array index corresponds to the same index in {@link #jobIds}.
          */
         private boolean[] isLightJobs;
 
         // for deserialization
-        public GetJobIdsResult() { }
+        public GetJobIdsResult() {
+        }
 
         public GetJobIdsResult(long jobId, boolean isLightJob) {
             jobIds = new long[]{jobId};

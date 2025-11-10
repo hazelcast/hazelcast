@@ -22,7 +22,6 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -39,7 +38,6 @@ import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
  * Does the same thing as {@link GreaterLessPredicate}, {@link BetweenPredicate}
  * and {@link BoundedRangePredicate} but for composite indexes and values.
  */
-@SuppressFBWarnings("SE_BAD_FIELD")
 public class CompositeRangePredicate implements IndexAwarePredicate {
 
     final String indexName;

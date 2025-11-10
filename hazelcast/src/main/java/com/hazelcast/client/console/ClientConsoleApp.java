@@ -46,7 +46,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
 import org.jline.reader.LineReader;
@@ -237,7 +236,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     /**
      * Handle a command.
      */
-    @SuppressFBWarnings("DM_EXIT")
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     protected void handleCommand(String commandInputted) {
         String command = commandInputted;
@@ -276,7 +274,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             int repeat = Integer.parseInt(first.substring(1));
             long t0 = Clock.currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
-                handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
+                handleCommand(command.substring(first.length()).replaceAll("\\$i", String.valueOf(i)));
             }
             println("ops/s = " + repeat * ONE_THOUSAND / (Clock.currentTimeMillis() - t0));
         } else if (first.startsWith("&") && first.length() > 1) {
@@ -287,7 +285,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 final int threadID = i;
                 pool.submit(() -> {
                     String command1 = threadCommand;
-                    String[] threadArgs = command1.replaceAll("\\$t", "" + threadID).trim().split(" ");
+                    String[] threadArgs = command1.replaceAll("\\$t", String.valueOf(threadID)).trim().split(" ");
                     // TODO &t #4 m.putmany x k
                     if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
                         if (threadArgs.length < LENGTH_BORDER) {
@@ -533,7 +531,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    @SuppressFBWarnings("DM_DEFAULT_ENCODING")
     private void handleAt(String first) {
         if (first.length() == 1) {
             println("usage: @<file-name>");
@@ -574,7 +571,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    @SuppressFBWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
         Runtime runtime = Runtime.getRuntime();

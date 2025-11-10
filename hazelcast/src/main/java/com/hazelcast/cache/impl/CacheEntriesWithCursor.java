@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -44,7 +43,7 @@ public class CacheEntriesWithCursor implements IdentifiedDataSerializable {
     public CacheEntriesWithCursor() {
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public CacheEntriesWithCursor(List<Map.Entry<Data, Data>> entries, IterationPointer[] pointers) {
         this.entries = entries;
         this.pointers = pointers;
@@ -53,7 +52,7 @@ public class CacheEntriesWithCursor implements IdentifiedDataSerializable {
     /**
      * Returns the iteration pointers representing the current iteration state.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
     public IterationPointer[] getPointers() {
         return pointers;
     }

@@ -33,16 +33,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -57,10 +58,10 @@ public class QueueEvictionTest extends HazelcastTestSupport {
     @Parameterized.Parameter
     public String comparatorClassName;
 
-    @Test
-    public void testQueueEviction_whenTtlIsSet_thenTakeThrowsException() throws Exception {
-        String queueName = randomString();
+    private String queueName = randomString();
 
+    @Test
+    public void whenTtlIsSet_andQueueIsDrained_thenTakeThrowsException() throws Exception {
         Config config = smallInstanceConfig();
         config.getQueueConfig(queueName)
               .setPriorityComparatorClassName(comparatorClassName)
@@ -68,22 +69,17 @@ public class QueueEvictionTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         IQueue<VersionedObject<String>> queue = hz.getQueue(queueName);
 
-        try {
-            assertTrue(queue.offer(new VersionedObject<>("item")));
-            assertEquals(new VersionedObject<>("item"), queue.poll());
+        // Add & remove an item
+        assertTrue(queue.offer(getItem()));
+        assertEquals(getItem(), queue.poll());
 
-            queue.take();
-            fail();
-        } catch (DistributedObjectDestroyedException expected) {
-            ignore(expected);
-        }
-        assertEquals(0, queue.size());
+        // Once empty, the queue should _immediately_ dispose
+        assertThatThrownBy(queue::take).isInstanceOf(DistributedObjectDestroyedException.class);
+        assertThat(queue).isEmpty();
     }
 
     @Test
-    public void testQueueEviction_whenTtlIsZero_thenListenersAreNeverthelessExecuted() throws Exception {
-        String queueName = randomString();
-
+    public void whenTtlIsZero_thenListenersAreNeverthelessExecuted() throws Exception {
         Config config = smallInstanceConfig();
         config.getQueueConfig("default")
               .setPriorityComparatorClassName(comparatorClassName);
@@ -92,19 +88,28 @@ public class QueueEvictionTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(2);
         hz.addDistributedObjectListener(new DistributedObjectListener() {
+            @Override
             public void distributedObjectCreated(DistributedObjectEvent event) {
                 latch.countDown();
             }
 
+            @Override
             public void distributedObjectDestroyed(DistributedObjectEvent event) {
                 latch.countDown();
             }
         });
 
         IQueue<VersionedObject<String>> queue = hz.getQueue(queueName);
-        assertTrue(queue.offer(new VersionedObject<>("item")));
-        assertEquals(new VersionedObject<>("item"), queue.poll());
 
+        // Add & remove an item from
+        assertTrue(queue.offer(getItem()));
+        assertEquals(getItem(), queue.poll());
+
+        // Check that (eventually) the queue is disposed
         assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    private static VersionedObject<String> getItem() {
+        return new VersionedObject<>("item");
     }
 }

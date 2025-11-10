@@ -38,7 +38,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -60,7 +59,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
     private final NodeEngineImpl nodeEngine;
     private final ExecutorStats executorStats = new ExecutorStats();
     private final DurableExecutorPartitionContainer[] partitionContainers;
-    private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<String> shutdownExecutors = ConcurrentHashMap.newKeySet();
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =

@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,24 +26,17 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+import java.lang.invoke.VarHandle;
 
 // written by single thread, can be read by multiple threads
 public class LocalRecordStoreStatsImpl
         implements LocalRecordStoreStats, IdentifiedDataSerializable, Versioned {
 
-    private static final AtomicLongFieldUpdater<LocalRecordStoreStatsImpl> HITS =
-            newUpdater(LocalRecordStoreStatsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<LocalRecordStoreStatsImpl> EVICTION_COUNT =
-            newUpdater(LocalRecordStoreStatsImpl.class, "evictionCount");
-    private static final AtomicLongFieldUpdater<LocalRecordStoreStatsImpl> EXPIRATION_COUNT =
-            newUpdater(LocalRecordStoreStatsImpl.class, "expirationCount");
-    private static final AtomicLongFieldUpdater<LocalRecordStoreStatsImpl> LAST_ACCESS_TIME =
-            newUpdater(LocalRecordStoreStatsImpl.class, "lastAccessTime");
-    private static final AtomicLongFieldUpdater<LocalRecordStoreStatsImpl> LAST_UPDATE_TIME =
-            newUpdater(LocalRecordStoreStatsImpl.class, "lastUpdateTime");
+    private static final VarHandle HITS = ReflectionUtil.findVarHandle("hits", long.class);
+    private static final VarHandle EVICTION_COUNT = ReflectionUtil.findVarHandle("evictionCount", long.class);
+    private static final VarHandle EXPIRATION_COUNT = ReflectionUtil.findVarHandle("expirationCount", long.class);
+    private static final VarHandle LAST_ACCESS_TIME = ReflectionUtil.findVarHandle("lastAccessTime", long.class);
+    private static final VarHandle LAST_UPDATE_TIME = ReflectionUtil.findVarHandle("lastUpdateTime", long.class);
 
     private volatile long hits;
     private volatile long lastAccessTime;
@@ -85,27 +79,27 @@ public class LocalRecordStoreStatsImpl
 
     @Override
     public void setLastAccessTime(long time) {
-        LAST_ACCESS_TIME.lazySet(this, Math.max(lastAccessTime, time));
+        LAST_ACCESS_TIME.setOpaque(this, Math.max(lastAccessTime, time));
     }
 
     @Override
     public void setLastUpdateTime(long time) {
-        LAST_UPDATE_TIME.lazySet(this, Math.max(lastUpdateTime, time));
+        LAST_UPDATE_TIME.setOpaque(this, Math.max(lastUpdateTime, time));
     }
 
     @Override
     public void increaseEvictions() {
-        EVICTION_COUNT.lazySet(this, evictionCount + 1);
+        EVICTION_COUNT.setOpaque(this, evictionCount + 1);
     }
 
     @Override
     public void increaseExpirations() {
-        EXPIRATION_COUNT.lazySet(this, expirationCount + 1);
+        EXPIRATION_COUNT.setOpaque(this, expirationCount + 1);
     }
 
     @Override
     public void increaseHits() {
-        HITS.lazySet(this, hits + 1);
+        HITS.setOpaque(this, hits + 1);
     }
 
     public void reset() {

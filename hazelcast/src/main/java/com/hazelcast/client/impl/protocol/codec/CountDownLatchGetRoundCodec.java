@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * reaches to 0 and a new round starts afterwards.
  */
 @SuppressWarnings("unused")
-@Generated("c233d974ecf9c81edbbcf727f9f208e8")
+@Generated("a0136bfc2e0753a81530d5e1f1b0cdf8")
 public final class CountDownLatchGetRoundCodec {
     //hex: 0x0B0500
     public static final int REQUEST_MESSAGE_TYPE = 722176;
@@ -51,7 +51,6 @@ public final class CountDownLatchGetRoundCodec {
     private CountDownLatchGetRoundCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

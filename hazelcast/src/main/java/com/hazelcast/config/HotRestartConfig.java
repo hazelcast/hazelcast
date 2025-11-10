@@ -34,9 +34,9 @@ import java.io.IOException;
  * configuration. hot-restart element (and thus {@code HotRestartConfig})
  * will be removed in a future release.
  *
- * @deprecated since 5.0 use {@link DataPersistenceConfig}
+ * @deprecated use {@link DataPersistenceConfig}
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public class HotRestartConfig implements IdentifiedDataSerializable {
 
     private boolean enabled;
@@ -81,7 +81,6 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
     /**
      * Sets whether disk write should be followed by an {@code fsync()} system call.
      *
-     * @param fsync fsync
      * @return this HotRestartConfig
      */
     public HotRestartConfig setFsync(boolean fsync) {

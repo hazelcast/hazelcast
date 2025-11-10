@@ -39,7 +39,7 @@ final class DiagnosticsStdout implements DiagnosticsLog {
     DiagnosticsStdout(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
-        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.isIncludeEpochTime(), diagnostics.logger);
         this.printWriter = newWriter();
         logWriter.init(printWriter);
         logger.info("Sending diagnostics logs to the stdout");
@@ -58,6 +58,11 @@ final class DiagnosticsStdout implements DiagnosticsLog {
         } catch (RuntimeException e) {
             logger.warning("Failed to write stdout: ", e);
         }
+    }
+
+    @Override
+    public void close() {
+        printWriter.flush();
     }
 
     private void renderStaticPlugins() {

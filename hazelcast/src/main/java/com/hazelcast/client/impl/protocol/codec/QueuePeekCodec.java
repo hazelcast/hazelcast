@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
 @SuppressWarnings("unused")
-@Generated("ca41372a2eed3b0228483000a47c4cda")
+@Generated("4221689fce98a31a4de5bc962783dc14")
 public final class QueuePeekCodec {
     //hex: 0x030700
     public static final int REQUEST_MESSAGE_TYPE = 198400;
@@ -77,7 +77,7 @@ public final class QueuePeekCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -88,6 +88,6 @@ public final class QueuePeekCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

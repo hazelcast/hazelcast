@@ -25,7 +25,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -50,8 +49,8 @@ public class SqlCatalogTest {
 
         // Then
         assertEquals(emptySet(), s1t1.getConflictingSchemas());
-        assertEquals(new HashSet<>(asList("s1", "s2")), s1t2.getConflictingSchemas());
-        assertEquals(new HashSet<>(asList("s1", "s2")), s2t2.getConflictingSchemas());
+        assertEquals(Set.of("s1", "s2"), s1t2.getConflictingSchemas());
+        assertEquals(Set.of("s1", "s2"), s2t2.getConflictingSchemas());
     }
 
     @Test
@@ -80,7 +79,7 @@ public class SqlCatalogTest {
         new SqlCatalog(asList(tr1, tr2));
 
         // Then
-        Set<String> bothSchemas = new HashSet<>(asList("s1", "s2"));
+        Set<String> bothSchemas = Set.of("s1", "s2");
         assertEquals(bothSchemas, s1t1_1.getConflictingSchemas());
         // the second occurrence of s1t1 doesn't have the conflicts set
         assertEquals(emptySet(), s1t1_2.getConflictingSchemas());

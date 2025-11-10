@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.jet.impl.operation.MasterAwareOperation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -244,6 +245,25 @@ public interface OperationService {
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
 
+    /**
+     * Creates an {@link InvocationBuilder} for invoking an operation on the master member of the cluster.
+     * <p>
+     * Note:
+     * This method only guarantees that the operation will be sent to the master member and,
+     * in case of a retryable exception, it will be retried on the new master node.
+     * However, this method by itself does not guarantee that the operation will actually be
+     * executed on the current master member:
+     * During invocation, the master node may restart and become a non-master member at the
+     * same address as the previous master. In this case, the operation may be executed on
+     * a non-master member.
+     * To prevent this behavior, the operation should implement the {@link MasterAwareOperation} interface
+     * and include an additional check to verify it is executing on the current master.
+     * If not, it should throw a {@link com.hazelcast.internal.cluster.impl.MasterNodeChangedException} exception.
+     *
+     * @param serviceName the name of the service to invoke this Operation on behalf of
+     * @param op          the {@link Operation} to invoke, should implement {@link MasterAwareOperation} interface.
+     * @return the {@link InvocationBuilder} which can be used to configure and execute the invocation
+     */
     InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op);
 
     /**

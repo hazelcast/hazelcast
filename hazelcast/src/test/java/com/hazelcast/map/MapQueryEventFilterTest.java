@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.PROP_LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES;
 import static com.hazelcast.query.Predicates.greaterEqual;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

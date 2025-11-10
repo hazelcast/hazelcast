@@ -50,6 +50,8 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -78,6 +80,13 @@ import static java.lang.System.getProperty;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity", "MethodCount"})
 public class MapContainerImpl implements MapContainer {
+
+    public static final String PROP_QUERY_EXPIRATION_CHECK_ENABLED
+            = "hazelcast.internal.map.query.expiration.check.enabled";
+    private static final boolean DEFAULT_QUERY_EXPIRATION_CHECK_ENABLED = true;
+    private static final HazelcastProperty QUERY_EXPIRATION_CHECK_ENABLED
+            = new HazelcastProperty(PROP_QUERY_EXPIRATION_CHECK_ENABLED,
+            DEFAULT_QUERY_EXPIRATION_CHECK_ENABLED);
 
     protected final String name;
     protected final String splitBrainProtectionName;
@@ -108,6 +117,7 @@ public class MapContainerImpl implements MapContainer {
     private volatile Evictor evictor;
 
     private final MapWanContext wanContext;
+    private final boolean queryExpirationCheckEnabled;
 
     private volatile boolean destroyed;
 
@@ -133,6 +143,9 @@ public class MapContainerImpl implements MapContainer {
                 .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
+        // Read queryExpirationCheckEnabled before creating globalIndexRegistry
+        HazelcastProperties properties = nodeEngine.getProperties();
+        this.queryExpirationCheckEnabled = properties.getBoolean(QUERY_EXPIRATION_CHECK_ENABLED);
         this.globalIndexRegistry = shouldUseGlobalIndex()
                 ? createIndexRegistry(true, GLOBAL_INDEX_NOOP_PARTITION_ID) : null;
         this.mapStoreContext = createMapStoreContext(this);
@@ -168,7 +181,8 @@ public class MapContainerImpl implements MapContainer {
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
                 .partitionId(partitionId)
-                .resultFilterFactory(new IndexResultFilterFactory())
+                .resultFilterFactory(queryExpirationCheckEnabled
+                        ? new IndexResultFilterFactory() : null)
                 .build();
     }
 
@@ -280,7 +294,6 @@ public class MapContainerImpl implements MapContainer {
      * Used to get index registry of one
      * of global or partitioned indexes.
      *
-     * @param partitionId partitionId
      * @return by default always returns global-index
      * registry otherwise return partitioned-index registry
      */
@@ -536,6 +549,11 @@ public class MapContainerImpl implements MapContainer {
                 //if index exists then cached value is already set -> let's use it
                 return getOrCreateIndexRegistry(partitionId).haveAtLeastOneIndex();
         }
+    }
+
+    // Only for testing purposes
+    public boolean isQueryExpirationCheckEnabled() {
+        return queryExpirationCheckEnabled;
     }
 
     @Override

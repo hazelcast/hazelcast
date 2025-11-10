@@ -71,7 +71,7 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
         return COMPLETION_STAGE_METHODS.stream()
                 .flatMap(method -> {
                     if (method.endsWith("Async")) {
-                        String syncMethod = method.substring(0, method.lastIndexOf(("Async")));
+                        String syncMethod = method.substring(0, method.lastIndexOf("Async"));
                         return COMPLETION_STAGE_METHODS.contains(syncMethod) ? Stream.of(syncMethod, method) : Stream.of(method);
                     } else {
                         return Stream.empty();

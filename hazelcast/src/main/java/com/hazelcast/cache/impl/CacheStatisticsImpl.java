@@ -18,11 +18,13 @@ package com.hazelcast.cache.impl;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.LongAccumulator;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.nearcache.NearCacheStats;
 
 /**
@@ -38,10 +40,8 @@ public class CacheStatisticsImpl
     protected static final float FLOAT_HUNDRED = 100.0f;
     protected static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
-    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_ACCESS_TIME =
-            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "lastAccessTime");
-    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_UPDATE_TIME =
-            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "lastUpdateTime");
+    protected static final VarHandle LAST_ACCESS_TIME = ReflectionUtil.findVarHandle("lastAccessTime", long.class);
+    protected static final VarHandle LAST_UPDATE_TIME = ReflectionUtil.findVarHandle("lastUpdateTime", long.class);
     protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removals");
     protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES =
@@ -50,12 +50,10 @@ public class CacheStatisticsImpl
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "puts");
     protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> EVICTIONS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "evictions");
-    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUT_TIME_TAKEN_NANOS =
-            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "putTimeTakenNanos");
-    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> GET_CACHE_TIME_TAKEN_NANOS =
-            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "getCacheTimeTakenNanos");
-    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS =
-            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
+    protected static final VarHandle PUT_TIME_TAKEN_NANOS = ReflectionUtil.findVarHandle("putTimeTakenNanos", long.class);
+    protected static final VarHandle GET_CACHE_TIME_TAKEN_NANOS =
+            ReflectionUtil.findVarHandle("getCacheTimeTakenNanos", long.class);
+    protected static final VarHandle REMOVE_TIME_TAKEN_NANOS = ReflectionUtil.findVarHandle("removeTimeTakenNanos", long.class);
 
     /**
      * This field is not mutated (read only) so no need to define it as volatile.

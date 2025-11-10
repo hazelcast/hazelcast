@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * store the value of the key to any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("de1b5234ada5d5ecc87fb3a8bfc702b8")
+@Generated("8f5f9309806318b57152903817048881")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x130B00
     public static final int REQUEST_MESSAGE_TYPE = 1248000;
@@ -53,7 +53,6 @@ public final class CacheGetAndReplaceCodec {
     private CacheGetAndReplaceCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -97,7 +96,7 @@ public final class CacheGetAndReplaceCodec {
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
         DataCodec.encode(clientMessage, value);
-        CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, expiryPolicy);
         return clientMessage;
     }
 
@@ -109,7 +108,7 @@ public final class CacheGetAndReplaceCodec {
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
         request.value = DataCodec.decode(iterator);
-        request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expiryPolicy = DataCodec.decodeNullable(iterator);
         return request;
     }
 
@@ -119,7 +118,7 @@ public final class CacheGetAndReplaceCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -130,6 +129,6 @@ public final class CacheGetAndReplaceCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

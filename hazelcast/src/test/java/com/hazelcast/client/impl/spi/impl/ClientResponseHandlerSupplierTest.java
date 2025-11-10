@@ -92,8 +92,8 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
     private Consumer<ClientMessage> getResponseHandler(int threadCount, boolean dynamic) {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(
                 new ClientConfig()
-                        .setProperty(RESPONSE_THREAD_COUNT.getName(), "" + threadCount)
-                        .setProperty(RESPONSE_THREAD_DYNAMIC.getName(), "" + dynamic));
+                        .setProperty(RESPONSE_THREAD_COUNT.getName(), String.valueOf(threadCount))
+                        .setProperty(RESPONSE_THREAD_DYNAMIC.getName(), String.valueOf(dynamic)));
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) clientInstanceImpl.getInvocationService();
 

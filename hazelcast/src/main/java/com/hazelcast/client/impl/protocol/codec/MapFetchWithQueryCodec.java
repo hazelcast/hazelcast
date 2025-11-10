@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * that match the predicate and applies the projection logic on them.
  */
 @SuppressWarnings("unused")
-@Generated("02edf2d760e42d1cfae9d48198ab410f")
+@Generated("c253b53e17bcdba964d66ac03742f7ad")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;
@@ -51,7 +51,6 @@ public final class MapFetchWithQueryCodec {
     private MapFetchWithQueryCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -109,7 +108,6 @@ public final class MapFetchWithQueryCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -129,7 +127,7 @@ public final class MapFetchWithQueryCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encodeContainsNullable(clientMessage, results, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, results, DataCodec::encodeNullable);
         EntryListIntegerIntegerCodec.encode(clientMessage, iterationPointers);
         return clientMessage;
     }
@@ -139,7 +137,7 @@ public final class MapFetchWithQueryCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.results = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        response.results = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decodeNullable);
         response.iterationPointers = EntryListIntegerIntegerCodec.decode(iterator);
         return response;
     }

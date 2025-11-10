@@ -70,7 +70,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
     @Override
     public void run() {
         if (logger.isFinestEnabled()) {
-            logger.finest("Running finalize promotion for " + getPartitionMigrationEvent() + ", result: " + success);
+            logger.finest("Running finalize promotion for %s, result: %s", getPartitionMigrationEvent(), success);
         }
 
         if (success) {

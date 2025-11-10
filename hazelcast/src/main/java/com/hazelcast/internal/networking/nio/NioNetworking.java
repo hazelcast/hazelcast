@@ -35,7 +35,6 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -68,7 +67,6 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.internal.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
-import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -111,7 +109,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     private final int balancerIntervalSeconds;
     private final int inputThreadCount;
     private final int outputThreadCount;
-    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<NioChannel> channels = ConcurrentHashMap.newKeySet();
     private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
@@ -169,17 +167,17 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         }
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public NioThread[] getInputThreads() {
         return inputThreads;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public NioThread[] getOutputThreads() {
         return outputThreads;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public Set<NioChannel> getChannels() {
         return channels;
     }
@@ -278,7 +276,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Shutting down IO Threads... Total: " + (inputThreads.length + outputThreads.length));
+            logger.finest("Shutting down IO Threads... Total: %s", (inputThreads.length + outputThreads.length));
         }
 
         shutdown(inputThreads);

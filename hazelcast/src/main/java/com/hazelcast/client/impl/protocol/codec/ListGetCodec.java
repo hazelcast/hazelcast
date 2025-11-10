@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the element at the specified position in this list
  */
 @SuppressWarnings("unused")
-@Generated("2d44b034cc24ea9e24cc21bce7d2a264")
+@Generated("01d8e1a715147047615f85cca58cd954")
 public final class ListGetCodec {
     //hex: 0x050F00
     public static final int REQUEST_MESSAGE_TYPE = 331520;
@@ -50,7 +50,6 @@ public final class ListGetCodec {
     private ListGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -92,7 +91,7 @@ public final class ListGetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -103,6 +102,6 @@ public final class ListGetCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

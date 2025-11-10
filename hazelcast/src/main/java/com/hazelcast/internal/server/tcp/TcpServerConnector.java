@@ -112,13 +112,13 @@ class TcpServerConnector {
         public void run() {
             if (!connectionManager.getServer().isLive()) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("ConnectionManager is not live, connection attempt to " + remoteAddress + " is cancelled!");
+                    logger.finest("ConnectionManager is not live, connection attempt to %s is cancelled!", remoteAddress);
                 }
                 return;
             }
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Starting to connect to " + remoteAddress);
+                logger.finest("Starting to connect to %s", remoteAddress);
             }
 
             try {
@@ -231,7 +231,7 @@ class TcpServerConnector {
                         return;
                     } catch (IOException e) {
                         ex = e;
-                        logger.finest("Could not bind port[ " + port + "]: " + e.getMessage());
+                        logger.finest("Could not bind port[ %s]: %s", port, e.getMessage());
                     }
                 }
                 throw ex;

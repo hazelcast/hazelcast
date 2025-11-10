@@ -64,7 +64,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Contains the configuration for a permission.
@@ -74,8 +73,8 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
     private PermissionType type;
     private String name;
     private String principal;
-    private Set<String> endpoints = newSetFromMap(new ConcurrentHashMap<>());
-    private Set<String> actions = newSetFromMap(new ConcurrentHashMap<>());
+    private Set<String> endpoints = ConcurrentHashMap.newKeySet();
+    private Set<String> actions = ConcurrentHashMap.newKeySet();
     private boolean deny;
 
     public PermissionConfig() {

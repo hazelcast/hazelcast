@@ -61,13 +61,13 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.TestedVersions.TEST_MYSQL_IMAGE;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.test.jdbc.MySQLDatabaseProvider.TEST_MYSQL_VERSION;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +99,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     @SuppressWarnings("resource")
     @Before
     public void setUpContainer() {
-        mysql = new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
+        mysql = new MySQLContainer<>(TEST_MYSQL_IMAGE)
                 .withUsername(USERNAME).withPassword(PASSWORD)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"))
                 .withTmpFs(Map.of(
@@ -388,7 +388,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         IMap<String, Integer> itemToHowManyProc = instance.getMap("itemToHowManyProc" + randomName());
         mappedValueStage
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
-                        (ctx, item) ->  tuple2(item, ctx))
+                        (ctx, item) -> tuple2(item, ctx))
                 .setLocalParallelism(localParallelism)
                 .groupingKey(Entry::getKey)
                 .mapStateful(AtomicInteger::new, (state, key, item) -> {
@@ -479,7 +479,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     private URL getJdbcConnectorURL() throws URISyntaxException {
         ClassLoader classLoader = getClass().getClassLoader();
-        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
+        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.8.4.zip";
         URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
         assert resource != null;
         assertThat(new File(resource.toURI())).exists();

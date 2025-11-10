@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.BitSet;
@@ -72,7 +71,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
      * @param operationFactory operation factory to use
      * @param partitions       partitions to invoke on
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public PartitionIteratingOperation(OperationFactory operationFactory, int[] partitions) {
         this.operationFactory = operationFactory;
         this.partitions = partitions;
@@ -293,12 +291,10 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             }
         }
 
-        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Object[] getResults() {
             return results;
         }
 
-        @SuppressFBWarnings("EI_EXPOSE_REP")
         public int[] getPartitions() {
             return partitions;
         }

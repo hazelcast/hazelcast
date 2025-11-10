@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * sub-interface for that event.
  */
 @SuppressWarnings("unused")
-@Generated("a3a146751d4a8dad9fa7e721534f2e4f")
+@Generated("231f5f9e1d7de43104e8f267933fd189")
 public final class MapAddEntryListenerToKeyCodec {
     //hex: 0x011800
     public static final int REQUEST_MESSAGE_TYPE = 71680;
@@ -61,7 +61,6 @@ public final class MapAddEntryListenerToKeyCodec {
     private MapAddEntryListenerToKeyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -149,10 +148,10 @@ public final class MapAddEntryListenerToKeyCodec {
         encodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET, numberOfAffectedEntries);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, oldValue, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, mergingValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, key);
+        DataCodec.encodeNullable(clientMessage, value);
+        DataCodec.encodeNullable(clientMessage, oldValue);
+        DataCodec.encodeNullable(clientMessage, mergingValue);
         return clientMessage;
     }
 
@@ -166,10 +165,10 @@ public final class MapAddEntryListenerToKeyCodec {
                 int eventType = decodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET);
                 java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ENTRY_UUID_FIELD_OFFSET);
                 int numberOfAffectedEntries = decodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET);
-                com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.internal.serialization.Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                com.hazelcast.internal.serialization.Data mergingValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+                com.hazelcast.internal.serialization.Data key = DataCodec.decodeNullable(iterator);
+                com.hazelcast.internal.serialization.Data value = DataCodec.decodeNullable(iterator);
+                com.hazelcast.internal.serialization.Data oldValue = DataCodec.decodeNullable(iterator);
+                com.hazelcast.internal.serialization.Data mergingValue = DataCodec.decodeNullable(iterator);
                 handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                 return;
             }

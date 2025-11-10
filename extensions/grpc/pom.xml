@@ -20,11 +20,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>hazelcast-jet-grpc</artifactId>
+    <name>hazelcast-jet-grpc</name>
+    <description>GRPC protocol support for Hazelcast Jet</description>
+    <url>https://www.hazelcast.com/</url>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>5.7.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -73,7 +76,6 @@
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

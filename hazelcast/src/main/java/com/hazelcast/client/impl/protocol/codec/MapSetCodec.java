@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * return the old value, which is more efficient.
  */
 @SuppressWarnings("unused")
-@Generated("3b2c6cb8d42b55a3ccc0681ef47a09a9")
+@Generated("ae794167cf98746a117cc91f235a5545")
 public final class MapSetCodec {
     //hex: 0x010F00
     public static final int REQUEST_MESSAGE_TYPE = 69376;
@@ -53,7 +53,6 @@ public final class MapSetCodec {
     private MapSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

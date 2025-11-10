@@ -26,16 +26,13 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>5.7.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-
-        <jsp.api.version>2.2.1</jsp.api.version>
-        <servlet.api.version>3.0.1</servlet.api.version>
 
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
@@ -600,7 +597,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-tpc-engine</artifactId>
-            <version>6.0.0-SNAPSHOT</version>
+            <version>5.7.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -636,13 +633,13 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.179</version>
+            <version>4.8.184</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.5</version>
+            <version>1.14.6</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -870,7 +867,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.4.0</version>
+            <version>3.5.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -953,7 +950,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>6.2.1</version>
+            <version>7.0.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

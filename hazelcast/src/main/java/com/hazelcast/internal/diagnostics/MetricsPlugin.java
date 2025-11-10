@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -49,22 +48,34 @@ public class MetricsPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.metrics.period.seconds", 60, SECONDS);
 
     private final MetricsRegistry metricsRegistry;
-    private final long periodMillis;
     private final MetricsCollectorImpl metricCollector = new MetricsCollectorImpl();
+    private final HazelcastProperties properties;
+    private long periodMillis;
 
-    public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
-    }
-
-    public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {
+    public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry,
+                         HazelcastProperties properties) {
         super(logger);
         this.metricsRegistry = metricsRegistry;
-        this.periodMillis = properties.getMillis(PERIOD_SECONDS);
+        this.properties = properties;
+        readProperties();
+
     }
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
+    void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
@@ -74,6 +85,9 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         metricCollector.writer = writer;
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
@@ -90,21 +104,24 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            // MetricCollector is called from a different thread than the Plugin.run(),
+            // during shutdown although plugin is closed, it has no ability to close the metric collector.
+            // So we need to check if writer is null or not.
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), value);
             }
         }
 
         @Override
         public void collectDouble(MetricDescriptor descriptor, double value) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), value);
             }
         }
 
         @Override
         public void collectException(MetricDescriptor descriptor, Exception e) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(),
                         e.getClass().getName() + ':' + e.getMessage());
             }
@@ -112,7 +129,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
         @Override
         public void collectNoValue(MetricDescriptor descriptor) {
-            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
+            if (writer != null && descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), "NA");
             }
         }

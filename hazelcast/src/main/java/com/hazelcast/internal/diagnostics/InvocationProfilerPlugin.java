@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -32,13 +32,19 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
             "hazelcast.diagnostics.invocation-profiler.period.seconds", 5, SECONDS);
 
     private final InvocationRegistry invocationRegistry;
-    private final long periodMs;
+    private long periodMs;
+    private final HazelcastProperties properties;
 
-    public InvocationProfilerPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = operationService.getInvocationRegistry();
-        this.periodMs = nodeEngine.getProperties().getMillis(PERIOD_SECONDS);
+    public InvocationProfilerPlugin(ILogger logger, InvocationRegistry invocationRegistry, HazelcastProperties props) {
+        super(logger);
+        this.invocationRegistry = invocationRegistry;
+        this.properties = props;
+        readProperties();
+    }
+
+    @Override
+    void readProperties() {
+        this.periodMs = this.properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
@@ -48,14 +54,26 @@ public class InvocationProfilerPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        this.periodMs = this.properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMs);
     }
 
     @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive: period-millis:" + periodMs);
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("InvocationProfiler");
         OperationProfilerPlugin.write(writer, invocationRegistry.latencyDistributions());
         writer.endSection();
     }
+
 }
 

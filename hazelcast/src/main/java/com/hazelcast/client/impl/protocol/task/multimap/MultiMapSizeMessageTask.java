@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.MapUtil.toIntSize;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_SIZE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapSizeCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapSizeMessageTask
         extends AbstractAllPartitionsMessageTask<String> {

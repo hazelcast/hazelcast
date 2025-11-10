@@ -38,7 +38,7 @@ import javax.annotation.Nonnull;
 public final class AvroSinks {
 
     /**
-     * Ensure that this does not collide with any constants in {@link com.hazelcast.jet.pipeline.ConnectorNames}
+     * Ensure that this does not collide with any constants in {@link com.hazelcast.jet.pipeline.impl.ConnectorNames}
      */
     static final String AVRO_SINK_CONNECTOR_NAME = "avroSink";
 

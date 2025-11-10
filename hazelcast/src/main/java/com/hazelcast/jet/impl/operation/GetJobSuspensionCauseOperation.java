@@ -22,7 +22,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.util.concurrent.CompletableFuture;
 
-public class GetJobSuspensionCauseOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
+public class GetJobSuspensionCauseOperation extends AsyncMasterOnlyJobOperation implements AllowedDuringPassiveState {
 
     public GetJobSuspensionCauseOperation() {
     }

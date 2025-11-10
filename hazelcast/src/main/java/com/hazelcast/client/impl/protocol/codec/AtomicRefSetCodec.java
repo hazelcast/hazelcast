@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the given value
  */
 @SuppressWarnings("unused")
-@Generated("13efa151f0af9ead8cf7b7afabcfba82")
+@Generated("6a4b15f22442d9440833bb9d8d672d4c")
 public final class AtomicRefSetCodec {
     //hex: 0x0A0500
     public static final int REQUEST_MESSAGE_TYPE = 656640;
@@ -50,7 +50,6 @@ public final class AtomicRefSetCodec {
     private AtomicRefSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -86,7 +85,7 @@ public final class AtomicRefSetCodec {
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, newValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, newValue);
         return clientMessage;
     }
 
@@ -97,7 +96,7 @@ public final class AtomicRefSetCodec {
         request.returnOldValue = decodeBoolean(initialFrame.content, REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET);
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
-        request.newValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.newValue = DataCodec.decodeNullable(iterator);
         return request;
     }
 
@@ -107,7 +106,7 @@ public final class AtomicRefSetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -119,6 +118,6 @@ public final class AtomicRefSetCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

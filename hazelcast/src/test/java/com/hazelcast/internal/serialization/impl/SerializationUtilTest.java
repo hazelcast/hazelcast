@@ -54,7 +54,20 @@ public class SerializationUtilTest {
 
     @Test
     public void testIsNullData() {
+        // non-canonical null representation
         Assert.assertTrue(SerializationUtil.isNullData(new HeapData()));
+    }
+
+    @Test
+    public void testIsNullDataEmptyArray() {
+        // non-canonical null representation
+        Assert.assertTrue(SerializationUtil.isNullData(new HeapData(new byte[0])));
+    }
+
+    @Test
+    public void testIsNullDataZeroArray() {
+        // non-canonical null representation
+        Assert.assertTrue(SerializationUtil.isNullData(new HeapData(new byte[8])));
     }
 
     @Test(expected = Error.class)
@@ -135,6 +148,9 @@ public class SerializationUtilTest {
             return 0;
         }
 
+        @Override
+        public void destroy() {
+        }
     }
 
     private class DummyVersionedPortable implements VersionedPortable {
@@ -155,11 +171,11 @@ public class SerializationUtilTest {
         }
 
         @Override
-        public void writePortable(PortableWriter writer) {
+        public void writePortable(PortableWriter writer) throws IOException {
         }
 
         @Override
-        public void readPortable(PortableReader reader) {
+        public void readPortable(PortableReader reader) throws IOException {
         }
     }
 }

@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses.
  */
 @SuppressWarnings("unused")
-@Generated("de99f30417b364822c01a62b6bdff6ca")
+@Generated("cf07504ccd64f36050b999ae1d77fe02")
 public final class MultiMapTryLockCodec {
     //hex: 0x021100
     public static final int REQUEST_MESSAGE_TYPE = 135424;
@@ -57,7 +57,6 @@ public final class MultiMapTryLockCodec {
     private MultiMapTryLockCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

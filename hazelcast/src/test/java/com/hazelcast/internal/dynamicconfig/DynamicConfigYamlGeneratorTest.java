@@ -655,7 +655,6 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         assertThat(generatedConfig.entrySet()).containsExactlyInAnyOrderElementsOf(vectorCollection.entrySet());
     }
 
-
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
         return getNewConfigViaGenerator(config, false);

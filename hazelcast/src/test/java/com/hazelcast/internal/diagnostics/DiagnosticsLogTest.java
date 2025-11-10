@@ -57,7 +57,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     @Test
     public void testLogFileContent() {
-        setup("10");
+        setup(10);
         assertTrueEventually(() -> {
             String content = loadLogfile(diagnosticsLogFile.file);
             assertNotNull(content);
@@ -71,7 +71,8 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     @Test
     public void testRollover() {
-        setup("0.2");
+        // 200KB
+        setup(0.2f);
         // we register 50 probes to quickly fill up the diagnostics log file
         String id = generateRandomString(10000);
         LongProbeFunction<Object> probe = source -> 0;
@@ -102,12 +103,12 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
         });
     }
 
-    private void setup(String maxFileSize) {
-        Config config = new Config()
-                .setProperty(Diagnostics.ENABLED.getName(), "true")
-                .setProperty(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName(), maxFileSize)
-                .setProperty(Diagnostics.MAX_ROLLED_FILE_COUNT.getName(), "3")
-                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
+    private void setup(float maxFileSizeMB) {
+        Config config = new Config();
+        config.setProperty(Diagnostics.ENABLED.getName(), "true");
+        config.setProperty(Diagnostics.MAX_ROLLED_FILE_COUNT.getName(), "3");
+        config.setProperty(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName(), String.valueOf(maxFileSizeMB));
+        config.setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -115,6 +116,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
         diagnosticsLogFile = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
         metricsRegistry = getMetricsRegistry(hz);
     }
+
 
     private static String loadLogfile(File file) {
         if (file == null || !file.exists()) {

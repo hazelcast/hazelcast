@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("fa929a15e68cc5cd0d075984f24faf32")
+@Generated("a9c97ce3b22c13f33ab687245d9d15f7")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -60,7 +60,6 @@ public final class DynamicConfigAddMapConfigCodec {
     private DynamicConfigAddMapConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -297,7 +296,7 @@ public final class DynamicConfigAddMapConfigCodec {
         ListMultiFrameCodec.encodeNullable(clientMessage, attributeConfigs, AttributeConfigCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, queryCacheConfigs, QueryCacheConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, partitioningStrategyClassName, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, partitioningStrategyImplementation, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, partitioningStrategyImplementation);
         CodecUtil.encodeNullable(clientMessage, hotRestartConfig, HotRestartConfigCodec::encode);
         CodecUtil.encodeNullable(clientMessage, eventJournalConfig, EventJournalConfigCodec::encode);
         CodecUtil.encodeNullable(clientMessage, merkleTreeConfig, MerkleTreeConfigCodec::encode);
@@ -341,7 +340,7 @@ public final class DynamicConfigAddMapConfigCodec {
         request.attributeConfigs = ListMultiFrameCodec.decodeNullable(iterator, AttributeConfigCodec::decode);
         request.queryCacheConfigs = ListMultiFrameCodec.decodeNullable(iterator, QueryCacheConfigHolderCodec::decode);
         request.partitioningStrategyClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        request.partitioningStrategyImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.partitioningStrategyImplementation = DataCodec.decodeNullable(iterator);
         request.hotRestartConfig = CodecUtil.decodeNullable(iterator, HotRestartConfigCodec::decode);
         request.eventJournalConfig = CodecUtil.decodeNullable(iterator, EventJournalConfigCodec::decode);
         request.merkleTreeConfig = CodecUtil.decodeNullable(iterator, MerkleTreeConfigCodec::decode);

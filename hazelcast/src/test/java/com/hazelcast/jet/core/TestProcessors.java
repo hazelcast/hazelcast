@@ -28,7 +28,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -64,7 +63,7 @@ public final class TestProcessors {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
     private static final Random RANDOM = new Random();
-    private static final Set<String> errors = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private static final Set<String> errors = ConcurrentHashMap.newKeySet();
 
     private TestProcessors() { }
 

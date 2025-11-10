@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -353,10 +354,12 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                 .collect(toList());
 
         Mapping mapping;
+        // RU_COMPAT 5.2
         if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)
                 && (node.dataConnectionNameWithoutSchema() != null || node.objectType() != null)) {
-            throw new HazelcastException("Cannot create a mapping with a data connection or an object type " +
-                    "until the cluster is upgraded to 5.3");
+            throw new HazelcastException(String.format(
+                    "Cannot create a mapping with a data connection or an object type until the cluster is upgraded to %s",
+                    Versions.V5_3));
         }
         mapping = new Mapping(
                 node.nameWithoutSchema(),
@@ -761,16 +764,16 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
 
         boolean fineLogOn = logger.isFineEnabled();
         if (fineLogOn) {
-            logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
+            logger.fine("Before logical opt:\n%s", RelOptUtil.toString(rel));
         }
         LogicalRel logicalRel = optimizeLogical(context, rel);
         if (fineLogOn) {
-            logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
+            logger.fine("After logical opt:\n%s", RelOptUtil.toString(logicalRel));
         }
 
         LogicalRel logicalRel2 = optimizeIMapKeyedAccess(context, logicalRel);
         if (fineLogOn && logicalRel != logicalRel2) {
-            logger.fine("After IMap keyed access opt:\n" + RelOptUtil.toString(logicalRel2));
+            logger.fine("After IMap keyed access opt:\n%s", RelOptUtil.toString(logicalRel2));
         }
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
@@ -778,7 +781,7 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
         physicalRel = postOptimizationRewrites(physicalRel);
 
         if (fineLogOn) {
-            logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
+            logger.fine("After physical opt:\n%s", RelOptUtil.toString(physicalRel));
         }
 
         PhysicalRel finalPhysicalRel = physicalRel;

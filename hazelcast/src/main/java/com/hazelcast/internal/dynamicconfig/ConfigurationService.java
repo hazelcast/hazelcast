@@ -20,7 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.config.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;

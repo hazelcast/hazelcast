@@ -44,7 +44,7 @@ public class MulticastDiscoveryReceiver {
             return serializationHelper.deserialize(data);
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Couldn't get member info from multicast channel " + e.getMessage());
+                logger.finest("Couldn't get member info from multicast channel %s", e.getMessage());
             }
         }
         return null;

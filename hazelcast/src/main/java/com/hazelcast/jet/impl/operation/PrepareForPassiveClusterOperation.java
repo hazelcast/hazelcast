@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
  * Sent from the member that initiates a cluster state change to the master.
  * When the operation completes, all jobs have been terminated.
  */
-public class PrepareForPassiveClusterOperation extends AsyncOperation implements UrgentSystemOperation {
+public class PrepareForPassiveClusterOperation extends AsyncMasterAwareOperation implements UrgentSystemOperation {
 
     public PrepareForPassiveClusterOperation() {
     }
@@ -38,5 +38,10 @@ public class PrepareForPassiveClusterOperation extends AsyncOperation implements
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.PREPARE_FOR_PASSIVE_CLUSTER_OP;
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return true;
     }
 }

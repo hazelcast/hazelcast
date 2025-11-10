@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an index to this map with specified configuration.
  */
 @SuppressWarnings("unused")
-@Generated("4f6fef785c189c7d99fbdff7af656007")
+@Generated("229daddb42d380dfb26f96eef97ac426")
 public final class MapAddIndexCodec {
     //hex: 0x012900
     public static final int REQUEST_MESSAGE_TYPE = 76032;
@@ -49,7 +49,6 @@ public final class MapAddIndexCodec {
     private MapAddIndexCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

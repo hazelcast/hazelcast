@@ -41,6 +41,16 @@ import static com.hazelcast.version.Version.UNKNOWN;
 @SuppressWarnings("MethodCount")
 public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
 
+    /**
+     * The array size used when doubling the current size would result in a value greater than {@link Integer#MAX_VALUE}.
+     * Some VMs reserve some header words in an array, so we give a very generous overhead for max array sizing.
+     * <pre>
+     * See <a href="https://github.com/openjdk/jdk/blob/bc5cde1b198baf6e2e36d370b0aaa907c8f35777/src/
+       java.base/share/classes/jdk/internal/util/ArraysSupport.java#L854">OpenJDK SOFT_MAX_ARRAY_LENGTH</a>
+     * </pre>
+     */
+    static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 64;
+
     final int initialSize;
 
     final int firstGrowthSize;
@@ -396,11 +406,30 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
         }
     }
 
+    // Extracted for testing purposes, to avoid needing to allocate huge arrays in tests
+    int getBufferLength() {
+        return buffer.length;
+    }
+
+    // Separate method for testing purposes
+    final int getNewCapacity(int len) {
+        int neededCapacity = getBufferLength() + len;
+        if (neededCapacity < 0 || neededCapacity > MAX_ARRAY_SIZE) {
+            throw new OutOfMemoryError(String.format("Buffer capacity cannot be allocated. Current: %d, Len: %d, Maximum: %d",
+                    getBufferLength(), len, MAX_ARRAY_SIZE));
+        }
+
+        if (getBufferLength() << 1 < 0) {
+            return MAX_ARRAY_SIZE;
+        } else {
+            return Math.max(Math.max(buffer.length << 1, neededCapacity), firstGrowthSize);
+        }
+    }
+
     final void ensureAvailable(int len) {
         if (available() < len) {
             if (buffer != null) {
-                int newCap = Math.max(Math.max(buffer.length << 1, buffer.length + len), firstGrowthSize);
-                buffer = Arrays.copyOf(buffer, newCap);
+                buffer = Arrays.copyOf(buffer, getNewCapacity(len));
             } else {
                 buffer = new byte[len > initialSize / 2 ? len * 2 : initialSize];
             }

@@ -57,6 +57,8 @@ class SystemPropertiesConfigParser {
     }
 
     private String processKey(Entry<String, ?> e) {
+        // we convert keys to lowercase for processing later; we parse the keys to find the correct
+        //  configuration objects to override, and all of our configuration keys are lowercase
         return StringUtil.lowerCaseInternal(e.getKey()
           .replace(" ", "")
           .replaceFirst(prefix, rootNode + "."));

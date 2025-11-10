@@ -63,8 +63,8 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
                 logger.finest("Acquired lock " + namespace.getObjectName()
                         + " for " + getCallerAddress() + " - " + getCallerUuid() + ", thread ID: " + threadId);
             } else {
-                logger.finest("Could not acquire lock " + namespace.getObjectName()
-                        + " as owned by " + getLockStore().getOwnerInfo(key));
+                logger.finest("Could not acquire lock %s as owned by %s", namespace.getObjectName(),
+                        getLockStore().getOwnerInfo(key));
             }
         }
     }

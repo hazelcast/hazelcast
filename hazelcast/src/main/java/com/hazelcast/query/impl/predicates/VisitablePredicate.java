@@ -32,7 +32,6 @@ public interface VisitablePredicate {
      * as immutable for optimization purposes.
      *
      * @param visitor visitor to accept
-     * @param indexes indexes
      * @return itself or its changed copy
      */
     Predicate accept(Visitor visitor, IndexRegistry indexes);

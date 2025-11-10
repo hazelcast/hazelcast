@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to find that item.
  */
 @SuppressWarnings("unused")
-@Generated("3bdea9c50f0aa7c8c30d1b9972f562c2")
+@Generated("bfe80fc21c3cf8a82bf316a562364546")
 public final class RingbufferAddCodec {
     //hex: 0x170600
     public static final int REQUEST_MESSAGE_TYPE = 1508864;
@@ -61,7 +61,6 @@ public final class RingbufferAddCodec {
     private RingbufferAddCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

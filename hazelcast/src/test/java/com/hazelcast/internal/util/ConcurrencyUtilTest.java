@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -24,11 +25,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,7 +62,7 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
         LongValue longValue = new LongValue();
         longValue.value = current;
 
-        ConcurrencyUtil.setMax(longValue, LongValue.UPDATER, update);
+        ConcurrencyUtil.setMax(longValue, LongValue.VARHANDLE, update);
 
         long max = Math.max(current, update);
         assertEquals(max, longValue.value);
@@ -116,7 +117,7 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
     private static final class LongValue {
 
-        static final AtomicLongFieldUpdater UPDATER = AtomicLongFieldUpdater.newUpdater(LongValue.class, "value");
+        static final VarHandle VARHANDLE = ReflectionUtil.findVarHandle("value", long.class);
 
         volatile long value;
     }

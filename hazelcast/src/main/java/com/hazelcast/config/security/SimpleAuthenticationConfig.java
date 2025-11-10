@@ -16,13 +16,9 @@
 
 package com.hazelcast.config.security;
 
-import static java.util.Collections.newSetFromMap;
-import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toCollection;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -48,7 +44,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Adds one user to the configuration.
      *
-     * @param username username
      * @param password user's password
      * @param roles roles assigned to the user
      * @return this object
@@ -61,7 +56,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Adds one user to the configuration.
      *
-     * @param username username
      * @param userDto user's attributes
      * @return this object
      */
@@ -113,7 +107,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Return the configured password for given username.
      *
-     * @param username username
      * @return user's password or null if such user doesn't exist
      */
     public String getPassword(@Nonnull String username) {
@@ -124,7 +117,6 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     /**
      * Returns role names assigned to the given user.
      *
-     * @param username username
      * @return configured roles or null if the user doesn't exist
      */
     public Set<String> getRoles(@Nonnull String username) {
@@ -213,8 +205,7 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
         public UserDto(@Nonnull String password, @Nonnull String... roles) {
             this.password = requireNonEmpty(password, "Password can't be empty");
             requireNonNull(roles, "Roles can't be null");
-            this.roles = unmodifiableSet(
-                    Arrays.stream(roles).collect(toCollection(() -> newSetFromMap(new ConcurrentHashMap<>()))));
+            this.roles = Set.of(roles);
         }
 
         @Override

@@ -61,7 +61,7 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
     public void run() {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Running before promotion for " + getPartitionMigrationEvent());
+            logger.finest("Running before promotion for %s", getPartitionMigrationEvent());
         }
 
         PartitionMigrationEvent event = getPartitionMigrationEvent();

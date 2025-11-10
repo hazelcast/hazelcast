@@ -49,6 +49,14 @@ final class InvocationBuilderImpl extends InvocationBuilder {
 
     @Override
     public InvocationFuture invoke() {
+        Invocation invocation = build();
+        return async
+                ? invocation.invokeAsync()
+                : invocation.invoke();
+    }
+
+    @Override
+    public Invocation build() {
         op.setServiceName(serviceName);
         Invocation invocation;
         if (executeOnMaster) {
@@ -65,9 +73,6 @@ final class InvocationBuilderImpl extends InvocationBuilder {
                     context, op, target, doneCallback, tryCount, tryPauseMillis,
                     callTimeout, resultDeserialized, connectionManager);
         }
-
-        return async
-                ? invocation.invokeAsync()
-                : invocation.invoke();
+        return invocation;
     }
 }

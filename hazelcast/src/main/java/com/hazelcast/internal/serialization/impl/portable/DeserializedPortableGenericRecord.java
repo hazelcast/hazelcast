@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,7 +44,6 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     private final ClassDefinition classDefinition;
     private final Object[] objects;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public DeserializedPortableGenericRecord(ClassDefinition classDefinition, Object[] objects) {
         this.classDefinition = classDefinition;
         this.objects = objects;

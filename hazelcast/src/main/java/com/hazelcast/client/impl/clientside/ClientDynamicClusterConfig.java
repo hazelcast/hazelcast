@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataConnectionConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigSetDiagnosticsConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
@@ -60,7 +59,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -120,7 +118,6 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into a live
@@ -1231,24 +1228,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config setVectorCollectionConfigs(Map<String, VectorCollectionConfig> vectorConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public DiagnosticsConfig getDiagnosticsConfig() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Nonnull
-    @Override
-    public Config setDiagnosticsConfig(DiagnosticsConfig diagnosticsConfig) {
-        checkNotNull(diagnosticsConfig, "DiagnosticsConfig cannot be null!");
-        ClientMessage request = DynamicConfigSetDiagnosticsConfigCodec.encodeRequest(diagnosticsConfig.isEnabled(),
-                diagnosticsConfig.getOutputType().name(), diagnosticsConfig.isIncludeEpochTime(),
-                diagnosticsConfig.getMaxRolledFileSizeInMB(), diagnosticsConfig.getMaxRolledFileCount(),
-                diagnosticsConfig.getLogDirectory(), diagnosticsConfig.getFileNamePrefix(),
-                diagnosticsConfig.getPluginProperties());
-        invoke(request);
-        return this;
     }
 
     @Override

@@ -41,12 +41,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -110,7 +110,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }, 30);
     }
 
-    @NotNull
+    @Nonnull
     protected Config getConfig() {
         Config config = super.getConfig();
         config.getSerializationConfig().addDataSerializableFactory(100, new Factory());

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cache contains a mapping for a key k such that key.equals(k). (There can be at most one such mapping.)
  */
 @SuppressWarnings("unused")
-@Generated("07c8af35ed8da051bdd128518a1c2e49")
+@Generated("b30b166473964cd4217cc38236b7c630")
 public final class CacheContainsKeyCodec {
     //hex: 0x130500
     public static final int REQUEST_MESSAGE_TYPE = 1246464;
@@ -51,7 +51,6 @@ public final class CacheContainsKeyCodec {
     private CacheContainsKeyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

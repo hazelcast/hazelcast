@@ -46,7 +46,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,6 +53,7 @@ import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -488,7 +488,7 @@ public class JobRepository {
         cleanupJobResults(nodeEngine);
 
         long elapsed = System.nanoTime() - start;
-        logger.fine("Job cleanup took " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
+        logger.fine("Job cleanup took %sms", TimeUnit.NANOSECONDS.toMillis(elapsed));
     }
 
     private void cleanupMaps(NodeEngine nodeEngine) {
@@ -531,7 +531,7 @@ public class JobRepository {
             IMap resourceMap = (IMap) map;
             long creationTime = resourceMap.getLocalMapStats().getCreationTime();
             if (isResourceMapExpired(creationTime)) {
-                logger.fine("Deleting job resource map " + map.getName() + " because the map " +
+                logger.fine("Deleting job resource map %s because the map %s", map.getName(),
                         "was created long ago and job record or result still doesn't exist");
                 resourceMap.destroy();
             }
@@ -750,10 +750,11 @@ public class JobRepository {
     public static final class UpdateJobExecutionRecordEntryProcessor implements
             EntryProcessor<Long, JobExecutionRecord, Object>,
             IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         private long jobId;
-        @SuppressFBWarnings(value = "SE_BAD_FIELD",
-                justification = "this class is not going to be java-serialized")
+//        @SuppressFBWarnings(value = "SE_BAD_FIELD",
+//                justification = "this class is not going to be java-serialized")
         private JobExecutionRecord jobExecutionRecord;
         private boolean canCreate;
 
@@ -811,7 +812,8 @@ public class JobRepository {
 
     public static class FilterJobResultByNamePredicate
             implements Predicate<Long, JobResult>, IdentifiedDataSerializable {
-
+        @Serial
+        private static final long serialVersionUID = 1L;
         private String name;
 
         public FilterJobResultByNamePredicate() {

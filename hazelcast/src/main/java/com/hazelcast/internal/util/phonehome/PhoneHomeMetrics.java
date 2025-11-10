@@ -204,7 +204,10 @@ public enum PhoneHomeMetrics implements Metric {
 
     UCN_ENABLED("ucnenabled"),
     UCN_NAMESPACE_COUNT("ucncount"),
-    V_CPU_COUNT("vcpuct");
+    V_CPU_COUNT("vcpuct"),
+
+    DIAGNOSTICS_DYNAMIC_ENABLED_COUNT("diagdenbct"),
+    DIAGNOSTICS_DYNAMIC_AUTO_OFF_COUNT("diagdoffct");
 
     private final String query;
 

@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -43,13 +43,14 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.diagnostics.memberinfo.period.seconds", 60, SECONDS);
 
-    private final long periodMillis;
+    private long periodMillis;
     private final NodeEngineImpl nodeEngine;
+
 
     public MemberHazelcastInstanceInfoPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(MemberHazelcastInstanceInfoPlugin.class));
-        this.periodMillis = nodeEngine.getProperties().getMillis(PERIOD_SECONDS);
         this.nodeEngine = nodeEngine;
+        readProperties();
     }
 
     @Override
@@ -59,11 +60,26 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
 
     @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
+    void readProperties() {
+        this.periodMillis = nodeEngine.getProperties().getMillis(overrideProperty(PERIOD_SECONDS));
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("HazelcastInstance");
 
         writer.writeKeyValueEntry("thisAddress", nodeEngine.getNode().getThisAddress().toString());

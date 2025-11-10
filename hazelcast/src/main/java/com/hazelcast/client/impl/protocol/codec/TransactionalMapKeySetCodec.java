@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * a QueryResultSizeExceededException if query result size limit is configured.
  */
 @SuppressWarnings("unused")
-@Generated("7446f84b9ad8a81b3fcc4e62bdcd8ea0")
+@Generated("14204ec17b5ccc86582168934b04da2f")
 public final class TransactionalMapKeySetCodec {
     //hex: 0x0E0E00
     public static final int REQUEST_MESSAGE_TYPE = 921088;
@@ -53,7 +53,6 @@ public final class TransactionalMapKeySetCodec {
     private TransactionalMapKeySetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

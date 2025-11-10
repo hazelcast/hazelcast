@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiate WAN consistency check for a specific map
  */
 @SuppressWarnings("unused")
-@Generated("cd9d16b9c8f8aaaee3c42dfbc1e6a4a4")
+@Generated("b3491bb2c7589fdc07d82cb7bde4ea82")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;
@@ -50,7 +50,6 @@ public final class MCCheckWanConsistencyCodec {
     private MCCheckWanConsistencyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

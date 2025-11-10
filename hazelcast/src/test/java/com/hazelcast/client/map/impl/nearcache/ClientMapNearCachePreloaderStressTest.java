@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static java.util.concurrent.Executors.newFixedThreadPool;
-import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)

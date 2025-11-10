@@ -18,10 +18,9 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ItemCounter;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -61,20 +60,25 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.invocation.slow.max.count", 100);
 
     private final InvocationRegistry invocationRegistry;
-    private final long samplePeriodMillis;
-    private final long thresholdMillis;
-    private final int maxCount;
+    private long samplePeriodMillis;
+    private long thresholdMillis;
+    private int maxCount;
     private final ItemCounter<String> slowOccurrences = new ItemCounter<>();
     private final ItemCounter<String> occurrences = new ItemCounter<>();
+    private final HazelcastProperties props;
 
-    public InvocationSamplePlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = operationService.getInvocationRegistry();
-        HazelcastProperties props = nodeEngine.getProperties();
-        this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);
-        this.thresholdMillis = props.getMillis(SLOW_THRESHOLD_SECONDS);
-        this.maxCount = props.getInteger(SLOW_MAX_COUNT);
+    public InvocationSamplePlugin(ILogger logger, InvocationRegistry invocationRegistry, HazelcastProperties props) {
+        super(logger);
+        this.invocationRegistry = invocationRegistry;
+        this.props = props;
+        readProperties();
+    }
+
+    @Override
+    void readProperties() {
+        this.samplePeriodMillis = props.getMillis(overrideProperty(SAMPLE_PERIOD_SECONDS));
+        this.thresholdMillis = props.getMillis(overrideProperty(SLOW_THRESHOLD_SECONDS));
+        this.maxCount = props.getInteger(overrideProperty(SLOW_MAX_COUNT));
     }
 
     @Override
@@ -84,11 +88,21 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + samplePeriodMillis + " threshold-millis:" + thresholdMillis);
     }
 
     @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         long now = Clock.currentTimeMillis();
 
         writer.startSection("Invocations");
@@ -100,6 +114,14 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
         renderSlowHistory(writer);
 
         writer.endSection();
+    }
+
+    int getMaxCount() {
+        return maxCount;
+    }
+
+    long getThresholdMillis() {
+        return thresholdMillis;
     }
 
     private void runCurrent(DiagnosticsLogWriter writer, long now) {

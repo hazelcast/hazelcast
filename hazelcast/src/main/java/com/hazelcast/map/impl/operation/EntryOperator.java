@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
@@ -28,6 +29,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.ExtendedMapEntry;
+import com.hazelcast.map.LockAware;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
@@ -36,6 +38,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -186,7 +189,7 @@ public final class EntryOperator {
         oldValue = recordStore.get(dataKey, backup, callerAddress, false);
 
         // predicated entry processors can only be applied to existing entries
-        // so if we have a predicate and somehow(due to expiration or split-brain healing)
+        // so if we have a predicate and somehow (due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
         if (predicate != null && oldValue == null) {
             return this;
@@ -204,7 +207,7 @@ public final class EntryOperator {
         }
 
         // predicated entry processors can only be applied to existing entries
-        // so if we have a predicate and somehow(due to expiration or split-brain healing)
+        // so if we have a predicate and somehow (due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
         if (predicate != null && oldValue == null) {
             return false;
@@ -215,6 +218,35 @@ public final class EntryOperator {
 
     public EntryOperator operateOnKeyValue(Data dataKey, Object oldValue) {
         init(dataKey, oldValue, null, null, null, null, true, UNSET);
+        return operateOnKeyValueInternal();
+    }
+
+    /**
+     * This is a variant of {@link #operateOnKey(Data)} which is used during scan.
+     * The differences are:
+     * <ol>
+     *     <li>It gets value from the scan, so does not have to look it up again</li>
+     *     <li>It does not expire entries</li>
+     *     <li>It will not load entry from MapStore</li>
+     * </ol>
+     *
+     * This method sets {@link LockAware#isLocked()} correctly (unlike {@link #operateOnKeyValue(Data, Object)}
+     * so it can be queried by the users according to contract of scanning entry processor methods.
+     */
+    public EntryOperator operateOnKeyValueDuringScan(Data dataKey, Object oldValue) {
+        // use the same sequence of operations as in operateOnKey
+        init(dataKey, null, null, null, null,
+                null, true, UNSET);
+
+        if (belongsAnotherPartition(dataKey)) {
+            return this;
+        }
+
+        this.oldValue = mapServiceContext.interceptGet(mapContainer.getInterceptorRegistry(), oldValue);
+
+        Boolean locked = recordStore.isLocked(dataKey);
+        init(dataKey, clonedOrRawOldValue(), null, null, null,
+                locked, true, UNSET);
         return operateOnKeyValueInternal();
     }
 

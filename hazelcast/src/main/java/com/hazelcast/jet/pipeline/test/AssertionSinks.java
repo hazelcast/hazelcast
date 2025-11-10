@@ -153,7 +153,7 @@ public final class AssertionSinks {
      * complete the job before the other ones succeeded.
      * <p>
      * The assertion can be validated as follows:
-     * <pre>{@code
+     * <pre>
      * try {
      *     jetInstance.newJob(p).join();
      *     Assert.fail("Job should have completed with an AssertionCompletedException, " +

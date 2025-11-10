@@ -718,9 +718,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      * @param hotRestartConfig hot restart config
      * @return this {@code MapConfig} instance
      *
-     * @deprecated since 5.0 use {@link MapConfig#setDataPersistenceConfig(DataPersistenceConfig)}
+     * @deprecated use {@link MapConfig#setDataPersistenceConfig(DataPersistenceConfig)}
      */
-    @Deprecated
+    @Deprecated(since = "5.0")
     public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig cannot be null");
 

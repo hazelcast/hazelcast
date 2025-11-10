@@ -28,7 +28,8 @@ import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import org.junit.jupiter.api.Tag;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.Test;
 
 import javax.management.ObjectName;
@@ -37,14 +38,12 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEX_PARTITIONS_INDEXED;
 import static com.hazelcast.map.metrics.MetricTestUtils.assertAttributeEquals;
 import static com.hazelcast.map.metrics.MetricTestUtils.buildMapIndexMetricName;
-import static com.hazelcast.test.annotation.ParallelJVMTest.PARALLEL_JVM_TEST;
-import static com.hazelcast.test.annotation.QuickTest.QUICK_TEST;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-@Tag(PARALLEL_JVM_TEST)
-@Tag(QUICK_TEST)
+@ParallelJVMTest
+@QuickTest
 class PartitionsIndexedTest
         extends HazelcastTestSupport {
 

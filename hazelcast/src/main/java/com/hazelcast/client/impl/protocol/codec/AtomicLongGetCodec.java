@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the current value.
  */
 @SuppressWarnings("unused")
-@Generated("39a96a2c54b022db079ff08a3b4a6852")
+@Generated("f6776fbe7e90596b975b7afeb081cb78")
 public final class AtomicLongGetCodec {
     //hex: 0x090500
     public static final int REQUEST_MESSAGE_TYPE = 591104;
@@ -50,7 +50,6 @@ public final class AtomicLongGetCodec {
     private AtomicLongGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * A no-operation processor. See {@link Processors#noopP()}.
@@ -63,6 +64,8 @@ public class NoopP implements Processor {
     }
 
     public static final class NoopPSupplier implements SupplierEx<Processor>, IdentifiedDataSerializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Processor getEx() throws Exception {

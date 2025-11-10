@@ -116,12 +116,12 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
     }
 
     @Override
-    public long getValuesCallsCount() {
+    public long getValuesCallCount() {
         return 0;
     }
 
     @Override
-    public long getEntrySetCallsCount() {
+    public long getEntrySetCallCount() {
         return 0;
     }
 

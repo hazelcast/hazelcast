@@ -24,6 +24,7 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.IMap;
@@ -49,6 +50,7 @@ import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -140,8 +142,8 @@ public interface RecordStore<R extends Record> {
      * <p>
      * An implementation is not supposed to be thread safe.
      *
-     * @param record  the accessed record
-     * @param now     the current time
+     * @param record the accessed record
+     * @param now    the current time
      */
     void accessRecord(Data dataKey, Record record, long now);
 
@@ -450,7 +452,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Does post eviction operations like sending events
      *
-     * @param dataValue    record to process
+     * @param dataValue record to process
      */
     void doPostEvictionOperations(@Nonnull Data dataKey, @Nonnull Object dataValue,
                                   @Nonnull ExpiryReason expiryReason);
@@ -627,10 +629,12 @@ public interface RecordStore<R extends Record> {
      *                             MapService shutdown, false otherwise.
      * @param onRecordStoreDestroy true if record-store will be destroyed,
      *                             otherwise false.
+     * @param disposables          disposable like freeing
+     *                             memory can be added this queue to make actual disposal later
      */
     @SuppressWarnings("JavadocReference")
-    void clearPartition(boolean onShutdown,
-                        boolean onRecordStoreDestroy);
+    void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy,
+                        @Nullable Queue<Disposable> disposables);
 
     /**
      * Called by {@link IMap#clear()}.

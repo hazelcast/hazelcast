@@ -20,7 +20,7 @@ import org.mockito.invocation.InvocationOnMock;
 
 /**
  * Default {@link org.mockito.stubbing.Answer} to create a mock for a proxied
- * {@link com.hazelcast.internal.server.FirewallingConnectionManager}.
+ * {@link com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager}.
  */
 class FirewallingConnectionManagerAnswer extends AbstractAnswer {
 

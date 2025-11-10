@@ -123,8 +123,7 @@ public class ClientListenerServiceImpl
                 }
                 case ALL_MEMBERS -> connections.forEach(connection ->
                         doRemoteRegistrationSync(registration, connection, userRegistrationId));
-                default ->
-                        throw new IllegalArgumentException("Unsupported routing mode: " + routingMode);
+                default -> throw new IllegalArgumentException("Unsupported routing mode: " + routingMode);
             }
 
             return userRegistrationId;
@@ -207,12 +206,9 @@ public class ClientListenerServiceImpl
         ClientConnection connection = (ClientConnection) clientMessage.getConnection();
         EventHandler eventHandler = connection.getEventHandler(correlationId);
         if (eventHandler == null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
-            }
+            logger.warning("No eventHandler for callId: " + correlationId + " event: " + clientMessage);
             return;
         }
-
         eventHandler.handle(clientMessage);
     }
 
@@ -228,7 +224,7 @@ public class ClientListenerServiceImpl
         ClientMessage request = codec.encodeAddRequest(registersLocalOnly());
         EventHandler handler = listenerRegistration.getHandler();
         if (logger.isFinestEnabled()) {
-            logger.finest("Register attempt of " + listenerRegistration + " to " + connection);
+            logger.finest("Register attempt of %s to %s", listenerRegistration, connection);
         }
         handler.beforeListenerRegister(connection);
 
@@ -245,7 +241,7 @@ public class ClientListenerServiceImpl
 
         UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
         if (logger.isFinestEnabled()) {
-            logger.finest("Registered " + listenerRegistration + " to " + connection);
+            logger.finest("Registered %s to %s", listenerRegistration, connection);
         }
         handler.onListenerRegister(connection);
         long correlationId = request.getCorrelationId();

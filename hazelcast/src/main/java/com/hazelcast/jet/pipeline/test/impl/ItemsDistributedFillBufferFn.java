@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Iterator;
 
 /**
@@ -33,7 +34,8 @@ import java.util.Iterator;
  */
 public class ItemsDistributedFillBufferFn<T>
         implements BiConsumerEx<Context, SourceBuffer<T>>, IdentifiedDataSerializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private Iterable<? extends T> items;
 
     // for deserialization

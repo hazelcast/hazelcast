@@ -203,7 +203,6 @@ import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.DATA_CONNECTION;
-import static com.hazelcast.internal.config.ConfigSections.DIAGNOSTICS;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
@@ -415,8 +414,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleRest(node);
         } else if (matches(VECTOR.getName(), nodeName)) {
             handleVector(node);
-        } else if (matches(DIAGNOSTICS.getName(), nodeName)) {
-            handleDiagnostics(node, config.getDiagnosticsConfig());
         } else {
             return true;
         }
@@ -1008,8 +1005,24 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleAdvancedNetwork(Node node)
-            throws Exception {
+    private void handleAdvancedNetwork(Node node) throws Exception {
+        // XSD 1.0 limitation: with the existing <xs:choice maxOccurs="unbounded"> model,
+        // the schema can’t restrict these elements to a single occurrence without a
+        // backward-incompatible change (e.g., introducing wrapper elements).
+        // To stay compatible, we enforce uniqueness in the parser and fail fast with
+        // InvalidConfigurationException when a duplicate singleton is encountered.
+        final Set<String> singletonElements = Set.of(
+                "join",
+                "failure-detector",
+                "member-address-provider",
+                "member-server-socket-endpoint-config",
+                "client-server-socket-endpoint-config",
+                "rest-server-socket-endpoint-config",
+                "memcache-server-socket-endpoint-config"
+        );
+        final Set<String> seen = new HashSet<>(singletonElements.size());
+
+        // enabled attribute
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
@@ -1017,8 +1030,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 config.getAdvancedNetworkConfig().setEnabled(getBooleanValue(att.getNodeValue()));
             }
         }
+
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
+            if (singletonElements.contains(nodeName) && !seen.add(nodeName)) {
+                throw new InvalidConfigurationException(
+                        "At most one " + nodeName + " is allowed under advanced-network."
+                );
+            }
+
             if (matches("join", nodeName)) {
                 handleJoin(child, true);
             } else if (matches("wan-endpoint-config", nodeName)) {
@@ -1671,7 +1691,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         getIntegerValue("connection-timeout-seconds", getTextContent(att)));
             }
         }
-        Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
+        Set<String> memberTags = Set.of("interface", "member", "members");
         for (Node n : childElements(node)) {
             if (matches(cleanNodeName(n), "member-list")) {
                 handleMemberList(n, advancedNetworkConfig);
@@ -3678,6 +3698,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         final String securityRealmName = "security-realm";
         final String tokenValiditySecondsName = "token-validity-seconds";
         final String requestTimeoutSecondsName = "request-timeout-seconds";
+        final String maxLoginAttempts = "max-login-attempts";
+        final String lockoutDuration = "lockout-duration-seconds";
 
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
@@ -3693,8 +3715,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches(requestTimeoutSecondsName, childName)) {
                 restConfig.setRequestTimeoutDuration(Duration
                         .ofSeconds(getIntegerValue(requestTimeoutSecondsName, getTextContent(child))));
+            } else if (matches(maxLoginAttempts, childName)) {
+                restConfig.setMaxLoginAttempts(getIntegerValue(maxLoginAttempts, getTextContent(child)));
+            } else if (matches(lockoutDuration, childName)) {
+                int durationSeconds = getIntegerValue(lockoutDuration, getTextContent(child));
+                restConfig.setLockoutDuration(Duration.of(durationSeconds, SECONDS));
             }
-
         }
     }
 

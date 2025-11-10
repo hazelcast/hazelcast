@@ -16,9 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
-@Tag("com.hazelcast.test.annotation.QuickTest")
+@QuickTest
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 class LazyCollectionTest {
     private static LazyCollection<?, ?> collection;

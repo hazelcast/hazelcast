@@ -19,7 +19,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -50,21 +50,22 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
             "hazelcast.diagnostics.slowoperations.period.seconds", 60, SECONDS);
 
     private final OperationServiceImpl operationService;
-    private final long periodMillis;
+    private final HazelcastProperties properties;
+    private long periodMillis;
 
-    public SlowOperationPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(SlowOperationPlugin.class));
-        this.operationService = nodeEngine.getOperationService();
-        this.periodMillis = getPeriodMillis(nodeEngine);
+    public SlowOperationPlugin(ILogger logger, OperationServiceImpl operationService, HazelcastProperties props) {
+        super(logger);
+        this.operationService = operationService;
+        this.properties = props;
+        readProperties();
     }
 
-    private long getPeriodMillis(NodeEngineImpl nodeEngine) {
-        HazelcastProperties props = nodeEngine.getProperties();
-        if (!props.getBoolean(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
-            return DISABLED;
+    private long readPeriodMillis() {
+        if (!properties.getBoolean(ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
+            return NOT_SCHEDULED_PERIOD_MS;
         }
 
-        return props.getMillis(PERIOD_SECONDS);
+        return properties.getMillis(overrideProperty(PERIOD_SECONDS));
     }
 
     @Override
@@ -74,11 +75,26 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
 
     @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
+    void readProperties() {
+        this.periodMillis = readPeriodMillis();
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         List<SlowOperationDTO> slowOperations = operationService.getSlowOperationDTOs();
         writer.startSection("SlowOperations");
 

@@ -110,8 +110,6 @@ public final class ClassLocator {
 
     public Class<?> defineClassFromClient(final String name, final byte[] classDef, Map<String, byte[]> bundledClassDefinitions) {
         // we need to acquire a classloading lock before defining a class
-        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
-        // mutexFactory abstract these differences away
         String mainClassName = extractMainClassName(name);
         Closeable classMutex = mutexFactory.mutexFor(mainClassName);
         try {
@@ -123,7 +121,7 @@ public final class ClassLocator {
                             throw new IllegalStateException("Class " + name
                                     + " is already in local cache and has conflicting byte code representation");
                         } else if (logger.isFineEnabled()) {
-                            logger.finest("Class " + name + " is already in local cache with equal byte code");
+                            logger.finest("Class %s is already in local cache with equal byte code", name);
                         }
                         return classSource.getClazz(name);
                     }
@@ -141,8 +139,6 @@ public final class ClassLocator {
 
     private Class<?> tryToGetClassFromRemote(String name) throws ClassNotFoundException {
         // we need to acquire a classloading lock before defining a class
-        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
-        // mutexFactory abstract these differences away
         String mainClassName = extractMainClassName(name);
         Closeable classMutex = mutexFactory.mutexFor(mainClassName);
         try {
@@ -152,7 +148,7 @@ public final class ClassLocator {
                     Class clazz = classSource.getClazz(name);
                     if (clazz != null) {
                         if (logger.isFineEnabled()) {
-                            logger.finest("Class " + name + " is already in local cache");
+                            logger.finest("Class %s is already in local cache", name);
                         }
                         return clazz;
                     }
@@ -187,7 +183,7 @@ public final class ClassLocator {
             Class clazz = classSource.getClazz(name);
             if (clazz != null) {
                 if (logger.isFineEnabled()) {
-                    logger.finest("Class " + name + " is already in local cache");
+                    logger.finest("Class %s is already in local cache", name);
                 }
                 return clazz;
             }
@@ -198,7 +194,7 @@ public final class ClassLocator {
             Class clazz = classSource.getClazz(name);
             if (clazz != null) {
                 if (logger.isFineEnabled()) {
-                    logger.finest("Class " + name + " is already in local cache");
+                    logger.finest("Class %s is already in local cache", name);
                 }
                 return clazz;
             }
@@ -241,7 +237,7 @@ public final class ClassLocator {
                 classData = tryToFetchClassDataFromMember(className, member);
                 if (classData != null) {
                     if (logger.isFineEnabled()) {
-                        logger.finest("Loaded class " + className + " from " + member);
+                        logger.finest("Loaded class %s from %s", className, member);
                     }
                     return classData;
                 }

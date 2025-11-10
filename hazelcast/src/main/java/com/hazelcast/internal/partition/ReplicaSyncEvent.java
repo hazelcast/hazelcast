@@ -24,7 +24,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
  * @param namespace synchronized namespace
  * @param replicaIndex synchronized replica index
  *
- * @since 6.0
+ * @since 5.6
  */
 public record ReplicaSyncEvent(int partitionId, ServiceNamespace namespace,
                                int replicaIndex) {

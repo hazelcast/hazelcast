@@ -32,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_REMOVEWITHINDEX}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListRemoveWithIndexCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListRemoveWithIndexMessageTask
         extends AbstractListMessageTask<ListRemoveWithIndexCodec.RequestParameters> {

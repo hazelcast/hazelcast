@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.internal.util.ItemCounter;
@@ -54,16 +53,21 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     private final InvocationRegistry invocationRegistry;
     private final ItemCounter<String> occurrenceMap = new ItemCounter<>();
-    private final long periodMillis;
-    private final int threshold;
+    private final HazelcastProperties properties;
+    private long periodMillis;
+    private int threshold;
 
-    public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = operationService.getInvocationRegistry();
-        HazelcastProperties props = nodeEngine.getProperties();
-        this.periodMillis = props.getMillis(PERIOD_SECONDS);
-        this.threshold = props.getInteger(THRESHOLD);
+    public PendingInvocationsPlugin(ILogger logger, InvocationRegistry invocationRegistry, HazelcastProperties props) {
+        super(logger);
+        this.invocationRegistry = invocationRegistry;
+        properties = props;
+        readProperties();
+    }
+
+    @Override
+    void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.threshold = properties.getInteger(overrideProperty(THRESHOLD));
     }
 
     @Override
@@ -73,11 +77,22 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active: period-millis:" + periodMillis + " threshold:" + threshold);
     }
 
     @Override
+    public void onShutdown() {
+        clean();
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         clean();
         scan();
         render(writer);
@@ -111,5 +126,10 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
             writer.writeKeyValueEntry(op, count);
         }
         writer.endSection();
+    }
+
+    // just for testing
+    int getThreshold() {
+        return threshold;
     }
 }

@@ -212,12 +212,12 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
     }
 
     private void createOrReadMapping() {
-        logger.fine("Initializing for map " + mapName);
+        logger.fine("Initializing for map %s", mapName);
         try {
             List<SqlColumnMetadata> mappingColumns = null;
             if (genericMapStoreProperties.hasColumns()) {
                 mappingColumns = resolveMappingColumns();
-                logger.fine("Discovered following mapping columns: " + mappingColumns);
+                logger.fine("Discovered following mapping columns: %s", mappingColumns);
             }
 
             mappingHelper.createMapping(
@@ -267,7 +267,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
     }
 
     private void readExistingMapping() {
-        logger.fine("Reading existing mapping for map " + mapName);
+        logger.fine("Reading existing mapping for map %s", mapName);
         try {
             // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
             List<SqlColumnMetadata> columnMetadata = mappingHelper.loadColumnMetadataFromMapping(mappingName);

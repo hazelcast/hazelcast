@@ -47,7 +47,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.MONGO_IMAGE;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -64,7 +64,7 @@ public class KafkaConnectMongoDbIT extends JetTestSupport {
     @BeforeClass
     public static void setupClass() {
         assumeDockerEnabled();
-        mongoContainer = new MongoDBContainer("mongo:" + MONGO_VERSION);
+        mongoContainer = new MongoDBContainer(MONGO_IMAGE);
         mongoContainer.start();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());
     }
@@ -128,7 +128,7 @@ public class KafkaConnectMongoDbIT extends JetTestSupport {
         jobConfig.addClass(TestUtil.class);
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         jobConfig.setSnapshotIntervalMillis(500);
-        jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.10.0-all.jar"));
+        jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.16.0-all.jar"));
         return jobConfig;
     }
 

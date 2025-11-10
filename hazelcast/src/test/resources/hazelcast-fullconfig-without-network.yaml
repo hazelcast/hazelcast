@@ -643,7 +643,7 @@ hazelcast:
   native-memory:
     allocator-type: STANDARD
     enabled: true
-    size:
+    capacity:
       unit: MEGABYTES
       value: 256
     min-block-size: 128

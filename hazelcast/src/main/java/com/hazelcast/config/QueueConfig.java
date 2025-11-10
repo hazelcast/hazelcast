@@ -61,7 +61,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     /**
-     * Default value for the TTL (time to live) for empty Queue.
+     * Default value for the {@link #getEmptyQueueTtl()}
      */
     public static final int DEFAULT_EMPTY_QUEUE_TTL = -1;
 
@@ -70,6 +70,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
+    /** @see #getEmptyQueueTtl() */
     private int emptyQueueTtl = DEFAULT_EMPTY_QUEUE_TTL;
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
@@ -102,18 +103,18 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     }
 
     /**
-     * Returns the TTL (time to live) for emptying the Queue.
-     *
-     * @return the TTL (time to live) for emptying the Queue
+     * @return the TTL (time to live) for destroying the Queue (in seconds). <br>
+     *         Once items have been removed and the Queue has been empty for a given amount of time, the Queue will be
+     *         destroyed. Has no effect until the Queue has been populated.
      */
     public int getEmptyQueueTtl() {
         return emptyQueueTtl;
     }
 
     /**
-     * Sets the TTL (time to live) for emptying the Queue.
-     *
-     * @param emptyQueueTtl set the TTL (time to live) for emptying the Queue to this value
+     * @param emptyQueueTtl set the TTL (time to live) for destroying the Queue (in seconds). <br>
+     *        Once items have been removed and the Queue has been empty for a given amount of time, the Queue will be destroyed.
+     *        Has no effect until the Queue has been populated.
      * @return the Queue configuration
      */
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {

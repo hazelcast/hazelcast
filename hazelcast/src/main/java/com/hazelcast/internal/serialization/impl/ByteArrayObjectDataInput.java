@@ -155,7 +155,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      * @return the next byte of this input stream as a signed 8-bit
      * {@code byte}.
      * @throws java.io.EOFException if this input stream has reached the end
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -183,7 +182,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next two bytes of this input stream as a Unicode character
      * @throws java.io.EOFException if this input stream reaches the end before reading two bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -206,7 +204,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next eight bytes of this input stream, interpreted as a {@code double}
      * @throws java.io.EOFException if this input stream reaches the end before reading eight bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.DataInputStream#readLong()
      * @see Double#longBitsToDouble(long)
      */
@@ -237,7 +234,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next four bytes of this input stream, interpreted as a {@code float}
      * @throws java.io.EOFException if this input stream reaches the end before reading four bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.DataInputStream#readInt()
      * @see Float#intBitsToFloat(int)
      */
@@ -282,7 +278,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next four bytes of this input stream, interpreted as an {@code int}
      * @throws java.io.EOFException if this input stream reaches the end before reading four bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -323,7 +318,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next eight bytes of this input stream, interpreted as a {@code long}
      * @throws java.io.EOFException if this input stream reaches the end before reading eight bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -359,7 +353,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next two bytes of this input stream, interpreted as a signed 16-bit number
      * @throws java.io.EOFException if this input stream reaches the end before reading two bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -554,7 +547,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next byte of this input stream, interpreted as an unsigned 8-bit number
      * @throws java.io.EOFException if this input stream has reached the end
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -569,7 +561,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      *
      * @return the next two bytes of this input stream, interpreted as an unsigned 16-bit integer
      * @throws java.io.EOFException if this input stream reaches the end before reading two bytes
-     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override

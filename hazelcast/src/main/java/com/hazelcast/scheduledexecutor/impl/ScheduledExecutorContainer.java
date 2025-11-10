@@ -25,6 +25,7 @@ import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor.Status;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -86,7 +87,7 @@ public class ScheduledExecutorContainer {
      * i.e. {@link IScheduledFuture#dispose()} or {@link IScheduledExecutorService#destroy()}
      * b. When a task is suspended (i.e. migration started / roll-backed)
      * Note: Permit releases are done, only if the task was previously active
-     * (i.e. {@link ScheduledTaskDescriptor#status == {@link Status#ACTIVE}}
+     * (i.e. {@link ScheduledTaskDescriptor#status} == {@link Status#ACTIVE}}
      *
      * As a result, {@link #tasks} size will be inconsistent with the number of acquired permits at times.
      */

@@ -47,6 +47,7 @@ public class CPMapConfig {
     /**
      * @deprecated exists only for DOM processing.
      */
+    @Deprecated
     public CPMapConfig() {
     }
 

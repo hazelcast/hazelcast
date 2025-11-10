@@ -74,10 +74,10 @@ import java.net.Socket;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.EventListener;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -87,7 +87,6 @@ import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECO
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static java.util.stream.IntStream.range;
@@ -626,7 +625,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                                 .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                         .setUsernamePasswordIdentityConfig("username", "password"))
                 .setMemberRealmConfig("mr", memberRealm)
-                .setClientPermissionConfigs(new HashSet<>(asList(
+                .setClientPermissionConfigs(Set.of(
                         new PermissionConfig()
                                 .setActions(newHashSet("read", "remove"))
                                 .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
@@ -644,7 +643,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 .setType(PermissionConfig.PermissionType.REPLICATEDMAP)
                                 .setName("rmap")
                                 .setPrincipal("monitor")
-                )));
+                ));
 
         cfg.setSecurityConfig(expectedConfig);
 
@@ -917,6 +916,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
             return 0;
         }
 
+        @Override
+        public void destroy() {
+        }
     }
 
     @Test
@@ -1612,20 +1614,22 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDiagnosticsConfig() {
-        Config cfg = new Config();
-        DiagnosticsConfig generatedCfg = getNewConfigViaXMLGenerator(cfg).getDiagnosticsConfig();
-        assertThat(generatedCfg).isEqualTo(cfg.getDiagnosticsConfig());
+    public void testMemberAttributesConfig() {
+        Config expectedConfig = new Config().setMemberAttributeConfig(new MemberAttributeConfig()
+                .setAttribute("attribute1", "value1")
+                .setAttribute("attribute2", "value2"));
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig, false);
+        assertEquals(expectedConfig.getMemberAttributeConfig(), actualConfig.getMemberAttributeConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
 
-    private static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
+    static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
-        LOGGER.fine("\n" + xml);
+        LOGGER.fine("\n%s", xml);
         return new InMemoryXmlConfig(xml);
     }
 

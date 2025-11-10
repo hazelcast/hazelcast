@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl is 0, then the entry lives forever.
  */
 @SuppressWarnings("unused")
-@Generated("0afc30bd26c5c01b29f17df2f89e95d5")
+@Generated("5c4a6c1a44c657587a380f4b3af406d1")
 public final class MapPutTransientCodec {
     //hex: 0x010D00
     public static final int REQUEST_MESSAGE_TYPE = 68864;
@@ -52,7 +52,6 @@ public final class MapPutTransientCodec {
     private MapPutTransientCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

@@ -35,9 +35,9 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * This class cannot be changed without breaking compatibility with existing
  * clients, in particular Management Center.
  *
- * @deprecated Since 5.3, to be removed in 6.0. Use {@link JobAndSqlSummary} instead
+ * @deprecated to be removed in 6.0. Use {@link JobAndSqlSummary} instead
  */
-@Deprecated
+@Deprecated(since = "5.3", forRemoval = true)
 public class JobSummary implements IdentifiedDataSerializable {
     private boolean isLightJob;
     private long jobId;

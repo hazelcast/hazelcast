@@ -52,7 +52,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -99,7 +98,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
         String mapName = "testPerNodePolicy_afterGracefulShutdown";
         Config config = createConfig(PER_NODE, perNodeMaxSize, mapName);
-        Set<Object> evictedKeySet = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        Set<Object> evictedKeySet = ConcurrentHashMap.newKeySet();
         // populate map from one of the nodes
         List<HazelcastInstance> nodes = createNodes(nodeCount, config);
         assertClusterSize(3, nodes.toArray(new HazelcastInstance[0]));

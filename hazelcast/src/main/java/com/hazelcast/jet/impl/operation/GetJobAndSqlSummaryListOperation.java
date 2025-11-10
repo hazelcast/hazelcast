@@ -16,20 +16,34 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.JobAndSqlSummaryIds;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.version.Version;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.stream.Collectors.toList;
+
 public class GetJobAndSqlSummaryListOperation extends AsyncOperation implements ReadonlyOperation {
+
     public GetJobAndSqlSummaryListOperation() {
     }
 
     @Override
-    public CompletableFuture<List<JobAndSqlSummary>> doRun() {
-        return getJobCoordinationService().getJobAndSqlSummaryList();
+    public CompletableFuture<? extends List<? extends JobAndSqlSummary>> doRun() {
+        Version currentClusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+        CompletableFuture<List<JobAndSqlSummaryIds>> summaries = getJobCoordinationService().getJobAndSqlSummaryList();
+        // TODO RU_COMPAT 5.6 is the last version to (inadvertently) use compact serialization for the response. Going
+        //  forward we return a class implementing IdentifiedDataSerializable. This switch is kept for backwards compatibility
+        //  during RU. Should be cleaned up when RU from version <= 5.6 is no longer supported.
+        //  .collect(toList()) used instead of .toList() as the latter returns an immutable list impl which fails to serialize
+        //  correctly whereas the former returns ArrayList.
+        return currentClusterVersion.isGreaterOrEqual(Versions.V5_7) ? summaries : summaries.thenApply(
+                result -> result.stream().map(JobAndSqlSummaryIds::toOldVersion).collect(toList()));
     }
 
     @Override

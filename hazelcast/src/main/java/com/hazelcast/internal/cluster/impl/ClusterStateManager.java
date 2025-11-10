@@ -101,7 +101,7 @@ public class ClusterStateManager {
         LockGuard stateLock = stateLockRef.get();
         while (stateLock.isLeaseExpired()) {
             if (stateLockRef.compareAndSet(stateLock, LockGuard.NOT_LOCKED)) {
-                logger.fine("Cluster state lock: " + stateLock + " is expired.");
+                logger.fine("Cluster state lock: %s is expired.", stateLock);
                 stateLock = LockGuard.NOT_LOCKED;
                 break;
             }
@@ -121,8 +121,9 @@ public class ClusterStateManager {
             boolean startingFromPersistence = hotRestartService.isEnabled() && hotRestartService.isClusterMetadataFoundOnDisk();
             if (startingFromPersistence) {
                 // When starting from persistence, ClusterMetadataManager initializes the cluster state
-                logger.fine("Skipping setting initial cluster state to "
-                        + initialState + ", as instructed by master, because persistence is enabled");
+                logger.fine(
+                        "Skipping setting initial cluster state to %s, as instructed by master, because persistence is enabled",
+                        initialState);
                 return;
             }
             if (currentState != ClusterState.ACTIVE && currentState != initialState) {
@@ -130,7 +131,7 @@ public class ClusterStateManager {
                         + initialState);
                 return;
             }
-            logger.fine("Setting initial cluster state: " + initialState + " and version: " + version);
+            logger.fine("Setting initial cluster state: %s and version: %s", initialState, version);
             setClusterStateAndVersion(initialState, version);
         } finally {
             clusterServiceLock.unlock();
@@ -304,7 +305,7 @@ public class ClusterStateManager {
                 return false;
             }
 
-            logger.fine("Rolling back cluster state transaction: " + txnId);
+            logger.fine("Rolling back cluster state transaction: %s", txnId);
             stateLockRef.set(LockGuard.NOT_LOCKED);
 
             // if state allows join after rollback, then remove all members which left during transaction.

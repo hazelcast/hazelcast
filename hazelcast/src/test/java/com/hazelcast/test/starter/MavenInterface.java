@@ -17,6 +17,7 @@
 package com.hazelcast.test.starter;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,10 +29,8 @@ import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
-import org.h2.util.StringUtils;
 
 import com.hazelcast.internal.tpcengine.util.OS;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 
 import java.io.IOException;
@@ -93,7 +92,7 @@ public class MavenInterface {
     public static Path locateArtifact(Artifact artifact, String... remoteRepositories) {
         final Path localCopy = MAVEN_REPOSITORY
                 .resolve(REPOSITORY_MANAGER.getPathForLocalArtifact(artifact) + FilenameUtils.EXTENSION_SEPARATOR
-                        + (StringUtils.isNullOrEmpty(artifact.getExtension()) ? "jar" : artifact.getExtension()));
+                        + (isNullOrEmpty(artifact.getExtension()) ? "jar" : artifact.getExtension()));
 
         if (!Files.exists(localCopy)) {
             downloadArtifact(artifact, remoteRepositories);
@@ -136,7 +135,7 @@ public class MavenInterface {
         builder.add("-DartifactId=" + artifact.getArtifactId());
         builder.add("-Dversion=" + artifact.getVersion());
 
-        if (!StringUtil.isNullOrEmpty(artifact.getClassifier())) {
+        if (!isNullOrEmpty(artifact.getClassifier())) {
             builder.add("-Dclassifier=" + artifact.getClassifier());
         }
 

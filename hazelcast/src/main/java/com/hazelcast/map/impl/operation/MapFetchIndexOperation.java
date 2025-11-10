@@ -75,7 +75,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             int sizeLimit
     ) {
         super(mapName);
-        checkPositive(sizeLimit, "" + sizeLimit);
+        checkPositive(sizeLimit, String.valueOf(sizeLimit));
         this.indexName = indexName;
         this.partitionIdSet = partitionIdSet;
         this.pointers = pointers;
@@ -148,7 +148,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             Data lastEntryKeyData = pointer.getLastEntryKeyData();
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Processing pointer: " + pointer);
+                logger.finest("Processing pointer: %s", pointer);
             }
 
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
@@ -187,7 +187,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         );
 
                         if (logger.isFinestEnabled()) {
-                            logger.finest("Generated pointer: " + newPointers[0]);
+                            logger.finest("Generated pointer: %s", newPointers[0]);
                         }
 
                         System.arraycopy(pointers, i + 1, newPointers, 1, newPointers.length - 1);

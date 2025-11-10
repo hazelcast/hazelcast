@@ -42,7 +42,7 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new SystemPropertiesPlugin(getNodeEngineImpl(hz));
+        plugin = new SystemPropertiesPlugin(getNodeEngineImpl(hz).getLogger(SystemPropertiesPlugin.class));
         plugin.onStart();
         System.setProperty(FAKE_PROPERTY, "foobar");
     }
@@ -54,7 +54,7 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testGetPeriodMillis() {
-        assertEquals(DiagnosticsPlugin.STATIC, plugin.getPeriodMillis());
+        assertEquals(DiagnosticsPlugin.RUN_ONCE_PERIOD_MS, plugin.getPeriodMillis());
     }
 
     @Test

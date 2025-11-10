@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     {@link com.hazelcast.internal.eviction.EvictionPolicyEvaluator} implementations.
+ *     {@link com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator} implementations.
  * </p>
  */
 package com.hazelcast.internal.eviction.impl.evaluator;

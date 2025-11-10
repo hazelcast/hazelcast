@@ -1,0 +1,27 @@
+name: 'Get Supported maintenance versions'
+
+outputs:
+  # Returns a sorted, unique array of major.minor versions
+  versions:
+    value: ${{ steps.get-maintenance-versions.outputs.versions }}
+  versions-including-extended-support-plus:
+    value: ${{ steps.get-maintenance-versions-including-extended-support-plus.outputs.versions }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: get-maintenance-versions
+      run: echo "versions=['5.4', '5.5', '5.6']" >> ${GITHUB_OUTPUT}
+
+    - shell: ${{ env.shell }}
+      id: get-extended-support-plus-versions
+      run: echo "versions=['5.3']" >> ${GITHUB_OUTPUT}
+
+    - shell: ${{ env.shell }}
+      id: get-maintenance-versions-including-extended-support-plus
+      run: |
+        echo "versions=$(jq --compact-output --null-input \
+          --argjson maintenance '${{ steps.get-maintenance-versions.outputs.versions }}' \
+          --argjson extended_support_plus '${{ steps.get-extended-support-plus-versions.outputs.versions }}' \
+          '$maintenance + $extended_support_plus | unique')" >> "${GITHUB_OUTPUT}"

@@ -790,7 +790,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     return;
                 } catch (IOException e) {
                     ex = e;
-                    logger.finest("Could not bind port[ " + port + "]: " + e.getMessage());
+                    logger.finest("Could not bind port[ %s]: %s", port, e.getMessage());
                 }
             }
 
@@ -1058,7 +1058,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             UUID newClusterId = response.getClusterId();
             UUID currentClusterId = clientClusterService.getClusterId();
             if (logger.isFineEnabled()) {
-                logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + currentClusterId);
+                logger.fine("Checking the cluster: %s, current cluster: %s", newClusterId, currentClusterId);
             }
             // `currentClusterId` is `null` only at the start of the client.
             // It is only set in this method below under `clientStateMutex`.
@@ -1347,7 +1347,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 UUID clusterId = clientClusterService.getClusterId();
                 if (targetClusterId.equals(clusterId)) {
                     if (logger.isFineEnabled()) {
-                        logger.fine("Client state is sent to cluster: " + targetClusterId);
+                        logger.fine("Client state is sent to cluster: %s", targetClusterId);
                     }
 
                     clientState = ClientState.INITIALIZED_ON_CLUSTER;
@@ -1448,7 +1448,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      */
     private class ConnectToAllClusterMembersTask implements Runnable {
 
-        private final Set<UUID> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<UUID> connectingAddresses = ConcurrentHashMap.newKeySet();
 
         @Override
         public void run() {

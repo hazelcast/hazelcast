@@ -53,14 +53,7 @@
         <notes><![CDATA[
         False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_7@.*$</packageUrl>
-        <cpe>cpe:/a:apache:hadoop</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_21@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf.*$</packageUrl>
         <cpe>cpe:/a:apache:hadoop</cpe>
     </suppress>
     <suppress>
@@ -81,7 +74,7 @@
         <notes><![CDATA[
         False positive. The flaws are relatated to the MySQL version and not the MySQL Debezium connector.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/io\.debezium/.*mysql.*@.*$</packageUrl>
         <cpe>cpe:/a:mysql:mysql</cpe>
     </suppress>
     <suppress>
@@ -161,5 +154,26 @@
         <cve>CVE-2023-43810</cve>
         <cve>CVE-2023-45142</cve>
         <cve>CVE-2023-47108</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - misidentifying Hazelcast as MongoDB
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-jet-mongodb@.*$</packageUrl>
+        <cve>CVE-2014-8180</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - misidentifying Hazelcast as MySQL
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-(enterprise-)?jet-cdc-mysql@.*$</packageUrl>
+        <cve>CVE-2017-15945</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - misidentifying test JAR as platform JAR
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet\.testjob.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
     </suppress>
 </suppressions>

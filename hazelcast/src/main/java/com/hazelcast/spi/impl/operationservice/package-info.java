@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService} API.
+ * Contains the {@link com.hazelcast.spi.impl.operationservice.OperationService} API.
  */
 package com.hazelcast.spi.impl.operationservice;

@@ -25,12 +25,16 @@ import com.hazelcast.jet.datamodel.Tag;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.io.Serial;
+
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
 
 
 public class AggregateOperation3Impl<T0, T1, T2, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation3<T0, T1, T2, A, R> {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public AggregateOperation3Impl() {
     }

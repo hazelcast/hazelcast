@@ -16,9 +16,10 @@
 package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
+import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.config.RoutingMode;
+import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.InitialMembershipEvent;
@@ -28,12 +29,11 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.jet.pipeline.MockLoggingFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,35 +49,52 @@ import java.util.stream.Collectors;
 import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport {
 
     protected static final MemberVersion VERSION
             = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final String HAZELCAST_LOGGING_TYPE = "hazelcast.logging.type";
+    private static final String HAZELCAST_LOGGING_CLASS = "hazelcast.logging.class";
 
-    protected final LoggingService loggingService = mock(LoggingService.class);
-    private final ILogger logger = mock(ILogger.class);
-    protected final HazelcastClientInstanceImpl clientMock = mock(HazelcastClientInstanceImpl.class);
-    private final ClientConnectionManager connectionManager = mock(ClientConnectionManager.class);
+    private String prevLoggingType;
+    private String prevLoggingClass;
+    protected HazelcastClientInstanceImpl client;
+    private final ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
+    private final AddressProvider addressProvider = mock(AddressProvider.class);
 
     protected abstract ClientClusterService createClientClusterService();
 
+
     @Before
     public void setUp() {
-        when(loggingService.getLogger(any(Class.class))).thenReturn(logger);
-        when(connectionManager.getRoutingMode()).thenReturn(RoutingMode.ALL_MEMBERS);
-        when(clientMock.getClientConfig()).thenReturn(new ClientConfig());
-        when(clientMock.getLoggingService()).thenReturn(loggingService);
-        when(clientMock.getProperties()).thenReturn(mock(HazelcastProperties.class));
-        when(clientMock.getConnectionManager()).thenReturn(connectionManager);
+        prevLoggingType = System.getProperty(HAZELCAST_LOGGING_TYPE);
+        prevLoggingClass = System.getProperty(HAZELCAST_LOGGING_CLASS);
+
+        System.clearProperty(HAZELCAST_LOGGING_TYPE);
+        System.setProperty(HAZELCAST_LOGGING_CLASS, MockLoggingFactory.class.getCanonicalName());
+        client = new HazelcastClientInstanceImpl(UUID.randomUUID().toString(),
+                new ClientConfig(), null, factory, addressProvider);
+    }
+
+    @After
+    public void after() {
+        if (prevLoggingType == null) {
+            System.clearProperty(HAZELCAST_LOGGING_TYPE);
+        } else {
+            System.setProperty(HAZELCAST_LOGGING_TYPE, prevLoggingType);
+        }
+        if (prevLoggingClass == null) {
+            System.clearProperty(HAZELCAST_LOGGING_CLASS);
+        } else {
+            System.setProperty(HAZELCAST_LOGGING_CLASS, prevLoggingClass);
+        }
     }
 
     @Test
@@ -546,7 +563,11 @@ public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport 
 
     @Test
     public void memberListLoggedOnHandleMembersViewEvent() {
-        ClientClusterService clusterService = createClientClusterService();
+        HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(UUID.randomUUID().toString(),
+                new ClientConfig(), null, factory, addressProvider);
+
+        ClientClusterService clusterService = new ClientClusterServiceImpl(client);
+
         MemberInfo member = member("127.0.0.1");
         List<MemberInfo> members = List.of(member);
 
@@ -558,15 +579,14 @@ public abstract class ClientClusterServiceBaseTest extends HazelcastTestSupport 
 
         for (int i = 0; i < 3; i++) {
             clusterService.handleMembersViewEvent(i, members, UUID.randomUUID());
-
-            // Returns the member list after the members view event
             assertCollection(
-                    members.stream()
-                            .map(MemberInfo::toMember)
-                            .collect(Collectors.toList()),
-                    clusterService.getEffectiveMemberList());
+                    members.stream().map(MemberInfo::toMember).collect(Collectors.toList()),
+                    clusterService.getEffectiveMemberList()
+            );
         }
-        // once on applyInitialState, twice on detectMembershipEvents
-        verify(logger, times(3)).info(expectedLogMessage);
+
+        assertThat(MockLoggingFactory.capturedMessages)
+                .filteredOn(msg -> msg.contains(expectedLogMessage))
+                .hasSize(3);
     }
 }

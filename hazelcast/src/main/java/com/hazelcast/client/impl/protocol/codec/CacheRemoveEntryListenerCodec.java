@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("e7f3831c57367fed6560deae8bc52381")
+@Generated("e3d2235f81674350337c396674e2c5c8")
 public final class CacheRemoveEntryListenerCodec {
     //hex: 0x131400
     public static final int REQUEST_MESSAGE_TYPE = 1250304;
@@ -52,7 +52,6 @@ public final class CacheRemoveEntryListenerCodec {
     private CacheRemoveEntryListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

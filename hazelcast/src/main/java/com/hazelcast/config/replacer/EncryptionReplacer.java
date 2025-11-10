@@ -21,6 +21,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.annotation.Nullable;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.xpath.XPath;
@@ -43,7 +44,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.util.StringUtil.trim;
+import static com.hazelcast.internal.util.StringUtil.strip;
 import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 import static java.lang.String.format;
 
@@ -127,7 +128,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
     public static final void main(String... args) throws Exception {
         if (args == null || args.length < 1 || args.length > 2) {
             System.err.println("Usage:");
-            System.err.println("\tjava -D<propertyName>=<propertyValue>  " + EncryptionReplacer.class.getName()
+            System.err.println("\tjava -D<propertyName>=<propertyValue> " + EncryptionReplacer.class.getName()
                     + " \"<String To Encrypt>\" [iterations]");
             System.err.println();
             System.err.println("The replacer configuration can be loaded either from hazelcast/hazelcast-client XML file:");
@@ -216,12 +217,13 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
             String name = cleanNodeName(n);
             if ("property".equals(name)) {
                 String propertyName = getTextContent(n.getAttributes().getNamedItem("name"));
-                String value = trim(getTextContent(n));
+                String value = strip(getTextContent(n));
                 properties.setProperty(propertyName, value == null ? "" : value);
             }
         }
     }
 
+    @Nullable
     private static String getTextContent(Node node) {
         try {
             return node.getTextContent();
@@ -230,6 +232,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
         }
     }
 
+    @Nullable
     private static String getTextContentOld(Node node) {
         Node child = node.getFirstChild();
         if (child != null) {

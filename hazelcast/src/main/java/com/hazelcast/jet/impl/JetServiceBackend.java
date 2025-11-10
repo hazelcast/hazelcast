@@ -152,8 +152,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         if (clientExceptionFactory != null) {
             ExceptionUtil.registerJetExceptions(clientExceptionFactory);
         } else {
-            logger.fine("Jet exceptions are not registered to the ClientExceptionFactory" +
-                        " since the ClientExceptionFactory is not accessible.");
+            logger.fine("Jet exceptions are not registered to the ClientExceptionFactory%s",
+                    " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
                     + jetConfig.getCooperativeThreadCount());
@@ -239,10 +239,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                         t
                 );
             } else {
-                logger.fine(
-                        "All non-master members were informed about the shutdown of member "
-                                + nodeEngine.getNode().getThisUuid()
-                );
+                logger.fine("All non-master members were informed about the shutdown of member %s",
+                        nodeEngine.getNode().getThisUuid());
             }
         });
     }
@@ -443,8 +441,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void beforeClusterStateChange(ClusterState requestedState) {
         if (requestedState == PASSIVE) {
             try {
-                nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                                new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
+                nodeEngine.getOperationService().createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME,
+                                new PrepareForPassiveClusterOperation())
                         .invoke().get();
             } catch (InterruptedException | ExecutionException e) {
                 throw rethrow(e);

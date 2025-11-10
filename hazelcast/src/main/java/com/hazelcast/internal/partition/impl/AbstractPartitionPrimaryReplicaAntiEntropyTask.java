@@ -144,11 +144,11 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
             ILogger logger = nodeEngine.getLogger(getClass());
             if (logger.isFinestEnabled()) {
                 if (clusterService.isMissingMember(target.address(), target.uuid())) {
-                    logger.finest("Could not send anti-entropy operation, because " + target + " is a missing member. "
-                            + partitionService.getPartition(partitionId));
+                    logger.finest("Could not send anti-entropy operation, because %s is a missing member. %s", target,
+                            partitionService.getPartition(partitionId));
                 } else {
-                    logger.finest("Could not send anti-entropy operation, because " + target + " is not a known member. "
-                            + partitionService.getPartition(partitionId));
+                    logger.finest("Could not send anti-entropy operation, because %s is not a known member. %s", target,
+                            partitionService.getPartition(partitionId));
                 }
             }
             return true;

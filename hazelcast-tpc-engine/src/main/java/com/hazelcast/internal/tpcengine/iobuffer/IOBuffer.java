@@ -161,7 +161,7 @@ public class IOBuffer {
     @SuppressWarnings("checkstyle:MagicNumber")
     public void writeShortL(short v) {
         ensureRemaining(SIZEOF_INT);
-        buff.put((byte) ((v) & 0xFF));
+        buff.put((byte) (v & 0xFF));
         buff.put((byte) ((v >>> 8) & 0xFF));
     }
 
@@ -185,7 +185,7 @@ public class IOBuffer {
     @SuppressWarnings("checkstyle:MagicNumber")
     public void writeIntL(int v) {
         ensureRemaining(SIZEOF_INT);
-        buff.put((byte) ((v) & 0xFF));
+        buff.put((byte) (v & 0xFF));
         buff.put((byte) ((v >>> 8) & 0xFF));
         buff.put((byte) ((v >>> 16) & 0xFF));
         buff.put((byte) ((v >>> 24) & 0xFF));

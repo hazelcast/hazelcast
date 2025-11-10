@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.tpcengine.util.JVM;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -103,7 +102,6 @@ public final class JVMUtil {
     }
 
     // not private for testing
-    @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     static Boolean isHotSpotCompressedOopsOrNull() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -122,7 +120,6 @@ public final class JVMUtil {
     /**
      * Fallback when checking CompressedOopsEnabled.
      */
-    @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     static Boolean isObjectLayoutCompressedOopsOrNull() {
         if (!UNSAFE_AVAILABLE) {
             return null;

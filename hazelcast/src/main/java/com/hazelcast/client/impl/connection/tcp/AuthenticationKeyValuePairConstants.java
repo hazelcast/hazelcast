@@ -36,15 +36,19 @@ import static com.hazelcast.client.config.RoutingStrategy.PARTITION_GROUPS;
 public final class AuthenticationKeyValuePairConstants {
 
     public static final String CLUSTER_VERSION = "clusterVersion";
-    public static final String ROUTING_MODE_NOT_SUPPORTED_MESSAGE = String.format(
-            "%s routing mode %s cannot be supported because the server has not sent "
-                    + "the required information. %s routing is an Enterprise feature in Hazelcast 5.5. "
-                    + "Make sure your cluster has Hazelcast Enterprise JARs on its classpath.",
-            RoutingMode.MULTI_MEMBER, PARTITION_GROUPS, RoutingMode.MULTI_MEMBER);
+    public static final String ROUTING_MODE_NOT_SUPPORTED_MESSAGE;
     public static final String MEMBER_GROUPS_INFO = "memberGroups";
     public static final String CP_LEADERS_INFO = "cp.leaders";
     private static final Version MULTI_MEMBER_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION = Versions.V5_5;
 
+    static {
+        ROUTING_MODE_NOT_SUPPORTED_MESSAGE = String.format(
+                "%s routing mode %s cannot be supported because the server has not sent "
+                        + "the required information. %s routing is an Enterprise feature in Hazelcast %s. "
+                        + "Make sure your cluster has Hazelcast Enterprise JARs on its classpath.",
+                RoutingMode.MULTI_MEMBER, PARTITION_GROUPS, RoutingMode.MULTI_MEMBER,
+                MULTI_MEMBER_ROUTING_MINIMUM_SUPPORTED_CLUSTER_VERSION);
+    }
 
     private AuthenticationKeyValuePairConstants() { }
 

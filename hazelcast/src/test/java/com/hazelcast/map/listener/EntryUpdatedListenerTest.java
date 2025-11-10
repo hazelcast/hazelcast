@@ -185,7 +185,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
     /**
      * Constructs a {@link EntryUpdatedListener}, registering it via {@code listenerSetter}
      *
-     * @return a {@link CompleteableFuture} referencing the {@link EntryEvent.getOldValue()} from when the
+     * @return a {@link CompletableFuture} referencing the {@link EntryEvent#getOldValue()} from when the
      *         {@link EntryUpdatedListener} was fired
      */
     private static CompletableFuture<Integer> setMapListener(

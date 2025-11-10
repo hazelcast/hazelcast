@@ -48,7 +48,7 @@ public class EventPublisherAccumulatorProcessor implements AccumulatorProcessor<
         eventService.sendEventToSubscriber(info.getCacheId(), sequenced, sequenced.getPartitionId());
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Publisher sent events " + sequenced);
+            logger.finest("Publisher sent events %s", sequenced);
         }
     }
 

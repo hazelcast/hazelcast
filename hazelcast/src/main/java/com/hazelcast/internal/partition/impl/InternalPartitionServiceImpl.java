@@ -364,7 +364,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     @Override
     public void memberAdded(Member member) {
-        logger.fine("Adding " + member);
+        logger.fine("Adding %s", member);
         partitionServiceLock.lock();
         try {
             latestMaster = node.getClusterService().getMasterAddress();
@@ -387,7 +387,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         if (members.length == 0) {
             return;
         }
-        logger.fine("Removing " + Arrays.toString(members));
+        logger.fine("Removing %s", Arrays.toString(members));
         partitionServiceLock.lock();
         try {
             ClusterState clusterState = node.getClusterService().getClusterState();
@@ -550,7 +550,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine("Publishing partition state, stamp: " + partitionState.getStamp());
+            logger.fine("Publishing partition state, stamp: %s", partitionState.getStamp());
         }
 
         PartitionStateOperation op = new PartitionStateOperation(partitionState, false);
@@ -577,7 +577,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         assert partitionState != null;
 
         if (logger.isFineEnabled()) {
-            logger.fine("Sending partition state, stamp: " + partitionState.getStamp() + ", to " + target);
+            logger.fine("Sending partition state, stamp: %s, to %s", partitionState.getStamp(), target);
         }
 
         OperationService operationService = nodeEngine.getOperationService();
@@ -601,7 +601,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
         long stamp = getPartitionStateStamp();
         if (logger.isFineEnabled()) {
-            logger.fine("Checking partition state, stamp: " + stamp);
+            logger.fine("Checking partition state, stamp: %s", stamp);
         }
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
@@ -810,11 +810,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
         if (logger.isFineEnabled()) {
             if (applied) {
-                logger.fine("Applied partition state update with stamp: " + calculateStamp(partitions)
-                        + ", Local stamp is: " + partitionStateManager.getStamp());
+                logger.fine("Applied partition state update with stamp: %s, Local stamp is: %s", calculateStamp(partitions),
+                        partitionStateManager.getStamp());
             } else {
-                logger.fine("Already applied partition state update with stamp: " + calculateStamp(partitions)
-                        + ", Local stamp is: " + partitionStateManager.getStamp());
+                logger.fine("Already applied partition state update with stamp: %s, Local stamp is: %s",
+                        calculateStamp(partitions), partitionStateManager.getStamp());
             }
         }
         migrationManager.retainCompletedMigrations(completedMigrations);
@@ -870,7 +870,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
                 if (migration.getStatus() == MigrationStatus.SUCCESS) {
                     if (logger.isFineEnabled()) {
-                        logger.fine("Applying completed migration " + migration);
+                        logger.fine("Applying completed migration %s", migration);
                     }
                     applyMigration(partition, migration);
                 } else {
@@ -882,7 +882,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             }
 
             if (logger.isFineEnabled()) {
-                logger.fine("Applied completed migrations with partition state stamp: " + partitionStateManager.getStamp());
+                logger.fine("Applied completed migrations with partition state stamp: %s", partitionStateManager.getStamp());
             }
 
             migrationManager.retainCompletedMigrations(migrations);
@@ -1426,7 +1426,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (finalVersion == currentVersion) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Already applied migration commit. Version: " + currentVersion + ", Master: " + sender);
+                    logger.fine("Already applied migration commit. Version: %s, Master: %s", currentVersion, sender);
                 }
                 return true;
             }
@@ -1456,7 +1456,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             activeMigration.setStatus(migration.getStatus());
             migrationManager.finalizeMigration(migration);
             if (logger.isFineEnabled()) {
-                logger.fine("Committed " + migration + " on destination with partition version: " + finalVersion);
+                logger.fine("Committed %s on destination with partition version: %s", migration, finalVersion);
             }
             return true;
         } finally {
@@ -1489,8 +1489,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 // If migrations and promotions are not allowed, partition table cannot be modified and we should have
                 // the most recent partition table already. Because cluster state cannot be changed
                 // when our partition table is stale.
-                logger.fine("No need to fetch the latest partition table. "
-                        + "Cluster state does not allow to modify partition table.");
+                logger.fine(
+                        "No need to fetch the latest partition table. Cluster state does not allow to modify partition table.");
                 shouldFetchPartitionTables = false;
                 return;
             }
@@ -1577,9 +1577,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             try {
                 PartitionRuntimeState state = future.get(FETCH_PARTITION_STATE_SECONDS, SECONDS);
                 if (state == null) {
-                    logger.fine("Received NULL partition state from " + member);
+                    logger.fine("Received NULL partition state from %s", member);
                 } else {
-                    logger.fine("Received partition state version from " + member);
+                    logger.fine("Received partition state version from %s", member);
                 }
                 return state;
             } catch (InterruptedException e) {

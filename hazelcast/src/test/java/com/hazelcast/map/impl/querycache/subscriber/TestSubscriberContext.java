@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 
-import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,7 +81,7 @@ public class TestSubscriberContext extends NodeSubscriberContext {
 
     private class TestSubscriberAccumulator extends SubscriberAccumulator {
 
-        private final Set<Long> lostSequenceNumber = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<Long> lostSequenceNumber = ConcurrentHashMap.newKeySet();
 
         TestSubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
             super(context, info);

@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +36,6 @@ import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_LEV
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
 import static com.hazelcast.test.Accessors.getMetricsRegistry;
-import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class HealthMonitorTest extends HazelcastTestSupport {
 
-    private HealthMonitor.HealthMetrics metrics;
+    HealthMonitor.HealthMetrics metrics;
     private MetricsRegistry metricsRegistry;
 
     @Before
@@ -55,7 +55,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
                 .setProperty(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        HealthMonitor healthMonitor = new HealthMonitor(getNode(hz));
+        HealthMonitor healthMonitor = Accessors.getNode(hz).getNodeExtension().createHealthMonitor();
         metricsRegistry = getMetricsRegistry(hz);
         metrics = healthMonitor.healthMetrics;
     }

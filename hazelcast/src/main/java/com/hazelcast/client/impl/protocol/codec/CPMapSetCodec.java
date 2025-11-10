@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Sets the key-value in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("41dbc1f045e7ed0258e8e50af61423b2")
+@Generated("725d9cf2bc4136426e8a7179088116b1")
 public final class CPMapSetCodec {
     //hex: 0x230300
     public static final int REQUEST_MESSAGE_TYPE = 2294528;
@@ -49,7 +49,6 @@ public final class CPMapSetCodec {
     private CPMapSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -107,7 +106,7 @@ public final class CPMapSetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -118,6 +117,6 @@ public final class CPMapSetCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

@@ -20,9 +20,9 @@ import static java.util.Arrays.copyOf;
 
 /**
  * Contains configuration for symmetric encryption
- * @deprecated since 4.2
+ * @deprecated
  */
-@Deprecated
+@Deprecated(since = "4.2")
 public class SymmetricEncryptionConfig
         extends AbstractSymmetricEncryptionConfig<SymmetricEncryptionConfig> {
 

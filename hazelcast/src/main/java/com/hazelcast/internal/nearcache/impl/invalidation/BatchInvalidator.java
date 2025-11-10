@@ -112,6 +112,10 @@ public class BatchInvalidator extends Invalidator {
             invalidationQueue.release();
         }
 
+        // Sending the invalidations after releasing the lock is a trade-off between queue inflation
+        // and delivery ordering. We accept a higher likelihood that invalidations will arrive out of
+        // order to the listener in exchange for lower latency on draining the queue when it exceeds
+        // the batch size.
         sendInvalidations(dataStructureName, invalidations);
     }
 
@@ -141,10 +145,9 @@ public class BatchInvalidator extends Invalidator {
         Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, dataStructureName);
         for (EventRegistration registration : registrations) {
             if (eventFilter.test(registration)) {
-                // find worker queue of striped executor by using subscribers' address.
-                // we want to send all batch invalidations belonging to same subscriber go into
-                // the same workers queue.
-                int orderKey = registration.getSubscriber().hashCode();
+                // Find worker queue of striped executor by using the registration id so all batch invalidations for the same
+                // registration will go into the same worker queue.
+                int orderKey = registration.getId().hashCode();
                 eventService.publishEvent(serviceName, registration, invalidation, orderKey);
             }
         }

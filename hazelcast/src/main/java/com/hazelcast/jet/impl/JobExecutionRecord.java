@@ -22,7 +22,6 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -152,8 +151,8 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     }
 
     @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "all updates to ongoingSnapshotId are synchronized")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "all updates to ongoingSnapshotId are synchronized")
     public void startNewSnapshot(String exportedSnapshotName) {
         ongoingSnapshotId++;
         ongoingSnapshotStartTime = Clock.currentTimeMillis();
@@ -188,6 +187,13 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         ongoingExportedSnapshotName = null;
         ongoingSnapshotStartTime = Long.MIN_VALUE;
         return res;
+    }
+
+    @SuppressWarnings({"NonAtomicOperationOnVolatileField", "squid:S3078"})
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "all updates to ongoingSnapshotId are synchronized")
+    void resetOngoingSnapshotId() {
+        ongoingSnapshotId--;
     }
 
     /**

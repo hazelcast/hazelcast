@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map contains an entry for the specified value.
  */
 @SuppressWarnings("unused")
-@Generated("765fcb66c3b9a4a0437862e2f68bb2dd")
+@Generated("93ca57b0f685c06ea57a14ad151817d4")
 public final class TransactionalMapContainsValueCodec {
     //hex: 0x0E1200
     public static final int REQUEST_MESSAGE_TYPE = 922112;
@@ -52,7 +52,6 @@ public final class TransactionalMapContainsValueCodec {
     private TransactionalMapContainsValueCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

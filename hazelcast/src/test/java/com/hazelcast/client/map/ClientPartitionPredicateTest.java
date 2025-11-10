@@ -62,7 +62,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
+        Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITIONS));
 
         server = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance remote = hazelcastFactory.newHazelcastInstance(config);

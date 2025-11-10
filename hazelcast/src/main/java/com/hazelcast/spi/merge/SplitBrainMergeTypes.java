@@ -152,7 +152,7 @@ public class SplitBrainMergeTypes {
      * Merge type of {@code VectorCollection}.
      * @param <K>   type of {@code VectorCollection} key
      * @param <V>   type of {@link VectorDocument}, stored in the {@code VectorCollection}
-     * @since 6.0.0
+     * @since 5.6
      */
     public interface VectorCollectionMergeTypes<K, V extends VectorDocument<?>> extends MergingEntry<K, V> {
     }

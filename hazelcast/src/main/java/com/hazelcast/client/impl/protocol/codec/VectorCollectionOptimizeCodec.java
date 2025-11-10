@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Optimize index.
  */
 @SuppressWarnings("unused")
-@Generated("210f4489dfffeeeb54e20aa66d7060e4")
+@Generated("044d5985ec9df5d4851c28fa28719624")
 public final class VectorCollectionOptimizeCodec {
     //hex: 0x240900
     public static final int REQUEST_MESSAGE_TYPE = 2361600;
@@ -50,7 +50,6 @@ public final class VectorCollectionOptimizeCodec {
     private VectorCollectionOptimizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

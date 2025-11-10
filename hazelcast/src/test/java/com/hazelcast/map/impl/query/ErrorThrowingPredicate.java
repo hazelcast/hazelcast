@@ -21,9 +21,9 @@ import com.hazelcast.query.Predicate;
 import java.io.Serializable;
 import java.util.Map;
 
-public class ErrorThrowingPredicate<K, V> implements Predicate<K, V>, Serializable {
+public class ErrorThrowingPredicate implements Predicate, Serializable {
     @Override
-    public boolean apply(Map.Entry<K, V> mapEntry) {
+    public boolean apply(Map.Entry mapEntry) {
         throw new NoClassDefFoundError();
     }
 }

@@ -7042,6 +7042,7 @@ public class MemberCompatibilityTest_2_8 {
         assertFalse(parameters.isSplitBrainProtectionNameExists);
         assertFalse(parameters.isMergePolicyExists);
         assertFalse(parameters.isMergeBatchSizeExists);
+        assertFalse(parameters.isUserCodeNamespaceExists);
     }
 
     @Test

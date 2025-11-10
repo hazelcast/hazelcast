@@ -33,7 +33,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.version.Version;
@@ -83,37 +82,41 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     private final ConnectionListenable connectionObservable;
     private final HazelcastInstance hazelcastInstance;
     private final Address thisAddress;
-    private final boolean logPartitions;
-    private final boolean enabled;
     private final NodeExtension nodeExtension;
-
-    public SystemLogPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getProperties(),
-                nodeEngine.getNode().getServer(),
-                nodeEngine.getHazelcastInstance(),
-                nodeEngine.getLogger(SystemLogPlugin.class),
-                nodeEngine.getNode().getNodeExtension());
-    }
+    private final HazelcastProperties properties;
+    private boolean logPartitions;
+    private volatile boolean enabled;
+    private ClusterVersionListenerImpl clusterVersionListener;
+    private ConnectionListenerImpl connectionListener;
+    private MembershipListenerImpl membershipListener;
+    private MigrationListenerImpl migrationListener;
+    private LifecycleListenerImpl lifecycleListener;
 
     public SystemLogPlugin(HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
                            ILogger logger) {
-        this(properties, connectionObservable, hazelcastInstance, logger, null);
+        this(logger, properties, connectionObservable, hazelcastInstance, null);
     }
 
-    public SystemLogPlugin(HazelcastProperties properties,
+    public SystemLogPlugin(ILogger logger,
+                           HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
-                           ILogger logger,
                            NodeExtension nodeExtension) {
         super(logger);
         this.connectionObservable = connectionObservable;
         this.hazelcastInstance = hazelcastInstance;
         this.thisAddress = getThisAddress(hazelcastInstance);
-        this.logPartitions = properties.getBoolean(LOG_PARTITIONS);
-        this.enabled = properties.getBoolean(ENABLED);
         this.nodeExtension = nodeExtension;
+        this.properties = properties;
+        readProperties();
+    }
+
+    @Override
+    void readProperties() {
+        this.logPartitions = properties.getBoolean(overrideProperty(LOG_PARTITIONS));
+        this.enabled = properties.getBoolean(overrideProperty(ENABLED));
     }
 
     private Address getThisAddress(HazelcastInstance hazelcastInstance) {
@@ -127,31 +130,60 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     @Override
     public long getPeriodMillis() {
         if (!enabled) {
-            return DiagnosticsPlugin.DISABLED;
+            return DiagnosticsPlugin.NOT_SCHEDULED_PERIOD_MS;
         }
         return PERIOD_MILLIS;
     }
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active: logPartitions:" + logPartitions);
 
-        connectionObservable.addConnectionListener(new ConnectionListenerImpl());
-        hazelcastInstance.getCluster().addMembershipListener(new MembershipListenerImpl());
+        // the listeners should be registered once during the lifetime of the Diagnostics service which is tied to
+        // Hazelcast instance
+        if (connectionListener == null) {
+            connectionListener = new ConnectionListenerImpl();
+            connectionObservable.addConnectionListener(connectionListener);
+        }
+
+        if (membershipListener == null) {
+            membershipListener = new MembershipListenerImpl();
+            hazelcastInstance.getCluster().addMembershipListener(membershipListener);
+        }
+
         if (logPartitions) {
-            hazelcastInstance.getPartitionService().addMigrationListener(new MigrationListenerImpl());
+            if (migrationListener == null) {
+                migrationListener = new MigrationListenerImpl();
+                hazelcastInstance.getPartitionService().addMigrationListener(migrationListener);
+            }
         }
-        hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
+
+        if (lifecycleListener == null) {
+            lifecycleListener = new LifecycleListenerImpl();
+            hazelcastInstance.getLifecycleService().addLifecycleListener(lifecycleListener);
+        }
+
         if (nodeExtension != null) {
-            nodeExtension.registerListener(new ClusterVersionListenerImpl());
+            if (clusterVersionListener == null) {
+                clusterVersionListener = new ClusterVersionListenerImpl();
+                nodeExtension.registerListener(clusterVersionListener);
+            }
         }
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logQueue.clear();
+        logger.info("Plugin:inactive");
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
         for (; ; ) {
             Object item = logQueue.poll();
-            if (item == null) {
+            if (item == null || !isActive()) {
                 return;
             }
 
@@ -171,6 +203,18 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         }
     }
 
+    // The plugins are there to be used by the diagnostics service always. If the service disabled at runtime,
+    // the plugin stays, and so its listeners since there is no deregister method for listeners.
+    // To avoid the listeners to be called when the plugin is inactive.
+    private boolean shouldListenersListen() {
+        return enabled && isActive();
+    }
+
+    //for testing
+    boolean getLogPartitions() {
+        return logPartitions;
+    }
+
     private void render(DiagnosticsLogWriter writer, LifecycleEvent event) {
         writer.startSection("Lifecycle");
         writer.writeEntry(event.getState().name());
@@ -179,14 +223,11 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     private void render(DiagnosticsLogWriter writer, MembershipEvent event) {
         switch (event.getEventType()) {
-            case MembershipEvent.MEMBER_ADDED:
-                writer.startSection("MemberAdded");
-                break;
-            case MembershipEvent.MEMBER_REMOVED:
-                writer.startSection("MemberRemoved");
-                break;
-            default:
+            case MembershipEvent.MEMBER_ADDED -> writer.startSection("MemberAdded");
+            case MembershipEvent.MEMBER_REMOVED -> writer.startSection("MemberRemoved");
+            default -> {
                 return;
+            }
         }
         writer.writeKeyValueEntry("member", event.getMember().getAddress().toString());
 
@@ -312,53 +353,71 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     protected class ConnectionListenerImpl implements ConnectionListener {
         @Override
         public void connectionAdded(Connection connection) {
-            logQueue.add(new ConnectionEvent(true, connection));
+            if (shouldListenersListen()) {
+                logQueue.add(new ConnectionEvent(true, connection));
+            }
         }
 
         @Override
         public void connectionRemoved(Connection connection) {
-            logQueue.add(new ConnectionEvent(false, connection));
+            if (shouldListenersListen()) {
+                logQueue.add(new ConnectionEvent(false, connection));
+            }
         }
     }
 
     protected class MembershipListenerImpl extends MembershipAdapter {
         @Override
         public void memberAdded(MembershipEvent event) {
-            logQueue.add(event);
+            if (shouldListenersListen()) {
+                logQueue.add(event);
+            }
         }
 
         @Override
         public void memberRemoved(MembershipEvent event) {
-            logQueue.add(event);
+            if (shouldListenersListen()) {
+                logQueue.add(event);
+            }
         }
     }
 
     protected class MigrationListenerImpl implements MigrationListener {
         @Override
         public void migrationStarted(MigrationState state) {
-            logQueue.add(state);
+            if (shouldListenersListen()) {
+                logQueue.add(state);
+            }
         }
 
         @Override
         public void migrationFinished(MigrationState state) {
-            logQueue.add(state);
+            if (shouldListenersListen()) {
+                logQueue.add(state);
+            }
         }
 
         @Override
         public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-            logQueue.add(event);
+            if (shouldListenersListen()) {
+                logQueue.add(event);
+            }
         }
 
         @Override
         public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-            logQueue.add(event);
+            if (shouldListenersListen()) {
+                logQueue.add(event);
+            }
         }
     }
 
     protected class ClusterVersionListenerImpl implements ClusterVersionListener {
         @Override
         public void onClusterVersionChange(Version newVersion) {
-            logQueue.add(newVersion);
+            if (shouldListenersListen()) {
+                logQueue.add(newVersion);
+            }
         }
     }
 }

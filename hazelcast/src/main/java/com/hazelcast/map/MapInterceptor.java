@@ -46,8 +46,21 @@ public interface MapInterceptor extends Serializable {
      * original value, so return {@code null} if you do not want to change
      * anything.
      * <p>
-     * Mutations made to the value do not affect the stored value. They do
-     * affect the returned value.
+     * When the in-memory format is not {@code OBJECT}, mutations made to the {@code value}
+     * do not affect the stored value. They only affect the returned value.
+     * <p>
+     * When the in-memory format is {@code OBJECT}, try to avoid modifying the input {@code value} directly,
+     * as it is not cloned for performance reasons. Mutating it may cause unexpected behavior:
+     * <ul>
+     *   <li>The modified {@code value} will be persisted in the map.</li>
+     *   <li>The modification will take effect even if the method returns {@code null}.</li>
+     *   <li>In a chain of interceptors, if one interceptor modifies the input value,
+     *   the next interceptor will receive the modified value as input.</li>
+     * </ul>
+     * If changes are required, create and return a copy of the value instead.
+     * <p>
+     * Modifying input values is not supported when in-memory-format=OBJECT is used in combination with indexes.
+     * Doing so will lead to runtime errors.
      *
      * @param value the original value to be returned as the result of get(...)
      *              operation
@@ -58,7 +71,7 @@ public interface MapInterceptor extends Serializable {
     /**
      * Called after the get(...) operation is completed.
      * <p>
-     * Mutations made to value do not affect the stored value.
+     * For all in-memory formats mutations made to {@code value} do not affect the stored value.
      *
      * @param value the value returned as the result of the get(...) operation
      */
@@ -70,6 +83,15 @@ public interface MapInterceptor extends Serializable {
      * Returns the object to be put into the map. Returning {@code null} will
      * cause the put(...) operation to operate as expected, namely no
      * interception. Throwing an exception will cancel the put operation.
+     * <p>
+     * When the in-memory format is {@code OBJECT}, try to avoid modifying the input values directly,
+     * as it is not cloned for performance reasons. Mutating it may cause unexpected behavior:
+     * <ul>
+     *   <li>The modification of {@code newValue} will take effect even if the method returns {@code null}.</li>
+     *   <li>In a chain of interceptors, if one interceptor modifies the input value,
+     *   the next interceptor will receive the modified value as input.</li>
+     * </ul>
+     * If modification is necessary, create and return a copy instead.
      *
      * @param oldValue the value currently in map
      * @param newValue the new value to be put into the map
@@ -79,8 +101,19 @@ public interface MapInterceptor extends Serializable {
 
     /**
      * Called after the put(...) operation is completed.
+     * <p>
+     * When the in-memory format is not {@code OBJECT}, mutations made to the {@code value}
+     * do not affect the stored value.
+     * <p
+     * When the in-memory format is {@code OBJECT}, try to avoid modifying the input {@code value} directly,
+     * as it is not cloned for performance reasons. Mutating it may cause unexpected behavior:
+     * <ul>
+     *   <li>The modified {@code value} will be persisted in the map.</li>
+     *   <li>In a chain of interceptors, if one interceptor modifies the input value,
+     *   the next interceptor will receive the modified value as input.</li>
+     * </ul>
      *
-     * @param value the value returned as the result of the put(...) operation
+     * @param value the new value that was put into the map.
      */
     void afterPut(Object value);
 
@@ -89,6 +122,18 @@ public interface MapInterceptor extends Serializable {
      * <p>
      * Returns the object to be returned as the result of the remove operation.
      * Throwing an exception will cancel the remove operation.
+     * <p>
+     * When the in-memory format is {@code OBJECT}, try to avoid modifying the input {@code value} directly,
+     * as it is not cloned for performance reasons. Mutating it may cause unexpected behavior:
+     * <ul>
+     *   <li>The modification of {@code removedValue} will take effect even if the method returns {@code null}.</li>
+     *   <li>In a chain of interceptors, if one interceptor modifies the input value,
+     *   the next interceptor will receive the modified value as input.</li>
+     * </ul>
+     * If modification is necessary, create and return a copy instead.
+     * <p>
+     * Modifying input values is not supported when in-memory format {code OBJECT} is used in combination with indexes.
+     * Doing so will lead to runtime errors.
      *
      * @param removedValue the existing value to be removed
      * @return the value to be returned as the result of remove operation

@@ -180,7 +180,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * @see #getAsyncBackupCount()
      */
     public T setAsyncBackupCount(int asyncBackupCount) {
-        this.asyncBackupCount = checkAsyncBackupCount(asyncBackupCount, asyncBackupCount);
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return (T) this;
     }
 

@@ -25,7 +25,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -41,7 +40,6 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     public TxnRollbackOperation() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TxnRollbackOperation(int partitionId, String name, long[] itemIds) {
         super(name);
         setPartitionId(partitionId);

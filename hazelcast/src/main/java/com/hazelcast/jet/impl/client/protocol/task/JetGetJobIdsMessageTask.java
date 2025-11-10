@@ -18,81 +18,93 @@ package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
-import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static java.util.Collections.singleton;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.stream.Collectors.toMap;
 
-public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<JetGetJobIdsCodec.RequestParameters> {
-
-    private transient Address masterAddress;
+public class JetGetJobIdsMessageTask extends AbstractAsyncMessageTask<JetGetJobIdsCodec.RequestParameters, Object> {
 
     JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Supplier<Operation> createOperationSupplier() {
-        return () -> new GetJobIdsOperation(parameters.onlyName, parameters.onlyJobId);
-    }
+    protected CompletableFuture<Object> processInternal() {
 
-    @Override
-    public Collection<Member> getTargets() {
-        masterAddress = nodeEngine.getClusterService().getMasterAddress();
-        if (masterAddress == null) {
-            throw new IllegalStateException("Master is not known yet");
-        }
+        GetJobIdsOperation masterOperation = new GetJobIdsOperation(parameters.onlyName, parameters.onlyJobId, false);
+        var masterInvocation = nodeEngine
+                .getOperationService()
+                .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, masterOperation)
+                .build();
+        CompletableFuture<GetJobIdsResult> masterFuture = masterInvocation.invoke();
 
-        // if onlyName != null, only send the operation to master. Light jobs cannot have a name
+        // perform operation only on master node
         if (parameters.onlyName != null) {
-            Member masterMember = nodeEngine.getClusterService().getMember(masterAddress);
-            if (masterMember == null) {
-                throw new IllegalStateException("Master changed");
-            }
-            return singleton(masterMember);
-        } else {
-            return nodeEngine.getClusterService().getMembers();
-        }
-    }
-
-    @Override
-    protected Object reduce(Map<Member, Object> map) {
-        return map.entrySet().stream().collect(toMap(
-                en -> en.getKey().getUuid(),
-                en -> {
-                    Object response = en.getValue();
-                    if (response instanceof MemberLeftException
-                            || response instanceof TargetNotMemberException
-                            || response instanceof TargetDisconnectedException) {
-                        return GetJobIdsResult.EMPTY;
-                    }
-                    if (response instanceof Exception exception) {
-                        // ignore exceptions from non-master, but not from master
-                        if (en.getKey().getAddress().equals(masterAddress)) {
-                            throw new RuntimeException(exception);
+            return masterFuture.handleAsync(
+                    (result, throwable) -> {
+                        if (throwable != null) {
+                            sneakyThrow(throwable);
                         }
-                        return GetJobIdsResult.EMPTY;
+                        Map<UUID, GetJobIdsResult> results = createHashMap(1);
+                        results.put(masterInvocation.getTargetMember().getUuid(), result);
+                        return results;
+                    },
+                    CALLER_RUNS
+            );
+        }
+
+        // get info only about light jobs from all nodes
+        Supplier<Operation> operationSupplier = () -> new GetJobIdsOperation(
+                parameters.onlyName,
+                parameters.onlyJobId,
+                true
+        ).setCallerUuid(endpoint.getUuid());
+
+        var allMembersFuture = InvocationUtil.invokeAndReduceOnAllClusterMembers(
+                nodeEngine,
+                operationSupplier,
+                (r, t) -> {
+                    if (t == null) {
+                        return r;
                     }
-                    return response;
-                }));
+                    // this is inconsistent with member api
+                    // ignore all exceptions about light jobs
+                    return GetJobIdsResult.EMPTY;
+                },
+                m -> m.entrySet().stream()
+                        .collect(
+                                toMap(
+                                        en -> en.getKey().getUuid(),
+                                        Map.Entry::getValue
+                                )
+                        )
+        );
+
+        return masterFuture.thenCombine(
+                allMembersFuture,
+                (masterResult, allMemberResults) -> {
+                    allMemberResults.put(masterInvocation.getTargetMember().getUuid(), masterResult);
+                    return allMemberResults;
+                }
+        );
     }
 
     @Override

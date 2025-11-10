@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -113,7 +112,6 @@ public final class JavaDefaultSerializers {
             }
         }
 
-        @SuppressFBWarnings("OS_OPEN_STREAM")
         @Override
         public void write(final ObjectDataOutput out, final Object obj) throws IOException {
             if (gzipEnabled) {

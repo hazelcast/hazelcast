@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -36,23 +35,31 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     private final List keys = new ArrayList();
     private String inputArgs;
 
-    public SystemPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(SystemPropertiesPlugin.class));
-    }
-
     public SystemPropertiesPlugin(ILogger logger) {
         super(logger);
     }
 
     @Override
     public long getPeriodMillis() {
-        return STATIC;
+        return RUN_ONCE_PERIOD_MS;
     }
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active");
         inputArgs = getInputArgs();
+    }
+
+    @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
+    void readProperties() {
+        // nothing to read
     }
 
     private static String getInputArgs() {
@@ -70,6 +77,9 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     @Override
     @SuppressWarnings("unchecked")
     public void run(DiagnosticsLogWriter writer) {
+        if (!isActive()) {
+            return;
+        }
         writer.startSection("SystemProperties");
 
         keys.clear();

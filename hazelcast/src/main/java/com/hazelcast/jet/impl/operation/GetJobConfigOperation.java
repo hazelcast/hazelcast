@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.internal.cluster.impl.MasterNodeChangedException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -25,7 +26,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class GetJobConfigOperation extends AbstractJobOperation implements AllowedDuringPassiveState {
+public class GetJobConfigOperation extends AbstractJobOperation implements AllowedDuringPassiveState, MasterAwareOperation {
     private boolean isLightJob;
     private JobConfig response;
 
@@ -35,6 +36,18 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
     public GetJobConfigOperation(long jobId, boolean isLightJob) {
         super(jobId);
         this.isLightJob = isLightJob;
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+        if (isRequireMasterExecution() && !isMaster()) {
+            throw new MasterNodeChangedException("This operation can only be executed on the master node.");
+        }
+        super.beforeRun();
+    }
+
+    private boolean isMaster() {
+        return getNodeEngine().getClusterService().isMaster();
     }
 
     @Override
@@ -63,5 +76,10 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         isLightJob = in.readBoolean();
+    }
+
+    @Override
+    public boolean isRequireMasterExecution() {
+        return !isLightJob;
     }
 }

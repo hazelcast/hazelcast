@@ -388,7 +388,7 @@ public class NioThread extends HazelcastManagedThread implements OperationHostil
 
     private void closeSelector() {
         if (logger.isFinestEnabled()) {
-            logger.finest("Closing selector for:" + getName());
+            logger.finest("Closing selector for:%s", getName());
         }
 
         try {

@@ -46,7 +46,7 @@ public class AddBackupListenerMessageTask
     protected CompletableFuture<UUID> processInternal() {
         UUID uuid = endpoint.getUuid();
         if (logger.isFinestEnabled()) {
-            logger.finest("Client is adding backup listener. client uuid " + uuid);
+            logger.finest("Client is adding backup listener. client uuid %s", uuid);
         }
         clientEngine.addBackupListener(uuid, this);
 

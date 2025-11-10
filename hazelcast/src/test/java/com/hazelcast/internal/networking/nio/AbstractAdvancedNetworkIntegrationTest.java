@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import org.junit.After;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,7 +41,7 @@ public abstract class AbstractAdvancedNetworkIntegrationTest {
     protected static final int NOT_OPENED_PORT = MEMBER_PORT - 1;
 
     protected final Set<HazelcastInstance> instances
-            = Collections.newSetFromMap(new ConcurrentHashMap<>());
+            = ConcurrentHashMap.newKeySet();
 
     @After
     public void tearDown() {

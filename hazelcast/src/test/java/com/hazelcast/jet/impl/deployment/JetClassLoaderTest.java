@@ -353,7 +353,7 @@ public class JetClassLoaderTest extends JetTestSupport {
                 List<ClassLoader> cls = entry.getValue();
                 for (ClassLoader cl : cls) {
                     assertThat(cl)
-                            .describedAs("expecting JetClassLoader for method " + entry.getKey())
+                            .describedAs("expecting JetClassLoader for method %s", entry.getKey())
                             .isInstanceOf(JetClassLoader.class);
                 }
             }
@@ -369,7 +369,7 @@ public class JetClassLoaderTest extends JetTestSupport {
 
                 String name = method.getName();
                 assertThat(classLoaderMap)
-                        .describedAs("method " + name + " not called")
+                        .describedAs("method %s not called", name)
                         .containsKey(name);
             }
         }

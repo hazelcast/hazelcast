@@ -43,7 +43,6 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.wan.impl.CallerProvenance;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -200,7 +199,8 @@ public class PartitionWideEntryOperation extends MapOperation
         recordStore.forEach((key, record) -> {
             Data dataKey = toHeapData(key);
 
-            Data response = operator.operateOnKey(dataKey).getResult();
+            // for native use variant that does not expire entries (see comment below)
+            Data response = operator.operateOnKeyValueDuringScan(dataKey, record.getValue()).getResult();
             if (response != null) {
                 responses.add(dataKey, response);
             }
@@ -259,9 +259,9 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
-            justification = "backupProcessor can indeed be null so check is not redundant")
+//    @SuppressFBWarnings(
+//            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+//            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         if (backupProcessor == null) {

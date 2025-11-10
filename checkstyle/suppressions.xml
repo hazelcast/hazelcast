@@ -122,6 +122,8 @@
 
     <!-- Instance -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]instance[\\/]"/>
+    <suppress checks="FileLength"
+              files="com[\\/]hazelcast[\\/]instance[\\/]impl[\\/]EnterpriseNodeExtension"/>
 
     <!-- SPI -->
     <suppress checks="FileLength"
@@ -140,6 +142,7 @@
 
     <!-- CP Subsystem -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]RaftService"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]RaftNodeImpl"/>
 
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>

@@ -53,6 +53,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -302,7 +303,7 @@ class ReferenceObjects {
             Predicates.in(aSmallString, aComparable, aComparable),
             Predicates.regex(aSmallString, aSmallString),
             Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aSmallString, aComparable)),
-            Predicates.multiPartitionPredicate(new HashSet<>(Arrays.asList(aComparable)), Predicates.greaterThan(aSmallString, aComparable)),
+            Predicates.multiPartitionPredicate(Set.of(aComparable), Predicates.greaterThan(aSmallString, aComparable)),
             Predicates.and(Predicates.sql(anSqlString),
                     Predicates.equal(aSmallString, aComparable),
                     Predicates.notEqual(aSmallString, aComparable),

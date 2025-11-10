@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the entry with the given key, value and the expiry policy to the cache.
  */
 @SuppressWarnings("unused")
-@Generated("e1f6a7bb4fabf27d08bbc8c4c281fccd")
+@Generated("48563f404edabe054dbb2f09af4d12c3")
 public final class CachePutCodec {
     //hex: 0x131300
     public static final int REQUEST_MESSAGE_TYPE = 1250048;
@@ -51,7 +51,6 @@ public final class CachePutCodec {
     private CachePutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -101,7 +100,7 @@ public final class CachePutCodec {
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
         DataCodec.encode(clientMessage, value);
-        CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, expiryPolicy);
         return clientMessage;
     }
 
@@ -114,7 +113,7 @@ public final class CachePutCodec {
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
         request.value = DataCodec.decode(iterator);
-        request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expiryPolicy = DataCodec.decodeNullable(iterator);
         return request;
     }
 
@@ -124,7 +123,7 @@ public final class CachePutCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -135,6 +134,6 @@ public final class CachePutCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

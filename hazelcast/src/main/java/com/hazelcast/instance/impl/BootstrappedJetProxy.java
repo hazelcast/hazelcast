@@ -141,6 +141,22 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         return jetInstance.getJobs(name);
     }
 
+    @Override
+    public Job getJob(long id) {
+        return jetInstance.getJob(id);
+    }
+
+    @Override
+    public Job getJob(@Nonnull String name) {
+        return jetInstance.getJob(name);
+    }
+
+    @Nonnull
+    @Override
+    public List<Job> getJobs() {
+        return jetInstance.getJobs();
+    }
+
     @Nonnull
     @Override
     public <K, V> IMap<K, V> getMap(@Nonnull String name) {
@@ -214,11 +230,6 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         return jetInstance.getMasterId();
     }
 
-    @Override
-    public Map<M, GetJobIdsOperation.GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
-        return jetInstance.getJobsInt(onlyName, onlyJobId);
-    }
-
     private void addToSubmittedJobs(@Nonnull Job job) {
         if (hasExecuteJobParameters()) {
             ExecuteJobParameters executeJobParameters = getExecuteJobParameters();
@@ -255,4 +266,17 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
             }
         }
     }
+
+    protected GetJobIdsOperation.GetJobIdsResult getJobByName(String onlyName) {
+        throw new UnsupportedOperationException("This method is not supported in this BootstrappedJetProxy class.");
+    }
+
+    protected Map<M, GetJobIdsOperation.GetJobIdsResult> getJobsById(Long onlyJobId) {
+        throw new UnsupportedOperationException("This method is not supported in this BootstrappedJetProxy class.");
+    }
+
+    protected Map<M, GetJobIdsOperation.GetJobIdsResult> getAllJobs() {
+        throw new UnsupportedOperationException("This method is not supported in this BootstrappedJetProxy class.");
+    }
+
 }

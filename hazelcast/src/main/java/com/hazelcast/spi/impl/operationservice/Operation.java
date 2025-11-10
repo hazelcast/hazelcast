@@ -18,10 +18,12 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -36,12 +38,11 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 import com.hazelcast.spi.tenantcontrol.Tenantable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.lang.invoke.VarHandle;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -75,8 +76,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
     static final int BITMASK_CLIENT_CALL_ID_SET = 1 << 7;
 
-    private static final AtomicLongFieldUpdater<Operation> CALL_ID =
-            AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
+    private static final VarHandle CALL_ID = ReflectionUtil.findVarHandle("callId", long.class);
 
     // serialized
     private volatile long callId;
@@ -243,7 +243,6 @@ public abstract class Operation implements DataSerializable, Tenantable {
     }
 
     @SuppressWarnings("java:S4973")
-    @SuppressFBWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
         // If the name of the service is the same as the name already provided, the call is skipped.
         // We can do a == instead of an equals because serviceName are typically constants, and it will
@@ -603,7 +602,10 @@ public abstract class Operation implements DataSerializable, Tenantable {
      * @return <code>ExceptionAction</code>
      */
     public ExceptionAction onMasterInvocationException(Throwable throwable) {
-        if (throwable instanceof WrongTargetException || throwable instanceof MemberLeftException) {
+        if (throwable instanceof WrongTargetException
+                || throwable instanceof MemberLeftException
+                || throwable instanceof HazelcastInstanceNotActiveException
+        ) {
             return RETRY_INVOCATION;
         }
         return onInvocationException(throwable);

@@ -216,14 +216,14 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         int expectedRowCount = expected.getRowCount();
         int actualRowCount = actual.getRowCount();
         assertThat(actualRowCount)
-                .as("Plan are different" + "\n\n>>> EXPECTED PLAN:\n%s\n>>> ACTUAL PLAN:\n%s", expected, actual)
+                .as("Plan are different%n%n>>> EXPECTED PLAN:%n%s%n>>> ACTUAL PLAN:%n%s", expected, actual)
                 .isEqualTo(expectedRowCount);
 
         for (int i = 0; i < expectedRowCount; i++) {
             PlanRow expectedRow = expected.getRow(i);
             PlanRow actualRow = actual.getRow(i);
             assertThat(actualRow)
-                    .as("Plan rows are different at %s" + "\n\n>>> EXPECTED PLAN:\n%s\n>>> ACTUAL PLAN:\n%s", i + 1, expected, actual)
+                    .as("Plan rows are different at %s%n%n>>> EXPECTED PLAN:%n%s%n>>> ACTUAL PLAN:%n%s", i + 1, expected, actual)
                     .isEqualTo(expectedRow);
         }
     }

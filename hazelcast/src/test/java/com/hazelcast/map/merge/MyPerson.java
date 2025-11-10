@@ -42,8 +42,8 @@ public class MyPerson implements Serializable {
     public MyPerson(long personId) {
         this.personId = personId;
         this.age = personId;
-        this.firstName = "" + personId;
-        this.lastName = "" + personId;
+        this.firstName = String.valueOf(personId);
+        this.lastName = String.valueOf(personId);
         this.salary = random.nextDouble();
     }
 

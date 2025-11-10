@@ -59,7 +59,7 @@ public final class Util {
     /**
      * Returns a {@link Serializable} {@code Map.Entry} with nullable key and
      * value. If nullability and serializability are not required, consider
-     * using {@link Map#entry(K, V)}.
+     * using {@link Map#entry(Object, Object)}.
      */
     public static <K, V> Entry<K, V> entry(@Nullable K key, @Nullable V value) {
         return new SimpleImmutableEntry<>(key, value);

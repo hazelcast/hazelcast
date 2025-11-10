@@ -19,7 +19,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 /**
  * A {@link Runnable} that declares checked exception.
- * @since 6.0
+ * @since 5.5
  */
 @FunctionalInterface
 public interface ThrowingRunnable extends Runnable {
@@ -38,4 +38,13 @@ public interface ThrowingRunnable extends Runnable {
             throw ExceptionUtil.sneakyThrow(e);
         }
     }
+
+    /**
+     * Wraps given {@link Runnable} into {@link ThrowingRunnable}.
+     * @since 5.6
+     */
+    static ThrowingRunnable wrap(Runnable step) {
+        return step::run;
+    }
+
 }

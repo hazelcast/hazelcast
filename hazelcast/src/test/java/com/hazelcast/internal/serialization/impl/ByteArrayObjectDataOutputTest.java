@@ -34,12 +34,15 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput.MAX_ARRAY_SIZE;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -414,6 +417,9 @@ public class ByteArrayObjectDataOutputTest {
 
     @Test
     public void testGetByteOrder() {
+        // no need to run this test for both cases
+        assumeTrue(useHugeFirstGrowth);
+
         ByteArrayObjectDataOutput outLE = new ByteArrayObjectDataOutput(10, mockSerializationService, LITTLE_ENDIAN);
         ByteArrayObjectDataOutput outBE = new ByteArrayObjectDataOutput(10, mockSerializationService, BIG_ENDIAN);
 
@@ -421,8 +427,78 @@ public class ByteArrayObjectDataOutputTest {
         assertEquals(BIG_ENDIAN, outBE.getByteOrder());
     }
 
+    /**
+     * Regression test for <a href="https://hazelcast.atlassian.net/browse/SUP-862">SUP-862</a> which demonstrated
+     * a huge (>100x) performance hit when an input length of more than {@code Integer.MAX_VALUE / 2} was provided, due
+     * to resizing being done in increments of {@code len} passed to {@code ensureAvailable(int len)} when doubling
+     * the current buffer length with a bit-shift would overflow and become a negative value.
+     */
+    @Test
+    public void testOverflowScenario() {
+        // no need to run this test for both cases
+        assumeTrue(useHugeFirstGrowth);
+
+        // use mocked object with artificial length, to avoid needing to allocate huge buffers and risk OOME in tests
+        int hugeLength = (Integer.MAX_VALUE / 2) + 1;
+        MockLengthByteArrayObjectDataOutput out = new MockLengthByteArrayObjectDataOutput(hugeLength);
+
+        // fetch the new capacity calculated for a length that would trigger resizing
+        int newCapacity = out.getNewCapacity(20);
+        assertEquals("Buffer length should be MAX_ARRAY_SIZE when it overflows", MAX_ARRAY_SIZE, newCapacity);
+    }
+
+    @Test
+    public void testExceptionThrownForTooLargeCapacity() {
+        // simulate small resizing and assert that exception is thrown
+        testExceptionThrownForTooLargeCapacity(MAX_ARRAY_SIZE, 20);
+    }
+
+    @Test
+    public void testExceptionThrownForTooLargeCapacity_WhenInitialLengthSmall() {
+        // simulate huge resizing from small length and assert that exception is thrown
+        testExceptionThrownForTooLargeCapacity(20, MAX_ARRAY_SIZE);
+    }
+
+    @Test
+    public void testExceptionThrownForTooLargeCapacity_WhenInitialLengthHalf() {
+        // simulate resizing above MAX_ARRAY_SIZE and assert that exception is thrown
+        int initialLength = (Integer.MAX_VALUE / 2) + 1;
+        testExceptionThrownForTooLargeCapacity(initialLength, (MAX_ARRAY_SIZE - initialLength) + 1);
+    }
+
+    @Test
+    public void testExceptionThrownForTooLargeCapacity_WithIntegerOverflow() {
+        // simulate resizing result above Integer.MAX_VALUE and assert that exception is thrown
+        testExceptionThrownForTooLargeCapacity((Integer.MAX_VALUE / 2) + 1, (Integer.MAX_VALUE / 2) + 2);
+    }
+
+    private void testExceptionThrownForTooLargeCapacity(int initialLength, int requestedLength) {
+        // no need to run this test for both cases
+        assumeTrue(useHugeFirstGrowth);
+
+        // use mocked object with artificial length, to avoid needing to allocate huge buffers and risk OOME in tests
+        MockLengthByteArrayObjectDataOutput out = new MockLengthByteArrayObjectDataOutput(initialLength);
+
+        // simulate resizing and assert that exception is thrown
+        assertThrows("Expected OutOfMemoryError", OutOfMemoryError.class, () -> out.getNewCapacity(requestedLength));
+    }
+
     @Test
     public void testToString() {
         assertNotNull(out.toString());
+    }
+
+    private static class MockLengthByteArrayObjectDataOutput extends ByteArrayObjectDataOutput {
+        private final int length;
+
+        MockLengthByteArrayObjectDataOutput(int mockedLength) {
+            super(16, null, BIG_ENDIAN);
+            this.length = mockedLength;
+        }
+
+        @Override
+        int getBufferLength() {
+            return length;
+        }
     }
 }

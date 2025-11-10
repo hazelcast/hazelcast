@@ -14,3 +14,4 @@ com.hazelcast.internal.util.phonehome.StorageMetricsProvider
 com.hazelcast.internal.util.phonehome.UserCodeNamespacesMetricsProvider
 com.hazelcast.internal.util.phonehome.VMMetricsProvider
 com.hazelcast.internal.util.phonehome.ClientRoutingModeMetricsProvider
+com.hazelcast.internal.util.phonehome.DiagnosticsMetricProvider

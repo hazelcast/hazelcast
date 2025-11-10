@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * longer need the iterator.
  */
 @SuppressWarnings("unused")
-@Generated("26bfcea01599ade88c3f6b23318487c9")
+@Generated("7407e782dff00dce7f300f18fa04ffe3")
 public final class ReplicatedMapEndEntryViewIterationCodec {
     //hex: 0x0D1500
     public static final int REQUEST_MESSAGE_TYPE = 857344;
@@ -51,7 +51,6 @@ public final class ReplicatedMapEndEntryViewIterationCodec {
     private ReplicatedMapEndEntryViewIterationCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

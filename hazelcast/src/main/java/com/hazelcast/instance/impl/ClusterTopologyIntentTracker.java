@@ -54,6 +54,9 @@ public interface ClusterTopologyIntentTracker {
 
     int UNKNOWN = -1;
 
+    /** Default value used when {@code status.*Replicas} fields are missing in the Kubernetes API response. */
+    int DEFAULT_STATUS_REPLICA_COUNT = 0;
+
     /**
      * Process an update of the cluster topology. Each update carries information about
      * the previous & current specified replicas count, the current number of replicas and ready replicas in the cluster.

@@ -67,7 +67,7 @@ public class WriteBehindManager implements MapStoreManager {
 
     /**
      * Store listener which is responsible for
-     * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore#stagingArea cleaning.
+     * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore#stagingArea} cleaning.
      */
     private static class InternalStoreListener implements StoreListener<DelayedEntry> {
 

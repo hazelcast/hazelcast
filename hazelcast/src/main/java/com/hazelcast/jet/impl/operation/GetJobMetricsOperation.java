@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * An operation sent from a member to master to query metrics for a specific
  * job ID.
  */
-public class GetJobMetricsOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
+public class GetJobMetricsOperation extends AsyncMasterOnlyJobOperation implements AllowedDuringPassiveState {
 
     public GetJobMetricsOperation() {
     }

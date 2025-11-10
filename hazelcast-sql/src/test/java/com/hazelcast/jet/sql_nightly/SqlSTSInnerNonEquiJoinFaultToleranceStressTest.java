@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql_nightly;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
+// This test is flaky because there is no guarantee on the order of received values
+// when using multiple Kafka partitions.
 @Category(NightlyTest.class)
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
 
@@ -34,5 +36,9 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +
                 " WHERE s1.__key != s2.__key";
+    }
+
+    protected int getAllowedLag() {
+        return 60;
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,7 +27,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,12 +37,17 @@ import com.hazelcast.transaction.TransactionalMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.mockito.Mockito;
 
 import java.io.Serial;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,10 +55,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.timeout;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InterceptorTest extends HazelcastTestSupport {
+
+    @Parameters(name = "inMemoryFormat:{0}")
+    public static Object[] memoryFormat() {
+        return new Object[]{
+                InMemoryFormat.BINARY,
+                InMemoryFormat.OBJECT,
+        };
+    }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
 
     protected void put(IMap map, Object key, Object value) {
         map.put(key, value);
@@ -71,7 +91,10 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfigWithoutJetAndMetrics();
+        var config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getMapConfig("default")
+                .setInMemoryFormat(inMemoryFormat);
+        return config;
     }
 
     @Test
@@ -336,6 +359,44 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
     }
 
+    // The interceptor sets the new value based on the result from the previous interceptor.
+    // The old value used by the interceptor is the original one before any changes.
+    @Test
+    public void chainOfPutInterceptor_useNewValueFromPreviousInterceptorAndOriginOldValue() {
+        final String name = "chain-interceptors-test";
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance(getConfig());
+
+        IMap<Integer, Integer> map = hz.getMap(name);
+        put(map, 1, 1);
+        assertEquals(1, get(map, 1));
+
+        map.addInterceptor(new NegativePutInterceptor());
+        var secondInterceptor = Mockito.mock(MapInterceptor.class);
+        map.addInterceptor(secondInterceptor);
+
+        put(map, 1, 2);
+        Mockito.verify(secondInterceptor).interceptPut(1, -2);
+        Mockito.verify(secondInterceptor, timeout(ASSERT_TRUE_EVENTUALLY_TIMEOUT)).afterPut(-2);
+    }
+
+    @Test
+    public void testAfterGetModifyInputValue_noAffectToStoredValue() {
+        final String name = "input-value-modify-interceptor-test";
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance(getConfig());
+
+        IMap<Integer, Dummy> map = hz.getMap(name);
+        var value = new Dummy(1);
+        put(map, 1, new Dummy(1));
+
+        var id = map.addInterceptor(new AfterGetModifyInterceptor());
+
+        assertEquals(value, get(map, 1));
+        map.removeInterceptor(id);
+        assertEquals(value, get(map, 1));
+    }
+
     static class DummyLoader implements MapLoader<Integer, String> {
 
         @Override
@@ -439,6 +500,49 @@ public class InterceptorTest extends HazelcastTestSupport {
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
             return ((Integer) newValue) * -1;
+        }
+    }
+
+    static class AfterGetModifyInterceptor extends MapInterceptorAdaptor {
+        @Override
+        public void afterGet(Object value) {
+            if (value instanceof Dummy) {
+                Dummy dummy = (Dummy) value;
+                dummy.value = -dummy.value;
+            }
+        }
+    }
+
+    public static class Dummy {
+        int value;
+
+        public Dummy(int value) {
+            this.value = value;
+        }
+
+        public Dummy() {
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
+            }
+            if (object == null || getClass() != object.getClass()) {
+                return false;
+            }
+            Dummy dummy = (Dummy) object;
+            return value == dummy.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Dummy{" + "value=" + value + '}';
         }
     }
 }

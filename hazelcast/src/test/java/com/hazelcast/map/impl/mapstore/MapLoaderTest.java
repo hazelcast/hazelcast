@@ -54,7 +54,6 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -481,7 +480,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
                     @Override
                     public Set<Object> loadAllKeys() {
-                        return new HashSet<>(Collections.singletonList(1));
+                        return Set.of(1);
                     }
                 });
 
@@ -547,7 +546,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .withPartitionCount(1)
                 .build();
 
-        Set<Integer> keySet = new HashSet<>(Arrays.asList(requestedKeys));
+        Set<Integer> keySet = Set.of(requestedKeys);
 
         map.getAll(keySet);
         map.getAll(keySet);

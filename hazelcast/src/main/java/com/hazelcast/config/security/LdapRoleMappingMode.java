@@ -16,7 +16,7 @@
 
 package com.hazelcast.config.security;
 
-import static com.hazelcast.internal.util.StringUtil.trim;
+import javax.annotation.Nullable;
 
 /**
  * Enum for LDAP role mapping modes.
@@ -51,14 +51,14 @@ public enum LdapRoleMappingMode {
         return valueString;
     }
 
-    public static LdapRoleMappingMode getRoleMappingMode(String label) {
-        label = trim(label);
-        if (label == null) {
-            return DEFAULT;
-        }
-        for (LdapRoleMappingMode mode : LdapRoleMappingMode.values()) {
-            if (mode.toString().equals(label)) {
-                return mode;
+    public static LdapRoleMappingMode getRoleMappingMode(@Nullable String label) {
+        if (label != null) {
+            label = label.strip();
+            for (LdapRoleMappingMode mode : LdapRoleMappingMode.values()) {
+                if (mode.toString()
+                        .equals(label)) {
+                    return mode;
+                }
             }
         }
         return DEFAULT;

@@ -204,7 +204,6 @@ public final class Address implements IdentifiedDataSerializable {
      * from another member.
      *
      * @param host hostname or IP
-     * @param port port
      * @return an unresolved address
      */
     @PrivateApi

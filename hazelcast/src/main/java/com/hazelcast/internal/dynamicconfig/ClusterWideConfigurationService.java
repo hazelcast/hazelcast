@@ -23,7 +23,6 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -48,6 +47,7 @@ import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -62,8 +62,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.version.Version;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.cluster.Versions.V5_5;
-import static com.hazelcast.internal.cluster.Versions.V6_0;
+import static com.hazelcast.internal.cluster.Versions.V5_6;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -199,6 +199,11 @@ public class ClusterWideConfigurationService implements
             Collection<? extends IdentifiedDataSerializable> values = entry.values();
             all.addAll(values);
         }
+        // since diagnostics config is single, cannot be managed in allConfigurations
+        DiagnosticsConfig effectiveDiagnosticsConfig = getDiagnosticsConfig();
+        if (effectiveDiagnosticsConfig != null) {
+            all.add(effectiveDiagnosticsConfig);
+        }
         return all.toArray(new IdentifiedDataSerializable[0]);
     }
 
@@ -217,6 +222,8 @@ public class ClusterWideConfigurationService implements
         for (Map<?, ?> entry : allConfigurations) {
             entry.clear();
         }
+        // since diagnostics config is single, cannot be managed in allConfigurations
+        diagnosticsConfig = null;
     }
 
     @Override
@@ -254,8 +261,7 @@ public class ClusterWideConfigurationService implements
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config,
-                                                                  BiFunction<ClusterService, IdentifiedDataSerializable,
-                                                                  DynamicConfigOperationSupplier> dynamicConfigOpGenerator) {
+        BiFunction<ClusterService, IdentifiedDataSerializable, DynamicConfigOperationSupplier> dynamicConfigOpGenerator) {
         checkConfigVersion(config);
         // we create a defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
@@ -361,12 +367,15 @@ public class ClusterWideConfigurationService implements
             currentConfig = namespaceConfigs.put(config.getName(), config);
             // ensure that the namespace is registered and added to the config.
             nodeEngine.getNamespaceService().addNamespaceConfig(nodeEngine.getConfig().getNamespacesConfig(), config);
+            // If a new namespace is added with the same name, delete all objects related to the previous namespace
+            nodeEngine.getSplitBrainMergePolicyProvider().clearNamespaceCache(config.getName());
             if (isNamespaceReferencedWithHRPersistence(nodeEngine, config)) {
                 listener.onConfigRegistered(config);
             }
         } else if (newConfig instanceof VectorCollectionConfig newVectorCollectionConfig) {
             currentConfig = vectorCollectionConfigs.putIfAbsent(newVectorCollectionConfig.getName(), newVectorCollectionConfig);
         } else if (newConfig instanceof DiagnosticsConfig newDiagnosticsConfig) {
+            ((NodeEngineImpl) nodeEngine).getDiagnostics().setConfig(newDiagnosticsConfig);
             diagnosticsConfig = newDiagnosticsConfig;
             currentConfig = newDiagnosticsConfig;
         } else {
@@ -644,6 +653,11 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public DiagnosticsConfig getDiagnosticsConfig() {
+        // it's not null, so it's set before (not reset), so that get the effective one.
+        if (diagnosticsConfig != null) {
+            // Diagnostics config might be set to disable by its auto-off, and it should be reflected to here.
+            diagnosticsConfig = ((NodeEngineImpl) nodeEngine).getDiagnostics().getDiagnosticsConfig();
+        }
         return diagnosticsConfig;
     }
 
@@ -672,7 +686,6 @@ public class ClusterWideConfigurationService implements
         private final NodeEngine nodeEngine;
         private final IdentifiedDataSerializable[] allConfigurations;
 
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2")
         public Merger(NodeEngine nodeEngine, IdentifiedDataSerializable[] allConfigurations) {
             this.nodeEngine = nodeEngine;
             this.allConfigurations = allConfigurations;
@@ -719,7 +732,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(WanReplicationConfig.class, V5_4);
         configToVersion.put(UserCodeNamespaceConfig.class, V5_4);
         configToVersion.put(VectorCollectionConfig.class, V5_5);
-        configToVersion.put(DiagnosticsConfig.class, V6_0);
+        configToVersion.put(DiagnosticsConfig.class, V5_6);
 
         return Collections.unmodifiableMap(configToVersion);
     }

@@ -61,7 +61,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_SYNC_REQUEST_COUNTER;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static java.lang.String.format;
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Maintains the version values for the partition replicas and manages the replica-related operations for partitions
@@ -135,7 +134,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncTimeoutScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler,
                 new ReplicaSyncTimeoutProcessor(), ScheduleType.POSTPONE);
 
-        replicaSyncRequests = newSetFromMap(new ConcurrentHashMap<>(partitionCount));
+        replicaSyncRequests = ConcurrentHashMap.newKeySet(partitionCount);
     }
 
     /**
@@ -203,8 +202,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
         if (!partition.isOwnerOrBackup(localReplica)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("This node is not backup replica of partitionId=" + partitionId
-                        + ", replicaIndex=" + replicaIndex + " anymore.");
+                logger.finest("This node is not backup replica of partitionId=%s, replicaIndex=%s anymore.", partitionId,
+                        replicaIndex);
             }
             return null;
         }
@@ -283,7 +282,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         ReplicaFragmentSyncInfo syncInfo = new ReplicaFragmentSyncInfo(partitionId, namespace, replicaIndex, target);
         if (!replicaSyncRequests.add(syncInfo)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Cannot send sync replica request for " + syncInfo + ". Sync is already in progress!");
+                logger.finest("Cannot send sync replica request for %s. Sync is already in progress!", syncInfo);
             }
             return false;
         }
@@ -383,7 +382,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * scheduled synchronization, clear the ongoing sync flag and release a synchronization permit.
      *
      * @param partitionId  the partition being synchronized
-     * @param namespace    namespace
      * @param replicaIndex the index of the replica being synchronized
      */
     // called in operation threads

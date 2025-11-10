@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values associated with the key.
  */
 @SuppressWarnings("unused")
-@Generated("d7beaa383181daf2268e8974debfd440")
+@Generated("f1b2cba8264aac98ddec0c5af5dc5f0d")
 public final class TransactionalMultiMapGetCodec {
     //hex: 0x0F0200
     public static final int REQUEST_MESSAGE_TYPE = 983552;
@@ -51,7 +51,6 @@ public final class TransactionalMultiMapGetCodec {
     private TransactionalMultiMapGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

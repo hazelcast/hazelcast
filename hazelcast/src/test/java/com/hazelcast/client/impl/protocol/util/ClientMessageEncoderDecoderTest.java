@@ -39,14 +39,14 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.AbstractMap;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,6 +55,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -100,7 +101,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     @Test
     public void testPut() {
         ClientMessage message =
-                MapPutCodec.encodeRequest("map", new HeapData(new byte[100]), new HeapData(new byte[100]), 5, 10);
+                MapPutCodec.encodeRequest("map", getNonNullData(), getNonNullData(), 5, 10);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -133,6 +134,27 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
         assertEquals(5, parameters.threadId);
         assertEquals("map", parameters.name);
+    }
+
+    @Test
+    public void testPutNullKey() {
+        assertThatThrownBy(() -> MapPutCodec.encodeRequest("map", new HeapData(new byte[100]), getNonNullData(), 5, 10))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Non-null Data field cannot be sent with null value");
+    }
+
+    @Test
+    public void testPutNullValue() {
+        assertThatThrownBy(() -> MapPutCodec.encodeRequest("map", getNonNullData(), new HeapData(new byte[100]), 5, 10))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Non-null Data field cannot be sent with null value");
+    }
+
+    protected static HeapData getNonNullData() {
+        byte[] payload = new byte[100];
+        // this will not be any actually registered type
+        payload[HeapData.TYPE_OFFSET] = 1;
+        return new HeapData(payload);
     }
 
     @Test

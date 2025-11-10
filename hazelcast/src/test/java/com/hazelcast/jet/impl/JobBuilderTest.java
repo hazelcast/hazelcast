@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -300,6 +301,15 @@ public class JobBuilderTest {
             return new MockJobProxy(jobId, isLightJob, jobDefinition, config, subject);
         }
 
+        @Override
+        protected GetJobIdsOperation.GetJobIdsResult getJobByName(String onlyName) { throw uoe(); }
+
+        @Override
+        protected Map getJobsById(Long onlyJobId) { throw uoe(); }
+
+        @Override
+        protected Map getAllJobs() { throw uoe(); }
+
         public Job newJobProxy(long jobId, Object lightJobCoordinator) { throw uoe(); }
 
         @Override
@@ -307,9 +317,6 @@ public class JobBuilderTest {
 
         @Override
         public ILogger getLogger() { throw uoe(); }
-
-        @Override
-        public Map getJobsInt(String onlyName, Long onlyJobId) { throw uoe(); }
 
         @Override
         public Object getMasterId() { throw uoe(); }

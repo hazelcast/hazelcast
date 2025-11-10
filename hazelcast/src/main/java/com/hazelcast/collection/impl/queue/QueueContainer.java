@@ -1122,7 +1122,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Schedules the queue for destruction if the queue is empty. Destroys the queue immediately the queue is empty and the
+     * Schedules the queue for destruction if the queue is empty. Destroys the queue immediately if the queue is empty and the
      * {@link QueueConfig#getEmptyQueueTtl()} is 0. Upon scheduled execution, the queue will be checked if it is still empty.
      */
     private void scheduleEvictionIfEmpty() {

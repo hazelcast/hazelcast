@@ -90,7 +90,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
                 logger.warning("Split-brain healing for " + getLabel() + " didn't finish within the timeout...");
             }
         } catch (InterruptedException e) {
-            logger.finest("Interrupted while waiting for split-brain healing of " + getLabel() + "...");
+            logger.finest("Interrupted while waiting for split-brain healing of %s...", getLabel());
             Thread.currentThread().interrupt();
         } finally {
             collector.destroy();

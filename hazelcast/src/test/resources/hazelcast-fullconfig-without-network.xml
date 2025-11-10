@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-6.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.7.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -662,7 +662,7 @@
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
-        <size unit="MEGABYTES" value="256"/>
+        <capacity unit="MEGABYTES" value="256"/>
         <min-block-size>128</min-block-size>
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>

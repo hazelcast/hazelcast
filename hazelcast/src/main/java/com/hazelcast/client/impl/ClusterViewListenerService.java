@@ -136,6 +136,7 @@ public class ClusterViewListenerService extends AbstractListenerService {
         Collection<Collection<UUID>> memberGroups = toMemberGroups(processedMembersView);
         ClientMessage memberGroupsViewEvent = ClientAddClusterViewListenerCodec
                 .encodeMemberGroupsViewEvent(version, memberGroups);
+        memberGroupsViewEvent.setCorrelationId(correlationId);
         write(memberGroupsViewEvent, clientEndpoint.getConnection());
 
         ClientMessage clusterVersionMessage = getClusterVersionMessage();

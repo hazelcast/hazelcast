@@ -28,7 +28,8 @@ import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.jupiter.api.Tag;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.Test;
 
 import javax.management.ObjectName;
@@ -38,12 +39,10 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEX_PARTITION_UPDATES_STARTED;
 import static com.hazelcast.map.metrics.MetricTestUtils.assertAttributeEquals;
 import static com.hazelcast.map.metrics.MetricTestUtils.buildMapIndexMetricName;
-import static com.hazelcast.test.annotation.ParallelJVMTest.PARALLEL_JVM_TEST;
-import static com.hazelcast.test.annotation.QuickTest.QUICK_TEST;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Tag(PARALLEL_JVM_TEST)
-@Tag(QUICK_TEST)
+@ParallelJVMTest
+@QuickTest
 class PartitionUpdateCountersTest
         extends HazelcastTestSupport {
 

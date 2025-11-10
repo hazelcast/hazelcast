@@ -279,8 +279,8 @@ public class SqlUnionTest extends SqlTestSupport {
         createMapping(map2Name, Person.class, String.class);
 
         for (int i = 0; i < 5; ++i) {
-            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
-            prunableMap2.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap1.put(new Person(i, "ABC" + i), String.valueOf(i));
+            prunableMap2.put(new Person(i, "ABC" + i), String.valueOf(i));
         }
 
         String sql = "(SELECT this FROM " + map1Name + " WHERE id = 1) " +
@@ -317,8 +317,8 @@ public class SqlUnionTest extends SqlTestSupport {
         createMapping(map2Name, Person.class, String.class);
 
         for (int i = 0; i < 5; ++i) {
-            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
-            prunableMap2.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap1.put(new Person(i, "ABC" + i), String.valueOf(i));
+            prunableMap2.put(new Person(i, "ABC" + i), String.valueOf(i));
         }
 
         String sql = "(SELECT this FROM " + map1Name + " WHERE id = 1) " +
@@ -342,7 +342,7 @@ public class SqlUnionTest extends SqlTestSupport {
         createMapping("pMap1", Person.class, String.class);
 
         for (int i = 0; i < 5; ++i) {
-            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap1.put(new Person(i, "ABC" + i), String.valueOf(i));
         }
 
         String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap1 WHERE id = 1)";
@@ -370,7 +370,7 @@ public class SqlUnionTest extends SqlTestSupport {
         createMapping("pMap2", Person.class, String.class);
 
         for (int i = 0; i < 5; ++i) {
-            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap1.put(new Person(i, "ABC" + i), String.valueOf(i));
         }
 
         String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION (SELECT this FROM pMap1 WHERE id = 1)";

@@ -66,7 +66,6 @@ public interface MapDataStore<K, V> {
      * The returned map will contain deserialised keys and values.
      *
      * @param keys the keys for which values are loaded
-     * @param keys the keys for which values are loaded
      * @return the map from de-serialised key to de-serialised value
      * @see MapLoader#loadAll(Collection)
      */

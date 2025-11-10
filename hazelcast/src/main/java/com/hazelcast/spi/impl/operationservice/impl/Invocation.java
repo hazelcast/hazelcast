@@ -33,6 +33,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -57,10 +58,9 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -98,9 +98,7 @@ import static java.util.logging.Level.WARNING;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class Invocation<T> extends BaseInvocation implements OperationResponseHandler {
-
-    private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
-            AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
+    private static final VarHandle RESPONSE_RECEIVED = ReflectionUtil.findVarHandle("responseReceived", Boolean.class);
 
     private static final long MIN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
@@ -390,8 +388,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         completeExceptionally(cause);
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
         if (!(op instanceof BlockingOperation)) {
             // if the call is not a BlockingOperation, then in case of a call-timeout, we are not going to retry;
@@ -401,7 +399,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: %s", this);
         }
 
         long oldWaitTimeout = op.getWaitTimeout();
@@ -563,8 +561,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private void doInvoke(boolean isAsync) {
         if (!engineActive()) {
             return;
@@ -757,11 +755,11 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         doInvoke(false);
     }
 
-    Address getTargetAddress() {
+    public Address getTargetAddress() {
         return targetAddress;
     }
 
-    Member getTargetMember() {
+    public Member getTargetMember() {
         return targetMember;
     }
 
@@ -805,8 +803,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 }
 
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Node is not joined. Re-scheduling " + this
-                            + " to be executed in " + tryPauseMillis + " ms.");
+                    logger.finest("Node is not joined. Re-scheduling %s to be executed in %s ms.", this, tryPauseMillis);
                 }
                 try {
                     context.invocationMonitor.schedule(new InvocationRetryTask(), tryPauseMillis);

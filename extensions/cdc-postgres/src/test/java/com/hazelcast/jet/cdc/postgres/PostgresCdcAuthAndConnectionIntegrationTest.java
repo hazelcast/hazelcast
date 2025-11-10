@@ -41,6 +41,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("wrongPassword")
                 .setDatabaseName("postgres")
+                .setCustomProperty("plugin.name", "pgoutput")
                 .build();
 
         Pipeline pipeline = pipeline(source);
@@ -63,6 +64,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
                 .setDatabaseName("wrongDatabaseName")
+                .setCustomProperty("plugin.name", "pgoutput")
                 .build();
 
         Pipeline pipeline = pipeline(source);

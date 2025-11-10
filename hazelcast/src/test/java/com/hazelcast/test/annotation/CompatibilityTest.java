@@ -17,6 +17,13 @@
 package com.hazelcast.test.annotation;
 
 import com.hazelcast.test.TestEnvironment;
+import org.junit.jupiter.api.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Mark a test as a compatibility test, suitable to be executed on a cluster with mixed Hazelcast versions.
@@ -34,5 +41,8 @@ import com.hazelcast.test.TestEnvironment;
  *
  * @see TestEnvironment#isRunningCompatibilityTest()
  */
-public final class CompatibilityTest {
+@Retention(RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.test.annotation.CompatibilityTest")
+public @interface CompatibilityTest {
 }

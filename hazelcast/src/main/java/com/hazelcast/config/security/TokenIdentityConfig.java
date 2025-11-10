@@ -23,12 +23,10 @@ import java.util.Arrays;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.SimpleTokenCredentials;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Simple token identity configuration.
  */
-@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class TokenIdentityConfig implements IdentityConfig {
 
     private final byte[] token;

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("b3cb7586cd0e5d2da91386cb849bbffc")
+@Generated("e1058193108b09e7502f51ceea1b6d67")
 public final class DynamicConfigAddReplicatedMapConfigCodec {
     //hex: 0x1B0600
     public static final int REQUEST_MESSAGE_TYPE = 1771008;
@@ -54,7 +54,6 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
     private DynamicConfigAddReplicatedMapConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

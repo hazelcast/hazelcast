@@ -57,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
@@ -244,17 +245,18 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs() {
-        return mergeJobIdsResults(getJobsInt(null, null));
+        return mergeJobIdsResults(getAllJobs());
     }
 
     @Nonnull @Override
     public List<Job> getJobs(@Nonnull String name) {
-        return mergeJobIdsResults(getJobsInt(name, null));
+        GetJobIdsResult result =  getJobByName(name);
+        return convertToJobStream(null, result).collect(Collectors.toList());
     }
 
     @Nullable @Override
     public Job getJob(long jobId) {
-        List<Job> jobs = mergeJobIdsResults(getJobsInt(null, jobId));
+        List<Job> jobs = mergeJobIdsResults(getJobsById(jobId));
         assert jobs.size() <= 1;
         return jobs.isEmpty() ? null : jobs.get(0);
     }
@@ -262,18 +264,22 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     @Nonnull
     private List<Job> mergeJobIdsResults(Map<M, GetJobIdsResult> results) {
         return results.entrySet().stream()
-                .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
-                        .mapToObj(i -> {
-                            long jobId = en.getValue().getJobIds()[i];
-                            boolean isLightJob = en.getValue().getIsLightJobs()[i];
-                            return newJobProxy(jobId, isLightJob ? en.getKey() : null);
-                        }))
+                .flatMap(entry -> convertToJobStream(entry.getKey(), entry.getValue()))
+                // Filtering is preserved for compatibility with 5.5: new client with old server
+                // Reason: Older server has an issue:
                 // In edge cases there can be duplicates. E.g. the GetIdsOp is broadcast to all members.  member1
                 // is master and responds and dies. It's removed from cluster, member2 becomes master and
                 // responds with the same normal jobs. It's safe to remove duplicates because the same jobId should
                 // be the same job - we use FlakeIdGenerator to generate the IDs.
                 .filter(distinctBy(Job::getId))
                 .collect(toList());
+    }
+
+    private Stream<Job> convertToJobStream(@Nullable M member, GetJobIdsResult result) {
+        long[] jobIds = result.getJobIds();
+        boolean[] isLightJobs = result.getIsLightJobs();
+        return IntStream.range(0, jobIds.length)
+                .mapToObj(i -> newJobProxy(jobIds[i], isLightJobs[i] ? member : null));
     }
 
     @Nullable
@@ -410,7 +416,12 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                                     @Nonnull JobConfig config,
                                     @Nullable Subject subject);
 
-    public abstract Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
+
+    protected abstract GetJobIdsResult getJobByName(String onlyName);
+
+    protected abstract Map<M, GetJobIdsResult> getJobsById(Long onlyJobId);
+
+    protected abstract Map<M, GetJobIdsResult> getAllJobs();
 
     public abstract M getMasterId();
 

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and disposes the result of the execution with the given sequence
  */
 @SuppressWarnings("unused")
-@Generated("b2d3c5327b4b070aed7a00928a0d6827")
+@Generated("fd774b6b320311247dc0c64d49fe0de3")
 public final class DurableExecutorRetrieveAndDisposeResultCodec {
     //hex: 0x180600
     public static final int REQUEST_MESSAGE_TYPE = 1574400;
@@ -50,7 +50,6 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
     private DurableExecutorRetrieveAndDisposeResultCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -92,7 +91,7 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -103,6 +102,6 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

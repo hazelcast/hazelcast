@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("1c98e08ed0e284fb1e1c7b8acca14a6b")
+@Generated("96ad7b4ccedc7dc68d961c2216192109")
 public final class EvictionConfigHolderCodec {
     private static final int SIZE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -43,7 +43,7 @@ public final class EvictionConfigHolderCodec {
         StringCodec.encode(clientMessage, evictionConfigHolder.getMaxSizePolicy());
         StringCodec.encode(clientMessage, evictionConfigHolder.getEvictionPolicy());
         CodecUtil.encodeNullable(clientMessage, evictionConfigHolder.getComparatorClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, evictionConfigHolder.getComparator(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, evictionConfigHolder.getComparator());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -58,7 +58,7 @@ public final class EvictionConfigHolderCodec {
         java.lang.String maxSizePolicy = StringCodec.decode(iterator);
         java.lang.String evictionPolicy = StringCodec.decode(iterator);
         java.lang.String comparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.internal.serialization.Data comparator = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data comparator = DataCodec.decodeNullable(iterator);
 
         fastForwardToEndFrame(iterator);
 

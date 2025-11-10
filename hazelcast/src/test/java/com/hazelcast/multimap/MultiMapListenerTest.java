@@ -41,7 +41,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -612,7 +611,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
 
     private static class KeyCollectingListener<V> extends EntryAdapter<String, V> {
 
-        private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<String> keys = ConcurrentHashMap.newKeySet();
         private final AtomicInteger eventCount = new AtomicInteger();
 
         public void entryAdded(EntryEvent<String, V> event) {

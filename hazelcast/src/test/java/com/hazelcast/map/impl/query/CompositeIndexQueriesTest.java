@@ -63,7 +63,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
     private IMap<Integer, Person> map;
 
-    private final List<String> indexes = new ArrayList<>();
+    private List<String> indexes = new ArrayList<>();
 
     @Parameterized.Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {

@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.util.collection;
 
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
+
+import java.lang.invoke.VarHandle;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Function;
 
 /**
@@ -154,8 +156,7 @@ public class ReadOptimizedLruCache<K, V> {
 
     // package-visible for tests
     static class ValueAndTimestamp<V> {
-        private static final AtomicLongFieldUpdater<ValueAndTimestamp> TIMESTAMP_UPDATER =
-                AtomicLongFieldUpdater.newUpdater(ValueAndTimestamp.class, "timestamp");
+        private static final VarHandle TIMESTAMP = ReflectionUtil.findVarHandle("timestamp", long.class);
 
         final V value;
         volatile long timestamp;
@@ -166,7 +167,7 @@ public class ReadOptimizedLruCache<K, V> {
         }
 
         public void touch() {
-            TIMESTAMP_UPDATER.lazySet(this, System.nanoTime());
+            TIMESTAMP.setOpaque(this, System.nanoTime());
         }
     }
 }

@@ -50,7 +50,7 @@ public class TestUtil {
     public static final String CLIENT_VERSIONS_SEPARATOR = ",";
 
     public static class DummyClientFactory {
-        private final Set<DummyClient> clients = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<DummyClient> clients = ConcurrentHashMap.newKeySet();
 
         public DummyClient newClient(String clientType, String clientVersion) {
             DummyClient client = new DummyClient(clientType, clientVersion);
@@ -70,7 +70,7 @@ public class TestUtil {
         private final String clientType;
         private final String clientVersion;
         private final UUID uuid;
-        private final Set<DummyConnection> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<DummyConnection> connections = ConcurrentHashMap.newKeySet();
 
         public DummyClient(String clientType, String clientVersion) {
             this.clientType = clientType;

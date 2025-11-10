@@ -24,13 +24,11 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.experimental.categories.Category;
-import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -38,7 +36,7 @@ import java.util.stream.Stream;
 /** Asserts that tests are annotated with `@RunWith` to ensure property isolation */
 public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
     private static final Collection<String> SYSTEM_PROPERTY_MODIFICATION_METHODS =
-            Set.of("java.lang.System.setProperty(java.lang.String, java.lang.String)",
+            Set.of("java.lang.System.setProperty(java.lang.String, java.lang.String)", "java.lang.System.clearProperty(String)",
                     "com.hazelcast.spi.properties.HazelcastProperty.setSystemProperty(java.lang.String)");
 
     public TestsHaveRunnersCondition() {
@@ -67,8 +65,7 @@ public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
             }
 
             // Has "ParallelJVMTest" tag
-            if ((classToTest.isAnnotatedWith(Tag.class) && Objects.equals(classToTest.getAnnotationOfType(Tag.class)
-                    .value(), "com.hazelcast.test.annotation.ParallelJVMTest"))
+            if (classToTest.isAnnotatedWith("com.hazelcast.test.annotation.ParallelJVMTest")
                     || (classToTest.isAnnotatedWith(Category.class) && Arrays
                             .stream(classToTest.getAnnotationOfType(Category.class)
                                     .value())

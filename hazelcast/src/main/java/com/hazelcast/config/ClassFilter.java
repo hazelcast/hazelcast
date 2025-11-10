@@ -44,17 +44,17 @@ public class ClassFilter {
     private AtomicBoolean warningLogged = new AtomicBoolean();
 
     public ClassFilter() {
-        classes = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        packages = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        prefixes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        classes = ConcurrentHashMap.newKeySet();
+        packages = ConcurrentHashMap.newKeySet();
+        prefixes = ConcurrentHashMap.newKeySet();
     }
 
     public ClassFilter(ClassFilter filter) {
-        classes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        classes = ConcurrentHashMap.newKeySet();
         classes.addAll(filter.classes);
-        packages = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        packages = ConcurrentHashMap.newKeySet();
         packages.addAll(filter.packages);
-        prefixes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        prefixes = ConcurrentHashMap.newKeySet();
         prefixes.addAll(filter.prefixes);
         warningLogged = new AtomicBoolean(filter.warningLogged.get());
     }

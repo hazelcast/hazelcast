@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * greater or equals to the sequence number set in fromSequence.
  */
 @SuppressWarnings("unused")
-@Generated("dbf01c7d56f74c0ebdd974766a2dae6e")
+@Generated("f40b0e9e6b3e97c087b53c2e56d75ada")
 public final class MCReadMetricsCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;
@@ -53,7 +53,6 @@ public final class MCReadMetricsCodec {
     private MCReadMetricsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -89,7 +88,6 @@ public final class MCReadMetricsCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

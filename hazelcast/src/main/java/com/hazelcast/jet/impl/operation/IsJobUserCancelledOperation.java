@@ -21,7 +21,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.util.concurrent.CompletableFuture;
 
-public class IsJobUserCancelledOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
+public class IsJobUserCancelledOperation extends AsyncMasterOnlyJobOperation implements AllowedDuringPassiveState {
 
     public IsJobUserCancelledOperation() {
     }

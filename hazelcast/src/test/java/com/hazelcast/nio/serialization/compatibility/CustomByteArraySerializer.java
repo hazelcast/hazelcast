@@ -42,4 +42,7 @@ public class CustomByteArraySerializer implements ByteArraySerializer<CustomByte
         return new CustomByteArraySerializable(wrap.getInt(), wrap.getFloat());
     }
 
+    @Override
+    public void destroy() {
+    }
 }

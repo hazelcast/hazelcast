@@ -541,7 +541,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue(0, sql("this", DOUBLE), DOUBLE, 0d);
         putAndCheckValue(0, sql("this", OBJECT), OBJECT, 0);
 
-        putAndCheckValue(Integer.MIN_VALUE, sql("this", VARCHAR), VARCHAR, "" + Integer.MIN_VALUE);
+        putAndCheckValue(Integer.MIN_VALUE, sql("this", VARCHAR), VARCHAR, String.valueOf(Integer.MIN_VALUE));
         putAndCheckFailure(Integer.MIN_VALUE, sql("this", TINYINT), DATA_EXCEPTION, "Numeric overflow while converting INTEGER to TINYINT");
         putAndCheckFailure(Integer.MIN_VALUE, sql("this", SMALLINT), DATA_EXCEPTION, "Numeric overflow while converting INTEGER to SMALLINT");
         putAndCheckValue(Integer.MIN_VALUE, sql("this", INTEGER), INTEGER, Integer.MIN_VALUE);
@@ -551,7 +551,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue(Integer.MIN_VALUE, sql("this", DOUBLE), DOUBLE, (double) Integer.MIN_VALUE);
         putAndCheckValue(Integer.MIN_VALUE, sql("this", OBJECT), OBJECT, Integer.MIN_VALUE);
 
-        putAndCheckValue(Integer.MAX_VALUE, sql("this", VARCHAR), VARCHAR, "" + Integer.MAX_VALUE);
+        putAndCheckValue(Integer.MAX_VALUE, sql("this", VARCHAR), VARCHAR, String.valueOf(Integer.MAX_VALUE));
         putAndCheckFailure(Integer.MAX_VALUE, sql("this", TINYINT), DATA_EXCEPTION, "Numeric overflow while converting INTEGER to TINYINT");
         putAndCheckFailure(Integer.MAX_VALUE, sql("this", SMALLINT), DATA_EXCEPTION, "Numeric overflow while converting INTEGER to SMALLINT");
         putAndCheckValue(Integer.MAX_VALUE, sql("this", INTEGER), INTEGER, Integer.MAX_VALUE);
@@ -1241,6 +1241,6 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private static String literal(Object value) {
-        return "" + value;
+        return String.valueOf(value);
     }
 }

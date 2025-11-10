@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -43,7 +42,7 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
     public MapFetchKeysOperation() {
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public MapFetchKeysOperation(String name, IterationPointer[] pointers, int fetchSize) {
         super(name);
         this.pointers = pointers;

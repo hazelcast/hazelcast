@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Readonly/immutable implementation of {@link InternalPartition} interface.
@@ -26,7 +25,6 @@ public class ReadonlyInternalPartition extends AbstractInternalPartition {
     private final PartitionReplica[] replicas;
     private final int version;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ReadonlyInternalPartition(PartitionReplica[] replicas, int partitionId, int version) {
         super(partitionId);
         this.replicas = replicas;

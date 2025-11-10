@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -254,7 +253,6 @@ public class IndexRegistry {
     /**
      * Returns all the composite indexes known to this indexes instance.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalIndex[] getCompositeIndexes() {
         return compositeIndexes;
     }
@@ -443,7 +441,6 @@ public class IndexRegistry {
     /**
      * Returns all the indexes known to this indexes instance.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalIndex[] getIndexes() {
         return indexes;
     }

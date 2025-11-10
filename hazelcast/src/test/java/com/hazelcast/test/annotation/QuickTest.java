@@ -15,29 +15,27 @@
  */
 
 package com.hazelcast.test.annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-import org.junit.runners.model.FrameworkMethod;
+import org.junit.jupiter.api.Tag;
 
-import java.text.MessageFormat;
 import java.time.Duration;
 
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
- * Annotates quick tests which are fast enough (i.e. execution sub-{@link #EXPECTED_RUNTIME_THRESHOLD} per test) for the PR builder.
+ * Annotates quick tests which are fast enough (i.e. execution sub-{@link #EXPECTED_RUNTIME_THRESHOLD} per test) for the PR
+ * builder.
  * <p>
  * Will be executed in the PR builder and for code coverage measurements.
  *
- * @see {@link SlowTest}
+ * @see SlowTest
  */
-public final class QuickTest {
-    public static final Duration EXPECTED_RUNTIME_THRESHOLD = Duration.ofMinutes(1);
-
-    public static final String QUICK_TEST = "com.hazelcast.test.annotation.QuickTest";
-
-    public static void logMessageIfTestOverran(FrameworkMethod method, float tookSeconds) {
-        if (tookSeconds > QuickTest.EXPECTED_RUNTIME_THRESHOLD.getSeconds()) {
-            System.err.println(MessageFormat.format(
-                    "{0} is annotated as a {1}, expected to complete within {2} seconds - but took {3} seconds",
-                    method.getName(), QuickTest.class.getSimpleName(), EXPECTED_RUNTIME_THRESHOLD.getSeconds(), tookSeconds));
-        }
-    }
+@Retention(RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.test.annotation.QuickTest")
+public @interface QuickTest {
+    Duration EXPECTED_RUNTIME_THRESHOLD = Duration.ofMinutes(1);
 }

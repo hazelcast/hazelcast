@@ -20,7 +20,6 @@ import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.kubernetes.KubernetesClient.StsMonitorThread;
 import com.hazelcast.spi.utils.RestClient;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import io.fabric8.kubernetes.api.model.ListMetaBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -32,14 +31,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetListBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatusBuilder;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
+import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.fabric8.mockwebserver.dsl.ReturnOrWebsocketable;
 import io.fabric8.mockwebserver.dsl.TimesOnceableOrHttpHeaderable;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -49,23 +46,23 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-// test interaction of KubernetesClient with Kubernetes mock API server
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+/** test interaction of KubernetesClient with Kubernetes mock API server */
+@NightlyTest
+@EnableKubernetesMockClient(https = false)
 public class StsMonitorTest {
 
     private static final String SERVICE_NAME = "hz-hazelcast";
 
-    @Rule
-    public KubernetesServer kubernetesServer = new KubernetesServer(false);
+    public KubernetesMockServer kubernetesServer;
 
     String namespace;
     String apiServerBaseUrl;
@@ -74,12 +71,12 @@ public class StsMonitorTest {
     KubernetesClient client;
     StsMonitorThread stsMonitor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         tracker = mock(ClusterTopologyIntentTracker.class);
         when(tracker.isEnabled()).thenReturn(true);
 
-        NamespacedKubernetesClient mockServerClient = kubernetesServer.getClient();
+        NamespacedKubernetesClient mockServerClient = kubernetesServer.createClient();
         namespace = mockServerClient.getNamespace();
         apiServerBaseUrl = mockServerClient.getMasterUrl().toString();
         if (apiServerBaseUrl.endsWith("/")) {
@@ -178,8 +175,8 @@ public class StsMonitorTest {
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);
-        assertTrue("Backoff should be triggered due to API faults and idleCount should be > 0",
-                stsMonitor.idleCount > 0);
+        assertThat(stsMonitor.idleCount).as("Backoff should be triggered due to API faults and idleCount should be > 0")
+                .isGreaterThan(0);
     }
 
     @Test
@@ -192,8 +189,8 @@ public class StsMonitorTest {
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);
-        assertTrue("Backoff should be triggered due to API faults and idleCount should be > 0",
-                stsMonitor.idleCount > 0);
+        assertThat(stsMonitor.idleCount).as("Backoff should be triggered due to API faults and idleCount should be > 0")
+                .isGreaterThan(0);
     }
 
     @Test

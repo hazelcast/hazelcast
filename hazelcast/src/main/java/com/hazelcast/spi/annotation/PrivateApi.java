@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * guarantees are given. So it could be that the functionality changes, moves, gets deleted etc without
  * any form of warning.
  */
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR })
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented

@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.AddressUtil.AddressHolder;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.internal.util.AddressUtil.Ip4AddressMatcher;
-import org.junit.jupiter.api.Tag;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for AddressUtil class.
  */
-@Tag("com.hazelcast.test.annotation.QuickTest")
+@QuickTest
 class AddressUtilTest {
 
     private static final String SOME_NOT_LOCAL_ADDRESS = "2001:db8:85a3:0:0:8a2e:370:7334";

@@ -84,7 +84,7 @@ public abstract class BasePutOperation
     public void afterRunInternal() {
         Object value = isPostProcessingOrHasInterceptor(recordStore)
                 ? recordStore.getRecord(dataKey).getValue() : dataValue;
-        mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
+        mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), value);
         mapEventPublisher.publishEvent(getCallerAddress(), name,
                 oldValue == null ? EntryEventType.ADDED
                         : EntryEventType.UPDATED, dataKey, oldValue, value);

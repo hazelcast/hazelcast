@@ -130,8 +130,9 @@ public final class PartitionBackupReplicaAntiEntropyOperation
         if (!startCompleted) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Anti-entropy operation for partitionId=" + getPartitionId()
-                        + ", replicaIndex=" + getReplicaIndex() + " is received before startup is completed.");
+                logger.finest(
+                        "Anti-entropy operation for partitionId=%s, replicaIndex=%s is received before startup is completed.",
+                        getPartitionId(), getReplicaIndex());
             }
         }
         return startCompleted;

@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 import static org.junit.Assume.assumeFalse;
+import static com.hazelcast.jet.TestedVersions.TEST_MYSQL_IMAGE;
 
 @Category(NightlyTest.class)
 public class MySQLSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
@@ -41,7 +42,7 @@ public class MySQLSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
         // https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-connp-props-metadata.html
         // Therefore we ignore the `table.with.dot` case for MySQL 5
 
-        assumeFalse(MySQLDatabaseProvider.TEST_MYSQL_VERSION.startsWith("5")
+        assumeFalse(TEST_MYSQL_IMAGE.getVersionPart().startsWith("5")
                 && table.equals("table.with.dot"));
     }
 

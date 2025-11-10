@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 

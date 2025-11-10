@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the next row page.
  */
 @SuppressWarnings("unused")
-@Generated("8f3382c4822c1974031a74182637d013")
+@Generated("43034f178e4d77fc2272cb757aff022c")
 public final class SqlFetch_reservedCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;
@@ -51,7 +51,6 @@ public final class SqlFetch_reservedCodec {
     private SqlFetch_reservedCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -87,7 +86,6 @@ public final class SqlFetch_reservedCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

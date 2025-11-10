@@ -15,6 +15,9 @@
  */
 package com.hazelcast.spring;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -24,17 +27,35 @@ import javax.annotation.Nonnull;
 
 /**
  * Configuration used by {@link ExposeHazelcastObjects} to dynamically register its configuration.
- * @since 6.0
+ * @since 5.6
  */
 public final class HazelcastExposeObjectRegistrar implements ImportBeanDefinitionRegistrar {
+
+    private final ILogger logger = Logger.getLogger(HazelcastExposeObjectRegistrar.class);
+    private final BeanFactory beanFactory;
+    public HazelcastExposeObjectRegistrar(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
 
     @Override
     public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata,
                                         @Nonnull BeanDefinitionRegistry registry) {
         final var annotatedConfiguration = ExposeHazelcastObjects.Configuration.toConfiguration(importingClassMetadata);
-        var builder = BeanDefinitionBuilder.rootBeanDefinition(ExposeHazelcastObjects.Configuration.class,
-                                                               () -> annotatedConfiguration)
-                                           .setLazyInit(false);
-        registry.registerBeanDefinition("hzInternalBeanInfo", builder.getBeanDefinition());
+        if (logger.isFineEnabled()) {
+            logger.fine("Registering additional ExposeHazelcastObjects configuration: %s", annotatedConfiguration);
+        }
+
+        ExposeHazelcastObjects.Configuration hzBeanExportConf = ExposeHazelcastObjects.Configuration.empty();
+
+        String hzBeanExportConfName = "hzBeanExportConf";
+        if (registry.containsBeanDefinition(hzBeanExportConfName)) {
+            hzBeanExportConf = beanFactory.getBean(hzBeanExportConfName, ExposeHazelcastObjects.Configuration.class);
+        } else {
+            final var toInsert = hzBeanExportConf;
+            registry.registerBeanDefinition(hzBeanExportConfName, BeanDefinitionBuilder.rootBeanDefinition(
+                    ExposeHazelcastObjects.Configuration.class, () -> toInsert).getBeanDefinition());
+        }
+
+        hzBeanExportConf.includeOther(annotatedConfiguration);
     }
 }

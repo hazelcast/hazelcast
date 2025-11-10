@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Starts execution of an SQL query (as of 4.2).
  */
 @SuppressWarnings("unused")
-@Generated("f40cf970c5ff15f12f5eece93201c14a")
+@Generated("db82d0ae94b980d2071ef6e3d5c7fc23")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -56,7 +56,6 @@ public final class SqlExecuteCodec {
     private SqlExecuteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -123,7 +122,7 @@ public final class SqlExecuteCodec {
         encodeBoolean(initialFrame.content, REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET, skipUpdateStatistics);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, sql);
-        ListMultiFrameCodec.encodeContainsNullable(clientMessage, parameters, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, parameters, DataCodec::encodeNullable);
         CodecUtil.encodeNullable(clientMessage, schema, StringCodec::encode);
         SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
@@ -143,13 +142,12 @@ public final class SqlExecuteCodec {
             request.isSkipUpdateStatisticsExists = false;
         }
         request.sql = StringCodec.decode(iterator);
-        request.parameters = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        request.parameters = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decodeNullable);
         request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queryId = SqlQueryIdCodec.decode(iterator);
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

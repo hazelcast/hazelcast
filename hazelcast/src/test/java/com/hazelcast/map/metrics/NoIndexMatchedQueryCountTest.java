@@ -23,18 +23,17 @@ import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.jupiter.api.Tag;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.Test;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NO_MATCHING_INDEX_QUERY_COUNT;
 import static com.hazelcast.map.metrics.MetricTestUtils.assertAttributeEquals;
 import static com.hazelcast.map.metrics.MetricTestUtils.buildMapMetricName;
-import static com.hazelcast.test.annotation.ParallelJVMTest.PARALLEL_JVM_TEST;
-import static com.hazelcast.test.annotation.QuickTest.QUICK_TEST;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Tag(PARALLEL_JVM_TEST)
-@Tag(QUICK_TEST)
+@ParallelJVMTest
+@QuickTest
 class NoIndexMatchedQueryCountTest
         extends HazelcastTestSupport {
 

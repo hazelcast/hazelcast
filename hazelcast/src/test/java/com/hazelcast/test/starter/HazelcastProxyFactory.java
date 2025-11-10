@@ -37,7 +37,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -335,7 +334,7 @@ public class HazelcastProxyFactory {
      * {@code type} itself if it's an interface.
      */
     private static Class<?>[] getAllInterfacesIncludingSelf(Class<?> type) {
-        Set<Class<?>> interfaces = new HashSet<>(Arrays.asList(getAllInterfaces(type)));
+        Set<Class<?>> interfaces = Set.of(getAllInterfaces(type));
         //if the return type itself is an interface then we have to add it
         //to the list of interfaces implemented by the proxy
         if (type.isInterface()) {

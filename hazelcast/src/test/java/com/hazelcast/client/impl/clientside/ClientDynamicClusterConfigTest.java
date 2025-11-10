@@ -47,4 +47,9 @@ public class ClientDynamicClusterConfigTest extends DynamicConfigTest {
     public void tearDown() {
         factory.terminateAll();
     }
+
+    @Override
+    public void testDiagnosticsConfig() {
+        // DiagnosticsConfig in dynamic config is only supported on members.
+    }
 }

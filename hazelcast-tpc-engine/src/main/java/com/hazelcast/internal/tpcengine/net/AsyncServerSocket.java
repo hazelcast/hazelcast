@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
@@ -115,7 +114,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * </ol>
      * This can be made on any thread, but it isn't thread safe.
      * <p/>
-     * This call needs to be made before {@link #start(Consumer)}.
+     * This call needs to be made before {@link #start()}.
      * <p/>
      * Bind should only be called once, otherwise an UncheckedIOException is thrown.
      *

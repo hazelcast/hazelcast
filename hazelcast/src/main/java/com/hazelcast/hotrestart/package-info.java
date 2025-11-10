@@ -15,7 +15,7 @@
  */
 
 /**
- * @deprecated since 5.0
+ * @deprecated
  * Please use {@link com.hazelcast.persistence} for the replacement.
  */
 package com.hazelcast.hotrestart;

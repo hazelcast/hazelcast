@@ -59,7 +59,6 @@ public interface IPartitionService extends CoreService {
      *
      * @param partitionId the partitionId
      * @return owner of partition
-     * @throws InterruptedException if interrupted while waiting
      * @throws NoDataMemberInClusterException if all nodes are lite members and partitions can't be assigned
      */
     Address getPartitionOwnerOrWait(int partitionId);

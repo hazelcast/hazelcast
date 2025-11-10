@@ -71,7 +71,7 @@ class MigrationThread extends Thread implements Runnable {
             }
         } catch (InterruptedException e) {
             if (logger.isFinestEnabled()) {
-                logger.finest("MigrationThread is interrupted: " + e.getMessage());
+                logger.finest("MigrationThread is interrupted: %s", e.getMessage());
             }
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);

@@ -69,9 +69,14 @@ public final class Versions {
     public static final Version V5_5 = Version.of(5, 5);
 
     /**
-     * Cluster version 6.0
+     * Cluster version 5.6
      */
-    public static final Version V6_0 = Version.of(6, 0);
+    public static final Version V5_6 = Version.of(5, 6);
+
+    /**
+     * Cluster version 5.7
+     */
+    public static final Version V5_7 = Version.of(5, 7);
 
     @Nonnull
     public static final Version CURRENT_CLUSTER_VERSION = Version.of(GeneratedBuildProperties.VERSION);

@@ -87,7 +87,7 @@ final class DnsEndpointResolver
         try {
             for (InetAddress address : future.get(serviceDnsTimeout, TimeUnit.SECONDS)) {
                 if (addresses.add(address.getHostAddress()) && logger.isFinestEnabled()) {
-                    logger.finest("Found node service with address: " + address);
+                    logger.finest("Found node service with address: %s", address);
                 }
             }
         } catch (ExecutionException e) {

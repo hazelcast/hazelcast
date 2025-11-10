@@ -67,7 +67,8 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
         Queue<Object> outComes = new LinkedList<>();
         recordStore.forEach((key, record) -> {
             Data dataKey = toHeapData(key);
-            operator.operateOnKey(dataKey);
+            // for native use variant that does not expire entries (see comment below)
+            operator.operateOnKeyValueDuringScan(dataKey, record.getValue());
 
             EntryEventType eventType = operator.getEventType();
             if (eventType != null) {

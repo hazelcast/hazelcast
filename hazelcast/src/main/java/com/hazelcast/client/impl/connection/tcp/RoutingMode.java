@@ -28,10 +28,10 @@ import com.hazelcast.client.config.RoutingStrategy;
  * <p>The {@code UNKNOWN} enumeration represents a state where the client's
  * {@link RoutingMode} is not known, usually due to < 5.5 client versions</p>
  *
- * @deprecated since 6.0, this enumeration is replaced by {@link com.hazelcast.client.config.RoutingMode} which
+ * @deprecated this enumeration is replaced by {@link com.hazelcast.client.config.RoutingMode} which
  * exists in the correct public API package. This enumeration will be removed in a future version.
  */
-@Deprecated(since = "6.0", forRemoval = true)
+@Deprecated(since = "5.6", forRemoval = true)
 public enum RoutingMode {
     /**
      * Represents a single member routing mode, previously known as `UNISOCKET`.

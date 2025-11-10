@@ -97,12 +97,15 @@ if [ -z "$LOGGING_PATTERN" ]; then
   fi
 fi
 
+source "$SCRIPT_DIR"/utils.sh
+prepare_java_opts_with_masking
+
 if [[ "$1" != "--version" ]] && [[ "$1" != "-V" ]]; then
   echo "########################################"
   echo "# JAVA=$JAVA"
-  echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+  echo "# JAVA_OPTS=${DISPLAY_OPTS[*]}"
   echo "# CLASSPATH=$CLASSPATH"
   echo "########################################"
 fi
 
-exec "${JAVA}" -cp "${CLASSPATH}" ${JAVA_OPTS_ARRAY[*]} com.hazelcast.commandline.HazelcastServerCommandLine "$@"
+exec "${JAVA}" -cp "${CLASSPATH}" "${FILTERED_JAVA_OPTS[@]}" com.hazelcast.commandline.HazelcastServerCommandLine "$@"

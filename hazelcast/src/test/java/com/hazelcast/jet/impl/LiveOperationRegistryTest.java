@@ -33,6 +33,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
@@ -41,19 +42,18 @@ import static org.mockito.Mockito.spy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LiveOperationRegistryTest {
 
-
-    private LiveOperationRegistry r = new LiveOperationRegistry();
+    private final LiveOperationRegistry r = new LiveOperationRegistry();
 
     @Test
     public void when_registerDuplicateCallId_then_exception() throws UnknownHostException {
         AsyncJobOperation operation = createOperation("1.2.3.4", 1234, 2222L);
-        r.register(operation);
+        assertTrue(r.register(operation));
 
-        // this should not fail
-        r.register(createOperation("1.2.3.4", 1234, 2223L));
+        // this should return true
+        assertTrue(r.register(createOperation("1.2.3.4", 1234, 2223L)));
 
-        // adding a duplicate, expecting failure
-        assertThrows(IllegalStateException.class, () -> r.register(operation));
+        // adding a duplicate, expecting false
+        assertFalse(r.register(operation));
     }
 
     @Test
@@ -61,8 +61,8 @@ public class LiveOperationRegistryTest {
         AsyncJobOperation op1 = createOperation("1.2.3.4", 1234, 2222L);
         AsyncJobOperation op2 = createOperation("1.2.3.4", 1234, 2223L);
 
-        r.register(op1);
-        r.register(op2);
+        assertTrue(r.register(op1));
+        assertTrue(r.register(op2));
         r.deregister(op1);
         r.deregister(op2);
     }

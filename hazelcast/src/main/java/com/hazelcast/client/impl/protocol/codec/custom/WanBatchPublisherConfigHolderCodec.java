@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("6ac3c498ae1dd9857044cbd0a50f7244")
+@Generated("5693894eef8e0beb7db9c143865a2082")
 public final class WanBatchPublisherConfigHolderCodec {
     private static final int SNAPSHOT_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_PUBLISHER_STATE_FIELD_OFFSET = SNAPSHOT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -68,7 +68,7 @@ public final class WanBatchPublisherConfigHolderCodec {
 
         CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getPublisherId(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getImplementation(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getImplementation());
         MapCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getProperties(), StringCodec::encode, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getClusterName(), StringCodec::encode);
         StringCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getTargetEndpoints());
@@ -106,7 +106,7 @@ public final class WanBatchPublisherConfigHolderCodec {
 
         java.lang.String publisherId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = DataCodec.decodeNullable(iterator);
         java.util.Map<java.lang.String, com.hazelcast.internal.serialization.Data> properties = MapCodec.decode(iterator, StringCodec::decode, DataCodec::decode);
         java.lang.String clusterName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String targetEndpoints = StringCodec.decode(iterator);

@@ -53,7 +53,7 @@ class BatchReplicaUpdateTest {
     void testFirstArrangement() {
         // configure member with high partition count
         Config config = HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics();
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + 20000);
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(20000));
         HazelcastInstance member = factory.newHazelcastInstance(config);
         // setup interceptor
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(member);
@@ -70,7 +70,7 @@ class BatchReplicaUpdateTest {
     void testOneMemberJoinsCluster() {
         // configure member with high partition count
         Config config = HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics();
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + 20000);
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(20000));
         // setup interceptor service that will track partition state stamp updates on joining member
         ConfigAccessor.getServicesConfig(config)
                 .addServiceConfig(

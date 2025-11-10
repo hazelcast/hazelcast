@@ -57,7 +57,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         assertNotContains(getContent(), expected);
     }
 
-    static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
+    protected static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
         try {
             Field field = NodeEngineImpl.class.getDeclaredField("diagnostics");
@@ -78,7 +78,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         }
         for (File file : files) {
             String name = file.getName();
-            if (name.startsWith(diagnostics.getBaseFileName()) && name.endsWith(".log")) {
+            if (name.startsWith(diagnostics.getBaseFileNameWithTime()) && name.endsWith(".log")) {
                 deleteQuietly(file);
             }
         }

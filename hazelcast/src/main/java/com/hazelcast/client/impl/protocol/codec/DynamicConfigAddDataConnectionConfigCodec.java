@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("51e8eb68fac28fa6ce415acf116acb37")
+@Generated("51fbd57eeb0cadb68229a52617aba60a")
 public final class DynamicConfigAddDataConnectionConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;
@@ -52,7 +52,6 @@ public final class DynamicConfigAddDataConnectionConfigCodec {
     private DynamicConfigAddDataConnectionConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

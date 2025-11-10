@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * QueryResultSizeExceededException if query result size limit is configured.
  */
 @SuppressWarnings("unused")
-@Generated("39836e17f10270a4ea743b312fcba026")
+@Generated("24561f2cab98b64943d2efcb196d6599")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013400
     public static final int REQUEST_MESSAGE_TYPE = 78848;
@@ -52,7 +52,6 @@ public final class MapKeySetWithPagingPredicateCodec {
     private MapKeySetWithPagingPredicateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -90,7 +89,6 @@ public final class MapKeySetWithPagingPredicateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

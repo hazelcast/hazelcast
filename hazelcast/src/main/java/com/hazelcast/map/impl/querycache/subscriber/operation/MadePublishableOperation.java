@@ -69,7 +69,7 @@ public class MadePublishableOperation extends AbstractNamedOperation {
         info.setPublishable(true);
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Accumulator was made publishable for map=" + getName());
+            logger.finest("Accumulator was made publishable for map=%s", getName());
         }
         this.done = true;
     }

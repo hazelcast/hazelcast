@@ -26,26 +26,22 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 import static com.hazelcast.jet.cdc.MySQLTestUtils.getMySqlConnection;
+import static com.hazelcast.jet.TestedVersions.DEBEZIUM_MYSQL_IMAGE;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
 @Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
-
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:2.3.0.Final")
-            .asCompatibleSubstituteFor("mysql");
-
     @Rule
     @SuppressWarnings("resource")
     public MySQLContainer<?> mysql = namedTestContainer(
-            new MySQLContainer<>(DOCKER_IMAGE)
+            new MySQLContainer<>(DEBEZIUM_MYSQL_IMAGE)
                     .withUsername("mysqluser")
                     .withPassword("mysqlpw")
     );

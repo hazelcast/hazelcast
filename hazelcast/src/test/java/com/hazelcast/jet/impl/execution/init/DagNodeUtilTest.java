@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import junit.framework.TestCase;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,10 +35,13 @@ import java.util.Set;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DagNodeUtilTest extends TestCase {
+public class DagNodeUtilTest {
     public static final ProcessorSupplier MOCK_PROCESSOR_SUPPLIER = null;
     public static final int MOCK_DEFAULT_PARALLELISM = 1;
 

@@ -33,7 +33,7 @@ import static java.util.Collections.singleton;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_CONTAINS}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListContainsCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListContainsMessageTask
         extends AbstractListMessageTask<ListContainsCodec.RequestParameters> {

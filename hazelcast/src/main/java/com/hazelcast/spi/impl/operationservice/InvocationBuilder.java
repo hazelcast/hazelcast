@@ -21,6 +21,7 @@ import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
@@ -279,4 +280,6 @@ public abstract class InvocationBuilder {
     }
 
     public abstract <E> InvocationFuture<E> invoke();
+
+    public abstract <E> Invocation<E> build();
 }

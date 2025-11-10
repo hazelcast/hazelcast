@@ -27,11 +27,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, IdentifiedDataSerializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     BiConsumerEx<? super A, ?>[] accumulateFns;
     private SupplierEx<A> createFn;
     private BiConsumerEx<? super A, ? super A> combineFn;

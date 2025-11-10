@@ -473,6 +473,7 @@ public class BounceMemberRule implements TestRule {
         private boolean avoidOverlappingTerminations;
         private int bouncingIntervalSeconds = DEFAULT_BOUNCING_INTERVAL_SECONDS;
         private long maximumStaleSeconds = DEFAULT_MAXIMUM_STALE_SECONDS;
+        private boolean hasSteadyMember = true;
 
         private Builder(Supplier<Config> memberConfigSupplier, boolean constantConfigSupplier) {
             this.memberConfigSupplier = memberConfigSupplier;
@@ -511,7 +512,7 @@ public class BounceMemberRule implements TestRule {
             }
             return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfigSupplier,
                     driversCount, driverFactory, useTerminate, avoidOverlappingTerminations,
-                    bouncingIntervalSeconds, maximumStaleSeconds));
+                    bouncingIntervalSeconds, maximumStaleSeconds, hasSteadyMember));
         }
 
         public Builder clusterSize(int clusterSize) {
@@ -565,6 +566,11 @@ public class BounceMemberRule implements TestRule {
             return this;
         }
 
+        public Builder noSteadyMember() {
+            this.hasSteadyMember = false;
+            return this;
+        }
+
         // reflectively instantiate default client-side test driver factory
         private DriverFactory newDefaultClientDriverFactory() {
             try {
@@ -583,8 +589,8 @@ public class BounceMemberRule implements TestRule {
     protected class MemberUpDownMonkey implements Runnable {
         @Override
         public void run() {
-            // rotate members 1..members.length(), member.get(0) is the steady member
-            int divisor = members.length() - 1;
+            // rotate members 1..members.length(), member.get(0) is the steady member if hasSteadyMember is true
+            int divisor = bounceTestConfig.hasSteadyMember() ? members.length() - 1 : members.length();
             int i = 1;
             try {
                 while (testRunning.get()) {
@@ -611,7 +617,7 @@ public class BounceMemberRule implements TestRule {
                     members.set(i, factory.newHazelcastInstance(memberConfigSupplier.get()));
                     sleepSecondsWhenRunning(bouncingIntervalSeconds);
                     // move to next member
-                    i = i % divisor + 1;
+                    i = bounceTestConfig.hasSteadyMember() ? i % divisor + 1 : (i + 1) % divisor;
                 }
             } catch (Throwable t) {
                 LOGGER.warning("Error while bouncing members", t);

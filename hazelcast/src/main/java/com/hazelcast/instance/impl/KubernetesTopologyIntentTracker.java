@@ -364,7 +364,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
 
     /**
      * Wait for cluster size (as observed by Hazelcast's ClusterService) to become equal to the
-     * last known cluster size as specified in Kubernetes {@code StatefulsetSpec.size), before cluster-wide shutdown
+     * last known cluster size as specified in Kubernetes {@code StatefulsetSpec.size}, before cluster-wide shutdown
      * was requested.
      * @return nanos remaining until cluster shutdown timeout
      */
@@ -414,7 +414,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
 
     /**
      *
-     * @param callable  {@link Callable<Boolean>} that returns {@code true} when its condition is completed and
+     * @param callable  {@link Callable} that returns {@code true} when its condition is completed and
      *                  control should return to caller.
      * @return {@code true} if completed because callable completed normally or {@code false} if timeout passed or
      *         thread was interrupted.

@@ -41,7 +41,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -106,7 +105,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         for (int i = 0; i < 30; i++) {
             map.put(i, i);
         }
-        final Set<Object> keys = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        final Set<Object> keys = ConcurrentHashMap.newKeySet();
         final AtomicInteger countAddEvent = new AtomicInteger();
         final AtomicInteger countRemoveEvent = new AtomicInteger();
 

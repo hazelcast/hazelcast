@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and no projection is applied.
  */
 @SuppressWarnings("unused")
-@Generated("ade06be6409d3dda11267444ba616683")
+@Generated("bdd8412a677256a61e7abc1c6b3f4a16")
 public final class MapEventJournalReadCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
@@ -61,7 +61,6 @@ public final class MapEventJournalReadCodec {
     private MapEventJournalReadCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -108,8 +107,8 @@ public final class MapEventJournalReadCodec {
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, predicate, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, projection, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, predicate);
+        DataCodec.encodeNullable(clientMessage, projection);
         return clientMessage;
     }
 
@@ -121,12 +120,11 @@ public final class MapEventJournalReadCodec {
         request.minSize = decodeInt(initialFrame.content, REQUEST_MIN_SIZE_FIELD_OFFSET);
         request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.predicate = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.projection = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.predicate = DataCodec.decodeNullable(iterator);
+        request.projection = DataCodec.decodeNullable(iterator);
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

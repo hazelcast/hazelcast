@@ -16,11 +16,13 @@
 
 package com.hazelcast.internal.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -73,7 +75,6 @@ public final class LatencyDistribution {
 
     public static final int BUCKET_COUNT = 31;
 
-    @SuppressFBWarnings("MS_MUTABLE_ARRAY")
     public static final String[] LATENCY_KEYS;
 
     static {
@@ -87,8 +88,7 @@ public final class LatencyDistribution {
             = newUpdater(LatencyDistribution.class, "count");
     private static final AtomicLongFieldUpdater<LatencyDistribution> TOTAL_MICROS
             = newUpdater(LatencyDistribution.class, "totalMicros");
-    private static final AtomicLongFieldUpdater<LatencyDistribution> MAX_MICROS
-            = newUpdater(LatencyDistribution.class, "maxMicros");
+    private static final VarHandle MAX_MICROS = ReflectionUtil.findVarHandle("maxMicros", long.class);
 
     private final AtomicLongArray buckets = new AtomicLongArray(BUCKET_COUNT);
 
@@ -148,19 +148,9 @@ public final class LatencyDistribution {
         long d = NANOSECONDS.toMicros(durationNanos);
         int durationMicros = d > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) d;
 
-        COUNT.addAndGet(this, 1);
+        COUNT.incrementAndGet(this);
         TOTAL_MICROS.addAndGet(this, durationMicros);
-
-        for (; ; ) {
-            long currentMax = maxMicros;
-            if (durationMicros <= currentMax) {
-                break;
-            }
-
-            if (MAX_MICROS.compareAndSet(this, currentMax, durationMicros)) {
-                break;
-            }
-        }
+        setMax(this, MAX_MICROS, durationMicros);
 
         try {
             buckets.incrementAndGet(usToBucketIndex(durationMicros));

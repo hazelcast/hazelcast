@@ -33,7 +33,7 @@ public interface MetadataInitializer {
      * @return metadata created from given binary data
      * @throws IOException
      */
-    Object createFromData(Data keyData) throws IOException;
+    Object createFromData(Data data) throws IOException;
 
     /**
      * Returns metadata for given object. Implementing class decides

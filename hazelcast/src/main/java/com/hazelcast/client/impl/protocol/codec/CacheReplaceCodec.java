@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("307dc929984152c5c18981feb5ecc62b")
+@Generated("060ed1ecd1e22b147ab26e1e8fb4d57d")
 public final class CacheReplaceCodec {
     //hex: 0x131700
     public static final int REQUEST_MESSAGE_TYPE = 1251072;
@@ -53,7 +53,6 @@ public final class CacheReplaceCodec {
     private CacheReplaceCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -101,9 +100,9 @@ public final class CacheReplaceCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
-        CodecUtil.encodeNullable(clientMessage, oldValue, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, oldValue);
         DataCodec.encode(clientMessage, newValue);
-        CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, expiryPolicy);
         return clientMessage;
     }
 
@@ -114,9 +113,9 @@ public final class CacheReplaceCodec {
         request.completionId = decodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
-        request.oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.oldValue = DataCodec.decodeNullable(iterator);
         request.newValue = DataCodec.decode(iterator);
-        request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expiryPolicy = DataCodec.decodeNullable(iterator);
         return request;
     }
 
@@ -126,7 +125,7 @@ public final class CacheReplaceCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -137,6 +136,6 @@ public final class CacheReplaceCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

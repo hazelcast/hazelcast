@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_ADDALLWITHINDEX}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListAddAllWithIndexMessageTask
         extends AbstractListMessageTask<ListAddAllWithIndexCodec.RequestParameters> {

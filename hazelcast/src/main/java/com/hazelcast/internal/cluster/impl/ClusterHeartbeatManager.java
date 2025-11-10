@@ -237,7 +237,7 @@ public class ClusterHeartbeatManager {
         try {
             if (!clusterService.isJoined()) {
                 if (clusterService.getThisUuid().equals(receiverUuid)) {
-                    logger.fine("Ignoring heartbeat of sender: " + senderMembersViewMetadata + ", because node is not joined!");
+                    logger.fine("Ignoring heartbeat of sender: %s, because node is not joined!", senderMembersViewMetadata);
                 } else {
                     // we know that sender version is 3.9, so we send explicit suspicion back even if we are not joined...
                     logger.fine("Sending explicit suspicion to " + senderAddress + " for heartbeat " + senderMembersViewMetadata
@@ -284,8 +284,8 @@ public class ClusterHeartbeatManager {
         } else {
             MemberImpl master = clusterService.getMember(clusterService.getMasterAddress());
             if (clusterService.getMembershipManager().isMemberSuspected(master)) {
-                logger.fine("Not sending heartbeat complaint for " + senderMembersViewMetadata
-                        + " to suspected master: " + master.getAddress());
+                logger.fine("Not sending heartbeat complaint for %s to suspected master: %s", senderMembersViewMetadata,
+                        master.getAddress());
                 return;
             }
 
@@ -304,8 +304,8 @@ public class ClusterHeartbeatManager {
 
         Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
-            logger.fine("Cannot send heartbeat complaint for " + senderMembersViewMetadata.getMemberAddress()
-                    + ", master address is not set.");
+            logger.fine("Cannot send heartbeat complaint for %s, master address is not set.",
+                    senderMembersViewMetadata.getMemberAddress());
             return;
         }
 
@@ -332,8 +332,9 @@ public class ClusterHeartbeatManager {
                         + " for sender: " + senderMVMetadata + " because this node is not master");
                 return;
             } else if (clusterJoinManager.isMastershipClaimInProgress()) {
-                logger.fine("Ignoring heartbeat complaint of receiver: " + receiverMVMetadata
-                        + " for sender: " + senderMVMetadata + " because mastership claim process is ongoing");
+                logger.fine(
+                        "Ignoring heartbeat complaint of receiver: %s for sender: %s because mastership claim process is ongoing",
+                        receiverMVMetadata, senderMVMetadata);
                 return;
             } else if (senderMVMetadata.getMemberAddress().equals(receiverMVMetadata.getMemberAddress())) {
                 logger.warning("Ignoring heartbeat complaint of receiver: " + receiverMVMetadata
@@ -343,8 +344,8 @@ public class ClusterHeartbeatManager {
 
             if (membershipManager.validateMembersViewMetadata(senderMVMetadata)) {
                 if (membershipManager.validateMembersViewMetadata(receiverMVMetadata)) {
-                    logger.fine("Sending latest member list to " + senderMVMetadata.getMemberAddress()
-                            + " and " + receiverMVMetadata.getMemberAddress() + " after heartbeat complaint.");
+                    logger.fine("Sending latest member list to %s and %s after heartbeat complaint.",
+                            senderMVMetadata.getMemberAddress(), receiverMVMetadata.getMemberAddress());
                     membershipManager.sendMemberListToMember(senderMVMetadata.getMemberAddress());
                     membershipManager.sendMemberListToMember(receiverMVMetadata.getMemberAddress());
                 } else {

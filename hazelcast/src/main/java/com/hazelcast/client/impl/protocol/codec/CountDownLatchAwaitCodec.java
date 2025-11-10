@@ -52,7 +52,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * less than or equal to zero, the method will not wait at all.
  */
 @SuppressWarnings("unused")
-@Generated("bfbe05020f1c84b2cad36b7823e691a9")
+@Generated("5205e5e1a85814ba9e1248f630512224")
 public final class CountDownLatchAwaitCodec {
     //hex: 0x0B0200
     public static final int REQUEST_MESSAGE_TYPE = 721408;
@@ -67,7 +67,6 @@ public final class CountDownLatchAwaitCodec {
     private CountDownLatchAwaitCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

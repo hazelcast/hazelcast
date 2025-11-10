@@ -16,11 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -37,13 +34,6 @@ class TestEmptyApplicationContext {
 
     @Autowired
     private HazelcastInstance instance;
-
-    @BeforeAll
-    @AfterAll
-    static void start() {
-        Hazelcast.shutdownAll();
-    }
-
     @Test
     void testXmlWithoutConfig() {
         assertNotNull(instance.getConfig());

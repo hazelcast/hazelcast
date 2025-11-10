@@ -176,7 +176,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     @Test
     public void test_completedFutures_sameElement() {
         TestSupport
-                .verifyProcessor(getSupplier((ctx, item) ->  completedFuture(singleton(item + "-1"))))
+                .verifyProcessor(getSupplier((ctx, item) -> completedFuture(singleton(item + "-1"))))
                 .hazelcastInstance(instance())
                 .input(asList("a", "a", "a"))
                 .disableProgressAssertion()
@@ -186,7 +186,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     @Test
     public void test_completedFutures_sameElementInterleavedWithWatermark() {
         TestSupport
-                .verifyProcessor(getSupplier((ctx, item) ->  completedFuture(singleton(item + "-1"))))
+                .verifyProcessor(getSupplier((ctx, item) -> completedFuture(singleton(item + "-1"))))
                 .hazelcastInstance(instance())
                 .input(asList("a", "a", wm(10), "a"))
                 .outputChecker((expected, actual) ->

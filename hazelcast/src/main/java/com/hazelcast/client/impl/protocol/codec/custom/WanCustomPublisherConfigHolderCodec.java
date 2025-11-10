@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("7e6ca5a73cdb4d753461bc73aa2969a8")
+@Generated("20408531eaa77e98223bd2ff11c2e53c")
 public final class WanCustomPublisherConfigHolderCodec {
 
     private WanCustomPublisherConfigHolderCodec() {
@@ -36,7 +36,7 @@ public final class WanCustomPublisherConfigHolderCodec {
 
         CodecUtil.encodeNullable(clientMessage, wanCustomPublisherConfigHolder.getPublisherId(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, wanCustomPublisherConfigHolder.getClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, wanCustomPublisherConfigHolder.getImplementation(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, wanCustomPublisherConfigHolder.getImplementation());
         MapCodec.encode(clientMessage, wanCustomPublisherConfigHolder.getProperties(), StringCodec::encode, DataCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -48,7 +48,7 @@ public final class WanCustomPublisherConfigHolderCodec {
 
         java.lang.String publisherId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = DataCodec.decodeNullable(iterator);
         java.util.Map<java.lang.String, com.hazelcast.internal.serialization.Data> properties = MapCodec.decode(iterator, StringCodec::decode, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);

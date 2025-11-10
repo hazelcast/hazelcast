@@ -48,10 +48,8 @@ import static java.util.logging.Level.SEVERE;
  * (e.g. transactions in combination with LockResource eviction), it is best that tasks are
  * removed from the scheduler on cancellation.
  * <p>
- * In Java 7+ the there is a method {@code ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
- * which removes the runnable on cancellation. Removal of tasks is done in logarithmic time
- * (see ScheduledThreadPoolExecutor.DelayedWorkQueue.indexOf where there is a direct lookup
- * instead of a linear scan over the queue).
+ * Removal of tasks is done in logarithmic time (see ScheduledThreadPoolExecutor.DelayedWorkQueue.indexOf
+ * where there is a direct lookup instead of a linear scan over the queue).
  */
 public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 

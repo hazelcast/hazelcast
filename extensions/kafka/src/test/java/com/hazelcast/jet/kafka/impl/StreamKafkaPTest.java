@@ -71,7 +71,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
@@ -243,10 +245,16 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     private void testSuspendResumeWithPartitionInitialOffsets(int recordsCount, ProcessingGuarantee processingGuarantee) {
         String sinkListName = randomName();
 
-        // produce a batch of records into single partition
-        for (int i = 0; i < recordsCount; i++) {
-            kafkaTestSupport.produce(topic1Name, 0, currentTimeMillis(), i, String.valueOf(i));
-        }
+        // Send a batch of records to a single partition and wait for acks to ensure the partition offset is set correctly
+        IntStream.range(0, recordsCount)
+                 .mapToObj(i -> kafkaTestSupport.produce(topic1Name, 0, currentTimeMillis(), i, String.valueOf(i))).toList()
+                 .forEach(future -> {
+                     try {
+                         future.get();
+                     } catch (ExecutionException | InterruptedException e) {
+                         throw new RuntimeException("Failed to insert initial records", e);
+                     }
+                 });
 
         // skip all records that exists in given kafka topic's partition before the job starts
         TopicsConfig topicsConfig = new TopicsConfig()

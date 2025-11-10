@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given interceptor for this map so it will not intercept operations anymore.
  */
 @SuppressWarnings("unused")
-@Generated("5c7fed72c35a92c7dead05a0d5467cc4")
+@Generated("1e3f5733976ee3af56abce925f4b77ca")
 public final class MapRemoveInterceptorCodec {
     //hex: 0x011500
     public static final int REQUEST_MESSAGE_TYPE = 70912;
@@ -50,7 +50,6 @@ public final class MapRemoveInterceptorCodec {
     private MapRemoveInterceptorCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

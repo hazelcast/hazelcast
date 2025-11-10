@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -112,6 +113,20 @@ public class JobMetrics_StressTest extends JetTestSupport {
         return dag;
     }
 
+    /**
+     * {@link Job#getStatus()} may return {@link JobStatus#RUNNING} before the processors
+     * finished initialization. This is by design - lack of more precise tracking of initialization.
+     * This can happen if the job is terminated during initialization and produces debug log:
+     * <pre>calling completeExecution because execution terminated before it started</pre>
+     *
+     * We need to wait for full initialization in order to have correct metric values in final assertions.
+     */
+    private static void waitForJobInitialization(int restartCount) {
+        assertTrueEventually(() -> assertThat(IncrementingProcessor.initCount)
+                .as("Job should be fully initialized")
+                .hasValue((restartCount + 1) * TOTAL_PROCESSORS));
+    }
+
     private static final class IncrementingProcessor extends AbstractProcessor {
 
         @Probe(name = "initCount")
@@ -145,6 +160,9 @@ public class JobMetrics_StressTest extends JetTestSupport {
         public void run() {
             try {
                 while (restartCount < RESTART_COUNT) {
+                    // wait for actual initialization, because we count them later in metric assertion
+                    waitForJobInitialization(restartCount);
+
                     job.restart();
                     sleepMillis(WAIT_FOR_METRICS_COLLECTION_TIME);
                     restartCount++;
@@ -170,6 +188,9 @@ public class JobMetrics_StressTest extends JetTestSupport {
         public void run() {
             try {
                 while (restartCount < RESTART_COUNT) {
+                    // wait for actual initialization, because we count them later in metric assertion
+                    waitForJobInitialization(restartCount);
+
                     job.suspend();
                     assertTrueEventually(() -> assertEquals(JobStatus.SUSPENDED, job.getStatus()));
                     sleepMillis(WAIT_FOR_METRICS_COLLECTION_TIME);

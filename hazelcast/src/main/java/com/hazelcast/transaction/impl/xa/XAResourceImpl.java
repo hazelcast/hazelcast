@@ -122,11 +122,11 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         long threadId = currentThreadId();
         TransactionContext threadContext = threadContextMap.remove(threadId);
         if (threadContext == null && logger.isFinestEnabled()) {
-            logger.finest("There is no TransactionContext for the current thread: " + threadId);
+            logger.finest("There is no TransactionContext for the current thread: %s", threadId);
         }
         List<TransactionContext> contexts = xidContextMap.get(xid);
         if (contexts == null && logger.isFinestEnabled()) {
-            logger.finest("There is no TransactionContexts for the given xid: " + xid);
+            logger.finest("There is no TransactionContexts for the given xid: %s", xid);
         }
     }
 

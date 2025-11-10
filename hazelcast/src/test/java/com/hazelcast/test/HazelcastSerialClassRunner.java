@@ -57,7 +57,7 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
             Category classAnnotations = method.getDeclaringClass().getAnnotation(Category.class);
 
             if (classAnnotations != null && ArrayUtils.contains(classAnnotations.value(), QuickTest.class)) {
-                QuickTest.logMessageIfTestOverran(method, tookSeconds);
+                logMessageIfTestOverran(method, tookSeconds);
             }
         } finally {
             removeThreadLocalTestMethodName();

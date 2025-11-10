@@ -47,9 +47,9 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.function.Functions.wholeItem;
-import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
-import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
-import static com.hazelcast.jet.core.test.JetAssert.fail;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**

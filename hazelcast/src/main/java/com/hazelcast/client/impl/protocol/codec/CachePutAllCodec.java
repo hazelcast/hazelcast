@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Copies all the mappings from the specified map to this cache with the given expiry policy.
  */
 @SuppressWarnings("unused")
-@Generated("7cc05db0dfa298fc82491f55adea59c3")
+@Generated("e154afa61f239267e5741521e54052c2")
 public final class CachePutAllCodec {
     //hex: 0x131B00
     public static final int REQUEST_MESSAGE_TYPE = 1252096;
@@ -50,7 +50,6 @@ public final class CachePutAllCodec {
     private CachePutAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -88,7 +87,7 @@ public final class CachePutAllCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, expiryPolicy);
         return clientMessage;
     }
 
@@ -99,7 +98,7 @@ public final class CachePutAllCodec {
         request.completionId = decodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
-        request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expiryPolicy = DataCodec.decodeNullable(iterator);
         return request;
     }
 

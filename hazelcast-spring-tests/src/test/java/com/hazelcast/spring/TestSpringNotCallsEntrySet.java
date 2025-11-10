@@ -17,8 +17,10 @@ package com.hazelcast.spring;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -118,6 +120,11 @@ public class TestSpringNotCallsEntrySet {
             var builder = BeanDefinitionBuilder.rootBeanDefinition(Map.class, () -> new MyMap())
                                                .setLazyInit(true);
             registry.registerBeanDefinition("dynamicMap", builder.getBeanDefinition());
+        }
+
+        @Override
+        public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory)
+                throws BeansException {
         }
     }
 

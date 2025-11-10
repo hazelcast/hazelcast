@@ -77,7 +77,7 @@ public enum JavaVersion implements JavaMajorVersion {
 
     /**
      * @see <a href="https://openjdk.org/jeps/223">
-     *      JEP 223: New Version-String Scheme
+     *      JEP 223: New Version-String Scheme</a>
      */
     static JavaMajorVersion detectCurrentVersion() {
         ILogger logger = Logger.getLogger(JavaVersion.class);
@@ -85,7 +85,7 @@ public enum JavaVersion implements JavaMajorVersion {
         int major = JVM.getMajorVersion();
 
         if (logger.isFineEnabled()) {
-            logger.fine("Detected runtime version: Java " + major);
+            logger.fine("Detected runtime version: Java %s", major);
         }
 
         return Arrays.<JavaMajorVersion>stream(values())

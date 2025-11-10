@@ -30,7 +30,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * This simplifies deployment as you do not have to deploy your domain classes into classpath of all
  * cluster members.
  *
- * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @deprecated "User Code Deployment" is replaced by the "User Code Namespaces" feature
  * @see UserCodeNamespacesConfig
  */
 @Deprecated(since = "5.4", forRemoval = true)

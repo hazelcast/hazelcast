@@ -111,7 +111,8 @@ public interface SqlService {
      * @see #execute(SqlStatement)
      * @see #execute(String, Object...)
      *
-     * @return The number of updated(/inserted/deleted) rows.
+     * @return The number of updated(/inserted/deleted) rows. Currently, always returns {@code 0}
+     * for DML statements as this method returns the result of the deprecated {@link SqlResult#updateCount}.
      *
      * @since 5.3
      */

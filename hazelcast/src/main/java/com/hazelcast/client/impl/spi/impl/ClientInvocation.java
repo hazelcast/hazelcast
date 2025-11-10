@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -33,13 +34,12 @@ import com.hazelcast.spi.impl.operationservice.impl.BaseInvocation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
+import java.lang.invoke.VarHandle;
 import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
@@ -50,8 +50,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
  * 3) How many times is it retried?
  */
 public class ClientInvocation extends BaseInvocation implements Runnable {
-    private static final AtomicReferenceFieldUpdater<ClientInvocation, ClientConnection> SENT_CONNECTION
-            = AtomicReferenceFieldUpdater.newUpdater(ClientInvocation.class, ClientConnection.class, "sentConnection");
+    private static final VarHandle SENT_CONNECTION = ReflectionUtil.findVarHandle("sentConnection", ClientConnection.class);
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
     private static final int UNASSIGNED_PARTITION = -1;
     private static final AtomicLongFieldUpdater<ClientInvocation> INVOKE_COUNT
@@ -281,7 +280,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     }
 
     public ClientConnection getSentConnection() {
-        return SENT_CONNECTION.get(this);
+        return (ClientConnection) SENT_CONNECTION.get(this);
     }
 
     @Override

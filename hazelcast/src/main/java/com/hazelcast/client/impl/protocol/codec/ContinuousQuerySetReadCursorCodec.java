@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * possible.
  */
 @SuppressWarnings("unused")
-@Generated("12a9e1669bbc9a7003a4dd4dbcad1b6f")
+@Generated("e42c180f29b9841d90a3c871713c2301")
 public final class ContinuousQuerySetReadCursorCodec {
     //hex: 0x160500
     public static final int REQUEST_MESSAGE_TYPE = 1443072;
@@ -56,7 +56,6 @@ public final class ContinuousQuerySetReadCursorCodec {
     private ContinuousQuerySetReadCursorCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

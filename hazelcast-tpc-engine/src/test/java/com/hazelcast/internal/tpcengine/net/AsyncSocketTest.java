@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;

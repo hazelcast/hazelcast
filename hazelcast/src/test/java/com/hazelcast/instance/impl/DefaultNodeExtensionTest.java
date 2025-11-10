@@ -174,9 +174,8 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_joinRequestFails_whenPreviousMinorVersion() {
         assumeTrue("Minor version is 0", nodeVersion.getMinor() > 0);
-        MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() - 1,
-                nodeVersion.getPatch());
-        JoinRequest joinRequest = new JoinRequest(buildNumber, nextMinorVersion, joinAddress, node.getLocalMember(), emptySet());
+        MemberVersion minorMinusOne = BuildInfoProvider.getBuildInfo().getPreviousVersion();
+        JoinRequest joinRequest = new JoinRequest(buildNumber, minorMinusOne, joinAddress, node.getLocalMember(), emptySet());
 
         String message = isEnterprise ?  "Rolling Member Upgrades is not licensed"
                 : "Rolling Member Upgrades are only supported in Hazelcast Enterprise";

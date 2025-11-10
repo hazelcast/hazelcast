@@ -252,7 +252,7 @@ public class ClusterJoinManager {
      * @param joinMessage the {@link JoinMessage} received from another node.
      * @return {@code true} if packet version of join message matches this node's packet version and configurations
      * are found to be compatible, otherwise {@code false}.
-     * @throws Exception in case any exception occurred while checking compatibility
+     * @throws RuntimeException in case any exception occurred while checking compatibility
      * @see ConfigCheck
      */
     public boolean validateJoinMessage(JoinMessage joinMessage) {
@@ -263,7 +263,7 @@ public class ClusterJoinManager {
             ConfigCheck newMemberConfigCheck = joinMessage.getConfigCheck();
             ConfigCheck clusterConfigCheck = node.createConfigCheck();
             return clusterConfigCheck.isCompatible(newMemberConfigCheck);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.warning(format("Invalid join request from %s, cause: %s", joinMessage.getAddress(), e.getMessage()));
             throw e;
         }
@@ -311,7 +311,7 @@ public class ClusterJoinManager {
         UUID targetUuid = joinRequest.getUuid();
 
         if (hotRestartService.isMemberExcluded(target, targetUuid)) {
-            logger.fine("cannot join " + target + " because it is excluded in cluster start.");
+            logger.fine("cannot join %s because it is excluded in cluster start.", target);
             hotRestartService.notifyExcludedMember(target);
             return true;
         }
@@ -631,7 +631,7 @@ public class ClusterJoinManager {
         }
 
         if (masterAddress.equals(target)) {
-            logger.fine("Cannot send master answer to " + target + " since it is the known master");
+            logger.fine("Cannot send master answer to %s since it is the known master", target);
             return;
         }
 
@@ -917,7 +917,7 @@ public class ClusterJoinManager {
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine("Checking if we should merge to: " + joinMessage);
+            logger.fine("Checking if we should merge to: %s", joinMessage);
         }
 
         if (!checkValidSplitBrainJoinMessage(joinMessage)) {
@@ -974,8 +974,8 @@ public class ClusterJoinManager {
     private boolean checkValidSplitBrainJoinMessage(SplitBrainJoinMessage joinMessage) {
         try {
             if (!validateJoinMessage(joinMessage)) {
-                logger.fine("Cannot process split brain merge message from " + joinMessage.getAddress()
-                        + ", since join-message could not be validated.");
+                logger.fine("Cannot process split brain merge message from %s, since join-message could not be validated.",
+                        joinMessage.getAddress());
                 return false;
             }
         } catch (Exception e) {
@@ -1001,8 +1001,7 @@ public class ClusterJoinManager {
     private boolean checkMergeTargetIsNotMember(SplitBrainJoinMessage joinMessage) {
         if (clusterService.getMember(joinMessage.getAddress()) != null) {
             if (logger.isFineEnabled()) {
-                logger.fine("Should not merge to " + joinMessage.getAddress()
-                        + ", because it is already member of this cluster.");
+                logger.fine("Should not merge to %s, because it is already member of this cluster.", joinMessage.getAddress());
             }
             return false;
         }
@@ -1013,8 +1012,8 @@ public class ClusterJoinManager {
         ClusterState clusterState = clusterService.getClusterState();
         if (!clusterState.isJoinAllowed()) {
             if (logger.isFineEnabled()) {
-                logger.fine("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
-                        + clusterState + " state.");
+                logger.fine("Should not merge to %s, because this cluster is in %s state.", joinMessage.getAddress(),
+                        clusterState);
             }
             return false;
         }

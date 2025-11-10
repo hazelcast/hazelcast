@@ -521,6 +521,24 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testNetworkConfigUnambiguous_whenAdvancedNetworkDisabled();
 
     @Test
+    public abstract void testMultipleClientEndpointConfigs_throwsException();
+
+    @Test
+    public abstract void testMultipleRestEndpointConfigs_throwsException();
+
+    @Test
+    public abstract void testMultipleMemcacheEndpointConfigs_throwsException();
+
+    @Test
+    public abstract void testMultipleJoinElements_throwsException();
+
+    @Test
+    public abstract void testMultipleFailureDetectorElements_throwsException();
+
+    @Test
+    public abstract void testMultipleMemberAddressProviderElements_throwsException();
+
+    @Test
     public abstract void testMultipleMemberEndpointConfigs_throwsException();
 
     @Test
@@ -730,6 +748,8 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(8080, restConfig.getPort());
         assertEquals("realmName", restConfig.getSecurityRealm());
         assertEquals(500, restConfig.getTokenValidityDuration().toSeconds());
+        assertEquals(10, restConfig.getMaxLoginAttempts());
+        assertEquals(10, restConfig.getLockoutDuration().getSeconds());
         assertTrue(restConfig.getSsl().isEnabled());
         assertEquals(RestConfig.Ssl.ClientAuth.NEED, restConfig.getSsl().getClientAuth());
         assertEquals("TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256", restConfig.getSsl().getCiphers());
@@ -813,9 +833,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testVectorCollectionConfig_multipleIndexesWithTheSameName_fail();
-
-    @Test
-    public abstract void testDiagnosticsConfig();
 
     protected void validateVectorCollectionConfig(Config config) {
         var vectorCollectionConfigs = config.getVectorCollectionConfigs();

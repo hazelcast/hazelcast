@@ -82,7 +82,7 @@ public interface ClientInvocationServiceInternal extends ClientInvocationService
     boolean shouldFailOnIndeterminateOperationState();
 
     /**
-     * @return returns the configured routing mode(by default it is {@link RoutingMode#SMART})
+     * @return returns the configured routing mode(by default it is {@link RoutingMode#ALL_MEMBERS})
      * @see RoutingMode
      */
     RoutingMode getRoutingMode();

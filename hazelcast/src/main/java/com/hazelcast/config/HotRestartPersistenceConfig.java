@@ -41,9 +41,9 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * configuration. hot-restart-persistence element (and thus {@code HotRestartPersistenceConfig})
  * will be removed in a future release.
  *
- * @deprecated since 5.0 use {@link PersistenceConfig}
+ * @deprecated use {@link PersistenceConfig}
  */
-@Deprecated
+@Deprecated(since = "5.0")
 public class HotRestartPersistenceConfig {
     /** Default directory name for the Hot Restart store's home */
     public static final String HOT_RESTART_BASE_DIR_DEFAULT = "hot-restart";

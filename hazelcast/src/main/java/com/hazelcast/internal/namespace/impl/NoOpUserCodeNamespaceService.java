@@ -98,6 +98,11 @@ public final class NoOpUserCodeNamespaceService
     }
 
     @Override
+    public String transformNamespace(String namespace) {
+        return namespace;
+    }
+
+    @Override
     public Map<String, LocalUserCodeNamespaceStats> getStats() {
         return Collections.emptyMap();
     }

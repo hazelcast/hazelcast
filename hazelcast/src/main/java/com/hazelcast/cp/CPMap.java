@@ -34,7 +34,8 @@ public interface CPMap<K, V> extends DistributedObject {
     /**
      * Associates {@code key} with {@code value}.
      * <p>
-     *     See {@link CPMap#set(K, V)} for a more optimal solution when the previous value of @{code key} is not relevant.
+     *     See {@link CPMap#set(Object, Object)} for a more optimal solution when the previous value of @{code key}
+     *     is not relevant.
      * </p>
      * @param key non-null key of the entry
      * @param value non-null value of the entry
@@ -55,9 +56,9 @@ public interface CPMap<K, V> extends DistributedObject {
     /**
      * Associates {@code key} with {@code value}.
      * <p>
-     *     This method should be preferred over {@link CPMap#put(K, V)} as it has a smaller network footprint due to the previous
-     *     value associated with {@code key} not being transmitted. Use {@link CPMap#put(K, V)} only when the previous value of
-     *     {@code key} is required.
+     *     This method should be preferred over {@link CPMap#put(Object, Object)} as it has a smaller network footprint
+     *     due to the previous value associated with {@code key} not being transmitted. Use
+     *     {@link CPMap#put(Object, Object)} only when the previous value of {@code key} is required.
      * </p>
      * @param key non-null key of the entry
      * @param value non-null value of the entry

@@ -107,7 +107,7 @@ public final class FileSourceBuilder {
      *
      * @deprecated Use {@link FileSources#files}. Will be removed in Jet 5.0.
      */
-    @Deprecated
+    @Deprecated(since = "Jet 4.4", forRemoval = true)
     @Nonnull
     public BatchSource<String> build() {
         return build((filename, line) -> line);
@@ -133,7 +133,7 @@ public final class FileSourceBuilder {
      *
      * @deprecated Use {@link FileSources#files}. Will be removed in Jet 5.0.
      */
-    @Deprecated
+    @Deprecated(since = "Jet 4.4", forRemoval = true)
     @Nonnull
     public <T> BatchSource<T> build(@Nonnull BiFunctionEx<String, String, ? extends T> mapOutputFn) {
         String charsetName = charset.name();
@@ -163,7 +163,7 @@ public final class FileSourceBuilder {
      *
      * @deprecated Use {@link FileSources#files}. Will be removed in Jet 5.0.
      */
-    @Deprecated
+    @Deprecated(since = "Jet 4.4", forRemoval = true)
     @Nonnull
     public <T> BatchSource<T> build(@Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',

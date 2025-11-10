@@ -77,9 +77,4 @@ public class OSTest {
     public void test_linuxMinorVersion0_whenNotIsLinux() {
         assertEquals(-1, OS.linuxMinorVersion0("5.16.12-200.fc35.x86_64", false));
     }
-
-    @Test
-    public void test_pageSize() {
-        assertEquals(UnsafeLocator.UNSAFE.pageSize(), OS.pageSize());
-    }
 }

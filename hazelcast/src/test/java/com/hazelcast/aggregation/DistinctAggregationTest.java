@@ -84,7 +84,7 @@ public class DistinctAggregationTest {
         Person[] people = {new Person(5.1), new Person(3.3)};
         Double[] ages = {5.1, 3.3};
         List<Person> values = repeatTimes(3, Arrays.asList(people));
-        Set<Double> expectation = new HashSet<>(Arrays.asList(ages));
+        Set<Double> expectation = Set.of(ages);
 
         Aggregator<Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {

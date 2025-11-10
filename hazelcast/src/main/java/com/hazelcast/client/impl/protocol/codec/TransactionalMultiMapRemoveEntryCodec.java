@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all the entries associated with the given key.
  */
 @SuppressWarnings("unused")
-@Generated("7a1fb2c47a4b20b4a318b9b243ac6646")
+@Generated("825d7a83a03468bb6bd208415df3c839")
 public final class TransactionalMultiMapRemoveEntryCodec {
     //hex: 0x0F0400
     public static final int REQUEST_MESSAGE_TYPE = 984064;
@@ -52,7 +52,6 @@ public final class TransactionalMultiMapRemoveEntryCodec {
     private TransactionalMultiMapRemoveEntryCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

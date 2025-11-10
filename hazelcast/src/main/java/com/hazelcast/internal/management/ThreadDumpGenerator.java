@@ -51,7 +51,7 @@ public final class ThreadDumpGenerator {
         header(s);
         appendThreadInfos(infos, s);
         if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("\n" + s);
+            LOGGER.finest("\n%s", s);
         }
         return s.toString();
     }

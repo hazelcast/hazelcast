@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
 @SuppressWarnings("unused")
-@Generated("546d30a78b7ef459fd6b89d5f83929b4")
+@Generated("1a6e8ccf0469e0010c4ece0eead6849f")
 public final class MapLoadGivenKeysCodec {
     //hex: 0x012100
     public static final int REQUEST_MESSAGE_TYPE = 73984;
@@ -50,7 +50,6 @@ public final class MapLoadGivenKeysCodec {
     private MapLoadGivenKeysCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

@@ -17,10 +17,12 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.internal.util.Clock;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -33,32 +35,21 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  */
 public class PartitionPerIndexStats implements PerIndexStats {
 
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> ENTRY_COUNT = newUpdater(PartitionPerIndexStats.class,
-            "entryCount");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> QUERY_COUNT = newUpdater(PartitionPerIndexStats.class,
-            "queryCount");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> HIT_COUNT = newUpdater(PartitionPerIndexStats.class,
-            "hitCount");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_HIT_LATENCY = newUpdater(
-            PartitionPerIndexStats.class, "totalHitLatency");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_NORMALIZED_HIT_CARDINALITY = newUpdater(
-            PartitionPerIndexStats.class, "totalNormalizedHitCardinality");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> INSERT_COUNT = newUpdater(PartitionPerIndexStats.class,
-            "insertCount");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_INSERT_LATENCY = newUpdater(
-            PartitionPerIndexStats.class, "totalInsertLatency");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> UPDATE_COUNT = newUpdater(PartitionPerIndexStats.class,
-            "updateCount");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_UPDATE_LATENCY = newUpdater(
-            PartitionPerIndexStats.class, "totalUpdateLatency");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> REMOVE_COUNT = newUpdater(PartitionPerIndexStats.class,
-            "removeCount");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> TOTAL_REMOVE_LATENCY = newUpdater(
-            PartitionPerIndexStats.class, "totalRemoveLatency");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> MEMORY_COST = newUpdater(PartitionPerIndexStats.class,
-            "memoryCost");
-    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> INDEX_NOT_READY_QUERY_COUNT = newUpdater(
-            PartitionPerIndexStats.class, "indexNotReadyQueryCount");
+    private static final VarHandle ENTRY_COUNT = ReflectionUtil.findVarHandle("entryCount", long.class);
+    private static final VarHandle QUERY_COUNT = ReflectionUtil.findVarHandle("queryCount", long.class);
+    private static final VarHandle HIT_COUNT = ReflectionUtil.findVarHandle("hitCount", long.class);
+    private static final VarHandle TOTAL_HIT_LATENCY = ReflectionUtil.findVarHandle("totalHitLatency", long.class);
+    private static final VarHandle TOTAL_NORMALIZED_HIT_CARDINALITY =
+            ReflectionUtil.findVarHandle("totalNormalizedHitCardinality", long.class);
+    private static final VarHandle INSERT_COUNT = ReflectionUtil.findVarHandle("insertCount", long.class);
+    private static final VarHandle TOTAL_INSERT_LATENCY = ReflectionUtil.findVarHandle("totalInsertLatency", long.class);
+    private static final VarHandle UPDATE_COUNT = ReflectionUtil.findVarHandle("updateCount", long.class);
+    private static final VarHandle TOTAL_UPDATE_LATENCY = ReflectionUtil.findVarHandle("totalUpdateLatency", long.class);
+    private static final VarHandle REMOVE_COUNT = ReflectionUtil.findVarHandle("removeCount", long.class);
+    private static final VarHandle TOTAL_REMOVE_LATENCY = ReflectionUtil.findVarHandle("totalRemoveLatency", long.class);
+    private static final VarHandle MEMORY_COST = ReflectionUtil.findVarHandle("memoryCost", long.class);
+    private static final AtomicLongFieldUpdater<PartitionPerIndexStats> INDEX_NOT_READY_QUERY_COUNT =
+            newUpdater(PartitionPerIndexStats.class, "indexNotReadyQueryCount");
 
     // Per-operation stats may be safely reused/shared for operations on
     // partitioned indexes since we know for sure only a single thread may
@@ -90,12 +81,12 @@ public class PartitionPerIndexStats implements PerIndexStats {
 
     @Override
     public void updateMemoryCost(long delta) {
-        MEMORY_COST.lazySet(this, memoryCost + delta);
+        MEMORY_COST.setOpaque(this, memoryCost + delta);
     }
 
     @Override
     public void onDispose() {
-        MEMORY_COST.lazySet(PartitionPerIndexStats.this, 0);
+        MEMORY_COST.setOpaque(PartitionPerIndexStats.this, 0);
     }
 
     @Override
@@ -116,7 +107,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
     @Override
     public void incrementQueryCount() {
         if (hasQueries) {
-            QUERY_COUNT.lazySet(this, queryCount + 1);
+            QUERY_COUNT.setOpaque(this, queryCount + 1);
         }
     }
 
@@ -178,19 +169,19 @@ public class PartitionPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (Timer.nanosElapsed(startNanos)));
-            INSERT_COUNT.lazySet(this, insertCount + 1);
+            TOTAL_INSERT_LATENCY.setOpaque(this, totalInsertLatency + (Timer.nanosElapsed(startNanos)));
+            INSERT_COUNT.setOpaque(this, insertCount + 1);
         }
-        ENTRY_COUNT.lazySet(this, entryCount + 1);
+        ENTRY_COUNT.setOpaque(this, entryCount + 1);
     }
 
     @Override
     public void onUpdate(long startNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (Timer.nanosElapsed(startNanos)));
-            UPDATE_COUNT.lazySet(this, updateCount + 1);
+            TOTAL_UPDATE_LATENCY.setOpaque(this, totalUpdateLatency + (Timer.nanosElapsed(startNanos)));
+            UPDATE_COUNT.setOpaque(this, updateCount + 1);
         }
-        ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
+        ENTRY_COUNT.setOpaque(this, entryCount + operationStats.getEntryCountDelta());
     }
 
     @Override
@@ -201,15 +192,15 @@ public class PartitionPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (Timer.nanosElapsed(startNanos)));
-            REMOVE_COUNT.lazySet(this, removeCount + 1);
+            TOTAL_REMOVE_LATENCY.setOpaque(this, totalRemoveLatency + (Timer.nanosElapsed(startNanos)));
+            REMOVE_COUNT.setOpaque(this, removeCount + 1);
         }
-        ENTRY_COUNT.lazySet(this, entryCount - 1);
+        ENTRY_COUNT.setOpaque(this, entryCount - 1);
     }
 
     @Override
     public void onClear() {
-        ENTRY_COUNT.lazySet(this, 0);
+        ENTRY_COUNT.setOpaque(this, 0);
         partitionsIndexed = 0;
     }
 
@@ -231,8 +222,8 @@ public class PartitionPerIndexStats implements PerIndexStats {
             return;
         }
 
-        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (Timer.nanosElapsed(startNanos)));
-        HIT_COUNT.lazySet(this, hitCount + 1);
+        TOTAL_HIT_LATENCY.setOpaque(this, totalHitLatency + (Timer.nanosElapsed(startNanos)));
+        HIT_COUNT.setOpaque(this, hitCount + 1);
 
         // limit the cardinality for "safety"
         long adjustedHitCardinality = Math.min(hitCardinality, localEntryCount);
@@ -243,7 +234,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
         double decodedTotalNormalizedHitCardinality = Double.longBitsToDouble(totalNormalizedHitCardinality);
         double newTotalNormalizedHitCardinality = decodedTotalNormalizedHitCardinality + normalizedHitCardinality;
         long newEncodedTotalNormalizedHitCardinality = Double.doubleToRawLongBits(newTotalNormalizedHitCardinality);
-        TOTAL_NORMALIZED_HIT_CARDINALITY.lazySet(this, newEncodedTotalNormalizedHitCardinality);
+        TOTAL_NORMALIZED_HIT_CARDINALITY.setOpaque(this, newEncodedTotalNormalizedHitCardinality);
     }
 
     @Override

@@ -276,7 +276,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         }
 
         private Traverser<T> processFile(Path file) {
-            logger.finest("Processing file " + file);
+            logger.finest("Processing file %s", file);
 
             assert fileStream == null : "fileStream != null";
             fileStream = readFileFn.apply(file);

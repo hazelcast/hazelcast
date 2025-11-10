@@ -40,8 +40,8 @@ import org.junit.runners.Parameterized;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -104,7 +104,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         final QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
 
-        map.getAll(new HashSet<>(asList(1, 2, 3)));
+        map.getAll(Set.of(1, 2, 3));
 
         assertTrueEventually(() -> assertEquals(3, cache.size()));
     }

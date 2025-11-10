@@ -289,7 +289,7 @@ public class LocalMapStatsProvider {
 
     private void logReplicaHasNoOwner(int partitionId, int replica) {
         if (logger.isFinestEnabled()) {
-            logger.finest("partitionId: " + partitionId + ", replica: " + replica + " has no owner!");
+            logger.finest("partitionId: %s, replica: %s has no owner!", partitionId, replica);
         }
     }
 

@@ -25,6 +25,7 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -57,6 +58,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -125,6 +127,11 @@ public final class NioOutboundPipeline
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter priorityFramesWritten = newSwCounter();
 
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = INFO, unit = BYTES)
+    private final MwCounter writeQueuePendingBytes = newMwCounter();
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = INFO, unit = BYTES)
+    private final MwCounter priorityWriteQueuePendingBytes = newMwCounter();
+
     private volatile long lastWriteTime;
 
     private long bytesWrittenLastPublish;
@@ -171,24 +178,6 @@ public final class NioOutboundPipeline
         return lastWriteTime;
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
-    public long bytesPending() {
-        return bytesPending(writeQueue);
-    }
-
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = DEBUG, unit = BYTES)
-    public long priorityBytesPending() {
-        return bytesPending(priorityWriteQueue);
-    }
-
-    private long bytesPending(Queue<OutboundFrame> writeQueue) {
-        long bytesPending = 0;
-        for (OutboundFrame frame : writeQueue) {
-            bytesPending += frame.getFrameLength();
-        }
-        return bytesPending;
-    }
-
     @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS, unit = MS, level = INFO)
     private long idleTimeMillis() {
         return max(currentTimeMillis() - lastWriteTime, 0);
@@ -201,9 +190,13 @@ public final class NioOutboundPipeline
 
     public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
-            priorityWriteQueue.offer(frame);
+            if (priorityWriteQueue.offer(frame)) {
+                priorityWriteQueuePendingBytes.inc(frame.getFrameLength());
+            }
         } else {
-            writeQueue.offer(frame);
+            if (writeQueue.offer(frame)) {
+                writeQueuePendingBytes.inc(frame.getFrameLength());
+            }
         }
 
         // take care of the scheduling.
@@ -292,8 +285,10 @@ public final class NioOutboundPipeline
                 return null;
             }
             normalFramesWritten.inc();
+            writeQueuePendingBytes.inc(-frame.getFrameLength());
         } else {
             priorityFramesWritten.inc();
+            priorityWriteQueuePendingBytes.inc(-frame.getFrameLength());
         }
 
         return frame;
@@ -445,6 +440,8 @@ public final class NioOutboundPipeline
     void drainWriteQueues() {
         writeQueue.clear();
         priorityWriteQueue.clear();
+        writeQueuePendingBytes.set(0);
+        priorityWriteQueuePendingBytes.set(0);
     }
 
     long bytesWritten() {

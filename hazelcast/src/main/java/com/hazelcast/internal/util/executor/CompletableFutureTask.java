@@ -16,20 +16,18 @@
 
 package com.hazelcast.internal.util.executor;
 
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
-import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
         implements RunnableFuture<V> {
 
-    private static final AtomicReferenceFieldUpdater<CompletableFutureTask, Thread> RUNNER
-            = newUpdater(CompletableFutureTask.class, Thread.class, "runner");
+    private static final VarHandle RUNNER = ReflectionUtil.findVarHandle("runner", Thread.class);
 
     private final Callable<V> callable;
 

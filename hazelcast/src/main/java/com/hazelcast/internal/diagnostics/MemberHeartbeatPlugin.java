@@ -20,7 +20,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -64,17 +64,24 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     private static final float HUNDRED = 100f;
 
-    private final long periodMillis;
-    private final NodeEngineImpl nodeEngine;
-    private final int maxDeviationPercentage;
+    private final ClusterService clusterService;
+    private final HazelcastProperties properties;
+    private long periodMillis;
+    private int maxDeviationPercentage;
     private boolean mainSectionStarted;
 
-    public MemberHeartbeatPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(MemberHazelcastInstanceInfoPlugin.class));
-        this.nodeEngine = nodeEngine;
-        HazelcastProperties properties = nodeEngine.getProperties();
-        this.periodMillis = properties.getMillis(PERIOD_SECONDS);
-        this.maxDeviationPercentage = properties.getInteger(MAX_DEVIATION_PERCENTAGE);
+
+    public MemberHeartbeatPlugin(ILogger logger, ClusterService clusterService, HazelcastProperties props) {
+        super(logger);
+        this.clusterService = clusterService;
+        this.properties = props;
+        readProperties();
+    }
+
+    @Override
+    void readProperties() {
+        this.periodMillis = properties.getMillis(overrideProperty(PERIOD_SECONDS));
+        this.maxDeviationPercentage = properties.getInteger(overrideProperty(MAX_DEVIATION_PERCENTAGE));
     }
 
     @Override
@@ -84,18 +91,32 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
+        super.onStart();
         logger.info("Plugin:active, period-millis:" + periodMillis);
     }
 
     @Override
+    public void onShutdown() {
+        super.onShutdown();
+        logger.info("Plugin:inactive");
+    }
+
+    @Override
     public void run(DiagnosticsLogWriter writer) {
-        ClusterService cs = nodeEngine.getClusterService();
-        if (!(cs instanceof ClusterServiceImpl)) {
+        if (!isActive()) {
+            return;
+        }
+        if (!(clusterService instanceof ClusterServiceImpl)) {
             // Let's be lenient during testing if a mocked cluster service is encountered.
             // we don't want to cause problems
             return;
         }
-        render(writer, (ClusterServiceImpl) cs);
+        render(writer, (ClusterServiceImpl) clusterService);
+    }
+
+    //for testing
+    int getMaxDeviationPercentage() {
+        return maxDeviationPercentage;
     }
 
     private void render(DiagnosticsLogWriter writer, ClusterServiceImpl clusterService) {

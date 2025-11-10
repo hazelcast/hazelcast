@@ -188,7 +188,7 @@ public class ManagementCenterService {
     private void registerExecutor() {
         final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
         int threadCount = instance.node.getProperties().getInteger(ClusterProperty.MC_EXECUTOR_THREAD_COUNT);
-        logger.finest("Creating new executor for Management Center service tasks with threadCount=" + threadCount);
+        logger.finest("Creating new executor for Management Center service tasks with threadCount=%s", threadCount);
         executionService.register(ExecutionService.MC_EXECUTOR,
                 threadCount, threadCount * EXECUTOR_QUEUE_CAPACITY_PER_THREAD,
                 ExecutorType.CACHED);

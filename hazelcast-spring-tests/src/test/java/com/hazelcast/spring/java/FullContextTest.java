@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FullContextTest extends AppContextTestBase {
 
     @Test
+    @Override
     void testMap() {
         assertThat((Object) map1).isNotNull();
         map1.set("key1", "value1");

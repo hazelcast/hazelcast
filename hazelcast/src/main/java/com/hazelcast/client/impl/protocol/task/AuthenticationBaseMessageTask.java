@@ -108,8 +108,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                 break;
             case AUTHENTICATED:
                 if (logger.isFineEnabled()) {
-                    logger.fine("Processing authentication with clientUuid " + clientUuid
-                            + " and clientName " + clientName);
+                    logger.fine("Processing authentication with clientUuid %s and clientName %s", clientUuid, clientName);
                 }
                 sendClientMessage(prepareAuthenticatedClientMessage());
                 break;

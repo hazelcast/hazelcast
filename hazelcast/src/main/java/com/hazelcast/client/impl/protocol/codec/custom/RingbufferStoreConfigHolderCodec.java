@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("d0d2cdfdeed0cb0558d8b5482737362e")
+@Generated("d46755d932b866895fe7c5e3b529ef53")
 public final class RingbufferStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -42,8 +42,8 @@ public final class RingbufferStoreConfigHolderCodec {
 
         CodecUtil.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getClassName(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getFactoryClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getImplementation(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getFactoryImplementation(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getImplementation());
+        DataCodec.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getFactoryImplementation());
         MapCodec.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getProperties(), StringCodec::encode, StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -58,8 +58,8 @@ public final class RingbufferStoreConfigHolderCodec {
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data factoryImplementation = DataCodec.decodeNullable(iterator);
         java.util.Map<java.lang.String, java.lang.String> properties = MapCodec.decodeNullable(iterator, StringCodec::decode, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

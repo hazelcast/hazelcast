@@ -33,7 +33,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.JdbcDatabaseProvider;
 import com.hazelcast.test.jdbc.JdbcObjectProvider;
-import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ObjectSpec;
@@ -61,6 +60,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.Column.col;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.INT;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.STRING;
+import static com.hazelcast.jet.TestedVersions.TEST_MYSQL_IMAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -758,7 +758,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         assumeTrue(objectProvider instanceof JdbcDatabaseProvider);
         var jdbcDatabaseProvider = (JdbcObjectProvider) objectProvider;
         // See MySQLSchemaJdbcSqlConnectorTest
-        assumeFalse(MySQLDatabaseProvider.TEST_MYSQL_VERSION.startsWith("5"));
+        assumeFalse(TEST_MYSQL_IMAGE.getVersionPart().startsWith("5"));
 
         String schemaName = "custom_schema2";
         jdbcDatabaseProvider.createSchema(schemaName);

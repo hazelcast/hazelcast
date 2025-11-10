@@ -46,6 +46,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         p.put(StoreLatencyPlugin.PERIOD_SECONDS, "1");
         HazelcastProperties properties = new HazelcastProperties(p);
         plugin = new StoreLatencyPlugin(Logger.getLogger(StoreLatencyPlugin.class), properties);
+        plugin.onStart();
     }
 
     @Test

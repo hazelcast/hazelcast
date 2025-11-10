@@ -81,7 +81,7 @@ import static java.util.stream.Collectors.joining;
  * Data travels from sources to sinks and is transformed and reshaped
  * as it passes through the processors.
  * <p>
- * Note that {@link #iterator()) must be invoked at least once in order to
+ * Note that {@link #iterator()} must be invoked at least once in order to
  * validate the DAG and check against cycles.
  *
  * @since Jet 3.0

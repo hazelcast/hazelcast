@@ -172,7 +172,6 @@ import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.clientMetr
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.unmodifiableSet;
 
 @SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
@@ -325,9 +324,9 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     }
 
     private Diagnostics initDiagnostics() {
-        String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
+        String name = "diagnostics-client-" + id;
 
-        return new Diagnostics(name, loggingService, instanceName, properties, config.getDiagnosticsConfig());
+        return new Diagnostics(name, loggingService, instanceName, properties);
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
@@ -411,25 +410,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
 
             diagnostics.start();
 
-            // static loggers at beginning of file
-            diagnostics.register(
-                    new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
-            diagnostics.register(
-                    new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
-            diagnostics.register(
-                    new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
-
-            // periodic loggers
-            diagnostics.register(
-                    new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
-            diagnostics.register(
-                    new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
-            diagnostics.register(
-                    new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
-                            loggingService.getLogger(NetworkingImbalancePlugin.class)));
-            diagnostics.register(
-                    new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
-                            properties));
+            registerDiagnosticsPlugins();
 
             metricsRegistry.provideMetrics(listenerService);
 
@@ -457,6 +438,31 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
             }
             throw rethrow(e);
         }
+    }
+
+    private void registerDiagnosticsPlugins() {
+        // static loggers at beginning of file
+        diagnostics.register(
+                new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
+        diagnostics.register(
+                new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
+        diagnostics.register(
+                new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
+
+        // periodic loggers
+        diagnostics.register(
+                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class),
+                        metricsRegistry, properties));
+        diagnostics.register(
+                new SystemLogPlugin(properties, connectionManager, this,
+                        loggingService.getLogger(SystemLogPlugin.class)));
+        diagnostics.register(
+                new NetworkingImbalancePlugin(loggingService.getLogger(NetworkingImbalancePlugin.class),
+                        properties, connectionManager.getNetworking()));
+        diagnostics.register(
+                new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class),
+                        listenerService.getEventExecutor(),
+                        properties));
     }
 
     private void startHeartbeat() {
@@ -995,5 +1001,9 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     @Override
     public ClientCPGroupViewService getCPGroupViewService() {
         return cpGroupViewService;
+    }
+
+    public Diagnostics getDiagnostics() {
+        return diagnostics;
     }
 }

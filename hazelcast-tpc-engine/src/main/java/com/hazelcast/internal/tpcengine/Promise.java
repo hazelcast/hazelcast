@@ -30,8 +30,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * <p>
  * The Promise supports pooling. So when you get a promise, make sure you call {@link #release()}
  * when you are done with it.
- *
- * @param <E>
  */
 @SuppressWarnings("checkstyle:VisibilityModifier")
 public class Promise<E> {

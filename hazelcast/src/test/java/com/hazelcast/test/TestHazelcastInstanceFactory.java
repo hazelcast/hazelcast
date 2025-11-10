@@ -550,7 +550,7 @@ public class TestHazelcastInstanceFactory {
 
     /**
      * Returns a list of addresses with the {@code 127.0.0.1} host and starting
-     * with the {@value DEFAULT_INITIAL_PORT} port or an empty list in case mock
+     * with the {@value #DEFAULT_INITIAL_PORT} port or an empty list in case mock
      * network is not used or the requested count is {@code 0}.
      *
      * @param count the number of requested addresses

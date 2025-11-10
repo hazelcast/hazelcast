@@ -183,7 +183,7 @@ public class QueryResultSizeLimiter {
             throw new IllegalArgumentException(QUERY_RESULT_SIZE_LIMIT + " has to be -1 (disabled) or a positive number!");
         }
         if (maxResultLimit < MINIMUM_MAX_RESULT_LIMIT) {
-            logger.finest("Max result limit was set to minimal value of " + MINIMUM_MAX_RESULT_LIMIT);
+            logger.finest("Max result limit was set to minimal value of %s", MINIMUM_MAX_RESULT_LIMIT);
             return MINIMUM_MAX_RESULT_LIMIT;
         }
         return maxResultLimit;

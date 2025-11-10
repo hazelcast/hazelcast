@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a WAN replication configuration.
  */
 @SuppressWarnings("unused")
-@Generated("7fa4e91d211d0e5826d5e810f82f986b")
+@Generated("7ac2f6ce21823eaa30a1d8a8013c3d06")
 public final class DynamicConfigAddWanReplicationConfigCodec {
     //hex: 0x1B1200
     public static final int REQUEST_MESSAGE_TYPE = 1774080;
@@ -49,7 +49,6 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
     private DynamicConfigAddWanReplicationConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

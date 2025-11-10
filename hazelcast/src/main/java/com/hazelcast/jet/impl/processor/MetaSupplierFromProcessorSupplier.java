@@ -29,12 +29,15 @@ import com.hazelcast.security.PermissionsUtil;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.List;
 import java.util.function.Function;
 
 @SerializableByConvention
 public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier, DataSerializable, ConnectorNameAware {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private int preferredLocalParallelism;
     private ProcessorSupplier processorSupplier;
     private Permission permission;

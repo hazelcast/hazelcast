@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast member.
 
   To learn how to configure Hazelcast, please see the schema at
-  http://www.hazelcast.com/schema/config/hazelcast-config-6.0.xsd
+  http://www.hazelcast.com/schema/config/hazelcast-config-5.7.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -31,7 +31,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-6.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.7.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -528,7 +528,7 @@
             the configuration details.
         - <kubernetes>:
             Set its "enabled" attribute to true for discovery in the Kubernetes environment.
-            Please refer to https://github.com/hazelcast/hazelcast-kubernetes#hazelcast-configuration for
+            Please refer to https://docs.hazelcast.com/hazelcast/latest/kubernetes/kubernetes-auto-discovery#hazelcast-configuration for
             the configuration details.
         - <eureka>:
             Set its "enabled" attribute to true for discovery with using Eureka Service Registry.
@@ -2279,9 +2279,9 @@
         * POOLED: Manages memory blocks in thread local pools.
 
         It has the following sub-elements:
-        - <size>:
-            Size of the total native memory to allocate. You can give the size using its "value" attribute and the unit
-            using its "unit" attribute. Unit can be bytes, kilobytes, megabytes and gigabytes. Default value is 128 and
+        - <capacity>:
+            Defines the total native memory capacity to allocate. You can give the size using its "value" attribute and the unit
+            using its "unit" attribute. Unit can be bytes, kilobytes, megabytes and gigabytes. Default value is 512 and
             default unit is MEGABYTES.
         - <min-block-size>:
             Minimum size of the blocks in bytes to split and fragment a page block to assign to an allocation request.
@@ -2308,7 +2308,7 @@
             will create its own subfolder to work with the non-volatile memory.
     -->
     <native-memory allocator-type="POOLED" enabled="true">
-        <size unit="MEGABYTES" value="256"/>
+        <capacity unit="MEGABYTES" value="256"/>
         <min-block-size>32</min-block-size>
         <page-size>4194304</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
@@ -3083,7 +3083,7 @@
                 the configuration details.
             - <kubernetes>:
                 Set its "enabled" attribute to true for discovery in the Kubernetes environment.
-                Please refer to https://github.com/hazelcast/hazelcast-kubernetes#hazelcast-configuration for
+                Please refer to https://docs.hazelcast.com/hazelcast/latest/kubernetes/kubernetes-auto-discovery#hazelcast-configuration for
                 the configuration details.
             - <eureka>:
                 Set its "enabled" attribute to true for discovery with using Eureka Service Registry.

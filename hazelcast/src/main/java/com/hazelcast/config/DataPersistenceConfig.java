@@ -78,7 +78,6 @@ public class DataPersistenceConfig implements IdentifiedDataSerializable {
     /**
      * Sets whether disk write should be followed by an {@code fsync()} system call.
      *
-     * @param fsync fsync
      * @return this DataPersistenceConfig
      */
     public DataPersistenceConfig setFsync(boolean fsync) {

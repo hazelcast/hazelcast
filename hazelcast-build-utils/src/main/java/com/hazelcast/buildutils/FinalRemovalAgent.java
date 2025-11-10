@@ -16,7 +16,6 @@
 
 package com.hazelcast.buildutils;
 
-import com.hazelcast.core.HazelcastException;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.ModifierAdjustment;
 import net.bytebuddy.description.modifier.MethodManifestation;
@@ -25,9 +24,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.jar.asm.Opcodes;
 
 import java.lang.instrument.Instrumentation;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,13 +43,13 @@ public final class FinalRemovalAgent {
     static {
         Map<String, Set<String>> finalMethods = new HashMap<>();
         finalMethods.put("com.hazelcast.cp.internal.session.AbstractProxySessionManager",
-                setOf("getSession", "getSessionAcquireCount"));
+                Set.of("getSession", "getSessionAcquireCount"));
         finalMethods.put("com.hazelcast.spi.impl.AbstractInvocationFuture",
-                setOf("get", "join"));
+                Set.of("get", "join"));
         finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService",
-                setOf("getRegistryOrNull"));
+                Set.of("getRegistryOrNull"));
         finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry",
-                setOf("getWaitTimeouts"));
+                Set.of("getWaitTimeouts"));
         FINAL_METHODS = finalMethods;
     }
 
@@ -98,13 +95,5 @@ public final class FinalRemovalAgent {
             }
         }
         return builder;
-    }
-
-    private static <T> Set<T> setOf(T... items) {
-        Set<T> set = new HashSet<>(Arrays.asList(items));
-        if (set.size() < items.length) {
-            throw new HazelcastException("set cannot contain duplicate items");
-        }
-        return set;
     }
 }

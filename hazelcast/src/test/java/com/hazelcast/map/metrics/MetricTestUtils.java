@@ -19,10 +19,13 @@ package com.hazelcast.map.metrics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 
+import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.ReflectionException;
 import java.lang.management.ManagementFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,14 +86,14 @@ public class MetricTestUtils {
         for (int i = 0; i < MBEAN_ASSERTION_RETRIES; i++) {
             try {
                 assertThat(mbeanServer.getAttribute(mbean, attributeName)).isEqualTo(expected);
-            } catch (AssertionError | InstanceNotFoundException e) {
+            } catch (AssertionError | InstanceNotFoundException | AttributeNotFoundException e) {
                 if (i == MBEAN_ASSERTION_RETRIES - 1) {
                     throw e instanceof AssertionError ? (AssertionError) e : new AssertionError(e);
                 } else {
                     sleep();
                     continue;
                 }
-            } catch (Exception e) {
+            } catch (MBeanException | ReflectionException e) {
                 throw new RuntimeException(e);
             }
             return;

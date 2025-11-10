@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically adds the given value to the current value.
  */
 @SuppressWarnings("unused")
-@Generated("cc468b53337cb33db418e3b86178bb54")
+@Generated("e396a51b326b6806fc38bd47fea8fc80")
 public final class AtomicLongAddAndGetCodec {
     //hex: 0x090300
     public static final int REQUEST_MESSAGE_TYPE = 590592;
@@ -51,7 +51,6 @@ public final class AtomicLongAddAndGetCodec {
     private AtomicLongAddAndGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

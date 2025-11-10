@@ -45,7 +45,7 @@ final class BitmapUtils {
         return Short.toUnsignedLong(value);
     }
 
-    /** @see Integer#toUnsignedLong(short) */
+    /** @see Integer#toUnsignedLong(int) */
     public static long toUnsignedLong(int value) {
         return Integer.toUnsignedLong(value);
     }

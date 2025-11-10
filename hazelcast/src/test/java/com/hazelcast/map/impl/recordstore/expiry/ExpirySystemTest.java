@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.recordstore.expiry;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -42,6 +41,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,17 +53,16 @@ public class ExpirySystemTest {
     @Mock
     private RecordStore recordStore;
     @Mock
-    private MapContainer mapContainer;
+    protected MapContainer mapContainer;
     @Mock
     private MapServiceContext mapServiceContext;
     @Mock
-    private NodeEngine nodeEngine;
+    protected NodeEngine nodeEngine;
     @Mock
     private ExpirationManager expirationManager;
     @Mock
     private HazelcastProperties hazelcastProperties;
-    @Mock
-    private ClearExpiredRecordsTask clearExpiredRecordsTask;
+
     @Mock
     private MapClearExpiredRecordsTask mapClearExpiredRecordsTask;
     @Mock
@@ -71,11 +70,10 @@ public class ExpirySystemTest {
     @Mock
     private ILogger logger;
 
-    private ExpirySystemImpl expirySystem;
+    private ExpirySystem expirySystem;
 
     @Before
     public void setUp() {
-        when(expirationManager.getTask()).thenReturn(clearExpiredRecordsTask);
         when(mapServiceContext.getExpirationManager()).thenReturn(expirationManager);
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
@@ -83,8 +81,8 @@ public class ExpirySystemTest {
         when(hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS)).thenReturn(10L);
         when(hazelcastProperties.getNanos(any())).thenReturn(1L);
         when(mapServiceContext.getClearExpiredRecordsTask()).thenReturn(mapClearExpiredRecordsTask);
-        when(recordStore.getStorage()).thenReturn(storage);
-        expirySystem = new ExpirySystemImpl(recordStore, mapContainer, mapServiceContext);
+        lenient().when(recordStore.getStorage()).thenReturn(storage);
+        expirySystem = createExpirySystem(recordStore, mapContainer, mapServiceContext);
     }
 
     @Test
@@ -182,7 +180,7 @@ public class ExpirySystemTest {
 
     private Data setupKeyAndMockStorage() {
         Data key = new HeapData(new byte[10]);
-        when(storage.toBackingDataKeyFormat(key)).thenReturn(key);
+        lenient().when(storage.toBackingDataKeyFormat(key)).thenReturn(key);
         return key;
     }
 

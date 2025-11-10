@@ -45,9 +45,7 @@ import org.junit.runner.RunWith;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -94,7 +92,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.name = "aClient";
         client.clusterConnectionTimestamp = connectionTimestamp;
         client.routingMode = RoutingMode.ALL_MEMBERS;
-        client.labels = new HashSet<>(Collections.singletonList("label"));
+        client.labels = Set.of("label");
         client.ipAddress = "10.176.167.34";
         client.canonicalHostName = "ip-10-176-167-34.ec2.internal";
         clients.add(client);

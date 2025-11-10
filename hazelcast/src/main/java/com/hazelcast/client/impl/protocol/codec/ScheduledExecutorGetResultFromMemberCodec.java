@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The call will blocking until the result is ready.
  */
 @SuppressWarnings("unused")
-@Generated("f333fc92d043966753f5825c4debc96e")
+@Generated("eabbd19c21ca6adb16cdfd104f101d48")
 public final class ScheduledExecutorGetResultFromMemberCodec {
     //hex: 0x1A1000
     public static final int REQUEST_MESSAGE_TYPE = 1708032;
@@ -51,7 +51,6 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
     private ScheduledExecutorGetResultFromMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -100,7 +99,7 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -111,6 +110,6 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

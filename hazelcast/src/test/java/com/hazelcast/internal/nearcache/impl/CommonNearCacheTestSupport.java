@@ -26,11 +26,13 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -59,12 +61,13 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
 
     <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig, InMemoryFormat inMemoryFormat) {
         NearCacheRecordStore<K, V> recordStore;
+        HazelcastProperties emptyProperties = new HazelcastProperties(new Properties());
         switch (inMemoryFormat) {
             case BINARY:
-                recordStore = new NearCacheDataRecordStore<>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
+                recordStore = new NearCacheDataRecordStore<>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null, emptyProperties);
                 break;
             case OBJECT:
-                recordStore = new NearCacheObjectRecordStore<>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
+                recordStore = new NearCacheObjectRecordStore<>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null, emptyProperties);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);

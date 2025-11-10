@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_ADD}
+ * {@link com.hazelcast.client.impl.protocol.codec.RingbufferAddCodec#REQUEST_MESSAGE_TYPE}
  */
 public class RingbufferAddMessageTask
         extends AbstractRingbufferMessageTask<RingbufferAddCodec.RequestParameters> {

@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("aace5c571a8291f91849defc2aba503d")
+@Generated("a230cec8853a1b53ddb507e2023215f3")
 public final class QueueStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -42,8 +42,8 @@ public final class QueueStoreConfigHolderCodec {
 
         CodecUtil.encodeNullable(clientMessage, queueStoreConfigHolder.getClassName(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, queueStoreConfigHolder.getFactoryClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, queueStoreConfigHolder.getImplementation(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, queueStoreConfigHolder.getFactoryImplementation(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, queueStoreConfigHolder.getImplementation());
+        DataCodec.encodeNullable(clientMessage, queueStoreConfigHolder.getFactoryImplementation());
         MapCodec.encodeNullable(clientMessage, queueStoreConfigHolder.getProperties(), StringCodec::encode, StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -58,8 +58,8 @@ public final class QueueStoreConfigHolderCodec {
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = DataCodec.decodeNullable(iterator);
+        com.hazelcast.internal.serialization.Data factoryImplementation = DataCodec.decodeNullable(iterator);
         java.util.Map<java.lang.String, java.lang.String> properties = MapCodec.decodeNullable(iterator, StringCodec::decode, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

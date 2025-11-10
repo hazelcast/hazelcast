@@ -73,7 +73,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             tryArrange(state, groups, partitionCount, aggressive, partitions);
             if (tryCount++ > 0) {
                 if (LOGGER.isFineEnabled()) {
-                    LOGGER.fine("Re-trying partition arrangement. Count: " + tryCount);
+                    LOGGER.fine("Re-trying partition arrangement. Count: %s", tryCount);
                 }
             }
         } while (tryCount < MAX_RETRY_COUNT && !areGroupsBalanced(groups, partitionCount));
@@ -474,7 +474,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             if (containsPartition(partitionId)) {
                 if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Partition[" + partitionId + "] is already owned by this group!");
+                    LOGGER.finest("Partition[%s] is already owned by this group!", partitionId);
                 }
                 return false;
             }
@@ -633,7 +633,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             if (containsPartition(partitionId)) {
                 if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Partition[" + partitionId + "] is already owned by this node " + replica);
+                    LOGGER.finest("Partition[%s] is already owned by this node %s", partitionId, replica);
                 }
                 return false;
             }

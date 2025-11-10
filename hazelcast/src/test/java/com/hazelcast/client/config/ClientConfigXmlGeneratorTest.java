@@ -24,7 +24,6 @@ import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.DiagnosticsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -55,7 +54,6 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.memory.Capacity;
@@ -486,6 +484,10 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             return 0;
         }
 
+        @Override
+        public void destroy() {
+
+        }
     }
 
     @Test
@@ -790,25 +792,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setDiscoveryToken("pAB2kwCdHKbGpFBNd9iO9AmnYBiQa7rz8yfGW25iHEHRvoRWSN");
         clientConfig.getNetworkConfig().setCloudConfig(originalConfig);
         ClientCloudConfig generatedConfig = newConfigViaGenerator().getNetworkConfig().getCloudConfig();
-        assertEquals(originalConfig, generatedConfig);
-    }
-
-    @Test
-    public void testDiagnosticsConfig() {
-        DiagnosticsConfig originalConfig = new DiagnosticsConfig()
-                .setEnabled(true)
-                .setMaxRolledFileSizeInMB(60)
-                .setMaxRolledFileCount(15)
-                .setOutputType(DiagnosticsOutputType.STDOUT)
-                .setLogDirectory("/src/user")
-                .setFileNamePrefix("mylogs")
-                .setIncludeEpochTime(true);
-        originalConfig.getPluginProperties().put("hazelcast.diagnostics.prop1", "myprop1");
-        originalConfig.getPluginProperties().put("hazelcast.diagnostics.prop2", "myprop2");
-
-        clientConfig.setDiagnosticsConfig(originalConfig);
-        DiagnosticsConfig generatedConfig = newConfigViaGenerator().getDiagnosticsConfig();
-
         assertEquals(originalConfig, generatedConfig);
     }
 

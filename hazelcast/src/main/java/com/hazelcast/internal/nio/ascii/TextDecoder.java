@@ -142,7 +142,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
         int capacity = commandLineBuffer.capacity() << 1;
         if (logger.isFineEnabled()) {
-            logger.fine("Expanding buffer capacity to " + capacity);
+            logger.fine("Expanding buffer capacity to %s", capacity);
         }
 
         ByteBuffer newBuffer = ByteBuffer.allocate(capacity);

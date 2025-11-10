@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -43,7 +42,7 @@ public final class LinkedAddresses {
 
     LinkedAddresses(Address primaryAddress) {
         this.primaryAddress = primaryAddress;
-        allLinkedAddresses = newSetFromMap(new ConcurrentHashMap<>());
+        allLinkedAddresses = ConcurrentHashMap.newKeySet();
         allLinkedAddresses.add(primaryAddress);
     }
 

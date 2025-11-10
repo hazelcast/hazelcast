@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_COMPAREANDREMOVEALL}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListCompareAndRemoveAllCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListCompareAndRemoveAllMessageTask
         extends AbstractListMessageTask<ListCompareAndRemoveAllCodec.RequestParameters> {

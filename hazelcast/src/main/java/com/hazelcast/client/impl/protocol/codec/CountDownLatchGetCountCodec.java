@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the current count.
  */
 @SuppressWarnings("unused")
-@Generated("bd2b7c0bef43c240d3bf408bf8873ce6")
+@Generated("f7e0064b8e1d44188c44eba69252d624")
 public final class CountDownLatchGetCountCodec {
     //hex: 0x0B0400
     public static final int REQUEST_MESSAGE_TYPE = 721920;
@@ -50,7 +50,6 @@ public final class CountDownLatchGetCountCodec {
     private CountDownLatchGetCountCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

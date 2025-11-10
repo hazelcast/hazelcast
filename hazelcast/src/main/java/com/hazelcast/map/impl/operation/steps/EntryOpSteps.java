@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.executionservice.impl.StatsAwareRunnable;
 
@@ -226,7 +227,20 @@ public enum EntryOpSteps implements IMapOpStep {
                         state.setChangeExpiryOnUpdate(entryOperator.getEntry().isChangeExpiryOnUpdate());
                         break;
                     case REMOVED:
-                        DeleteOpSteps.READ.runStep(state);
+                        // Almost the same as DeleteOpSteps.READ but without expiration,
+                        // which was already checked when EP first obtained the entry.
+                        // However, we handle missing record in case another overlapping operation evicted it.
+                        Record record = state.getRecordStore().getRecord(state.getKey());
+                        state.setOldValue(record == null ? null : record.getValue());
+                        state.setRecordExistsInMemory(record != null);
+
+                        if (record != null) {
+                            Object oldValue = record.getValue();
+                            oldValue = mapServiceContext.interceptRemove(mapContainer.getInterceptorRegistry(), oldValue);
+                            if (oldValue != null) {
+                                state.setOldValue(oldValue);
+                            }
+                        }
                         break;
                     default:
                         throw new IllegalArgumentException("Unexpected event found:" + eventType);

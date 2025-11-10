@@ -104,7 +104,7 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
     private static final int ITEM_COUNT = 1_000;
-    private static final String FILE_NAME = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
+    private static final String FILE_NAME = "confluentinc-kafka-connect-jdbc-10.8.4.zip";
 
     @BeforeClass
     public static void setUpDocker() {

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
  */
 @SuppressWarnings("unused")
-@Generated("fed96c8417159c494016e90ba8abda7f")
+@Generated("bc42939b43c54c050ab6de61864725fb")
 public final class MapExecuteOnAllKeysCodec {
     //hex: 0x013000
     public static final int REQUEST_MESSAGE_TYPE = 77824;
@@ -49,7 +49,6 @@ public final class MapExecuteOnAllKeysCodec {
     private MapExecuteOnAllKeysCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

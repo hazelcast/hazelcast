@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("0b2cc0534570b01834f8cfd95ceba027")
+@Generated("9342e984aa50f0c272c45707e67d0bd0")
 public final class VectorSearchResultCodec {
     private static final int SCORE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = SCORE_FIELD_OFFSET + FLOAT_SIZE_IN_BYTES;
@@ -41,7 +41,7 @@ public final class VectorSearchResultCodec {
         clientMessage.add(initialFrame);
 
         DataCodec.encode(clientMessage, vectorSearchResult.getKey());
-        CodecUtil.encodeNullable(clientMessage, vectorSearchResult.getValue(), DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, vectorSearchResult.getValue());
         ListMultiFrameCodec.encodeNullable(clientMessage, vectorSearchResult.getVectors(), VectorPairCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -55,7 +55,7 @@ public final class VectorSearchResultCodec {
         float score = decodeFloat(initialFrame.content, SCORE_FIELD_OFFSET);
 
         com.hazelcast.internal.serialization.Data key = DataCodec.decode(iterator);
-        com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data value = DataCodec.decodeNullable(iterator);
         java.util.List<com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder> vectors = ListMultiFrameCodec.decodeNullable(iterator, VectorPairCodec::decode);
 
         fastForwardToEndFrame(iterator);

@@ -23,9 +23,9 @@ package com.hazelcast.memory;
  * @see Capacity
  * @since 3.4
  *
- * @deprecated  Since 5.1, {@link Capacity} should be used instead.
+ * @deprecated {@link Capacity} should be used instead.
  */
-@Deprecated
+@Deprecated(since = "5.1")
 public final class MemorySize extends Capacity {
 
     public MemorySize(long value) {
@@ -50,9 +50,9 @@ public final class MemorySize extends Capacity {
      * Examples:
      * 12345, 12345m, 12345K, 123456G
      *
-     * @deprecated since 5.1, use {@link Capacity#parse(String)} instead.
+     * @deprecated use {@link Capacity#parse(String)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.1")
     public static MemorySize parse(String value) {
         return parse(value, MemoryUnit.BYTES);
     }
@@ -71,9 +71,9 @@ public final class MemorySize extends Capacity {
      * Examples:
      * 12345, 12345m, 12345K, 123456G
      *
-     * @deprecated since 5.1, use {@link Capacity#parse(String, MemoryUnit)} instead
+     * @deprecated use {@link Capacity#parse(String, MemoryUnit)} instead
      */
-    @Deprecated
+    @Deprecated(since = "5.1")
     public static MemorySize parse(String value, MemoryUnit defaultUnit) {
         if (value == null || value.length() == 0) {
             return new MemorySize(0, MemoryUnit.BYTES);

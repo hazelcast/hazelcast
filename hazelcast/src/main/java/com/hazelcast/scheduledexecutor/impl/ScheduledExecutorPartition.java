@@ -42,7 +42,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
         this.partitionId = partitionId;
         this.containerConstructorFunction = name -> {
             if (logger.isFinestEnabled()) {
-                logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
+                logger.finest("[Partition:%s]Create new scheduled executor container with name:%s", partitionId, name);
             }
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
             return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
@@ -61,7 +61,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
         Map<String, Map<String, ScheduledTaskDescriptor>> map = createHashMap(containers.size());
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] Preparing replication for index: " + replicaIndex);
+            logger.finest("[Partition: %s] Preparing replication for index: %s", partitionId, replicaIndex);
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
@@ -92,8 +92,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] Dispose obsolete replicas with thresholdReplicaIndex: "
-                    + thresholdReplicaIndex);
+            logger.finest("[Partition: %s] Dispose obsolete replicas with thresholdReplicaIndex: %s", partitionId,
+                    thresholdReplicaIndex);
         }
 
         if (thresholdReplicaIndex < 0) {
@@ -121,7 +121,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
      */
     void promoteSuspended() {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] " + "Promote suspended");
+            logger.finest("[Partition: %s] %s", partitionId, "Promote suspended");
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
@@ -136,7 +136,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
      */
     void suspendTasks() {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] Suspending tasks");
+            logger.finest("[Partition: %s] Suspending tasks", partitionId);
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {

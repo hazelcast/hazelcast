@@ -57,6 +57,7 @@ import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.EventQueuePlugin;
+import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.diagnostics.InvocationProfilerPlugin;
 import com.hazelcast.internal.diagnostics.InvocationSamplePlugin;
 import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
@@ -120,6 +121,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -629,28 +631,39 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void registerPlugins(Diagnostics diagnostics) {
         final NodeEngineImpl nodeEngine = node.nodeEngine;
+        HazelcastProperties properties = nodeEngine.getProperties();
 
         // static loggers at beginning of file
-        diagnostics.register(new BuildInfoPlugin(nodeEngine));
-        diagnostics.register(new SystemPropertiesPlugin(nodeEngine));
+        diagnostics.register(new BuildInfoPlugin(nodeEngine.getLogger(BuildInfoPlugin.class)));
+        diagnostics.register(new SystemPropertiesPlugin(nodeEngine.getLogger(SystemPropertiesPlugin.class)));
         diagnostics.register(new ConfigPropertiesPlugin(nodeEngine));
 
         // periodic loggers
         diagnostics.register(new OverloadedConnectionsPlugin(nodeEngine));
-        diagnostics.register(new EventQueuePlugin(nodeEngine,
-                ((EventServiceImpl) nodeEngine.getEventService()).getEventExecutor()));
-        diagnostics.register(new PendingInvocationsPlugin(nodeEngine));
-        diagnostics.register(new MetricsPlugin(nodeEngine));
-        diagnostics.register(new SlowOperationPlugin(nodeEngine));
-        diagnostics.register(new InvocationSamplePlugin(nodeEngine));
-        diagnostics.register(new InvocationProfilerPlugin(nodeEngine));
-        diagnostics.register(new OperationProfilerPlugin(nodeEngine));
+        diagnostics.register(new EventQueuePlugin(nodeEngine.getLogger(EventQueuePlugin.class),
+                ((EventServiceImpl) nodeEngine.getEventService()).getEventExecutor(), properties));
+        diagnostics.register(new PendingInvocationsPlugin(nodeEngine.getLogger(PendingInvocationsPlugin.class),
+                nodeEngine.getOperationService().getInvocationRegistry(), properties));
+        diagnostics.register(new MetricsPlugin(nodeEngine.getLogger(MetricsPlugin.class),
+                nodeEngine.getMetricsRegistry(), properties));
+        diagnostics.register(new SlowOperationPlugin(nodeEngine.getLogger(SlowOperationPlugin.class),
+                nodeEngine.getOperationService(), properties));
+        diagnostics.register(new InvocationSamplePlugin(nodeEngine.getLogger(InvocationSamplePlugin.class),
+                nodeEngine.getOperationService().getInvocationRegistry(), properties));
+        diagnostics.register(new InvocationProfilerPlugin(nodeEngine.getLogger(InvocationProfilerPlugin.class),
+                nodeEngine.getOperationService().getInvocationRegistry(), properties));
+        diagnostics.register(new OperationProfilerPlugin(nodeEngine.getLogger(OperationProfilerPlugin.class),
+                nodeEngine.getOperationService().getOpLatencyDistributions(), properties));
         diagnostics.register(new MemberHazelcastInstanceInfoPlugin(nodeEngine));
-        diagnostics.register(new SystemLogPlugin(nodeEngine));
-        diagnostics.register(new StoreLatencyPlugin(nodeEngine));
-        diagnostics.register(new MemberHeartbeatPlugin(nodeEngine));
-        diagnostics.register(new NetworkingImbalancePlugin(nodeEngine));
-        diagnostics.register(new OperationHeartbeatPlugin(nodeEngine));
+        diagnostics.register(new SystemLogPlugin(nodeEngine.getLogger(SystemLogPlugin.class), properties, node.getServer(),
+                nodeEngine.getHazelcastInstance(), node.getNodeExtension()));
+        diagnostics.register(new StoreLatencyPlugin(nodeEngine.getLogger(StoreLatencyPlugin.class), properties));
+        diagnostics.register(new MemberHeartbeatPlugin(nodeEngine.getLogger(MemberHeartbeatPlugin.class),
+                nodeEngine.getClusterService(), properties));
+        diagnostics.register(new NetworkingImbalancePlugin(nodeEngine.getLogger(NetworkingImbalancePlugin.class),
+                properties, node.getServer()));
+        diagnostics.register(new OperationHeartbeatPlugin(nodeEngine.getLogger(OperationHeartbeatPlugin.class),
+                nodeEngine.getOperationService().getInvocationMonitor(), properties));
         diagnostics.register(new OperationThreadSamplerPlugin(nodeEngine));
     }
 
@@ -725,5 +738,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public ClientEngine createClientEngine() {
         return new ClientEngineImpl(node);
+    }
+
+    @Override
+    public HealthMonitor createHealthMonitor() {
+        return new HealthMonitor(node);
     }
 }

@@ -39,7 +39,7 @@ import static com.hazelcast.config.RestEndpointGroup.getAllEndpointGroups;
  *
  * @since 3.12
  *
- * @deprecated since 5.5, use RestConfig instead. Will be removed at 6.0.
+ * @deprecated use RestConfig instead. Will be removed at 6.0.
  * @see RestConfig
  */
 @Deprecated(since = "5.5", forRemoval = true)

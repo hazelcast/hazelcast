@@ -40,6 +40,7 @@ public class StoreLatencyPluginResetTest extends AbstractDiagnosticsPluginTest {
 
         HazelcastProperties properties = new HazelcastProperties(props);
         StoreLatencyPlugin plugin = new StoreLatencyPlugin(Logger.getLogger(StoreLatencyPlugin.class), properties);
+        plugin.onStart();
 
         StoreLatencyPlugin.LatencyProbe probe = plugin.newProbe("foo", "queue", "somemethod");
 
@@ -53,7 +54,7 @@ public class StoreLatencyPluginResetTest extends AbstractDiagnosticsPluginTest {
 
         // reset the logWriter so we don't get previous run content
         reset();
-        // run for the second time;
+        // run for the second time
         plugin.run(logWriter);
         // now it should still contain the old statistics
         assertContains("max(us)=5");

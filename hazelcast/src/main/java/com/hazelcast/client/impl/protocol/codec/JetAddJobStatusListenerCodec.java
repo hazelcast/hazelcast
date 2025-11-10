@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a JobStatusListener to the specified job.
  */
 @SuppressWarnings("unused")
-@Generated("ec31fd64f0e25321b8de1303b2745e1f")
+@Generated("7b474ce2f1f34862816157fd638ae742")
 public final class JetAddJobStatusListenerCodec {
     //hex: 0xFE1300
     public static final int REQUEST_MESSAGE_TYPE = 16651008;
@@ -61,7 +61,6 @@ public final class JetAddJobStatusListenerCodec {
     private JetAddJobStatusListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

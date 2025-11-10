@@ -70,7 +70,7 @@ public class EvictionChecker {
         this.memoryInfoAccessor = givenMemoryInfoAccessor;
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Used memoryInfoAccessor=" + this.memoryInfoAccessor.getClass().getCanonicalName());
+            logger.finest("Used memoryInfoAccessor=%s", this.memoryInfoAccessor.getClass().getCanonicalName());
         }
 
         this.misconfiguredPerNodeMaxSizeWarningLogged = new AtomicBoolean();

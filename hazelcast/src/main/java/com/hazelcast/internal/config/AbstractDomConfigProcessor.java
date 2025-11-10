@@ -21,7 +21,7 @@ import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
-import com.hazelcast.config.DiagnosticsConfig;
+import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -38,11 +38,13 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
-import com.hazelcast.config.DiagnosticsOutputType;
+import com.hazelcast.internal.diagnostics.DiagnosticsOutputType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.Node;
+
+import javax.annotation.Nonnull;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -92,6 +94,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         this.strict = strict;
     }
 
+    @Nonnull
     protected String getTextContent(Node node) {
         return DomConfigHelper.getTextContent(node, domLevel3).trim();
     }
@@ -200,8 +203,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
         for (Node n : childElements(node)) {
             String name = cleanNodeName(n);
-            if (matches("max-rolled-file-size-mb", name)) {
-                diagnosticsConfig.setMaxRolledFileSizeInMB(parseInt(n.getTextContent()));
+            if (matches("max-rolled-file-size-in-mb", name)) {
+                diagnosticsConfig.setMaxRolledFileSizeInMB(Float.parseFloat(n.getTextContent()));
             } else if (matches("max-rolled-file-count", name)) {
                 diagnosticsConfig.setMaxRolledFileCount(parseInt(n.getTextContent()));
             } else if (matches("include-epoch-time", name)) {
@@ -212,6 +215,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 diagnosticsConfig.setFileNamePrefix(n.getTextContent());
             } else if (matches("output-type", name)) {
                 diagnosticsConfig.setOutputType(DiagnosticsOutputType.valueOf(n.getTextContent()));
+            } else if (matches("auto-off-timer-in-minutes", name)) {
+                diagnosticsConfig.setAutoOffDurationInMinutes(parseInt(n.getTextContent()));
             } else if (matches("plugin-properties", name)) {
                 Map<String, Comparable> rawProperties = new HashMap<>();
                 fillProperties(n, rawProperties);

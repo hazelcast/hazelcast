@@ -39,7 +39,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -76,7 +75,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private ExecutionService executionService;
     private final ConcurrentMap<UUID, Processor> submittedTasks = new ConcurrentHashMap<>();
     private final Set<String> shutdownExecutors
-            = Collections.newSetFromMap(new ConcurrentHashMap<>());
+            = ConcurrentHashMap.newKeySet();
     private final ExecutorStats executorStats = new ExecutorStats();
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();

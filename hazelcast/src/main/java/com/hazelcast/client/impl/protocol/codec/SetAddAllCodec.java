@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * collection is modified while the operation is in progress.
  */
 @SuppressWarnings("unused")
-@Generated("c5fd355ee0da1eefa448340fa8c26bf6")
+@Generated("22e462f264f90f8a2eb0c3f76b3d9874")
 public final class SetAddAllCodec {
     //hex: 0x060600
     public static final int REQUEST_MESSAGE_TYPE = 394752;
@@ -53,7 +53,6 @@ public final class SetAddAllCodec {
     private SetAddAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

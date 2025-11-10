@@ -252,13 +252,13 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     @Test
     public void testValues() {
         getMap().values();
-        assertEquals(1, getMapStats().getValuesCallsCount());
+        assertEquals(1, getMapStats().getValuesCallCount());
     }
 
     @Test
     public void testEntrySet() {
         getMap().entrySet();
-        assertEquals(1, getMapStats().getEntrySetCallsCount());
+        assertEquals(1, getMapStats().getEntrySetCallCount());
     }
 
     @Test

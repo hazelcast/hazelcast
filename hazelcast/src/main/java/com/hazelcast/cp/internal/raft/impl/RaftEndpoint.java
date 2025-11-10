@@ -25,7 +25,7 @@ import java.util.UUID;
  * From the Raft consensus algorithm's point of view, the only important
  * property of a Raft endpoint is its identity. All other properties are
  * implementation details of a Raft endpoint and can be handled inside the
- * {@link RaftIntegration} abstraction.
+ * {@code RaftIntegration} abstraction.
  */
 public interface RaftEndpoint {
 

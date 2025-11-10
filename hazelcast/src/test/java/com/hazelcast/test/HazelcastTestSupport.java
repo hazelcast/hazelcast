@@ -56,6 +56,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.metrics.MetricsRule;
 import junit.framework.AssertionFailedError;
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Assume;
@@ -112,8 +113,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -160,9 +161,9 @@ public abstract class HazelcastTestSupport {
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
         ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION = Duration.ofSeconds(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-        LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = %s", ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
-        LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
+        LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = %s", ASSERT_COMPLETES_STALL_TOLERANCE);
         String pmemDirectories = System.getProperty("hazelcast.persistent.memory");
         PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
         ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");
@@ -1376,7 +1377,8 @@ public abstract class HazelcastTestSupport {
      * @param actual   actual value which is used for assert
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
-        assertEquals(format(message, expected, actual), expected, actual);
+        assertThat(actual).as(message, expected, actual)
+                .isEqualTo(expected);
     }
 
     /**
@@ -1388,7 +1390,8 @@ public abstract class HazelcastTestSupport {
      * @param actual   actual value which is used for assert
      */
     public static void assertNotEqualsStringFormat(String message, Object expected, Object actual) {
-        assertNotEquals(format(message, expected, actual), expected, actual);
+        assertThat(actual).as(message, expected, actual)
+                .isNotEqualTo(expected);
     }
 
     /** @see org.assertj.core.api.AbstractLongAssert#isBetween(Long, Long) */
@@ -1628,8 +1631,9 @@ public abstract class HazelcastTestSupport {
     public static void assumeConfiguredByteOrder(InternalSerializationService serializationService,
                                                  ByteOrder assumedByteOrder) {
         ByteOrder configuredByteOrder = serializationService.getByteOrder();
-        assumeTrue(format("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder),
-                configuredByteOrder.equals(assumedByteOrder));
+        assumeThat(configuredByteOrder)
+                .as("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder)
+                .isEqualTo(assumedByteOrder);
     }
 
     /**
@@ -1666,5 +1670,10 @@ public abstract class HazelcastTestSupport {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /** Converts Windows line separators ({@code \r\n}) to {@code \r} */
+    protected static String convertWindowsLineSeperators(String str) {
+        return StringUtils.remove(str, StringUtils.CR);
     }
 }

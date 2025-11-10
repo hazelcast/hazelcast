@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the end of the transaction (either commit or rollback).
  */
 @SuppressWarnings("unused")
-@Generated("179b4e62581fd57e4f47d00b7c14384d")
+@Generated("bedc45ce4080e27d176c21704df1eae1")
 public final class TransactionalMapGetForUpdateCodec {
     //hex: 0x0E0300
     public static final int REQUEST_MESSAGE_TYPE = 918272;
@@ -52,7 +52,6 @@ public final class TransactionalMapGetForUpdateCodec {
     private TransactionalMapGetForUpdateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -109,7 +108,7 @@ public final class TransactionalMapGetForUpdateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -120,6 +119,6 @@ public final class TransactionalMapGetForUpdateCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

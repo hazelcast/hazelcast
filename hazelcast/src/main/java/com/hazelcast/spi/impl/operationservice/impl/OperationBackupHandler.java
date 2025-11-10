@@ -350,11 +350,9 @@ public final class OperationBackupHandler {
         if (clusterService.getMember(target.address(), target.uuid()) == null) {
             if (logger.isFinestEnabled()) {
                 if (clusterService.isMissingMember(target.address(), target.uuid())) {
-                    logger.finest("Could not send backup operation, because " + target + " is a missing member. "
-                            + partition);
+                    logger.finest("Could not send backup operation, because %s is a missing member. %s", target, partition);
                 } else {
-                    logger.finest("Could not send backup operation, because " + target + " is not a known member. "
-                            + partition);
+                    logger.finest("Could not send backup operation, because %s is not a known member. %s", target, partition);
                 }
             }
             return true;

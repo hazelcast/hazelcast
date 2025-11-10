@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Resumes the execution of a suspended job.
  */
-public class ResumeJobOperation extends AsyncJobOperation {
+public class ResumeJobOperation extends AsyncMasterOnlyJobOperation {
 
     public ResumeJobOperation() {
     }

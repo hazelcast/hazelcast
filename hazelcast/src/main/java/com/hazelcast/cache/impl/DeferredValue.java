@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.AbstractSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -148,7 +147,7 @@ public class DeferredValue<V> {
     }
 
     public static <V> Set<DeferredValue<V>> concurrentSetOfValues(Set<V> values) {
-        Set<DeferredValue<V>> result = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        Set<DeferredValue<V>> result = ConcurrentHashMap.newKeySet();
         for (V value : values) {
             result.add(DeferredValue.withValue(value));
         }

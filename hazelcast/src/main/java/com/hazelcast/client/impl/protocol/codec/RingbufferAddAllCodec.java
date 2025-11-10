@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The result of the future contains the sequenceId of the last written item
  */
 @SuppressWarnings("unused")
-@Generated("9c8a99787d19d080debb862d576c89c8")
+@Generated("05705abe1e4683826945d83d2e31ae18")
 public final class RingbufferAddAllCodec {
     //hex: 0x170800
     public static final int REQUEST_MESSAGE_TYPE = 1509376;
@@ -58,7 +58,6 @@ public final class RingbufferAddAllCodec {
     private RingbufferAddAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

@@ -55,7 +55,6 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
-import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -93,7 +92,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
     private volatile boolean stop;
     private volatile Selector selector;
 
-    private final Set<SelectionKey> selectionKeys = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<SelectionKey> selectionKeys = ConcurrentHashMap.newKeySet();
 
     TcpServerAcceptor(ServerSocketRegistry registry, TcpServer server, ServerContext serverContext) {
         this.registry = registry;
@@ -153,7 +152,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
         @Override
         public void run() {
             if (logger.isFinestEnabled()) {
-                logger.finest("Starting TcpIpAcceptor on " + registry);
+                logger.finest("Starting TcpIpAcceptor on %s", registry);
             }
 
             try {
@@ -288,7 +287,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             Channel channel = connectionManager.newChannel(socketChannel, false);
 
             if (logger.isFineEnabled()) {
-                logger.fine("Accepting socket connection from " + channel.socket().getRemoteSocketAddress());
+                logger.fine("Accepting socket connection from %s", channel.socket().getRemoteSocketAddress());
             }
             serverContext.getAuditLogService()
                 .eventBuilder(AuditlogTypeIds.NETWORK_CONNECT)

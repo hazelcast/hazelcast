@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.starter.ReflectionUtils;
@@ -42,6 +43,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -73,7 +75,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         final String threadDumpOnFailure = System.getProperty("hazelcast.test.threadDumpOnFailure");
         THREAD_DUMP_ON_FAILURE = threadDumpOnFailure != null
-                ? Boolean.parseBoolean(threadDumpOnFailure) : JenkinsDetector.isOnJenkins();
+                ? Boolean.parseBoolean(threadDumpOnFailure) : CiExecutionDetector.isOnCi();
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 
@@ -425,6 +427,15 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 }
                 statement.evaluate();
             }
+        }
+    }
+
+    public static void logMessageIfTestOverran(FrameworkMethod method, float tookSeconds) {
+        if (tookSeconds > QuickTest.EXPECTED_RUNTIME_THRESHOLD.getSeconds()) {
+            System.err.println(MessageFormat.format(
+                    "{0} is annotated as a {1}, expected to complete within {2} seconds - but took {3} seconds",
+                    method.getName(), QuickTest.class.getSimpleName(), QuickTest.EXPECTED_RUNTIME_THRESHOLD.getSeconds(),
+                    tookSeconds));
         }
     }
 }

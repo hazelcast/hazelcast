@@ -19,23 +19,21 @@ package com.hazelcast.internal.monitor.impl;
 import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.LocalListStats;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
 import com.hazelcast.internal.util.Clock;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.lang.invoke.VarHandle;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.LIST_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.LIST_METRIC_LAST_ACCESS_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.LIST_METRIC_LAST_UPDATE_TIME;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalListStatsImpl extends AbstractLocalCollectionStats implements LocalCollectionStats, LocalListStats {
 
-    protected static final AtomicLongFieldUpdater<LocalListStatsImpl> LAST_ACCESS_TIME_UPDATER =
-            newUpdater(LocalListStatsImpl.class, LAST_ACCESS_TIME);
-    protected static final AtomicLongFieldUpdater<LocalListStatsImpl> LAST_UPDATE_TIME_UPDATER =
-            newUpdater(LocalListStatsImpl.class, LAST_UPDATE_TIME);
+    private static final VarHandle LAST_ACCESS_TIME_VARHANDLE = ReflectionUtil.findVarHandle(LAST_ACCESS_TIME, long.class);
+    private static final VarHandle LAST_UPDATE_TIME_VARHANDLE = ReflectionUtil.findVarHandle(LAST_UPDATE_TIME, long.class);
 
     @Probe(name = LIST_METRIC_LAST_ACCESS_TIME, unit = MS)
     protected volatile long lastAccessTime;
@@ -55,7 +53,7 @@ public class LocalListStatsImpl extends AbstractLocalCollectionStats implements 
 
     @Override
     public void setLastAccessTime(long lastAccessTime) {
-        setMax(this, LAST_ACCESS_TIME_UPDATER, lastAccessTime);
+        setMax(this, LAST_ACCESS_TIME_VARHANDLE, lastAccessTime);
     }
 
     @Override
@@ -65,7 +63,7 @@ public class LocalListStatsImpl extends AbstractLocalCollectionStats implements 
 
     @Override
     public void setLastUpdateTime(long lastUpdateTime) {
-        setMax(this, LAST_UPDATE_TIME_UPDATER, lastUpdateTime);
+        setMax(this, LAST_UPDATE_TIME_VARHANDLE, lastUpdateTime);
     }
 
     @Override

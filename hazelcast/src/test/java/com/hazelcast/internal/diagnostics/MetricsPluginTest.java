@@ -53,7 +53,8 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
         metricsRegistry = nodeEngineImpl.getMetricsRegistry();
-        plugin = new MetricsPlugin(nodeEngineImpl);
+        plugin = new MetricsPlugin(nodeEngineImpl.getLogger(MetricsPlugin.class),
+                nodeEngineImpl.getMetricsRegistry(), nodeEngineImpl.getProperties());
         plugin.onStart();
 
         diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);

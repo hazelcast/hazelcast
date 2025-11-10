@@ -93,7 +93,7 @@ public final class ConcurrentInboundEdgeStream {
             this.priority = priority;
             logger = prefixedLogger(Logger.getLogger(getClass()), debugName);
             if (logger.isFinestEnabled()) {
-                logger.finest("Coalescing " + conveyor.queueCount() + " input queues");
+                logger.finest("Coalescing %s input queues", conveyor.queueCount());
             }
         }
 

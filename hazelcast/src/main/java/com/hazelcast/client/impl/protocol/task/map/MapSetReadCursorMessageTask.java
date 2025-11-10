@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_SETREADCURSOR}
+ * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQuerySetReadCursorCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MapSetReadCursorMessageTask
         extends AbstractPartitionMessageTask<ContinuousQuerySetReadCursorCodec.RequestParameters> {

@@ -28,10 +28,10 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -49,13 +49,12 @@ import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingRealTimeLag;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
-import static com.hazelcast.test.annotation.QuickTest.QUICK_TEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag(QUICK_TEST)
+@QuickTest
 @SuppressWarnings({"JUnitMixedFramework", "DataFlowIssue"})
 class ReadKafkaConnectPTest extends HazelcastTestSupport {
 

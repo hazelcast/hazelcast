@@ -179,7 +179,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     /**
      * Gets the {@link LocalReplicatedMapStatsImpl} implementation of {@link LocalReplicatedMapStats} for the provided
-     * {@param name} of the replicated map. This is used for operations that mutate replicated map's local statistics.
+     * {@code name} of the replicated map. This is used for operations that mutate replicated map's local statistics.
      *
      * @param name of the replicated map.
      * @return replicated map's local statistics object.

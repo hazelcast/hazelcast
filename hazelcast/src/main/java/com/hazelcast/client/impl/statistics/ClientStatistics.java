@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.statistics;
 
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * An immutable class representing the statistics sent by the clients
@@ -33,7 +32,6 @@ public final class ClientStatistics {
     private final String clientAttributes;
     private final byte[] metricsBlob;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ClientStatistics(long timestamp, String clientAttributes, byte[] metricsBlob) {
         this.timestamp = timestamp;
         this.clientAttributes = clientAttributes;
@@ -48,7 +46,6 @@ public final class ClientStatistics {
         return clientAttributes;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public byte[] metricsBlob() {
         return metricsBlob;
     }

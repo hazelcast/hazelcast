@@ -40,7 +40,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -66,7 +65,6 @@ import java.util.concurrent.locks.Lock;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.internal.util.StringUtil.trim;
 import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -179,7 +177,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         if (command == null) {
             return;
         }
-        command = trim(command);
+        command = command.strip();
         if (command.isEmpty()) {
             return;
         }
@@ -199,7 +197,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         String[] argsSplit = command.split(" ");
         String[] args = new String[argsSplit.length];
         for (int i = 0; i < argsSplit.length; i++) {
-            args[i] = trim(argsSplit[i]);
+            args[i] = argsSplit[i].strip();
         }
         if (spaceIndex != -1) {
             first = args[0];
@@ -210,7 +208,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             int repeat = Integer.parseInt(first.substring(1));
             long started = Clock.currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
-                handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
+                handleCommand(command.substring(first.length()).replaceAll("\\$i", String.valueOf(i)));
             }
             long elapsedMilliSeconds = Clock.currentTimeMillis() - started;
             if (elapsedMilliSeconds > 0) {
@@ -226,7 +224,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 final int threadID = i;
                 pool.submit(() -> {
                     String sanitizedCommand = threadCommand;
-                    String[] threadArgs = trim(sanitizedCommand.replaceAll("\\$t", "" + threadID)).split(" ");
+                    String[] threadArgs = sanitizedCommand.replaceAll("\\$t", String.valueOf(threadID)).strip().split(" ");
                     // TODO &t #4 m.putmany x k
                     if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
                         if (threadArgs.length < 4) {
@@ -254,7 +252,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
         } else if ("ns".equals(first)) {
-            handleNamespace(trim(command.substring(first.length())));
+            handleNamespace(command.substring(first.length()).strip());
         } else if ("whoami".equals(first)) {
             handleWhoami();
         } else if ("who".equals(first)) {
@@ -500,7 +498,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("namespace: " + namespace);
     }
 
-    @SuppressFBWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
 

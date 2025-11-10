@@ -37,7 +37,9 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.hazelcast.config.ConfigXmlGeneratorTest.getNewConfigViaXMLGenerator;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -93,6 +95,14 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testXmlConfigGeneratorWithFullExampleProducesSameConfig() throws IOException {
+        Config xmlConfig = getXML("hazelcast-full-example.xml");
+        Config generatedConfig = getNewConfigViaXMLGenerator(xmlConfig, false);
+
+        assertThat(xmlConfig).usingRecursiveComparison().isEqualTo(generatedConfig);
+    }
+
+    @Test
     public void testFullExampleWithAdvancedNetwork() throws IOException {
         Config xmlConfig = getXML("hazelcast-full-example.xml");
         Config yamlConfig = getYaml("hazelcast-full-example.yaml");
@@ -133,7 +143,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         String yaml = readResourceToString(resource);
 
         // remove imports to prevent the test from failing with importing non-existing files
-        yaml = StringUtils.remove(yaml, "\r");
+        yaml = convertWindowsLineSeperators(yaml);
         yaml = StringUtils.remove(yaml, "import:\n    - your-configuration-YAML-file");
 
         yaml = replaceExampleValuesWithRealFiles(yaml);

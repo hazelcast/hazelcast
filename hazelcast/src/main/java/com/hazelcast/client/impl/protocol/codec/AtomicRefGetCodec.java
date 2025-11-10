@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the current value.
  */
 @SuppressWarnings("unused")
-@Generated("c4fcbf1bb58c14bf325658d85dbf09c3")
+@Generated("23a2e7b05bb56a70a16ded25361cf58b")
 public final class AtomicRefGetCodec {
     //hex: 0x0A0400
     public static final int REQUEST_MESSAGE_TYPE = 656384;
@@ -49,7 +49,6 @@ public final class AtomicRefGetCodec {
     private AtomicRefGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -92,7 +91,7 @@ public final class AtomicRefGetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        DataCodec.encodeNullable(clientMessage, response);
         return clientMessage;
     }
 
@@ -103,6 +102,6 @@ public final class AtomicRefGetCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        return DataCodec.decodeNullable(iterator);
     }
 }

@@ -43,7 +43,6 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkState;
-import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -57,7 +56,7 @@ public class FirewallingServer
     public final Server delegate;
     private final ScheduledExecutorService scheduledExecutor
             = newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
-    private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<Address> blockedAddresses = ConcurrentHashMap.newKeySet();
 
     private final Consumer<Packet> packetConsumer;
     private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);

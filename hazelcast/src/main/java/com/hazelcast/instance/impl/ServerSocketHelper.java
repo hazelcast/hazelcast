@@ -137,9 +137,9 @@ final class ServerSocketHelper {
             }
             serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
 
-            logger.fine("Trying to bind inet socket address: " + socketBindAddress);
+            logger.fine("Trying to bind inet socket address: %s", socketBindAddress);
             serverSocket.bind(socketBindAddress, SOCKET_BACKLOG_LENGTH);
-            logger.fine("Bind successful to inet socket address: " + serverSocket.getLocalSocketAddress());
+            logger.fine("Bind successful to inet socket address: %s", serverSocket.getLocalSocketAddress());
 
             serverSocketChannel.configureBlocking(false);
             return serverSocketChannel;

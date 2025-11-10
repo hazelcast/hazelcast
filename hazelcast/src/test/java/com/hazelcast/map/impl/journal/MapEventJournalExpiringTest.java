@@ -19,16 +19,23 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.journal.AbstractEventJournalExpiringTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.EventJournalMapEvent;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.ringbuffer.impl.RingbufferContainer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class MapEventJournalExpiringTest<K, V> extends AbstractEventJournalExpiringTest<EventJournalMapEvent> {
 
@@ -38,7 +45,9 @@ public class MapEventJournalExpiringTest<K, V> extends AbstractEventJournalExpir
     protected Config getConfig() {
         Config defConfig = super.getConfig();
         defConfig.getMapConfig(MAP_NAME)
-                 .setInMemoryFormat(getInMemoryFormat());
+                .setBackupCount(1)
+                .setInMemoryFormat(getInMemoryFormat())
+                .setEventJournalConfig(getEventJournalConfig());
         return defConfig;
     }
 
@@ -53,5 +62,21 @@ public class MapEventJournalExpiringTest<K, V> extends AbstractEventJournalExpir
                 null,
                 new EventJournalMapEventAdapter<>()
         );
+    }
+
+    protected String getName() {
+        return MAP_NAME;
+    }
+
+    protected  RingbufferContainer<?, ?> getRingBufferContainer(String name, int partitionId, HazelcastInstance instance) {
+        var serviceName = RingbufferService.SERVICE_NAME;
+        final RingbufferService service = getNodeEngine(instance).getService(serviceName);
+        final ObjectNamespace ns = MapService.getObjectNamespace(name);
+
+        RingbufferContainer<?, ?> ringbuffer = service.getContainerOrNull(partitionId, ns);
+        if (ringbuffer == null) {
+            throw new IllegalStateException("No ringbuffer container for partition " + partitionId);
+        }
+        return ringbuffer;
     }
 }
