@@ -618,7 +618,7 @@
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.2.1</version>
+                <version>4.2.2</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
