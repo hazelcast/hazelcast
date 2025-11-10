@@ -38,7 +38,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 import com.hazelcast.spi.tenantcontrol.Tenantable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.lang.invoke.VarHandle;
@@ -244,7 +243,6 @@ public abstract class Operation implements DataSerializable, Tenantable {
     }
 
     @SuppressWarnings("java:S4973")
-    @SuppressFBWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
         // If the name of the service is the same as the name already provided, the call is skipped.
         // We can do a == instead of an equals because serviceName are typically constants, and it will

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the value associated with the key in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("396a293c663a7ba5d396d73a8ee99ccd")
+@Generated("0ac47fc79ceeb618ddf3ea63157d2401")
 public final class CPMapGetCodec {
     //hex: 0x230100
     public static final int REQUEST_MESSAGE_TYPE = 2294016;
@@ -49,7 +49,6 @@ public final class CPMapGetCodec {
     private CPMapGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

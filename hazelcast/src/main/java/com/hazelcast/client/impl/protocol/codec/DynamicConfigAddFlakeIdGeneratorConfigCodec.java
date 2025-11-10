@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("c5cd43f7b2e57e4e7906fd705245be8b")
+@Generated("9d72e5fb30d6f0ff4d9c466ed2983f20")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1B0F00
     public static final int REQUEST_MESSAGE_TYPE = 1773312;
@@ -59,7 +59,6 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     private DynamicConfigAddFlakeIdGeneratorConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

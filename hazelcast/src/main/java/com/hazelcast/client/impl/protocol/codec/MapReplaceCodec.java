@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if currently mapped to a given value.
  */
 @SuppressWarnings("unused")
-@Generated("526abc6976e1a1f21b5bf8b4a0e189e4")
+@Generated("65b92d044019e95e124139c42fa0a37c")
 public final class MapReplaceCodec {
     //hex: 0x010400
     public static final int REQUEST_MESSAGE_TYPE = 66560;
@@ -50,7 +50,6 @@ public final class MapReplaceCodec {
     private MapReplaceCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

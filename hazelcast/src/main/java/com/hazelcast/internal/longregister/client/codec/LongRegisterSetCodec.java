@@ -49,7 +49,6 @@ public final class LongRegisterSetCodec {
     private LongRegisterSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**

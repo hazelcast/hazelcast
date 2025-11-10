@@ -26,7 +26,6 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -61,7 +60,6 @@ public final class ExpirationManager implements LifecycleListener, PartitionLost
     private volatile ScheduledFuture<?> scheduledExpirationTask;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ExpirationManager(ClearExpiredRecordsTask task, NodeEngine nodeEngine) {
         this.task = task;
         this.nodeEngine = nodeEngine;

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * amount for acquiring the lock.
  */
 @SuppressWarnings("unused")
-@Generated("ff3e0fd1d7b99370cc30fdf0fb409088")
+@Generated("9e98407e186ad8c06bc107595913644b")
 public final class MapTryRemoveCodec {
     //hex: 0x010B00
     public static final int REQUEST_MESSAGE_TYPE = 68352;
@@ -54,7 +54,6 @@ public final class MapTryRemoveCodec {
     private MapTryRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

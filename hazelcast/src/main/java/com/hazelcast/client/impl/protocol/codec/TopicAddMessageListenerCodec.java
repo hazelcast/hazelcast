@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * MessageListener is called. More than one message listener can be added on one instance.
  */
 @SuppressWarnings("unused")
-@Generated("43d33c90577b5be87066b0cab812bbb4")
+@Generated("02c329fb88a9c004f36060491b796044")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;
@@ -58,7 +58,6 @@ public final class TopicAddMessageListenerCodec {
     private TopicAddMessageListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

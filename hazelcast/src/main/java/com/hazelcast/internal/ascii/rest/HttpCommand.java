@@ -19,7 +19,6 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.internal.ascii.TextCommandService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
 import java.net.HttpURLConnection;
@@ -36,7 +35,6 @@ import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_503;
 import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
-@SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
 public abstract class HttpCommand extends AbstractTextCommand {
 
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");

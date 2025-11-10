@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * events filtered by the given predicate.
  */
 @SuppressWarnings("unused")
-@Generated("35bccb21ec5691ef0162c45857e91c7c")
+@Generated("8c92e71ee489ebad249a1cb32eda95d5")
 public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
     //hex: 0x0D0A00
     public static final int REQUEST_MESSAGE_TYPE = 854528;
@@ -59,7 +59,6 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
     private ReplicatedMapAddEntryListenerToKeyWithPredicateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

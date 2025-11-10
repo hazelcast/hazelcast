@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -108,7 +107,6 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
         @Serial
         private static final long serialVersionUID = 1L;
 
-        @SuppressFBWarnings("SE_BAD_FIELD")
         private final JobConf jobConf;
         private final BiFunctionEx<K, V, R> projectionFn;
 
@@ -156,7 +154,6 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
         @Serial
         private static final long serialVersionUID = 1L;
 
-        @SuppressFBWarnings("SE_BAD_FIELD")
         private final JobConf jobConf;
         private final BiFunctionEx<K, V, R> projectionFn;
         private final List<IndexedInputSplit> assignedSplits;

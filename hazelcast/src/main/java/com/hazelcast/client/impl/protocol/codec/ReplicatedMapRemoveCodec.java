@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
 @SuppressWarnings("unused")
-@Generated("b286338be16b4d00e6c055c263143ac2")
+@Generated("de6ed1005310cf99a49ad3c0601db81d")
 public final class ReplicatedMapRemoveCodec {
     //hex: 0x0D0700
     public static final int REQUEST_MESSAGE_TYPE = 853760;
@@ -52,7 +52,6 @@ public final class ReplicatedMapRemoveCodec {
     private ReplicatedMapRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.tpcengine.util.ReflectionUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicLongArray;
@@ -76,7 +75,6 @@ public final class LatencyDistribution {
 
     public static final int BUCKET_COUNT = 31;
 
-    @SuppressFBWarnings("MS_MUTABLE_ARRAY")
     public static final String[] LATENCY_KEYS;
 
     static {

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all the entries with the given key.
  */
 @SuppressWarnings("unused")
-@Generated("5b30bc0eb152fc8ac82fe00dfd332600")
+@Generated("0ac606102437e5bd0341de2b72d314ed")
 public final class MultiMapDeleteCodec {
     //hex: 0x021600
     public static final int REQUEST_MESSAGE_TYPE = 136704;
@@ -50,7 +50,6 @@ public final class MultiMapDeleteCodec {
     private MultiMapDeleteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

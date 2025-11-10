@@ -20,7 +20,6 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT;
@@ -33,7 +32,6 @@ public class PartitionOperationThread extends OperationThread {
 
     OperationRunner[] partitionOperationRunners;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name,
                                     int threadId,
                                     OperationQueue queue,

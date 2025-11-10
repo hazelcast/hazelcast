@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
 @SuppressWarnings("unused")
-@Generated("f3cff7d05bedc60d614946ae60e73e39")
+@Generated("216acc6d827579c5773409c650e6b362")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;
@@ -60,7 +60,6 @@ public final class RingbufferReadManyCodec {
     private RingbufferReadManyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -118,7 +117,6 @@ public final class RingbufferReadManyCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

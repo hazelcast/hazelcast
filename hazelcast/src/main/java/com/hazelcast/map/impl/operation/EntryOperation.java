@@ -52,7 +52,6 @@ import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.wan.impl.CallerProvenance;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -343,9 +342,9 @@ public class EntryOperation extends LockAwareOperation
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
-            justification = "backupProcessor can indeed be null so check is not redundant")
+//    @SuppressFBWarnings(
+//            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+//            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
         if (offload && !steppedOperationOffloadEnabled()) {
             return null;

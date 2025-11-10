@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -46,7 +45,6 @@ public class PublishAllOperation extends AbstractNamedOperation
     public PublishAllOperation() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PublishAllOperation(String name, Data[] messages) {
         super(name);
         this.messages = messages;

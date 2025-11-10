@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * become available.
  */
 @SuppressWarnings("unused")
-@Generated("c185aed758cd4517704438b74055030f")
+@Generated("8c6c9d185425da0a0a7729a2d4a67872")
 public final class QueueOfferCodec {
     //hex: 0x030100
     public static final int REQUEST_MESSAGE_TYPE = 196864;
@@ -52,7 +52,6 @@ public final class QueueOfferCodec {
     private QueueOfferCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

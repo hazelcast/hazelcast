@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.util.executor;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -129,7 +128,6 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         return submit(task, null);
     }
 
-    @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
     private void addNewWorkerIfRequired() {
         if (size < maxPoolSize) {
             try {

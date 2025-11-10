@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * javax.cache.integration.CacheLoader might be called to retrieve the value of the key from any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("abf3fd455f7c28e40b6fffa55f727b07")
+@Generated("bfaf90a25d018d3f7c54d598185c1f21")
 public final class CacheGetCodec {
     //hex: 0x130D00
     public static final int REQUEST_MESSAGE_TYPE = 1248512;
@@ -51,7 +51,6 @@ public final class CacheGetCodec {
     private CacheGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

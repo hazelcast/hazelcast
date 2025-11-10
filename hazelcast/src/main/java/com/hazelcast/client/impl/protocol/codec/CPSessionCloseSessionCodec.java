@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Closes the given session on the given CP group
  */
 @SuppressWarnings("unused")
-@Generated("ce7373269cf818dd3420b2d1be989d19")
+@Generated("e7d9a93a1e61d1eb3ce1e746b7458b57")
 public final class CPSessionCloseSessionCodec {
     //hex: 0x1F0200
     public static final int REQUEST_MESSAGE_TYPE = 2032128;
@@ -51,7 +51,6 @@ public final class CPSessionCloseSessionCodec {
     private CPSessionCloseSessionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

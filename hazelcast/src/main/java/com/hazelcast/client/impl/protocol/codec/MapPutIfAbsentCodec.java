@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a value. Entry will expire and get evicted after the ttl.
  */
 @SuppressWarnings("unused")
-@Generated("87fb7f03bccca12fe3f6c09081466858")
+@Generated("74e8b6399a61e1772b3475fcdf0befc4")
 public final class MapPutIfAbsentCodec {
     //hex: 0x010E00
     public static final int REQUEST_MESSAGE_TYPE = 69120;
@@ -52,7 +52,6 @@ public final class MapPutIfAbsentCodec {
     private MapPutIfAbsentCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

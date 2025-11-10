@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.query.impl.Metadata;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -124,7 +123,6 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         }
     }
 
-    @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     private void updateValueMetadataIfNecessary(Data dataKey,
                                                 Object updateValue) {
         Object valueMetadata = null;

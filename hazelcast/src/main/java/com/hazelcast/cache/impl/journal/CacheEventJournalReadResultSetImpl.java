@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.internal.serialization.SerializationService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -41,7 +40,6 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
                 predicate == null ? null : new Predicate<>() {
                     @Override
                     @SuppressWarnings("unchecked")
-                    @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
                     public boolean test(InternalEventJournalCacheEvent e) {
                         return predicate.test((DeserializingEventJournalCacheEvent<K, V>) e);
                     }
@@ -79,7 +77,6 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
 
         @Override
         @SuppressWarnings("unchecked")
-        @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
         public T transform(InternalEventJournalCacheEvent input) {
             return projection.apply((DeserializingEventJournalCacheEvent<K, V>) input);
         }

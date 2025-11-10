@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -63,7 +62,6 @@ public class NonCompletableFuture extends CompletableFuture<Void> {
         throw new UnsupportedOperationException("This future can't be completed by an outside caller");
     }
 
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void internalComplete() {
         super.complete(null);
     }

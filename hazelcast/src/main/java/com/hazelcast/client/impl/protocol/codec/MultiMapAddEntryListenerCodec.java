@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
 @SuppressWarnings("unused")
-@Generated("660091f05b2b5570d968ba02c72a0537")
+@Generated("660d442e5989fffbea711ded71e1eeab")
 public final class MultiMapAddEntryListenerCodec {
     //hex: 0x020E00
     public static final int REQUEST_MESSAGE_TYPE = 134656;
@@ -59,7 +59,6 @@ public final class MultiMapAddEntryListenerCodec {
     private MultiMapAddEntryListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

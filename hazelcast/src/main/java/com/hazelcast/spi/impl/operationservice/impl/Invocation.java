@@ -58,7 +58,6 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.RejectedExecutionException;
@@ -389,8 +388,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         completeExceptionally(cause);
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
         if (!(op instanceof BlockingOperation)) {
             // if the call is not a BlockingOperation, then in case of a call-timeout, we are not going to retry;
@@ -562,8 +561,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private void doInvoke(boolean isAsync) {
         if (!engineActive()) {
             return;

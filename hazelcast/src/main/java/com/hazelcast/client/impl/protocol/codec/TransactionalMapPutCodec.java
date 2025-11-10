@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * current transaction context till transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("f9d8e321d8c6de520a315b370cb5bd32")
+@Generated("d33c33fb9607733b5820edebf805470b")
 public final class TransactionalMapPutCodec {
     //hex: 0x0E0600
     public static final int REQUEST_MESSAGE_TYPE = 919040;
@@ -54,7 +54,6 @@ public final class TransactionalMapPutCodec {
     private TransactionalMapPutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

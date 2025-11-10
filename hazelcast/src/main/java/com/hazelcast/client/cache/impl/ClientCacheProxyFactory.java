@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;
 import java.util.Set;
@@ -60,7 +59,6 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         }
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     void addCacheConfig(String cacheName, CacheConfig cacheConfig) {
         configs.putIfAbsent(cacheName, cacheConfig);
     }
@@ -77,7 +75,6 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         return configs.entrySet();
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private CacheConfig findCacheConfig(String cacheName) {
         CacheConfig cacheConfig = configs.get(cacheName);
         if (cacheConfig != null) {

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Cancels further execution and scheduling of the task
  */
 @SuppressWarnings("unused")
-@Generated("e09d6ebc7d800f0f450882b57e66da71")
+@Generated("8052623a6991d0b6d60c7e02fa8379c6")
 public final class ScheduledExecutorCancelFromPartitionCodec {
     //hex: 0x1A0900
     public static final int REQUEST_MESSAGE_TYPE = 1706240;
@@ -51,7 +51,6 @@ public final class ScheduledExecutorCancelFromPartitionCodec {
     private ScheduledExecutorCancelFromPartitionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies a function on the value, the actual stored value will not change
  */
 @SuppressWarnings("unused")
-@Generated("5537d6412a42ecc2f26f48d86c7d6176")
+@Generated("11217f096b9a3c431cb0c258249437f7")
 public final class AtomicLongApplyCodec {
     //hex: 0x090100
     public static final int REQUEST_MESSAGE_TYPE = 590080;
@@ -49,7 +49,6 @@ public final class AtomicLongApplyCodec {
     private AtomicLongApplyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

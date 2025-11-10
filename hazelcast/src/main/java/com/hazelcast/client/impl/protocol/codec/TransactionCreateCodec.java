@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a transaction with the given parameters.
  */
 @SuppressWarnings("unused")
-@Generated("aa366201e1b3ed91ce4d9b92b3d816a5")
+@Generated("6c9cf40a966d603351986ccbd0631dd7")
 public final class TransactionCreateCodec {
     //hex: 0x150200
     public static final int REQUEST_MESSAGE_TYPE = 1376768;
@@ -54,7 +54,6 @@ public final class TransactionCreateCodec {
     private TransactionCreateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

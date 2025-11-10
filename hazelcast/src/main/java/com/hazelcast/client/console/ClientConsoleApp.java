@@ -46,7 +46,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
 import org.jline.reader.LineReader;
@@ -237,7 +236,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     /**
      * Handle a command.
      */
-    @SuppressFBWarnings("DM_EXIT")
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     protected void handleCommand(String commandInputted) {
         String command = commandInputted;
@@ -533,7 +531,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    @SuppressFBWarnings("DM_DEFAULT_ENCODING")
     private void handleAt(String first) {
         if (first.length() == 1) {
             println("usage: @<file-name>");
@@ -574,7 +571,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    @SuppressFBWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
         Runtime runtime = Runtime.getRuntime();

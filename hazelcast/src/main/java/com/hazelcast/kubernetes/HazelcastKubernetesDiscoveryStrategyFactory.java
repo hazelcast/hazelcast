@@ -23,7 +23,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -112,7 +111,6 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
         return tokenFileExists() && defaultKubernetesMasterReachable();
     }
 
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     boolean tokenFileExists() {
         return new File(tokenPath).exists();
     }

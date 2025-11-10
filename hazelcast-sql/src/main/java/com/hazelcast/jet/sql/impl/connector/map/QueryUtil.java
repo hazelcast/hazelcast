@@ -41,7 +41,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -208,10 +207,10 @@ public final class QueryUtil {
         }
     }
 
-    @SuppressFBWarnings(
-            value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
-            justification = "the class is never java-serialized"
-    )
+//    @SuppressFBWarnings(
+//            value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
+//            justification = "the class is never java-serialized"
+//    )
     private static final class JoinProjection
             implements Projection<Entry<Object, Object>, JetSqlRow>, DataSerializable,
             NodeAware, SerializationServiceAware {

@@ -17,7 +17,6 @@
 
 package com.hazelcast.internal.util.collection;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -37,8 +36,8 @@ public class IntIterator implements Iterator<Integer> {
      * @param missingValue to indicate the value is missing, i.e. not present or null.
      * @param values       to iterate over.
      */
-    @SuppressFBWarnings(value = "EI2", justification =
-            "This is flyweight over caller's array, so no copying")
+//    @SuppressFBWarnings(value = "EI2", justification =
+//            "This is flyweight over caller's array, so no copying")
     public IntIterator(final int missingValue, final int[] values) {
         this.missingValue = missingValue;
         this.values = values;

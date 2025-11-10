@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("4cfd9961bd2ab3590eb5ffd7a64c2333")
+@Generated("5c5dbdf5d59284cec5f4b1f364f07296")
 public final class DynamicConfigAddCardinalityEstimatorConfigCodec {
     //hex: 0x1B0300
     public static final int REQUEST_MESSAGE_TYPE = 1770240;
@@ -54,7 +54,6 @@ public final class DynamicConfigAddCardinalityEstimatorConfigCodec {
     private DynamicConfigAddCardinalityEstimatorConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

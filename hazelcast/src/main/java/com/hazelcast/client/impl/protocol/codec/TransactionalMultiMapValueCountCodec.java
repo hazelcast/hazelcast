@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of values matching the given key in the multimap.
  */
 @SuppressWarnings("unused")
-@Generated("c252ad559d45529e5bfcccaea976efd3")
+@Generated("034a200ff210d916f0663c8bd2c9f9f1")
 public final class TransactionalMultiMapValueCountCodec {
     //hex: 0x0F0500
     public static final int REQUEST_MESSAGE_TYPE = 984320;
@@ -52,7 +52,6 @@ public final class TransactionalMultiMapValueCountCodec {
     private TransactionalMultiMapValueCountCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

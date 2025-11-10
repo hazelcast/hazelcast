@@ -22,7 +22,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.TypeConverters;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.HashMap;
 
@@ -150,7 +149,6 @@ public class RangeVisitor extends AbstractVisitor {
         GREATER
     }
 
-    @SuppressFBWarnings("SE_BAD_FIELD")
     private static class Ranges extends HashMap<String, Range> {
 
         public static final Ranges UNSATISFIABLE = new Ranges();

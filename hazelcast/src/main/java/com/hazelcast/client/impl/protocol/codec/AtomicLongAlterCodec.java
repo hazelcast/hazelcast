@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Alters the currently stored value by applying a function on it.
  */
 @SuppressWarnings("unused")
-@Generated("c7016519331ebb205f816b441859fedf")
+@Generated("0eb69dde912628ee8fab2e7cea1b721c")
 public final class AtomicLongAlterCodec {
     //hex: 0x090200
     public static final int REQUEST_MESSAGE_TYPE = 590336;
@@ -51,7 +51,6 @@ public final class AtomicLongAlterCodec {
     private AtomicLongAlterCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

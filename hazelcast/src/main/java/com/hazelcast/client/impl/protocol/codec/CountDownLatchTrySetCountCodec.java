@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and returns false
  */
 @SuppressWarnings("unused")
-@Generated("a2eba92ccc7a89b6b4b1f1ce9617936d")
+@Generated("5ec844b7e151b6b3899b8cbb472cab87")
 public final class CountDownLatchTrySetCountCodec {
     //hex: 0x0B0100
     public static final int REQUEST_MESSAGE_TYPE = 721152;
@@ -53,7 +53,6 @@ public final class CountDownLatchTrySetCountCodec {
     private CountDownLatchTrySetCountCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

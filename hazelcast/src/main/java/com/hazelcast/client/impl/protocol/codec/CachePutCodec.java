@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the entry with the given key, value and the expiry policy to the cache.
  */
 @SuppressWarnings("unused")
-@Generated("0a20ca75396e7919b438d5d689fb2c4b")
+@Generated("48563f404edabe054dbb2f09af4d12c3")
 public final class CachePutCodec {
     //hex: 0x131300
     public static final int REQUEST_MESSAGE_TYPE = 1250048;
@@ -51,7 +51,6 @@ public final class CachePutCodec {
     private CachePutCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

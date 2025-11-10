@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster using custom credentials.
  */
 @SuppressWarnings("unused")
-@Generated("33c4c6e8b6bb4910822ba0f139bfd38d")
+@Generated("599a2fab83148c5eab2c079bb5830391")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -61,7 +61,6 @@ public final class ClientAuthenticationCustomCodec {
     private ClientAuthenticationCustomCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -175,7 +174,6 @@ public final class ClientAuthenticationCustomCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

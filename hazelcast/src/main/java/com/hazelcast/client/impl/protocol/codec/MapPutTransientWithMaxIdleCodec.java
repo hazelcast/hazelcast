@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
 @SuppressWarnings("unused")
-@Generated("3839e41df0ebd232b6a85c7bf204e9b8")
+@Generated("265dadd40b92e677c358d62b9b5ab72c")
 public final class MapPutTransientWithMaxIdleCodec {
     //hex: 0x014500
     public static final int REQUEST_MESSAGE_TYPE = 83200;
@@ -53,7 +53,6 @@ public final class MapPutTransientWithMaxIdleCodec {
     private MapPutTransientWithMaxIdleCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

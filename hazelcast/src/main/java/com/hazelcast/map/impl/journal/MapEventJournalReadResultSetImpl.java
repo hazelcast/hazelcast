@@ -22,7 +22,6 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.internal.serialization.SerializationService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -74,7 +73,6 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
 
         @Override
         @SuppressWarnings("unchecked")
-        @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
         public T transform(InternalEventJournalMapEvent e) {
             return projection.apply((DeserializingEventJournalMapEvent<K, V>) e);
         }

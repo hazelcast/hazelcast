@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
 @SuppressWarnings("unused")
-@Generated("c1a8366d80512940a574b1d75377ec60")
+@Generated("1c84c24139aa2a22734b0853d881a7fd")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x131900
     public static final int REQUEST_MESSAGE_TYPE = 1251584;
@@ -60,7 +60,6 @@ public final class CacheAddPartitionLostListenerCodec {
     private CacheAddPartitionLostListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

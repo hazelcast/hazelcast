@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,7 +41,7 @@ public abstract class AbstractCursor<T> implements IdentifiedDataSerializable {
     protected AbstractCursor() {
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     protected AbstractCursor(List<T> entries, IterationPointer[] pointers) {
         this.objects = entries;
         this.pointers = pointers;
@@ -55,7 +54,7 @@ public abstract class AbstractCursor<T> implements IdentifiedDataSerializable {
     /**
      * Returns the iteration pointers representing the current iteration state.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
     public IterationPointer[] getIterationPointers() {
         return pointers;
     }

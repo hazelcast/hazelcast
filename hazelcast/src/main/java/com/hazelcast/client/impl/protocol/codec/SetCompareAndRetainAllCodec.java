@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * intersection of the two sets.
  */
 @SuppressWarnings("unused")
-@Generated("4f1333528db683f5d2f1e8501c580e96")
+@Generated("b851d9eeebc7d81dfda98b95061dde18")
 public final class SetCompareAndRetainAllCodec {
     //hex: 0x060800
     public static final int REQUEST_MESSAGE_TYPE = 395264;
@@ -53,7 +53,6 @@ public final class SetCompareAndRetainAllCodec {
     private SetCompareAndRetainAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

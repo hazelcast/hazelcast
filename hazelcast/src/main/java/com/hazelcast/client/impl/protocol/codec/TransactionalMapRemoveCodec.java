@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * context until the transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("9e039796bb261b195a28ec1bf6060ec6")
+@Generated("0556edc9a389bf902b2071a054eb9218")
 public final class TransactionalMapRemoveCodec {
     //hex: 0x0E0B00
     public static final int REQUEST_MESSAGE_TYPE = 920320;
@@ -53,7 +53,6 @@ public final class TransactionalMapRemoveCodec {
     private TransactionalMapRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

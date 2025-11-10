@@ -45,7 +45,6 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -231,8 +230,8 @@ public class ProcessorTasklet implements Tasklet {
         return queue;
     }
 
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
-            justification = "hazelcastInstance() can be null in TestProcessorContext")
+//    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
+//            justification = "hazelcastInstance() can be null in TestProcessorContext")
     private ILogger getLogger(@Nonnull Context context) {
         //noinspection ConstantConditions
         return context.hazelcastInstance() != null

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts an entry into this map if the specified key is not already associated with a value.
  */
 @SuppressWarnings("unused")
-@Generated("26604090d717032841bf1027e94aa9fd")
+@Generated("f5ee986370c8946629439be48ff1f876")
 public final class VectorCollectionPutIfAbsentCodec {
     //hex: 0x240200
     public static final int REQUEST_MESSAGE_TYPE = 2359808;
@@ -49,7 +49,6 @@ public final class VectorCollectionPutIfAbsentCodec {
     private VectorCollectionPutIfAbsentCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

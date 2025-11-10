@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the VectorDocument for the given key.
  */
 @SuppressWarnings("unused")
-@Generated("e288f7b093d30d40379ba65a0a32ab51")
+@Generated("b76db5dd43e329abf717b40db9a8a6b1")
 public final class VectorCollectionGetCodec {
     //hex: 0x240400
     public static final int REQUEST_MESSAGE_TYPE = 2360320;
@@ -49,7 +49,6 @@ public final class VectorCollectionGetCodec {
     private VectorCollectionGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

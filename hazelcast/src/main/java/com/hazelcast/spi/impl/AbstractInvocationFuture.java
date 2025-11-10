@@ -24,7 +24,6 @@ import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.WrappableException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,7 +61,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  *
  * @param <V>
  */
-@SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
+//@SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractInvocationFuture<V> extends InternalCompletableFuture<V> {
 

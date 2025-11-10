@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the element at the specified position in this list
  */
 @SuppressWarnings("unused")
-@Generated("c3e7afb41fb39f100842017f7c84d7c6")
+@Generated("01d8e1a715147047615f85cca58cd954")
 public final class ListGetCodec {
     //hex: 0x050F00
     public static final int REQUEST_MESSAGE_TYPE = 331520;
@@ -50,7 +50,6 @@ public final class ListGetCodec {
     private ListGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

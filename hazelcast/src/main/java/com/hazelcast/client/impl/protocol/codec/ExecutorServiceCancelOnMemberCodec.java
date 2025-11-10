@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Cancels the task running on the member with the given address.
  */
 @SuppressWarnings("unused")
-@Generated("986f1c2063f74f287303df85b4d93630")
+@Generated("d41c7e0f2bc5f9e09ce3c77d4c212ee1")
 public final class ExecutorServiceCancelOnMemberCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;
@@ -53,7 +53,6 @@ public final class ExecutorServiceCancelOnMemberCodec {
     private ExecutorServiceCancelOnMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

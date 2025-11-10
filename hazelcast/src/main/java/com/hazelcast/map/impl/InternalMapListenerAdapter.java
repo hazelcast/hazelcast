@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.listener.MapListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.map.impl.MapListenerAdaptors.createListenerAdapters;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -56,7 +55,7 @@ public class InternalMapListenerAdapter implements ListenerAdapter<IMapEvent> {
         listenerAdapter.onEvent(event);
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "listenerAdapters internal state is never changed")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "listenerAdapters internal state is never changed")
     public ListenerAdapter[] getListenerAdapters() {
         return listenerAdapters;
     }

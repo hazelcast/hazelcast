@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.NoSuchElementException;
@@ -165,7 +164,6 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
@@ -180,7 +178,6 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Nonnull
     @Override
     public ResultIterator<SqlRow> iterator() {

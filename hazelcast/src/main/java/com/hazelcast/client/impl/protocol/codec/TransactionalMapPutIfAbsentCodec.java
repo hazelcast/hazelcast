@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The object to be put will be accessible only in the current transaction context until the transaction is committed.
  */
 @SuppressWarnings("unused")
-@Generated("8306753dfc179143a9ff9e7a0d9006b7")
+@Generated("2afce03586cb4298ebe502cf57695a17")
 public final class TransactionalMapPutIfAbsentCodec {
     //hex: 0x0E0800
     public static final int REQUEST_MESSAGE_TYPE = 919552;
@@ -52,7 +52,6 @@ public final class TransactionalMapPutIfAbsentCodec {
     private TransactionalMapPutIfAbsentCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

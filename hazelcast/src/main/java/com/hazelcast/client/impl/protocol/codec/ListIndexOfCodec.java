@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * contain the element.
  */
 @SuppressWarnings("unused")
-@Generated("56e2524d8d0b903279ae59fc3875792e")
+@Generated("e4941f6b65d279bddcbfce71c8dd34dd")
 public final class ListIndexOfCodec {
     //hex: 0x051400
     public static final int REQUEST_MESSAGE_TYPE = 332800;
@@ -51,7 +51,6 @@ public final class ListIndexOfCodec {
     private ListIndexOfCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

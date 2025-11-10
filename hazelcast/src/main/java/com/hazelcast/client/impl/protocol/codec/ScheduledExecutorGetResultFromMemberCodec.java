@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The call will blocking until the result is ready.
  */
 @SuppressWarnings("unused")
-@Generated("51b3e236dfa0b139fa381e3dc63252b3")
+@Generated("eabbd19c21ca6adb16cdfd104f101d48")
 public final class ScheduledExecutorGetResultFromMemberCodec {
     //hex: 0x1A1000
     public static final int REQUEST_MESSAGE_TYPE = 1708032;
@@ -51,7 +51,6 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
     private ScheduledExecutorGetResultFromMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

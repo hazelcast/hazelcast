@@ -30,7 +30,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -80,7 +79,7 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
         pendingInPartition[partitionId]++;
     }
 
-    @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
+    //@SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
     public static class ApplyFnEntryProcessor<K, V, T>
             implements EntryProcessor<K, V, Void>, IdentifiedDataSerializable,
             SerializationServiceAware {

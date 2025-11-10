@@ -40,7 +40,6 @@ import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -77,7 +76,6 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         this(backupOp, originalCaller, replicaVersions, sync, -1);
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
@@ -90,12 +88,10 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         this.clientCorrelationId = clientCorrelationId;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
         this(backupOpData, originalCaller, replicaVersions, sync, -1);
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
         this.backupOpData = backupOpData;
         this.originalCaller = originalCaller;

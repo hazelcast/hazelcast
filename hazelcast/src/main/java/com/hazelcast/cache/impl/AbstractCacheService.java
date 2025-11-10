@@ -65,7 +65,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.wan.impl.WanReplicationService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -228,7 +227,6 @@ public abstract class AbstractCacheService implements ICacheService,
     }
 
     @Override
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public CachePartitionSegment[] getPartitionSegments() {
         return segments;
     }

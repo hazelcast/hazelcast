@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * rounded to the next closest second value.
  */
 @SuppressWarnings("unused")
-@Generated("f895474eb1f06f1f90bb1e5faeb7adba")
+@Generated("fa30eb70942f68a90f10c3ceeeb8bc40")
 public final class MapPutWithMaxIdleCodec {
     //hex: 0x014400
     public static final int REQUEST_MESSAGE_TYPE = 82944;
@@ -55,7 +55,6 @@ public final class MapPutWithMaxIdleCodec {
     private MapPutWithMaxIdleCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

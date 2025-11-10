@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the VectorDocuments closest to the given vector.
  */
 @SuppressWarnings("unused")
-@Generated("df577cb43fe21320fc6cd641948fc763")
+@Generated("75ab130f0b9494f851ffad04c220610a")
 public final class VectorCollectionSearchNearVectorCodec {
     //hex: 0x240800
     public static final int REQUEST_MESSAGE_TYPE = 2361344;
@@ -49,7 +49,6 @@ public final class VectorCollectionSearchNearVectorCodec {
     private VectorCollectionSearchNearVectorCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

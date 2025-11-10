@@ -18,7 +18,6 @@
 package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.internal.util.QuickMath;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -27,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /** Pad out a cacheline to the left of producer fields to prevent false sharing. */
-@SuppressFBWarnings(value = "UuF", justification = "Fields used for padding are unused programatically")
+//@SuppressFBWarnings(value = "UuF", justification = "Fields used for padding are unused programatically")
 class AbstractConcurrentArrayQueuePadding1 {
     @SuppressWarnings({"unused", "checkstyle:multiplevariabledeclarations"})
     protected long p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15;
@@ -46,7 +45,7 @@ class AbstractConcurrentArrayQueueProducer extends AbstractConcurrentArrayQueueP
 }
 
 /** Pad out a cacheline between the producer and consumer fields to prevent false sharing. */
-@SuppressFBWarnings(value = "UuF", justification = "Fields used for padding are unused programatically")
+//@SuppressFBWarnings(value = "UuF", justification = "Fields used for padding are unused programatically")
 class AbstractConcurrentArrayQueuePadding2 extends AbstractConcurrentArrayQueueProducer {
     @SuppressWarnings({"unused", "checkstyle:multiplevariabledeclarations"})
     protected long p16, p17, p18, p19, p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p30;
@@ -61,7 +60,7 @@ class AbstractConcurrentArrayQueueConsumer extends AbstractConcurrentArrayQueueP
 }
 
 /** Pad out a cacheline to the right of consumer fields to prevent false sharing. */
-@SuppressFBWarnings(value = "UuF", justification = "Fields used for padding are unused programatically")
+//@SuppressFBWarnings(value = "UuF", justification = "Fields used for padding are unused programatically")
 class AbstractConcurrentArrayQueuePadding3 extends AbstractConcurrentArrayQueueConsumer {
     @SuppressWarnings({"unused", "checkstyle:multiplevariabledeclarations"})
     protected long p31, p32, p33, p34, p35, p36, p37, p38, p39, p40, p41, p42, p43, p44, p45;

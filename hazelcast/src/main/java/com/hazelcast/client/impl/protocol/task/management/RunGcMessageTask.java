@@ -24,7 +24,6 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ManagementPermission;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.security.Permission;
 
@@ -36,7 +35,6 @@ public class RunGcMessageTask extends AbstractCallableMessageTask<Void> {
         super(clientMessage, node, connection);
     }
 
-    @SuppressFBWarnings("DM_GC")
     @Override
     protected Object call() throws Exception {
         System.gc();
