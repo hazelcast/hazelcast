@@ -802,7 +802,9 @@
                                 <artifact>*:*</artifact>
                                 <excludes>
                                     <exclude>module-info.class</exclude>
-                                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                                    <!-- We don't need to shade muli-release JAR content that targets a Java version lower than our minimum requirements -->
+                                    <exclude>META-INF/versions/9/**</exclude>
+                                    <exclude>META-INF/versions/11/**</exclude>
                                     <exclude>LICENSE</exclude>
                                     <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
