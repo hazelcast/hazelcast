@@ -51,7 +51,6 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -80,13 +79,6 @@ import static java.lang.System.getProperty;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity", "MethodCount"})
 public class MapContainerImpl implements MapContainer {
-
-    public static final String PROP_QUERY_EXPIRATION_CHECK_ENABLED
-            = "hazelcast.internal.map.query.expiration.check.enabled";
-    private static final boolean DEFAULT_QUERY_EXPIRATION_CHECK_ENABLED = true;
-    private static final HazelcastProperty QUERY_EXPIRATION_CHECK_ENABLED
-            = new HazelcastProperty(PROP_QUERY_EXPIRATION_CHECK_ENABLED,
-            DEFAULT_QUERY_EXPIRATION_CHECK_ENABLED);
 
     protected final String name;
     protected final String splitBrainProtectionName;
