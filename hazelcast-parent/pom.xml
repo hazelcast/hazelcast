@@ -84,7 +84,7 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
-        <checkstyle.version>12.1.1</checkstyle.version>
+        <checkstyle.version>12.1.2</checkstyle.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.4</avro.version>
