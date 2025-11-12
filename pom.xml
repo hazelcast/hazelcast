@@ -726,21 +726,26 @@
         </profile>
 
         <profile>
-            <id>release</id>
+            <id>maven-central</id>
+            <activation>
+                <property>
+                    <name>!maven.central.disable</name>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>release-repository</serverId>
-                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
-                            <stagingProfileId>com.hazelcast</stagingProfileId>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>com.hazelcast.maven</groupId>
                         <artifactId>attribution-maven-plugin</artifactId>

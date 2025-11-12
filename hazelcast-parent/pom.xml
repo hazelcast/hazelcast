@@ -1454,6 +1454,43 @@
             </build>
         </profile>
 
+        <profile>
+            <id>maven-central</id>
+            <activation>
+                <property>
+                    <name>!maven.central.disable</name>
+                </property>
+            </activation>
+            <properties>
+                <maven.central.autoReleaseAfterClose>true</maven.central.autoReleaseAfterClose>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.sonatype.plugins</groupId>
+                            <artifactId>nexus-staging-maven-plugin</artifactId>
+                            <version>1.7.0</version>
+                            <extensions>true</extensions>
+                            <configuration>
+                                <serverId>release-repository</serverId>
+                                <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
+                                <stagingProfileId>com.hazelcast</stagingProfileId>
+                                <autoReleaseAfterClose>${maven.central.autoReleaseAfterClose}</autoReleaseAfterClose>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <inherited>false</inherited>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <!--
         A range of Spring versions are supported - using profiles allow configuration of different major versions for testing
         The supported versions of Spring are featured in the public documentation
