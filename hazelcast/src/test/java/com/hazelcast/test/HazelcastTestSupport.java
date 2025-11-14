@@ -62,7 +62,6 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
 import org.junit.ClassRule;
-import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
@@ -113,11 +112,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -840,18 +840,30 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    /**
+     * alternative implementation of {@link org.assertj.core.api.AbstractIterableAssert#contains(Object...)} that does not rely
+     * on an implementation of {@link Collection#iterator()}
+     */
     public static <E> void assertContains(Collection<E> collection, E expected) {
         if (!collection.contains(expected)) {
             fail(format("Collection %s (%d) didn't contain expected '%s'", collection, collection.size(), expected));
         }
     }
 
+    /**
+     * alternative implementation of {@link org.assertj.core.api.AbstractIterableAssert#doesNotContain(Object...)} that does not
+     * rely on an implementation of {@link Collection#iterator()}
+     */
     public static <E> void assertNotContains(Collection<E> actual, E notExpected) {
         if (actual.contains(notExpected)) {
             fail(format("Collection %s (%d) contained unexpected '%s'", actual, actual.size(), notExpected));
         }
     }
 
+    /**
+     * alternative implementation of {@link org.assertj.core.api.AbstractIterableAssert#containsAll(Iterable)} that does not
+     * rely on an implementation of {@link Collection#iterator()}
+     */
     public static <E> void assertContainsAll(Collection<E> actual, Collection<E> expected) {
         if (!actual.containsAll(expected)) {
             fail(format("Collection %s (%d) didn't contain expected %s (%d)",
@@ -861,40 +873,34 @@ public abstract class HazelcastTestSupport {
 
     public static <E> void assertNotContainsAll(Collection<E> actual, Collection<E> notExpected) {
         if (actual.containsAll(notExpected)) {
-            fail(format("Collection %s (%d) contained unexpected %s (%d)",
-                    actual, actual.size(), notExpected, notExpected.size()));
+            fail("Collection %s (%d) contained unexpected %s (%d)", actual, actual.size(), notExpected, notExpected.size());
         }
     }
 
+    /** @see org.assertj.core.api.AbstractCharSequenceAssert#contains(CharSequence...) */
     public static void assertContains(String actual, String expected) {
-        if (actual == null || !actual.contains(expected)) {
-            fail(format("'%s' didn't contain expected '%s'", actual, expected));
-        }
+        assertThat(actual).contains(expected);
     }
 
+    /** @see org.assertj.core.api.AbstractCharSequenceAssert#doesNotContain(CharSequence...) */
     public static void assertNotContains(String actual, String notExpected) {
-        if (actual.contains(notExpected)) {
-            fail(format("'%s' contained unexpected '%s'", actual, notExpected));
-        }
+        assertThat(actual).doesNotContain(notExpected);
     }
 
+    /** @see org.assertj.core.api.AbstractCharSequenceAssert#startsWith(CharSequence) */
     public static void assertStartsWith(String expected, String actual) {
-        if (actual != null && actual.startsWith(expected)) {
-            return;
-        }
-        if (expected != null && actual != null) {
-            throw new ComparisonFailure("", expected, actual);
-        }
-        fail(formatAssertMessage(expected, null));
+        assertThat(actual).startsWith(expected);
     }
 
+    /**
+     * alternative implementation of {@link org.assertj.core.api.AbstractMapAssert#isEqualTo(Object)} that queries via
+     * {@link Properties#stringPropertyNames()}}
+     */
     public static void assertPropertiesEquals(Properties expected, Properties actual) {
-        if (expected == null && actual == null) {
-            return;
-        }
-
-        if (expected == null || actual == null) {
-            fail(formatAssertMessage(expected, actual));
+        if (expected == null) {
+            assertNull(actual);
+        } else {
+            assertNotNull(actual);
         }
 
         for (String key : expected.stringPropertyNames()) {
@@ -905,27 +911,6 @@ public abstract class HazelcastTestSupport {
             assertEquals("Unexpected value for key " + key + " from actual object", expected.getProperty(key),
                     actual.getProperty(key));
         }
-    }
-
-    private static String formatAssertMessage(Object expected, Object actual) {
-        StringBuilder assertMessage = new StringBuilder();
-        String expectedString = String.valueOf(expected);
-        String actualString = String.valueOf(actual);
-        if (expectedString.equals(actualString)) {
-            assertMessage.append("expected: ");
-            formatClassAndValue(assertMessage, expected, expectedString);
-            assertMessage.append(" but was: ");
-            formatClassAndValue(assertMessage, actual, actualString);
-        } else {
-            assertMessage.append("expected: <").append(expectedString)
-                    .append("> but was: <").append(actualString).append(">");
-        }
-        return assertMessage.toString();
-    }
-
-    private static void formatClassAndValue(StringBuilder message, Object value, String valueString) {
-        message.append((value == null) ? "null" : value.getClass().getName())
-                .append("<").append(valueString).append(">");
     }
 
     @SuppressWarnings("unchecked")
@@ -961,10 +946,9 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    /** @see org.assertj.core.api.AbstractIterableAssert#containsExactlyInAnyOrderElementsOf(Iterable) */
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
-        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
-                expected.size(), actual.size());
-        assertContainsAll(expected, actual);
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
@@ -977,16 +961,9 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertIterableEquals(Iterable<?> actual, Object... expected) {
-        List<Object> actualList = new ArrayList<>();
-        for (Object object : actual) {
-            actualList.add(object);
-        }
-
-        var expectedList = asList(expected);
-
-        assertEquals("size should match", expectedList.size(), actualList.size());
-        assertEquals(expectedList, actualList);
+    /** @see org.assertj.core.api.AbstractIterableAssert#containsExactly(Object...) */
+    public static <T> void assertIterableEquals(Iterable<T> actual, T... expected) {
+        assertThat(actual).containsExactly(expected);
     }
 
     public static void assertCompletesEventually(final Future<?> future) {
@@ -1002,7 +979,7 @@ public abstract class HazelcastTestSupport {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            fail(String.format("Future has not completed - %s", e));
+            fail("Future has not completed - %s", e);
         }
     }
 
@@ -1055,8 +1032,8 @@ public abstract class HazelcastTestSupport {
         for (int i = 0; i < instances.length; i++) {
             int clusterSize = getClusterSize(instances[i]);
             if (expectedSize != clusterSize) {
-                fail(format("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d",
-                        expectedSize, clusterSize, i));
+                fail("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d",
+                        expectedSize, clusterSize, i);
             }
         }
     }
