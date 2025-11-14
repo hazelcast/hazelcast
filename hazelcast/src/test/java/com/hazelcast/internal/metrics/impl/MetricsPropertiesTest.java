@@ -46,6 +46,10 @@ import static org.junit.Assert.assertSame;
 @Category(QuickTest.class)
 public class MetricsPropertiesTest extends HazelcastTestSupport {
 
+    /**
+     * Default test instances have {@link MetricsConfig#setCollectionFrequencySeconds(int)} set to 1,
+     */
+    private static final int DEFAULT_METRICS_COLLECTION_FREQ = 1;
     @Rule
     public OverridePropertyRule overrideFrequency =
             OverridePropertyRule.clear(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName());
@@ -100,7 +104,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getManagementCenterConfig().getRetentionSeconds(),
                 metricsConfig.getManagementCenterConfig().getRetentionSeconds());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
-        assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
+        assertEquals(DEFAULT_METRICS_COLLECTION_FREQ, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
         MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
@@ -155,7 +159,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getManagementCenterConfig().getRetentionSeconds(),
                 metricsConfig.getManagementCenterConfig().getRetentionSeconds());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
-        assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
+        assertEquals(DEFAULT_METRICS_COLLECTION_FREQ, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
         MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);

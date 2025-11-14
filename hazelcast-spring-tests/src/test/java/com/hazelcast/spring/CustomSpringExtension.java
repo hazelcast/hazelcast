@@ -94,7 +94,7 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     @Override
     public void afterAll(ExtensionContext context) {
         var applicationContext = (AbstractApplicationContext) SpringExtension.getApplicationContext(context);
-        if (!applicationContext.isRunning() || !applicationContext.isActive()) {
+        if (applicationContext.isRunning() || applicationContext.isActive()) {
             Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
             if (!instances.isEmpty()) {
                 LOGGER.warn("Instances haven't been shut down: " + instances);

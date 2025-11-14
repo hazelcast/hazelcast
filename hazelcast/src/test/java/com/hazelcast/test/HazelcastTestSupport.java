@@ -166,7 +166,6 @@ public abstract class HazelcastTestSupport {
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = %s", ASSERT_COMPLETES_STALL_TOLERANCE);
         String pmemDirectories = System.getProperty("hazelcast.persistent.memory");
         PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
-        ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
         Assertions.setMaxStackTraceElementsDisplayed(100);
     }
@@ -220,12 +219,14 @@ public abstract class HazelcastTestSupport {
     public static Config shrinkInstanceConfig(Config config) {
         smallInstanceConfigWithoutJetAndMetrics(config);
         config.getMetricsConfig().setEnabled(true);
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
         return config;
     }
 
     public static Config regularInstanceConfig() {
         Config config = new Config();
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         config.getJetConfig().setEnabled(true);
         return config;
     }
