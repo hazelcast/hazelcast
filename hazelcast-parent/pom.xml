@@ -379,7 +379,7 @@
             <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
-                <version>3.0</version>
+                <version>3.0.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
