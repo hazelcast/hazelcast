@@ -727,11 +727,6 @@
 
         <profile>
             <id>maven-central</id>
-            <activation>
-                <property>
-                    <name>!maven.central.disable</name>
-                </property>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
