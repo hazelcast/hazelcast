@@ -41,7 +41,7 @@ jobs:
             return checkoutRef
             
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         continue-on-error: true
         with:
           fetch-depth: 0
