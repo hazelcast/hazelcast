@@ -15,7 +15,7 @@ jobs:
    synchronize-pr-reviewers:
       runs-on: ubicloud-standard-2
       steps:
-         - uses: actions/checkout@v5
+         - uses: actions/checkout@v6
            with:
               sparse-checkout: .github
          - name: Copy reviewers to other PR
