@@ -401,8 +401,8 @@ public class EntryOperation extends LockAwareOperation
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
-                return oldValue instanceof Data
-                        ? toHeapData((Data) oldValue) : oldValue;
+                return oldValue instanceof Data d
+                        ? toHeapData(d) : oldValue;
             case OBJECT:
                 return getNodeEngine().getSerializationService()
                         .toData(oldValue);

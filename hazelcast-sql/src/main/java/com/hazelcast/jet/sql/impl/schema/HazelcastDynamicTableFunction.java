@@ -180,7 +180,7 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
 
     protected static String extractStringValue(SqlLiteral literal) {
         Object value = literal.getValue();
-        return value instanceof NlsString ? ((NlsString) value).getValue() : null;
+        return value instanceof NlsString ns ? ns.getValue() : null;
     }
 
     private static Map<String, String> extractMapValue(
@@ -211,15 +211,15 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
     ) {
         if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
             Object value = validator.getArgumentAt(((SqlDynamicParam) node).getIndex());
-            if (value instanceof String) {
-                return (String) value;
+            if (value instanceof String string) {
+                return string;
             }
         }
         if (SqlUtil.isLiteral(node)) {
             SqlLiteral literal = (SqlLiteral) node;
             Object value = literal.getValue();
-            if (value instanceof NlsString) {
-                return ((NlsString) value).getValue();
+            if (value instanceof NlsString string) {
+                return string.getValue();
             }
         }
         throw QueryException.error(

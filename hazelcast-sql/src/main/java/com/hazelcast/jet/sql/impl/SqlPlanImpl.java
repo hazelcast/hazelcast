@@ -1385,8 +1385,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
-                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression<?> pe
+                    ? pe.getIndex()
                     : -1;
         }
 
@@ -1625,8 +1625,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.updaterSupplier = updaterSupplier;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
-                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression<?> pe
+                    ? pe.getIndex()
                     : -1;
         }
 
@@ -1709,8 +1709,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
-                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression<?> pe
+                    ? pe.getIndex()
                     : -1;
         }
 

@@ -1017,32 +1017,32 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             } else if (prevFieldValue == null) {
                 cmp = fieldValue == null ? 0 : -1;
             } else {
-                if (fieldValue instanceof Integer) {
-                    cmp = ((Integer) prevFieldValue).compareTo((Integer) fieldValue);
-                } else if (fieldValue instanceof Long) {
-                    cmp = ((Long) prevFieldValue).compareTo((Long) fieldValue);
-                } else if (fieldValue instanceof Float) {
-                    cmp = ((Float) prevFieldValue).compareTo((Float) fieldValue);
-                } else if (fieldValue instanceof Double) {
-                    cmp = ((Double) prevFieldValue).compareTo((Double) fieldValue);
-                } else if (fieldValue instanceof String) {
-                    cmp = ((String) prevFieldValue).compareTo((String) fieldValue);
-                } else if (fieldValue instanceof Boolean) {
-                    cmp = ((Boolean) prevFieldValue).compareTo((Boolean) fieldValue);
-                } else if (fieldValue instanceof Byte) {
-                    cmp = ((Byte) prevFieldValue).compareTo((Byte) fieldValue);
-                } else if (fieldValue instanceof Short) {
-                    cmp = ((Short) prevFieldValue).compareTo((Short) fieldValue);
-                } else if (fieldValue instanceof BigDecimal) {
-                    cmp = ((BigDecimal) prevFieldValue).compareTo((BigDecimal) fieldValue);
-                } else if (fieldValue instanceof LocalTime) {
-                    cmp = ((LocalTime) prevFieldValue).compareTo((LocalTime) fieldValue);
-                } else if (fieldValue instanceof LocalDate) {
-                    cmp = ((LocalDate) prevFieldValue).compareTo((LocalDate) fieldValue);
-                } else if (fieldValue instanceof LocalDateTime) {
-                    cmp = ((LocalDateTime) prevFieldValue).compareTo((LocalDateTime) fieldValue);
-                } else if (fieldValue instanceof OffsetDateTime) {
-                    cmp = ((OffsetDateTime) prevFieldValue).compareTo((OffsetDateTime) fieldValue);
+                if (fieldValue instanceof Integer integer) {
+                    cmp = ((Integer) prevFieldValue).compareTo(integer);
+                } else if (fieldValue instanceof Long l) {
+                    cmp = ((Long) prevFieldValue).compareTo(l);
+                } else if (fieldValue instanceof Float f) {
+                    cmp = ((Float) prevFieldValue).compareTo(f);
+                } else if (fieldValue instanceof Double d) {
+                    cmp = ((Double) prevFieldValue).compareTo(d);
+                } else if (fieldValue instanceof String str) {
+                    cmp = ((String) prevFieldValue).compareTo(str);
+                } else if (fieldValue instanceof Boolean b) {
+                    cmp = ((Boolean) prevFieldValue).compareTo(b);
+                } else if (fieldValue instanceof Byte b) {
+                    cmp = ((Byte) prevFieldValue).compareTo(b);
+                } else if (fieldValue instanceof Short s) {
+                    cmp = ((Short) prevFieldValue).compareTo(s);
+                } else if (fieldValue instanceof BigDecimal d) {
+                    cmp = ((BigDecimal) prevFieldValue).compareTo(d);
+                } else if (fieldValue instanceof LocalTime t) {
+                    cmp = ((LocalTime) prevFieldValue).compareTo(t);
+                } else if (fieldValue instanceof LocalDate d) {
+                    cmp = ((LocalDate) prevFieldValue).compareTo(d);
+                } else if (fieldValue instanceof LocalDateTime t) {
+                    cmp = ((LocalDateTime) prevFieldValue).compareTo(t);
+                } else if (fieldValue instanceof OffsetDateTime t) {
+                    cmp = ((OffsetDateTime) prevFieldValue).compareTo(t);
                 } else {
                     fail("Not supported field type " + fieldValue.getClass());
                 }

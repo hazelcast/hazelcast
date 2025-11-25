@@ -65,8 +65,8 @@ public class GenericQueryTargetTest extends CoreSqlTestSupport {
 
     private void checkTarget(GenericQueryTarget target, TestObject originalObject, Object object) {
         // Set target.
-        if (object instanceof Data) {
-            target.setTarget(null, (Data) object);
+        if (object instanceof Data data) {
+            target.setTarget(null, data);
         } else {
             target.setTarget(object, null);
         }

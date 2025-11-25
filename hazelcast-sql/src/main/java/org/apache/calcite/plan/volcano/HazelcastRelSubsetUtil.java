@@ -42,8 +42,8 @@ public final class HazelcastRelSubsetUtil {
      *  Otherwise, return the node.
      */
     public static RelNode unwrapSubset(RelNode node) {
-        if (node instanceof RelSubset) {
-            RelNode best = ((RelSubset) node).getBest();
+        if (node instanceof RelSubset subset) {
+            RelNode best = subset.getBest();
             if (best != null) {
                 return unwrapSubset(best);
             }

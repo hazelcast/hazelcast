@@ -35,8 +35,8 @@ public final class SqlConnectorUtil {
     @SuppressWarnings("unchecked")
     public static <T extends SqlConnector> T getJetSqlConnector(Table table) {
         SqlConnector connector;
-        if (table instanceof JetTable) {
-            connector = ((JetTable) table).getSqlConnector();
+        if (table instanceof JetTable jetTable) {
+            connector = jetTable.getSqlConnector();
         } else if (table instanceof PartitionedMapTable) {
             connector = IMapSqlConnector.INSTANCE;
         } else {

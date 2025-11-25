@@ -129,8 +129,8 @@ public class SqlExtendedInsert extends SqlInsert {
 
         for (SqlNode fieldNode : getTargetColumnList()) {
             TableField field = fieldsMap.get(((SqlIdentifier) fieldNode).getSimple());
-            if (field instanceof MapTableField) {
-                QueryPath path = ((MapTableField) field).getPath();
+            if (field instanceof MapTableField tableField) {
+                QueryPath path = tableField.getPath();
                 if (path.getPath() == null
                         && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT
                         && !objectTypeSupportsTopLevelUpserts(field.getType())) {

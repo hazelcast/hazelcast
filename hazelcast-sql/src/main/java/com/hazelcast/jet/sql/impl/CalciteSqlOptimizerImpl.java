@@ -289,47 +289,47 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
         SqlNode node = parseResult.getNode();
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
-        if (node instanceof SqlCreateMapping) {
-            return toCreateMappingPlan(planKey, (SqlCreateMapping) node);
-        } else if (node instanceof SqlDropMapping) {
-            return toDropMappingPlan(planKey, (SqlDropMapping) node);
-        } else if (node instanceof SqlCreateIndex) {
-            return toCreateIndexPlan(planKey, (SqlCreateIndex) node);
-        } else if (node instanceof SqlDropIndex) {
-            return toDropIndexPlan(planKey, (SqlDropIndex) node);
-        } else if (node instanceof SqlCreateDataConnection) {
-            return toCreateDataConnectionPlan(planKey, (SqlCreateDataConnection) node);
-        } else if (node instanceof SqlDropDataConnection) {
-            return toDropDataConnectionPlan(planKey, (SqlDropDataConnection) node);
+        if (node instanceof SqlCreateMapping mapping1) {
+            return toCreateMappingPlan(planKey, mapping1);
+        } else if (node instanceof SqlDropMapping mapping) {
+            return toDropMappingPlan(planKey, mapping);
+        } else if (node instanceof SqlCreateIndex index1) {
+            return toCreateIndexPlan(planKey, index1);
+        } else if (node instanceof SqlDropIndex index) {
+            return toDropIndexPlan(planKey, index);
+        } else if (node instanceof SqlCreateDataConnection connection1) {
+            return toCreateDataConnectionPlan(planKey, connection1);
+        } else if (node instanceof SqlDropDataConnection connection) {
+            return toDropDataConnectionPlan(planKey, connection);
         } else if (node instanceof SqlCreateJob) {
             return toCreateJobPlan(planKey, parseResult, context, task.getSql());
-        } else if (node instanceof SqlAlterJob) {
-            return toAlterJobPlan(planKey, (SqlAlterJob) node);
-        } else if (node instanceof SqlDropJob) {
-            return toDropJobPlan(planKey, (SqlDropJob) node);
-        } else if (node instanceof SqlCreateSnapshot) {
-            return toCreateSnapshotPlan(planKey, (SqlCreateSnapshot) node);
-        } else if (node instanceof SqlDropSnapshot) {
-            return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
-        } else if (node instanceof SqlCreateView) {
-            return toCreateViewPlan(planKey, context, (SqlCreateView) node);
-        } else if (node instanceof SqlDropView) {
-            return toDropViewPlan(planKey, (SqlDropView) node);
-        } else if (node instanceof SqlDropType) {
-            return toDropTypePlan(planKey, (SqlDropType) node);
-        } else if (node instanceof SqlShowStatement) {
-            return toShowStatementPlan(planKey, (SqlShowStatement) node);
+        } else if (node instanceof SqlAlterJob job1) {
+            return toAlterJobPlan(planKey, job1);
+        } else if (node instanceof SqlDropJob job) {
+            return toDropJobPlan(planKey, job);
+        } else if (node instanceof SqlCreateSnapshot snapshot1) {
+            return toCreateSnapshotPlan(planKey, snapshot1);
+        } else if (node instanceof SqlDropSnapshot snapshot) {
+            return toDropSnapshotPlan(planKey, snapshot);
+        } else if (node instanceof SqlCreateView view1) {
+            return toCreateViewPlan(planKey, context, view1);
+        } else if (node instanceof SqlDropView view) {
+            return toDropViewPlan(planKey, view);
+        } else if (node instanceof SqlDropType type1) {
+            return toDropTypePlan(planKey, type1);
+        } else if (node instanceof SqlShowStatement statement1) {
+            return toShowStatementPlan(planKey, statement1);
         } else if (node instanceof SqlExplainStatement) {
             return toExplainStatementPlan(planKey, context, parseResult);
-        } else if (node instanceof SqlCreateType) {
-            return toCreateTypePlan(planKey, (SqlCreateType) node);
+        } else if (node instanceof SqlCreateType type) {
+            return toCreateTypePlan(planKey, type);
         } else {
             // only Select and DML are currently eligible for ANALYZE
             boolean analyze = false;
             SqlAnalyzeStatement analyzeStatement = null;
-            if (node instanceof SqlAnalyzeStatement) {
+            if (node instanceof SqlAnalyzeStatement statement) {
                 analyze = true;
-                analyzeStatement = (SqlAnalyzeStatement) node;
+                analyzeStatement = statement;
                 node = analyzeStatement.getQuery();
             }
 
@@ -440,7 +440,7 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                 false,
                 null
         );
-        assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
+        assert dmlPlan instanceof DmlPlan dp && dp.getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
                 planKey,
@@ -561,10 +561,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
 
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
+        if (physicalRel instanceof SelectByKeyMapPhysicalRel select) {
             assert !isCreateJob;
             checkIMapByKeyPlanIsAnalyzed(analyze);
-            SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -580,10 +579,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof InsertMapPhysicalRel) {
+        } else if (physicalRel instanceof InsertMapPhysicalRel insert) {
             assert !isCreateJob;
             checkIMapByKeyPlanIsAnalyzed(analyze);
-            InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
             return new IMapInsertPlan(
                     planKey,
                     insert.objectKey(),
@@ -594,10 +592,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                     permissions,
                     insert.keyParamIndex()
             );
-        } else if (physicalRel instanceof SinkMapPhysicalRel) {
+        } else if (physicalRel instanceof SinkMapPhysicalRel sink) {
             assert !isCreateJob;
             checkIMapByKeyPlanIsAnalyzed(analyze);
-            SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(
                     planKey,
                     sink.objectKey(),
@@ -607,10 +604,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
+        } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel update) {
             assert !isCreateJob;
             checkIMapByKeyPlanIsAnalyzed(analyze);
-            UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
             return new IMapUpdatePlan(
                     planKey,
                     update.objectKey(),
@@ -640,10 +636,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                     permissions,
                     analyze,
                     analyzeJobConfig);
-        } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
+        } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel delete) {
             assert !isCreateJob;
             checkIMapByKeyPlanIsAnalyzed(analyze);
-            DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(
                     planKey,
                     delete.objectKey(),
@@ -653,9 +648,9 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof TableModify) {
+        } else if (physicalRel instanceof TableModify modify) {
             checkDmlOperationWithView(physicalRel);
-            Operation operation = ((TableModify) physicalRel).getOperation();
+            Operation operation = modify.getOperation();
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
@@ -964,12 +959,12 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
                                     tableName, columnName)));
 
                     final RexNode rexNode = variant.get(columnName);
-                    if (rexNode instanceof RexDynamicParam) {
-                        convertedVariant.put(fieldName, visitor.visitDynamicParam((RexDynamicParam) rexNode));
+                    if (rexNode instanceof RexDynamicParam param) {
+                        convertedVariant.put(fieldName, visitor.visitDynamicParam(param));
                     }
 
-                    if (rexNode instanceof RexLiteral) {
-                        convertedVariant.put(fieldName, visitor.visitLiteral((RexLiteral) rexNode));
+                    if (rexNode instanceof RexLiteral literal) {
+                        convertedVariant.put(fieldName, visitor.visitLiteral(literal));
                     }
                 }
                 if (!convertedVariant.isEmpty()) {
@@ -1012,8 +1007,8 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
 
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            if (node instanceof ShouldNotExecuteRel) {
-                message = ((ShouldNotExecuteRel) node).message();
+            if (node instanceof ShouldNotExecuteRel rel) {
+                message = rel.message();
                 return;
             }
             super.visit(node, ordinal, parent);

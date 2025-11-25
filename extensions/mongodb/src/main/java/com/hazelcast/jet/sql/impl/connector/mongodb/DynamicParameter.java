@@ -45,8 +45,8 @@ public class DynamicParameter implements DynamicallyReplacedPlaceholder {
     }
 
     public static DynamicParameter matches(Object o) {
-        if (o instanceof String) {
-            Matcher matcher = PATTERN.matcher((String) o);
+        if (o instanceof String string) {
+            Matcher matcher = PATTERN.matcher(string);
             if (matcher.matches()) {
                 return new DynamicParameter(Integer.parseInt(matcher.group(1)));
             }

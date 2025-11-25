@@ -74,8 +74,8 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).connectorType().equals("type-1")));
-        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).connectorType().equals("type-2")));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping m1 && m1.connectorType().equals("type-1")));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping m2 && m2.connectorType().equals("type-2")));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, view(name, "type"));
 
         assertThat(storage.removeView(name)).isNotNull();
-        assertTrue(storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name)));
+        assertTrue(storage.allObjects().stream().noneMatch(o -> o instanceof View v && v.name().equals(name)));
     }
 
     @Test

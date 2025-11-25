@@ -134,8 +134,8 @@ public abstract class ExpressionValues implements Serializable {
                 return -1;
             }
             Expression<?> p = projection.get(fieldIndex);
-            if (p instanceof ParameterExpression) {
-                return ((ParameterExpression<?>) p).getIndex();
+            if (p instanceof ParameterExpression<?> expression) {
+                return expression.getIndex();
             }
             return -1;
         }

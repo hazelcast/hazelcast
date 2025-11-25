@@ -116,8 +116,7 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
     private static Row convertRow(Row row) {
         Object[] rowObj = row.getValues();
         for (int i = 0; i < rowObj.length; i++) {
-            if (rowObj[i] instanceof HazelcastJsonValue) {
-                HazelcastJsonValue value = (HazelcastJsonValue) rowObj[i];
+            if (rowObj[i] instanceof HazelcastJsonValue value) {
                 try {
                     if (Json.parse(value.getValue()) instanceof JsonObject) {
                         rowObj[i] = new JsonObjectWithRelaxedEquality(value);
@@ -144,8 +143,8 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof JsonObjectWithRelaxedEquality
-                    && SAME_ITEMS_ANY_ORDER.test(fields, ((JsonObjectWithRelaxedEquality) o).fields);
+            return o instanceof JsonObjectWithRelaxedEquality jowre
+                    && SAME_ITEMS_ANY_ORDER.test(fields, jowre.fields);
         }
 
         @Override

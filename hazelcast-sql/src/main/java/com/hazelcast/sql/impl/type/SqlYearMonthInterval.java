@@ -70,8 +70,8 @@ public class SqlYearMonthInterval implements IdentifiedDataSerializable, Compara
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SqlYearMonthInterval) {
-            SqlYearMonthInterval other = ((SqlYearMonthInterval) obj);
+        if (obj instanceof SqlYearMonthInterval interval) {
+            SqlYearMonthInterval other = interval;
 
             return months == other.months;
         }

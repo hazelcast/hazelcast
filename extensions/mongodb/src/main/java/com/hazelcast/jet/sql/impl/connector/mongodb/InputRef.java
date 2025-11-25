@@ -44,8 +44,8 @@ public class InputRef implements DynamicallyReplacedPlaceholder {
     }
 
     public static InputRef match(Object o) {
-        if (o instanceof String) {
-            Matcher matcher = PATTERN.matcher((String) o);
+        if (o instanceof String string) {
+            Matcher matcher = PATTERN.matcher(string);
             if (matcher.matches()) {
                 return new InputRef(Integer.parseInt(matcher.group(1)));
             }
@@ -54,8 +54,8 @@ public class InputRef implements DynamicallyReplacedPlaceholder {
         return null;
     }
     public static boolean matches(Object o) {
-        if (o instanceof String) {
-            Matcher matcher = PATTERN.matcher((String) o);
+        if (o instanceof String string) {
+            Matcher matcher = PATTERN.matcher(string);
             return matcher.matches();
         }
         return false;

@@ -1102,10 +1102,10 @@ public final class IndexResolver {
             // Compose the final filter based on the type of the last resolved filter.
             IndexFilter lastFilter = filters.get(filters.size() - 1);
 
-            if (lastFilter instanceof IndexEqualsFilter) {
-                return composeEqualsFilter(filters, (IndexEqualsFilter) lastFilter, indexType, indexComponentsCount);
-            } else if (lastFilter instanceof IndexCompositeFilter) {
-                return composeCompositeFilter(filters, (IndexCompositeFilter) lastFilter, indexType, indexComponentsCount);
+            if (lastFilter instanceof IndexEqualsFilter filter1) {
+                return composeEqualsFilter(filters, filter1, indexType, indexComponentsCount);
+            } else if (lastFilter instanceof IndexCompositeFilter filter) {
+                return composeCompositeFilter(filters, filter, indexType, indexComponentsCount);
             } else {
                 assert lastFilter instanceof IndexRangeFilter;
 
@@ -1198,8 +1198,8 @@ public final class IndexResolver {
         List<IndexFilter> newFilters = new ArrayList<>(lastFilter.getFilters().size());
 
         for (IndexFilter filter : lastFilter.getFilters()) {
-            if (filter instanceof IndexEqualsFilter) {
-                IndexFilter newFilter = composeEqualsFilter(filters, (IndexEqualsFilter) filter, indexType, indexComponentsCount);
+            if (filter instanceof IndexEqualsFilter equalsFilter) {
+                IndexFilter newFilter = composeEqualsFilter(filters, equalsFilter, indexType, indexComponentsCount);
 
                 if (newFilter == null) {
                     // Cannot create a filter for one of the values of the IN clause. Stop.
@@ -1207,8 +1207,8 @@ public final class IndexResolver {
                 }
 
                 newFilters.add(newFilter);
-            } else if (filter instanceof IndexRangeFilter) {
-                IndexFilter newFilter = composeRangeFilter(filters, (IndexRangeFilter) filter, indexType, indexComponentsCount);
+            } else if (filter instanceof IndexRangeFilter rangeFilter) {
+                IndexFilter newFilter = composeRangeFilter(filters, rangeFilter, indexType, indexComponentsCount);
                 newFilters.add(newFilter);
             }
         }

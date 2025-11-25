@@ -81,9 +81,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         SqlDataTypeSpec targetTypeSpec;
 
-        if (targetType instanceof HazelcastIntegerType) {
+        if (targetType instanceof HazelcastIntegerType type) {
             targetTypeSpec = new SqlDataTypeSpec(
-                    new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
+                    new HazelcastIntegerTypeNameSpec(type),
                     SqlParserPos.ZERO
             );
         } else if (targetType.getSqlTypeName() == ANY) {
@@ -241,8 +241,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return customTypesCoercion(source, target, ((SqlCall) rowElement).operand(0), scope);
         }
 
-        if (source instanceof HazelcastObjectType) {
-            return ((HazelcastObjectType) source).getTypeName()
+        if (source instanceof HazelcastObjectType type) {
+            return type.getTypeName()
                     .equals(((HazelcastObjectType) target).getTypeName());
         }
 
@@ -352,8 +352,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
      * @return Ordinal'th expression, never null
      */
     private SqlNode getNthExpr(SqlNode query, int ordinal, int sourceCount) {
-        if (query instanceof SqlInsert) {
-            SqlInsert insert = (SqlInsert) query;
+        if (query instanceof SqlInsert insert) {
             if (insert.getTargetColumnList() != null) {
                 return insert.getTargetColumnList().get(ordinal);
             } else {
@@ -362,14 +361,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                         ordinal,
                         sourceCount);
             }
-        } else if (query instanceof SqlUpdate) {
+        } else if (query instanceof SqlUpdate update) {
             // trailing elements of selectList are equal to elements of sourceExpressionList
             // see JetSqlValidator.validateUpdate()
-            SqlUpdate update = (SqlUpdate) query;
             SqlNodeList selectList = update.getSourceSelect().getSelectList();
             return selectList.get(selectList.size() - sourceCount + ordinal);
-        } else if (query instanceof SqlSelect) {
-            SqlSelect select = (SqlSelect) query;
+        } else if (query instanceof SqlSelect select) {
             if (select.getSelectList().size() == sourceCount) {
                 return select.getSelectList().get(ordinal);
             } else {

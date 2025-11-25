@@ -223,8 +223,8 @@ public class QueryConverter {
 
             @Override
             public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-                if (node instanceof LogicalFilter) {
-                    RexSubQuery exists = getExists((LogicalFilter) node);
+                if (node instanceof LogicalFilter filter) {
+                    RexSubQuery exists = getExists(filter);
                     if (exists != null) {
                         found |= depth > 0;
                         depth++;

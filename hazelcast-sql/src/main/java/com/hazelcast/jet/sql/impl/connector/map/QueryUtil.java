@@ -94,8 +94,8 @@ public final class QueryUtil {
     private static Comparable<?> asComparable(Object value) {
         if (value == null) {
             return null;
-        } else if (value instanceof Comparable) {
-            return (Comparable<?>) value;
+        } else if (value instanceof Comparable<?> comparable) {
+            return comparable;
         } else {
             throw QueryException.error("JOIN not supported for " + value.getClass() + ": not comparable");
         }
@@ -145,8 +145,7 @@ public final class QueryUtil {
                 result.add(descending ? IndexIterationPointer.ALL_DESC : IndexIterationPointer.ALL);
             }
         }
-        if (indexFilter instanceof IndexRangeFilter) {
-            IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
+        if (indexFilter instanceof IndexRangeFilter rangeFilter) {
 
             if (rangeFilter.getFrom() == null && rangeFilter.getTo() == null) {
                 // IS NOT NULL range
@@ -193,14 +192,12 @@ public final class QueryUtil {
 
             result.add(IndexIterationPointer.create(
                     from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
-        } else if (indexFilter instanceof IndexEqualsFilter) {
-            IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
+        } else if (indexFilter instanceof IndexEqualsFilter equalsFilter) {
             Comparable<?> value = equalsFilter.getComparable(evalContext);
             // Note: this branch is also used for IS NULL, but null value in IndexEqualsFilter
             // is mapped to NULL by getComparable, so we can easily use it in the same way as ordinary values.
             result.add(IndexIterationPointer.create(value, true, value, true, descending, null));
-        } else if (indexFilter instanceof IndexCompositeFilter) {
-            IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;
+        } else if (indexFilter instanceof IndexCompositeFilter inFilter) {
             for (IndexFilter filter : inFilter.getFilters()) {
                 createFromIndexFilterInt(filter, compositeIndex, descending, evalContext, result);
             }

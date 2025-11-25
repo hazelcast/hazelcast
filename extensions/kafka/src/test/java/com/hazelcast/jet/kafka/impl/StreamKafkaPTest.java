@@ -606,8 +606,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             long idleTimeoutMillis
     ) {
         ToLongFunctionEx<T> timestampFn = e ->
-                e instanceof Entry
-                        ? (int) ((Entry<?, ?>) e).getKey()
+                e instanceof Entry<?, ?> entry
+                        ? (int) entry.getKey()
                         : currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);

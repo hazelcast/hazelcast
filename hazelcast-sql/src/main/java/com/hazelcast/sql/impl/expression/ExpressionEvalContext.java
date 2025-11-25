@@ -48,16 +48,14 @@ public interface ExpressionEvalContext {
     static ExpressionEvalContext from(Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
 
-        if (ctx instanceof Contexts.ProcSupplierCtx) {
-            Contexts.ProcSupplierCtx pCtx = (Contexts.ProcSupplierCtx) ctx;
+        if (ctx instanceof Contexts.ProcSupplierCtx pCtx) {
             return new ExpressionEvalContextImpl(
                     requireNonNull(arguments),
                     pCtx.serializationService(),
                     pCtx.nodeEngine(),
                     pCtx
             );
-        } else if (ctx instanceof Contexts.MetaSupplierCtx) {
-            MetaSupplierCtx mCtx = (Contexts.MetaSupplierCtx) ctx;
+        } else if (ctx instanceof MetaSupplierCtx mCtx) {
             // Note that additional serializers configured for the job are not available in PMS.
             // Currently this is not needed.
             return new ExpressionEvalContextImpl(

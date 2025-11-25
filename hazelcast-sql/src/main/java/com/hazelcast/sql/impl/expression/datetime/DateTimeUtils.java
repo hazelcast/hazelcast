@@ -50,16 +50,16 @@ public final class DateTimeUtils {
     }
 
     public static double extractField(Object object, ExtractField field) {
-        if (object instanceof OffsetDateTime) {
-            return field.extract((OffsetDateTime) object);
-        } else if (object instanceof ZonedDateTime) {
-            return field.extract(((ZonedDateTime) object).toOffsetDateTime());
-        } else if (object instanceof LocalDateTime) {
-            return field.extract((LocalDateTime) object);
-        } else if (object instanceof LocalDate) {
-            return field.extract((LocalDate) object);
-        } else if (object instanceof LocalTime) {
-            return field.extract((LocalTime) object);
+        if (object instanceof OffsetDateTime time) {
+            return field.extract(time);
+        } else if (object instanceof ZonedDateTime time) {
+            return field.extract(time.toOffsetDateTime());
+        } else if (object instanceof LocalDateTime time) {
+            return field.extract(time);
+        } else if (object instanceof LocalDate date) {
+            return field.extract(date);
+        } else if (object instanceof LocalTime time) {
+            return field.extract(time);
         } else {
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(object.getClass());
             throw new IllegalArgumentException("Cannot extract field from " + type.getTypeFamily().getPublicType());

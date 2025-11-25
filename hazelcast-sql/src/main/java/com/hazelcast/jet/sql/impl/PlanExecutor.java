@@ -740,8 +740,7 @@ public class PlanExecutor {
 
             // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
             final List<String> orderedKeyAttributes = new ArrayList<>();
-            if (strategy instanceof AttributePartitioningStrategy) {
-                final var attributeStrategy = (AttributePartitioningStrategy) strategy;
+            if (strategy instanceof AttributePartitioningStrategy attributeStrategy) {
                 orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
             } else {
                 orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
@@ -809,8 +808,8 @@ public class PlanExecutor {
 
     private static int findQueryExceptionCode(Throwable t) {
         while (t != null) {
-            if (t instanceof QueryException) {
-                return ((QueryException) t).getCode();
+            if (t instanceof QueryException exception) {
+                return exception.getCode();
             }
             if (isTopologyException(t)) {
                 return SqlErrorCode.TOPOLOGY_CHANGE;

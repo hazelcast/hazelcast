@@ -95,8 +95,8 @@ public class FieldAccessExpression<T> implements Expression<T> {
         }
 
         try {
-            Object value = result instanceof GenericRecord
-                    ? AvroQueryTarget.extractValue((GenericRecord) result, name)
+            Object value = result instanceof GenericRecord gr
+                    ? AvroQueryTarget.extractValue(gr, name)
                     : Extractors.newBuilder(context.getSerializationService())
                             .setGetterCacheSupplier(() -> getterCache)
                             .build().extract(result, name, useLazyDeserialization);

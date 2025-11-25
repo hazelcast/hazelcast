@@ -73,9 +73,9 @@ public class DataConnectionStorageTest extends SimpleTestInClusterSupport {
         assertThat(storage.putIfAbsent(name, dataConnection(name, "type-1", true))).isTrue();
         assertThat(storage.putIfAbsent(name, dataConnection(name, "type-2", false))).isFalse();
         assertTrue(storage.allObjects().stream()
-                .anyMatch(dl -> dl instanceof DataConnectionCatalogEntry && ((DataConnectionCatalogEntry) dl).type().equals("type-1")));
+                .anyMatch(dl -> dl instanceof DataConnectionCatalogEntry dcce && dcce.type().equals("type-1")));
         assertTrue(storage.allObjects().stream()
-                .noneMatch(dl -> dl instanceof DataConnectionCatalogEntry && ((DataConnectionCatalogEntry) dl).type().equals("type-2")));
+                .noneMatch(dl -> dl instanceof DataConnectionCatalogEntry dcce && dcce.type().equals("type-2")));
     }
 
     @Test

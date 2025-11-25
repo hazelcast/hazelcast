@@ -643,10 +643,10 @@ public abstract class Formatter {
                     if (!(g instanceof Anchorable) || ((Anchorable) g).isAnchored()) {
                         offerSign = i;
                     }
-                    if (g instanceof PatternElement && ((PatternElement) g).isNegativeSign()) {
+                    if (g instanceof PatternElement element && element.isNegativeSign()) {
                         negative = true;
                         if (g == PatternElement.BR || g == PatternElement.B) {
-                            bracket = (PatternElement) g;
+                            bracket = element;
                         }
                     }
                 }
@@ -686,10 +686,9 @@ public abstract class Formatter {
                 // f: Accumulate the padding space until a fixed element or the end of the mask is encountered
                 for (int i = 0, d = 0, f = 0; i < groups.size();) {
                     Object g = groups.get(i);
-                    if (g instanceof Literal) {
-                        parts.add(((Literal) g).contents);
-                    } else if (g instanceof PatternElement) {
-                        PatternElement p = (PatternElement) g;
+                    if (g instanceof Literal literal) {
+                        parts.add(literal.contents);
+                    } else if (g instanceof PatternElement p) {
                         if (p.isSign()) {
                             char c = p.getSign(pre, negative);
                             if (c != ' ') {
@@ -739,24 +738,24 @@ public abstract class Formatter {
                         } else if (padding) {
                             f++;
                         }
-                    } else if (g instanceof Integer) {
+                    } else if (g instanceof Integer gInteger) {
                         if (overflow) {
                             StringBuilder r = new StringBuilder();
-                            for (int j = 0; j < (int) g; j++) {
+                            for (int j = 0; j < gInteger; j++) {
                                 r.append('#');
                             }
                             parts.add(r);
                         } else if (d < digits.length()) {
-                            int e = Math.min(d + (int) g, digits.length());
+                            int e = Math.min(d + gInteger, digits.length());
                             StringBuilder r = new StringBuilder().append(digits, d, e);
                             parts.add(pre ? r.reverse() : r);
                             if (padding) {
-                                f += d + (int) g - e;
+                                f += d + gInteger - e;
                             }
                         } else if (padding) {
-                            f += (int) g;
+                            f += gInteger;
                         }
-                        d += (int) g;
+                        d += gInteger;
                     }
 
                     i++;

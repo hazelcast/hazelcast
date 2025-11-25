@@ -485,8 +485,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     private String getNamedTaskName(Object command) {
-        if (command instanceof AbstractTaskDecorator) {
-            NamedTask namedTask = ((AbstractTaskDecorator<?>) command).undecorateTo(NamedTask.class);
+        if (command instanceof AbstractTaskDecorator<?> decorator) {
+            NamedTask namedTask = decorator.undecorateTo(NamedTask.class);
             if (namedTask != null) {
                 return namedTask.getName();
             }
