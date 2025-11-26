@@ -88,6 +88,7 @@ import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -1148,9 +1149,9 @@ abstract class MapProxySupport<K, V>
             List<Future> futures = new ArrayList<>();
             for (Entry<Integer, Object> entry : results.entrySet()) {
                 Integer partitionId = entry.getKey();
-                Long count = ((Long) entry.getValue());
-                if (count != 0) {
-                    Operation operation = new AwaitMapFlushOperation(name, count);
+                Long sequence = ((Long) entry.getValue());
+                if (sequence != 0) {
+                    Operation operation = new AwaitMapFlushOperation(name, sequence);
                     futures.add(operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId));
                 }
             }
@@ -1158,6 +1159,50 @@ abstract class MapProxySupport<K, V>
             for (Future future : futures) {
                 future.get();
             }
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public CompletableFuture<Void> flushAsync() {
+        return flushAsync(null);
+    }
+
+    /**
+     * @param partitionsToFlush optional list of partitions to be flushed.
+     *                          If not provided, all partitions are flushed.
+     *
+     * @implNote The implementation is almost identical to {@link #flush()}, but there are some subtle differences
+     *           between sync and async invocations (async partition invocation can be performed from partition thread
+     *           for any partitions, sync partition invocation only for the same partition/partition thread
+     *           and in such case it will run directly - see {@link OperationExecutor#runOrExecute(Operation)}).
+     *           They might not matter in this case. If that turns out to be true,
+     *           {@link #flush()} could be implemented as {@code flushAsync().get()}.
+     * @see #flush()
+     */
+    public CompletableFuture<Void> flushAsync(@Nullable Collection<Integer> partitionsToFlush) {
+        try {
+            MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);
+            BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
+            CompletableFuture<Map<Integer, Object>> flushInvokeFuture;
+
+            if (partitionsToFlush != null) {
+                flushInvokeFuture = operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsToFlush);
+            } else {
+                flushInvokeFuture = operationService.invokeOnAllPartitionsAsync(SERVICE_NAME, operationFactory);
+            }
+            return flushInvokeFuture.thenComposeAsync(results -> {
+                List<CompletableFuture<?>> futures = new ArrayList<>();
+                for (Entry<Integer, Object> entry : results.entrySet()) {
+                    Integer partitionId = entry.getKey();
+                    Long sequence = ((Long) entry.getValue());
+                    if (sequence != 0) {
+                        Operation operation = new AwaitMapFlushOperation(name, sequence);
+                        futures.add(operationService.invokeOnPartitionAsync(MapService.SERVICE_NAME, operation, partitionId));
+                    }
+                }
+                return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+            }, CALLER_RUNS);
         } catch (Throwable t) {
             throw rethrow(t);
         }
