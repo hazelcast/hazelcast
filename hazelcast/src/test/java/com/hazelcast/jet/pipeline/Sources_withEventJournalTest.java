@@ -40,8 +40,6 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -88,18 +86,13 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         dataConnectionConfig.setType("HZ");
 
         // Read XML and set as DataConnectionConfig
-        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName);
+        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName, remoteHz);
         dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
             hazelcastInstanceConfig.addDataConnectionConfig(dataConnectionConfig);
         }
-    }
-
-    private static String readLocalClusterConfig(String file, String clusterName) throws IOException {
-        String str = Files.readString(Paths.get("src", "test", "resources", file));
-        return str.replace("$CLUSTER_NAME$", clusterName);
     }
 
     @AfterClass
@@ -169,13 +162,12 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         final String HZ_CLIENT_YAML_EXTERNAL_REF = "hzclientyamlexternalref";
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
-            Config config = hazelcastInstance.getConfig();
-
             DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(HZ_CLIENT_YAML_EXTERNAL_REF);
             dataConnectionConfig.setType("HZ");
 
             // Read YAML and set as DataConnectionConfig
-            String yamlString = readLocalClusterConfig("hazelcast-client-test-external.yaml", remoteHzClientConfig.getClusterName());
+            String yamlString = readLocalClusterConfig("hazelcast-client-test-external.yaml", remoteHzClientConfig.getClusterName(),
+                                                       remoteHz);
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_YML, yamlString);
 
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();

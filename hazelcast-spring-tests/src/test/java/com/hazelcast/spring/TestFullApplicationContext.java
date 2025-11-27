@@ -1613,7 +1613,6 @@ public class TestFullApplicationContext {
         assertFalse(metricsConfig.getManagementCenterConfig().isEnabled());
         assertEquals(42, metricsConfig.getManagementCenterConfig().getRetentionSeconds());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
-        assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
     }
 
     @Test

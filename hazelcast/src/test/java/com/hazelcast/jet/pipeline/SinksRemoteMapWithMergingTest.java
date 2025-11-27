@@ -30,15 +30,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
-import static java.nio.file.Files.readAllBytes;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,19 +65,13 @@ public class SinksRemoteMapWithMergingTest extends PipelineTestSupport {
         dataConnectionConfig.setType("HZ");
 
         // Read XML and set as DataConnectionConfig
-        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName);
+        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName, remoteHz);
         dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
             hazelcastInstanceConfig.addDataConnectionConfig(dataConnectionConfig);
         }
-    }
-
-    private static String readLocalClusterConfig(String file, String clusterName) throws IOException {
-        byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", file));
-        return new String(bytes, StandardCharsets.UTF_8)
-                .replace("$CLUSTER_NAME$", clusterName);
     }
 
     @AfterClass
