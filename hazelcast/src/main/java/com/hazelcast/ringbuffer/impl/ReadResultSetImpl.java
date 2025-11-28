@@ -55,11 +55,13 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
+
     private transient int minSize;
     private transient int maxSize;
     private transient IFunction<O, Boolean> filter;
     private transient Predicate<? super O> predicate;
     private transient Projection<? super O, E> projection;
+    private transient boolean markNextEventAsLostEventsDetected;
 
     private Data[] items;
     private long[] seqs;
@@ -236,5 +238,15 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         }
         seqs = in.readLongArray();
         nextSeq = in.readLong();
+    }
+
+    public void markAsLostEventDetected() {
+        this.markNextEventAsLostEventsDetected = true;
+    }
+
+    protected boolean getAndClearLostEventsFlag() {
+        var r =  markNextEventAsLostEventsDetected;
+        this.markNextEventAsLostEventsDetected = false;
+        return r;
     }
 }

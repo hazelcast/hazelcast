@@ -42,17 +42,21 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.journal.EventJournalReadOperation.NEWEST_INITIAL_SEQUENCE;
+import static com.hazelcast.internal.journal.EventJournalReadOperation.OLDEST_INITIAL_SEQUENCE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.EVICTED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.LOADED;
 import static com.hazelcast.test.Accessors.getNode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -65,6 +69,7 @@ import static org.junit.Assert.assertTrue;
  * @param <EJ_TYPE> the type of the event journal event
  */
 public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTestSupport {
+    protected static final int JOURNAL_CAPACITY_PER_PARTITION = 500;
     private static final Random RANDOM = new Random();
 
     protected HazelcastInstance[] instances;
@@ -85,7 +90,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         int defaultPartitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
-                .setCapacity(500 * defaultPartitionCount);
+                .setCapacity(JOURNAL_CAPACITY_PER_PARTITION * defaultPartitionCount);
         Config config = super.getConfig();
         config.getMapConfig("default").setEventJournalConfig(eventJournalConfig);
         config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
@@ -496,6 +501,86 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         callbackStage.toCompletableFuture().join();
     }
 
+    @Test
+    public void someEventLostThenNotify() throws ExecutionException, InterruptedException {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        var key = generateKeyForPartition(instances[0], 0);
+        for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION + 1; i++) {
+            context.dataAdapter.put(key, i);
+        }
+        var expectedSize = JOURNAL_CAPACITY_PER_PARTITION / 2;
+        var result = readFromEventJournal(context.dataAdapter, 0,
+                expectedSize, 0, TRUE_PREDICATE, IDENTITY_FUNCTION);
+        ReadResultSet<EJ_TYPE> items = result.toCompletableFuture().get();
+
+        assertThat(items.size()).isEqualTo(expectedSize);
+        assertThat(isAfterLostEvents(items.get(0))).isTrue();
+        for (int i = 1; i < items.size(); i++) {
+            assertThat(isAfterLostEvents(items.get(i))).isFalse();
+        }
+    }
+
+    @Test
+    public void noEventLostThenNoEventLostMarker() throws ExecutionException, InterruptedException {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        var key = generateKeyForPartition(instances[0], 0);
+        for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION; i++) {
+            context.dataAdapter.put(key, i);
+        }
+        var expectedSize = JOURNAL_CAPACITY_PER_PARTITION / 2;
+        var result = readFromEventJournal(context.dataAdapter, 0,
+                expectedSize, 0, TRUE_PREDICATE, IDENTITY_FUNCTION);
+        ReadResultSet<EJ_TYPE> items = result.toCompletableFuture().get();
+
+        assertThat(items.size()).isEqualTo(expectedSize);
+        for (int i = 0; i < items.size(); i++) {
+            assertThat(isAfterLostEvents(items.get(i))).isFalse();
+        }
+    }
+
+    @Test
+    public void startFromOldestSequence() throws ExecutionException, InterruptedException {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        var key = generateKeyForPartition(instances[0], 0);
+        for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION; i++) {
+            context.dataAdapter.put(key, i);
+        }
+        var result = readFromEventJournal(context.dataAdapter, OLDEST_INITIAL_SEQUENCE,
+                1, 0, TRUE_PREDICATE, IDENTITY_FUNCTION);
+        ReadResultSet<EJ_TYPE> items = result.toCompletableFuture().get();
+
+        assertThat(items.size()).isEqualTo(1);
+        assertValueEquals(items.get(0), 0);
+    }
+
+    @Test(timeout = 5000)
+    public void startFromNewestSequence() throws ExecutionException, InterruptedException {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        var key = generateKeyForPartition(instances[0], 0);
+        for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION; i++) {
+            context.dataAdapter.put(key, i);
+        }
+        var result = readFromEventJournal(context.dataAdapter, NEWEST_INITIAL_SEQUENCE,
+                1, 0, TRUE_PREDICATE, IDENTITY_FUNCTION);
+        var future = result.toCompletableFuture();
+        // A put operation may occur before the read operation actually starts,
+        // so to avoid race conditions, we repeat the put until the read is completed.
+        while (!future.isDone()) {
+            context.dataAdapter.put(key, JOURNAL_CAPACITY_PER_PARTITION);
+        }
+        ReadResultSet<EJ_TYPE> items = future.get();
+
+        assertThat(items.size()).isEqualTo(1);
+        assertValueEquals(items.get(0), JOURNAL_CAPACITY_PER_PARTITION);
+    }
+
+    protected abstract boolean isAfterLostEvents(EJ_TYPE event);
+
+    protected abstract void assertValueEquals(EJ_TYPE event, Object expectedValue);
     /**
      * Returns an execution callback for an event journal read operation. The
      * callback expects a single

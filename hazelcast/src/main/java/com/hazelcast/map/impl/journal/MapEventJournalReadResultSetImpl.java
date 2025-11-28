@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -48,7 +48,7 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalMapEvent e = (InternalEventJournalMapEvent) item;
         final DeserializingEventJournalMapEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalMapEvent<>(serializationService, e);
+                = new DeserializingEventJournalMapEvent<>(serializationService, e, getAndClearLostEventsFlag());
         super.addItem(seq, deserialisingEvent);
     }
 

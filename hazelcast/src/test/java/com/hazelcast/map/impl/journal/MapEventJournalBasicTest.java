@@ -20,15 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.journal.EventJournalDataStructureAdapter;
-import com.hazelcast.map.MapStore;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
+import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.MapUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -168,5 +168,14 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
         public Object apply(Object o) {
             return null;
         }
+    }
+
+    protected boolean isAfterLostEvents(EventJournalMapEvent event) {
+        return event.isAfterLostEvents();
+    }
+
+    @Override
+    protected void assertValueEquals(EventJournalMapEvent event, Object expectedValue) {
+        assert event.getNewValue().equals(expectedValue);
     }
 }

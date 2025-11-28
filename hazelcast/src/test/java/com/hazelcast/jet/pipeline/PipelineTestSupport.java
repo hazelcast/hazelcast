@@ -111,6 +111,10 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return randomMapName(JOURNALED_MAP_PREFIX);
     }
 
+    protected static String journaledCacheName() {
+        return randomMapName(JOURNALED_CACHE_PREFIX);
+    }
+
     protected void addToSrcList(Collection<Integer> data) {
         srcList.addAll(data);
     }

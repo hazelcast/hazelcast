@@ -20,11 +20,10 @@ import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
-import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,10 +37,11 @@ import javax.cache.spi.CachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTest<EventJournalMapEvent> {
+public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTest<EventJournalCacheEvent> {
 
     private static final String NON_EVICTING_CACHE = "cache";
     private static final String EVICTING_CACHE = "evicting";
@@ -90,6 +90,16 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
     @Ignore
     public void receiveExpirationEventsWhenPutOnExpiringStructure() {
         // not tested
+    }
+
+    @Override
+    protected boolean isAfterLostEvents(EventJournalCacheEvent event) {
+        return event.isAfterLostEvents();
+    }
+
+    @Override
+    protected void assertValueEquals(EventJournalCacheEvent event, Object expectedValue) {
+        assertThat(event.getNewValue()).isEqualTo(expectedValue);
     }
 
     @Override

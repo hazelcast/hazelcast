@@ -60,4 +60,12 @@ public interface EventJournalMapEvent<K, V> {
      * @return the event type
      */
     EntryEventType getType();
+
+    /**
+     * Returns {@code true} if lost events were detected before this event in the journal.
+     * @return {@code true} if earlier events were lost, {@code false} otherwise
+     * @since 5.7
+     */
+    boolean isAfterLostEvents();
+
 }
