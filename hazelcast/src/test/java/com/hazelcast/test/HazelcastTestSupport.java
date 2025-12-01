@@ -1543,7 +1543,11 @@ public abstract class HazelcastTestSupport {
     // ########## read from backup utils ##########
     // ############################################
 
-    protected Object readFromMapBackup(HazelcastInstance instance, String mapName, Object key) {
+    public static Object readFromMapBackup(HazelcastInstance instance, String mapName, Object key) {
+        return readFromMapBackup(instance, mapName, key, 1);
+    }
+
+    public static Object readFromMapBackup(HazelcastInstance instance, String mapName, Object key, int replicaIndex) {
         try {
             NodeEngine nodeEngine = Accessors.getNode(instance).getNodeEngine();
             SerializationService ss = Accessors.getNode(instance).getSerializationService();
@@ -1551,7 +1555,7 @@ public abstract class HazelcastTestSupport {
 
             MapOperation get = getMapOperationProvider(instance, mapName).createGetOperation(mapName, ss.toData(key));
             get.setPartitionId(partitionId);
-            get.setReplicaIndex(1);
+            get.setReplicaIndex(replicaIndex);
 
             return Accessors.getNode(instance).getNodeEngine().getOperationService().invokeOnPartition(get).get();
         } catch (Exception ex) {
@@ -1559,7 +1563,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected MapOperationProvider getMapOperationProvider(HazelcastInstance instance, String mapName) {
+    public static MapOperationProvider getMapOperationProvider(HazelcastInstance instance, String mapName) {
         MapService mapService = Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext().getMapOperationProvider(mapName);
     }
