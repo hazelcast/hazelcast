@@ -170,18 +170,12 @@
 
     <distributionManagement>
         <repository>
-            <id>release-repository</id>
-            <!-- Irrespective of this configuration, nexus-staging-maven-plugin
-            will *also* deploy to it's own staging destination, configured in
-            //project//plugin[artifactId='nexus-staging-maven-plugin']/configuration/nexusUrl
-            (i.e. Maven central) -->
-            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
+            <id>private-repository</id>
+            <url>https://repository.hazelcast.com/release</url>
         </repository>
         <snapshotRepository>
-            <id>snapshot-repository</id>
-            <name>Maven2 Snapshot Repository</name>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <uniqueVersion>false</uniqueVersion>
+            <id>private-repository</id>
+            <url>https://repository.hazelcast.com/snapshot</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -1455,9 +1449,10 @@
         </profile>
 
         <profile>
-            <id>maven-central</id>
+            <!-- USE WITH CAUTION! Switches deployment from JFrog Artifactory to Maven Central for releases -->
+            <id>enable-maven-central</id>
             <properties>
-                <maven.central.autoReleaseAfterClose>true</maven.central.autoReleaseAfterClose>
+                <maven.central.autoReleaseAfterClose>false</maven.central.autoReleaseAfterClose>
             </properties>
             <build>
                 <pluginManagement>
@@ -1484,6 +1479,13 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <!-- USE WITH CAUTION! Activates automatic release to Maven Central upon closing the staging repository -->
+            <id>auto-release-maven-central</id>
+            <properties>
+                <maven.central.autoReleaseAfterClose>true</maven.central.autoReleaseAfterClose>
+            </properties>
         </profile>
 
         <!--

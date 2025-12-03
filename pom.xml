@@ -726,7 +726,7 @@
         </profile>
 
         <profile>
-            <id>maven-central</id>
+            <id>enable-maven-central</id>
             <build>
                 <plugins>
                     <plugin>
