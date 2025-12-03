@@ -19,6 +19,7 @@ package com.hazelcast.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -149,6 +150,22 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
         context.dataAdapter.putAll(addMap);
         assertOpenEventually(latch, 30);
+    }
+
+    @Test
+    public void readManyFromEventJournalShouldNotBlock_whenSomeReadersDoNotMatch() {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+        assertEventJournalSize(context.dataAdapter, 0);
+
+        var readerNotMatching = readFromEventJournal(context.dataAdapter, 0, 10, partitionId, PredicateEx.alwaysFalse(), IDENTITY_FUNCTION);
+        var readerMatching = readFromEventJournal(context.dataAdapter, 0, 10, partitionId, PredicateEx.alwaysTrue(), IDENTITY_FUNCTION);
+
+        context.dataAdapter.put(randomPartitionKey(), 0);
+
+        assertThat(readerMatching).as("Not matching journal reader should not block matching one")
+                .succeedsWithin(ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION);
+        assertThat(readerNotMatching).as("Not matching journal reader should not complete")
+                .isNotDone();
     }
 
     @Test

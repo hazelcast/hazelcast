@@ -59,8 +59,9 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     protected static TestHazelcastFactory factory = new TestHazelcastFactory();
     private static HazelcastInstance[] allHazelcastInstances;
 
-    protected static HazelcastInstance member;
-    protected static HazelcastInstance client;
+    // these variables are read and updated by different threads
+    protected static volatile HazelcastInstance member;
+    protected static volatile HazelcastInstance client;
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
