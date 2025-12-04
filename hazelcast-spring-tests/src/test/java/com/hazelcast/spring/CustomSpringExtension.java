@@ -95,18 +95,18 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     @Override
     public void afterAll(@NonNull ExtensionContext context) {
         var applicationContext = (AbstractApplicationContext) SpringExtension.getApplicationContext(context);
-        if (applicationContext.isRunning() || applicationContext.isActive()) {
+        if (!applicationContext.isRunning() || applicationContext.isActive()) {
+            // context was closed, but instance(s) are running, something went wrong.
+            Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                LOGGER.warn("Instances haven't been shut down: {}", instances);
+                HazelcastInstanceFactory.terminateAll();
+            }
+        } else {
             // Normal Hazelcast beans are declared with destroy-method = shutdown, but it makes graceful shutdown,
             // which takes time and is not necessary in tests.
             // instead, terminate Hz instances
             HazelcastInstanceFactory.terminateAll();
-        } else {
-            // context was closed, but instance(s) are running, something went wrong.
-            Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
-            if (!instances.isEmpty()) {
-                LOGGER.warn("Instances haven't been shut down: " + instances);
-                HazelcastInstanceFactory.terminateAll();
-            }
         }
         JmxLeakHelper.checkJmxBeans();
     }

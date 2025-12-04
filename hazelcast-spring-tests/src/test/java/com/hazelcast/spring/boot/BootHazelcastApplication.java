@@ -17,9 +17,8 @@
 package com.hazelcast.spring.boot;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MetadataPolicy;
-import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.spring.ConfigCreator;
+import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +26,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ClassPathResource;
 
 @SpringBootApplication
+@ExposeHazelcastObjects
 public class BootHazelcastApplication {
 
     public static void main(String[] args) {
@@ -42,32 +42,6 @@ public class BootHazelcastApplication {
 
     @Bean
     public Config config() {
-        Config config = new Config();
-        config.setClusterName("spring-cluster");
-
-        config.getJetConfig().setEnabled(true);
-
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setPort(5801);
-        networkConfig.setPortAutoIncrement(true);
-        networkConfig.getInterfaces().addInterface("127.0.0.1");
-        networkConfig.getJoin().getAutoDetectionConfig().setEnabled(false);
-        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
-
-        config.setProperty("hazelcast.merge.first.run.delay.seconds", "5");
-        config.setProperty("hazelcast.merge.next.run.delay.seconds", "5");
-        config.setProperty("hazelcast.partition.count", "277");
-
-        var mapConfig = new MapConfig("testMap");
-        mapConfig.setBackupCount(2);
-        mapConfig.setReadBackupData(true);
-        mapConfig.setMetadataPolicy(MetadataPolicy.OFF);
-        config.addMapConfig(mapConfig);
-        var map1Config = new MapConfig("map1");
-        map1Config.setBackupCount(2);
-        map1Config.setReadBackupData(true);
-        map1Config.setMetadataPolicy(MetadataPolicy.OFF);
-        config.addMapConfig(map1Config);
-        return config;
+        return ConfigCreator.createConfigWithStructures();
     }
 }

@@ -17,22 +17,23 @@ package com.hazelcast.spring.boot;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.sql.SqlService;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = BootHazelcastApplication.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 class BootHazelcastApplicationTest {
 
     @Autowired
@@ -50,12 +51,6 @@ class BootHazelcastApplicationTest {
 
     @Autowired
     private ApplicationContext applicationContext;
-
-    @AfterAll
-    static void stop() {
-        HazelcastInstanceFactory.terminateAll();
-        System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "1");
-    }
 
     @Test
     void testServices() {
