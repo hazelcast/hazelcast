@@ -703,7 +703,7 @@
         </profile>
 
         <profile>
-            <id>release-devel</id>
+            <id>release-snapshot</id>
             <build>
                 <plugins>
                     <plugin>
