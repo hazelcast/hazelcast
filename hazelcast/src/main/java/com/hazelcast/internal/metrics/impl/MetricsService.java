@@ -190,9 +190,10 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     private void tryCompleteRead(CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future, long sequence) {
         try {
             RingbufferSlice<Map.Entry<Long, byte[]>> slice = metricsJournal.copyFrom(sequence);
-            if (!slice.isEmpty()) {
-                future.complete(slice);
-            }
+            // Always complete the future, even with empty slice.
+            // This prevents memory leak in LiveOperationRegistry when requesting sequence == tail.
+            // Empty slice is a valid response meaning "no data available yet at this sequence".
+            future.complete(slice);
         } catch (ConcurrentArrayRingbuffer.SequenceOutOfBoundsException e) {
             logger.fine("Error reading from metrics journal, sequence: " + sequence + "."
                     + " In case of persistence-enabled member restart, this error is handled by MC gracefully.", e);
@@ -212,6 +213,15 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
         }
+
+        // Complete all pending reads to prevent memory leak on shutdown
+        // The scheduled timeout tasks may not execute if ExecutionService is already stopping
+        pendingReads.forEach((future, sequence) -> {
+            if (!future.isDone()) {
+                tryCompleteRead(future, sequence);
+            }
+        });
+        pendingReads.clear();
 
         publishers.forEach(MetricsPublisher::shutdown);
     }
