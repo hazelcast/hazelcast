@@ -14,8 +14,8 @@ on:
       - edited
 env:
   branch_to_sync: ${{ github.base_ref || github.ref_name}}
-  sot_repo: hazelcast/hazelcast-mono
-  destination_repo: hazelcast/hazelcast
+  sot_repo: ${{ github.repository_owner }}/hazelcast-mono
+  destination_repo: ${{ github.repository_owner }}/hazelcast
 jobs:
   copybara-os-pr:
     runs-on: ubuntu-latest
