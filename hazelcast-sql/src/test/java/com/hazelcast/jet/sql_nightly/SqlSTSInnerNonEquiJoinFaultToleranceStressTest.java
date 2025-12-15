@@ -38,6 +38,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
                 " WHERE s1.__key != s2.__key";
     }
 
+    @Override
     protected int getAllowedLag() {
         return 60;
     }

@@ -84,6 +84,7 @@ public class MapJournalLostEventTest extends AbstractJournalLostEventTest {
         );
     }
 
+    @Override
     protected void put(HazelcastInstance hz, Integer key, Integer value) {
         hz.getMap(sourceMap).put(key, value);
     }

@@ -58,6 +58,7 @@ public class CacheJournalLostEventTest extends AbstractJournalLostEventTest {
         );
     }
 
+    @Override
     protected void put(HazelcastInstance hz, Integer key, Integer value) {
         hz.getCacheManager().getCache(sourceCache).put(key, value);
     }
