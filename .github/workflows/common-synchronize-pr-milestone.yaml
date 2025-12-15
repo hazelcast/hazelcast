@@ -19,7 +19,7 @@ jobs:
               sparse-checkout: .github
          - name: Copy milestone to other PR
            run: |
-              SOURCE_REPO="${{ github.repository }}"
+              SOURCE_REPO="${GITHUB_REPOSITORY}"
               SOURCE_PR="${{ github.event.pull_request.number }}"
               CONTENT="$(gh pr view "$SOURCE_PR" --json "body,comments" -q '.body, .comments[].body')"
               

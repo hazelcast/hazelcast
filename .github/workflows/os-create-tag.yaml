@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Create Tag
         run: |
-          BRANCH_NAME="${{ github.ref_name }}"
+          BRANCH_NAME="${GITHUB_REF_NAME}"
           TAG_NAME="${BRANCH_NAME#tag-}"          
           git tag --force $TAG_NAME
           git push origin --force $TAG_NAME

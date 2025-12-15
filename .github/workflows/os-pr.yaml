@@ -34,7 +34,7 @@ jobs:
               OTHER_PR="${BASH_REMATCH[4]}"
               echo "Reopening PR: $OWNER/$REPO/$OTHER_PR"
               gh pr reopen --repo "$OWNER/$REPO" \
-               --comment "This pull request has been reopened because of reopening of https://github.com/${{ github.repository }}/pull/${PR_NUMBER}" \
+               --comment "This pull request has been reopened because of reopening of https://github.com/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" \
               $OTHER_PR
             fi
           done <<< "$CONTENT"
@@ -58,7 +58,7 @@ jobs:
           custom_config: .github/workflows/os-pr.sky
       - name: Copy labels, assignees, reviewers, milestone to other PR
         run: |
-          SOURCE_REPO="${{ github.repository }}"
+          SOURCE_REPO="${GITHUB_REPOSITORY}"
           SOURCE_PR="${{ github.event.pull_request.number }}"
           CONTENT="$(gh pr view "$SOURCE_PR" --json "body,comments" -q '.body, .comments[].body')"
 
