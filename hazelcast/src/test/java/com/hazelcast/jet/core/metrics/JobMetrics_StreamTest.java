@@ -18,12 +18,14 @@ package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -38,9 +40,10 @@ import java.util.Map;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
+import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATEFUL_PROCESSOR_STATES;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
+import static com.hazelcast.jet.impl.util.Util.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -59,6 +62,10 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
     public void before() {
         journalMapName = JOURNALED_MAP_PREFIX + randomString();
         sinkListName = "sinkList" + randomString();
+    }
+
+    private JobConfig getJobConfig() {
+        return new JobConfig().setStoreMetricsAfterJobCompletion(true);
     }
 
     @Test
@@ -122,7 +129,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         putIntoMap(map, 2, 1);
         List<String> sink = hz().getList(sinkListName);
 
-        Job job = hz().getJet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(createPipeline(), getJobConfig());
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 3, 1));
@@ -150,7 +157,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         Map<String, String> map = hz().getMap(journalMapName);
         List<String> sink = hz().getList(sinkListName);
 
-        Job job = hz().getJet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(createPipeline(), getJobConfig());
 
         assertThat(job).eventuallyHasStatus(RUNNING);
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 0, 0));
@@ -171,6 +178,150 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         putIntoMap(map, 1, 1);
         assertTrueEventually(() -> assertEquals(5, sink.size()));
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 5, 2));
+    }
+
+    @Test
+    public void when_stateIsEvicted_then_mapStatefulMetricIsUpdatedCorrectly() {
+        IMap<String, Long> map = hz().getMap(journalMapName);
+        List<String> sink = hz().getList(sinkListName);
+        var ttl = 10;
+        var lag = 0;
+        var p = Pipeline.create();
+        p.readFrom(Sources.mapJournal(map, JournalInitialPosition.START_FROM_OLDEST))
+                .withTimestamps(Map.Entry::getValue, lag)
+                .groupingKey(Map.Entry::getKey)
+                .mapStateful(
+                        ttl,
+                        () -> new long[1],
+                        (key, state, entry) -> entry,
+                        (key, state, watermark) -> null
+                )
+                .setName("mapStateful")
+                .groupingKey(Map.Entry::getKey)
+                .flatMapStateful(
+                        ttl,
+                        () -> new long[1],
+                        (key, state, entry) -> Traversers.singleton(entry),
+                        (key, state, watermark) -> Traversers.empty()
+                )
+                .setName("flatMapStateful")
+                .writeTo(Sinks.list(sinkListName));
+
+        Job job = hz().getJet().newJob(p, getJobConfig().setMetricsEnabled(true));
+        assertThat(job).eventuallyHasStatus(RUNNING);
+        range(0, 10).forEach(i -> map.put("key_" + i, (long) i));
+
+        assertTrueEventually(() -> assertEquals(10, sink.size()));
+
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "mapStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(10, sum);
+        });
+
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "flatMapStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(10, sum);
+        });
+
+        // Touch all states except one.
+        // The state corresponding to key_0 will be evicted.
+        range(1, 10).forEach(i -> map.put("key_" + i, (long) i + ttl + lag + 1));
+
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "mapStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(9, sum);
+        });
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "flatMapStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(9, sum);
+        });
+    }
+
+    @Test
+    public void when_jobRestore_then_mapStatefulMetricIsUpdatedCorrectly() {
+        IMap<String, Long> map = hz().getMap(journalMapName);
+        List<String> sink = hz().getList(sinkListName);
+        var ttl = 10;
+        var lag = 0;
+        var p = Pipeline.create();
+        p.readFrom(Sources.mapJournal(map, JournalInitialPosition.START_FROM_OLDEST))
+                .withTimestamps(Map.Entry::getValue, lag)
+                .groupingKey(Map.Entry::getKey)
+                .mapStateful(
+                        ttl,
+                        () -> new long[1],
+                        (key, state, entry) -> entry,
+                        (key, state, watermark) -> null
+                )
+                .setName("mapStateful")
+                .writeTo(Sinks.list(sinkListName));
+
+        Job job = hz().getJet().newJob(
+                p,
+                getJobConfig()
+                        .setMetricsEnabled(true)
+                        .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+        );
+        assertThat(job).eventuallyHasStatus(RUNNING);
+        range(0, 10).forEach(i -> map.put("key_" + i, (long) i));
+
+        assertTrueEventually(() -> assertEquals(10, sink.size()));
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "mapStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(10, sum);
+        });
+
+        job.suspend();
+        assertThat(job).eventuallyHasStatus(SUSPENDED);
+
+        job.resume();
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        assertEquals(10, sink.size());
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "mapStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(10, sum);
+        });
+    }
+
+    @Test
+    public void when_stateIsEvicted_then_filterStatefulMetricIsUpdatedCorrectly() {
+        IMap<String, Long> map = hz().getMap(journalMapName);
+        List<String> sink = hz().getList(sinkListName);
+        var ttl = 10;
+        var lag = 0;
+        var p = Pipeline.create();
+        p.readFrom(Sources.mapJournal(map, JournalInitialPosition.START_FROM_OLDEST))
+                .withTimestamps(Map.Entry::getValue, lag)
+                .groupingKey(Map.Entry::getKey)
+                .filterStateful(
+                        ttl,
+                        () -> new long[1],
+                        (state, entry) -> true
+                )
+                .setName("filterStateful")
+                .writeTo(Sinks.list(sinkListName));
+
+        Job job = hz().getJet().newJob(p, getJobConfig().setMetricsEnabled(true));
+        assertThat(job).eventuallyHasStatus(RUNNING);
+        range(0, 10).forEach(i -> map.put("key_" + i, (long) i));
+
+        assertTrueEventually(() -> assertEquals(10, sink.size()));
+
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "filterStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(10, sum);
+        });
+
+
+        // Touch all states except one.
+        // The state corresponding to key_0 will be evicted.
+        range(1, 10).forEach(i -> map.put("key_" + i, (long) i + ttl + lag + 1));
+
+        assertTrueEventually(() -> {
+            var sum = sumValueFor(job.getMetrics(), "filterStateful", JOB_STATEFUL_PROCESSOR_STATES);
+            assertEquals(9, sum);
+        });
     }
 
     private Pipeline createPipeline() {

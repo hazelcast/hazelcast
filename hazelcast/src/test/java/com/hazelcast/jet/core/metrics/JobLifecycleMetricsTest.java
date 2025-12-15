@@ -60,6 +60,7 @@ import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.IS_USER_CANCELLED;
+import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATEFUL_PROCESSOR_STATES;
 import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
 import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM_LATENCY;
@@ -275,8 +276,8 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
                 DISTRIBUTED_BYTES_OUT,
                 DISTRIBUTED_ITEMS_IN,
                 DISTRIBUTED_ITEMS_OUT,
-                "lateEventsDropped"
-
+                "lateEventsDropped",
+                JOB_STATEFUL_PROCESSOR_STATES
         );
         var metrics = job.getMetrics();
         assertEquals(metrics.metrics().size(), expectedMetrics.size());
