@@ -56,7 +56,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
     @Probe(name = MetricNames.JOB_STATEFUL_PROCESSOR_STATES)
-    private final Counter statesGauge = SwCounter.newSwCounter();
+    private final Counter totalStates = SwCounter.newSwCounter();
 
     private final long ttl;
     private final Function<? super T, ? extends K> keyFn;
@@ -119,7 +119,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
             if (keyToState.size() == maxEntries) {
                 throw new AccumulationLimitExceededException();
             }
-            statesGauge.inc();
+            totalStates.inc();
             return createIfAbsentFn.apply(k);
         });
         tsAndState.setTimestamp(max(tsAndState.timestamp(), timestamp));
@@ -176,7 +176,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
                     break;
                 }
                 keyToStateIterator.remove();
-                statesGauge.inc(-1);
+                totalStates.inc(-1);
                 if (onEvictFn != null) {
                     return onEvictFn.apply(entry.getValue().item(), entry.getKey(), currentWm);
                 }
@@ -214,7 +214,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
         } else {
             @SuppressWarnings("unchecked")
             TimestampedItem<S> old = keyToState.put((K) key, (TimestampedItem<S>) value);
-            statesGauge.inc();
+            totalStates.inc();
             assert old == null : "Duplicate key '" + key + '\'';
         }
     }

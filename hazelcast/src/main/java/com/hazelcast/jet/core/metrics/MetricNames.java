@@ -295,7 +295,7 @@ public final class MetricNames {
      *
      * @since 5.7
      */
-    public static final String JOB_STATEFUL_PROCESSOR_STATES = "statesGauge";
+    public static final String JOB_STATEFUL_PROCESSOR_STATES = "totalStates";
 
     private MetricNames() { }
 }
