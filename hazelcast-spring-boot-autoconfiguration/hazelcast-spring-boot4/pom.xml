@@ -32,7 +32,7 @@
     <properties>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
-        <spring.boot.version>4.0.0</spring.boot.version>
+        <spring.boot.version>4.0.1</spring.boot.version>
         <org.springframework.version>7.0.0</org.springframework.version>
     </properties>
 
