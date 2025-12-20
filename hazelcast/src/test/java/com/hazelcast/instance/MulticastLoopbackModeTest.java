@@ -43,7 +43,7 @@ import static org.junit.Assume.assumeFalse;
  * Test the multicast loopback mode when there is no other
  * network interface than 127.0.0.1.
  *
- * @author St&amp;eacute;phane Galland <galland@arakhne.org>
+ * @author St&amp;eacute;phane Galland <galland{@literal @}arakhne.org>
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

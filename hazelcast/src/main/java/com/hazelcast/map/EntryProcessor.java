@@ -46,7 +46,7 @@ import java.util.Map.Entry;
  * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
  * <pre>
  * <code>
- * {@literal}Override
+ * {@literal @}Override
  *     public Object process(Map.Entry entry) {
  *        Value value = entry.getValue();
  *        // process and modify value
@@ -57,7 +57,7 @@ import java.util.Map.Entry;
  * </code>
  * </pre>
  * otherwise EntryProcessor does not guarantee that it will modify the entry.
- *<p>
+ * <p>
  * EntryProcessor instances can be shared between threads. If an EntryProcessor instance contains mutable state, proper
  * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely
  * on {@code ThreadLocal}s.
@@ -83,7 +83,6 @@ import java.util.Map.Entry;
  *         }
  *         return null;
  *     }
- * }
  * }
  * </pre>
  *

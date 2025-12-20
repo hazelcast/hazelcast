@@ -15,9 +15,8 @@
  */
 
 /**
- * <p>
- *     Event classes to define listenters for JCache other than EntryListener
- *     @since 3.6
- * </p>
+ * Event classes to define listenters for JCache other than EntryListener.
+ *
+ * @since 3.6
  */
 package com.hazelcast.cache.impl.event;
