@@ -98,7 +98,7 @@ public interface ReplicatedRecordStore {
      * We didn't want to call putRecords with version= current version + "number of items in the batch" because we are not sure
      * if it'll work. The replication logic might have been broken if we update the version by a lot like this.
      * <p>
-     * This method is used by {@link }
+     * This method is used by {@link com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy#putAllWithMetadataAsync}.
      *
      * @param record the record to put
      * @return the previous record or null if there wasn't any record with the key
