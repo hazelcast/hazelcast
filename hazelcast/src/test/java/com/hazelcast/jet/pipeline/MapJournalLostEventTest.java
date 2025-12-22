@@ -18,10 +18,12 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.map.EventJournalMapEvent;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 
@@ -37,32 +39,61 @@ public class MapJournalLostEventTest extends AbstractJournalLostEventTest {
     @Test
     public void defaultProjection1_eventReceived() {
         performTest(
+                member,
                 Sources.mapJournalEntries(sourceMap, START_FROM_OLDEST),
-                JournalSourceEntry::isAfterLostEvents
+                JournalSourceEntry::isAfterLostEvents,
+                EventFilterType.ONLY_PUT
         );
     }
 
     @Test
     public void defaultProjection2_eventReceived() {
         performTest(
+                member,
                 Sources.mapJournalEntries(hz().getMap(sourceMap), START_FROM_OLDEST),
-                JournalSourceEntry::isAfterLostEvents
+                JournalSourceEntry::isAfterLostEvents,
+                EventFilterType.ONLY_PUT
         );
     }
 
     @Test
-    public void customProjection1_eventReceived() {
+    public void customProjection_allEvents_eventReceived() {
         performTest(
-                Sources.mapJournal(sourceMap, START_FROM_OLDEST, EventJournalMapEvent::isAfterLostEvents, mapPutEvents()),
-                FunctionEx.identity()
+                member,
+                Sources.mapJournal(sourceMap, START_FROM_OLDEST, EventJournalMapEvent::isAfterLostEvents, PredicateEx.alwaysTrue()),
+                FunctionEx.identity(),
+                EventFilterType.ALL
         );
     }
+
+    @Test
+    public void customProjection_putEvents_eventReceived() {
+        performTest(
+                member,
+                Sources.mapJournal(sourceMap, START_FROM_OLDEST, EventJournalMapEvent::isAfterLostEvents, mapPutEvents()),
+                FunctionEx.identity(),
+                EventFilterType.ONLY_PUT
+        );
+    }
+
+    @Test
+    public void customProjection_removeEvents_eventReceived() {
+        performTest(
+                member,
+                Sources.mapJournal(sourceMap, START_FROM_OLDEST, EventJournalMapEvent::isAfterLostEvents, e -> e.getType() == REMOVED),
+                FunctionEx.identity(),
+                EventFilterType.ONLY_REMOVE
+        );
+    }
+
 
     @Test
     public void customProjection2_eventReceived() {
         performTest(
+                member,
                 Sources.mapJournal(hz().getMap(sourceMap), START_FROM_OLDEST, EventJournalMapEvent::isAfterLostEvents, mapPutEvents()),
-                FunctionEx.identity()
+                FunctionEx.identity(),
+                EventFilterType.ONLY_PUT
         );
     }
 
@@ -71,7 +102,8 @@ public class MapJournalLostEventTest extends AbstractJournalLostEventTest {
         performTest(
                 remoteInstance,
                 Sources.remoteMapJournalEntries(sourceMap, remoteHzClientConfig, START_FROM_OLDEST),
-                JournalSourceEntry::isAfterLostEvents
+                JournalSourceEntry::isAfterLostEvents,
+                EventFilterType.ONLY_PUT
         );
     }
 
@@ -80,12 +112,29 @@ public class MapJournalLostEventTest extends AbstractJournalLostEventTest {
         performTest(
                 remoteInstance,
                 Sources.remoteMapJournal(sourceMap, remoteHzClientConfig, START_FROM_OLDEST, EventJournalMapEvent::isAfterLostEvents, mapPutEvents()),
-                FunctionEx.identity()
+                FunctionEx.identity(),
+                EventFilterType.ONLY_PUT
         );
+    }
+
+    @Test
+    public void performRareEventTest() {
+        var streamSource = Sources.mapJournal(
+                sourceMap,
+                START_FROM_OLDEST,
+                EventJournalMapEvent::isAfterLostEvents,
+                e -> e.getType() == REMOVED
+        );
+        performRareEventTest(streamSource);
     }
 
     @Override
     protected void put(HazelcastInstance hz, Integer key, Integer value) {
         hz.getMap(sourceMap).put(key, value);
+    }
+
+    @Override
+    protected void remove(HazelcastInstance hz, Integer key) {
+        hz.getMap(sourceMap).remove(key);
     }
 }

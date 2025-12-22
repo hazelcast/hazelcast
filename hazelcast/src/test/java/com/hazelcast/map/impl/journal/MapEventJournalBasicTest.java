@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
@@ -174,8 +175,20 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
         return event.isAfterLostEvents();
     }
 
+    protected Predicate<EventJournalMapEvent> putFilter() {
+        return new PutPredicate();
+    }
+
     @Override
     protected void assertValueEquals(EventJournalMapEvent event, Object expectedValue) {
         assert event.getNewValue().equals(expectedValue);
+    }
+
+    public static class PutPredicate implements Predicate<EventJournalMapEvent>, Serializable {
+
+        @Override
+        public boolean test(EventJournalMapEvent e) {
+            return e.getType() == EntryEventType.ADDED;
+        }
     }
 }

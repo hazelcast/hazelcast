@@ -58,17 +58,11 @@ public abstract class AbstractJournalLostEventTest extends PipelineTestSupport {
         remoteCluster.forEach(HazelcastInstance::shutdown);
     }
 
-    public <T> void performTest(
-            StreamSource<T> source,
-            FunctionEx<T, Boolean> mapFn
-    ) {
-        performTest(member, source, mapFn);
-    }
-
-    public <T> void performTest(
+    protected <T> void performTest(
             HazelcastInstance producerInstance,
             StreamSource<T> streamSource,
-            FunctionEx<T, Boolean> mapFn
+            FunctionEx<T, Boolean> mapFn,
+            EventFilterType filter
     ) {
         Pipeline p = Pipeline.create();
 
@@ -85,7 +79,8 @@ public abstract class AbstractJournalLostEventTest extends PipelineTestSupport {
 
         int counter = 0;
         put(producerInstance, 0, counter);
-        counter++;
+        remove(producerInstance, 0);
+        counter = 2;
 
         List<Boolean> sinkList = member.getList(sinkName);
         assertTrueEventually(() -> assertThat(sinkList.size()).isGreaterThan(0));
@@ -96,17 +91,72 @@ public abstract class AbstractJournalLostEventTest extends PipelineTestSupport {
         // Fill up the journal to cause lost events
         while (counter < 2 * JOURNAL_CAPACITY_PER_PARTITION) {
             put(producerInstance, 0, counter);
-            counter++;
+            remove(producerInstance, 0);
+            counter += 2;
         }
 
         job.resume();
         JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
 
-        assertTrueEventually(() -> assertThat(sinkList.size()).isEqualTo(1 + JOURNAL_CAPACITY_PER_PARTITION));
+        var expectedOutputSize = switch (filter) {
+            case ALL -> 2 + JOURNAL_CAPACITY_PER_PARTITION;
+            case ONLY_PUT, ONLY_REMOVE -> 1 + JOURNAL_CAPACITY_PER_PARTITION / 2;
+        };
+
+        assertTrueEventually(() -> assertThat(sinkList.size()).isEqualTo(expectedOutputSize));
 
         assertThat(sinkList).containsOnlyOnce(true);
     }
 
+    protected <T> void performRareEventTest(StreamSource<T> streamSource) {
+        Pipeline p = Pipeline.create();
+        p.readFrom(streamSource)
+                .withTimestamps(e -> System.currentTimeMillis(), 0)
+                .writeTo(Sinks.list(sinkName));
+
+        JobConfig config = new JobConfig();
+        config.setProcessingGuarantee(EXACTLY_ONCE);
+        var job = hz().getJet().newJob(p, config);
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
+
+        put(member, 0, 0);
+        remove(member, 0);
+
+        List<Boolean> sinkList = member.getList(sinkName);
+        assertTrueEventually(() -> assertThat(sinkList).hasSize(1));
+
+        job.suspend();
+        JobAssertions.assertThat(job).eventuallyHasStatus(SUSPENDED);
+        sinkList.clear();
+
+        // Fill up the journal to cause lost events
+        for (int i = 0; i < 2 * JOURNAL_CAPACITY_PER_PARTITION; i++) {
+            put(member, 0, i);
+        }
+
+        job.resume();
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
+
+        // Normal processing of an event that is filtered out
+        for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION; i++) {
+            put(member, 0, i);
+        }
+
+        assertThat(sinkList).isEmpty();
+        remove(member, 0);
+
+        assertTrueEventually(() -> assertThat(sinkList.size()).isEqualTo(1));
+        assertThat(sinkList.get(0)).isTrue();
+    }
+
+
     protected abstract void put(HazelcastInstance instance, Integer key, Integer value);
 
+    protected abstract void remove(HazelcastInstance instance, Integer key);
+
+    protected enum EventFilterType {
+        ALL,
+        ONLY_PUT,
+        ONLY_REMOVE
+    }
 }
