@@ -154,8 +154,9 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
      *
      * @param seq  the sequence ID of the item
      * @param item the item to add to the result set
+     * @return {@code true} if the item was added, {@code false} otherwise
      */
-    public void addItem(long seq, Object item) {
+    public boolean addItem(long seq, Object item) {
         assert size < maxSize;
         readCount++;
 
@@ -165,7 +166,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
             final boolean passesFilter = filter == null || filter.apply(objectItem);
             final boolean passesPredicate = predicate == null || predicate.test(objectItem);
             if (!passesFilter || !passesPredicate) {
-                return;
+                return false;
             }
             if (projection != null) {
                 resultItem = serializationService.toData(projection.transform(objectItem));
@@ -185,6 +186,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         items[size] = resultItem;
         seqs[size] = seq;
         size++;
+        return true;
     }
 
 
@@ -244,9 +246,12 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         this.markNextEventAsLostEventsDetected = true;
     }
 
-    protected boolean getAndClearLostEventsFlag() {
-        var r =  markNextEventAsLostEventsDetected;
-        this.markNextEventAsLostEventsDetected = false;
-        return r;
+    protected boolean getLostEventsFlag() {
+        return this.markNextEventAsLostEventsDetected;
     }
+
+    protected void clearLostEventsFlag() {
+        this.markNextEventAsLostEventsDetected = false;
+    }
+
 }

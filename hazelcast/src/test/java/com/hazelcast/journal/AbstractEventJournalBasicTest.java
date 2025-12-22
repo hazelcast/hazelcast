@@ -539,6 +539,30 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     }
 
     @Test
+    public void useFilterAndSomeEventLostThenNotify() throws ExecutionException, InterruptedException {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        var key = generateKeyForPartition(instances[0], 0);
+        for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION + 1; i++) {
+            if (i % 2 == 0) {
+                context.dataAdapter.put(key, i);
+            } else {
+                context.dataAdapter.remove(key);
+            }
+        }
+        var expectedSize = JOURNAL_CAPACITY_PER_PARTITION / 4;
+        var result = readFromEventJournal(context.dataAdapter, 0,
+                expectedSize, 0, putFilter(), IDENTITY_FUNCTION);
+        ReadResultSet<EJ_TYPE> items = result.toCompletableFuture().get();
+
+        assertThat(items.size()).isEqualTo(expectedSize);
+        assertThat(isAfterLostEvents(items.get(0))).isTrue();
+        for (int i = 1; i < items.size(); i++) {
+            assertThat(isAfterLostEvents(items.get(i))).isFalse();
+        }
+    }
+
+    @Test
     public void noEventLostThenNoEventLostMarker() throws ExecutionException, InterruptedException {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 
@@ -596,6 +620,8 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     }
 
     protected abstract boolean isAfterLostEvents(EJ_TYPE event);
+
+    protected abstract Predicate<EJ_TYPE> putFilter();
 
     protected abstract void assertValueEquals(EJ_TYPE event, Object expectedValue);
     /**

@@ -33,7 +33,10 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.io.Serializable;
+import java.util.function.Predicate;
 
+import static com.hazelcast.cache.CacheEventType.CREATED;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
@@ -97,6 +100,10 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
         return event.isAfterLostEvents();
     }
 
+    protected Predicate<EventJournalCacheEvent> putFilter() {
+        return new PutPredicate();
+    }
+
     @Override
     protected void assertValueEquals(EventJournalCacheEvent event, Object expectedValue) {
         assertThat(event.getNewValue()).isEqualTo(expectedValue);
@@ -117,5 +124,13 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
     protected CacheManager createCacheManager() {
         CachingProvider cachingProvider = createServerCachingProvider(getRandomInstance());
         return cachingProvider.getCacheManager();
+    }
+
+    public static class PutPredicate implements Predicate<EventJournalCacheEvent>, Serializable {
+
+        @Override
+        public boolean test(EventJournalCacheEvent e) {
+            return e.getType() == CREATED;
+        }
     }
 }

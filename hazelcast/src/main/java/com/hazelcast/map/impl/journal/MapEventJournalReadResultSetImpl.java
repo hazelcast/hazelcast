@@ -44,12 +44,17 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     }
 
     @Override
-    public void addItem(long seq, Object item) {
+    public boolean addItem(long seq, Object item) {
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalMapEvent e = (InternalEventJournalMapEvent) item;
+        var lostEventsDetected = getLostEventsFlag();
         final DeserializingEventJournalMapEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalMapEvent<>(serializationService, e, getAndClearLostEventsFlag());
-        super.addItem(seq, deserialisingEvent);
+                = new DeserializingEventJournalMapEvent<>(serializationService, e, lostEventsDetected);
+        var added = super.addItem(seq, deserialisingEvent);
+        if (lostEventsDetected && added) {
+            clearLostEventsFlag();
+        }
+        return added;
     }
 
     @Override
