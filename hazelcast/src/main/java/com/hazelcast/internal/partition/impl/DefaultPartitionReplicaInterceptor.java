@@ -36,7 +36,6 @@ final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterc
      * If this logic changes, consider also changing the implementation of
      * {@link PartitionStateManager#partitionOwnersChanged(PartitionIdSet)}, which should apply
      * the same logic per partition batch.
-     * </b></p>.
      */
     @Override
     public void replicaChanged(int partitionId, int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica) {

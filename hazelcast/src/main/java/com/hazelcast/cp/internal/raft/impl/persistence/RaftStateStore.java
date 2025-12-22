@@ -128,7 +128,6 @@ public interface RaftStateStore extends Closeable {
      * the follower receives a snapshot from the leader. There is no upper bound
      * on the gap between the newest log entry and the index of the received
      * snapshot.
-     * </ul>
      *
      * @see #flushLogs()
      * @see #persistEntry(LogEntry)
@@ -176,7 +175,6 @@ public interface RaftStateStore extends Closeable {
      * the follower receives a snapshot from the leader. There is no upper bound
      * on the gap between the newest log entry and the index of the received
      * snapshot.
-     * </ul>
      *
      * @see #flushLogs()
      * @see #persistEntry(LogEntry)
