@@ -76,6 +76,12 @@ public final class FactoryIdHelper {
 
     public static final String HIBERNATE_DS_FACTORY = "hazelcast.serialization.ds.hibernate";
     public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
+    /**
+     * Reserved default value is -3000.
+     * Used by <a href="https://github.com/hazelcast/hazelcast-spring-session">Hazelcast Spring Session</a>.
+     * @since 5.7
+     */
+    public static final String HAZELCAST_SPRING_SESSION_DS_FACTORY = "hazelcast.serialization.ds.hazelcast.spring.session";
 
     public static final String WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.wan_replication";
     public static final int WAN_REPLICATION_DS_FACTORY_ID = -19;

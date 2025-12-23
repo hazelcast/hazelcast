@@ -24,6 +24,7 @@ public interface DataSerializerHook {
 
     int F_ID_OFFSET_WEBMODULE = -1000;
     int F_ID_OFFSET_HIBERNATE = -2000;
+    int F_ID_OFFSET_SPRING_SESSION = -3000;
 
     int getFactoryId();
 
