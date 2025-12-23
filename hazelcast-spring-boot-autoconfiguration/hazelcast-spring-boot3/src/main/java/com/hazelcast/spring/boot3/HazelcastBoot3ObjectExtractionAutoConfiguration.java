@@ -30,10 +30,11 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration(proxyBeanMethods = false)
 @AutoConfiguration
-@AutoConfigureAfter({
-        // Boot 3.x
-        org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration.class,
-        com.hazelcast.spring.HazelcastExposeObjectRegistrar.class })
+@AutoConfigureAfter(name = {
+        // Boot 3.x, avoid direct class usage due to JavaDoc generation error - it does not see actuator 3.x when
+        // applying javadoc:aggregate, as it sees 4.x from the boot 4 module.
+        "org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration",
+        "com.hazelcast.spring.HazelcastExposeObjectRegistrar" })
 @Import(HazelcastObjectExtractionConfiguration.class)
 public class HazelcastBoot3ObjectExtractionAutoConfiguration implements InitializingBean {
 
