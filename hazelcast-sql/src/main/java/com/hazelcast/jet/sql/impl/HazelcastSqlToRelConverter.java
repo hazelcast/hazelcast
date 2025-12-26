@@ -256,8 +256,8 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
     /**
      * This method overrides Apache Calcite's approach for IN operator.
      *
-     * @see org.apache.calcite.sql2rel.SqlToRelConverter##substituteSubQuery
-     * @see org.apache.calcite.sql2rel.SqlToRelConverter##convertInToOr
+     * @see org.apache.calcite.sql2rel.SqlToRelConverter#substituteSubQuery
+     * @see org.apache.calcite.sql2rel.SqlToRelConverter#convertInToOr
      */
     private RexNode convertIn(SqlCall call, Blackboard blackboard) {
         assert call.getOperandList().size() == 2;
