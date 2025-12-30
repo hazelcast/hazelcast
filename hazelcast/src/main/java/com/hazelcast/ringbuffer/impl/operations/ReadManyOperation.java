@@ -23,6 +23,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
@@ -53,11 +55,14 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
     }
 
     @Override
-    public void beforeRun() {
+    public boolean shouldWait() {
+        // shouldWait is invoked only during unparking process.
+        // Unparking occurs only after a new element is added, so we definitely have something to process.
+        return false;
     }
 
     @Override
-    public boolean shouldWait() {
+    public CallStatus call() throws Exception {
         RingbufferContainer ringbuffer = getRingBufferContainerOrNull();
 
         if (resultSet == null) {
@@ -66,7 +71,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         }
 
         if (ringbuffer == null) {
-            return minSize > 0;
+            return minSize > 0 ? CallStatus.WAIT : CallStatus.RESPONSE;
         }
 
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
@@ -76,30 +81,30 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
                 readMany(ringbuffer);
             }
 
-            return false;
+            return CallStatus.RESPONSE;
         }
 
         if (resultSet.isMinSizeReached()) {
             // enough items have been read, we are done.
-            return false;
+            return CallStatus.RESPONSE;
         }
 
         if (sequence == ringbuffer.tailSequence() + 1) {
             // the sequence is not readable
-            return true;
+            return CallStatus.WAIT;
         }
         readMany(ringbuffer);
-        return !resultSet.isMinSizeReached();
+        return resultSet.isMinSizeReached() ? CallStatus.RESPONSE : CallStatus.WAIT;
+    }
+
+    @Override
+    public void unpark(OperationService service) {
+        service.execute(this);
     }
 
     private void readMany(RingbufferContainer ringbuffer) {
         sequence = ringbuffer.readMany(sequence, resultSet);
         resultSet.setNextSequenceToReadFrom(sequence);
-    }
-
-    @Override
-    public void run() throws Exception {
-        // no-op; we already did the work in the shouldWait method.
     }
 
     @Override

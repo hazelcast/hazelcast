@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * contain the element.
  */
 @SuppressWarnings("unused")
-@Generated("5303f45abbee3029f91b0ff22067b52d")
+@Generated("56e73d3b97d3e24bc539c2fb728b9a24")
 public final class ListLastIndexOfCodec {
     //hex: 0x051300
     public static final int REQUEST_MESSAGE_TYPE = 332544;
@@ -51,7 +51,6 @@ public final class ListLastIndexOfCodec {
     private ListLastIndexOfCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -34,20 +34,20 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
     @SuppressWarnings("unchecked")
     public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes) {
         Predicate optimized = predicate;
-        if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).accept(flatteningVisitor, indexes);
+        if (optimized instanceof VisitablePredicate visitablePredicate) {
+            optimized = visitablePredicate.accept(flatteningVisitor, indexes);
         }
-        if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).accept(rangeVisitor, indexes);
+        if (optimized instanceof VisitablePredicate visitablePredicate) {
+            optimized = visitablePredicate.accept(rangeVisitor, indexes);
         }
-        if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).accept(orToInVisitor, indexes);
+        if (optimized instanceof VisitablePredicate visitablePredicate) {
+            optimized = visitablePredicate.accept(orToInVisitor, indexes);
         }
-        if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).accept(compositeIndexVisitor, indexes);
+        if (optimized instanceof VisitablePredicate visitablePredicate) {
+            optimized = visitablePredicate.accept(compositeIndexVisitor, indexes);
         }
-        if (optimized instanceof VisitablePredicate) {
-            optimized = ((VisitablePredicate) optimized).accept(evaluateVisitor, indexes);
+        if (optimized instanceof VisitablePredicate visitablePredicate) {
+            optimized = visitablePredicate.accept(evaluateVisitor, indexes);
         }
         return optimized;
     }

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the aggregation logic on all map entries and returns the result
  */
 @SuppressWarnings("unused")
-@Generated("11e2bcb6b9433244bbda5d6eb54e8070")
+@Generated("3e42053686264dc35a4ecc7d9777b7a6")
 public final class MapAggregateCodec {
     //hex: 0x013900
     public static final int REQUEST_MESSAGE_TYPE = 80128;
@@ -49,7 +49,6 @@ public final class MapAggregateCodec {
     private MapAggregateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

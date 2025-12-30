@@ -15,14 +15,11 @@
  */
 package com.hazelcast.spring.java;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spring.ConfigCreator;
 import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.spring.ExposeHazelcastObjects;
-import com.hazelcast.spring.HazelcastObjectExtractionConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -36,12 +33,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = IncludeByNameTest.UsingIncludeByName.class)
-@EnableAutoConfiguration(exclude = HazelcastObjectExtractionConfiguration.class)
-class IncludeByNameTest extends AppContextTestBase {
+@EnableAutoConfiguration
+public class IncludeByNameTest extends AppContextTestBase {
 
     @Test
     @Override
-    void testMap() {
+    public void testMap() {
         assertThat((Object) map1).isNull();
         assertThat((Object) testMap).isNotNull();
         testMap.set("key1", "value1");
@@ -50,22 +47,11 @@ class IncludeByNameTest extends AppContextTestBase {
 
     @ExposeHazelcastObjects(includeByName = {"testMap", "jetService", "hazelcastInstance", "sqlService"})
     @ComponentScan(basePackages = "com.hazelcast.non.existing")
-    @EnableAutoConfiguration(exclude = HazelcastObjectExtractionConfiguration.class)
+    @EnableAutoConfiguration
     public static class UsingIncludeByName {
         @Bean(destroyMethod = "shutdown")
         public HazelcastInstance hazelcastInstance() {
-            Config config = ConfigCreator.createConfig();
-            config.setClusterName("spring-hazelcast-cluster-from-java");
-
-            var mapConfig = new MapConfig("testMap");
-            mapConfig.setBackupCount(2);
-            mapConfig.setReadBackupData(true);
-            config.addMapConfig(mapConfig);
-            var map1Config = new MapConfig("map1");
-            map1Config.setBackupCount(2);
-            map1Config.setReadBackupData(true);
-            config.addMapConfig(map1Config);
-            return HazelcastInstanceFactory.newHazelcastInstance(config);
+            return HazelcastInstanceFactory.newHazelcastInstance(ConfigCreator.createConfigWithStructures());
         }
     }
 }

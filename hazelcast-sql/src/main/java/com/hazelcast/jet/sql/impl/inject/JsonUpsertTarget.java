@@ -102,24 +102,24 @@ class JsonUpsertTarget implements UpsertTarget {
         generator.writeFieldName(path);
         if (value == null) {
             generator.writeNull();
-        } else if (value instanceof TreeNode) {
-            generator.writeTree((TreeNode) value);
+        } else if (value instanceof TreeNode node) {
+            generator.writeTree(node);
         } else if (value instanceof Map) {
             generator.writeObject(value);
-        } else if (value instanceof Boolean) {
-            generator.writeBoolean((boolean) value);
-        } else if (value instanceof Byte) {
-            generator.writeNumber((byte) value);
-        } else if (value instanceof Short) {
-            generator.writeNumber((short) value);
-        } else if (value instanceof Integer) {
-            generator.writeNumber((int) value);
-        } else if (value instanceof Long) {
-            generator.writeNumber((long) value);
-        } else if (value instanceof Float) {
-            generator.writeNumber((float) value);
-        } else if (value instanceof Double) {
-            generator.writeNumber((double) value);
+        } else if (value instanceof Boolean b) {
+            generator.writeBoolean(b);
+        } else if (value instanceof Byte b) {
+            generator.writeNumber(b);
+        } else if (value instanceof Short s) {
+            generator.writeNumber(s);
+        } else if (value instanceof Integer i) {
+            generator.writeNumber(i);
+        } else if (value instanceof Long l) {
+            generator.writeNumber(l);
+        } else if (value instanceof Float f) {
+            generator.writeNumber(f);
+        } else if (value instanceof Double d) {
+            generator.writeNumber(d);
         } else {
             generator.writeString((String) QueryDataType.VARCHAR.convert(value));
         }

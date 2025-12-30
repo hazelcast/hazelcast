@@ -23,7 +23,6 @@ import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -34,7 +33,6 @@ public class CollectionRollbackBackupOperation extends CollectionOperation imple
     public CollectionRollbackBackupOperation() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public CollectionRollbackBackupOperation(String name, long[] itemIds) {
         super(name);
         this.itemIds = itemIds;

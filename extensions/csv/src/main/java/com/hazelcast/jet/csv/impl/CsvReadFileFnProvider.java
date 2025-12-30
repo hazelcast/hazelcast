@@ -27,7 +27,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.file.CsvFileFormat;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.impl.ReadFileFnProvider;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.InputStream;
@@ -49,10 +48,10 @@ import static java.util.function.Function.identity;
  * {@link ReadFileFnProvider} for CSV files, reading the given path and
  * deserializing using Jackson {@link CsvMapper}.
  */
-@SuppressFBWarnings(
-        value = "OBL_UNSATISFIED_OBLIGATION",
-        justification = "The FileInputStream is closed via Stream$onClose"
-)
+//@SuppressFBWarnings(
+//        value = "OBL_UNSATISFIED_OBLIGATION",
+//        justification = "The FileInputStream is closed via Stream$onClose"
+//)
 public class CsvReadFileFnProvider implements ReadFileFnProvider {
 
     @SuppressWarnings("unchecked")

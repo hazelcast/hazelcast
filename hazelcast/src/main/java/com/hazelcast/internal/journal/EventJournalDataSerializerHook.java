@@ -39,6 +39,7 @@ public final class EventJournalDataSerializerHook implements DataSerializerHook 
      */
     public static final int EVENT_JOURNAL_INITIAL_SUBSCRIBER_STATE = 1;
     public static final int DESERIALIZING_ENTRY = 2;
+    public static final int DESERIALIZING_JOURNAL_ENTRY = 3;
 
     @Override
     public int getFactoryId() {
@@ -50,6 +51,7 @@ public final class EventJournalDataSerializerHook implements DataSerializerHook 
         return typeId -> switch (typeId) {
             case EVENT_JOURNAL_INITIAL_SUBSCRIBER_STATE -> new EventJournalInitialSubscriberState();
             case DESERIALIZING_ENTRY -> new DeserializingEntry<>();
+            case DESERIALIZING_JOURNAL_ENTRY -> new DeserializingJournalEntry<>();
             default -> null;
         };
     }

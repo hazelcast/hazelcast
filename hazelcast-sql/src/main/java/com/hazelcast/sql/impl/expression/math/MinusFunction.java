@@ -117,8 +117,8 @@ public final class MinusFunction<T> extends BiExpressionWithType<T> {
             case TIMESTAMP_WITH_TIME_ZONE:
                 Temporal temporal = (Temporal) left;
 
-                if (right instanceof SqlDaySecondInterval) {
-                    return temporal.minus(((SqlDaySecondInterval) right).getMillis(), ChronoUnit.MILLIS);
+                if (right instanceof SqlDaySecondInterval interval) {
+                    return temporal.minus(interval.getMillis(), ChronoUnit.MILLIS);
                 } else {
                     assert family != TIME;
                     assert right instanceof SqlYearMonthInterval;

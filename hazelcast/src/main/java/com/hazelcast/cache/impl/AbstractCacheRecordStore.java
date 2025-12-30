@@ -65,7 +65,6 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.cache.configuration.Factory;
@@ -1087,7 +1086,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && keys != null && !keys.isEmpty()) {
             try (TenantControl.Closeable ctx = cacheWriter.getTenantControl().setTenant()) {

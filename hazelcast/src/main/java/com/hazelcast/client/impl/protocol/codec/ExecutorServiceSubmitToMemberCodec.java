@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Submits the task to member specified by the address.
  */
 @SuppressWarnings("unused")
-@Generated("c289f0f7ff2fbe3b20556587b338c827")
+@Generated("c625ae5372a33198859217538654f634")
 public final class ExecutorServiceSubmitToMemberCodec {
     //hex: 0x080600
     public static final int REQUEST_MESSAGE_TYPE = 525824;
@@ -51,7 +51,6 @@ public final class ExecutorServiceSubmitToMemberCodec {
     private ExecutorServiceSubmitToMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -25,7 +25,6 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -168,7 +167,6 @@ public final class TcpServerControl {
      *                             will be registered. These are the public addresses configured on the remote.
      */
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private synchronized void process0(TcpServerConnection connection,
                                        Address remoteEndpointAddress,
                                        Collection<Address> remoteAddressAliases,

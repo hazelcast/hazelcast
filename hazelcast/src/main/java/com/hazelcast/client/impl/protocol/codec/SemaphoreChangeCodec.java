@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Increases or decreases the number of permits by the given value.
  */
 @SuppressWarnings("unused")
-@Generated("53799af3badd329a14bef691af68ea25")
+@Generated("00375fd670e6cf83e1dfec6f0a187e00")
 public final class SemaphoreChangeCodec {
     //hex: 0x0C0500
     public static final int REQUEST_MESSAGE_TYPE = 787712;
@@ -54,7 +54,6 @@ public final class SemaphoreChangeCodec {
     private SemaphoreChangeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

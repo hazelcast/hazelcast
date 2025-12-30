@@ -238,8 +238,8 @@ public class SqlServiceImpl implements InternalSqlService {
     }
 
     private void updateSqlStreamingQueriesExecuted(SqlResult sqlResult) {
-        if (sqlResult instanceof AbstractSqlResult) {
-            if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
+        if (sqlResult instanceof AbstractSqlResult result) {
+            if (result.isInfiniteRows()) {
                 sqlStreamingQueriesExecuted.inc();
             }
         }

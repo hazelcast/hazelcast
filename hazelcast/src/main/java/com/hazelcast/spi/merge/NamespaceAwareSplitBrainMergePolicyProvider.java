@@ -99,6 +99,7 @@ public final class NamespaceAwareSplitBrainMergePolicyProvider extends SplitBrai
         }
     }
 
+    @Override
     public void clearNamespaceCache(String namespace) {
         // Some classes may be added with a null namespace using the default class loader.
         // We treat these classes the same as predefined ones and do not delete them.

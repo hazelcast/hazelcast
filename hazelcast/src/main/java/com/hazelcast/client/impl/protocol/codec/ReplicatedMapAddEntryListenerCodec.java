@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
  */
 @SuppressWarnings("unused")
-@Generated("48e6a60677d64c1b41d4cc075f192ce8")
+@Generated("adb32554e43fdfad9eb75872f2a41eae")
 public final class ReplicatedMapAddEntryListenerCodec {
     //hex: 0x0D0D00
     public static final int REQUEST_MESSAGE_TYPE = 855296;
@@ -58,7 +58,6 @@ public final class ReplicatedMapAddEntryListenerCodec {
     private ReplicatedMapAddEntryListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

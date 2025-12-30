@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractList;
@@ -56,11 +55,13 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
+
     private transient int minSize;
     private transient int maxSize;
     private transient IFunction<O, Boolean> filter;
     private transient Predicate<? super O> predicate;
     private transient Projection<? super O, E> projection;
+    private transient boolean markNextEventAsLostEventsDetected;
 
     private Data[] items;
     private long[] seqs;
@@ -80,7 +81,6 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         this.filter = filter;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ReadResultSetImpl(int readCount, List<Data> items, long[] seqs, long nextSeq) {
         this.readCount = readCount;
         this.items = items.toArray(new Data[0]);
@@ -106,7 +106,6 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         return size >= minSize;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Data[] getDataItems() {
         return items;
     }
@@ -155,8 +154,9 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
      *
      * @param seq  the sequence ID of the item
      * @param item the item to add to the result set
+     * @return {@code true} if the item was added, {@code false} otherwise
      */
-    public void addItem(long seq, Object item) {
+    public boolean addItem(long seq, Object item) {
         assert size < maxSize;
         readCount++;
 
@@ -166,7 +166,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
             final boolean passesFilter = filter == null || filter.apply(objectItem);
             final boolean passesPredicate = predicate == null || predicate.test(objectItem);
             if (!passesFilter || !passesPredicate) {
-                return;
+                return false;
             }
             if (projection != null) {
                 resultItem = serializationService.toData(projection.transform(objectItem));
@@ -186,6 +186,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         items[size] = resultItem;
         seqs[size] = seq;
         size++;
+        return true;
     }
 
 
@@ -240,4 +241,17 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         seqs = in.readLongArray();
         nextSeq = in.readLong();
     }
+
+    public void markAsLostEventDetected() {
+        this.markNextEventAsLostEventsDetected = true;
+    }
+
+    protected boolean getLostEventsFlag() {
+        return this.markNextEventAsLostEventsDetected;
+    }
+
+    protected void clearLostEventsFlag() {
+        this.markNextEventAsLostEventsDetected = false;
+    }
+
 }

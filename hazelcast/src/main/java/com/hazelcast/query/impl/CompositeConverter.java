@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
@@ -50,7 +49,6 @@ public class CompositeConverter implements TypeConverter {
      *
      * @param converters the component converters.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public CompositeConverter(TypeConverter[] converters) {
         this.converters = converters;
 

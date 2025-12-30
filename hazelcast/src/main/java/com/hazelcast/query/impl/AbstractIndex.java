@@ -30,7 +30,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -66,7 +65,6 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private volatile TypeConverter converter;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     protected AbstractIndex(
             Node node,
             IndexConfig config,
@@ -94,7 +92,6 @@ public abstract class AbstractIndex implements InternalIndex {
         return config.getName();
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public String[] getComponents() {
         return components;

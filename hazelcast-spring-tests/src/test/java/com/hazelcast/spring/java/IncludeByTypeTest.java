@@ -15,9 +15,6 @@
  */
 package com.hazelcast.spring.java;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.JetService;
@@ -25,7 +22,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spring.ConfigCreator;
 import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.spring.ExposeHazelcastObjects;
-import com.hazelcast.spring.HazelcastObjectExtractionConfiguration;
 import com.hazelcast.sql.SqlService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,13 +36,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = IncludeByTypeTest.UsingIncludeByType.class)
-@EnableAutoConfiguration(exclude = HazelcastObjectExtractionConfiguration.class)
-class IncludeByTypeTest
-        extends AppContextTestBase {
+public class IncludeByTypeTest extends AppContextTestBase {
 
     @Test
     @Override
-    void testMap() {
+    public void testMap() {
         assertThat((Object) map1).isNotNull();
         assertThat((Object) testMap).isNotNull();
         assertThat((Object) ringbuffer).isNull();
@@ -56,26 +50,11 @@ class IncludeByTypeTest
 
     @ExposeHazelcastObjects(includeByType = {IMap.class, JetService.class, HazelcastInstance.class, SqlService.class})
     @ComponentScan(basePackages = "com.hazelcast.non.existing")
-    @EnableAutoConfiguration(exclude = HazelcastObjectExtractionConfiguration.class)
+    @EnableAutoConfiguration
     public static class UsingIncludeByType {
         @Bean(destroyMethod = "shutdown")
         public HazelcastInstance hazelcastInstance() {
-            Config config = ConfigCreator.createConfig();
-            config.setClusterName("spring-hazelcast-cluster-from-java");
-
-            var mapConfig = new MapConfig("testMap");
-            mapConfig.setBackupCount(2);
-            mapConfig.setReadBackupData(true);
-            config.addMapConfig(mapConfig);
-            var map1Config = new MapConfig("map1");
-            map1Config.setBackupCount(2);
-            map1Config.setReadBackupData(true);
-            config.addMapConfig(map1Config);
-
-            var ringbufferConfig = new RingbufferConfig("ringbuffer");
-            config.addRingBufferConfig(ringbufferConfig);
-
-            return HazelcastInstanceFactory.newHazelcastInstance(config);
+            return HazelcastInstanceFactory.newHazelcastInstance(ConfigCreator.createConfigWithStructures());
         }
     }
 }

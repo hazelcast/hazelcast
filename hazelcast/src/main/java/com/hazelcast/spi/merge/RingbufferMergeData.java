@@ -19,7 +19,6 @@ package com.hazelcast.spi.merge;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.spi.impl.merge.RingbufferMergingValueImpl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -212,7 +211,6 @@ public class RingbufferMergeData implements Iterable<Object> {
      * by sequence ID and the index of the item in this array must be calculated
      * using the sequence and the modulo of the array.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Object[] getItems() {
         return items;
     }

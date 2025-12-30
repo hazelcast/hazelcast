@@ -9,15 +9,15 @@ jobs:
   create-tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Create Tag
         run: |
-          BRANCH_NAME="${{ github.ref_name }}"
+          BRANCH_NAME="${GITHUB_REF_NAME}"
           TAG_NAME="${BRANCH_NAME#tag-}"          
           git tag --force $TAG_NAME
           git push origin --force $TAG_NAME
           git push origin --delete $BRANCH_NAME
-      - uses: 8398a7/action-slack@v3
+      - uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
         if: failure()
         with:
             fields: repo,message,author,action,eventName,workflow,job,pullRequest

@@ -40,7 +40,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -499,7 +498,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("namespace: " + namespace);
     }
 
-    @SuppressFBWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
 

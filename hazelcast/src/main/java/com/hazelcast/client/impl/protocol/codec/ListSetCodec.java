@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The element previously at the specified position
  */
 @SuppressWarnings("unused")
-@Generated("3f22881f16b5c72354caf678266c5325")
+@Generated("7f36b36e09bd37874fd5498a736badfe")
 public final class ListSetCodec {
     //hex: 0x051000
     public static final int REQUEST_MESSAGE_TYPE = 331776;
@@ -50,7 +50,6 @@ public final class ListSetCodec {
     private ListSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

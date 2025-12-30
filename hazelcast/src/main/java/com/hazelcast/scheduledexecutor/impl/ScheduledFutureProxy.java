@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.UUID;
 import java.util.concurrent.Delayed;
@@ -49,7 +48,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-@SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @SuppressWarnings("checkstyle:methodcount")
 public final class ScheduledFutureProxy<V>
         implements IScheduledFuture<V>, HazelcastInstanceAware {

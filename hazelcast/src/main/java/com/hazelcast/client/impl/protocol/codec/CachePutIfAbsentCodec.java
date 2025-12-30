@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("ffef0e11f07e3aa566307f1c464e8a27")
+@Generated("9eb7cc9495bfb667c380c0ad5310c133")
 public final class CachePutIfAbsentCodec {
     //hex: 0x131200
     public static final int REQUEST_MESSAGE_TYPE = 1249792;
@@ -53,7 +53,6 @@ public final class CachePutIfAbsentCodec {
     private CachePutIfAbsentCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

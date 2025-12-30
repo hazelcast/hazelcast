@@ -197,8 +197,8 @@ public class HazelcastTable extends AbstractTable {
         for (int i = 0; i < projects.size(); i++) {
             RexNode project = projects.get(i);
             RelDataTypeField fieldType;
-            if (project instanceof RexInputRef) {
-                TableField field = target.getField(((RexInputRef) project).getIndex());
+            if (project instanceof RexInputRef ref) {
+                TableField field = target.getField(ref.getIndex());
                 fieldType = new RelDataTypeFieldImpl(field.getName(), i, project.getType());
                 if (field.isHidden()) {
                     hiddenFieldNames.add(field.getName());

@@ -211,12 +211,12 @@ public class TpcTestSupport {
     }
 
     public static RuntimeException rethrow(Throwable t) {
-        if (t instanceof Error) {
-            throw (Error) t;
+        if (t instanceof Error error) {
+            throw error;
         }
 
-        if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
+        if (t instanceof RuntimeException exception) {
+            throw exception;
         }
 
         throw new RuntimeException(t);

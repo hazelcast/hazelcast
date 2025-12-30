@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Copies all the mappings from the specified map to this cache with the given expiry policy.
  */
 @SuppressWarnings("unused")
-@Generated("9dc17ecf056387fc0ffb0a548cd20a24")
+@Generated("e154afa61f239267e5741521e54052c2")
 public final class CachePutAllCodec {
     //hex: 0x131B00
     public static final int REQUEST_MESSAGE_TYPE = 1252096;
@@ -50,7 +50,6 @@ public final class CachePutAllCodec {
     private CachePutAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

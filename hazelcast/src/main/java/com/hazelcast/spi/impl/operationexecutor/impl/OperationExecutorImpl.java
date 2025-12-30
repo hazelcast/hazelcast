@@ -42,7 +42,6 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -278,13 +277,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         registry.provideMetrics((Object[]) partitionOperationRunners);
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;

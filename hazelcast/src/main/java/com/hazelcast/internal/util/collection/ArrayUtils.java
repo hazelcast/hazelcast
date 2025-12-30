@@ -70,8 +70,7 @@ public final class ArrayUtils {
      */
     public static <T> T[] append(T[] array1, T[] array2) {
         T[] dst = (T[]) Array.newInstance(array1.getClass().getComponentType(), array1.length + array2.length);
-        System.arraycopy(array1, 0, dst, 0, array1.length);
-        System.arraycopy(array2, 0, dst, array1.length, array2.length);
+        concat(array1, array2, dst);
         return dst;
     }
 

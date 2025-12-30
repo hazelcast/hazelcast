@@ -56,14 +56,14 @@ public abstract class AppContextTestBase {
     protected ApplicationContext applicationContext;
 
     @Test
-    void testServices() {
+    public void testServices() {
         assertThat(instance).isNotNull();
         assertThat(jet).isNotNull();
         assertThat(sqlService).isNotNull();
     }
 
     @Test
-    void testMap() {
+    public void testMap() {
         assertThat((Object) testMap).isNotNull();
         testMap.set("key1", "value1");
         assertEqualsEventually(() -> testMap.get("key1"), "value1");

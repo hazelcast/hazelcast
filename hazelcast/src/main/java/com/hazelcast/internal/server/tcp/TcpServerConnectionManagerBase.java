@@ -33,7 +33,6 @@ import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -230,7 +229,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             this.streamId = streamId;
         }
 
-        @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
+        //@SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
         @Override
         public void run() {
             retries++;

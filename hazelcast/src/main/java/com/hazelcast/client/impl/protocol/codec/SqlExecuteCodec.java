@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Starts execution of an SQL query (as of 4.2).
  */
 @SuppressWarnings("unused")
-@Generated("ad5c3fab7c858d41ecb1edd7be130cd4")
+@Generated("db82d0ae94b980d2071ef6e3d5c7fc23")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -56,7 +56,6 @@ public final class SqlExecuteCodec {
     private SqlExecuteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -149,7 +148,6 @@ public final class SqlExecuteCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

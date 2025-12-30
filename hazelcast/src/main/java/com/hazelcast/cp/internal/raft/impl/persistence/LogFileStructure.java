@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 
@@ -28,7 +27,6 @@ public class LogFileStructure {
     private final long[] tailEntryOffsets;
     private final long indexOfFirstTailEntry;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public LogFileStructure(
             @Nonnull String filename,
             @Nonnull long[] tailEntryOffsets,
@@ -45,7 +43,6 @@ public class LogFileStructure {
     }
 
     @Nonnull
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public long[] tailEntryOffsets() {
         return tailEntryOffsets;
     }

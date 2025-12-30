@@ -24,6 +24,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spring.config.ConfigFactoryAccessor;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -75,7 +76,7 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) {
+    public void beforeAll(@NonNull ExtensionContext context) {
         // Code to run before all tests
     }
 
@@ -87,25 +88,32 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void afterEach(ExtensionContext context) {
+    public void afterEach(@NonNull ExtensionContext context) {
         TestLoggingUtils.removeThreadLocalTestMethodName();
     }
 
     @Override
-    public void afterAll(ExtensionContext context) {
+    public void afterAll(@NonNull ExtensionContext context) {
         var applicationContext = (AbstractApplicationContext) SpringExtension.getApplicationContext(context);
-        if (!applicationContext.isRunning() || !applicationContext.isActive()) {
+        if (!applicationContext.isRunning() || applicationContext.isActive()) {
+            // context was closed, but instance(s) are running, something went wrong.
             Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
             if (!instances.isEmpty()) {
-                LOGGER.warn("Instances haven't been shut down: " + instances);
+                LOGGER.warn("Instances haven't been shut down: {}", instances);
                 HazelcastInstanceFactory.terminateAll();
             }
+        } else {
+            // Normal Hazelcast beans are declared with destroy-method = shutdown, but it makes graceful shutdown,
+            // which takes time and is not necessary in tests.
+            // instead, terminate Hz instances
+            HazelcastInstanceFactory.terminateAll();
         }
         JmxLeakHelper.checkJmxBeans();
     }
 
     @Override
-    public void interceptTestMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    public void interceptTestMethod(@NonNull Invocation<Void> invocation, @NonNull ReflectiveInvocationContext<@NonNull Method> invocationContext,
+                                    @NonNull ExtensionContext extensionContext) throws Throwable {
         Method testMethod = invocationContext.getExecutable();
         long finalTimeoutSeconds = getTimeoutSeconds(testMethod);
         AtomicReference<Throwable> error = new AtomicReference<>();

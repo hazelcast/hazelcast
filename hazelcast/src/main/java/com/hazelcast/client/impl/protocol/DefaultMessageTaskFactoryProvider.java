@@ -798,7 +798,6 @@ import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 
@@ -1717,7 +1716,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new SendAllSchemasMessageTask(cm, node, con));
     }
 
-    @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
     @Override
     public Int2ObjectHashMap<MessageTaskFactory> getFactories() {
         return factories;

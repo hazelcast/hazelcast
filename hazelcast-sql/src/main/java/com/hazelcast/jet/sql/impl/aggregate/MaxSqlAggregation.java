@@ -62,8 +62,8 @@ public class MaxSqlAggregation implements SqlAggregation {
     }
 
     private static Comparable<?> asComparable(Object value) {
-        if (value instanceof Comparable) {
-            return (Comparable<?>) value;
+        if (value instanceof Comparable<?> comparable) {
+            return comparable;
         } else {
             throw QueryException.error("MAX not supported for " + value.getClass() + ": not comparable");
         }

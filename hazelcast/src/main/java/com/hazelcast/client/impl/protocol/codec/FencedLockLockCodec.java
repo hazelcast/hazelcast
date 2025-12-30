@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}.
  */
 @SuppressWarnings("unused")
-@Generated("6fbb5d59431775ef6161141f697776b9")
+@Generated("f8b1fd791d530027bde0867be7664df4")
 public final class FencedLockLockCodec {
     //hex: 0x070100
     public static final int REQUEST_MESSAGE_TYPE = 459008;
@@ -59,7 +59,6 @@ public final class FencedLockLockCodec {
     private FencedLockLockCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

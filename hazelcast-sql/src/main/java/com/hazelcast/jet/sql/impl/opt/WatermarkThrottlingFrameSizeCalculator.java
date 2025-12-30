@@ -60,12 +60,10 @@ public final class WatermarkThrottlingFrameSizeCalculator {
         }
 
         private void visit0(RelNode node) {
-            if (node instanceof SlidingWindowAggregatePhysicalRel) {
-                SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
+            if (node instanceof SlidingWindowAggregatePhysicalRel slidingWindow) {
                 long windowSize = slidingWindow.windowPolicyProvider().apply(eec).frameSize();
                 gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : windowSize;
-            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
-                StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
+            } else if (node instanceof StreamToStreamJoinPhysicalRel s2sJoin) {
                 // For stream-to-stream join we cannot precisely define the throttling frame size, because the
                 // closing edge of records doesn't have a regular rhythm, as windows do. Therefore, we use
                 // a hard-coded value that's a trade-off between latency and the amount of watermarks.

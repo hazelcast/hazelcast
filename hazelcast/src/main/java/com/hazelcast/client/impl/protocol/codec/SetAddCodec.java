@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
 @SuppressWarnings("unused")
-@Generated("28c4611f0907aad7c5f91282d2ad6eb4")
+@Generated("26e7c7166fdc24dba92718339a880d56")
 public final class SetAddCodec {
     //hex: 0x060400
     public static final int REQUEST_MESSAGE_TYPE = 394240;
@@ -55,7 +55,6 @@ public final class SetAddCodec {
     private SetAddCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

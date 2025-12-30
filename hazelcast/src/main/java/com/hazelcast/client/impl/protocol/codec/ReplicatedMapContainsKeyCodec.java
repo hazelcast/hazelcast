@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map contains a mapping for the specified key.
  */
 @SuppressWarnings("unused")
-@Generated("976df4a40fa30ff0088c662ba6dd3d64")
+@Generated("0310718155b1ee5dfce4ad480346360e")
 public final class ReplicatedMapContainsKeyCodec {
     //hex: 0x0D0400
     public static final int REQUEST_MESSAGE_TYPE = 852992;
@@ -50,7 +50,6 @@ public final class ReplicatedMapContainsKeyCodec {
     private ReplicatedMapContainsKeyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

@@ -21,7 +21,6 @@ import com.hazelcast.internal.ascii.TextProtocolsDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,7 +29,6 @@ import java.util.Arrays;
 
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
-@SuppressFBWarnings("EI_EXPOSE_REP")
 public class MemcacheEntry implements IdentifiedDataSerializable {
     private byte[] bytes;
     private byte[] value;

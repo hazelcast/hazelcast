@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Runs given console command on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("f2a55b088be6bb431f8149818148e9a4")
+@Generated("37573c3cf48979c0511ae2674f65e462")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;
@@ -49,7 +49,6 @@ public final class MCRunConsoleCommandCodec {
     private MCRunConsoleCommandCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

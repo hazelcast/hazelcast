@@ -16,7 +16,6 @@
 package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.internal.util.QuickMath;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.*;
 
@@ -896,7 +895,6 @@ public class Object2LongHashMap<K>
         }
     }
 
-    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS")
     public final class EntryIterator
         extends AbstractIterator<Entry<K, Long>>
         implements Entry<K, Long>

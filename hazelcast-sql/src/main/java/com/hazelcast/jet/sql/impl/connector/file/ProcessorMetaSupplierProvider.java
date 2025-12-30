@@ -68,8 +68,8 @@ class ProcessorMetaSupplierProvider implements Supplier<ProcessorMetaSupplier> {
             }
 
             Object value = entry.getValue();
-            if (value instanceof String) {
-                builder.option(key, (String) value);
+            if (value instanceof String string) {
+                builder.option(key, string);
             } else if (value instanceof Map) {
                 for (Map.Entry<String, String> option : ((Map<String, String>) value).entrySet()) {
                     builder.option(option.getKey(), option.getValue());

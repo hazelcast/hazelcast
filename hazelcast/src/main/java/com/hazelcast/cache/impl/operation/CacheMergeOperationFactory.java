@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -46,7 +45,6 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
     public CacheMergeOperationFactory() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public CacheMergeOperationFactory(String name, int[] partitions, List<CacheMergeTypes<Object, Object>>[] mergingEntries,
                                       SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy) {
         this.name = name;

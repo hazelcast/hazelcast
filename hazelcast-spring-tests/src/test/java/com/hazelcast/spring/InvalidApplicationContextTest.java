@@ -17,12 +17,15 @@
 package com.hazelcast.spring;
 
 import org.junit.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 public class InvalidApplicationContextTest {
 
     @Test

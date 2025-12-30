@@ -88,7 +88,7 @@ public class MetricTestUtils {
                 assertThat(mbeanServer.getAttribute(mbean, attributeName)).isEqualTo(expected);
             } catch (AssertionError | InstanceNotFoundException | AttributeNotFoundException e) {
                 if (i == MBEAN_ASSERTION_RETRIES - 1) {
-                    throw e instanceof AssertionError ? (AssertionError) e : new AssertionError(e);
+                    throw e instanceof AssertionError ae ? ae : new AssertionError(e);
                 } else {
                     sleep();
                     continue;

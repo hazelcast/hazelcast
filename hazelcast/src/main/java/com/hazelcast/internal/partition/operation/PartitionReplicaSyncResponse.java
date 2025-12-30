@@ -45,7 +45,6 @@ import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -70,7 +69,6 @@ import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFa
  * <li>if the node is not a replica anymore it will clear the replica versions for the partition</li>
  * </ul>
  */
-@SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
         AllowedDuringPassiveState, TargetAware, Versioned {

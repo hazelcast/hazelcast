@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * modified while the operation is in progress.
  */
 @SuppressWarnings("unused")
-@Generated("1f00bb29a5eb5c088fe7c4b5dc567192")
+@Generated("bea79c6d00b9bd9a34a9763125af9632")
 public final class QueueDrainToMaxSizeCodec {
     //hex: 0x030A00
     public static final int REQUEST_MESSAGE_TYPE = 199168;
@@ -54,7 +54,6 @@ public final class QueueDrainToMaxSizeCodec {
     private QueueDrainToMaxSizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

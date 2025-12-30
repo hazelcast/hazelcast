@@ -49,8 +49,7 @@ public class TrimFunction extends BiExpression<String> {
 
     public static TrimFunction create(Expression<?> input, Expression<?> characters, boolean leading, boolean trailing) {
         // It is common for "characters" to be a constant with space character. Handle it as a special case.
-        if (characters instanceof ConstantExpression) {
-            ConstantExpression<?> characters0 = (ConstantExpression<?>) characters;
+        if (characters instanceof ConstantExpression<?> characters0) {
 
             if (SPACE_ONLY.equals(characters0.getValue())) {
                 characters = null;

@@ -22,7 +22,9 @@ import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.connector.AbstractUpdateMapP.ApplyValuesEntryProcessor;
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
+import com.hazelcast.jet.impl.connector.UpdateMapP;
 import com.hazelcast.jet.impl.connector.UpdateMapP.ApplyFnEntryProcessor;
+import com.hazelcast.jet.impl.connector.UpdateMapWithEntryProcessorP.NamespaceAwareEntryProcessor;
 import com.hazelcast.jet.impl.processor.ProcessorSuppliers;
 import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -63,6 +65,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int EXPECT_NOTHING_PROCESSOR_SUPPLIER = 19;
     public static final int SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 20;
     public static final int RANDOM_MEMBER_PROCESSOR_META_SUPPLIER = 21;
+    public static final int NAMESPACE_AWARE_ENTRY_PROCESSOR = 22;
+    public static final int NAMESPACE_AWARE_APPLY_FN_ENTRY_PROCESSOR = 23;
 
     /**
      * Factory ID
@@ -106,6 +110,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                 case EXPECT_NOTHING_PROCESSOR_SUPPLIER -> new ProcessorMetaSupplier.ExpectNothingProcessorSupplier();
                 case SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER -> new ProcessorMetaSupplier.SpecificMemberPms();
                 case RANDOM_MEMBER_PROCESSOR_META_SUPPLIER -> new ProcessorMetaSupplier.RandomMemberPms();
+                case NAMESPACE_AWARE_ENTRY_PROCESSOR -> new NamespaceAwareEntryProcessor<>();
+                case NAMESPACE_AWARE_APPLY_FN_ENTRY_PROCESSOR -> new UpdateMapP.NamespaceAwareApplyFnEntryProcessor<>();
                 default -> throw new IllegalArgumentException("Unknown type id " + typeId);
             };
         }

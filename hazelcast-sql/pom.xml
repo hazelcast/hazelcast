@@ -38,7 +38,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <immutables.version>2.11.6</immutables.version>
+        <immutables.version>2.12.0</immutables.version>
         <json-surfer.version>0.12</json-surfer.version>
     </properties>
 
@@ -169,6 +169,21 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <phase>package</phase>
+                        <!-- We must generate a -javadoc JAR file to publish on Maven Central -->
+                        <id>empty-javadoc-jar</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                            <excludes>
+                                <exclude>.*</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

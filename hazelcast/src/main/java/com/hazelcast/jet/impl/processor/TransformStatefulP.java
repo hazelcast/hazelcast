@@ -26,8 +26,10 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.impl.util.Util;
 
@@ -54,6 +56,8 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
 
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
+    @Probe(name = MetricNames.JOB_STATEFUL_PROCESSOR_STATES)
+    private final Counter totalStates = SwCounter.newSwCounter();
 
     private final long ttl;
     private final Function<? super T, ? extends K> keyFn;
@@ -69,6 +73,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     private final FlatMapper<Watermark, Object> wmFlatMapper = flatMapper(this::flatMapWm);
     private final EvictingTraverser evictingTraverser = new EvictingTraverser();
     private final Traverser<?> evictingTraverserFlattened = evictingTraverser.flatMap(x -> x);
+    private final TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate;
 
     private long currentWm = Long.MIN_VALUE;
     private Traverser<? extends Entry<?, ?>> snapshotTraverser;
@@ -82,6 +87,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
             @Nonnull ToLongFunction<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> statefulFlatMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
         this.ttl = ttl > 0 ? ttl : Long.MAX_VALUE;
@@ -90,6 +96,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
         this.createIfAbsentFn = k -> new TimestampedItem<>(Long.MIN_VALUE, createFn.get());
         this.statefulFlatMapFn = statefulFlatMapFn;
         this.onEvictFn = onEvictFn;
+        this.deleteStatePredicate = deleteStatePredicate;
     }
 
     @Override
@@ -116,12 +123,17 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
             if (keyToState.size() == maxEntries) {
                 throw new AccumulationLimitExceededException();
             }
-
+            totalStates.inc();
             return createIfAbsentFn.apply(k);
         });
         tsAndState.setTimestamp(max(tsAndState.timestamp(), timestamp));
         S state = tsAndState.item();
-        return statefulFlatMapFn.apply(state, key, event);
+        var traverser =  statefulFlatMapFn.apply(state, key, event);
+        if (deleteStatePredicate != null && deleteStatePredicate.test(state, key, event)) {
+            keyToState.remove(key);
+            totalStates.inc(-1);
+        }
+        return traverser;
     }
 
     @Override
@@ -173,6 +185,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
                     break;
                 }
                 keyToStateIterator.remove();
+                totalStates.inc(-1);
                 if (onEvictFn != null) {
                     return onEvictFn.apply(entry.getValue().item(), entry.getKey(), currentWm);
                 }
@@ -210,6 +223,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
         } else {
             @SuppressWarnings("unchecked")
             TimestampedItem<S> old = keyToState.put((K) key, (TimestampedItem<S>) value);
+            totalStates.inc();
             assert old == null : "Duplicate key '" + key + '\'';
         }
     }

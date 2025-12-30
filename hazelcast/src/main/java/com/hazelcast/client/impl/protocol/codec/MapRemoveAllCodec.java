@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all entries which match with the supplied predicate
  */
 @SuppressWarnings("unused")
-@Generated("d1efd9802f8a522fd0f1689944dd902a")
+@Generated("68fc3af3ce7afec52f5237eec17c94a2")
 public final class MapRemoveAllCodec {
     //hex: 0x013E00
     public static final int REQUEST_MESSAGE_TYPE = 81408;
@@ -49,7 +49,6 @@ public final class MapRemoveAllCodec {
     private MapRemoveAllCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

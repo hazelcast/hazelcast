@@ -40,8 +40,8 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
     }
 
     public static HazelcastRelMetadataQuery reuseOrCreate(RelMetadataQuery mq) {
-        if (mq instanceof HazelcastRelMetadataQuery) {
-            return (HazelcastRelMetadataQuery) mq;
+        if (mq instanceof HazelcastRelMetadataQuery query) {
+            return query;
         } else {
             return new HazelcastRelMetadataQuery();
         }

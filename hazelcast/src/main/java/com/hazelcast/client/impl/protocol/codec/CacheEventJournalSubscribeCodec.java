@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * oldest and newest event in the journal.
  */
 @SuppressWarnings("unused")
-@Generated("78ce6c4a055ee07575d949128b7a14a4")
+@Generated("76c5eae4eb4d3f02cb9a7436f694320a")
 public final class CacheEventJournalSubscribeCodec {
     //hex: 0x131F00
     public static final int REQUEST_MESSAGE_TYPE = 1253120;
@@ -75,7 +75,6 @@ public final class CacheEventJournalSubscribeCodec {
         return StringCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

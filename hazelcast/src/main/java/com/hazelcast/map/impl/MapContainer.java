@@ -28,6 +28,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -37,6 +38,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 public interface MapContainer {
+
+    String PROP_QUERY_EXPIRATION_CHECK_ENABLED
+            = "hazelcast.internal.map.query.expiration.check.enabled";
+
+    boolean DEFAULT_QUERY_EXPIRATION_CHECK_ENABLED = true;
+
+    HazelcastProperty QUERY_EXPIRATION_CHECK_ENABLED
+            = new HazelcastProperty(PROP_QUERY_EXPIRATION_CHECK_ENABLED, DEFAULT_QUERY_EXPIRATION_CHECK_ENABLED);
+
     void init();
 
     /**

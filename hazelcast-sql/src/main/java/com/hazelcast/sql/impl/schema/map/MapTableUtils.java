@@ -159,8 +159,8 @@ public final class MapTableUtils {
             return Collections.emptyList();
         }
 
-        if (converter instanceof CompositeConverter) {
-            CompositeConverter converter0 = ((CompositeConverter) converter);
+        if (converter instanceof CompositeConverter compositeConverter) {
+            CompositeConverter converter0 = compositeConverter;
 
             List<QueryDataType> res = new ArrayList<>(converter0.getComponentCount());
 

@@ -211,13 +211,13 @@ public class EvaluateVisitorTest {
             return true;
         }
 
-        if (expected instanceof EvaluatePredicate && actual instanceof EvaluatePredicate) {
-            return same(((EvaluatePredicate) expected).getPredicate(), ((EvaluatePredicate) actual).getPredicate());
+        if (expected instanceof EvaluatePredicate predicate && actual instanceof EvaluatePredicate evaluatePredicate) {
+            return same(predicate.getPredicate(), evaluatePredicate.getPredicate());
         }
 
-        if (expected instanceof AndPredicate && actual instanceof AndPredicate) {
-            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(((AndPredicate) expected).predicates));
-            List<Predicate> actualSubPredicates = new ArrayList<>(asList(((AndPredicate) actual).predicates));
+        if (expected instanceof AndPredicate predicate && actual instanceof AndPredicate andPredicate) {
+            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(predicate.predicates));
+            List<Predicate> actualSubPredicates = new ArrayList<>(asList(andPredicate.predicates));
 
             for (int i = expectedSubPredicates.size() - 1; i >= 0; --i) {
                 for (int j = actualSubPredicates.size() - 1; j >= 0; --j) {
@@ -232,9 +232,9 @@ public class EvaluateVisitorTest {
             return expectedSubPredicates.isEmpty() && actualSubPredicates.isEmpty();
         }
 
-        if (expected instanceof OrPredicate && actual instanceof OrPredicate) {
-            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(((OrPredicate) expected).predicates));
-            List<Predicate> actualSubPredicates = new ArrayList<>(asList(((OrPredicate) actual).predicates));
+        if (expected instanceof OrPredicate predicate && actual instanceof OrPredicate orPredicate) {
+            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(predicate.predicates));
+            List<Predicate> actualSubPredicates = new ArrayList<>(asList(orPredicate.predicates));
 
             for (int i = expectedSubPredicates.size() - 1; i >= 0; --i) {
                 for (int j = actualSubPredicates.size() - 1; j >= 0; --j) {
@@ -249,8 +249,8 @@ public class EvaluateVisitorTest {
             return expectedSubPredicates.isEmpty() && actualSubPredicates.isEmpty();
         }
 
-        if (expected instanceof NotPredicate && actual instanceof NotPredicate) {
-            return same(((NotPredicate) expected).getPredicate(), ((NotPredicate) actual).getPredicate());
+        if (expected instanceof NotPredicate predicate && actual instanceof NotPredicate notPredicate) {
+            return same(predicate.getPredicate(), notPredicate.getPredicate());
         }
 
         return false;
@@ -265,13 +265,13 @@ public class EvaluateVisitorTest {
             return true;
         }
 
-        if (actual instanceof EvaluatePredicate) {
-            return homomorphic(expected, ((EvaluatePredicate) actual).getPredicate(), useEquals);
+        if (actual instanceof EvaluatePredicate predicate) {
+            return homomorphic(expected, predicate.getPredicate(), useEquals);
         }
 
-        if (expected instanceof AndPredicate && actual instanceof AndPredicate) {
-            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(((AndPredicate) expected).predicates));
-            List<Predicate> actualSubPredicates = new ArrayList<>(asList(((AndPredicate) actual).predicates));
+        if (expected instanceof AndPredicate predicate && actual instanceof AndPredicate andPredicate) {
+            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(predicate.predicates));
+            List<Predicate> actualSubPredicates = new ArrayList<>(asList(andPredicate.predicates));
 
             // First comparison pass.
 
@@ -292,8 +292,7 @@ public class EvaluateVisitorTest {
 
             for (int i = actualSubPredicates.size() - 1; i >= 0; --i) {
                 Predicate actualSubPredicate = actualSubPredicates.get(i);
-                if (actualSubPredicate instanceof EvaluatePredicate) {
-                    EvaluatePredicate actualEvaluatePredicate = (EvaluatePredicate) actualSubPredicate;
+                if (actualSubPredicate instanceof EvaluatePredicate actualEvaluatePredicate) {
                     if (actualEvaluatePredicate.getPredicate() instanceof AndPredicate) {
                         AndPredicate actualAndPredicate = (AndPredicate) actualEvaluatePredicate.getPredicate();
                         actualSubPredicates.remove(i);
@@ -316,9 +315,9 @@ public class EvaluateVisitorTest {
             return expectedSubPredicates.isEmpty() && actualSubPredicates.isEmpty();
         }
 
-        if (expected instanceof OrPredicate && actual instanceof OrPredicate) {
-            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(((OrPredicate) expected).predicates));
-            List<Predicate> actualSubPredicates = new ArrayList<>(asList(((OrPredicate) actual).predicates));
+        if (expected instanceof OrPredicate predicate && actual instanceof OrPredicate orPredicate) {
+            List<Predicate> expectedSubPredicates = new ArrayList<>(asList(predicate.predicates));
+            List<Predicate> actualSubPredicates = new ArrayList<>(asList(orPredicate.predicates));
 
             // First comparison pass.
 
@@ -339,8 +338,7 @@ public class EvaluateVisitorTest {
 
             for (int i = actualSubPredicates.size() - 1; i >= 0; --i) {
                 Predicate actualSubPredicate = actualSubPredicates.get(i);
-                if (actualSubPredicate instanceof EvaluatePredicate) {
-                    EvaluatePredicate actualEvaluatePredicate = (EvaluatePredicate) actualSubPredicate;
+                if (actualSubPredicate instanceof EvaluatePredicate actualEvaluatePredicate) {
                     if (actualEvaluatePredicate.getPredicate() instanceof OrPredicate) {
                         OrPredicate actualAndPredicate = (OrPredicate) actualEvaluatePredicate.getPredicate();
                         actualSubPredicates.remove(i);
@@ -363,16 +361,16 @@ public class EvaluateVisitorTest {
             return expectedSubPredicates.isEmpty() && actualSubPredicates.isEmpty();
         }
 
-        if (expected instanceof NotPredicate && actual instanceof NotPredicate) {
-            return homomorphic(((NotPredicate) expected).getPredicate(), ((NotPredicate) actual).getPredicate(), useEquals);
+        if (expected instanceof NotPredicate predicate && actual instanceof NotPredicate notPredicate) {
+            return homomorphic(predicate.getPredicate(), notPredicate.getPredicate(), useEquals);
         }
 
         return false;
     }
 
     private Predicate optimize(Predicate input) {
-        if (input instanceof VisitablePredicate) {
-            return ((VisitablePredicate) input).accept(visitor, indexes);
+        if (input instanceof VisitablePredicate predicate) {
+            return predicate.accept(visitor, indexes);
         } else {
             return input;
         }

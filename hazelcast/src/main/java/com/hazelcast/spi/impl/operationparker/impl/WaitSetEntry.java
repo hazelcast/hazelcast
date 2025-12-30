@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -106,6 +107,10 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
 
     public boolean shouldWait() {
         return blockingOperation.shouldWait();
+    }
+
+    public void unpark(OperationService operationService) {
+        blockingOperation.unpark(operationService);
     }
 
     @Override

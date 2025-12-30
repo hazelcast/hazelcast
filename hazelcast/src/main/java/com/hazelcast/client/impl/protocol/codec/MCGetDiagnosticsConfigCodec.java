@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the diagnostics configuration from the member.
  */
 @SuppressWarnings("unused")
-@Generated("05dd8f7ecb19a3790aed6d410ad98370")
+@Generated("fc52fa4ee153707fc98e40d6e1c96531")
 public final class MCGetDiagnosticsConfigCodec {
     //hex: 0x202800
     public static final int REQUEST_MESSAGE_TYPE = 2107392;
@@ -66,7 +66,6 @@ public final class MCGetDiagnosticsConfigCodec {
         return clientMessage;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

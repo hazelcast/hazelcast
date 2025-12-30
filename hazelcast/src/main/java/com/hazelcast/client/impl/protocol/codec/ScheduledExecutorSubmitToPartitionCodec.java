@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
 @SuppressWarnings("unused")
-@Generated("16348708fa3cf71903eb1dee8c945c5a")
+@Generated("dff0530290d3c60e202429cd5ed64d23")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -53,7 +53,6 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
     private ScheduledExecutorSubmitToPartitionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

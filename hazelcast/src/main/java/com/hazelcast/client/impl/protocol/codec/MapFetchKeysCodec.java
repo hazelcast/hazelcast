@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
 @SuppressWarnings("unused")
-@Generated("4c51a930d5d89ed5f26c5dd0456c494d")
+@Generated("fe2657866f75ec5a0641136b7b9babe8")
 public final class MapFetchKeysCodec {
     //hex: 0x013700
     public static final int REQUEST_MESSAGE_TYPE = 79616;
@@ -50,7 +50,6 @@ public final class MapFetchKeysCodec {
     private MapFetchKeysCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -93,7 +92,6 @@ public final class MapFetchKeysCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

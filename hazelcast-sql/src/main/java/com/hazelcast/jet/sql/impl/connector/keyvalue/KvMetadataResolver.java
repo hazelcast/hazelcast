@@ -127,8 +127,8 @@ public interface KvMetadataResolver {
         }
 
         public Field(TableField field) {
-            name = field instanceof MapTableField
-                    ? ((MapTableField) field).getPath().getPath() : field.getName();
+            name = field instanceof MapTableField mtf
+                    ? mtf.getPath().getPath() : field.getName();
             type = field.getType();
         }
 

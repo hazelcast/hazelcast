@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -31,7 +30,6 @@ public class DynamicConfigPreJoinOperation
     private IdentifiedDataSerializable[] configs;
     private ConfigCheckMode configCheckMode;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public DynamicConfigPreJoinOperation(IdentifiedDataSerializable[] configs, ConfigCheckMode configCheckMode) {
         this.configs = configs;
         this.configCheckMode = configCheckMode;

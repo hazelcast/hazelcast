@@ -78,13 +78,11 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
         RelDataType rightType;
 
         // Derive type for RHS.
-        if (right instanceof SqlNodeList) {
+        if (right instanceof SqlNodeList nodeList) {
             // Handle the 'IN (expr, ...)' form.
             List<RelDataType> rightTypeList = new ArrayList<>();
-            SqlNodeList nodeList = (SqlNodeList) right;
             for (SqlNode node : nodeList) {
-                if (node instanceof SqlLiteral) {
-                    SqlLiteral lit = (SqlLiteral) node;
+                if (node instanceof SqlLiteral lit) {
                     // We are not supporting raw NULL literals within IN right-hand side list.
                     if (lit.getValue() == null) {
                         throw validator.newValidationError(right, HZRESOURCE.noRawNullsAllowed());

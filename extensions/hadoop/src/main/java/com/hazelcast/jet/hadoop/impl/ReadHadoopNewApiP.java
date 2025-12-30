@@ -32,7 +32,6 @@ import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.PermissionsUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -166,7 +165,6 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
          * The instance is either {@link SerializableConfiguration} or {@link
          * SerializableJobConf}, which are serializable.
          */
-        @SuppressFBWarnings("SE_BAD_FIELD")
         private final Configuration configuration;
         private final ConsumerEx<Configuration> configureFn;
         private final BiFunctionEx<K, V, R> projectionFn;
@@ -239,7 +237,6 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
          * The instance is either {@link SerializableConfiguration} or {@link
          * SerializableJobConf}, which are serializable.
          */
-        @SuppressFBWarnings("SE_BAD_FIELD")
         private final Configuration configuration;
         private final BiFunctionEx<K, V, R> projectionFn;
         private final List<IndexedInputSplit> assignedSplits;

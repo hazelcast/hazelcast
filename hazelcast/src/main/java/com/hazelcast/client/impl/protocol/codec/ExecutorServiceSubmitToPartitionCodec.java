@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Submits the task to the member that owns the partition with the given id.
  */
 @SuppressWarnings("unused")
-@Generated("e7edd13a5ffdd492b0c23bcdbac81fca")
+@Generated("35066f1fbf918cceffa7ba986eaa561a")
 public final class ExecutorServiceSubmitToPartitionCodec {
     //hex: 0x080500
     public static final int REQUEST_MESSAGE_TYPE = 525568;
@@ -50,7 +50,6 @@ public final class ExecutorServiceSubmitToPartitionCodec {
     private ExecutorServiceSubmitToPartitionCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

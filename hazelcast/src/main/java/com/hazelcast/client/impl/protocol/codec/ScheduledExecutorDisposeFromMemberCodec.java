@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Dispose the task from the scheduler
  */
 @SuppressWarnings("unused")
-@Generated("7f65252ef19e5ed99c5decef0649ef80")
+@Generated("2715cf6f2b75420e78e7a18806eb56ab")
 public final class ScheduledExecutorDisposeFromMemberCodec {
     //hex: 0x1A1200
     public static final int REQUEST_MESSAGE_TYPE = 1708544;
@@ -50,7 +50,6 @@ public final class ScheduledExecutorDisposeFromMemberCodec {
     private ScheduledExecutorDisposeFromMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

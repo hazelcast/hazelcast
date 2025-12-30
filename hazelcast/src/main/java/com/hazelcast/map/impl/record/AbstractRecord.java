@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
@@ -33,8 +32,8 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private static final int NUMBER_OF_INTS = 6;
 
     protected int version;
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "Record can be accessed by only its own partition thread.")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "Record can be accessed by only its own partition thread.")
     protected volatile int hits;
     private volatile int lastAccessTime = UNSET;
     private volatile int lastUpdateTime = UNSET;

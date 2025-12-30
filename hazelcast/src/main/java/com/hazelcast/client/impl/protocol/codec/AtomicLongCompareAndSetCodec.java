@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * value the expected value.
  */
 @SuppressWarnings("unused")
-@Generated("6ac2557243c66a754e7b0112a90b1399")
+@Generated("917fb42837b53fa3b42579aa4eddf918")
 public final class AtomicLongCompareAndSetCodec {
     //hex: 0x090400
     public static final int REQUEST_MESSAGE_TYPE = 590848;
@@ -53,7 +53,6 @@ public final class AtomicLongCompareAndSetCodec {
     private AtomicLongCompareAndSetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

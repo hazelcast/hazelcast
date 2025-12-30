@@ -66,9 +66,8 @@ public final class ColumnExpression<T> implements Expression<T> {
         // Don't use lazy deserialization for compact and portable, we need to return a deserialized generic record
         // if the column expression is the top expression.
         Object res = row.get(index, false);
-        if (res instanceof LazyTarget) {
+        if (res instanceof LazyTarget lazyTarget) {
             assert type.getTypeFamily() == QueryDataTypeFamily.OBJECT;
-            LazyTarget lazyTarget = (LazyTarget) res;
             res = lazyTarget.getDeserialized() != null ? lazyTarget.getDeserialized() : lazyTarget.getSerialized();
         }
         return res;
@@ -84,9 +83,9 @@ public final class ColumnExpression<T> implements Expression<T> {
     public T eval(Row row, ExpressionEvalContext context, boolean useLazyDeserialization) {
         Object res = row.get(index, useLazyDeserialization);
 
-        if (res instanceof LazyTarget) {
+        if (res instanceof LazyTarget target) {
             assert type.getTypeFamily() == QueryDataTypeFamily.OBJECT;
-            res = ((LazyTarget) res).deserialize(context.getSerializationService());
+            res = target.deserialize(context.getSerializationService());
         }
 
         return (T) res;

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks if the reference contains the value.
  */
 @SuppressWarnings("unused")
-@Generated("0e3893a2296603e323035a902630e2ee")
+@Generated("4670d10bfe07cf5e0e017b0227fc072b")
 public final class AtomicRefContainsCodec {
     //hex: 0x0A0300
     public static final int REQUEST_MESSAGE_TYPE = 656128;
@@ -50,7 +50,6 @@ public final class AtomicRefContainsCodec {
     private AtomicRefContainsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

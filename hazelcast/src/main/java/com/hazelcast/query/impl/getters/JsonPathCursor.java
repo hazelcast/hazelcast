@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.getters;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -128,7 +127,7 @@ public class JsonPathCursor {
      *
      * The returned byte array must not be modified!
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Making a copy reverses the benefit of this method")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Making a copy reverses the benefit of this method")
     public byte[] getCurrentAsUTF8() {
         return currentAsUtf8;
     }

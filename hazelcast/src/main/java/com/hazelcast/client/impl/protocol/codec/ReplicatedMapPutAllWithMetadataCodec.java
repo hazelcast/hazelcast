@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
 @SuppressWarnings("unused")
-@Generated("c6359776b5be5e7d674331da29fb318d")
+@Generated("4633cfd3ceb8a65236bad3c7f98102bd")
 public final class ReplicatedMapPutAllWithMetadataCodec {
     //hex: 0x0D1300
     public static final int REQUEST_MESSAGE_TYPE = 856832;
@@ -54,7 +54,6 @@ public final class ReplicatedMapPutAllWithMetadataCodec {
     private ReplicatedMapPutAllWithMetadataCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

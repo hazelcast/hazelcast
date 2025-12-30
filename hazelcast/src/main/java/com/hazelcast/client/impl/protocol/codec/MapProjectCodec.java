@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the projection logic on all map entries and returns the result
  */
 @SuppressWarnings("unused")
-@Generated("cb10b2f1a20f9b0c90b871e147192e60")
+@Generated("313ac5e36c34b72f9afece523eff7a9c")
 public final class MapProjectCodec {
     //hex: 0x013B00
     public static final int REQUEST_MESSAGE_TYPE = 80640;
@@ -49,7 +49,6 @@ public final class MapProjectCodec {
     private MapProjectCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

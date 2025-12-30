@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.security.permission.ConnectorPermission;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
@@ -107,10 +106,10 @@ public final class AvroProcessors {
                 ), connectorName);
     }
 
-    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE",
-            justification = "mkdirs() returns false if the directory already existed, which is good. "
-                    + "We don't care even if it didn't exist and we failed to create it, "
-                    + "because we'll fail later when trying to create the file.")
+//    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE",
+//            justification = "mkdirs() returns false if the directory already existed, which is good. "
+//                    + "We don't care even if it didn't exist and we failed to create it, "
+//                    + "because we'll fail later when trying to create the file.")
     private static <D> FunctionEx<Processor.Context, DataFileWriter<D>> dataFileWriterFn(
             String directoryName, String jsonSchema, SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) {

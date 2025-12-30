@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this set contains the specified element.
  */
 @SuppressWarnings("unused")
-@Generated("e65e6ea5dc85260efa4ea3b80a8f23e3")
+@Generated("90fa37d504d075007a71cc274a98b381")
 public final class SetContainsCodec {
     //hex: 0x060200
     public static final int REQUEST_MESSAGE_TYPE = 393728;
@@ -50,7 +50,6 @@ public final class SetContainsCodec {
     private SetContainsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

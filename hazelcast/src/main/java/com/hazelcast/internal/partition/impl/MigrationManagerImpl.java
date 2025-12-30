@@ -1633,8 +1633,9 @@ public class MigrationManagerImpl implements MigrationManager {
     /**
      * Checks if the partition table needs repairing once the partitions have been initialized (assigned).
      * This means that it will:
-     * <li>Remove unknown addresses from the partition table</li>
-     * <li>Promote the partition replicas if necessary (the partition owner is missing)</li>
+     * <ul>
+     *   <li>Remove unknown addresses from the partition table</li>
+     *   <li>Promote the partition replicas if necessary (the partition owner is missing)</li>
      * </ul>
      * If the promotions are successful, schedules the {@link RedoPartitioningTask}. If the process was not successful
      * it will trigger a {@link ControlTask} to restart the partition table repair process.

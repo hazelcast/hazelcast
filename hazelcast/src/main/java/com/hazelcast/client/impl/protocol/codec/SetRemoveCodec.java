@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (This set will not contain the element once the call returns.)
  */
 @SuppressWarnings("unused")
-@Generated("dbb17a310d7201d6467897e552871cfc")
+@Generated("4e7a7d839db811ab638edd3cdb52f230")
 public final class SetRemoveCodec {
     //hex: 0x060500
     public static final int REQUEST_MESSAGE_TYPE = 394496;
@@ -52,7 +52,6 @@ public final class SetRemoveCodec {
     private SetRemoveCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

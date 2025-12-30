@@ -22,9 +22,6 @@ import com.hazelcast.logging.Logger;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,8 +38,6 @@ import java.util.function.Supplier;
  * @since 5.6
  */
 @Configuration(proxyBeanMethods = false)
-@AutoConfiguration
-@AutoConfigureAfter({HazelcastAutoConfiguration.class, HazelcastExposeObjectRegistrar.class})
 public class HazelcastObjectExtractionConfiguration {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastObjectExtractionConfiguration.class);
@@ -54,6 +49,7 @@ public class HazelcastObjectExtractionConfiguration {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     public static BeanDefinitionRegistryPostProcessor hzInternalBeanExposer(@Nonnull HazelcastInstance hazelcastInstance,
                                                                             ApplicationContext applicationContext) {
+        LOGGER.fine("Initializing Hazelcast object extraction configuration");
         ExposeHazelcastObjects.Configuration hzBeanExportConf = ExposeHazelcastObjects.Configuration.empty();
         if (applicationContext.containsBean("hzBeanExportConf")) {
             hzBeanExportConf = applicationContext.getBean("hzBeanExportConf", ExposeHazelcastObjects.Configuration.class);

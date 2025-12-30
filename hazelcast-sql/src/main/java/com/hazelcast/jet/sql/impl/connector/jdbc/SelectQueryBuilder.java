@@ -58,8 +58,7 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
-            if (node instanceof RexInputRef) {
-                RexInputRef rexInputRef = (RexInputRef) node;
+            if (node instanceof RexInputRef rexInputRef) {
                 SqlIdentifier field = (SqlIdentifier) context.field(rexInputRef.getIndex());
                 QueryDataType fieldType = jdbcTable.getFieldByExternalName(field.getSimple()).getType();
                 converters.add(fieldType::convert);

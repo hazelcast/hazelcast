@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
@@ -76,16 +77,82 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
+    /**
+     * The same as {@link BatchStageWithKey#mapStateful(SupplierEx, TriFunction)},
+     * with an additional parameter {@code deleteStatePredicate} that allows the state to be deleted.
+     * @param createFn function that returns the state object
+     * @param mapFn    function that receives the state object and the input item and
+     *                 outputs the result item. It may modify the state object. It must be
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param deleteStatePredicate predicate that determines whether the state should be deleted
+     *                            immediately after processing the event. If this predicate returns
+     *                            {@code true}, the state is removed right away.
+     * @param <S>      type of the state object
+     * @param <R>      type of the result
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    <S, R> BatchStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    );
+
     @Nonnull @Override
     <S> BatchStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     );
 
+    /**
+     * The same as {@link BatchStageWithKey#filterStateful(SupplierEx, BiPredicateEx)},
+     * with an additional parameter {@code deleteStatePredicate} that allows the state to be deleted.
+     * @param createFn function that returns the state object
+     * @param filterFn predicate that receives the state object and the input item and
+     *                 outputs a boolean value. It may modify the state object.
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param deleteStatePredicate predicate that determines whether the state should be deleted
+     *                            immediately after processing the event. If this predicate returns
+     *                            {@code true}, the state is removed right away.
+     * @param <S>      type of the state object
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    <S> BatchStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    );
+
     @Nonnull @Override
     <S, R> BatchStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
+    );
+
+    /**
+     * The same as {@link BatchStageWithKey#flatMapStateful(SupplierEx, TriFunction)}},
+     * with an additional parameter {@code deleteStatePredicate} that allows the state to be deleted.
+     * @param createFn  function that returns the state object
+     * @param flatMapFn function that receives the state object and the input item and
+     *                  outputs the result items. It may modify the state
+     *                  object. It must not return null traverser, but can
+     *                  return an {@linkplain Traversers#empty() empty traverser}.
+     * @param deleteStatePredicate predicate that determines whether the state should be deleted
+     *                            immediately after processing the event. If this predicate returns
+     *                            {@code true}, the state is removed right away.
+     * @param <S>      type of the state object
+     * @param <R>       type of the result
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    <S, R> BatchStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
     );
 
     @Nonnull @Override

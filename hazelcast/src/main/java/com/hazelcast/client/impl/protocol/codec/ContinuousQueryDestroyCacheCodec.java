@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the query cache with the given name for a specific map.
  */
 @SuppressWarnings("unused")
-@Generated("8a30ec9bcba30c3879194dda82e63f60")
+@Generated("b2d7e1c88ca8f55543660788a49a299e")
 public final class ContinuousQueryDestroyCacheCodec {
     //hex: 0x160600
     public static final int REQUEST_MESSAGE_TYPE = 1443328;
@@ -50,7 +50,6 @@ public final class ContinuousQueryDestroyCacheCodec {
     private ContinuousQueryDestroyCacheCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

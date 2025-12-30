@@ -506,8 +506,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     static class AfterGetModifyInterceptor extends MapInterceptorAdaptor {
         @Override
         public void afterGet(Object value) {
-            if (value instanceof Dummy) {
-                Dummy dummy = (Dummy) value;
+            if (value instanceof Dummy dummy) {
                 dummy.value = -dummy.value;
             }
         }

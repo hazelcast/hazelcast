@@ -22,7 +22,6 @@ import java.util.Properties;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.security.ICredentialsFactory;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This class configures the Kerberos identity. Based on this configuration, service tickets are retrieved from Kerberos KDC
@@ -117,7 +116,7 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return this;
     }
 
-    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Proper support in the config XML generator.")
+    //@SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Proper support in the config XML generator.")
     public Boolean getUseCanonicalHostname() {
         String strVal = factoryConfig.getProperties().getProperty("useCanonicalHostname");
         return strVal != null ? Boolean.parseBoolean(strVal) : null;

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to become available.
  */
 @SuppressWarnings("unused")
-@Generated("8248ce76a757a3bd51a7daed864e79c4")
+@Generated("bddf525b7d6ed6d4647b0149d0f62636")
 public final class TransactionalQueuePollCodec {
     //hex: 0x120300
     public static final int REQUEST_MESSAGE_TYPE = 1180416;
@@ -53,7 +53,6 @@ public final class TransactionalQueuePollCodec {
     private TransactionalQueuePollCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

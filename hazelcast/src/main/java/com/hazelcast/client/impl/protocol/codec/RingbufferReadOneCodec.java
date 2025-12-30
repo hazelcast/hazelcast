@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
 @SuppressWarnings("unused")
-@Generated("25fde6c381c98731beaa0e0f14b05952")
+@Generated("afe3bb3e8b9c7c1e6666fe08c9fed06a")
 public final class RingbufferReadOneCodec {
     //hex: 0x170700
     public static final int REQUEST_MESSAGE_TYPE = 1509120;
@@ -53,7 +53,6 @@ public final class RingbufferReadOneCodec {
     private RingbufferReadOneCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

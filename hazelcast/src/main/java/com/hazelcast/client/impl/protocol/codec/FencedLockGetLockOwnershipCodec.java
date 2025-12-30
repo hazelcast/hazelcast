@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns current lock ownership status of the given FencedLock instance.
  */
 @SuppressWarnings("unused")
-@Generated("1aef2c6cf5d6bbcc2c1a913a250af6cd")
+@Generated("38e072b5aa98ff1929c512b9cc1a9168")
 public final class FencedLockGetLockOwnershipCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;
@@ -53,7 +53,6 @@ public final class FencedLockGetLockOwnershipCodec {
     private FencedLockGetLockOwnershipCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -90,7 +89,6 @@ public final class FencedLockGetLockOwnershipCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

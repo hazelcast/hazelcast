@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the size of the list
  */
 @SuppressWarnings("unused")
-@Generated("056fd47ebdf32069576f014d8fba2131")
+@Generated("c467f9c040235c77a572a76f68f1441c")
 public final class TransactionalListSizeCodec {
     //hex: 0x110300
     public static final int REQUEST_MESSAGE_TYPE = 1114880;
@@ -52,7 +52,6 @@ public final class TransactionalListSizeCodec {
     private TransactionalListSizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

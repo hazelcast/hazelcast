@@ -84,13 +84,12 @@
 
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
-        <checkstyle.version>12.1.1</checkstyle.version>
-        <docker.maven.plugin.version>0.47.0</docker.maven.plugin.version>
+        <checkstyle.version>12.3.0</checkstyle.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.4</avro.version>
-        <aws.sdk.version>1.12.793</aws.sdk.version>
-        <aws.sdk2.version>2.37.1</aws.sdk2.version>
+        <aws.sdk.version>1.12.796</aws.sdk.version>
+        <aws.sdk2.version>2.40.15</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -113,7 +112,7 @@
         <kafka.version>3.9.1</kafka.version>
         <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
         <confluent.version>7.9.1</confluent.version>
-        <kotlin.version>2.2.21</kotlin.version>
+        <kotlin.version>2.3.0</kotlin.version>
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <parquet.version>1.16.0</parquet.version>
 
@@ -126,11 +125,11 @@
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
-        <mongodb.version>5.6.1</mongodb.version>
+        <mongodb.version>5.6.2</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.44.0</activemq-artemis.version>
-        <bytebuddy.version>1.17.8</bytebuddy.version>
+        <bytebuddy.version>1.18.3</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -171,18 +170,12 @@
 
     <distributionManagement>
         <repository>
-            <id>release-repository</id>
-            <!-- Irrespective of this configuration, nexus-staging-maven-plugin
-            will *also* deploy to it's own staging destination, configured in
-            //project//plugin[artifactId='nexus-staging-maven-plugin']/configuration/nexusUrl
-            (i.e. Maven central) -->
-            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
+            <id>private-repository</id>
+            <url>https://repository.hazelcast.com/release</url>
         </repository>
         <snapshotRepository>
-            <id>snapshot-repository</id>
-            <name>Maven2 Snapshot Repository</name>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <uniqueVersion>false</uniqueVersion>
+            <id>private-repository</id>
+            <url>https://repository.hazelcast.com/snapshot</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -219,7 +212,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>4.1.126.Final</version>
+                <version>4.1.128.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -380,27 +373,27 @@
             <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
-                <version>2.10</version>
+                <version>3.0.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.19.0</version>
+                <version>1.20.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.20.0</version>
+                <version>2.21.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.19.0</version>
+                <version>3.20.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.14.0</version>
+                <version>1.15.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -512,7 +505,7 @@
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
-                <version>2.25.2</version>
+                <version>2.25.3</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -525,7 +518,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.51.1</version>
+                <version>3.52.1</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -550,7 +543,7 @@
             <dependency>
                 <groupId>org.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>1.8.0</version>
+                <version>1.8.1</version>
             </dependency>
             <dependency>
                 <groupId>net.minidev</groupId>
@@ -612,24 +605,19 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-bom</artifactId>
-                <version>5.20.0</version>
+                <version>5.21.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.2.1</version>
+                <version>4.2.5</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
                 <version>0.10.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-annotations</artifactId>
-                <version>4.9.8</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -645,7 +633,7 @@
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.43.0</version>
+                <version>2.45.0</version>
             </dependency>
             <dependency>
                 <groupId>info.picocli</groupId>
@@ -689,7 +677,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.71.0</version>
+                <version>26.73.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -715,12 +703,12 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
-                <version>3.9.11</version>
+                <version>3.9.12</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
-                <version>3.9.11</version>
+                <version>3.9.12</version>
             </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
@@ -750,7 +738,7 @@
             <dependency>
                 <groupId>org.wiremock</groupId>
                 <artifactId>wiremock-standalone</artifactId>
-                <version>3.13.1</version>
+                <version>3.13.2</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.validation</groupId>
@@ -760,7 +748,7 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-jvm</artifactId>
-                <version>5.2.1</version>
+                <version>5.3.2</version>
             </dependency>
             <!-- Resolves convergence between hazelcast-sql (via calcite) & hazelcast-jet-files-azure (via parquet) -->
             <dependency>
@@ -808,7 +796,9 @@
                                 <artifact>*:*</artifact>
                                 <excludes>
                                     <exclude>module-info.class</exclude>
-                                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                                    <!-- We don't need to shade muli-release JAR content that targets a Java version lower than our minimum requirements -->
+                                    <exclude>META-INF/versions/9/**</exclude>
+                                    <exclude>META-INF/versions/11/**</exclude>
                                     <exclude>LICENSE</exclude>
                                     <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
@@ -896,12 +886,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.4.2</version>
+                    <version>3.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>3.4.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1039,7 +1029,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>3.4.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1084,7 +1074,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.6.2</version>
+                    <version>3.6.3</version>
                 </plugin>
                 <plugin>
                     <groupId>pl.project13.maven</groupId>
@@ -1099,7 +1089,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>12.1.8</version>
+                    <version>12.1.9</version>
                     <configuration>
                         <format>ALL</format>
                         <skipProvidedScope>true</skipProvidedScope>
@@ -1121,6 +1111,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
                     <version>3.1.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.48.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1342,51 +1337,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <!--
-            Configures release-specific options when doing an intermediate devel release
-
-            Ensures Javadoc, sources etc. are generated and that an appropriate distribution destination is specified
-
-            Unfortunately, it isn't possible to chain profiles, so we need to duplicate the javadoc plugin
-            -->
-            <id>release-devel</id>
-            <properties>
-                <maven.source.skip>false</maven.source.skip>
-                <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
-                <attribution.skip>false</attribution.skip>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.hazelcast.maven</groupId>
-                        <artifactId>attribution-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>per-jar-attribution</id>
-                                <goals>
-                                    <goal>generate</goal>
-                                </goals>
-                                <configuration>
-                                    <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <distributionManagement>
-                <repository>
-                    <id>devel-repository</id>
-                    <url>https://repository.hazelcast.com/devel</url>
-                </repository>
-            </distributionManagement>
-        </profile>
         
         <!-- For use in CI (Continuous Integration) environments (Jenkins, GitHub actions etc) -->
         <profile>
@@ -1453,6 +1403,46 @@
             </build>
         </profile>
 
+        <profile>
+            <!-- USE WITH CAUTION! Switches deployment from JFrog Artifactory to Maven Central for releases -->
+            <id>enable-maven-central</id>
+            <properties>
+                <maven.central.autoReleaseAfterClose>false</maven.central.autoReleaseAfterClose>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.sonatype.plugins</groupId>
+                            <artifactId>nexus-staging-maven-plugin</artifactId>
+                            <version>1.7.0</version>
+                            <extensions>true</extensions>
+                            <configuration>
+                                <serverId>release-repository</serverId>
+                                <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
+                                <stagingProfileId>com.hazelcast</stagingProfileId>
+                                <autoReleaseAfterClose>${maven.central.autoReleaseAfterClose}</autoReleaseAfterClose>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <inherited>false</inherited>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- USE WITH CAUTION! Activates automatic release to Maven Central upon closing the staging repository -->
+            <id>auto-release-maven-central</id>
+            <properties>
+                <maven.central.autoReleaseAfterClose>true</maven.central.autoReleaseAfterClose>
+            </properties>
+        </profile>
+
         <!--
         A range of Spring versions are supported - using profiles allow configuration of different major versions for testing
         The supported versions of Spring are featured in the public documentation
@@ -1475,7 +1465,7 @@
             <properties>
                 <!-- should only be Spring 6 -->
                 <spring.boot.version>3.5.7</spring.boot.version>
-                <org.springframework.version>6.2.7</org.springframework.version>
+                <org.springframework.version>6.2.14</org.springframework.version>
             </properties>
         </profile>
         <profile>
@@ -1551,17 +1541,6 @@
             <id>hazelcast-private-snapshot-repository</id>
             <name>Hazelcast Private Repository</name>
             <url>https://repository.hazelcast.com/snapshot/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>snapshot-internal</id>
-            <name>Hazelcast Internal Snapshots</name>
-            <url>https://repository.hazelcast.com/snapshot-internal/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>

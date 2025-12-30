@@ -21,7 +21,6 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -37,7 +36,7 @@ public class ResultSegment implements IdentifiedDataSerializable {
     public ResultSegment() {
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public ResultSegment(Result result, IterationPointer[] pointers) {
         this.result = result;
         this.pointers = pointers;
@@ -54,7 +53,7 @@ public class ResultSegment implements IdentifiedDataSerializable {
     /**
      * Returns the iteration pointers representing the current iteration state.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
     public IterationPointer[] getPointers() {
         return pointers;
     }
@@ -62,7 +61,7 @@ public class ResultSegment implements IdentifiedDataSerializable {
     /**
      * Sets the iteration pointers representing the current iteration state.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public void setPointers(IterationPointer[] pointers) {
         this.pointers = pointers;
     }

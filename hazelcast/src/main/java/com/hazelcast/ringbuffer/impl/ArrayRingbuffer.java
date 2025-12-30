@@ -17,7 +17,6 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -161,7 +160,6 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
     }
 
     @Override
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public E[] getItems() {
         return ringItems;
     }

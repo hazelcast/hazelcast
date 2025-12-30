@@ -112,17 +112,16 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
             throwCantDeterminePath();
         }
 
-        if (astPath instanceof SqlLiteral) {
-            String path = extractStringValue((SqlLiteral) astPath);
+        if (astPath instanceof SqlLiteral literal) {
+            String path = extractStringValue(literal);
             if (path != null) {
                 return Collections.singletonList(ConnectorPermission.file(path, ActionConstants.ACTION_READ));
             } else {
                 throwCantDeterminePath();
             }
-        } else if (astPath instanceof SqlDynamicParam) {
-            Object pathObj = validator.getRawArgumentAt(((SqlDynamicParam) astPath).getIndex());
-            if (pathObj instanceof String) {
-                String path = (String) pathObj;
+        } else if (astPath instanceof SqlDynamicParam param) {
+            Object pathObj = validator.getRawArgumentAt(param.getIndex());
+            if (pathObj instanceof String path) {
                 return Collections.singletonList(ConnectorPermission.file(path, ActionConstants.ACTION_READ));
             } else {
                 throwCantDeterminePath();

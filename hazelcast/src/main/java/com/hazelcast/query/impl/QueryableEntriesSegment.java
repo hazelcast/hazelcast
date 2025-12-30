@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.iteration.IterationPointer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 
@@ -30,7 +29,7 @@ public class QueryableEntriesSegment {
     private final Collection<QueryableEntry> entries;
     private final IterationPointer[] pointers;
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public QueryableEntriesSegment(Collection<QueryableEntry> entries, IterationPointer[] pointers) {
         this.entries = entries;
         this.pointers = pointers;
@@ -43,7 +42,7 @@ public class QueryableEntriesSegment {
     /**
      * Returns the iteration pointers representing the current iteration state.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
     public IterationPointer[] getPointers() {
         return pointers;
     }

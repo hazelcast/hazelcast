@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("d59e3dae670d87e058fb9020ced6c700")
+@Generated("79daad4f13ce1cfb120c40bddb1fbc26")
 public final class DynamicConfigAddRingbufferConfigCodec {
     //hex: 0x1B0200
     public static final int REQUEST_MESSAGE_TYPE = 1769984;
@@ -56,7 +56,6 @@ public final class DynamicConfigAddRingbufferConfigCodec {
     private DynamicConfigAddRingbufferConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

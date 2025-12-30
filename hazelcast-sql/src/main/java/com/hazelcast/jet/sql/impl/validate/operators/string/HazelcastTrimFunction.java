@@ -134,7 +134,7 @@ public final class HazelcastTrimFunction extends HazelcastFunction implements Ha
                 break;
 
             case 3:
-                assert operands[0] instanceof SqlLiteral && ((SqlLiteral) operands[0]).getValue() instanceof SqlTrimFunction.Flag;
+                assert operands[0] instanceof SqlLiteral sl && sl.getValue() instanceof SqlTrimFunction.Flag;
 
                 if (operands[1] == null) {
                     operands[1] = SqlLiteral.createCharString(" ", pos);

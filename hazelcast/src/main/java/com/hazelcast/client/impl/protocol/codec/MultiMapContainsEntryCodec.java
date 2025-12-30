@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns whether the multimap contains the given key-value pair.
  */
 @SuppressWarnings("unused")
-@Generated("574e46df85d96bc33ec1484dc77a1010")
+@Generated("bfbfca5041ab7c03597f405b66706cd9")
 public final class MultiMapContainsEntryCodec {
     //hex: 0x020900
     public static final int REQUEST_MESSAGE_TYPE = 133376;
@@ -51,7 +51,6 @@ public final class MultiMapContainsEntryCodec {
     private MultiMapContainsEntryCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
