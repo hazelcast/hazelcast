@@ -58,7 +58,7 @@ public final class ElasticSinks {
      * clientFn and maps items using given mapToRequestFn
      * <p>
      * Usage:
-     * <pre>Sink<Map<String, Object>> sink = ElasticSinks.elastic(
+     * <pre>Sink&lt;Map&lt;String, Object&gt;&gt; sink = ElasticSinks.elastic(
      *   () -> ElasticClients.client("es-host", 9200),
      *   map -> new IndexRequest("my-index").source(map)
      * );</pre>
