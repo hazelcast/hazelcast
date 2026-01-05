@@ -238,6 +238,12 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka.version}</version>
+                <classifier>test</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
                 <artifactId>connect-api</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
@@ -260,6 +266,17 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>connect-file</artifactId>
                 <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka_${scala.version}</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka_${scala.version}</artifactId>
+                <version>${kafka.version}</version>
+                <classifier>test</classifier>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>

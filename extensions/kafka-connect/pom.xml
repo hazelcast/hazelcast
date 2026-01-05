@@ -181,13 +181,11 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
         </dependency>
         <!-- This jar is often used by connectors; was transitively included in Kafka < 3.9, now it must be explicit -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${kafka.version}</version>
         </dependency>
 
         <!-- Kafka Connect connectors use Jackson Core --> 
