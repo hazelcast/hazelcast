@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("0ff4ecf22fb2f3e812ec61fd909181d4")
+@Generated("cdfab31855f97d03b6bd2070027d0962")
 public final class AzureConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int USE_PUBLIC_IP_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

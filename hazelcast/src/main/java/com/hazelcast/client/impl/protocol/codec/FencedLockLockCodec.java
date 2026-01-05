@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}.
  */
 @SuppressWarnings("unused")
-@Generated("9755faf2dc5dd5e80c7e04a782e250d4")
+@Generated("b855410c018c5c4844528b1b235b1ccb")
 public final class FencedLockLockCodec {
     //hex: 0x070100
     public static final int REQUEST_MESSAGE_TYPE = 459008;

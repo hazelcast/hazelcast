@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and returns false
  */
 @SuppressWarnings("unused")
-@Generated("c03d93b6b37e24c58126072ce0af5fda")
+@Generated("ab89ba2d282c5cdebcedca1e8d8aefe9")
 public final class CountDownLatchTrySetCountCodec {
     //hex: 0x0B0100
     public static final int REQUEST_MESSAGE_TYPE = 721152;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all the entries associated with the given key.
  */
 @SuppressWarnings("unused")
-@Generated("359b8d6ab64c4e7634c7332234d231b4")
+@Generated("25683107368b3498a5edfb5a489b18c7")
 public final class TransactionalMultiMapRemoveEntryCodec {
     //hex: 0x0F0400
     public static final int REQUEST_MESSAGE_TYPE = 984064;

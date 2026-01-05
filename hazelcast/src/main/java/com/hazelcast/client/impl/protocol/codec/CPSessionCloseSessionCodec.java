@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Closes the given session on the given CP group
  */
 @SuppressWarnings("unused")
-@Generated("464a26da849d9320edbbc7e428f91e67")
+@Generated("21d32aa7f158ec39515dcc1545f91c44")
 public final class CPSessionCloseSessionCodec {
     //hex: 0x1F0200
     public static final int REQUEST_MESSAGE_TYPE = 2032128;

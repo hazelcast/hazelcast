@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * modified while the operation is in progress.
  */
 @SuppressWarnings("unused")
-@Generated("693c84c723cbdefa7fdfcd5c6446a1ae")
+@Generated("0721882b883e479f1036ceda7f3efc0b")
 public final class QueueDrainToMaxSizeCodec {
     //hex: 0x030A00
     public static final int REQUEST_MESSAGE_TYPE = 199168;

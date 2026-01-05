@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
 @SuppressWarnings("unused")
-@Generated("eba05b9b51109e7aa1100bc9a50fd638")
+@Generated("3b0d3e6581a8ae0869a389d7f9939edc")
 public final class MapIsLockedCodec {
     //hex: 0x011200
     public static final int REQUEST_MESSAGE_TYPE = 70144;

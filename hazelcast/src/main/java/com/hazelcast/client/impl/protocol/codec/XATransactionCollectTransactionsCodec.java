@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Obtains a list of prepared transaction from the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("1015e0575cc905d282329be09925ed03")
+@Generated("4d63056f15913b640b42a1f3fb6a6cb5")
 public final class XATransactionCollectTransactionsCodec {
     //hex: 0x140200
     public static final int REQUEST_MESSAGE_TYPE = 1311232;

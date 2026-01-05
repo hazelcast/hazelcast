@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("adaa27da65d4418f39b336e8bb4fefb9")
+@Generated("f40f06635b5285921e56a0be44d3e828")
 public final class DistributedObjectInfoCodec {
 
     private DistributedObjectInfoCodec() {

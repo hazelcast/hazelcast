@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts an entry into this map if the specified key is not already associated with a value.
  */
 @SuppressWarnings("unused")
-@Generated("813cd3a64f3884389bf46a53c546148d")
+@Generated("28e69570864a211c18677a19e980731c")
 public final class VectorCollectionPutIfAbsentCodec {
     //hex: 0x240200
     public static final int REQUEST_MESSAGE_TYPE = 2359808;

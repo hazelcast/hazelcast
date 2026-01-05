@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds listener for backup acks
  */
 @SuppressWarnings("unused")
-@Generated("6e1d02a3d11e083b947c268f20768861")
+@Generated("8f118bfce4e68d776d8675cb4e6ddbfb")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Remove item from the transactional list
  */
 @SuppressWarnings("unused")
-@Generated("a362c3a292ba3b01ffc7f900fe3303c2")
+@Generated("0bd0416a7e209b6533a77cdddc9c1d61")
 public final class TransactionalListRemoveCodec {
     //hex: 0x110200
     public static final int REQUEST_MESSAGE_TYPE = 1114624;

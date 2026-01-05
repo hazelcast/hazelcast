@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the result of the processing, if any, defined by the implementation.
  */
 @SuppressWarnings("unused")
-@Generated("79531fe48e806b6631e3abce0393c527")
+@Generated("28c33d03f77ada9e535c448e39c10cd2")
 public final class CacheEntryProcessorCodec {
     //hex: 0x130800
     public static final int REQUEST_MESSAGE_TYPE = 1247232;

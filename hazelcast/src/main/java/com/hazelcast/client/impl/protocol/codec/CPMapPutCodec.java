@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the key-value into the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("7270e2025c34a957038665569f798e08")
+@Generated("d0a10aaec2817652aaeb76ff5dd2d204")
 public final class CPMapPutCodec {
     //hex: 0x230200
     public static final int REQUEST_MESSAGE_TYPE = 2294272;

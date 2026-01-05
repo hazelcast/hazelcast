@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
  */
 @SuppressWarnings("unused")
-@Generated("50f16a4ceb48f455d4a8bcede80eb704")
+@Generated("46055f30da20949939ab653cd0c85f76")
 public final class MapPutIfAbsentWithMaxIdleCodec {
     //hex: 0x014600
     public static final int REQUEST_MESSAGE_TYPE = 83456;

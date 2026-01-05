@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
 @SuppressWarnings("unused")
-@Generated("62a4200667c642c6533cc4271a7bf0ec")
+@Generated("d7cfa9bf72d48f9e3dbfc103ad52814e")
 public final class MapGetEntryViewCodec {
     //hex: 0x011D00
     public static final int REQUEST_MESSAGE_TYPE = 72960;

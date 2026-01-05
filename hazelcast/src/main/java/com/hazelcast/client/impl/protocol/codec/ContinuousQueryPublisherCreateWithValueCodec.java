@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a publisher that includes value for the cache events it sends.
  */
 @SuppressWarnings("unused")
-@Generated("f3e8c90300a873e512a256f87c2f2cbc")
+@Generated("314621759ebe54c232da78f1f0a13a83")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;

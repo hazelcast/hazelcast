@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
 @SuppressWarnings("unused")
-@Generated("01b804b4d12c04685700d91d1c365935")
+@Generated("dea8054e824f1750ec17eacf2347a3d1")
 public final class ListRemoveWithIndexCodec {
     //hex: 0x051200
     public static final int REQUEST_MESSAGE_TYPE = 332288;

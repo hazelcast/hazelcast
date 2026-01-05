@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Derives CREATE MAPPING SQL.
  */
 @SuppressWarnings("unused")
-@Generated("79ec980b91797eece502184bf0bdaebe")
+@Generated("4bf1c99add69f9e03194618e2431dd65")
 public final class SqlMappingDdlCodec {
     //hex: 0x210600
     public static final int REQUEST_MESSAGE_TYPE = 2164224;

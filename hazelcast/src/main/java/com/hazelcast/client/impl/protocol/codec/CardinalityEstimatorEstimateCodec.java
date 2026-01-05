@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If it was previously estimated and never invalidated, then the cached version is used.
  */
 @SuppressWarnings("unused")
-@Generated("5e5f414060bd68e5c0342a0d99b6ca93")
+@Generated("6d29bfd9f407556cb336da28a8168d0e")
 public final class CardinalityEstimatorEstimateCodec {
     //hex: 0x190200
     public static final int REQUEST_MESSAGE_TYPE = 1638912;

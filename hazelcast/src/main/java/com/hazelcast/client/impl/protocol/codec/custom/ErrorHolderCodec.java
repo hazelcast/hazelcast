@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("effc0bfd8aef32cfa167818bf178e73c")
+@Generated("13379626a6ded7d7ac1ce00809cce0e9")
 public final class ErrorHolderCodec {
     private static final int ERROR_CODE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ERROR_CODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

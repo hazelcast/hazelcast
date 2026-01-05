@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * will be notified for, see the documentation of the type field of the Cache event below.
  */
 @SuppressWarnings("unused")
-@Generated("34be54a0965d40ac78d15f52f236e819")
+@Generated("9d9570714b71b5cf19efc6f7aa4b314f")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;

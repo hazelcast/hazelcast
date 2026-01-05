@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("69720d4dfd48375975c869b3c0c05b0c")
+@Generated("33abbda32724230c26415163f1fdadea")
 public final class MCEventCodec {
     private static final int TIMESTAMP_FIELD_OFFSET = 0;
     private static final int TYPE_FIELD_OFFSET = TIMESTAMP_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

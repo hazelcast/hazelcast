@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Sends all the schemas to the cluster
  */
 @SuppressWarnings("unused")
-@Generated("fd3333ac64bad5d036cce7a061fd3a24")
+@Generated("ca184960ec8806fda2458688fe926e8a")
 public final class ClientSendAllSchemasCodec {
     //hex: 0x001500
     public static final int REQUEST_MESSAGE_TYPE = 5376;

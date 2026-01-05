@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * method returns.
  */
 @SuppressWarnings("unused")
-@Generated("784d7658f7e1b4a3ad3fa9af257228e5")
+@Generated("d044380e9b94d5a9858f21175b69c6a5")
 public final class QueueClearCodec {
     //hex: 0x030F00
     public static final int REQUEST_MESSAGE_TYPE = 200448;

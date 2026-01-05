@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the capacity of this Ringbuffer.
  */
 @SuppressWarnings("unused")
-@Generated("6065947a4ed0c215b58a6ee73ebb69b9")
+@Generated("6a2108b3e36235d60d89f25dac732933")
 public final class RingbufferCapacityCodec {
     //hex: 0x170400
     public static final int REQUEST_MESSAGE_TYPE = 1508352;

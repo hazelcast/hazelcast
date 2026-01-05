@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cache contains a mapping for a key k such that key.equals(k). (There can be at most one such mapping.)
  */
 @SuppressWarnings("unused")
-@Generated("01185ebaafccd28deaf9fc2b633e3a18")
+@Generated("4e8a9daa80b94fca847ffe57d03119c1")
 public final class CacheContainsKeyCodec {
     //hex: 0x130500
     public static final int REQUEST_MESSAGE_TYPE = 1246464;

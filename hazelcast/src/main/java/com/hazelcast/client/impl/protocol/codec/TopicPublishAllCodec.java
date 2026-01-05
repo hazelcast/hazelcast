@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Publishes all messages to all subscribers of this topic
  */
 @SuppressWarnings("unused")
-@Generated("5a164eac9d99c1ff8695ec7808386e65")
+@Generated("5adfe42a4f7c71e696a8dc7aed766ec2")
 public final class TopicPublishAllCodec {
     //hex: 0x040400
     public static final int REQUEST_MESSAGE_TYPE = 263168;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
  */
 @SuppressWarnings("unused")
-@Generated("b420162407a6bb8871afe1a38c344c22")
+@Generated("b3ff7946ae4315ec26a7d08dbc319411")
 public final class ReplicatedMapAddEntryListenerCodec {
     //hex: 0x0D0D00
     public static final int REQUEST_MESSAGE_TYPE = 855296;

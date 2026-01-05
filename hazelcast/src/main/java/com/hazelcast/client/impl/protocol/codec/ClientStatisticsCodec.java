@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,7 +203,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The metrics blob constructed this way is then gets ZLIB compressed.
  */
 @SuppressWarnings("unused")
-@Generated("7530b41b4af6dc24d90c553c6d07e5b2")
+@Generated("92fe7f8fe89117ba1f79e57c008f4527")
 public final class ClientStatisticsCodec {
     //hex: 0x000C00
     public static final int REQUEST_MESSAGE_TYPE = 3072;

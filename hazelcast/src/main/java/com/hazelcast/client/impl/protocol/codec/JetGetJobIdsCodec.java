@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("ea93d18c40d817d4ca7faf41e111ab83")
+@Generated("654ecddb2a3520a9e57a2cdbe49f201a")
 public final class JetGetJobIdsCodec {
     //hex: 0xFE0400
     public static final int REQUEST_MESSAGE_TYPE = 16647168;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this list contains the specified element.
  */
 @SuppressWarnings("unused")
-@Generated("a35c0c76149b47a6b63aa6d0500b13cc")
+@Generated("aeb4b66b3f1f0f914152e6563f19a4e2")
 public final class ListContainsCodec {
     //hex: 0x050200
     public static final int REQUEST_MESSAGE_TYPE = 328192;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Loads all the keys into the CacheRecordStore in batch.
  */
 @SuppressWarnings("unused")
-@Generated("9ad40c0cc9ad77a19ac43096b1e4e2b2")
+@Generated("4da969b0a85c51b80455259db6b133ba")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;

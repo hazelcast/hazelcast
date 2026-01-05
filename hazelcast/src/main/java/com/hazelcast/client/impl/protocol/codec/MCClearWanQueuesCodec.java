@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Clear WAN replication queues for the given wan replication and publisher
  */
 @SuppressWarnings("unused")
-@Generated("f4ba7d533c0697a160840c695a05b200")
+@Generated("bdf102f006f3c1a267a45feed50a558e")
 public final class MCClearWanQueuesCodec {
     //hex: 0x201400
     public static final int REQUEST_MESSAGE_TYPE = 2102272;

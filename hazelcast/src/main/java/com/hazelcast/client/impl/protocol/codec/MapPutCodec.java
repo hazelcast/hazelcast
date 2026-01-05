@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * rounded to the next closest second value.
  */
 @SuppressWarnings("unused")
-@Generated("28935558608ee9e424c9a1eecc7bf097")
+@Generated("153d8aa171fb167acf21ead7fc63b52d")
 public final class MapPutCodec {
     //hex: 0x010100
     public static final int REQUEST_MESSAGE_TYPE = 65792;

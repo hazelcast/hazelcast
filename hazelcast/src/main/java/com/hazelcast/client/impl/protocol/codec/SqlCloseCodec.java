@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Closes server-side query cursor.
  */
 @SuppressWarnings("unused")
-@Generated("fe09527a5e5e4e6b89eb023502519b82")
+@Generated("288d0f45b1b3e6487b1bb1866093e912")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;

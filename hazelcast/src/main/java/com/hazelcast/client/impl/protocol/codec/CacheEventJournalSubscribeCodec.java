@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * oldest and newest event in the journal.
  */
 @SuppressWarnings("unused")
-@Generated("7629f477b27c9c2610857b839700decd")
+@Generated("7120c72da884ceaea6fa1e1a0adf4bf0")
 public final class CacheEventJournalSubscribeCodec {
     //hex: 0x131F00
     public static final int REQUEST_MESSAGE_TYPE = 1253120;

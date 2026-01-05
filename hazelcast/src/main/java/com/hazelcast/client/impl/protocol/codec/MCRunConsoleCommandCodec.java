@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Runs given console command on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("d19a59cc3217a8f6b3516d0e6734b875")
+@Generated("5035e23e88bea1001bddbab2ff261bbd")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;

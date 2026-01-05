@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * operation of EntryProcessor.
  */
 @SuppressWarnings("unused")
-@Generated("57df917e004b06631f32053d11be479c")
+@Generated("e92c947a96b3c8d57412375e93793bde")
 public final class MapSubmitToKeyCodec {
     //hex: 0x012F00
     public static final int REQUEST_MESSAGE_TYPE = 77568;

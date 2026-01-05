@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
 @SuppressWarnings("unused")
-@Generated("618134b423b0ecf99bcb501dfda166ac")
+@Generated("ef84e5ebd1f5fb95e08d131e62319cf7")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;

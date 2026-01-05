@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Requests garbage collection to be performed on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("9f86431acfd83fe756d079aff376a222")
+@Generated("539139ef3ea60fac8275ccf36aa6225d")
 public final class MCRunGcCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;

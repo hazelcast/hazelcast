@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the current list of CP members.
  */
 @SuppressWarnings("unused")
-@Generated("ada423378b47d93ba3f079dcd01cc193")
+@Generated("e2979732029d94515e2606302a8ea474")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * members in the cluster (members that own data).
  */
 @SuppressWarnings("unused")
-@Generated("68877518204f776d28959048bb1ce14c")
+@Generated("c719952a30e7d54b78ae5bc8a4ac7c04")
 public final class PNCounterGetConfiguredReplicaCountCodec {
     //hex: 0x1D0300
     public static final int REQUEST_MESSAGE_TYPE = 1901312;

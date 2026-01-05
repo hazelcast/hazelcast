@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the key-value into the specified map if the key is not currently associated with a value.
  */
 @SuppressWarnings("unused")
-@Generated("3f1db8e59c09d49a672d41bde8084c4a")
+@Generated("7db2bba2bcff702db3a2e70720780e27")
 public final class CPMapPutIfAbsentCodec {
     //hex: 0x230700
     public static final int REQUEST_MESSAGE_TYPE = 2295552;

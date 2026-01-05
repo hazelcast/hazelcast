@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a partition lost listener to the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("8e331508490ef85e0154e92744dd7bf6")
+@Generated("20e3e1750cddd5096bb90c49609051c5")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;

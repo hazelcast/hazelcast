@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Clears the XA transaction with the given xid from remote member.
  */
 @SuppressWarnings("unused")
-@Generated("7d8dff4fd2317816f208502223ea795f")
+@Generated("7de51dd9717c014d8f2da542e3366044")
 public final class XATransactionClearRemoteCodec {
     //hex: 0x140100
     public static final int REQUEST_MESSAGE_TYPE = 1310976;

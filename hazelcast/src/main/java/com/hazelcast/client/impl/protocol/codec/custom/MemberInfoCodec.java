@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("5c46b8c095ca04e39cc0d21bc2b4b58c")
+@Generated("f2e8b65b319a26186971abd02ebfcca8")
 public final class MemberInfoCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int LITE_MEMBER_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

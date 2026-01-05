@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
 @SuppressWarnings("unused")
-@Generated("cb6153434d2a6a19b81616a504c4df7e")
+@Generated("eb26c618dd9525670839f71145ac8508")
 public final class MapSetTtlCodec {
     //hex: 0x014300
     public static final int REQUEST_MESSAGE_TYPE = 82688;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiate WAN sync for a specific map or all maps
  */
 @SuppressWarnings("unused")
-@Generated("a4a3792398d40b49bd411d48acd82130")
+@Generated("68677c6ddfc2029315b92f18db209e9d")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;

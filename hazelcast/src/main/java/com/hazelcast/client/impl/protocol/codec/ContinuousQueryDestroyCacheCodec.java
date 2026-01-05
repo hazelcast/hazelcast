@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the query cache with the given name for a specific map.
  */
 @SuppressWarnings("unused")
-@Generated("a978b08fbd3085af0f4b96a322e1653e")
+@Generated("9fa6db6d8a6be8cf0809c1978f3b25f0")
 public final class ContinuousQueryDestroyCacheCodec {
     //hex: 0x160600
     public static final int REQUEST_MESSAGE_TYPE = 1443328;

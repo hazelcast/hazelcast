@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("280365a4f2bb9294a36b38cd2e5fed29")
+@Generated("dba0385bcaa9d9d14fd5307240dbb4e1")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1B0F00
     public static final int REQUEST_MESSAGE_TYPE = 1773312;

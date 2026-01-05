@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a cluster-wide proxy with the given name and service.
  */
 @SuppressWarnings("unused")
-@Generated("0f64ebbeb8e37ed2447c02eba6f7ec0b")
+@Generated("d75f704eda7fe7165eecfa177de89b1d")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;

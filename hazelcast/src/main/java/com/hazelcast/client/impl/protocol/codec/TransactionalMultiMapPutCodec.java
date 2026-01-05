@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Stores a key-value pair in the multimap.
  */
 @SuppressWarnings("unused")
-@Generated("7a3def6fd5337e58d5ebc8647a2929ae")
+@Generated("edcbeaa19392ab2ccd13e74b21b22feb")
 public final class TransactionalMultiMapPutCodec {
     //hex: 0x0F0100
     public static final int REQUEST_MESSAGE_TYPE = 983296;

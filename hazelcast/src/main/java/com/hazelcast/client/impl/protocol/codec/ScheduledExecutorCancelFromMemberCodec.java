@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Cancels further execution and scheduling of the task
  */
 @SuppressWarnings("unused")
-@Generated("ff95bae66927e2591065e5eb39c635e4")
+@Generated("86a07766e4da373dea230851fa2132a5")
 public final class ScheduledExecutorCancelFromMemberCodec {
     //hex: 0x1A0A00
     public static final int REQUEST_MESSAGE_TYPE = 1706496;

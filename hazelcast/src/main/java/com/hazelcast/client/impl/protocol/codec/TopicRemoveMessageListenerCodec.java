@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
 @SuppressWarnings("unused")
-@Generated("9e005b35971d1b740e012e6d64f825e3")
+@Generated("5d9b4341a3b6b92ab1af33589e619e22")
 public final class TopicRemoveMessageListenerCodec {
     //hex: 0x040300
     public static final int REQUEST_MESSAGE_TYPE = 262912;

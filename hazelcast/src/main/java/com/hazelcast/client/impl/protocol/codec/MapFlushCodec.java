@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and/or MapStore.deleteAll().
  */
 @SuppressWarnings("unused")
-@Generated("5284d348c431a35c10fb8afa36f96766")
+@Generated("e46bd695212e2f0e14ab2d8f69d7dff3")
 public final class MapFlushCodec {
     //hex: 0x010A00
     public static final int REQUEST_MESSAGE_TYPE = 68096;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("965cc3df469ebc8a87cd52a64e8a57fb")
+@Generated("3bfe8cccbb2be2edca8a6084d51332e6")
 public final class ResourceDefinitionCodec {
     private static final int RESOURCE_TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = RESOURCE_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

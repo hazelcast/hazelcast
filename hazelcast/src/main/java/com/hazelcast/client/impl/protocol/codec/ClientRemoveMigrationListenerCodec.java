@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified migration listener.
  */
 @SuppressWarnings("unused")
-@Generated("18862d08bdfef4ce246d77ac672cdd6c")
+@Generated("2ae3abbbe79f6af4d5f6d533ba7ca46a")
 public final class ClientRemoveMigrationListenerCodec {
     //hex: 0x001200
     public static final int REQUEST_MESSAGE_TYPE = 4608;

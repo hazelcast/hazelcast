@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the map are NOT reflected in the collection, and vice-versa.
  */
 @SuppressWarnings("unused")
-@Generated("203ec2b4206a23da4ade4bde98866afb")
+@Generated("3b1699da419bc523ebb18859cd7bc4ca")
 public final class MultiMapGetCodec {
     //hex: 0x020200
     public static final int REQUEST_MESSAGE_TYPE = 131584;

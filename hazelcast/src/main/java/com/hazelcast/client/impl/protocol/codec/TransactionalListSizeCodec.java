@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the size of the list
  */
 @SuppressWarnings("unused")
-@Generated("767bccbb0468f30accb5c3f23ed185bf")
+@Generated("c60c42d1406bce74f432553ae9c8ade7")
 public final class TransactionalListSizeCodec {
     //hex: 0x110300
     public static final int REQUEST_MESSAGE_TYPE = 1114880;

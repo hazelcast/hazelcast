@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("77da81a5a487942e4029f81c45482fef")
+@Generated("6fe5484648ba4e66e1b392f9ccada464")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;

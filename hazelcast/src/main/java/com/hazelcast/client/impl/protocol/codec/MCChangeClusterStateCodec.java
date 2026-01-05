@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Changes the state of a cluster.
  */
 @SuppressWarnings("unused")
-@Generated("e6156fe672fe0822a8e8f68fa8da69e6")
+@Generated("685d38b46291112d6fb49d60bc70ce4f")
 public final class MCChangeClusterStateCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;

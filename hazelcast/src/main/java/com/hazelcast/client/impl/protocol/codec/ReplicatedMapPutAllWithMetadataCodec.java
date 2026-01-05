@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
 @SuppressWarnings("unused")
-@Generated("80efe89219cb0d7eda95e6d0e640743e")
+@Generated("fc33969b705107dba02c344d6440d7ba")
 public final class ReplicatedMapPutAllWithMetadataCodec {
     //hex: 0x0D1300
     public static final int REQUEST_MESSAGE_TYPE = 856832;

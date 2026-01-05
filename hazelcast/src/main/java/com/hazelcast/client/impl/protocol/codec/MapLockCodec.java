@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
  */
 @SuppressWarnings("unused")
-@Generated("fe6814f1c09d34371730fafedaa8cde3")
+@Generated("16f60ec259e60b3b95b8c6c91eba8397")
 public final class MapLockCodec {
     //hex: 0x011000
     public static final int REQUEST_MESSAGE_TYPE = 69632;

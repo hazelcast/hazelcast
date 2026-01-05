@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * or the function throws an exception.
  */
 @SuppressWarnings("unused")
-@Generated("73e3f07d960343536b5597d59c8e1dc8")
+@Generated("695dbd861b16ee3457468e5c9c181de6")
 public final class MapReplaceAllCodec {
     //hex: 0x014800
     public static final int REQUEST_MESSAGE_TYPE = 83968;

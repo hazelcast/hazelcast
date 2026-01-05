@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl is not set, the remaining capacity will always be the capacity.
  */
 @SuppressWarnings("unused")
-@Generated("1c9f64b6c1c7c8edba72cd19fba0d44f")
+@Generated("0a0e600fb3982f57c5f10ca1ba07659b")
 public final class RingbufferRemainingCapacityCodec {
     //hex: 0x170500
     public static final int REQUEST_MESSAGE_TYPE = 1508608;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * distributed query, so it may throw a QueryResultSizeExceededException if query result size limit is configured.
  */
 @SuppressWarnings("unused")
-@Generated("545b717c685fac34e4388988210c5828")
+@Generated("92fd00fdd4ec5c22a6f86b41fe7368ee")
 public final class TransactionalMapValuesCodec {
     //hex: 0x0E1000
     public static final int REQUEST_MESSAGE_TYPE = 921600;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
 @SuppressWarnings("unused")
-@Generated("9689857b79cd8c00d5c36d0a2058a8e3")
+@Generated("c20da8bc482ed4af386d1e5b9863cefd")
 public final class ScheduledExecutorGetDelayFromPartitionCodec {
     //hex: 0x1A0700
     public static final int REQUEST_MESSAGE_TYPE = 1705728;

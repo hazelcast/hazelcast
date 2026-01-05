@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a near cache entry listener for this map. This listener will be notified when an entry is added/removed/updated/evicted/expired etc. so that the near cache entries can be invalidated.
  */
 @SuppressWarnings("unused")
-@Generated("b41b1abda861919e38afe25cee7cbc76")
+@Generated("ecdee089913ebbd4dbe65a8b8bdc17d4")
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     //hex: 0x0D1200
     public static final int REQUEST_MESSAGE_TYPE = 856576;

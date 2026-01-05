@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns a lazy collection view of the values contained in this map.
  */
 @SuppressWarnings("unused")
-@Generated("eed30214f346930dd2ca40719cb52640")
+@Generated("172231a6100112788c68b60f4fbe906e")
 public final class ReplicatedMapValuesCodec {
     //hex: 0x0D1000
     public static final int REQUEST_MESSAGE_TYPE = 856064;

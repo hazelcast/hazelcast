@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if currently mapped to a given value.
  */
 @SuppressWarnings("unused")
-@Generated("cf134fb8a857835bc6daef0474d96745")
+@Generated("30219d7416098fa7f0c737892cc723fd")
 public final class MapReplaceCodec {
     //hex: 0x010400
     public static final int REQUEST_MESSAGE_TYPE = 66560;

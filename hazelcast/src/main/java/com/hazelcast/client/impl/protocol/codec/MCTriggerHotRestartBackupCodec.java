@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Triggers hot restart backup
  */
 @SuppressWarnings("unused")
-@Generated("a93c529f360380949301114ddfbecf17")
+@Generated("7ff6d267f650e40fc423f539376284e7")
 public final class MCTriggerHotRestartBackupCodec {
     //hex: 0x201F00
     public static final int REQUEST_MESSAGE_TYPE = 2105088;

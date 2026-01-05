@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The message is used to transfer the declarative pipeline definition and the related resource files from client to the server.
  */
 @SuppressWarnings("unused")
-@Generated("1a7b9cb9e53d1a4d88d63d11db6223f7")
+@Generated("0dfb6da59c31e5de80ae2b23f62cc0e5")
 public final class ExperimentalPipelineSubmitCodec {
     //hex: 0xFD0100
     public static final int REQUEST_MESSAGE_TYPE = 16580864;

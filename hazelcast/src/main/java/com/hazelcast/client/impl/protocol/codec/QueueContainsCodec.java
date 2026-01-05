@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * contains at least one element e such that value.equals(e)
  */
 @SuppressWarnings("unused")
-@Generated("80bfc70afda3abe49ecf2e0fdd06550b")
+@Generated("36f2a033eac0b0457a4c514c4e15d837")
 public final class QueueContainsCodec {
     //hex: 0x030B00
     public static final int REQUEST_MESSAGE_TYPE = 199424;

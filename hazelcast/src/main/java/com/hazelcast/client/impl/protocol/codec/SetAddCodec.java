@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
 @SuppressWarnings("unused")
-@Generated("32d6eff999c4e27f5e8f3ca65e6f918e")
+@Generated("0ccfae62f0e86e486fd8b0cc92980b1f")
 public final class SetAddCodec {
     //hex: 0x060400
     public static final int REQUEST_MESSAGE_TYPE = 394240;

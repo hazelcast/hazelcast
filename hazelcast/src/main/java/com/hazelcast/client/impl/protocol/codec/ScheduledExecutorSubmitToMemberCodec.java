@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Submits the task to a member for execution. Member is provided with its uuid.
  */
 @SuppressWarnings("unused")
-@Generated("01be008e44bec51b1745dc410f226208")
+@Generated("4ddb34bb9dffa6c637a61ddcca7b7a3d")
 public final class ScheduledExecutorSubmitToMemberCodec {
     //hex: 0x1A0300
     public static final int REQUEST_MESSAGE_TYPE = 1704704;

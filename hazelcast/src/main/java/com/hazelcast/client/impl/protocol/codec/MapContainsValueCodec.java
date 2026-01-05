@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * linear in the map size for most implementations of the Map interface.
  */
 @SuppressWarnings("unused")
-@Generated("5f55adab33c56041df43c3f06d5a3213")
+@Generated("e9675191d54dcfa19bee6ce1bff9f8b2")
 public final class MapContainsValueCodec {
     //hex: 0x010700
     public static final int REQUEST_MESSAGE_TYPE = 67328;

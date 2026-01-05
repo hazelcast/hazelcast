@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Submits the task to the member that owns the partition with the given id.
  */
 @SuppressWarnings("unused")
-@Generated("fa6667f3836010a4b6d5ec59f3e765d1")
+@Generated("6940970137c8151a3c62e059ac6329fc")
 public final class ExecutorServiceSubmitToPartitionCodec {
     //hex: 0x080500
     public static final int REQUEST_MESSAGE_TYPE = 525568;

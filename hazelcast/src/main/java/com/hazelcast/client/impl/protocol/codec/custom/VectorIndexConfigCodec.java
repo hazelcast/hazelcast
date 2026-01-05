@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("f043f23c304a00f3d083e3302481ff43")
+@Generated("91f93321f839ac2f67b7253331f213b9")
 public final class VectorIndexConfigCodec {
     private static final int METRIC_FIELD_OFFSET = 0;
     private static final int DIMENSION_FIELD_OFFSET = METRIC_FIELD_OFFSET + INT_SIZE_IN_BYTES;

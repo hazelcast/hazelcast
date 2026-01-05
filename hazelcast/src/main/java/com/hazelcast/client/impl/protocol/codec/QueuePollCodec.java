@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to become available.
  */
 @SuppressWarnings("unused")
-@Generated("6170557d8d8264a37dffad85cf380705")
+@Generated("41670146619ebe52303078f5eaa8b970")
 public final class QueuePollCodec {
     //hex: 0x030500
     public static final int REQUEST_MESSAGE_TYPE = 197888;

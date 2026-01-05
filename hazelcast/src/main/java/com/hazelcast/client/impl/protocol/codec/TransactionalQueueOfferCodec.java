@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * become available.
  */
 @SuppressWarnings("unused")
-@Generated("0ffc207d3bd7a98bd503721a8966e53a")
+@Generated("95b0ff13f1a5de4d848ea2d8eb1a8ca3")
 public final class TransactionalQueueOfferCodec {
     //hex: 0x120100
     public static final int REQUEST_MESSAGE_TYPE = 1179904;

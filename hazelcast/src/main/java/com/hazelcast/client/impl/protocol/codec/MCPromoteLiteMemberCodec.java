@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Promotes the lite member it's called on to a data member.
  */
 @SuppressWarnings("unused")
-@Generated("6a328a975f702f6da4d9f8c24567b04a")
+@Generated("ac99afa37b8ebf4ed3f29301bd0f838c")
 public final class MCPromoteLiteMemberCodec {
     //hex: 0x200900
     public static final int REQUEST_MESSAGE_TYPE = 2099456;

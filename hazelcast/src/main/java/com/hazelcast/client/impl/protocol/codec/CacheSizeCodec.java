@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Total entry count
  */
 @SuppressWarnings("unused")
-@Generated("1c60d090ec937879adbc1cd684eb5f54")
+@Generated("46fc4db304e09e5e9e6e4af27ac70998")
 public final class CacheSizeCodec {
     //hex: 0x131800
     public static final int REQUEST_MESSAGE_TYPE = 1251328;

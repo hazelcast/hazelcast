@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * QueryResultSizeExceededException if query result size limit is configured.
  */
 @SuppressWarnings("unused")
-@Generated("62b8dfca26d6a4e35af61959d5c17d93")
+@Generated("4bcb1031268ae9ae0eda0c7e4ab68255")
 public final class MapEntriesWithPredicateCodec {
     //hex: 0x012800
     public static final int REQUEST_MESSAGE_TYPE = 75776;

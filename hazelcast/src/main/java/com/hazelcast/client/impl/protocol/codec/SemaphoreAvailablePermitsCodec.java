@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of available permits.
  */
 @SuppressWarnings("unused")
-@Generated("16ed7eab20ec0374708b0a41e379f8ac")
+@Generated("92194469913495c458aabfa8bc5af3b3")
 public final class SemaphoreAvailablePermitsCodec {
     //hex: 0x0C0600
     public static final int REQUEST_MESSAGE_TYPE = 787968;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("3d9f9e15d8a3b0182457253fde0b5206")
+@Generated("659ef6d0c0e3e2f010fd26c5c63bdceb")
 public final class MigrationStateCodec {
     private static final int START_TIME_FIELD_OFFSET = 0;
     private static final int PLANNED_MIGRATIONS_FIELD_OFFSET = START_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

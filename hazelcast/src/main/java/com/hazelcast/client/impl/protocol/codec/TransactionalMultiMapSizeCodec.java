@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value pairs in the multimap.
  */
 @SuppressWarnings("unused")
-@Generated("63b2672d5897cdc7aeeaed7eacc05d52")
+@Generated("775dd3bd5ce79b1ca424a19d8235e508")
 public final class TransactionalMultiMapSizeCodec {
     //hex: 0x0F0600
     public static final int REQUEST_MESSAGE_TYPE = 984576;

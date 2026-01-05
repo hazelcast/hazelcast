@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
  */
 @SuppressWarnings("unused")
-@Generated("3eda20ff03fdadf2c8cbc8658f6147ec")
+@Generated("f4b9006ca368d7b92b66f940239ab5c9")
 public final class CacheRemoveAllCodec {
     //hex: 0x130400
     public static final int REQUEST_MESSAGE_TYPE = 1246208;

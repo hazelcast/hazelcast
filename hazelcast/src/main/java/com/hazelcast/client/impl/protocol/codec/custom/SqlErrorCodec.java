@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("1d59d4acd83d4354ead329709fc98a81")
+@Generated("7565e8a83e575171cc83a372e8e5298c")
 public final class SqlErrorCodec {
     private static final int CODE_FIELD_OFFSET = 0;
     private static final int ORIGINATING_MEMBER_ID_FIELD_OFFSET = CODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

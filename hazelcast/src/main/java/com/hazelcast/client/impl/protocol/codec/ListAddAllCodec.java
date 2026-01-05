@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
 @SuppressWarnings("unused")
-@Generated("88cf468c9dfb10af713aa9ef78d0aab2")
+@Generated("22b927ccb211ab1bbc0a4fc7d4adc2c9")
 public final class ListAddAllCodec {
     //hex: 0x050600
     public static final int REQUEST_MESSAGE_TYPE = 329216;

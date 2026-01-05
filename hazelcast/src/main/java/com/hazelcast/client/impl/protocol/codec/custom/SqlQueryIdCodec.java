@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("834b4709d3dcc8205fb005b5ec8e7947")
+@Generated("5f1b40e797b276fe3de262ae0edca7f4")
 public final class SqlQueryIdCodec {
     private static final int MEMBER_ID_HIGH_FIELD_OFFSET = 0;
     private static final int MEMBER_ID_LOW_FIELD_OFFSET = MEMBER_ID_HIGH_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

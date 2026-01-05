@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("7e5a4c83f9c82e00d901b6ab46c19a37")
+@Generated("60b9591aff1ab5cd303ac726f816d104")
 public final class SetRemoveListenerCodec {
     //hex: 0x060C00
     public static final int REQUEST_MESSAGE_TYPE = 396288;

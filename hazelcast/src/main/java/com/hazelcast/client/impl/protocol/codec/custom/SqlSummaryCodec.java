@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("cc39da7bc6968f13262b56789c5a21c8")
+@Generated("da52d1eaad1ae8868fe49a5f6a85a940")
 public final class SqlSummaryCodec {
     private static final int UNBOUNDED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = UNBOUNDED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

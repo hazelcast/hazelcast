@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes from this list all of its elements that are contained in the specified collection (optional operation).
  */
 @SuppressWarnings("unused")
-@Generated("d9fe8b1e7cb1acd67151859a18c84927")
+@Generated("073ea1d11dcfc36f33274ff355ebba01")
 public final class ListCompareAndRemoveAllCodec {
     //hex: 0x050700
     public static final int REQUEST_MESSAGE_TYPE = 329472;

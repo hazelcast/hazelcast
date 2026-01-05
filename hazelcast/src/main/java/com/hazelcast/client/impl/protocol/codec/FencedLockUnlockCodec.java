@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * held by the caller after a successful unlock() call, false otherwise.
  */
 @SuppressWarnings("unused")
-@Generated("91f9a256c45f4c58eec34822589df591")
+@Generated("3ae8aa2d1ece05f5b4487d505a8f960e")
 public final class FencedLockUnlockCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * returns Integer.MAX_VALUE
  */
 @SuppressWarnings("unused")
-@Generated("ac6b762271bbf6f879f1b85c5667df91")
+@Generated("96c7e8d3f61593513daf779a20938d74")
 public final class MapSizeCodec {
     //hex: 0x012A00
     public static final int REQUEST_MESSAGE_TYPE = 76288;

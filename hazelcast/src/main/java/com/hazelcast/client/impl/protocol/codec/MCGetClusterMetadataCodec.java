@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the current metadata of a cluster.
  */
 @SuppressWarnings("unused")
-@Generated("7d1ee4e59876686b26703690cc4e2cd8")
+@Generated("ab62c8bd9639f8efee37275a163a4330")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;

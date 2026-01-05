@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Alters the currently stored value by applying a function on it.
  */
 @SuppressWarnings("unused")
-@Generated("59bc711b336c1b5c88ee6aefea151041")
+@Generated("74ad1bbc1dbcb15c281bb6ae8b5067b9")
 public final class AtomicLongAlterCodec {
     //hex: 0x090200
     public static final int REQUEST_MESSAGE_TYPE = 590336;

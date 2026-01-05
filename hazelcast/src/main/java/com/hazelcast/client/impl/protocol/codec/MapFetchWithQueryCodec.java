@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * that match the predicate and applies the projection logic on them.
  */
 @SuppressWarnings("unused")
-@Generated("f164f73a5a135e77fef51577382c3fd6")
+@Generated("cdd1af3347fc364c361ec6d6ffd87e93")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;

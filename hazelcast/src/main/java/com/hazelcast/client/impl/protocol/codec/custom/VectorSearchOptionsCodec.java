@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("66179ecc0ac541f46dc6dfbba96d30d5")
+@Generated("268dbde6f391d672f349917b4af64ace")
 public final class VectorSearchOptionsCodec {
     private static final int INCLUDE_VALUE_FIELD_OFFSET = 0;
     private static final int INCLUDE_VECTORS_FIELD_OFFSET = INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

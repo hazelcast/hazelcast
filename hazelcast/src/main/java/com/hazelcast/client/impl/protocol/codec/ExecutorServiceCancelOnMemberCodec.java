@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Cancels the task running on the member with the given address.
  */
 @SuppressWarnings("unused")
-@Generated("6ca7c98b0b297c7f9b11abb8256f29b7")
+@Generated("948ff9b03e35f3f4095b63915dd90277")
 public final class ExecutorServiceCancelOnMemberCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;

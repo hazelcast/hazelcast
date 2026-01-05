@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
  */
 @SuppressWarnings("unused")
-@Generated("c60c4853ec24cb812bf6db54a9bcd0ba")
+@Generated("4c71b882be175c802f6803af4922ed52")
 public final class ListAddListenerCodec {
     //hex: 0x050B00
     public static final int REQUEST_MESSAGE_TYPE = 330496;

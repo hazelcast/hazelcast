@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Deletes the value associated with the key in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("bc7a557882448a1b57831f77b9eaa799")
+@Generated("0424a2b14e82f4088d4241e467e74078")
 public final class CPMapDeleteCodec {
     //hex: 0x230500
     public static final int REQUEST_MESSAGE_TYPE = 2295040;

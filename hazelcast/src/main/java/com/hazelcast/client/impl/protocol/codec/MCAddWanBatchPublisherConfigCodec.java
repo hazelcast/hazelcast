@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Add a new WAN batch publisher configuration
  */
 @SuppressWarnings("unused")
-@Generated("b63ca8953c488cebe2e609cbb6fa680c")
+@Generated("f3548db2cd50be4e690720bebbaf7665")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;

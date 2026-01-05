@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("55e9c024a65722364f2ee6681fe5cd73")
+@Generated("120aaea0e7f07ff3c4b061fe60bd059c")
 public final class WanSyncConfigCodec {
     private static final int CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;

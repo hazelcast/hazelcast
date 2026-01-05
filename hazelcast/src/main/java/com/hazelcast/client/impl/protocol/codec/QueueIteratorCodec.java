@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the elements are returned (unless this collection is an instance of some class that provides a guarantee).
  */
 @SuppressWarnings("unused")
-@Generated("e17abb657e31df67cee18f28a4c502c8")
+@Generated("7dd3399be261bfbaac700bca0084a6a6")
 public final class QueueIteratorCodec {
     //hex: 0x030800
     public static final int REQUEST_MESSAGE_TYPE = 198656;

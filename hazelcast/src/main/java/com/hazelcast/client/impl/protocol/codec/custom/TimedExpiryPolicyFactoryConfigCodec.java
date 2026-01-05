@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("0b379b188d2ebf5a37408a73cfc66c2d")
+@Generated("a0bc3d804a1338501045fce370a89a0d")
 public final class TimedExpiryPolicyFactoryConfigCodec {
     private static final int EXPIRY_POLICY_TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = EXPIRY_POLICY_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

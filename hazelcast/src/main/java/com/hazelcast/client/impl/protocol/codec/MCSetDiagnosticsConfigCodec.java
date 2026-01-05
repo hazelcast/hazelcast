@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the request fails by throwing an IllegalStateException exception but the other members for which the invocation succeeded will have the new config applied. 
  */
 @SuppressWarnings("unused")
-@Generated("0ca38073cffb3b0f2ef75c604d2e4293")
+@Generated("432f69dc7e7ad7ee95fa7cbf10cad0de")
 public final class MCSetDiagnosticsConfigCodec {
     //hex: 0x202700
     public static final int REQUEST_MESSAGE_TYPE = 2107136;

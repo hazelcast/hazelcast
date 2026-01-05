@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * amount for acquiring the lock.
  */
 @SuppressWarnings("unused")
-@Generated("0acdfcbe1dec2885872ecdec930197eb")
+@Generated("e99cee24cd4d05377ba2926dfb56dd12")
 public final class MapTryRemoveCodec {
     //hex: 0x010B00
     public static final int REQUEST_MESSAGE_TYPE = 68352;

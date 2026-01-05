@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the mapping for a key from this VectorCollection without returning previous value.
  */
 @SuppressWarnings("unused")
-@Generated("c15f06debd9a7e01b1bb588252688a8d")
+@Generated("f4222ec865708b90b1b55daf2a89478e")
 public final class VectorCollectionDeleteCodec {
     //hex: 0x240700
     public static final int REQUEST_MESSAGE_TYPE = 2361088;

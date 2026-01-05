@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
 @SuppressWarnings("unused")
-@Generated("084a4480c0f9709b5fcd6360c4e3e0e6")
+@Generated("30a99f248bfd8f2e0221d784783cd731")
 public final class RingbufferReadOneCodec {
     //hex: 0x170700
     public static final int REQUEST_MESSAGE_TYPE = 1509120;

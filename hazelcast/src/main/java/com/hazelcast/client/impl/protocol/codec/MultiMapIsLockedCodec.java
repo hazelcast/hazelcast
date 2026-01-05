@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
  */
 @SuppressWarnings("unused")
-@Generated("40928e9a2f24ec50f27e02d5fec81a23")
+@Generated("0a3e715202eab589df41b55115693b7c")
 public final class MultiMapIsLockedCodec {
     //hex: 0x021200
     public static final int REQUEST_MESSAGE_TYPE = 135680;

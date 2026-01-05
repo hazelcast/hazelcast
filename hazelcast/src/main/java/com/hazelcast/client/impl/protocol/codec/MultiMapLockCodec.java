@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * unlocked N times before another thread can acquire it.
  */
 @SuppressWarnings("unused")
-@Generated("4437a8250e48155f9475389c45118575")
+@Generated("72c8b1fe3c501cecef95e51469611dab")
 public final class MultiMapLockCodec {
     //hex: 0x021000
     public static final int REQUEST_MESSAGE_TYPE = 135168;

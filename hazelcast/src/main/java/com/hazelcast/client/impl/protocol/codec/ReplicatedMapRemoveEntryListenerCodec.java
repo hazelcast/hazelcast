@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cluster and returns false.
  */
 @SuppressWarnings("unused")
-@Generated("94af76a660a5588ab8ffd2cce17f4cde")
+@Generated("0d90b845052b29aa9c262cc7f0bf5260")
 public final class ReplicatedMapRemoveEntryListenerCodec {
     //hex: 0x0D0E00
     public static final int REQUEST_MESSAGE_TYPE = 855552;

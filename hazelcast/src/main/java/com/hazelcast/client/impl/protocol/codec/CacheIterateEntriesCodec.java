@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches specified number of entries from the specified partition starting from specified table index.
  */
 @SuppressWarnings("unused")
-@Generated("c710410bdb4dd8576dee708ef3ea2931")
+@Generated("6b5750fc2c2d90a8112ac68c42885543")
 public final class CacheIterateEntriesCodec {
     //hex: 0x131C00
     public static final int REQUEST_MESSAGE_TYPE = 1252352;

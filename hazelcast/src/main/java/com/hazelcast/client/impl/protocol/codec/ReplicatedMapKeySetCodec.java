@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
 @SuppressWarnings("unused")
-@Generated("a791bdb7b5c7517badddf775d8c86605")
+@Generated("9fd5ceda0ee4b2c2ec2c0981c53d2689")
 public final class ReplicatedMapKeySetCodec {
     //hex: 0x0D0F00
     public static final int REQUEST_MESSAGE_TYPE = 855808;

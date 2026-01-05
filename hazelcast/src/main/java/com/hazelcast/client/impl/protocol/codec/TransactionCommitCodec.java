@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Commits the transaction with the given id.
  */
 @SuppressWarnings("unused")
-@Generated("2932b0edad68b3ea6bb065f5ae0599d0")
+@Generated("e58016d11a22cd83f9a5ddfbe24946f6")
 public final class TransactionCommitCodec {
     //hex: 0x150100
     public static final int REQUEST_MESSAGE_TYPE = 1376512;

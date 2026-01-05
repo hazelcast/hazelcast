@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * has expired or has been evicted.
  */
 @SuppressWarnings("unused")
-@Generated("42e639f81a8a0ed477ea2c21a9f05422")
+@Generated("f39a13d1d70e005036117e21ea6b1377")
 public final class CacheIterateCodec {
     //hex: 0x130E00
     public static final int REQUEST_MESSAGE_TYPE = 1248768;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("ccd8e5bb497fec0b91d6bf386eac534a")
+@Generated("78333fe1c02e77bc72d463d061aceab2")
 public final class DynamicConfigAddListConfigCodec {
     //hex: 0x1B0400
     public static final int REQUEST_MESSAGE_TYPE = 1770496;

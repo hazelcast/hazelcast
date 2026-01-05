@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Changes the cluster version.
  */
 @SuppressWarnings("unused")
-@Generated("2534e1e3baec1a2b6375fdb2acd3677b")
+@Generated("2ddef7731424df461bd83c6cc61b38dd")
 public final class MCChangeClusterVersionCodec {
     //hex: 0x201000
     public static final int REQUEST_MESSAGE_TYPE = 2101248;

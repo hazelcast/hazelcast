@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiate WAN consistency check for a specific map
  */
 @SuppressWarnings("unused")
-@Generated("da055a35e2e33318f9a962ccb5fd2abe")
+@Generated("b6c6c3a42e6513819c224e1982f70e1d")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;

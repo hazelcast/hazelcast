@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
 @SuppressWarnings("unused")
-@Generated("d3430be2048f4ca5b74b6161d4f4a1ae")
+@Generated("cce1ebee27258cc1c74578d6b6d5bdda")
 public final class QueuePeekCodec {
     //hex: 0x030700
     public static final int REQUEST_MESSAGE_TYPE = 198400;

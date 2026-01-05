@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * have a RaftService.
  */
 @SuppressWarnings("unused")
-@Generated("2291f94fca1c824d73523a127b5599b6")
+@Generated("69ddfb335aa25a530590419126e1a470")
 public final class CPSubsystemGetCPGroupIdsCodec {
     //hex: 0x220500
     public static final int REQUEST_MESSAGE_TYPE = 2229504;

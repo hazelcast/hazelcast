@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
 @SuppressWarnings("unused")
-@Generated("e34fdfabe66c8ce5659ac2ba47ca97fd")
+@Generated("d80efab5af7b687a47084b99cc496804")
 public final class MapPutAllCodec {
     //hex: 0x012C00
     public static final int REQUEST_MESSAGE_TYPE = 76800;

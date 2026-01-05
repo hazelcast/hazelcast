@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * A snapshot is used to retrieve the result.
  */
 @SuppressWarnings("unused")
-@Generated("de7aad5c862a7f8002d8f46d52a0c710")
+@Generated("1d72d5b05daf473b9b43946008ccb58e")
 public final class CPSubsystemGetCPObjectInfosCodec {
     //hex: 0x220600
     public static final int REQUEST_MESSAGE_TYPE = 2229760;

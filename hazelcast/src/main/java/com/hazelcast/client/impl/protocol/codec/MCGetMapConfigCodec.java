@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the config of a map on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("d381cb0f31609c32bd9313fa0f94096e")
+@Generated("abb0032b2b6e4ec69dbf785f46ecc895")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the case that another thread is about to insert or remove an element.
  */
 @SuppressWarnings("unused")
-@Generated("8916b7424b2fef7aaf0dcd06893a402b")
+@Generated("1a57e45d29de87bbba5d24d2e8506aec")
 public final class QueueRemainingCapacityCodec {
     //hex: 0x031300
     public static final int REQUEST_MESSAGE_TYPE = 201472;

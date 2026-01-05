@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Acquires all available permits at once and returns immediately.
  */
 @SuppressWarnings("unused")
-@Generated("1b0b806a6b27e4e4a9226e1904b4b5dc")
+@Generated("ccf095842ed3a18894a9c26196b8c47a")
 public final class SemaphoreDrainCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;

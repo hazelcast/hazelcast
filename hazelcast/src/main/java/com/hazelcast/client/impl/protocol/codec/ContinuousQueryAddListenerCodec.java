@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a listener to be notified for the events fired on the underlying map on all nodes.
  */
 @SuppressWarnings("unused")
-@Generated("4e2927bd930accddbcafb5dfa762a2c9")
+@Generated("0d6aaf3341ae0f834e693195f077020b")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;

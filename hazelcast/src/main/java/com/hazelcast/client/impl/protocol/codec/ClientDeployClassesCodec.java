@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * key of entry is full class name, and byte[] is the class definition.
  */
 @SuppressWarnings("unused")
-@Generated("7f27fa97c12254cc697058bc20c2a6c9")
+@Generated("35c6ee45cbcf1730e117497c338f9632")
 public final class ClientDeployClassesCodec {
     //hex: 0x000D00
     public static final int REQUEST_MESSAGE_TYPE = 3328;

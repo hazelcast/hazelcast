@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * head completed the first looparound the ring. This is because no items are getting retired.
  */
 @SuppressWarnings("unused")
-@Generated("3756703dd1b2f215be7d148c498f624d")
+@Generated("77626f61bc9c1a8a5c42b7ab14667251")
 public final class RingbufferSizeCodec {
     //hex: 0x170100
     public static final int REQUEST_MESSAGE_TYPE = 1507584;

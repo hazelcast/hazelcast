@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * filtered by the given predicate.
  */
 @SuppressWarnings("unused")
-@Generated("72dc3ed1f3795ea6cb2e3dd92cce4712")
+@Generated("e4154ebf1ac395dc142237c1817155a7")
 public final class MapAddEntryListenerWithPredicateCodec {
     //hex: 0x011700
     public static final int REQUEST_MESSAGE_TYPE = 71424;

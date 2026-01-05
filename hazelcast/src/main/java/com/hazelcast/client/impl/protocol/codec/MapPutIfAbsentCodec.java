@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a value. Entry will expire and get evicted after the ttl.
  */
 @SuppressWarnings("unused")
-@Generated("13df567ba5e3f8186be0b4311b4ff9a6")
+@Generated("94eac390b8c147ceac728346b4203378")
 public final class MapPutIfAbsentCodec {
     //hex: 0x010E00
     public static final int REQUEST_MESSAGE_TYPE = 69120;

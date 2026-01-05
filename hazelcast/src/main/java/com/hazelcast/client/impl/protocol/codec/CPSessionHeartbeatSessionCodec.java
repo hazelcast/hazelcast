@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * extends its session expiration time.
  */
 @SuppressWarnings("unused")
-@Generated("88b63772ded3cffb9df745bd00bde54a")
+@Generated("47d8df580a766f94fcae1acd88cd8346")
 public final class CPSessionHeartbeatSessionCodec {
     //hex: 0x1F0300
     public static final int REQUEST_MESSAGE_TYPE = 2032384;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("dfa335815e29001532efff6b0e94e831")
+@Generated("654b2660b906705b00ea5b7e65811ace")
 public final class WanBatchPublisherConfigHolderCodec {
     private static final int SNAPSHOT_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_PUBLISHER_STATE_FIELD_OFFSET = SNAPSHOT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

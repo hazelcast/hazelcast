@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
 @SuppressWarnings("unused")
-@Generated("b8911c5c7b0d08acbb3965e145fdf08f")
+@Generated("8aad62bdd0216cf5bd211ab3bbd6b33e")
 public final class MapFetchKeysCodec {
     //hex: 0x013700
     public static final int REQUEST_MESSAGE_TYPE = 79616;

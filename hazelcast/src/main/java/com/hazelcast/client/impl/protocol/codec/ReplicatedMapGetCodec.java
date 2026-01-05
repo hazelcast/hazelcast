@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
  */
 @SuppressWarnings("unused")
-@Generated("ab0331b74372523f22272205bf7d2bb8")
+@Generated("67d6d4e4a1477621a478a750e8f7ca30")
 public final class ReplicatedMapGetCodec {
     //hex: 0x0D0600
     public static final int REQUEST_MESSAGE_TYPE = 853504;

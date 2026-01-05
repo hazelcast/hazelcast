@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * newValue.
  */
 @SuppressWarnings("unused")
-@Generated("eb9f3e83d8fec7d3bbfc33d4b2e0a1d9")
+@Generated("41b334d57e3fed666e1cf4a4cccb962e")
 public final class CPMapCompareAndSetCodec {
     //hex: 0x230600
     public static final int REQUEST_MESSAGE_TYPE = 2295296;

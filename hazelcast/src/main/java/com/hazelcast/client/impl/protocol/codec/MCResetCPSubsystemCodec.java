@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * as if the Hazelcast cluster is starting up initially.
  */
 @SuppressWarnings("unused")
-@Generated("40df04af4142db9b95c68bd8d2e40fed")
+@Generated("0e504824f2560d0fa036171e97b17214")
 public final class MCResetCPSubsystemCodec {
     //hex: 0x201C00
     public static final int REQUEST_MESSAGE_TYPE = 2104320;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Deregisters CP availability listener.
  */
 @SuppressWarnings("unused")
-@Generated("816f52d43fbf7cbc980eba33d7a49b7c")
+@Generated("fdc8bb2ad6f7d68bd8afafa2d986d01e")
 public final class CPSubsystemRemoveGroupAvailabilityListenerCodec {
     //hex: 0x220400
     public static final int REQUEST_MESSAGE_TYPE = 2229248;

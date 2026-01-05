@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Triggers partial start
  */
 @SuppressWarnings("unused")
-@Generated("2fae10a356fe42e9a644f108a616c0c8")
+@Generated("ffbe7ba2ab0b2340f12a36f1f8b3a2be")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;

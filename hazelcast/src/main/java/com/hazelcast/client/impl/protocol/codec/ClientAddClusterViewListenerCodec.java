@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a cluster view listener to a connection.
  */
 @SuppressWarnings("unused")
-@Generated("d9a8a9d898c6699682c268f4b1207682")
+@Generated("4de2b6d19493c28117859b703ad819e9")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the diagnostics configuration from the member.
  */
 @SuppressWarnings("unused")
-@Generated("84620b74f4bdf174bad480b735b82c55")
+@Generated("dfc8ea8b4e7aaad6fd879c70130c81d5")
 public final class MCGetDiagnosticsConfigCodec {
     //hex: 0x202800
     public static final int REQUEST_MESSAGE_TYPE = 2107392;

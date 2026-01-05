@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The result of the future contains the sequenceId of the last written item
  */
 @SuppressWarnings("unused")
-@Generated("4a0871bcdf67bd1396016610956ec24e")
+@Generated("6794a90cdcd195e9bb587f9a9b348df0")
 public final class RingbufferAddAllCodec {
     //hex: 0x170800
     public static final int REQUEST_MESSAGE_TYPE = 1509376;

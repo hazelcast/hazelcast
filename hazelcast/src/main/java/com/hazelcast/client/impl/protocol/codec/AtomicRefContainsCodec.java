@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks if the reference contains the value.
  */
 @SuppressWarnings("unused")
-@Generated("454d1c7e3b4122a91ad2a97e2e1a9642")
+@Generated("b79153125a0838281b61b3f61772f64e")
 public final class AtomicRefContainsCodec {
     //hex: 0x0A0300
     public static final int REQUEST_MESSAGE_TYPE = 656128;

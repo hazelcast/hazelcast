@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl is 0, then the entry lives forever.
  */
 @SuppressWarnings("unused")
-@Generated("97ac1ff9319c2c7ad28838e62e810925")
+@Generated("2bcae313ae855c09026c7a220d6f37dc")
 public final class MapPutTransientCodec {
     //hex: 0x010D00
     public static final int REQUEST_MESSAGE_TYPE = 68864;

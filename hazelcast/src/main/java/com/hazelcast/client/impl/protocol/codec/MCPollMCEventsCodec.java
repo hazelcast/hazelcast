@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * member's internal queue.
  */
 @SuppressWarnings("unused")
-@Generated("63fc42526f0fc1bf01b83b4777871cfe")
+@Generated("324040ffd800cb4ce168a931fbacd22a")
 public final class MCPollMCEventsCodec {
     //hex: 0x201800
     public static final int REQUEST_MESSAGE_TYPE = 2103296;

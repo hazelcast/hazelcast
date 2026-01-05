@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes the query cache with the given name for a specific map publishable.
  */
 @SuppressWarnings("unused")
-@Generated("8db0db3e801ae0fb564664e2cfae24bb")
+@Generated("8519f3ced31caba1746191ee54b6f0cd")
 public final class ContinuousQueryMadePublishableCodec {
     //hex: 0x160300
     public static final int REQUEST_MESSAGE_TYPE = 1442560;

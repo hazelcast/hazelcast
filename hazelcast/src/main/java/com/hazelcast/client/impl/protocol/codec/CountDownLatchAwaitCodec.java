@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * less than or equal to zero, the method will not wait at all.
  */
 @SuppressWarnings("unused")
-@Generated("77ce59fe12e3489729f9588c41d91ad5")
+@Generated("f966a38c700225dd6a32faf0eab42235")
 public final class CountDownLatchAwaitCodec {
     //hex: 0x0B0200
     public static final int REQUEST_MESSAGE_TYPE = 721408;

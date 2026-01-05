@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("aa1812947a685daf30c99148a06bbd9e")
+@Generated("6d79151972d0166c41cbbbc34c9c69d2")
 public final class JetGetJobSuspensionCauseCodec {
     //hex: 0xFE0E00
     public static final int REQUEST_MESSAGE_TYPE = 16649728;

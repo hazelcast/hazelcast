@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster using custom credentials.
  */
 @SuppressWarnings("unused")
-@Generated("39b493ab8946bf0b72e6c693b9a9583e")
+@Generated("09bd0b7f4733370e62ebafa6bee6b2fd")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;

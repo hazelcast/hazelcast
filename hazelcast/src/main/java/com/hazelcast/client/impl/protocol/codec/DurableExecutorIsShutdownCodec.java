@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this executor has been shut down.
  */
 @SuppressWarnings("unused")
-@Generated("e7692a37abbfd6fee4e241f5fb7085e4")
+@Generated("9ea2e146e08330f504886c1929fd583a")
 public final class DurableExecutorIsShutdownCodec {
     //hex: 0x180200
     public static final int REQUEST_MESSAGE_TYPE = 1573376;

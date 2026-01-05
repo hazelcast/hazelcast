@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches invalidation metadata from partitions of map.
  */
 @SuppressWarnings("unused")
-@Generated("669defbeee3e11cc0e8a7f0ca51aea1a")
+@Generated("62ef9e7cf6e42acf37cd2e3f657606ad")
 public final class CacheFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x131E00
     public static final int REQUEST_MESSAGE_TYPE = 1252864;

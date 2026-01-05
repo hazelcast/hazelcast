@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns current lock ownership status of the given FencedLock instance.
  */
 @SuppressWarnings("unused")
-@Generated("3c4df1e96dd7a131711fb32461b98be7")
+@Generated("258a42f7bea1e73eb5ed96bc90c0635f")
 public final class FencedLockGetLockOwnershipCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;

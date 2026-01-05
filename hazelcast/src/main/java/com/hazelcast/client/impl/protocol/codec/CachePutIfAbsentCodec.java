@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("6892d7926712247fd1171fff218a35dc")
+@Generated("8f79826f2cce9db87ff4d222e389950d")
 public final class CachePutIfAbsentCodec {
     //hex: 0x131200
     public static final int REQUEST_MESSAGE_TYPE = 1249792;

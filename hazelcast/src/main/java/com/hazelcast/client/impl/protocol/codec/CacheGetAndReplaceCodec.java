@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * store the value of the key to any kind of external resource.
  */
 @SuppressWarnings("unused")
-@Generated("26d1c6c0128b8cbcbfac5fe7bc0f665e")
+@Generated("88eb21c47889fa4ee7dae87d17ce3792")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x130B00
     public static final int REQUEST_MESSAGE_TYPE = 1248000;

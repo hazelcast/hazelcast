@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this proxy.
  */
 @SuppressWarnings("unused")
-@Generated("1ace1948627facbe9354fda16c8d5b48")
+@Generated("9544cc9fd02357bee6cdd0e2e1628369")
 public final class ClientDestroyProxyCodec {
     //hex: 0x000500
     public static final int REQUEST_MESSAGE_TYPE = 1280;

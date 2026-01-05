@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Stop, pause or resume WAN replication for the given WAN replication and publisher
  */
 @SuppressWarnings("unused")
-@Generated("f1393b88aa947db39d638c13a969ff3b")
+@Generated("b88e11f95530059019cb12b850be55cf")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;

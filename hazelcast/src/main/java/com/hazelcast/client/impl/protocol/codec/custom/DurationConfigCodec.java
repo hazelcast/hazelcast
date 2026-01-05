@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("e40d3f73a40e81800fad0d343502a6f7")
+@Generated("2cff4394554ba443b61b130e9cee39d4")
 public final class DurationConfigCodec {
     private static final int DURATION_AMOUNT_FIELD_OFFSET = 0;
     private static final int TIME_UNIT_FIELD_OFFSET = DURATION_AMOUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

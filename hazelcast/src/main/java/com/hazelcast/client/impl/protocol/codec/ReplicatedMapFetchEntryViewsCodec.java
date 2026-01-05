@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * member with the default timeout of 300 seconds that is reset after each fetch. Sending endEntryViewIteration or timing out will release the resource.
  */
 @SuppressWarnings("unused")
-@Generated("fe4d874d570f19e15063c21dc2a7e3e7")
+@Generated("c1cac600d2977faf0902f8f6f3abefe2")
 public final class ReplicatedMapFetchEntryViewsCodec {
     //hex: 0x0D1400
     public static final int REQUEST_MESSAGE_TYPE = 857088;

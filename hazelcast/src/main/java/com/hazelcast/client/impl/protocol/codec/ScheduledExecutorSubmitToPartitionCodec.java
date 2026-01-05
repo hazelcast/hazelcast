@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
 @SuppressWarnings("unused")
-@Generated("9ae1b49e5c2689ee94b1db11fd0cd184")
+@Generated("4943728309d600a112d8e30b4aad3b7a")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;

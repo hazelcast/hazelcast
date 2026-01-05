@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
 @SuppressWarnings("unused")
-@Generated("9051ed5f4987e51b44db06aa83b4fd58")
+@Generated("36d06134498df0c5b3f74ec02a26d389")
 public final class ClientCreateProxiesCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;

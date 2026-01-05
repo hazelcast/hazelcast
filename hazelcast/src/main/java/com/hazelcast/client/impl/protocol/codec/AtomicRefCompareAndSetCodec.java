@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Alters the currently stored value by applying a function on it.
  */
 @SuppressWarnings("unused")
-@Generated("6b3bd348c09041ca6357d70a4f1446a4")
+@Generated("2f00ab851019401130ce62aa2366266a")
 public final class AtomicRefCompareAndSetCodec {
     //hex: 0x0A0200
     public static final int REQUEST_MESSAGE_TYPE = 655872;

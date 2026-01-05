@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Shuts down the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("92d0a2c5fa035a4809391fae350fe07b")
+@Generated("e222150f0ab178018232995749ef1f52")
 public final class MCShutdownClusterCodec {
     //hex: 0x200F00
     public static final int REQUEST_MESSAGE_TYPE = 2100992;

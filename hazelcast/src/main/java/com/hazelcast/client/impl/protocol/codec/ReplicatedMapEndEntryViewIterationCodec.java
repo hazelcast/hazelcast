@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * longer need the iterator.
  */
 @SuppressWarnings("unused")
-@Generated("e9dc9ed1da1550f1a349afd949674d61")
+@Generated("4ddced0e8dfaaf89f4a3a0491f20934c")
 public final class ReplicatedMapEndEntryViewIterationCodec {
     //hex: 0x0D1500
     public static final int REQUEST_MESSAGE_TYPE = 857344;

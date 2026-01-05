@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
 @SuppressWarnings("unused")
-@Generated("8c376e6d0c443559328ea3ed5b6bae1b")
+@Generated("e8977dc8ee37f5f23802bc9990469bc8")
 public final class MapAddInterceptorCodec {
     //hex: 0x011400
     public static final int REQUEST_MESSAGE_TYPE = 70656;

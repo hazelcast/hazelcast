@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new multimap config is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("70d7c8d510b87d3e39968ecf601be2f5")
+@Generated("915eaa63380c368316652deafd4c58bd")
 public final class DynamicConfigAddMultiMapConfigCodec {
     //hex: 0x1B0100
     public static final int REQUEST_MESSAGE_TYPE = 1769728;

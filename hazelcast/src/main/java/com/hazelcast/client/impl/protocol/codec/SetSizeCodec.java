@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * elements, returns Integer.MAX_VALUE.
  */
 @SuppressWarnings("unused")
-@Generated("7c9755cf5c415cc19b1561175d4734b2")
+@Generated("f6bd4d179301544e015c5ded5395f31a")
 public final class SetSizeCodec {
     //hex: 0x060100
     public static final int REQUEST_MESSAGE_TYPE = 393472;

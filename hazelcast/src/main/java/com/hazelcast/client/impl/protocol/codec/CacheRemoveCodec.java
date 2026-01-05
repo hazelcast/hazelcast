@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically removes the mapping for a key only if currently mapped to the given value.
  */
 @SuppressWarnings("unused")
-@Generated("ce37a15d9871cb715c7109b1d101118b")
+@Generated("c524c761f1e86dc2df79abb4e347f7de")
 public final class CacheRemoveCodec {
     //hex: 0x131600
     public static final int REQUEST_MESSAGE_TYPE = 1250816;

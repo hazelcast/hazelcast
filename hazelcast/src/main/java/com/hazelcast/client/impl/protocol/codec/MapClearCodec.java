@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * To clear a map without calling MapStore#deleteAll, use #evictAll.
  */
 @SuppressWarnings("unused")
-@Generated("1b711f436e92f1db2ca941ebd8fa5129")
+@Generated("6a6ab4cf333dc899d935e928df61979e")
 public final class MapClearCodec {
     //hex: 0x012D00
     public static final int REQUEST_MESSAGE_TYPE = 77056;

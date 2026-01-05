@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Note that Partition based operations triggers this automatically
  */
 @SuppressWarnings("unused")
-@Generated("94976bf90e88b65f1c219eef4fb0b621")
+@Generated("67b738e3730b4da9349b0683ffee2512")
 public final class ClientTriggerPartitionAssignmentCodec {
     //hex: 0x001000
     public static final int REQUEST_MESSAGE_TYPE = 4096;

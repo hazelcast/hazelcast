@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("250453e92fc6ddc81f7d65dcd944cbe3")
+@Generated("47a2fb262216a569ee086c378696ff7d")
 public final class SimpleEntryViewCodec {
     private static final int COST_FIELD_OFFSET = 0;
     private static final int CREATION_TIME_FIELD_OFFSET = COST_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

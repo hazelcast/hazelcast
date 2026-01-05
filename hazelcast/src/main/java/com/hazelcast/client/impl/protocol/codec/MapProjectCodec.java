@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the projection logic on all map entries and returns the result
  */
 @SuppressWarnings("unused")
-@Generated("ef2fb09b062307eb83c691ece567d7eb")
+@Generated("72a30eb6a21d7db83535972183874637")
 public final class MapProjectCodec {
     //hex: 0x013B00
     public static final int REQUEST_MESSAGE_TYPE = 80640;

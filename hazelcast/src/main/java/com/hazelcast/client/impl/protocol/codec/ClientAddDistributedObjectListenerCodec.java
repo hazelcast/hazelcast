@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * when a distributed object is created or destroyed.
  */
 @SuppressWarnings("unused")
-@Generated("992aca188816a281065a7e967f4d49c9")
+@Generated("b3f2ffcb926bd8be6f38ad3f9e818c9c")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;

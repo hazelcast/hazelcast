@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a new CP group with the given name
  */
 @SuppressWarnings("unused")
-@Generated("b5ebe24a861714e97bf2075110550d80")
+@Generated("bda48d691ba73096afdd7d825dab562b")
 public final class CPGroupCreateCPGroupCodec {
     //hex: 0x1E0100
     public static final int REQUEST_MESSAGE_TYPE = 1966336;

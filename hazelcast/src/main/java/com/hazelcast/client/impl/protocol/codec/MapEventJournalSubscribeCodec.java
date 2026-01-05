@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * oldest and newest event in the journal.
  */
 @SuppressWarnings("unused")
-@Generated("b7b6cb42618d9314f5bd493ffb1ef45d")
+@Generated("dd5379b50771a8455f17bc27733506c9")
 public final class MapEventJournalSubscribeCodec {
     //hex: 0x014100
     public static final int REQUEST_MESSAGE_TYPE = 82176;

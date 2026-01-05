@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and lies dormant until other threads release enough permits.
  */
 @SuppressWarnings("unused")
-@Generated("48445a26d1bb48fc079864395f937357")
+@Generated("9a949496ab25fbbd46e2c9662d5567d0")
 public final class SemaphoreAcquireCodec {
     //hex: 0x0C0200
     public static final int REQUEST_MESSAGE_TYPE = 786944;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * asymmetric set difference of the two sets.
  */
 @SuppressWarnings("unused")
-@Generated("29b2700921a8e10d482d2c8212e4ca8f")
+@Generated("9ac3f801986391af715a0ccde7cd22a8")
 public final class SetCompareAndRemoveAllCodec {
     //hex: 0x060700
     public static final int REQUEST_MESSAGE_TYPE = 395008;

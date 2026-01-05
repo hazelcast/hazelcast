@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the entry with the given key, value and the expiry policy to the cache.
  */
 @SuppressWarnings("unused")
-@Generated("07d54ffd7521fb5f75e4a4750e963438")
+@Generated("ce2f4ceadb584927ef2b0e4453575ad8")
 public final class CachePutCodec {
     //hex: 0x131300
     public static final int REQUEST_MESSAGE_TYPE = 1250048;

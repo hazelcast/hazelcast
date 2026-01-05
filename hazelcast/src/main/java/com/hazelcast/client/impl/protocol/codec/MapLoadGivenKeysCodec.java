@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
 @SuppressWarnings("unused")
-@Generated("7801f22438f50e05240a245c925233f4")
+@Generated("38021145b8bc1add3320063ed35a405c")
 public final class MapLoadGivenKeysCodec {
     //hex: 0x012100
     public static final int REQUEST_MESSAGE_TYPE = 73984;

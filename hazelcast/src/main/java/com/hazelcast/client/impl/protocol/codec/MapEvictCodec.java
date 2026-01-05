@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
 @SuppressWarnings("unused")
-@Generated("bcb3d189a0deb9602f7dd14a8a5aa5b8")
+@Generated("76ef5fe9b6dcb43cdde83625ccf0d302")
 public final class MapEvictCodec {
     //hex: 0x011E00
     public static final int REQUEST_MESSAGE_TYPE = 73216;

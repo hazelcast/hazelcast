@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("2d2a7dc8e997e28fc18753ce1a84d091")
+@Generated("758afd7f09638c01e5fa7bf0ecc9ffff")
 public final class CacheConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

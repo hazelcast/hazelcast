@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Triggers force start
  */
 @SuppressWarnings("unused")
-@Generated("07eba4c900cb5e02a60cb16ea1287313")
+@Generated("a4df4b8ee74db0926bb56eacacab64bf")
 public final class MCTriggerForceStartCodec {
     //hex: 0x201E00
     public static final int REQUEST_MESSAGE_TYPE = 2104832;

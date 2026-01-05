@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Finalizes the commit of XA transaction with the given xid.
  */
 @SuppressWarnings("unused")
-@Generated("8ec63d7d6eb95b97c4a00470dcd3a906")
+@Generated("5e56e9452fbe9cc4760063bd20fa44b2")
 public final class XATransactionFinalizeCodec {
     //hex: 0x140300
     public static final int REQUEST_MESSAGE_TYPE = 1311488;

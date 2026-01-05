@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
 @SuppressWarnings("unused")
-@Generated("070f3fc68006b25451495be756bf8e7a")
+@Generated("a6728e90e25f15f9bd08329c930b037f")
 public final class MCMatchMCConfigCodec {
     //hex: 0x200C00
     public static final int REQUEST_MESSAGE_TYPE = 2100224;

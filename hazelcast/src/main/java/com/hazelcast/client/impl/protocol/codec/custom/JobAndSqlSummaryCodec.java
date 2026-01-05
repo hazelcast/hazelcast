@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("4c85db3675181fe76934483217b63b36")
+@Generated("71bee4b1779f79360245e17311a9bef7")
 public final class JobAndSqlSummaryCodec {
     private static final int LIGHT_JOB_FIELD_OFFSET = 0;
     private static final int JOB_ID_FIELD_OFFSET = LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

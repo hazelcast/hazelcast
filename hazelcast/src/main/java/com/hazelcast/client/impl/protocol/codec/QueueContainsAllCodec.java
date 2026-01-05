@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Return true if this collection contains all of the elements in the specified collection.
  */
 @SuppressWarnings("unused")
-@Generated("9d4a8d84b3626beb2f33433a2421ad2c")
+@Generated("df1bd808dd626fea6eea7e9aa78171b5")
 public final class QueueContainsAllCodec {
     //hex: 0x030C00
     public static final int REQUEST_MESSAGE_TYPE = 199680;

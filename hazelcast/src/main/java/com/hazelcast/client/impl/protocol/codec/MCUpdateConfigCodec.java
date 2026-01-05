@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Updates the configuration on the member with the passed configuration, applies (merges) the passed config to the current config
  */
 @SuppressWarnings("unused")
-@Generated("99bb9372b15b7640bf2dd26b378e0a12")
+@Generated("17ecd9b62f545f3802a34e56b16d6d7f")
 public final class MCUpdateConfigCodec {
     //hex: 0x202300
     public static final int REQUEST_MESSAGE_TYPE = 2106112;

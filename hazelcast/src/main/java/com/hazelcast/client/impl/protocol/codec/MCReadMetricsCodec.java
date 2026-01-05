@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * greater or equals to the sequence number set in fromSequence.
  */
 @SuppressWarnings("unused")
-@Generated("1a4381762a741bb15e0dbd850d7af386")
+@Generated("0f1742be8f47606942d505d4333dfc7d")
 public final class MCReadMetricsCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("3fccb33016a6912a7724cefd27e99217")
+@Generated("321b929389438a4877f44d05d31525e8")
 public final class QueryCacheEventDataCodec {
     private static final int SEQUENCE_FIELD_OFFSET = 0;
     private static final int EVENT_TYPE_FIELD_OFFSET = SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

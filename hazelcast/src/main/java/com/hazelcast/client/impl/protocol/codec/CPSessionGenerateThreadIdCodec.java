@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CP group.
  */
 @SuppressWarnings("unused")
-@Generated("bb85642a9ae74daa60b45f85e892eb9a")
+@Generated("94464a400875589baaf3484e68ed0240")
 public final class CPSessionGenerateThreadIdCodec {
     //hex: 0x1F0400
     public static final int REQUEST_MESSAGE_TYPE = 2032640;

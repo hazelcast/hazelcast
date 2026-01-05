@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * MessageListener is called. More than one message listener can be added on one instance.
  */
 @SuppressWarnings("unused")
-@Generated("99338320136c1039fd07b28d6aa4ed77")
+@Generated("d2020665d3c001f7197f096139034ed0")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;

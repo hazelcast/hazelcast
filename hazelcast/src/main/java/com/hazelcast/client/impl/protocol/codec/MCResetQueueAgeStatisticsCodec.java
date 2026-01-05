@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Resets the max-age, min-age and average-age metrics of the queue
  */
 @SuppressWarnings("unused")
-@Generated("e2b0ddb75a75df459c42e836ca1a3762")
+@Generated("7482bf2a9afadbf2a7e03ca458b5a15a")
 public final class MCResetQueueAgeStatisticsCodec {
     //hex: 0x202100
     public static final int REQUEST_MESSAGE_TYPE = 2105600;

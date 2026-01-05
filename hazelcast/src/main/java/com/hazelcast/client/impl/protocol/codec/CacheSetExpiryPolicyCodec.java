@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
 @SuppressWarnings("unused")
-@Generated("7f988215cb76733cb075421861032545")
+@Generated("bfa34546155d3bde2e634f391b1186a9")
 public final class CacheSetExpiryPolicyCodec {
     //hex: 0x132100
     public static final int REQUEST_MESSAGE_TYPE = 1253632;

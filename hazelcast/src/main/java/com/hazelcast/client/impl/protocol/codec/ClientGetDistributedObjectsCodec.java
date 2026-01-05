@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the list of distributed objects in the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("6941685764569bdb8fc3865700b46bcb")
+@Generated("25acd563292353225f22361ea6806f4f")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;

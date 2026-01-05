@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * message may act as a proxy.
  */
 @SuppressWarnings("unused")
-@Generated("47113f73b7ac7f20cbbde29f3b8a43e0")
+@Generated("12ea9035e205af7b07e5a8da0cddb621")
 public final class PNCounterAddCodec {
     //hex: 0x1D0200
     public static final int REQUEST_MESSAGE_TYPE = 1901056;
