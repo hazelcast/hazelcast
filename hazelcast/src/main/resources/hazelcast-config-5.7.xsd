@@ -2982,6 +2982,7 @@
                         <xs:enumeration value="aggregate"/>
                         <xs:enumeration value="projection"/>
                         <xs:enumeration value="deploy"/>
+                        <xs:enumeration value="use"/>
                         <xs:enumeration value="optimize"/>
                         <xs:enumeration value="submit"/>
                         <xs:enumeration value="cancel"/>
@@ -2992,6 +2993,7 @@
                         <xs:enumeration value="instance"/>
                         <xs:enumeration value="member"/>
                         <xs:enumeration value="migration"/>
+                        <xs:enumeration value="view-mapping"/>
                         <xs:enumeration value="create-view"/>
                         <xs:enumeration value="drop-view"/>
                         <xs:enumeration value="create-type"/>

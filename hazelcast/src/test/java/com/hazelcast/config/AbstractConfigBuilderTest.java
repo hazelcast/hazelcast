@@ -470,6 +470,12 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testConfigPermission();
 
     @Test
+    public abstract void testUserCodeNamespacePermission();
+
+    @Test
+    public abstract void testSqlPermission();
+
+    @Test
     public abstract void testAllPermissionsCovered() throws IOException;
 
     @Test(expected = InvalidConfigurationException.class)
