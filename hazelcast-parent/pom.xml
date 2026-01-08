@@ -1482,7 +1482,7 @@
                 https://stackoverflow.com/a/7481347
                 -->
                 <property>
-                    <name>!testedSpringOverride</name>
+                    <name>!tested.spring.override</name>
                 </property>
             </activation>
             <properties>
@@ -1503,7 +1503,7 @@
             <id>spring-6</id>
             <activation>
                 <property>
-                    <name>testedSpringOverride</name>
+                    <name>tested.spring.override</name>
                     <value>6</value>
                 </property>
             </activation>
@@ -1525,7 +1525,7 @@
             <id>spring-5</id>
             <activation>
                 <property>
-                    <name>testedSpringOverride</name>
+                    <name>tested.spring.override</name>
                     <value>5</value>
                 </property>
             </activation>

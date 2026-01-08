@@ -163,7 +163,7 @@
             <!-- see hazelcast-parent -->
             <activation>
                 <property>
-                    <name>testedSpringOverride</name>
+                    <name>tested.spring.override</name>
                     <value>5</value>
                 </property>
             </activation>
@@ -180,7 +180,7 @@
             <activation>
                 <!-- see hazelcast-parent -->
                 <property>
-                    <name>!testedSpringOverride</name>
+                    <name>!tested.spring.override</name>
                 </property>
             </activation>
             <dependencies>
