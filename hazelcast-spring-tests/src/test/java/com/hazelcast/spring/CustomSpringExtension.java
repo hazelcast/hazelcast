@@ -24,7 +24,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spring.config.ConfigFactoryAccessor;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +76,7 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void beforeAll(@NonNull ExtensionContext context) {
+    public void beforeAll(@Nonnull ExtensionContext context) {
         // Code to run before all tests
     }
 
@@ -88,12 +88,12 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void afterEach(@NonNull ExtensionContext context) {
+    public void afterEach(@Nonnull ExtensionContext context) {
         TestLoggingUtils.removeThreadLocalTestMethodName();
     }
 
     @Override
-    public void afterAll(@NonNull ExtensionContext context) {
+    public void afterAll(@Nonnull ExtensionContext context) {
         var applicationContext = (AbstractApplicationContext) SpringExtension.getApplicationContext(context);
         if (!applicationContext.isRunning() || applicationContext.isActive()) {
             // context was closed, but instance(s) are running, something went wrong.
@@ -113,8 +113,8 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void interceptTestMethod(@NonNull Invocation<Void> invocation, @NonNull ReflectiveInvocationContext<@NonNull Method> invocationContext,
-                                    @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptTestMethod(@Nonnull Invocation<Void> invocation, @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                    @Nonnull ExtensionContext extensionContext) throws Throwable {
         Method testMethod = invocationContext.getExecutable();
         long finalTimeoutSeconds = getTimeoutSeconds(testMethod);
         AtomicReference<Throwable> error = new AtomicReference<>();
