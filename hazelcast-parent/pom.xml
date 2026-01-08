@@ -116,6 +116,12 @@
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <parquet.version>1.16.0</parquet.version>
 
+        <spring.boot3.version>3.5.7</spring.boot3.version>
+        <org.springframework6.version>6.2.14</org.springframework6.version>
+
+        <spring.boot4.version>4.0.0</spring.boot4.version>
+        <org.springframework7.version>7.0.0</org.springframework7.version>
+
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
@@ -1467,7 +1473,7 @@
         https://github.com/hazelcast/hz-docs/blob/main/docs/modules/spring/pages/overview.adoc#supported-versions
         -->
         <profile>
-            <id>spring-6</id>
+            <id>spring-7</id>
             <activation>
                 <!--
                 Make this the default profile
@@ -1476,20 +1482,51 @@
                 https://stackoverflow.com/a/7481347
                 -->
                 <property>
-                    <name>!spring-5</name>
+                    <name>!testedSpringOverride</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- should only be Spring 7 -->
+                <spring.boot.version>${spring.boot4.version}</spring.boot.version>
+                <org.springframework.version>${org.springframework7.version}</org.springframework.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>jakarta.inject</groupId>
+                    <artifactId>jakarta.inject-api</artifactId>
+                    <version>2.0.1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>spring-6</id>
+            <activation>
+                <property>
+                    <name>testedSpringOverride</name>
+                    <value>6</value>
                 </property>
             </activation>
             <properties>
                 <!-- should only be Spring 6 -->
-                <spring.boot.version>3.5.7</spring.boot.version>
-                <org.springframework.version>6.2.14</org.springframework.version>
+                <spring.boot.version>${spring.boot3.version}</spring.boot.version>
+                <org.springframework.version>${org.springframework6.version}</org.springframework.version>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                    <version>1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
         </profile>
         <profile>
             <id>spring-5</id>
             <activation>
                 <property>
-                    <name>spring-5</name>
+                    <name>testedSpringOverride</name>
+                    <value>5</value>
                 </property>
             </activation>
             <properties>
@@ -1497,6 +1534,14 @@
                 <spring.boot.version>2.7.18</spring.boot.version>
                 <org.springframework.version>5.3.39</org.springframework.version>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                    <version>1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 

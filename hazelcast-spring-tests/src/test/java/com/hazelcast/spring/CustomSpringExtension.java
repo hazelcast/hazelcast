@@ -102,6 +102,7 @@ public class CustomSpringExtension implements BeforeAllCallback, BeforeEachCallb
                 LOGGER.warn("Instances haven't been shut down: {}", instances);
                 HazelcastInstanceFactory.terminateAll();
             }
+            applicationContext.stop();
         } else {
             // Normal Hazelcast beans are declared with destroy-method = shutdown, but it makes graceful shutdown,
             // which takes time and is not necessary in tests.

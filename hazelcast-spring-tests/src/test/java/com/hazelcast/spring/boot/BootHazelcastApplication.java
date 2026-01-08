@@ -30,8 +30,8 @@ import org.springframework.core.io.ClassPathResource;
 public class BootHazelcastApplication {
 
     public static void main(String[] args) {
-            SpringApplication.run(BootHazelcastApplication.class, args);
-        }
+        SpringApplication.run(BootHazelcastApplication.class, args);
+    }
 
     @Bean
     public PropertySourcesPlaceholderConfigurer propertyPlaceholderConfigurer() {
