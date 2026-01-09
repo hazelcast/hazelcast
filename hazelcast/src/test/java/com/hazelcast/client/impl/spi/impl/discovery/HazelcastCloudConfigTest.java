@@ -54,7 +54,7 @@ public class HazelcastCloudConfigTest extends ClientTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config.getProperties());
         String cloudUrlBase = hazelcastProperties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
         String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, token);
-        assertEquals("https://api.viridian.hazelcast.com/cluster/discovery?token=TOKEN", urlEndpoint);
+        assertEquals("https://api.cloud.hazelcast.com/cluster/discovery?token=TOKEN", urlEndpoint);
     }
 
 }
