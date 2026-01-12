@@ -64,9 +64,9 @@ import static org.junit.Assert.assertNotNull;
 @Category(SlowTest.class)
 public class Sources_withEventJournalTest extends PipelineTestSupport {
     // The instance for remote cluster
-    private static HazelcastInstance remoteHz;
+    protected static HazelcastInstance remoteHz;
     // The configuration for connecting to remote cluster
-    private static ClientConfig remoteHzClientConfig;
+    protected static ClientConfig remoteHzClientConfig;
 
     private static final String HZ_CLIENT_EXTERNAL_REF = "hzclientexternalref";
 
@@ -76,15 +76,24 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Create remote cluster
         String clusterName = randomName();
 
+        Config remoteClusterConfig = prepareRemoteClusterConfig(clusterName);
+        remoteHz = createRemoteCluster(remoteClusterConfig, 2).get(0);
+        remoteHzClientConfig = getClientConfigForRemoteCluster(remoteHz);
+
+       prepareLocalCluster(clusterName);
+    }
+
+    protected static Config prepareRemoteClusterConfig(String clusterName) {
         Config remoteClusterConfig = new Config();
         remoteClusterConfig.setClusterName(clusterName);
         remoteClusterConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         remoteClusterConfig.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         remoteClusterConfig.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        return remoteClusterConfig;
+    }
 
-        remoteHz = createRemoteCluster(remoteClusterConfig, 2).get(0);
-        remoteHzClientConfig = getClientConfigForRemoteCluster(remoteHz);
-
+    protected static void prepareLocalCluster(String clusterName)
+            throws IOException {
         // Create local cluster
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(HZ_CLIENT_EXTERNAL_REF);
         dataConnectionConfig.setType("HZ");

@@ -86,6 +86,16 @@ public class CacheJournalLostEventTest extends AbstractJournalLostEventTest {
     }
 
     @Test
+    public void remoteSourceDefaultProjection_receivedEvent() {
+        performTest(
+                remoteInstance,
+                Sources.remoteCacheJournalEntries(sourceCache, remoteHzClientConfig, START_FROM_OLDEST),
+                JournalSourceEntry::isAfterLostEvents,
+                EventFilterType.ONLY_PUT
+        );
+    }
+
+    @Test
     public void performRareEventTest() {
         var streamSource = Sources.cacheJournal(
                 sourceCache,

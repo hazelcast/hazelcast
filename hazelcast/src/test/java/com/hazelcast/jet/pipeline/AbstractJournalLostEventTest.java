@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class AbstractJournalLostEventTest extends PipelineTestSupport {
     protected static HazelcastInstance remoteInstance;
     protected static ClientConfig remoteHzClientConfig;
-    private static List<HazelcastInstance> remoteCluster;
+    protected static List<HazelcastInstance> remoteCluster;
 
     @Before
     public void setup() {
