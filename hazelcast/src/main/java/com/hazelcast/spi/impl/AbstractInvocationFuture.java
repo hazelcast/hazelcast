@@ -1146,7 +1146,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      * is the response.
      */
     private Object registerWaiter(Object waiter, Executor executor) {
-        assert !(waiter instanceof UnblockableThread) : "Waiting for response on this thread is illegal";
+        assert !(waiter instanceof UnblockableThread) : "Waiting for response on this thread is illegal (" + waiter + ")";
         WaitNode waitNode = null;
         for (; ; ) {
             final Object oldState = state;

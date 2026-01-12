@@ -285,6 +285,35 @@ public interface OperationService {
             throws Exception;
 
     /**
+     * Invokes a set of operations on all relevant local partitions. Relevant partitions in this
+     * context refer to all owned partitions and replica partitions up to and including
+     * {@code maxReplicaIndex}.
+     * <p>
+     * This method blocks until the operations successfully complete across all partitions, or
+     * they persistently fail after retries. Operations are submitted in a manner that allows
+     * intermediate operations to be executed.
+     * <p>
+     * If the operations have sync backups, this method will <b>not</b> wait for their completion.
+     * Instead, it will return once the operations are completed on primary replicas of the
+     * given {@code partitions}.
+     * <p>
+     *     WARNING: The passed {@link OperationFactory} must produce idempotent
+     *     and commutative operations, as retries will occur for all partitions.
+     * </p>
+     *
+     * @implNote               operations output by the {@code operationFactory} must be idempotent.
+     * @param serviceName      the name of the service.
+     * @param operationFactory the factory responsible for creating idempotent operations
+     * @param maxReplicaIndex  the maximum partition replica index to include
+     * @param timeoutMillis    the maximum milliseconds to wait for all invocations to complete
+     * @return a Map with partitionId as a key and the outcome of the operation as a value.
+     * @throws Exception
+     */
+    Map<Integer, Object> invokeOnRelevantLocalPartitions(String serviceName, OperationFactory operationFactory,
+                                                            int maxReplicaIndex, long timeoutMillis)
+            throws Exception;
+
+    /**
      * Invokes a set of operations on selected set of all partitions in an async way.
      * <p>
      * If the operations have sync backups, the returned {@link CompletableFuture} does <b>not</b>

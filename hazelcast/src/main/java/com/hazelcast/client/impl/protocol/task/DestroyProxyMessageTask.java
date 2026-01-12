@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDest
 
 import java.security.Permission;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -67,7 +68,11 @@ public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<Clie
 
     @Override
     public Collection<Member> getTargets() {
-        return nodeEngine.getClusterService().getMembers();
+        // prefer sending to other members before ourselves, local invocation may block during execution
+        Member localMember = nodeEngine.getLocalMember();
+        return nodeEngine.getClusterService().getMembers().stream()
+                .sorted(Comparator.comparing(localMember::equals))
+                .toList();
     }
 
     private void handleException(Throwable throwable) {
