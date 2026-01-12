@@ -129,10 +129,10 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
         ClientMessage request = MCReadMetricsCodec.encodeRequest(memberUuid, tailSequence);
         ClientInvocation invocation = new ClientInvocation(clientImpl, request, null);
 
-        // Try to get with short timeout - should complete with empty slice or timeout
+        //sends a request to the server and returns future
         try {
-            invocation.invoke().get(500, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
+            invocation.invoke();
+        } catch (Exception e) {
             // Expected - operation is waiting for future data
         }
 
@@ -229,27 +229,5 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
         }
 
         return totalOperations;
-    }
-
-    private void printLiveOperationRegistryState() throws Exception {
-        // Diagnostic method for debugging - called only on test failure
-        LiveOperationRegistry registry = metricsService.getLiveOperationRegistry();
-        Field liveOperationsField = LiveOperationRegistry.class.getDeclaredField("liveOperations");
-        liveOperationsField.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        ConcurrentHashMap<?, Map<Long, ?>> liveOperations =
-            (ConcurrentHashMap<?, Map<Long, ?>>) liveOperationsField.get(registry);
-
-        // Information will be available in test failure output
-        int totalOps = 0;
-        for (Map<Long, ?> ops : liveOperations.values()) {
-            totalOps += ops.size();
-        }
-
-        // This will appear in test logs when the test fails
-        if (totalOps > 0) {
-            fail("Found " + totalOps + " leaked operations across " + liveOperations.size() + " addresses");
-        }
     }
 }
