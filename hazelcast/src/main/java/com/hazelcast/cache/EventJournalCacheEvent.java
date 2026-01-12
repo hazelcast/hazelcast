@@ -58,4 +58,12 @@ public interface EventJournalCacheEvent<K, V> {
      * @return the event type
      */
     CacheEventType getType();
+
+    /**
+     * Returns {@code true} if lost events were detected before this event in the journal.
+     * @return {@code true} if earlier events were lost, {@code false} otherwise
+     * @since 5.7
+     */
+    boolean isAfterLostEvents();
+
 }

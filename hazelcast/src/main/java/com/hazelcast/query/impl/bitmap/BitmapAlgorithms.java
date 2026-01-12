@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.bitmap;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
@@ -143,7 +142,6 @@ final class BitmapAlgorithms {
             last.next = null;
         }
 
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         private static final class Node implements Comparable<Node> {
 
             final AscendingLongIterator iterator;

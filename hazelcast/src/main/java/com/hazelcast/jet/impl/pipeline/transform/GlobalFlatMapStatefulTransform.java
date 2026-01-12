@@ -57,7 +57,7 @@ public class GlobalFlatMapStatefulTransform<T, S, R> extends AbstractTransform {
         determinedLocalParallelism(1);
         ConstantFunctionEx<T, Integer> keyFn = new ConstantFunctionEx<>(name().hashCode());
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
-                flatMapStatefulP(Long.MAX_VALUE, keyFn, timestampFn, createFn, statefulFlatMapFn, null));
+                flatMapStatefulP(Long.MAX_VALUE, keyFn, timestampFn, createFn, statefulFlatMapFn, null, null));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

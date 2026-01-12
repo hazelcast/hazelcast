@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -680,7 +679,6 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
         }
     }
 
-    @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);

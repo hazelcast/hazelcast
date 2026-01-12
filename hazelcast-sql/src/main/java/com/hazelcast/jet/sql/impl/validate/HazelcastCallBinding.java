@@ -116,8 +116,8 @@ public class HazelcastCallBinding extends SqlCallBinding {
     private static Collection<SqlNode> getOperands(SqlCall call) {
         SqlOperator operator = call.getOperator();
 
-        if (operator instanceof HazelcastCallBindingSignatureErrorAware) {
-            return ((HazelcastCallBindingSignatureErrorAware) operator).getOperandsForSignatureError(call);
+        if (operator instanceof HazelcastCallBindingSignatureErrorAware aware) {
+            return aware.getOperandsForSignatureError(call);
         } else {
             return call.getOperandList();
         }

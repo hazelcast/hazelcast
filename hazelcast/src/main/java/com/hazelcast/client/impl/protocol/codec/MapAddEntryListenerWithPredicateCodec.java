@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * filtered by the given predicate.
  */
 @SuppressWarnings("unused")
-@Generated("d74c98d86ae3dd9bd4a99edd692049c4")
+@Generated("d6b86dfa019755de90d16d89fa308e5d")
 public final class MapAddEntryListenerWithPredicateCodec {
     //hex: 0x011700
     public static final int REQUEST_MESSAGE_TYPE = 71424;
@@ -61,7 +61,6 @@ public final class MapAddEntryListenerWithPredicateCodec {
     private MapAddEntryListenerWithPredicateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

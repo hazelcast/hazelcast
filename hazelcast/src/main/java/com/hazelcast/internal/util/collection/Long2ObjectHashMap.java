@@ -18,7 +18,6 @@
 package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.internal.util.QuickMath;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -569,8 +568,8 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     }
 
     @SuppressWarnings("unchecked")
-    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
-            justification = "deliberate, documented choice")
+//    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
+//            justification = "deliberate, documented choice")
     private class EntryIterator extends AbstractIterator<Entry<Long, V>> implements Entry<Long, V> {
 
         @Override

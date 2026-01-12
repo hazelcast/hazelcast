@@ -23,7 +23,6 @@ package com.hazelcast.internal.util;
  */
 
 import com.hazelcast.internal.serialization.SerializableByConvention;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -526,8 +525,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         /**
          * The number of elements in this segment's region.
          */
-        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification =
-                "I trust Doug Lea's technical decision")
+//        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification =
+//                "I trust Doug Lea's technical decision")
         transient volatile int count;
 
         /**
@@ -538,8 +537,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
          * we might have an inconsistent view of state so (usually) we
          * must retry.
          */
-        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification =
-                "I trust Doug Lea's technical decision")
+//        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification =
+//                "I trust Doug Lea's technical decision")
         transient int modCount;
 
         /**

@@ -162,7 +162,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             return topNode;
         }
 
-        if (topNode instanceof SqlExplainStatement) {
+        if (topNode instanceof SqlExplainStatement explainStatement) {
             /*
              * Just FYI, why do we do set validated explicandum back.
              *
@@ -179,15 +179,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
              * It's a reason why we do it (extraction, validation & re-setting) manually.
              */
 
-            SqlExplainStatement explainStatement = (SqlExplainStatement) topNode;
             SqlNode explicandum = explainStatement.getExplicandum();
             explicandum = super.validate(explicandum);
             explainStatement.setExplicandum(explicandum);
             return explainStatement;
         }
 
-        if (topNode instanceof SqlAnalyzeStatement) {
-            SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) topNode;
+        if (topNode instanceof SqlAnalyzeStatement analyzeStatement) {
             analyzeStatement.validate(this);
             // Note: we're using custom validate method to extract & validate options
             SqlNode query = analyzeStatement.getQuery();
@@ -202,8 +200,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
         super.validateQuery(node, scope, targetRowType);
-        if (node instanceof SqlSelect) {
-            validateSelect((SqlSelect) node, scope);
+        if (node instanceof SqlSelect select) {
+            validateSelect(select, scope);
         }
     }
 
@@ -430,11 +428,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateTableFunction(SqlCall node, SqlValidatorScope scope, RelDataType targetRowType) {
         if (ssc.isSecurityEnabled() && node instanceof SqlBasicCall && !node.getOperandList().isEmpty()) {
             SqlNode sqlNode = node.getOperandList().get(0);
-            if (sqlNode instanceof SqlBasicCall) {
-                SqlBasicCall call = (SqlBasicCall) sqlNode;
+            if (sqlNode instanceof SqlBasicCall call) {
                 SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastDynamicTableFunction) {
-                    HazelcastDynamicTableFunction f = (HazelcastDynamicTableFunction) operator;
+                if (operator instanceof HazelcastDynamicTableFunction f) {
                     for (Permission permission : f.permissions(call, this)) {
                         ssc.checkPermission(permission);
                     }
@@ -604,8 +600,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private static final class TableOperatorWrapper extends SqlShuttle {
         @Override
         public SqlNode visit(@Nonnull SqlCall call) {
-            if (call instanceof SqlJoin) {
-                SqlJoin join = (SqlJoin) call;
+            if (call instanceof SqlJoin join) {
                 join.setLeft(wrapTableOperator(join.getLeft()));
                 join.setRight(wrapTableOperator(join.getRight()));
                 return join;
@@ -614,8 +609,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         private SqlNode wrapTableOperator(SqlNode node) {
-            if (node instanceof SqlCall) {
-                SqlCall call = (SqlCall) node;
+            if (node instanceof SqlCall call) {
                 if (call.getOperator().getKind() == AS) {
                     call.setOperand(0, wrapTableOperator(call.getOperandList().get(0)));
                     return call;

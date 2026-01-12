@@ -54,11 +54,14 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     protected static final String JOURNALED_MAP_PREFIX = "journaledMap.";
     protected static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
     protected static final int MEMBER_COUNT = 2;
+    protected static final int JOURNAL_CAPACITY_PER_PARTITION = 1000;
+
     protected static TestHazelcastFactory factory = new TestHazelcastFactory();
     private static HazelcastInstance[] allHazelcastInstances;
 
-    protected static HazelcastInstance member;
-    protected static HazelcastInstance client;
+    // these variables are read and updated by different threads
+    protected static volatile HazelcastInstance member;
+    protected static volatile HazelcastInstance client;
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
@@ -88,10 +91,17 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         // Set partition count to match the parallelism of IMap sources.
         // Their preferred local parallelism is 2, therefore partition count
         // should be 2 * MEMBER_COUNT.
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(2 * MEMBER_COUNT));
+        int partitionCount = 2 * MEMBER_COUNT;
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
-        config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        config.getMapConfig(JOURNALED_MAP_PREFIX + '*')
+                .getEventJournalConfig()
+                .setCapacity(partitionCount * JOURNAL_CAPACITY_PER_PARTITION)
+                .setEnabled(true);
+        config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*')
+                .getEventJournalConfig()
+                .setCapacity(partitionCount * JOURNAL_CAPACITY_PER_PARTITION)
+                .setEnabled(true);
         return config;
     }
 

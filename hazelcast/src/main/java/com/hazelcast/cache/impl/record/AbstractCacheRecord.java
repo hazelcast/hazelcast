@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -89,8 +88,8 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
     }
 
     @Override
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "CacheRecord can be accessed by only its own partition thread.")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "CacheRecord can be accessed by only its own partition thread.")
     public void incrementHits() {
         hits++;
     }

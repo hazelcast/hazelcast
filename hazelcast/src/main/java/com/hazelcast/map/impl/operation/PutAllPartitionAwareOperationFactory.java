@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -45,7 +44,6 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
     public PutAllPartitionAwareOperationFactory() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public PutAllPartitionAwareOperationFactory(String name, int[] partitions,
                                                 MapEntries[] mapEntries, boolean triggerMapLoader) {
         this.name = name;

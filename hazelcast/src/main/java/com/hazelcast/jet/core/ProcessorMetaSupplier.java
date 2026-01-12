@@ -40,7 +40,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.spi.annotation.Beta;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -625,7 +624,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * on a node with given {@link Address} or random member if address is not given.
      * Additionally, it ensures that total parallelism is 1.
      */
-    @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
+    //@SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
     @SerializableByConvention
     class SpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
         @Serial

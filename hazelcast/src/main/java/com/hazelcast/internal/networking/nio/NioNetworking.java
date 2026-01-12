@@ -35,7 +35,6 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -168,17 +167,17 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         }
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public NioThread[] getInputThreads() {
         return inputThreads;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public NioThread[] getOutputThreads() {
         return outputThreads;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public Set<NioChannel> getChannels() {
         return channels;
     }

@@ -16,13 +16,12 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.internal.serialization.SerializationService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -45,12 +44,17 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     }
 
     @Override
-    public void addItem(long seq, Object item) {
+    public boolean addItem(long seq, Object item) {
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalMapEvent e = (InternalEventJournalMapEvent) item;
+        var lostEventsDetected = getLostEventsFlag();
         final DeserializingEventJournalMapEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalMapEvent<>(serializationService, e);
-        super.addItem(seq, deserialisingEvent);
+                = new DeserializingEventJournalMapEvent<>(serializationService, e, lostEventsDetected);
+        var added = super.addItem(seq, deserialisingEvent);
+        if (lostEventsDetected && added) {
+            clearLostEventsFlag();
+        }
+        return added;
     }
 
     @Override
@@ -74,7 +78,6 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
 
         @Override
         @SuppressWarnings("unchecked")
-        @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
         public T transform(InternalEventJournalMapEvent e) {
             return projection.apply((DeserializingEventJournalMapEvent<K, V>) e);
         }

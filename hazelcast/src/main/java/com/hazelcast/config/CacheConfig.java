@@ -31,7 +31,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -85,7 +84,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
     //      * ENTRY_COUNT with 10000 max entry count
     //      * LRU as eviction policy
     private EvictionConfig evictionConfig = new EvictionConfig();
-    @SuppressFBWarnings("SE_BAD_FIELD")
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;

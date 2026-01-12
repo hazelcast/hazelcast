@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.ProbeUnit;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -396,7 +395,6 @@ public class MetricsCompressor {
         extractMetrics(blob, consumer, DEFAULT_DESCRIPTOR_SUPPLIER);
     }
 
-    @SuppressFBWarnings("RR_NOT_CHECKED")
     public static void extractMetrics(byte[] blob, MetricConsumer consumer, Supplier<? extends MetricDescriptor> supplier) {
         ByteArrayInputStream bais = new ByteArrayInputStream(blob);
         int version = (bais.read() << BITS_IN_BYTE) + bais.read();

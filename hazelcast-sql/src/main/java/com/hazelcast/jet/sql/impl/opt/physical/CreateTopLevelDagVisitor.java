@@ -630,8 +630,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
         // We support only top-level LIMIT ... OFFSET.
-        if (input instanceof LimitPhysicalRel) {
-            LimitPhysicalRel limit = (LimitPhysicalRel) input;
+        if (input instanceof LimitPhysicalRel limit) {
             if (limit.fetch() != null) {
                 fetch = limit.fetch(dagBuildContext.getParameterMetadata());
             }

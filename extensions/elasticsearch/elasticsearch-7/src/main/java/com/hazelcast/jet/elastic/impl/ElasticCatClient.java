@@ -24,7 +24,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.elastic.impl.Shard.Prirep;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
@@ -129,7 +128,6 @@ public class ElasticCatClient implements Closeable {
      *
      * @param indices indexes to return shards for (wildcard format accepted)
      */
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public List<Shard> shards(String... indices) {
         Map<String, String> idToAddress = nodes().stream().collect(toMap(Node::getId, Node::getHttpAddress));
 

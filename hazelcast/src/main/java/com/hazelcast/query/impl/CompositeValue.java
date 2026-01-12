@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -121,7 +120,6 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
      * For performance reasons, the ownership of the passed components array
      * is transferred to the newly constructed composite value.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public CompositeValue(Comparable[] components) {
         this.components = components;
     }
@@ -145,7 +143,6 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
      * For performance reasons, the internal components array is directly
      * exposed to the caller.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Comparable[] getComponents() {
         return components;
     }
@@ -173,7 +170,6 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         return Arrays.toString(components);
     }
 
-    @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
     @Override
     public int compareTo(CompositeValue that) {
         assert components.length == that.components.length;
@@ -249,7 +245,6 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
             // nothing to read
         }
 
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         @SuppressWarnings("NullableProblems")
         @Override
         public int compareTo(Object o) {
@@ -288,7 +283,6 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
             // nothing to read
         }
 
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         @SuppressWarnings("NullableProblems")
         @Override
         public int compareTo(Object o) {

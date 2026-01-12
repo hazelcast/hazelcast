@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Commits the transaction with the given id.
  */
 @SuppressWarnings("unused")
-@Generated("907182807a9e10edf3f6cb20632e9c37")
+@Generated("65038df085e648ae83d4e8690d92097f")
 public final class TransactionCommitCodec {
     //hex: 0x150100
     public static final int REQUEST_MESSAGE_TYPE = 1376512;
@@ -51,7 +51,6 @@ public final class TransactionCommitCodec {
     private TransactionCommitCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

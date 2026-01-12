@@ -46,7 +46,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -754,8 +753,8 @@ public class JobRepository {
         @Serial
         private static final long serialVersionUID = 1L;
         private long jobId;
-        @SuppressFBWarnings(value = "SE_BAD_FIELD",
-                justification = "this class is not going to be java-serialized")
+//        @SuppressFBWarnings(value = "SE_BAD_FIELD",
+//                justification = "this class is not going to be java-serialized")
         private JobExecutionRecord jobExecutionRecord;
         private boolean canCreate;
 

@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.pipeline.StreamStageWithKey;
 
 /**
  * Each metric provided by Jet has a specific name which conceptually
@@ -264,6 +269,33 @@ public final class MetricNames {
      * @since Jet 4.0
      */
     public static final String JOB_EXECUTIONS_COMPLETED = "jobs.executionCompleted";
+
+
+    /**
+     * Number of active state objects held by stateful processors in a running job.
+     * <p>
+     * This metric applies to stages that use stateful operations such as
+     * {@link StreamStageWithKey#mapStateful(SupplierEx, TriFunction)},
+     * {@link StreamStageWithKey#filterStateful(long, SupplierEx, BiPredicateEx)}, and similar.
+     * <p>
+     * Stages such as {@link StreamStageWithKey#mapStateful(SupplierEx, TriFunction)} hold multiple
+     * state objects: each distinct key has its own dedicated state. For such stages, this metric
+     * reflects the number of currently allocated per-key state objects.
+     * <p>
+     * Stages such as {@link com.hazelcast.jet.pipeline.StreamStage#mapStateful(SupplierEx, BiFunctionEx)}
+     * maintain a single state per processor instance. For these stages, this metric
+     * reports {@code 1} if the processor was used at least once, and {@code 0} otherwise.
+     * <p>
+     * All states are removed once the job is finished (for example, for batch jobs) or fails.
+     * In these cases this metric returns {@code 0}.
+     *
+     * <p>
+     * In summary, this metric indicates how many state-holder objects currently exist
+     * across the processors of the running job.
+     *
+     * @since 5.7
+     */
+    public static final String JOB_STATEFUL_PROCESSOR_STATES = "totalStates";
 
     private MetricNames() { }
 }

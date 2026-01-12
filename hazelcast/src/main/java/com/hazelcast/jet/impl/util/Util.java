@@ -488,7 +488,7 @@ public final class Util {
      * if only one thread is updating the value.
      */
     public static void lazyAdd(AtomicLongArray counters, int index, long addend) {
-        counters.lazySet(index, counters.get(index) + addend);
+        counters.lazySet(index, counters.getPlain(index) + addend);
     }
 
     /**

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -69,7 +68,6 @@ public class StringNavigableJsonAdapter extends NavigableJsonInputAdapter {
         return source.charAt(pos++) == '"';
     }
 
-    @SuppressFBWarnings("SR_NOT_CHECKED")
     @Override
     public JsonValue parseValue(JsonReducedValueParser parser, int offset) throws IOException {
         StringReader reader = new StringReader(source);

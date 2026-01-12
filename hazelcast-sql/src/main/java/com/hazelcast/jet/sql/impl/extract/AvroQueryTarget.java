@@ -53,8 +53,8 @@ public class AvroQueryTarget implements QueryTarget {
             return null;
         }
         Object value = record.get(path);
-        if (value instanceof Utf8) {
-            return ((Utf8) value).toString();
+        if (value instanceof Utf8 utf8) {
+            return utf8.toString();
         } else {
             return value;
         }

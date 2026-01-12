@@ -25,7 +25,6 @@ import com.hazelcast.jet.python.impl.grpc.JetToPythonGrpc;
 import com.hazelcast.jet.python.impl.grpc.JetToPythonGrpc.JetToPythonStub;
 import com.hazelcast.jet.python.impl.grpc.OutputMessage;
 import com.hazelcast.logging.ILogger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 
@@ -175,7 +174,6 @@ final class PythonService {
         }
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     void destroy() {
         // Stopping the Python subprocess is essential, lower the interrupted flag
         boolean interrupted = Thread.interrupted();

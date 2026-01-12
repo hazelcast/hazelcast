@@ -119,8 +119,8 @@ public final class SumSqlAggregations {
                 sum = BigDecimal.ZERO;
             }
 
-            BigDecimal decimalValue = value instanceof BigDecimal
-                    ? (BigDecimal) value
+            BigDecimal decimalValue = value instanceof BigDecimal bd
+                    ? bd
                     : new BigDecimal((long) value);
             sum = sum.add(decimalValue, DECIMAL_MATH_CONTEXT);
         }

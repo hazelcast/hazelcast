@@ -15,72 +15,15 @@
  */
 package com.hazelcast.spring.java;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spring.CustomSpringExtension;
-import com.hazelcast.spring.HazelcastObjectExtractionConfiguration;
-import com.hazelcast.transaction.TransactionalObject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.Set;
-
-import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
-import static java.util.stream.Collectors.joining;
-import static org.assertj.core.api.Assertions.assertThat;
-
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = SpringHazelcastConfiguration.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class AllDistributedObjectsAreIncludedTest {
+public class AllDistributedObjectsAreIncludedTest extends AllDistributedObjectsAreIncludedTestBase {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AllDistributedObjectsAreIncludedTest.class);
-
-    /**
-     * Classes that are either abstract/base interfaces or structures that doesn't have configuration.
-     */
-    private static final Set<Class<?>> EXCEPTIONS = Set.of(
-            com.hazelcast.collection.ICollection.class,
-            com.hazelcast.cp.IAtomicReference.class,
-            com.hazelcast.cp.ICountDownLatch.class,
-            com.hazelcast.cp.IAtomicLong.class,
-            com.hazelcast.core.PrefixedDistributedObject.class,
-            com.hazelcast.multimap.BaseMultiMap.class,
-            com.hazelcast.collection.BaseQueue.class,
-            com.hazelcast.transaction.HazelcastXAResource.class,
-            com.hazelcast.map.BaseMap.class,
-            com.hazelcast.cache.impl.ICacheInternal.class);
-
-    @Autowired
-    private HazelcastObjectExtractionConfiguration conf;
-
-    @AfterAll
-    public static void afterAll() {
-        HazelcastInstanceFactory.terminateAll();
-    }
-
-    @Test
-    void checkAllDistributedObjectsAreIncluded() {
-        Set<Class<?>> typesOfBeans = conf.registeredTypesOfBeans();
-        LOGGER.debug("List of all registered: {}\n",  typesOfBeans.stream()
-                                                                  .map(c -> " - " + c.getName())
-                                                                  .collect(joining(System.lineSeparator())));
-
-        Set<Class<? extends  DistributedObject>> typesOfDistributedObjects = REFLECTIONS.getSubTypesOf(DistributedObject.class);
-        typesOfDistributedObjects.removeIf(c -> !c.isInterface());
-        typesOfDistributedObjects.removeIf(c -> c.getName().startsWith("Base"));
-        typesOfDistributedObjects.removeIf(EXCEPTIONS::contains);
-        typesOfDistributedObjects.removeIf(TransactionalObject.class::isAssignableFrom);
-
-        assertThat(typesOfBeans)
-                .as("Some classes are not added as bean by Hazelcast configuration")
-                .containsAll(typesOfDistributedObjects);
-    }
 }

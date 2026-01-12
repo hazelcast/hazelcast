@@ -17,14 +17,12 @@
 
 package com.hazelcast.internal.util.collection;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
 
 /**
  * An iterator for a sequence of primitive integers.
  */
-@SuppressFBWarnings("EI2")
 public class LongIterator implements Iterator<Long> {
     private final long missingValue;
     private final long[] values;

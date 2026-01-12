@@ -111,8 +111,8 @@ public final class AvroSerializerHooks {
                     // schema1.toString().equals(schema2.toString()).
                     String schemaJson = schemaToJson.computeIfAbsent(datum.getSchema(), Schema::toString);
                     out.writeString(schemaJson);
-                    out.writeByteArray(datum instanceof LazyImmutableContainer
-                            ? ((LazyImmutableContainer<?>) datum).serialized
+                    out.writeByteArray(datum instanceof LazyImmutableContainer<?> lic
+                            ? lic.serialized
                             : serialize(new GenericDatumWriter<>(datum.getSchema()), datum));
                 }
 

@@ -18,7 +18,9 @@ package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.journal.DeserializingEntry;
+import com.hazelcast.internal.journal.DeserializingJournalEntry;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.jet.pipeline.JournalSourceEntry;
 import com.hazelcast.map.EventJournalMapEvent;
 
 import java.io.Serial;
@@ -41,6 +43,20 @@ public final class MapEventJournalFunctions {
 
     public static <K, V> Function<EventJournalMapEvent<K, V>, Entry<K, V>> mapEventToEntry() {
         return new MapEventToEntryProjection<>();
+    }
+
+    /**
+     * Returns a projection function that converts a Hazelcast
+     * {@link EventJournalMapEvent} into a {@link JournalSourceEntry}.
+     *
+     * @param <K> the key type of the map
+     * @param <V> the value type of the map
+     * @return a function mapping {@link  EventJournalMapEvent} to
+     *         {@link  JournalSourceEntry}
+     * @since 5.7
+     */
+    public static <K, V> Function<EventJournalMapEvent<K, V>, JournalSourceEntry<K, V>> mapEventToJournalEntry() {
+        return new MapEventToJournalEntryProjection<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -69,6 +85,19 @@ public final class MapEventJournalFunctions {
         public Entry<K, V> apply(EventJournalMapEvent<K, V> e) {
             DeserializingEventJournalMapEvent<K, V> casted = (DeserializingEventJournalMapEvent<K, V>) e;
             return new DeserializingEntry<>(casted.getDataKey(), casted.getDataNewValue());
+        }
+    }
+
+    @SerializableByConvention
+    private static class MapEventToJournalEntryProjection<K, V>
+            implements Function<EventJournalMapEvent<K, V>, JournalSourceEntry<K, V>>, Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public JournalSourceEntry<K, V> apply(EventJournalMapEvent<K, V> e) {
+            DeserializingEventJournalMapEvent<K, V> casted = (DeserializingEventJournalMapEvent<K, V>) e;
+            return new DeserializingJournalEntry<>(casted.getDataKey(), casted.getDataNewValue(), casted.isAfterLostEvents());
         }
     }
 

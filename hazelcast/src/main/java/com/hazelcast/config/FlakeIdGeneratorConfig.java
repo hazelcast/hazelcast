@@ -117,6 +117,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     /**
      * Returns the configuration name. This can be actual object name or pattern.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -125,6 +126,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link Config}.
      */
+    @Override
     public FlakeIdGeneratorConfig setName(String name) {
         this.name = name;
         return this;

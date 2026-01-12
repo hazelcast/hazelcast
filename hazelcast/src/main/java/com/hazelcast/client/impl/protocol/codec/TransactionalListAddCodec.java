@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a new item to the transactional list.
  */
 @SuppressWarnings("unused")
-@Generated("3aeb0c85b8b5d553497eefb0de36d7b1")
+@Generated("d301497034a8d3524858d99b83d3cf5a")
 public final class TransactionalListAddCodec {
     //hex: 0x110100
     public static final int REQUEST_MESSAGE_TYPE = 1114368;
@@ -52,7 +52,6 @@ public final class TransactionalListAddCodec {
     private TransactionalListAddCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

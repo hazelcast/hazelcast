@@ -34,7 +34,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConnectorPermission;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -339,8 +338,8 @@ public final class WriteFileP<T> implements Processor {
         final Path targetFile;
         Writer writer;
 
-        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
-                justification = "targetFile always has fileName")
+//        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+//                justification = "targetFile always has fileName")
         FileResource(FileId fileId) {
             this.fileId = fileId;
             this.targetFile = directory.resolve(fileId.fileName);

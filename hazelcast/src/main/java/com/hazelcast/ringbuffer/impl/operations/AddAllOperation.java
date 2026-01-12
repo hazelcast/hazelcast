@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -49,7 +48,6 @@ public class AddAllOperation extends AbstractRingBufferOperation
     public AddAllOperation() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public AddAllOperation(String name, Data[] items, OverflowPolicy overflowPolicy) {
         super(name);
         this.items = items;

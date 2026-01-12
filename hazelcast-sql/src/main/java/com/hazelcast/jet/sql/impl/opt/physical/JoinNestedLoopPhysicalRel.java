@@ -76,8 +76,8 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
         for (int i = 0; i < rightKeys.size(); i++) {
             Integer rightKeyIndex = rightKeys.get(i);
             RexNode rightExpr = table.getProjects().get(rightKeyIndex);
-            if (rightExpr instanceof RexInputRef) {
-                rightKeys.set(i, ((RexInputRef) rightExpr).getIndex());
+            if (rightExpr instanceof RexInputRef ref) {
+                rightKeys.set(i, ref.getIndex());
             } else {
                 // Offset the indices in rightExp by the width of the left row
                 rightExpr = rightExpr.accept(new RexShuttle() {

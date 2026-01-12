@@ -108,8 +108,8 @@ public final class Mappers {
      */
     @Nonnull
     public static Document bsonToDocument(@Nonnull Bson bson) {
-        if (bson instanceof Document) {
-            return (Document) bson;
+        if (bson instanceof Document document) {
+            return document;
         }
         BsonDocument document = bson.toBsonDocument(BsonDocument.class, INSTANCE.pojoCodecRegistry);
         return bsonDocumentToDocument(document);

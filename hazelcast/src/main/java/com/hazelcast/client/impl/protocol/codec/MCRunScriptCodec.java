@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Runs given script on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("0a6e6ce3efeff17615aa7208e45be6ab")
+@Generated("5a3a144f91fdd7adf694466e6fb0d13f")
 public final class MCRunScriptCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
@@ -49,7 +49,6 @@ public final class MCRunScriptCodec {
     private MCRunScriptCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

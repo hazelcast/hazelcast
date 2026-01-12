@@ -26,7 +26,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,7 +92,6 @@ public final class CustomClassLoadedObject {
 
         @Override
         // explicit cast to OutputStream and intentionally omitting to close ObjectOutputStream
-        @SuppressFBWarnings({"BC_UNCONFIRMED_CAST", "OS_OPEN_STREAM"})
         public void write(ObjectDataOutput out, CustomClassLoadedObject object) throws IOException {
             boolean isJavaSerialized = !(object.object instanceof DataSerializable);
             out.writeBoolean(isJavaSerialized);
@@ -109,7 +107,6 @@ public final class CustomClassLoadedObject {
 
         @Override
         // explicit cast to InputStream and intentionally omitting to close ObjectInputStream
-        @SuppressFBWarnings({"BC_UNCONFIRMED_CAST", "OS_OPEN_STREAM"})
         @SuppressWarnings("squid:S2095")
         public CustomClassLoadedObject read(com.hazelcast.nio.ObjectDataInput in) throws IOException {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();

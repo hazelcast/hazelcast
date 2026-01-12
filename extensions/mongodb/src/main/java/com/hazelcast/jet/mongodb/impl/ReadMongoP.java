@@ -499,8 +499,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public void restore(Object value) {
             if (value != null) {
-                if (value instanceof BsonDocument) {
-                    this.resumeToken = (BsonDocument) value;
+                if (value instanceof BsonDocument document) {
+                    this.resumeToken = document;
                 }
             }
         }

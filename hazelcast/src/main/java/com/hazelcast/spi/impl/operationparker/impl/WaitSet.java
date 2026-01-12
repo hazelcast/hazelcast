@@ -114,7 +114,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
                         return;
                     }
                     OperationService operationService = nodeEngine.getOperationService();
-                    operationService.run(op);
+                    entry.unpark(operationService);
                 }
                 entry.setValid(false);
             }

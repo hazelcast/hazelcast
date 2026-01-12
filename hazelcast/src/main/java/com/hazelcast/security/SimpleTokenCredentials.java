@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -33,7 +32,6 @@ import static java.util.Objects.requireNonNull;
  * Simple implementation of {@link Credentials} using a raw byte array token.
  */
 @BinaryInterface
-@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class SimpleTokenCredentials implements TokenCredentials, IdentifiedDataSerializable {
 
     @Serial

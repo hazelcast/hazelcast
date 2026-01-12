@@ -58,8 +58,8 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
     @SuppressWarnings("rawtypes")
     public Object visitLiteral(RexLiteral literal) {
         Comparable value = literal.getValue();
-        if (value instanceof NlsString) {
-            return ((NlsString) value).getValue();
+        if (value instanceof NlsString string) {
+            return string.getValue();
         }
         return value;
     }

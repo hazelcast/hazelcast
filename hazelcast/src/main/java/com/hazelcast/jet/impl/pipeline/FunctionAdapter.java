@@ -32,6 +32,7 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
@@ -83,6 +84,13 @@ public class FunctionAdapter {
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
         return mapFn;
+    }
+
+    @Nonnull
+    <S, K, T> TriPredicate<? super S, ? super K, ?> adaptDeleteStatePredicate(
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    ) {
+        return deleteStatePredicate;
     }
 
     @Nonnull
@@ -324,6 +332,13 @@ class JetEventFunctionAdapter extends FunctionAdapter {
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
         return (state, key, e) -> jetEvent(e.timestamp(), mapFn.apply(state, key, e.payload()));
+    }
+
+    @Nonnull
+    <S, K, T> TriPredicate<? super S, ? super K, ? super JetEvent<T>> adaptDeleteStatePredicate(
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    ) {
+        return (state, key, e) -> deleteStatePredicate.test(state, key, e.payload());
     }
 
     @Nonnull

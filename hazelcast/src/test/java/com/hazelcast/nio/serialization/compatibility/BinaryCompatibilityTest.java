@@ -213,9 +213,9 @@ public class BinaryCompatibilityTest {
             }
             return true;
         }
-        if (a instanceof Collection && b instanceof Collection) {
-            Iterator e1 = ((Collection) a).iterator();
-            Iterator e2 = ((Collection) b).iterator();
+        if (a instanceof Collection collection1 && b instanceof Collection collection2) {
+            Iterator e1 = collection1.iterator();
+            Iterator e2 = collection2.iterator();
             while (e1.hasNext() && e2.hasNext()) {
                 Object o1 = e1.next();
                 Object o2 = e2.next();

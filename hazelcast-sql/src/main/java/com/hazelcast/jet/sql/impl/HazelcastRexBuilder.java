@@ -51,14 +51,14 @@ public final class HazelcastRexBuilder extends RexBuilder {
         // To see the problem in action, you may comment out this code and run CastFunctionIntegrationTest.
         // Some conversions will fail due to precision loss.
 
-        if (type.getSqlTypeName() == ANY && value instanceof Number) {
+        if (type.getSqlTypeName() == ANY && value instanceof Number number) {
             Converter converter = Converters.getConverter(value.getClass());
 
             if (converter != null) {
                 QueryDataTypeFamily typeFamily = converter.getTypeFamily();
 
                 if (typeFamily.isNumericInteger()) {
-                    int bitWidth = HazelcastIntegerType.bitWidthOf(((Number) value).longValue());
+                    int bitWidth = HazelcastIntegerType.bitWidthOf(number.longValue());
                     type = HazelcastIntegerType.create(bitWidth, false);
                 } else {
                     SqlTypeName typeName = HazelcastTypeUtils.toCalciteType(typeFamily);

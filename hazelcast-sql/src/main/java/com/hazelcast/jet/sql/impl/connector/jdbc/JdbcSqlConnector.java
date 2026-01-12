@@ -153,8 +153,8 @@ public class JdbcSqlConnector implements SqlConnector {
     static TypeResolver typeResolver(Connection connection) {
         try {
             SqlDialect dialect = resolveDialect(connection.getMetaData());
-            if (dialect instanceof TypeResolver) {
-                return (TypeResolver) dialect;
+            if (dialect instanceof TypeResolver resolver) {
+                return resolver;
             } else {
                 return DefaultTypeResolver::resolveType;
             }

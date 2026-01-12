@@ -21,7 +21,6 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 
@@ -44,7 +43,6 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
      * @param next the {@link OutboundHandler} to replace this one in the outbound pipeline
      *             upon match of protocol bytes
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public MemberProtocolEncoder(OutboundHandler... next) {
         this.outboundHandlers = next;
     }

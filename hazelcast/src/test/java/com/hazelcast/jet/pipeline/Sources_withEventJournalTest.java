@@ -23,12 +23,14 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.SlowTest;
@@ -40,8 +42,6 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -50,12 +50,14 @@ import java.util.stream.Stream;
 import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -88,18 +90,13 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         dataConnectionConfig.setType("HZ");
 
         // Read XML and set as DataConnectionConfig
-        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName);
+        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName, remoteHz);
         dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
             hazelcastInstanceConfig.addDataConnectionConfig(dataConnectionConfig);
         }
-    }
-
-    private static String readLocalClusterConfig(String file, String clusterName) throws IOException {
-        String str = Files.readString(Paths.get("src", "test", "resources", file));
-        return str.replace("$CLUSTER_NAME$", clusterName);
     }
 
     @AfterClass
@@ -169,13 +166,12 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         final String HZ_CLIENT_YAML_EXTERNAL_REF = "hzclientyamlexternalref";
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
-            Config config = hazelcastInstance.getConfig();
-
             DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(HZ_CLIENT_YAML_EXTERNAL_REF);
             dataConnectionConfig.setType("HZ");
 
             // Read YAML and set as DataConnectionConfig
-            String yamlString = readLocalClusterConfig("hazelcast-client-test-external.yaml", remoteHzClientConfig.getClusterName());
+            String yamlString = readLocalClusterConfig("hazelcast-client-test-external.yaml", remoteHzClientConfig.getClusterName(),
+                                                       remoteHz);
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_YML, yamlString);
 
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
@@ -419,6 +415,47 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
                 .filter(i -> i % 2 == 0)
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void mapJournal_twoJobsWithPredicateAndProjection() {
+        // Given
+        var puts = hz().getList(randomMapName("puts"));
+        var deletes = hz().getList(randomMapName("deletes"));
+
+        StreamSource<Integer> sourcePuts = Sources.mapJournal(
+                srcMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue,
+                mapPutEvents()
+        );
+        StreamSource<Integer> sourceDeletes = Sources.mapJournal(
+                srcMap, START_FROM_OLDEST, EventJournalMapEvent::getOldValue,
+                event -> event.getType() == EntryEventType.REMOVED);
+
+        var putsJob = submitJournalJob(sourcePuts, puts);
+        var deletesJob = submitJournalJob(sourceDeletes, deletes);
+
+        assertThat(putsJob).eventuallyHasStatus(JobStatus.RUNNING);
+        assertThat(deletesJob).eventuallyHasStatus(JobStatus.RUNNING);
+
+        // When
+        // create sequence of mixed events
+        srcMap.put("a", 1);
+        sleepSeconds(1);
+        srcMap.delete("a");
+        sleepSeconds(1);
+        srcMap.put("a", 2);
+
+        // Then
+        assertTrueEventually(() -> assertThat(puts).containsExactly(1, 2));
+        assertTrueEventually(() -> assertThat(deletes).containsExactly(1));
+    }
+
+    private Job submitJournalJob(StreamSource<Integer> source, IList<Object> listName) {
+        Pipeline p = Pipeline.create();
+        StreamStage<Integer> events = p.readFrom(source).withoutTimestamps();
+        events.writeTo(Sinks.list(listName));
+        events.writeTo(Sinks.logger());
+        return hz().getJet().newJob(p);
     }
 
     @Test

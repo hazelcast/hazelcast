@@ -64,7 +64,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.version.Version;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -687,7 +686,6 @@ public class ClusterWideConfigurationService implements
         private final NodeEngine nodeEngine;
         private final IdentifiedDataSerializable[] allConfigurations;
 
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2")
         public Merger(NodeEngine nodeEngine, IdentifiedDataSerializable[] allConfigurations) {
             this.nodeEngine = nodeEngine;
             this.allConfigurations = allConfigurations;

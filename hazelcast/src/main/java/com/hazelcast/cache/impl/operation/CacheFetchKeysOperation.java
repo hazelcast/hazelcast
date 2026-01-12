@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -42,7 +41,7 @@ public class CacheFetchKeysOperation extends KeyBasedCacheOperation implements R
     public CacheFetchKeysOperation() {
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    //@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public CacheFetchKeysOperation(String name, IterationPointer[] pointers, int fetchSize) {
         super(name, new HeapData());
         this.pointers = pointers;

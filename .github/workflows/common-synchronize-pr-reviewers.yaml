@@ -6,7 +6,6 @@ on:
          - "[0-9]+.[0-9]+.z"
          - "[0-9]+.[0-9]+.[0-9]"
          - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
-         - "[0-9]+.[0-9]+.[0-9]+-DEVEL-[0-9]+"
          - "data-migration-5.3"
       types:
          - review_requested
@@ -15,12 +14,12 @@ jobs:
    synchronize-pr-reviewers:
       runs-on: ubicloud-standard-2
       steps:
-         - uses: actions/checkout@v5
+         - uses: actions/checkout@v6
            with:
               sparse-checkout: .github
          - name: Copy reviewers to other PR
            run: |
-              SOURCE_REPO="${{ github.repository }}"
+              SOURCE_REPO="${GITHUB_REPOSITORY}"
               SOURCE_PR="${{ github.event.pull_request.number }}"
               CONTENT="$(gh pr view "$SOURCE_PR" --json "body,comments" -q '.body, .comments[].body')"
               
@@ -33,7 +32,7 @@ jobs:
               done <<< "$CONTENT"
            env:
               GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
-         - uses: 8398a7/action-slack@v3
+         - uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
            if: failure()
            with:
                fields: repo,message,author,action,eventName,workflow,job,pullRequest

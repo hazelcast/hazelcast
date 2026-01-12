@@ -21,7 +21,6 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -72,7 +71,6 @@ public class SingleProtocolDecoder
      *                                          non-matching protocol bytes have
      *                                          been received
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next,
                                  SingleProtocolEncoder encoder) {
         this.supportedProtocol = supportedProtocol;

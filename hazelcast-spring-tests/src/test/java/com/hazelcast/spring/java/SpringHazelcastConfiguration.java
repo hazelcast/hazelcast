@@ -15,18 +15,14 @@
  */
 package com.hazelcast.spring.java;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spring.ConfigCreator;
 import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ClassPathResource;
-
-import static com.hazelcast.spring.ConfigCreator.createConfig;
 
 /**
  * A Java-based equivalent of {@code com/hazelcast/spring/springaware/springAware-enabled-applicationContext-hazelcast.xml}
@@ -37,19 +33,7 @@ public class SpringHazelcastConfiguration {
 
     @Bean(destroyMethod = "shutdown")
     public HazelcastInstance hazelcastInstance() {
-        Config config = createConfig();
-        config.setClusterName("spring-hazelcast-cluster-from-java");
-
-        var mapConfig = new MapConfig("testMap");
-        mapConfig.setBackupCount(2);
-        mapConfig.setReadBackupData(true);
-        config.addMapConfig(mapConfig);
-        var map1Config = new MapConfig("map1");
-        map1Config.setBackupCount(2);
-        map1Config.setReadBackupData(true);
-        map1Config.setMetadataPolicy(MetadataPolicy.OFF);
-        config.addMapConfig(map1Config);
-        return HazelcastInstanceFactory.newHazelcastInstance(config);
+        return HazelcastInstanceFactory.newHazelcastInstance(ConfigCreator.createConfigWithStructures());
     }
 
     @Bean

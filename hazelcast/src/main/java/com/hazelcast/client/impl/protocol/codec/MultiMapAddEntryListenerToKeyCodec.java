@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * add/remove/update/evict events for the specified key only.
  */
 @SuppressWarnings("unused")
-@Generated("ff5e123fcbac233585f5a644784ed08f")
+@Generated("c91d53d5b09fa417957576be51a6d31c")
 public final class MultiMapAddEntryListenerToKeyCodec {
     //hex: 0x020D00
     public static final int REQUEST_MESSAGE_TYPE = 134400;
@@ -60,7 +60,6 @@ public final class MultiMapAddEntryListenerToKeyCodec {
     private MultiMapAddEntryListenerToKeyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**

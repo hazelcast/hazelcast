@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * has expired or has been evicted.
  */
 @SuppressWarnings("unused")
-@Generated("f92af775ade5c06e4218793a6dd10f75")
+@Generated("93bf875c7e6bf3e86ecacf063c35e3a4")
 public final class CacheIterateCodec {
     //hex: 0x130E00
     public static final int REQUEST_MESSAGE_TYPE = 1248768;
@@ -53,7 +53,6 @@ public final class CacheIterateCodec {
     private CacheIterateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class RequestParameters {
 
         /**
@@ -96,7 +95,6 @@ public final class CacheIterateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public static class ResponseParameters {
 
         /**

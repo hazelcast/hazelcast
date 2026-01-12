@@ -20,16 +20,15 @@ import com.hazelcast.internal.partition.AbstractInternalPartition;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static java.util.Arrays.copyOf;
 
 public class InternalPartitionImpl extends AbstractInternalPartition implements InternalPartition {
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_REFERENCE_TO_ARRAY", justification =
-            "The contents of this array will never be updated, so it can be safely read using a volatile read."
-                    + " Writing to `replicas` is done under InternalPartitionServiceImpl.lock,"
-                    + " so there's no need to guard `replicas` field or to use a CAS.")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_REFERENCE_TO_ARRAY", justification =
+//            "The contents of this array will never be updated, so it can be safely read using a volatile read."
+//                    + " Writing to `replicas` is done under InternalPartitionServiceImpl.lock,"
+//                    + " so there's no need to guard `replicas` field or to use a CAS.")
     private volatile PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
     private final PartitionReplicaInterceptor interceptor;
     private volatile int version;
@@ -42,7 +41,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
         this.interceptor = interceptor;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalPartitionImpl(int partitionId, PartitionReplica localReplica, PartitionReplica[] replicas, int version,
             PartitionReplicaInterceptor interceptor) {
         this(partitionId, localReplica, interceptor);
@@ -175,8 +173,8 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
      * for the changed replica.
      * @return {@code true} if a replica change was detected, otherwise {@code false}.
      */
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "This method is called under InternalPartitionServiceImpl.lock")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "This method is called under InternalPartitionServiceImpl.lock")
     private boolean onReplicaChange(int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica) {
         return onReplicaChange(replicaIndex, oldReplica, newReplica, true);
     }
@@ -185,8 +183,8 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
      * Calls the partition replica change interceptor for the changed replica.
      * @return {@code true} if a replica change was detected, otherwise {@code false}.
      */
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "This method is called under InternalPartitionServiceImpl.lock")
+//    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+//            justification = "This method is called under InternalPartitionServiceImpl.lock")
     private boolean onReplicaChange(int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica,
                                  boolean invokeInterceptor) {
         boolean changed;

@@ -6,7 +6,6 @@ on:
       - "[0-9]+.[0-9]+.z"
       - "[0-9]+.[0-9]+.[0-9]"
       - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-DEVEL-[0-9]+"
       - "data-migration-5.3"
     types:
       - closed
@@ -18,7 +17,7 @@ jobs:
       - name: Close referenced PRs
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          CONTENT="$(gh pr view --repo ${{ github.repository }} "$PR_NUMBER" --json "body,comments" -q '.body, .comments[].body')"
+          CONTENT="$(gh pr view --repo ${GITHUB_REPOSITORY} "$PR_NUMBER" --json "body,comments" -q '.body, .comments[].body')"
           
           while read -r line; do
             if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+)/([^/]+)#([0-9]+) ]]; then
@@ -27,7 +26,7 @@ jobs:
               OTHER_PR="${BASH_REMATCH[4]}"
               echo "Closing PR: $OWNER/$REPO/$OTHER_PR"
               REASON=${{ github.event.pull_request.merged && 'merged' || 'closed' }}
-              MESSAGE="This pull request has been closed because it was already $REASON as https://github.com/${{ github.repository }}/pull/${PR_NUMBER}"
+              MESSAGE="This pull request has been closed because it was already $REASON as https://github.com/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
               PR_CLOSED=$(gh pr view --repo "$OWNER/$REPO" $OTHER_PR --json closed -q '.closed')
               if [ "$PR_CLOSED" == "false" ]; then
                 gh pr close --repo "$OWNER/$REPO" --comment "$MESSAGE" $OTHER_PR
@@ -36,7 +35,7 @@ jobs:
           done <<< "$CONTENT"
         env:
           GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
-      - uses: 8398a7/action-slack@v3
+      - uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
         if: failure()
         with:
           fields: repo,message,author,action,eventName,workflow,job,pullRequest

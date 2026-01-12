@@ -58,7 +58,16 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
-        return attachMapStateful(0, createFn, mapFn, null);
+        return attachMapStateful(0, createFn, mapFn, null, null);
+    }
+
+    @Nonnull @Override
+    public <S, R> BatchStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    ) {
+        return attachMapStateful(0, createFn, mapFn, deleteStatePredicate, null);
     }
 
     @Nonnull @Override
@@ -66,7 +75,16 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return attachMapStateful(0, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, null);
+        return attachMapStateful(0, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, null, null);
+    }
+
+    @Nonnull @Override
+    public <S> BatchStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    ) {
+        return attachMapStateful(0, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, deleteStatePredicate, null);
     }
 
     @Nonnull @Override
@@ -74,7 +92,16 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
-        return attachFlatMapStateful(0, createFn, flatMapFn, null);
+        return attachFlatMapStateful(0, createFn, flatMapFn, null, null);
+    }
+
+    @Nonnull @Override
+    public <S, R> BatchStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
+    ) {
+        return attachFlatMapStateful(0, createFn, flatMapFn, deleteStatePredicate, null);
     }
 
     @Nonnull @Override

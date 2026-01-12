@@ -174,14 +174,13 @@ public class UpdateProcessorSupplier extends MongoProcessorSupplier implements D
         for (int i = 0; i < updatedFieldNames.length; i++) {
             String fieldName = updatedFieldNames[i];
             Object updateExpr = updates.get(i);
-            if (updateExpr instanceof Bson) {
-                Document document = Document.parse(((Bson) updateExpr)
+            if (updateExpr instanceof Bson bson) {
+                Document document = Document.parse(bson
                         .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
                 PlaceholderReplacer.replacePlaceholders(document, evalContext, values, externalNames, afterScan);
                 updateExpr = document;
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
-            } else if (updateExpr instanceof String) {
-                String expr = (String) updateExpr;
+            } else if (updateExpr instanceof String expr) {
                 Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false,
                         afterScan);
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));

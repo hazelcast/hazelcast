@@ -179,8 +179,8 @@ public final class QueryUtils {
 
         for (final RelDataTypeField field : type.getFieldList()) {
             final RelDataType fieldType = field.getType();
-            if (fieldType instanceof HazelcastObjectType
-                    && containsCycles((HazelcastObjectType) fieldType, discovered)) {
+            if (fieldType instanceof HazelcastObjectType objectType
+                    && containsCycles(objectType, discovered)) {
                 return true;
             }
         }

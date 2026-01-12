@@ -33,6 +33,10 @@ import org.junit.Before;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.cache.Cache;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,6 +49,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static java.nio.file.Files.readAllBytes;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -104,6 +109,10 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
 
     protected static String journaledMapName() {
         return randomMapName(JOURNALED_MAP_PREFIX);
+    }
+
+    protected static String journaledCacheName() {
+        return randomMapName(JOURNALED_CACHE_PREFIX);
     }
 
     protected void addToSrcList(Collection<Integer> data) {
@@ -214,5 +223,13 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
         clientConfig.setClusterName(instance.getConfig().getClusterName());
         return clientConfig;
+    }
+
+    static String readLocalClusterConfig(String file, String clusterName, @Nonnull HazelcastInstance instance) throws IOException {
+        int port = ((InetSocketAddress) instance.getLocalEndpoint().getSocketAddress()).getPort();
+        byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", file));
+        return new String(bytes, StandardCharsets.UTF_8)
+                .replace("$CLUSTER_NAME$", clusterName)
+                .replace("$PORT_NUMBER$", String.valueOf(port));
     }
 }

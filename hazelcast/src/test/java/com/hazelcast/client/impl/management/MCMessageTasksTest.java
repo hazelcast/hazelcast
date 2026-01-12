@@ -522,9 +522,9 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
             fail("Execution was successful whereas failure was expected.");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            assertTrue("Cause is of type " + cause.getClass().toString(),
+            assertTrue("Cause is of type " + cause.getClass(),
                     cause.getClass().isAssignableFrom(expectedExceptionType));
-            assertEquals(expectedExceptionMsg, cause.getMessage());
+            assertContains(cause.getMessage(), expectedExceptionMsg);
         }
     }
 

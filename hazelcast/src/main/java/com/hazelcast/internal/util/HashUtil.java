@@ -20,7 +20,6 @@ package com.hazelcast.internal.util;
 import com.hazelcast.internal.memory.ByteAccessStrategy;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
@@ -31,7 +30,6 @@ import static java.lang.Math.abs;
 /**
  * Utility methods related to hash tables.
  */
-@SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 @SuppressWarnings({
         "checkstyle:magicnumber",
         "checkstyle:methodname",

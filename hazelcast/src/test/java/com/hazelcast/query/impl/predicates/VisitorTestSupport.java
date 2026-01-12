@@ -101,16 +101,16 @@ public abstract class VisitorTestSupport {
     }
 
     private static void assertPredicate(Predicate expected, AndPredicate original, Predicate actual) {
-        if (expected instanceof AndPredicate) {
-            assertAnd((AndPredicate) expected, original, actual);
-        } else if (expected instanceof ReferencePredicate) {
-            assertSame(((ReferencePredicate) expected).resolve(original), actual);
-        } else if (expected instanceof RangePredicate) {
-            assertRangePredicate((RangePredicate) expected, actual);
-        } else if (expected instanceof CompositeRangePredicate) {
-            assertCompositeRangePredicate((CompositeRangePredicate) expected, actual);
-        } else if (expected instanceof CompositeEqualPredicate) {
-            assertCompositeEqualPredicate((CompositeEqualPredicate) expected, actual);
+        if (expected instanceof AndPredicate andPrecicate) {
+            assertAnd(andPrecicate, original, actual);
+        } else if (expected instanceof ReferencePredicate referencePredicate) {
+            assertSame(referencePredicate.resolve(original), actual);
+        } else if (expected instanceof RangePredicate rangePredicate) {
+            assertRangePredicate(rangePredicate, actual);
+        } else if (expected instanceof CompositeRangePredicate compositeRangePredicate) {
+            assertCompositeRangePredicate(compositeRangePredicate, actual);
+        } else if (expected instanceof CompositeEqualPredicate compositeEqualPredicate) {
+            assertCompositeEqualPredicate(compositeEqualPredicate, actual);
         } else if (expected instanceof FalsePredicate) {
             assertTrue("expected FalsePredicate got " + actual, actual instanceof FalsePredicate);
         } else {
@@ -171,7 +171,7 @@ public abstract class VisitorTestSupport {
         outer:
         for (Predicate predicate : expected.predicates) {
             Predicate expectedPredicate =
-                    predicate instanceof ReferencePredicate ? ((ReferencePredicate) predicate).resolve(original) : predicate;
+                    predicate instanceof ReferencePredicate rp ? rp.resolve(original) : predicate;
 
             Integer count = unmatched.get(expectedPredicate);
             if (count != null) {
@@ -181,33 +181,33 @@ public abstract class VisitorTestSupport {
                 } else {
                     unmatched.put(expectedPredicate, count);
                 }
-            } else if (expectedPredicate instanceof RangePredicate) {
+            } else if (expectedPredicate instanceof RangePredicate expectedRangePredicate) {
                 for (Iterator<Predicate> i = unmatched.keySet().iterator(); i.hasNext(); ) {
                     Predicate unmatchedPredicate = i.next();
-                    if (unmatchedPredicate instanceof RangePredicate && rangePredicatesAreEqual(
-                            (RangePredicate) expectedPredicate, (RangePredicate) unmatchedPredicate)) {
+                    if (unmatchedPredicate instanceof RangePredicate unmatchedRangePredicate && rangePredicatesAreEqual(
+                            expectedRangePredicate, unmatchedRangePredicate)) {
                         i.remove();
                         continue outer;
                     }
                 }
 
                 fail("unmatched predicate: " + expectedPredicate);
-            } else if (expectedPredicate instanceof CompositeRangePredicate) {
+            } else if (expectedPredicate instanceof CompositeRangePredicate compositeRangePredicate) {
                 for (Iterator<Predicate> i = unmatched.keySet().iterator(); i.hasNext(); ) {
                     Predicate unmatchedPredicate = i.next();
-                    if (unmatchedPredicate instanceof CompositeRangePredicate && compositeRangePredicatesAreEqual(
-                            (CompositeRangePredicate) expectedPredicate, (CompositeRangePredicate) unmatchedPredicate)) {
+                    if (unmatchedPredicate instanceof CompositeRangePredicate rangePredicate && compositeRangePredicatesAreEqual(
+                            compositeRangePredicate, rangePredicate)) {
                         i.remove();
                         continue outer;
                     }
                 }
 
                 fail("unmatched predicate: " + expectedPredicate);
-            } else if (expectedPredicate instanceof CompositeEqualPredicate) {
+            } else if (expectedPredicate instanceof CompositeEqualPredicate compositeEqualPredicate) {
                 for (Iterator<Predicate> i = unmatched.keySet().iterator(); i.hasNext(); ) {
                     Predicate unmatchedPredicate = i.next();
-                    if (unmatchedPredicate instanceof CompositeEqualPredicate && compositeEqualPredicatesAreEqual(
-                            (CompositeEqualPredicate) expectedPredicate, (CompositeEqualPredicate) unmatchedPredicate)) {
+                    if (unmatchedPredicate instanceof CompositeEqualPredicate equalPredicate && compositeEqualPredicatesAreEqual(
+                            compositeEqualPredicate, equalPredicate)) {
                         i.remove();
                         continue outer;
                     }

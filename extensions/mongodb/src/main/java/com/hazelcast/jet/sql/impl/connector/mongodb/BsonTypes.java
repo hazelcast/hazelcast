@@ -159,50 +159,47 @@ final class BsonTypes {
 
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:RightCurly"})
     static Object unwrapSimpleWrappers(Object value) {
-        if (value instanceof BsonBoolean) {
-            return ((BsonBoolean) value).getValue();
+        if (value instanceof BsonBoolean bsonBoolean) {
+            return bsonBoolean.getValue();
         }
-        if (value instanceof BsonInt32) {
-            return ((BsonInt32) value).getValue();
+        if (value instanceof BsonInt32 bsonInt32) {
+            return bsonInt32.getValue();
         }
-        if (value instanceof BsonInt64) {
-            return ((BsonInt64) value).getValue();
+        if (value instanceof BsonInt64 bsonInt64) {
+            return bsonInt64.getValue();
         }
-        if (value instanceof BsonDouble) {
-            return ((BsonDouble) value).getValue();
+        if (value instanceof BsonDouble bsonDouble) {
+            return bsonDouble.getValue();
         }
         if (value instanceof BsonString) {
             return value.toString();
         }
-        if (value instanceof BsonDecimal128) {
-            BsonDecimal128 v = (BsonDecimal128) value;
-            return new BigDecimal(v.toString());
+        if (value instanceof BsonDecimal128 bsonDecimal) {
+            return new BigDecimal(bsonDecimal.toString());
         }
-        if (value instanceof Decimal128) {
-            Decimal128 v = (Decimal128) value;
-            return new BigDecimal(v.toString());
+        if (value instanceof Decimal128 decimal) {
+            return new BigDecimal(decimal.toString());
         }
-        if (value instanceof BsonArray) {
-            return ((BsonArray) value).getValues();
+        if (value instanceof BsonArray bsonArray) {
+            return bsonArray.getValues();
         }
-        if (value instanceof BsonDateTime) {
-            BsonDateTime v = (BsonDateTime) value;
-            return LocalDateTime.from(Instant.ofEpochMilli(v.getValue()));
+        if (value instanceof BsonDateTime bsonDateTime) {
+            return LocalDateTime.from(Instant.ofEpochMilli(bsonDateTime.getValue()));
         }
-        if (value instanceof BsonTimestamp) {
-            return bsonTimestampToLocalDateTime((BsonTimestamp) value);
+        if (value instanceof BsonTimestamp bsonTimestamp) {
+            return bsonTimestampToLocalDateTime(bsonTimestamp);
         }
-        if (value instanceof BsonJavaScript) {
-            return ((BsonJavaScript) value).getCode();
+        if (value instanceof BsonJavaScript bsonScript) {
+            return bsonScript.getCode();
         }
-        else if (value instanceof BsonJavaScriptWithScope) {
-            return ((BsonJavaScriptWithScope) value).getCode();
+        else if (value instanceof BsonJavaScriptWithScope bsonScope) {
+            return bsonScope.getCode();
         }
         if (value instanceof CodeWithScope) {
             return value;
         }
-        if (value instanceof Code) {
-            return ((Code) value).getCode();
+        if (value instanceof Code code) {
+            return code.getCode();
         }
         return value;
     }
@@ -214,8 +211,7 @@ final class BsonTypes {
     @SuppressWarnings("unchecked")
     static BsonType getBsonType(Document propertyDescription) {
         Object bsonType = propertyDescription.get("bsonType");
-        if (bsonType instanceof String) {
-            String bsonTypeName = (String) bsonType;
+        if (bsonType instanceof String bsonTypeName) {
             return BsonTypes.resolveTypeByName(bsonTypeName);
         }
         if (bsonType instanceof Collection) {

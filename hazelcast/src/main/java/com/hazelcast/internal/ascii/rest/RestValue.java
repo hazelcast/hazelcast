@@ -20,12 +20,10 @@ import com.hazelcast.internal.ascii.TextProtocolsDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-@SuppressFBWarnings("EI_EXPOSE_REP")
 public class RestValue implements IdentifiedDataSerializable {
 
     private byte[] value;

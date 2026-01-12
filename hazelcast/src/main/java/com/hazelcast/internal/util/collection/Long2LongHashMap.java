@@ -19,7 +19,6 @@ package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.internal.util.QuickMath;
 import com.hazelcast.internal.util.function.LongLongConsumer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -464,8 +463,8 @@ public class Long2LongHashMap implements Map<Long, Long> {
         }
     }
 
-    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
-            justification = "deliberate, documented choice")
+//    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
+//            justification = "deliberate, documented choice")
     private final class EntryIterator
             extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long, Long> {
         private long key;

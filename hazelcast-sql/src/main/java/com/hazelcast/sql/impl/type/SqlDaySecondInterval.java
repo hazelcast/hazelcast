@@ -70,8 +70,8 @@ public class SqlDaySecondInterval implements IdentifiedDataSerializable, Compara
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SqlDaySecondInterval) {
-            SqlDaySecondInterval other = ((SqlDaySecondInterval) obj);
+        if (obj instanceof SqlDaySecondInterval interval) {
+            SqlDaySecondInterval other = interval;
 
             return millis == other.millis;
         }

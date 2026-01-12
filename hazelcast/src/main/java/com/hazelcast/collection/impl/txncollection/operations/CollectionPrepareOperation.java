@@ -23,7 +23,6 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -36,7 +35,6 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     public CollectionPrepareOperation() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public CollectionPrepareOperation(int partitionId, String name, String serviceName, long[] itemIds, UUID transactionId) {
         super(name);
         setPartitionId(partitionId);

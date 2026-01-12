@@ -18,7 +18,6 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
@@ -212,7 +211,6 @@ public interface DataStructureAdapter<K, V> {
         }
 
         @Override
-        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Class<?>[] getParameterTypes() {
             return parameterTypes;
         }
