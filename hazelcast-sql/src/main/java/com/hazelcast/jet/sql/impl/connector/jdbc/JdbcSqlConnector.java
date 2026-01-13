@@ -70,7 +70,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.jet.sql.impl.connector.jdbc.GettersProvider.GETTERS;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcSqlConnector implements SqlConnector {

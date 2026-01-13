@@ -32,22 +32,16 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
@@ -186,18 +180,6 @@ public final class QueryUtils {
         }
 
         return false;
-    }
-
-    /**
-     * Quote the given compound identifier using Calcite dialect (= Hazelcast dialect).
-     * You can use this when giving information to the user, e.g. in exception message.
-     * When building a query you should use {@link SqlDialect#quoteIdentifier(StringBuilder, List)} directly.
-     */
-    public static String quoteCompoundIdentifier(String... compoundIdentifier) {
-        List<String> parts = Arrays.stream(compoundIdentifier).filter(Objects::nonNull).collect(toList());
-        return CalciteSqlDialect.DEFAULT
-                .quoteIdentifier(new StringBuilder(), parts)
-                .toString();
     }
 
     public static <K, V> MapContainer getMapContainer(IMap<K, V> map) {

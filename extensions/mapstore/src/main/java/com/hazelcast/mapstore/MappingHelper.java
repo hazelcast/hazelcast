@@ -20,8 +20,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
-import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,9 +27,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteStringLiteral;
+
 final class MappingHelper {
 
-    private static final SqlDialect DIALECT = CalciteSqlDialect.DEFAULT;
     private final SqlService sqlService;
 
     MappingHelper(SqlService sqlService) {
@@ -60,14 +60,14 @@ final class MappingHelper {
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE MAPPING ");
-        DIALECT.quoteIdentifier(sb, mappingName);
+        quoteIdentifier(sb, mappingName);
         sb.append(" EXTERNAL NAME ");
         quoteExternalName(sb, tableName);
         if (mappingColumns != null) {
             sb.append(" ( ");
             for (Iterator<SqlColumnMetadata> iterator = mappingColumns.iterator(); iterator.hasNext(); ) {
                 SqlColumnMetadata mc = iterator.next();
-                DIALECT.quoteIdentifier(sb, mc.getName());
+                quoteIdentifier(sb, mc.getName());
                 sb.append(' ');
                 sb.append(mc.getType());
                 if (iterator.hasNext()) {
@@ -77,10 +77,10 @@ final class MappingHelper {
             sb.append(" )");
         }
         sb.append(" DATA CONNECTION ");
-        DIALECT.quoteIdentifier(sb, dataConnectionRef);
+        quoteIdentifier(sb, dataConnectionRef);
         sb.append(" OPTIONS (");
         sb.append(" 'idColumn' = ");
-        DIALECT.quoteStringLiteral(sb, null, idColumn);
+        quoteStringLiteral(sb, null, idColumn);
         sb.append(" )");
         return sb.toString();
 
@@ -92,7 +92,7 @@ final class MappingHelper {
         for (int i = 0; i < parts.size(); i++) {
             String unescaped = unescapeQuotes(parts.get(i));
             String unquoted = unquoteIfQuoted(unescaped);
-            DIALECT.quoteIdentifier(sb, unquoted);
+            quoteIdentifier(sb, unquoted);
             if (i < parts.size() - 1) {
                 sb.append(".");
             }
@@ -132,7 +132,7 @@ final class MappingHelper {
     public void dropMapping(String mappingName) {
         StringBuilder sb = new StringBuilder()
                 .append("DROP MAPPING IF EXISTS ");
-        DIALECT.quoteIdentifier(sb, mappingName);
+        quoteIdentifier(sb, mappingName);
         sqlService.execute(sb.toString()).close();
     }
 

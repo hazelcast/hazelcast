@@ -89,7 +89,7 @@ import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapRea
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_TSTORE_ENABLED;
 import static com.hazelcast.sql.impl.QueryUtils.getMapContainer;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

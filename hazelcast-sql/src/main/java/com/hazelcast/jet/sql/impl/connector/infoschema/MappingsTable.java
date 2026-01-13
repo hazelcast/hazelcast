@@ -35,7 +35,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 
 /**
