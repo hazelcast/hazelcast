@@ -17,9 +17,13 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.operationservice.AbstractInvokeOnPartitions;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -136,7 +140,7 @@ final class InvokeOnLocalPartitions extends AbstractInvokeOnPartitions {
 
     private void internalRetry(int delayMillis) {
         retryScheduler.schedule(() -> {
-            if (!nodeEngine.getPartitionService().isPartitionTableSafe()) {
+            if (!partitionsAreSafe()) {
                 // wait until partition table is safe
                 internalRetry(PARTITION_TABLE_SAFE_DELAY_MILLIS);
                 return;
@@ -148,7 +152,21 @@ final class InvokeOnLocalPartitions extends AbstractInvokeOnPartitions {
 
     private boolean partitionChangesDetected() {
         return nodeEngine.getPartitionService().getPartitionStateStamp() != partitionStamp
-                || !nodeEngine.getPartitionService().isPartitionTableSafe();
+                || !partitionsAreSafe();
+    }
+
+    private boolean partitionsAreSafe() {
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+        PartitionServiceState state = partitionService.getPartitionReplicaStateChecker().getPartitionTableState();
+        return switch (state) {
+            case SAFE -> true;
+            case REPLICA_NOT_OWNED -> {
+                ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
+                // if no migrations are allowed, partition changes cannot be in progress, can be in this state due to member loss
+                yield !clusterState.isMigrationAllowed();
+            }
+            default -> false;
+        };
     }
 
     private String getFactoryIdentity() {
@@ -164,14 +182,14 @@ final class InvokeOnLocalPartitions extends AbstractInvokeOnPartitions {
 
         @Override
         public void accept(Object response, Throwable throwable) {
-            if (partitionChangesDetected()) {
-                logger.warning("Partition state changed while invoking operation on local partitions. "
-                        + "Recalculating partitions and retrying.");
-                retryAllOperations();
-                return;
-            }
-
             if (throwable == null) {
+                if (partitionChangesDetected()) {
+                    logger.warning("Partition state changed while invoking operation on local partitions. "
+                            + "Recalculating partitions and retrying.");
+                    retryAllOperations();
+                    return;
+                }
+
                 Map<Integer, Object> responses = new HashMap<>(requestedPartitions.size());
                 PartitionResponse partitionResponse = (PartitionResponse) response;
                 partitionResponse.addResults(responses);
@@ -208,7 +226,12 @@ final class InvokeOnLocalPartitions extends AbstractInvokeOnPartitions {
                     logger.warning(String.format("Failed to execute operation (from factory: %s) on all partitions: %s",
                             getFactoryIdentity(), throwable.getMessage()));
                 }
-                retryAllOperations();
+                // don't retry if our instance is no longer active
+                if (!(throwable instanceof HazelcastInstanceNotActiveException)) {
+                    retryAllOperations();
+                } else {
+                    future.completeExceptionally(throwable);
+                }
             }
         }
     }

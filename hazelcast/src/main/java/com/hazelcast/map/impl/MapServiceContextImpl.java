@@ -525,6 +525,9 @@ class MapServiceContextImpl implements MapServiceContext {
         } catch (TimeoutException ex) {
             logger.warning(String.format("Map partitions for '%s' not destroyed in expected time, possible leak",
                     mapContainer.getName()));
+        } catch (InterruptedException e) {
+            logger.warning("Interrupted while destroying map partitions for " + mapContainer.getName() + ", possible leak", e);
+            Thread.currentThread().interrupt();
         } catch (Exception ex) {
             logger.warning("Encountered exception while destroying map partitions for " + mapContainer.getName()
                     + ", possible leak", ex);
