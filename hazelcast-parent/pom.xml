@@ -1431,28 +1431,35 @@
             <id>enable-maven-central</id>
             <properties>
                 <maven.central.autoReleaseAfterClose>false</maven.central.autoReleaseAfterClose>
+                <deploy.name>Hazelcast ${project.version}</deploy.name>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>org.sonatype.plugins</groupId>
-                            <artifactId>nexus-staging-maven-plugin</artifactId>
-                            <version>1.7.0</version>
+                            <groupId>org.sonatype.central</groupId>
+                            <artifactId>central-publishing-maven-plugin</artifactId>
+                            <version>0.10.0</version>
                             <extensions>true</extensions>
                             <configuration>
-                                <serverId>release-repository</serverId>
-                                <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
-                                <stagingProfileId>com.hazelcast</stagingProfileId>
-                                <autoReleaseAfterClose>${maven.central.autoReleaseAfterClose}</autoReleaseAfterClose>
+                                <!-- server id comes from settings.xml -->
+                                <publishingServerId>release-repository</publishingServerId>
+                                <!--
+                                wait until the artifacts are actually published automatically using 'autoPublish'.
+                                the default is `validated` which would then require manual publishing
+                                -->
+                                <waitUntil>published</waitUntil>
+                                <autoPublish>${maven.central.autoReleaseAfterClose}</autoPublish>
+                                <checksums>required</checksums>
+                                <deploymentName>Deployment ${deploy.name}</deploymentName>
                             </configuration>
                         </plugin>
                     </plugins>
                 </pluginManagement>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                         <inherited>false</inherited>
                     </plugin>
                 </plugins>
