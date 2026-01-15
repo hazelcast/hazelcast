@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,24 +60,24 @@ final class PlaceholderReplacer {
             Object entryValue = entry.getValue();
 
             entryKey = (String) replace(entryKey, evalContext, inputRow, externalNames, true, readValueFromInput);
-            if (entryValue instanceof String) {
-               entryValue = replace((String) entryValue, evalContext, inputRow, externalNames, false, readValueFromInput);
+            if (entryValue instanceof String string) {
+               entryValue = replace(string, evalContext, inputRow, externalNames, false, readValueFromInput);
             }
 
-            if (entryValue instanceof List) {
+            if (entryValue instanceof List<?> list) {
                 List<Object> newValues = new ArrayList<>();
-                for (Object val : (List<?>) entryValue) {
+                for (Object val : list) {
                     Object v = val;
-                   if (val instanceof Document) {
-                       v = replacePlaceholders((Document) val, evalContext, inputRow, externalNames, readValueFromInput);
-                   } else if (val instanceof String) {
-                       v = replace((String) val, evalContext, inputRow, externalNames, false, readValueFromInput);
+                   if (val instanceof Document document) {
+                       v = replacePlaceholders(document, evalContext, inputRow, externalNames, readValueFromInput);
+                   } else if (val instanceof String string) {
+                       v = replace(string, evalContext, inputRow, externalNames, false, readValueFromInput);
                    }
                    newValues.add(v);
                 }
                 entryValue = newValues;
-            } else if (entryValue instanceof Document) {
-                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow, externalNames,
+            } else if (entryValue instanceof Document document) {
+                entryValue = replacePlaceholders(document, evalContext, inputRow, externalNames,
                         readValueFromInput);
             }
 

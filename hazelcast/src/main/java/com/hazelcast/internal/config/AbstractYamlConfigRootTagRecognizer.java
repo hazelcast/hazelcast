@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,18 +29,21 @@ import org.snakeyaml.engine.v2.api.ConstructNode;
  * Hazelcast YAML configurations. The recognition is done by looking into
  * the provided configuration to check if the root node is the expected
  * one.
- * <p/>
+ * <p>
  * This implementation loads the entire YAML document and builds the
  * document's internal Hazelcast YAML representation graph. This can be
  * prevented by creating and using custom {@link ConstructNode}
  * implementations for the tag types.
- * <p/>
+ * </p>
+ * <p>
  * If the provided configuration is not a valid YAML document, no exception
  * is thrown. Instead, the configuration is simply not recognized by this
  * implementation.
  * </p>
+ * <p>
  * Note that this {@link ConfigRecognizer} doesn't validate the
  * configuration and doesn't look further into the provided configuration.
+ * </p>
  */
 public abstract class AbstractYamlConfigRootTagRecognizer implements ConfigRecognizer {
     private final String expectedRootNode;

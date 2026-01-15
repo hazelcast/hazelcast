@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,12 +211,12 @@ public class TpcTestSupport {
     }
 
     public static RuntimeException rethrow(Throwable t) {
-        if (t instanceof Error) {
-            throw (Error) t;
+        if (t instanceof Error error) {
+            throw error;
         }
 
-        if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
+        if (t instanceof RuntimeException exception) {
+            throw exception;
         }
 
         throw new RuntimeException(t);

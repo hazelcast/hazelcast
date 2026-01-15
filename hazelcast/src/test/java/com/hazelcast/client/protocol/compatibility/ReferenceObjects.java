@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,8 +146,8 @@ public class ReferenceObjects {
 
                 Object aElement = Array.get(a, i);
                 Object bElement = Array.get(b, i);
-                if (aElement instanceof StackTraceElement && bElement instanceof StackTraceElement) {
-                    if (!isEqualStackTrace((StackTraceElement) aElement, (StackTraceElement) bElement)) {
+                if (aElement instanceof StackTraceElement element && bElement instanceof StackTraceElement element1) {
+                    if (!isEqualStackTrace(element, element1)) {
                         return false;
                     }
                 }
@@ -157,9 +157,9 @@ public class ReferenceObjects {
             }
             return true;
         }
-        if (a instanceof List && b instanceof List) {
-            ListIterator e1 = ((List) a).listIterator();
-            ListIterator e2 = ((List) b).listIterator();
+        if (a instanceof List list1 && b instanceof List list2) {
+            ListIterator e1 = list1.listIterator();
+            ListIterator e2 = list2.listIterator();
             while (e1.hasNext() && e2.hasNext()) {
                 Object o1 = e1.next();
                 Object o2 = e2.next();
@@ -169,29 +169,27 @@ public class ReferenceObjects {
             }
             return !(e1.hasNext() || e2.hasNext());
         }
-        if (a instanceof Entry && b instanceof Entry) {
-            final Entry entryA = (Entry) a;
-            final Entry entryB = (Entry) b;
+        if (a instanceof Entry entryA && b instanceof Entry entryB) {
             return isEqual(entryA.getKey(), entryB.getKey()) && isEqual(entryA.getValue(), entryB.getValue());
         }
         // following classes are list elements and have to be explicitly cast
-        if (a instanceof ListenerConfigHolder && b instanceof ListenerConfigHolder) {
-            return isEqual((ListenerConfigHolder) a, (ListenerConfigHolder) b);
+        if (a instanceof ListenerConfigHolder holderA && b instanceof ListenerConfigHolder holderB) {
+            return isEqual(holderA, holderB);
         }
-        if (a instanceof IndexConfig && b instanceof IndexConfig) {
-            return isEqual((IndexConfig) a, (IndexConfig) b);
+        if (a instanceof IndexConfig configA && b instanceof IndexConfig configB) {
+            return isEqual(configA, configB);
         }
-        if (a instanceof AttributeConfig && b instanceof AttributeConfig) {
-            return isEqual((AttributeConfig) a, (AttributeConfig) b);
+        if (a instanceof AttributeConfig configA && b instanceof AttributeConfig configB) {
+            return isEqual(configA, configB);
         }
-        if (a instanceof QueryCacheConfigHolder && b instanceof QueryCacheConfigHolder) {
-            return isEqual((QueryCacheConfigHolder) a, (QueryCacheConfigHolder) b);
+        if (a instanceof QueryCacheConfigHolder holderA && b instanceof QueryCacheConfigHolder holderB) {
+            return isEqual(holderA, holderB);
         }
-        if (a instanceof CacheSimpleEntryListenerConfig && b instanceof CacheSimpleEntryListenerConfig) {
-            return isEqual((CacheSimpleEntryListenerConfig) a, (CacheSimpleEntryListenerConfig) b);
+        if (a instanceof CacheSimpleEntryListenerConfig configA && b instanceof CacheSimpleEntryListenerConfig configB) {
+            return isEqual(configA, configB);
         }
-        if (a instanceof DefaultQueryCacheEventData && b instanceof DefaultQueryCacheEventData) {
-            return isEqual((DefaultQueryCacheEventData) a, (DefaultQueryCacheEventData) b);
+        if (a instanceof DefaultQueryCacheEventData dataA && b instanceof DefaultQueryCacheEventData dataB) {
+            return isEqual(dataA, dataB);
         }
         if (a instanceof VectorValues && b instanceof List list && !list.isEmpty() && list.get(0) instanceof VectorPairHolder) {
             // VectorValues are asymmetrically encoded and decoded

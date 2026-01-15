@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,8 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
     @SuppressWarnings("rawtypes")
     public Object visitLiteral(RexLiteral literal) {
         Comparable value = literal.getValue();
-        if (value instanceof NlsString) {
-            return ((NlsString) value).getValue();
+        if (value instanceof NlsString string) {
+            return string.getValue();
         }
         return value;
     }

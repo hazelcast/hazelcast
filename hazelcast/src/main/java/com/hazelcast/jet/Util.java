@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.JournalSourceEntry;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
@@ -97,6 +99,18 @@ public final class Util {
     }
 
     /**
+     * Returns a projection that converts the {@link EventJournalMapEvent} to a
+     * {@link JournalSourceEntry} using the event's new value as a value.
+     *
+     * @see Sources#mapJournalEntries(String, JournalInitialPosition)
+     * @since 5.7
+     */
+    public static <K, V> FunctionEx<EventJournalMapEvent<K, V>, JournalSourceEntry<K, V>> mapEventToJournalEntry() {
+        return wrapImdgFunction(MapEventJournalFunctions.mapEventToJournalEntry());
+    }
+
+
+    /**
      * Returns a projection that extracts the new value from an {@link
      * EventJournalMapEvent}.
      *
@@ -116,6 +130,17 @@ public final class Util {
      */
     public static <K, V> FunctionEx<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
         return wrapImdgFunction(CacheEventJournalFunctions.cacheEventToEntry());
+    }
+
+    /**
+     * Returns a projection that converts the {@link EventJournalCacheEvent} to a
+     * {@link JournalSourceEntry} using the event's new value as a value.
+     *
+     * @see Sources#cacheJournalEntries(String, JournalInitialPosition)
+     * @since 5.7
+     */
+    public static <K, V> FunctionEx<EventJournalCacheEvent<K, V>, JournalSourceEntry<K, V>> cacheEventToJournalEntry() {
+        return wrapImdgFunction(CacheEventJournalFunctions.cacheEventToJournalEntry());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -514,6 +514,15 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testOneMemberFlush() {
+        testOneMemberFlush(false);
+    }
+
+    @Test(timeout = 120000)
+    public void testOneMemberFlushAsync() {
+        testOneMemberFlush(true);
+    }
+
+    private void testOneMemberFlush(boolean async) {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         int size = 100;
@@ -528,7 +537,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(size, map.size());
         assertEquals(0, testMapStore.getStore().size());
         assertEquals(size, map.getLocalMapStats().getDirtyEntryCount());
-        map.flush();
+        flush(map, async);
         assertEquals(size, testMapStore.getStore().size());
         assertEquals(0, map.getLocalMapStats().getDirtyEntryCount());
         assertEquals(size, map.size());
@@ -538,7 +547,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         }
         assertEquals(size / 2, map.size());
         assertEquals(size, testMapStore.getStore().size());
-        map.flush();
+        flush(map, async);
         assertEquals(size / 2, testMapStore.getStore().size());
         assertEquals(size / 2, map.size());
     }

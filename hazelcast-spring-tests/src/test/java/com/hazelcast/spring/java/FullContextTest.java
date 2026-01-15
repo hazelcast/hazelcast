@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class FullContextTest extends AppContextTestBase {
 
     @Test
     @Override
-    void testMap() {
+    public void testMap() {
         assertThat((Object) map1).isNotNull();
         map1.set("key1", "value1");
         assertEqualsEventually(() -> map1.get("key1"), "value1");

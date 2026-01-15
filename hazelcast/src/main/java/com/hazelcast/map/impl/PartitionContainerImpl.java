@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +138,10 @@ public class PartitionContainerImpl implements PartitionContainer {
     public Collection<ServiceNamespace> getNamespaces(Predicate<MapConfig> predicate, int replicaIndex) {
         return NameSpaceUtil.getAllNamespaces(maps, recordStore -> {
             MapContainer mapContainer = recordStore.getMapContainer();
+            if (mapContainer.isDestroyed()) {
+                // don't replicate destroyed containers
+                return false;
+            }
             MapConfig mapConfig = mapContainer.getMapConfig();
             return mapConfig.getTotalBackupCount() >= replicaIndex && predicate.test(mapConfig);
         }, recordStore -> recordStore.getMapContainer().getObjectNamespace());
@@ -179,14 +183,6 @@ public class PartitionContainerImpl implements PartitionContainer {
 
     @Override
     public final void destroyMap(MapContainer mapContainer) {
-        // Mark map container destroyed before the underlying
-        // data structures are destroyed. We need this to
-        // ensure that every reader that observed non-destroyed
-        // state may use previously read data. E.g. if the
-        // reader returned only Key1 it is guaranteed that it
-        // hadn't missed Key2 because it was destroyed earlier.
-        mapContainer.onBeforeDestroy();
-
         String name = mapContainer.getName();
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {

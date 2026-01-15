@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -86,6 +87,7 @@ public class TransformStatefulPTest {
                     return entry(k, s[0]);
                 },
                 null,
+                null,
                 expandEntryFn);
 
         TestSupport.verifyProcessor(supplier)
@@ -112,6 +114,7 @@ public class TransformStatefulPTest {
                 () -> new long[1],
                 (long[] s, Object k, Entry<String, Long> e) -> null,
                 null,
+                null,
                 expandEntryFn);
 
         TestSupport.verifyProcessor(supplier)
@@ -130,6 +133,7 @@ public class TransformStatefulPTest {
                     s[0] += e.payload().getValue();
                     return jetEvent(e.timestamp(), entry(k, s[0]));
                 },
+                null,
                 null,
                 expandJetEventFn
         );
@@ -165,6 +169,7 @@ public class TransformStatefulPTest {
                     return jetEvent(e.timestamp(), entry(k, s[0]));
                 },
                 null,
+                null,
                 expandJetEventFn
         );
 
@@ -192,6 +197,7 @@ public class TransformStatefulPTest {
                     s[0] += e.payload().getValue();
                     return jetEvent(e.timestamp(), entry(k, s[0]));
                 },
+                null,
                 null,
                 expandJetEventFn
         );
@@ -225,6 +231,7 @@ public class TransformStatefulPTest {
                     s[0] += e.payload().getValue();
                     return jetEvent(e.timestamp(), entry(k, s[0]));
                 },
+                null,
                 (state, key, wm) -> jetEvent(wm, entry(key, evictSignal)),
                 expandJetEventFn
         );
@@ -264,6 +271,7 @@ public class TransformStatefulPTest {
                     return jetEvent(e.timestamp(), entry(k, s[0]));
                 },
                 null,
+                null,
                 expandJetEventFn
         );
 
@@ -300,6 +308,7 @@ public class TransformStatefulPTest {
                     s[0] += e.payload();
                     return jetEvent(e.timestamp(), s[0]);
                 },
+                null,
                 null
         );
 
@@ -329,6 +338,7 @@ public class TransformStatefulPTest {
                     return jetEvent(e.timestamp(), entry(k, s[0]));
                 },
                 null,
+                null,
                 expandJetEventFn
         );
 
@@ -351,6 +361,96 @@ public class TransformStatefulPTest {
                            wm(-4),
                            jetEvent(-4, entry("b", 4L))
                    ));
+    }
+
+    @Test
+    public void mapStateful_deleteState() {
+        SupplierEx<Processor> supplier = Processors.mapStatefulP(
+                0,
+                jetEvent -> 0L,
+                JetEvent::timestamp,
+                () -> new long[1],
+                (long[] s, Object k, JetEvent<Long> e) -> {
+                    s[0] += e.payload();
+                    return s[0];
+                },
+                (long[] s, Object k, JetEvent<Long> e) -> s[0] == 2,
+                (s, k, wm) -> s
+        );
+
+        TestSupport.verifyProcessor(supplier)
+                .input(asList(
+                        jetEvent(0, 1L),
+                        jetEvent(1, 1L),
+                        jetEvent(2, 1L)
+                ))
+                .expectOutput(asList(
+                        1L,
+                        2L,
+                        1L
+                ));
+    }
+
+    @Test
+    public void mapStateful_deleteState_ttlEvictionWorks() {
+        SupplierEx<Processor> supplier = Processors.mapStatefulP(
+                5,
+                jetEvent -> 0L,
+                JetEvent::timestamp,
+                () -> new long[1],
+                (long[] s, Object k, JetEvent<Long> e) -> {
+                    s[0] += e.payload();
+                    return s[0];
+                },
+                (long[] s, Object k, JetEvent<Long> e) -> s[0] == 2,
+                (s, k, wm) -> 0L
+        );
+
+        TestSupport.verifyProcessor(supplier)
+                .input(asList(
+                        jetEvent(0, 1L),
+                        jetEvent(1, 1L), // delete state
+                        jetEvent(2, 1L),
+                        wm(10), // evict state
+                        jetEvent(11, 1L)
+                ))
+                .expectOutput(asList(
+                        1L,
+                        2L,
+                        1L,
+                        0L,
+                        wm(10),
+                        1L,
+                        0L // on completion, the processor always evicts all states.
+                ));
+    }
+
+    @Test
+    public void flatMapStateful_deleteState() {
+        SupplierEx<Processor> supplier = Processors.flatMapStatefulP(
+                0,
+                jetEvent -> 0L,
+                JetEvent::timestamp,
+                () -> new long[1],
+                (long[] s, Object k, JetEvent<Long> e) -> {
+                    s[0] += e.payload();
+                    return Traversers.singleton(s[0]);
+                },
+                (long[] s, Object k, JetEvent<Long> e) -> s[0] == 2,
+                (s, k, wm) -> Traversers.singleton(s)
+        );
+
+        TestSupport.verifyProcessor(supplier)
+                .input(asList(
+                        jetEvent(0, 1L),
+                        jetEvent(1, 1L),
+                        jetEvent(2, 1L)
+                ))
+                .expectOutput(asList(
+                        1L,
+                        2L,
+                        1L
+                ));
     }
 
     private <OUT> List<Object> asExpandedList(Function<OUT, Traverser<OUT>> expandFn, Object ... items) {
@@ -378,6 +478,7 @@ public class TransformStatefulPTest {
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn,
             @Nonnull Function<R, Traverser<R>> flatMapExpandFn
     ) {
@@ -387,6 +488,7 @@ public class TransformStatefulPTest {
                         R r = statefulMapFn.apply(s, k, t);
                         return r != null ? flatMapExpandFn.apply(r) : Traversers.empty();
                     },
+                    deleteStatePredicate,
                     onEvictFn != null
                             ? (s, k, wm) -> {
                                 R r = onEvictFn.apply(s, k, wm);
@@ -394,7 +496,7 @@ public class TransformStatefulPTest {
                             }
                             : null);
         } else {
-            return Processors.mapStatefulP(ttl, keyFn, timestampFn, createFn, statefulMapFn, onEvictFn);
+            return Processors.mapStatefulP(ttl, keyFn, timestampFn, createFn, statefulMapFn, deleteStatePredicate, onEvictFn);
         }
     }
 }

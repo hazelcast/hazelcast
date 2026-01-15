@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,10 +33,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindOnBackupsTest.writeBehindQueueSize;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -123,6 +127,76 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         map.flush();
 
         assertEquals("Expecting " + numberOfPuts + " store after flush", numberOfPuts, store.getStoreOperationCount());
+    }
+
+    @Test
+    public void testFlushAsync_shouldNotBlockAndUltimatelySucceed() {
+        int blockStoreOperationSeconds = 5;
+        TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
+
+        Config config = newMapStoredConfig(store, 2000);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap<String, String> map = instance.getMap("default");
+        int numberOfPuts = 1000;
+        for (int i = 0; i < numberOfPuts; i++) {
+            map.put(i + "", i + "");
+        }
+
+        assertThat(((MapProxyImpl<?, ?>) map).flushAsync())
+                .as("should execute asynchronously").isNotDone()
+                .as("should ultimately succeed").succeedsWithin(ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION);
+    }
+
+    @Test
+    public void testFlushAsync_shouldFlushNull() throws Exception {
+        testFlushAsync_shouldFlushSelectedPartitions(null);
+    }
+
+    @Test
+    public void testFlushAsync_shouldFlushSelectedPartition() throws Exception {
+        testFlushAsync_shouldFlushSelectedPartitions(Set.of(1));
+    }
+
+    @Test
+    public void testFlushAsync_shouldFlushManyPartitions() throws Exception {
+        testFlushAsync_shouldFlushSelectedPartitions(Set.of(1, 4, 9));
+    }
+
+    private void testFlushAsync_shouldFlushSelectedPartitions(@Nullable Set<Integer> partitionsToFlush) throws Exception {
+        // given
+        var store = new MapStoreWriteBehindTest.RecordingMapStore(Integer.MAX_VALUE, Integer.MAX_VALUE);
+
+        // will rely on manual flushing
+        Config config = newMapStoredConfig(store, 100000);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap<String, String> map = instance.getMap("default");
+        int numberOfPuts = 1000;
+        for (int i = 0; i < numberOfPuts; i++) {
+            map.put(i + "", i + "");
+        }
+
+        // when
+        ((MapProxyImpl<?, ?>) map).flushAsync(partitionsToFlush).get();
+
+        // then
+        if (partitionsToFlush != null) {
+            assertThat(store.getStore()).isNotEmpty();
+            assertThat(store.getStore().keySet())
+                    .as("Should flush only selected partitions")
+                    .allMatch(key -> partitionsToFlush.contains(getPartitionId(instance, key)));
+        } else {
+            assertThat(store.getStore()).containsAllEntriesOf(map);
+        }
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,8 +95,8 @@ public class FieldAccessExpression<T> implements Expression<T> {
         }
 
         try {
-            Object value = result instanceof GenericRecord
-                    ? AvroQueryTarget.extractValue((GenericRecord) result, name)
+            Object value = result instanceof GenericRecord gr
+                    ? AvroQueryTarget.extractValue(gr, name)
                     : Extractors.newBuilder(context.getSerializationService())
                             .setGetterCacheSupplier(() -> getterCache)
                             .build().extract(result, name, useLazyDeserialization);

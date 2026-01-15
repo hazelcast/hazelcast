@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,19 +47,19 @@ public final class NumericLiteral extends Literal {
     public static Literal create(SqlTypeName typeName, Object value) {
         // Calcite always uses DECIMAL or DOUBLE for literals.
         // If the DECIMAL is an integer that fits into a smaller integer type, replace the type.
-        if (value instanceof BigDecimal && !hasDecimalPlaces((BigDecimal) value)
+        if (value instanceof BigDecimal decimal && !hasDecimalPlaces(decimal)
                 && !HazelcastTypeUtils.isNumericInexactType(typeName)) {
-            Literal res = tryReduceInteger((BigDecimal) value);
+            Literal res = tryReduceInteger(decimal);
             if (res != null) {
                 return res;
             }
         }
 
-        if (value instanceof BigDecimal) {
+        if (value instanceof BigDecimal decimal) {
             if (typeName == SqlTypeName.DOUBLE) {
-                value = ((BigDecimal) value).doubleValue();
+                value = decimal.doubleValue();
             } else if (typeName == SqlTypeName.REAL) {
-                value = ((BigDecimal) value).floatValue();
+                value = decimal.floatValue();
             }
         }
 

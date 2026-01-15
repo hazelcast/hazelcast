@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -187,24 +186,6 @@ public final class ReflectionHelper {
             return getter;
         } catch (Throwable e) {
             throw new QueryException(e);
-        }
-    }
-
-    public static Getter createGetter(Object obj, String attribute) {
-        return createGetter(obj, attribute, true);
-    }
-
-    public static Object extractValue(Object object, String attributeName, boolean failOnMissingAttribute) throws Exception {
-        return createGetter(object, attributeName, failOnMissingAttribute).getValue(object);
-    }
-
-    public static <T> T invokeMethod(Object object, String methodName) throws RuntimeException {
-        try {
-            Method method = object.getClass().getMethod(methodName);
-            method.setAccessible(true);
-            return (T) method.invoke(object);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -225,6 +225,15 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testOneMemberWriteBehindFlush() {
+        testOneMemberWriteBehindFlush(false);
+    }
+
+    @Test(timeout = 120000)
+    public void testOneMemberWriteBehindFlushAsync() {
+        testOneMemberWriteBehindFlush(true);
+    }
+
+    private void testOneMemberWriteBehindFlush(boolean async) {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         int writeDelaySeconds = 10;
@@ -243,7 +252,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             assertEquals("value1", mapStoreValue);
         }
         assertEquals(1, map.size());
-        map.flush();
+        flush(map, async);
         assertEquals("value1", testMapStore.getStore().get("1"));
     }
 

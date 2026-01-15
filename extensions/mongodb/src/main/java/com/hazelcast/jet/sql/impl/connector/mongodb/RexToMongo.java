@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,10 @@ public final class RexToMongo {
                 return Filters.or(convertOperands(operands));
 
             case NOT:
-                if (operands[0] instanceof String) {
+                if (operands[0] instanceof String string) {
                     // simple column, meaning it's boolean
                     assert call.getOperands().get(0).getType().getSqlTypeName() == SqlTypeName.BOOLEAN;
-                    return Filters.ne((String) operands[0], true);
+                    return Filters.ne(string, true);
                 } else {
                     return Filters.not((Bson) operands[0]);
                 }
@@ -120,10 +120,10 @@ public final class RexToMongo {
         Bson[] r = new Bson[operands.length];
         for (int i = 0; i < operands.length; i++) {
             Object ith = operands[i];
-            if (ith instanceof String) {
-                r[i] = Filters.eq((String) ith, true);
-            } else if (ith instanceof Bson) {
-                r[i] = (Bson) ith;
+            if (ith instanceof String string) {
+                r[i] = Filters.eq(string, true);
+            } else if (ith instanceof Bson bson) {
+                r[i] = bson;
             } else {
                 throw new UnsupportedOperationException("Not supported type of operand: " + ith.getClass());
             }

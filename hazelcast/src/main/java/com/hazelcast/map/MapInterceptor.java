@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public interface MapInterceptor extends Serializable {
      * <p>
      * When the in-memory format is not {@code OBJECT}, mutations made to the {@code value}
      * do not affect the stored value.
-     * <p
+     * <p>
      * When the in-memory format is {@code OBJECT}, try to avoid modifying the input {@code value} directly,
      * as it is not cloned for performance reasons. Mutating it may cause unexpected behavior:
      * <ul>
@@ -132,7 +132,7 @@ public interface MapInterceptor extends Serializable {
      * </ul>
      * If modification is necessary, create and return a copy instead.
      * <p>
-     * Modifying input values is not supported when in-memory format {code OBJECT} is used in combination with indexes.
+     * Modifying input values is not supported when in-memory format {@code OBJECT} is used in combination with indexes.
      * Doing so will lead to runtime errors.
      *
      * @param removedValue the existing value to be removed

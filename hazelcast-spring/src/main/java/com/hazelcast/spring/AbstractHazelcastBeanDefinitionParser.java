@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -741,7 +741,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             discoveryStrategyConfigs.add(discoveryStrategyConfigBuilder.getBeanDefinition());
         }
 
-        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder configBuilder, String properyName) {
+        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder configBuilder, String propertyName) {
             BeanDefinitionBuilder filterConfigBuilder = createBeanBuilder(JavaSerializationFilterConfig.class);
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
@@ -753,7 +753,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
             filterConfigBuilder.addPropertyValue("defaultsDisabled", getTextContent(defaultsDisabledAttr));
-            configBuilder.addPropertyValue(properyName,
+            configBuilder.addPropertyValue(propertyName,
                     filterConfigBuilder.getBeanDefinition());
         }
 

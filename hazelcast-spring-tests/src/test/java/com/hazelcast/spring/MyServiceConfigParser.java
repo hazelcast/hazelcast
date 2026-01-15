@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getTextContent;
 
 public class MyServiceConfigParser extends AbstractXmlConfigHelper implements ServiceConfigurationParser<MyServiceConfig> {
 
+    @Override
     public MyServiceConfig parse(Element element) {
         MyServiceConfig config = new MyServiceConfig();
         for (Node configNode : childElements(element)) {

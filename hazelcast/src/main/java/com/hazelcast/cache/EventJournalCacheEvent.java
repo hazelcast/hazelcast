@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,4 +58,12 @@ public interface EventJournalCacheEvent<K, V> {
      * @return the event type
      */
     CacheEventType getType();
+
+    /**
+     * Returns {@code true} if lost events were detected before this event in the journal.
+     * @return {@code true} if earlier events were lost, {@code false} otherwise
+     * @since 5.7
+     */
+    boolean isAfterLostEvents();
+
 }

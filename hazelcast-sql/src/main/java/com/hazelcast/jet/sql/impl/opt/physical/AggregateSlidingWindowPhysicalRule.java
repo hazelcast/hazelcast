@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,8 +143,8 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         for (int i = 0; i < projections.size(); i++) {
             RexNode projection = projections.get(i);
             // we don't support any transformation of the window bound using an expression, it must be a direct input reference.
-            if (projection instanceof RexInputRef) {
-                int index = ((RexInputRef) projection).getIndex();
+            if (projection instanceof RexInputRef ref) {
+                int index = ref.getIndex();
                 if (index == windowStartIndex || index == windowEndIndex) {
                     // todo [viliam] avoid multiple projections of the timestamp
                     projection = call.builder().getRexBuilder().makeInputRef(projection.getType(), timestampIndex);

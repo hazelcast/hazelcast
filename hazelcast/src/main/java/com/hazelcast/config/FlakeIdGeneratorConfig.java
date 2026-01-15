@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,6 +117,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     /**
      * Returns the configuration name. This can be actual object name or pattern.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -125,6 +126,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link Config}.
      */
+    @Override
     public FlakeIdGeneratorConfig setName(String name) {
         this.name = name;
         return this;

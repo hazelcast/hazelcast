@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,8 +116,7 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
     private static Row convertRow(Row row) {
         Object[] rowObj = row.getValues();
         for (int i = 0; i < rowObj.length; i++) {
-            if (rowObj[i] instanceof HazelcastJsonValue) {
-                HazelcastJsonValue value = (HazelcastJsonValue) rowObj[i];
+            if (rowObj[i] instanceof HazelcastJsonValue value) {
                 try {
                     if (Json.parse(value.getValue()) instanceof JsonObject) {
                         rowObj[i] = new JsonObjectWithRelaxedEquality(value);
@@ -144,8 +143,8 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof JsonObjectWithRelaxedEquality
-                    && SAME_ITEMS_ANY_ORDER.test(fields, ((JsonObjectWithRelaxedEquality) o).fields);
+            return o instanceof JsonObjectWithRelaxedEquality jowre
+                    && SAME_ITEMS_ANY_ORDER.test(fields, jowre.fields);
         }
 
         @Override

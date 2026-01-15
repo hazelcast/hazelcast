@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.internal.serialization.Data;
 
 import java.util.Collection;
 import java.util.Map;
@@ -110,6 +110,7 @@ public interface MapDataStore<K, V> {
      * {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
      *
      * @return last given sequence number to the last store operation
+     *         or 0 if there are no pending store operations.
      * @see com.hazelcast.map.impl.operation.MapFlushOperation
      */
     long softFlush();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -488,7 +488,7 @@ public final class Util {
      * if only one thread is updating the value.
      */
     public static void lazyAdd(AtomicLongArray counters, int index, long addend) {
-        counters.lazySet(index, counters.get(index) + addend);
+        counters.lazySet(index, counters.getPlain(index) + addend);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,16 +37,19 @@ import static java.util.Objects.requireNonNull;
  * Hazelcast XML configurations. The recognition is done by looking into
  * the provided configuration to check if the root node is the expected
  * one.
- * <p/>
+ * <p>
  * This implementation uses a SAX parser. The parsing is aborted once the
  * root tag is processed.
- * <p/>
+ * </p>
+ * <p>
  * If the provided configuration is not a valid XML document, no exception
  * is thrown. Instead, the configuration is simply not recognized by this
  * implementation.
  * </p>
+ * <p>
  * Note that this {@link ConfigRecognizer} doesn't validate the
  * configuration and doesn't look further into the provided configuration.
+ * </p>
  */
 public class AbstractXmlConfigRootTagRecognizer implements ConfigRecognizer {
     private final SAXParser saxParser;

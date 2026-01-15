@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,9 +73,9 @@ public class DataConnectionStorageTest extends SimpleTestInClusterSupport {
         assertThat(storage.putIfAbsent(name, dataConnection(name, "type-1", true))).isTrue();
         assertThat(storage.putIfAbsent(name, dataConnection(name, "type-2", false))).isFalse();
         assertTrue(storage.allObjects().stream()
-                .anyMatch(dl -> dl instanceof DataConnectionCatalogEntry && ((DataConnectionCatalogEntry) dl).type().equals("type-1")));
+                .anyMatch(dl -> dl instanceof DataConnectionCatalogEntry dcce && dcce.type().equals("type-1")));
         assertTrue(storage.allObjects().stream()
-                .noneMatch(dl -> dl instanceof DataConnectionCatalogEntry && ((DataConnectionCatalogEntry) dl).type().equals("type-2")));
+                .noneMatch(dl -> dl instanceof DataConnectionCatalogEntry dcce && dcce.type().equals("type-2")));
     }
 
     @Test

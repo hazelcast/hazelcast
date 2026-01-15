@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,11 +113,8 @@ public class DiagnosticsConfig implements IdentifiedDataSerializable {
     /**
      * Sets the auto off time duration for the diagnostics service in minutes.
      * <p>Auto off control is disabled by default.</p>
-     * <p>
-     * <b>The auto off feature will be enabled by default on next minor release.</b>
-     * </p>
-     * <b>The given value must be positive. You can set it to -1 to disable the auto off timer.</b>
-     * </p>
+     * <p><b>The auto off feature will be enabled by default on next minor release.</b></p>
+     * <p><b>The given value must be positive. You can set it to -1 to disable the auto off timer.</b></p>
      *
      * @since 5.6
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,7 @@ public class TrimFunction extends BiExpression<String> {
 
     public static TrimFunction create(Expression<?> input, Expression<?> characters, boolean leading, boolean trailing) {
         // It is common for "characters" to be a constant with space character. Handle it as a special case.
-        if (characters instanceof ConstantExpression) {
-            ConstantExpression<?> characters0 = (ConstantExpression<?>) characters;
+        if (characters instanceof ConstantExpression<?> characters0) {
 
             if (SPACE_ONLY.equals(characters0.getValue())) {
                 characters = null;

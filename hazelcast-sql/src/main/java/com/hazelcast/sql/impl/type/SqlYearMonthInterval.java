@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,8 @@ public class SqlYearMonthInterval implements IdentifiedDataSerializable, Compara
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SqlYearMonthInterval) {
-            SqlYearMonthInterval other = ((SqlYearMonthInterval) obj);
+        if (obj instanceof SqlYearMonthInterval interval) {
+            SqlYearMonthInterval other = interval;
 
             return months == other.months;
         }

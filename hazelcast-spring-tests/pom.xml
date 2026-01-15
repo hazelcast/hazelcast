@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -33,6 +33,23 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>
@@ -88,7 +105,7 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>7.1.7.Final</version>
+            <version>7.2.0.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -131,13 +148,41 @@
         </dependency>
     </dependencies>
 
+    <!--
+        without the duplication of activation sections the configuration does not activate correctly,
+        even though `mvn help:active-profiles` shows that the profile is active
+    -->
     <profiles>
         <profile>
             <id>spring-5</id>
+            <!-- see hazelcast-parent -->
+            <activation>
+                <property>
+                    <name>tested.spring.override</name>
+                    <value>5</value>
+                </property>
+            </activation>
             <dependencies>
                 <dependency>
                     <groupId>javax.annotation</groupId>
                     <artifactId>javax.annotation-api</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>spring-7</id>
+            <activation>
+                <!-- see hazelcast-parent -->
+                <property>
+                    <name>!tested.spring.override</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-hazelcast</artifactId>
+                    <version>${spring.boot4.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>

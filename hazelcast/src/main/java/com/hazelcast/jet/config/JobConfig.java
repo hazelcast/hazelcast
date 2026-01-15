@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1130,7 +1130,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * job. It will be accessible to all the code attached to the underlying
      * pipeline or DAG, but not to any other code. There are several serializer
      * types you can register, see the
-     * <a href="https://docs.hazelcast.com/hazelcast/latest/pipelines/serialization#serialization-of-data-types
+     * <a href="https://docs.hazelcast.com/hazelcast/latest/pipelines/serialization#serialization-of-data-types">
      * Programming Guide</a>.
      * <p>
      * A serializer registered on the job level has precedence over any

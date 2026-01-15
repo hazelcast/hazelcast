@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,15 +80,14 @@ public class GetDdlFunction extends TriExpression<String> {
         final Object obj = sqlCatalog.get(keyName);
         if (obj == null) {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
-        } else if (obj instanceof SqlCatalogObject) {
-            SqlCatalogObject catalogObject = (SqlCatalogObject) obj;
+        } else if (obj instanceof SqlCatalogObject catalogObject) {
             if (catalogObject instanceof Mapping) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_MAPPING));
             } else if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             }
             // Note: both view and type can't contain sensitive information -> we don't check them
-            ddl = ((SqlCatalogObject) obj).unparse();
+            ddl = catalogObject.unparse();
         } else {
             throw new AssertionError("Object must not be present in information_schema");
         }

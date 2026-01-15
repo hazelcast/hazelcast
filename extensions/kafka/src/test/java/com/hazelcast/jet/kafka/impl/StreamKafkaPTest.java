@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -606,8 +606,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             long idleTimeoutMillis
     ) {
         ToLongFunctionEx<T> timestampFn = e ->
-                e instanceof Entry
-                        ? (int) ((Entry<?, ?>) e).getKey()
+                e instanceof Entry<?, ?> entry
+                        ? (int) entry.getKey()
                         : currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);

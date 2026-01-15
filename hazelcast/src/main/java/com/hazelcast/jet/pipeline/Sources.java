@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,10 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
+import static com.hazelcast.jet.Util.cacheEventToJournalEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
+import static com.hazelcast.jet.Util.mapEventToJournalEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
@@ -487,6 +489,21 @@ public final class Sources {
     }
 
     /**
+     * Same as {@link #mapJournal(String, JournalInitialPosition)}, but returns {@link JournalSourceEntry},
+     * which provides information about whether dropped events occurred in the journal.
+     * <p>
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    public static <K, V> StreamSource<JournalSourceEntry<K, V>> mapJournalEntries(
+            @Nonnull String mapName,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return mapJournal(mapName, initialPos, mapEventToJournalEntry(), mapPutEvents());
+    }
+
+    /**
      * Convenience for {@link #mapJournal(IMap, JournalInitialPosition, FunctionEx, PredicateEx)}
      * which will pass only {@link EntryEventType#ADDED
      * ADDED} and {@link EntryEventType#UPDATED UPDATED}
@@ -504,6 +521,21 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return mapJournal(map.getName(), initialPos, mapEventToEntry(), mapPutEvents());
+    }
+
+    /**
+     * Same as {@link #mapJournal(IMap, JournalInitialPosition)}, but returns {@link JournalSourceEntry},
+     * which provides information about whether dropped events occurred in the journal.
+     * <p>
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    public static <K, V> StreamSource<JournalSourceEntry<K, V>> mapJournalEntries(
+            @Nonnull IMap<? extends K, ? extends V> map,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return mapJournal(map.getName(), initialPos, mapEventToJournalEntry(), mapPutEvents());
     }
 
     /**
@@ -777,6 +809,29 @@ public final class Sources {
     }
 
     /**
+     * Same as {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition)}, but returns {@link JournalSourceEntry},
+     * which provides information about whether dropped events occurred in the journal.
+     * <p>
+     * This method requires the remote cluster to be running version 5.7 or later.
+     * <p>
+     * @since 5.7
+     */
+    @Nonnull
+    public static <K, V> StreamSource<JournalSourceEntry<K, V>> remoteMapJournalEntries(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return remoteMapJournal(
+                mapName,
+                clientConfig,
+                initialPos,
+                mapEventToJournalEntry(),
+                mapPutEvents()
+        );
+    }
+
+    /**
      * Convenience for {@link #remoteMapJournal(String, DataConnectionRef, JournalInitialPosition, FunctionEx, PredicateEx)}
      * which will pass only {@link EntryEventType#ADDED ADDED}
      * and {@link EntryEventType#UPDATED UPDATED} events and will
@@ -790,6 +845,26 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return remoteMapJournal(mapName, dataConnectionRef, initialPos, mapEventToEntry(), mapPutEvents());
+    }
+
+    /**
+     * Same as {@link #remoteMapJournal(String, DataConnectionRef, JournalInitialPosition)},
+     * but returns {@link JournalSourceEntry}, which provides information
+     * about whether dropped events occurred in the journal.
+     * <p>
+     * This method requires the remote cluster to be running version 5.7 or later.
+     * <p>
+     * @since 5.7
+     */
+    @Nonnull
+    public static <K, V> StreamSource<JournalSourceEntry<K, V>> remoteMapJournalEntries(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return remoteMapJournal(
+                mapName, dataConnectionRef, initialPos, mapEventToJournalEntry(), mapPutEvents()
+        );
     }
 
     /**
@@ -885,6 +960,22 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return cacheJournal(cacheName, initialPos, cacheEventToEntry(), cachePutEvents());
+    }
+
+
+    /**
+     * Same as {@link #cacheJournal(String, JournalInitialPosition)}, but returns {@link JournalSourceEntry},
+     * which provides information about whether dropped events occurred in the journal.
+     * <p>
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    public static <K, V> StreamSource<JournalSourceEntry<K, V>> cacheJournalEntries(
+            @Nonnull String cacheName,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return cacheJournal(cacheName, initialPos, cacheEventToJournalEntry(), cachePutEvents());
     }
 
     /**
@@ -986,6 +1077,23 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return remoteCacheJournal(cacheName, clientConfig, initialPos, cacheEventToEntry(), cachePutEvents());
+    }
+
+    /**
+     * Same as {@link #remoteCacheJournal(String, ClientConfig, JournalInitialPosition)}, but returns {@link JournalSourceEntry},
+     * which provides information about whether dropped events occurred in the journal.
+     * <p>
+     * This method requires the remote cluster to be running version 5.7 or later.
+     * <p>
+     * @since 5.7
+     */
+    @Nonnull
+    public static <K, V> StreamSource<JournalSourceEntry<K, V>> remoteCacheJournalEntries(
+            @Nonnull String cacheName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return remoteCacheJournal(cacheName, clientConfig, initialPos, cacheEventToJournalEntry(), cachePutEvents());
     }
 
     /**

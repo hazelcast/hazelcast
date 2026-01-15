@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapStatefulTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
@@ -207,6 +208,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
             @Nonnull FunctionEx<? super T, ? extends K> keyFn,
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
         checkSerializable(keyFn, "keyFn");
@@ -222,6 +224,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 fnAdapter.adaptTimestampFn(),
                 createFn,
                 fnAdapter.adaptStatefulMapFn(mapFn),
+                deleteStatePredicate != null ? fnAdapter.adaptDeleteStatePredicate(deleteStatePredicate) : null,
                 onEvictFn != null ? fnAdapter.adaptOnEvictFn(onEvictFn) : null);
         return attach(mapStatefulTransform, fnAdapter);
     }
@@ -233,6 +236,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
             @Nonnull FunctionEx<? super T, ? extends K> keyFn,
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
         checkSerializable(keyFn, "keyFn");
@@ -248,6 +252,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 fnAdapter.adaptTimestampFn(),
                 createFn,
                 fnAdapter.adaptStatefulFlatMapFn(flatMapFn),
+                deleteStatePredicate != null ? fnAdapter.adaptDeleteStatePredicate(deleteStatePredicate) : null,
                 onEvictFn != null ? fnAdapter.adaptOnEvictFlatMapFn(onEvictFn) : null);
         return attach(flatMapStatefulTransform, fnAdapter);
     }

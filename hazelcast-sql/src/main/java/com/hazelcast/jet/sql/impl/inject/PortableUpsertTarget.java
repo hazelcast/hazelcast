@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,9 +152,9 @@ class PortableUpsertTarget implements UpsertTarget {
                         portable.setTimestampWithTimezone(name, value == NOT_SET ? null : (OffsetDateTime) value);
                         break;
                     case PORTABLE:
-                        if (value instanceof RowValue) {
+                        if (value instanceof RowValue rowValue) {
                             portable.setGenericRecord(name, UpsertTargetUtils.convertRowToPortableType(
-                                    (RowValue) value, this.dataTypeMap.get(i))
+                                    rowValue, this.dataTypeMap.get(i))
                             );
                         } else {
                             portable.setGenericRecord(name, value == NOT_SET ? null : (GenericRecord) value);

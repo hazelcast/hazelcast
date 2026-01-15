@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,36 +23,28 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReflectionHelperTest {
 
     @Test
-    public void extractValue_whenIntermediateFieldIsInterfaceAndDoesNotContainField_thenThrowIllegalArgumentException()
-            throws Exception {
-        OuterObject object = new OuterObject();
-        try {
-            ReflectionHelper.extractValue(object, "emptyInterface.doesNotExist", true);
-            fail("Non-existing field has been ignored");
-        } catch (QueryException e) {
-            // createGetter() method is catching everything throwable and wraps it in QueryException
-            // I don't think it's the right thing to do, but I don't want to change this behaviour.
-            // Hence, I have to use try/catch in this test instead of just declaring
-            // IllegalArgumentException as expected exception.
-            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
-        }
+    public void extractValue_whenIntermediateFieldIsInterfaceAndDoesNotContainField_thenThrowIllegalArgumentException() {
+        // createGetter() method is catching everything throwable and wraps it in QueryException
+        // I don't think it's the right thing to do, but I don't want to change this behaviour.
+        // Hence, I have to check the root cause instead of declaring IllegalArgumentException as expected exception.
+        assertThatThrownBy(() -> extractValue("emptyInterface.doesNotExist", true))
+                .describedAs("Non-existing field has been ignored")
+                .has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
     public void extractValue_whenIntermediateFieldIsInterfaceAndDoesNotContainField_returnsNull()
             throws Exception {
-        OuterObject object = new OuterObject();
-
-        assertNull(ReflectionHelper.extractValue(object, "emptyInterface.doesNotExist", false));
+        assertNull(extractValue("emptyInterface.doesNotExist", false));
     }
 
     @SuppressWarnings("unused")
@@ -62,5 +53,10 @@ public class ReflectionHelperTest {
     }
 
     private interface EmptyInterface {
+    }
+
+    private static Object extractValue(String attributeName, boolean failOnMissingAttribute) throws Exception {
+        OuterObject object = new OuterObject();
+        return ReflectionHelper.createGetter(object, attributeName, failOnMissingAttribute).getValue(object);
     }
 }

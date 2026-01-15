@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,8 @@ public class MaxSqlAggregation implements SqlAggregation {
     }
 
     private static Comparable<?> asComparable(Object value) {
-        if (value instanceof Comparable) {
-            return (Comparable<?>) value;
+        if (value instanceof Comparable<?> comparable) {
+            return comparable;
         } else {
             throw QueryException.error("MAX not supported for " + value.getClass() + ": not comparable");
         }

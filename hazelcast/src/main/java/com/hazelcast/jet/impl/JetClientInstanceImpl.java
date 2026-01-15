@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 });
     }
 
+    @Override
     protected GetJobIdsResult getJobByName(String onlyName) {
         var result = getJobsInt(onlyName, null);
         // Only normal jobs can have a name.
@@ -98,10 +99,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return result.values().stream().findFirst().orElseThrow();
     }
 
+    @Override
     protected Map<UUID, GetJobIdsResult> getJobsById(Long onlyJobId) {
         return getJobsInt(null, onlyJobId);
     }
 
+    @Override
     protected Map<UUID, GetJobIdsResult> getAllJobs() {
         return getJobsInt(null, null);
     }

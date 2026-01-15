@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
     private long initTimeoutMillis;
 
     // uses initFinished latch to ensure visibility
-    private Exception initFailure;
+    private Throwable initFailure;
 
     private final CountDownLatch initFinished = new CountDownLatch(1);
 
@@ -229,7 +229,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
             );
 
             readExistingMapping();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // We create the mapping on the first member initializing this object
             // Other members trying to concurrently initialize will fail and just read the mapping
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
@@ -378,6 +378,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
         awaitSuccessfulInit();
 
         String sql = queries.loadAllKeys();
+        //noinspection resource
         SqlResult keysResult = sqlService.execute(sql);
 
         // The contract for loadAllKeys says that if iterator implements Closable

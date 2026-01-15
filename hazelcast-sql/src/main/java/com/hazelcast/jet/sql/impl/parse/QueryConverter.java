@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,8 +223,8 @@ public class QueryConverter {
 
             @Override
             public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-                if (node instanceof LogicalFilter) {
-                    RexSubQuery exists = getExists((LogicalFilter) node);
+                if (node instanceof LogicalFilter filter) {
+                    RexSubQuery exists = getExists(filter);
                     if (exists != null) {
                         found |= depth > 0;
                         depth++;

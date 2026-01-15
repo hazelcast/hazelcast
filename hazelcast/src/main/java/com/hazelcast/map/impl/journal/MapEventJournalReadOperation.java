@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.util.function.Predicate;
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  *
- * @param <T> the return type of the projection. It is equal to an implementation of {@link }
+ * @param <T> the return type of the projection. It is equal to the journal event type
  *            if the projection is {@code null} or it is the identity projection
  * @since 3.9
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -396,13 +396,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         private SqlCall rewriteCall(SqlCall call) {
-            if (call instanceof SqlBasicCall) {
+            if (call instanceof SqlBasicCall basicCall) {
                 // An alias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
                 if (call.getKind() == SqlKind.AS) {
                     return call;
                 }
-
-                SqlBasicCall basicCall = (SqlBasicCall) call;
                 SqlOperator operator = basicCall.getOperator();
 
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
@@ -422,8 +420,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 assert resolvedOperators.size() == 1;
 
                 basicCall.setOperator(resolvedOperators.get(0));
-            } else if (call instanceof SqlCase) {
-                SqlCase sqlCase = (SqlCase) call;
+            } else if (call instanceof SqlCase sqlCase) {
                 return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
                         sqlCase.getThenOperands(), sqlCase.getElseOperand());
             }

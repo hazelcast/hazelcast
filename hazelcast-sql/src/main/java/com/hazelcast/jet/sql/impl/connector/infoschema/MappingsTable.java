@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 
 /**

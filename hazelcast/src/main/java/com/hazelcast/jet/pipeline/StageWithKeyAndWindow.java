@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,6 +188,7 @@ public interface StageWithKeyAndWindow<T, K> {
      * {@code KeyedWindowResult(key, Tuple3(result0, result1, result2))}.
      * <p>
      * Sample usage:
+     * <pre>{@code
      * StreamStage<KeyedWindowResult<Long, Tuple3<Long, Long, Long>>> aggregated = pageVisits
      *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
      *     .groupingKey(PageVisit::getUserId)
@@ -199,8 +200,6 @@ public interface StageWithKeyAndWindow<T, K> {
      *             AggregateOperations.counting(),
      *             AggregateOperations.counting())
      *     );
-     * <pre>{@code
-     *
      * }</pre>
      * This variant requires you to provide a three-input aggregate operation
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple

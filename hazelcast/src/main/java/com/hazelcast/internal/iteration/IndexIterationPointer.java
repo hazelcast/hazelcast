@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
  *     <li>NULL end does not make sense for composite index because composite index
  *     stores {@link com.hazelcast.query.impl.CompositeValue} which are never null, even if
  *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.</li>
- *     </li>beware of distinction between Java null and NULL - it is not always obvious.</li>
+ *     <li>beware of distinction between Java null and NULL - it is not always obvious.</li>
  * </ol>
  * <p>
  * {@link IndexIterationPointer} set operation use the following ordering:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetDataSerializerHook;
+import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.BinaryOperator;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -48,10 +51,13 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
     private final BinaryOperator<Object> remappingFunction =
             (o, n) -> ApplyFnEntryProcessor.append(o, (Data) n);
 
+    // The job namespace may be required for deserializing the update function
+    private String userCodeNamespace;
+
     public UpdateMapP(HazelcastInstance instance,
-               String mapName,
-               @Nonnull FunctionEx<? super T, ? extends K> keyFn,
-               @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn) {
+                      String mapName,
+                      @Nonnull FunctionEx<? super T, ? extends K> keyFn,
+                      @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn) {
         this(instance, MAX_PARALLEL_ASYNC_OPS_DEFAULT, mapName, keyFn, updateFn);
     }
 
@@ -65,8 +71,15 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
     }
 
     @Override
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        super.init(outbox, context);
+        this.userCodeNamespace = context.jobConfig().getUserCodeNamespace();
+    }
+
+    @Override
     protected EntryProcessor<K, V, Void> entryProcessor(Map<Data, Object> buffer) {
-        return new ApplyFnEntryProcessor<>(buffer, updateFn);
+        return userCodeNamespace != null && isLocal() ? new NamespaceAwareApplyFnEntryProcessor<>(buffer, updateFn,
+                userCodeNamespace) : new ApplyFnEntryProcessor<>(buffer, updateFn);
     }
 
     @Override
@@ -93,9 +106,8 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
         }
 
         ApplyFnEntryProcessor(
-            Map<Data, Object> keysToUpdate,
-            BiFunctionEx<? super V, ? super T, ? extends V> updateFn
-        ) {
+                Map<Data, Object> keysToUpdate,
+                BiFunctionEx<? super V, ? super T, ? extends V> updateFn) {
             this.keysToUpdate = keysToUpdate;
             this.updateFn = updateFn;
         }
@@ -156,6 +168,11 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
                     assert false : "Unknown value type: " + value.getClass();
                 }
             }
+            writeUpdateFn(out, updateFn);
+        }
+
+        protected void writeUpdateFn(ObjectDataOutput out, BiFunctionEx<? super V, ? super T, ? extends V> updateFn)
+                throws IOException {
             out.writeObject(updateFn);
         }
 
@@ -178,7 +195,12 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
                 }
                 keysToUpdate.put(key, value);
             }
-            updateFn = in.readObject();
+            updateFn = readUpdateFn(in);
+        }
+
+        protected BiFunctionEx<? super V, ? super T, ? extends V> readUpdateFn(ObjectDataInput in)
+                throws IOException {
+            return in.readObject();
         }
 
         @Override
@@ -206,4 +228,44 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
         }
     }
 
+    public static class NamespaceAwareApplyFnEntryProcessor<K, V, T>
+            extends ApplyFnEntryProcessor<K, V, T> {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private String userCodeNamespace;
+
+        public NamespaceAwareApplyFnEntryProcessor() {
+        }
+
+        NamespaceAwareApplyFnEntryProcessor(
+                Map<Data, Object> keysToUpdate,
+                BiFunctionEx<? super V, ? super T, ? extends V> updateFn,
+                @Nonnull String userCodeNamespace) {
+            super(keysToUpdate, updateFn);
+            this.userCodeNamespace = Objects.requireNonNull(userCodeNamespace);
+        }
+
+        @Override
+        protected void writeUpdateFn(ObjectDataOutput out, BiFunctionEx<? super V, ? super T, ? extends V> updateFn)
+                throws IOException {
+            out.writeString(userCodeNamespace);
+            out.writeObject(updateFn);
+        }
+
+        @Override
+        protected BiFunctionEx<? super V, ? super T, ? extends V> readUpdateFn(ObjectDataInput in)
+                throws IOException {
+            userCodeNamespace = in.readString();
+            if (userCodeNamespace == null) {
+                throw new NullPointerException("Unexpected null namespace read from stream");
+            }
+            return NamespaceUtil.tryReadObjectFromNamespace(in, userCodeNamespace);
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.NAMESPACE_AWARE_APPLY_FN_ENTRY_PROCESSOR;
+        }
+    }
 }

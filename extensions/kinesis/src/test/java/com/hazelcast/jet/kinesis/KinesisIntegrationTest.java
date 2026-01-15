@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -560,7 +560,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         String sequenceNumber = putRecordsResult.getRecords().get(50).getSequenceNumber();
 
-        //start a new job which reads records from the sequence nomber (inclusive)
+        //start a new job which reads records from the sequence number (inclusive)
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", AT_SEQUENCE_NUMBER.name(), sequenceNumber)
                 .build();
@@ -581,7 +581,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         String sequenceNumber = putRecordsResult.getRecords().get(50).getSequenceNumber();
 
-        //start a new job which reads records from the sequence nomber (inclusive)
+        //start a new job which reads records from the sequence number (inclusive)
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", AFTER_SEQUENCE_NUMBER.name(), sequenceNumber)
                 .build();

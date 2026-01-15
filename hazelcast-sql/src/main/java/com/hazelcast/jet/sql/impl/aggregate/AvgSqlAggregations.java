@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,8 +80,8 @@ public final class AvgSqlAggregations {
                 sum = BigDecimal.ZERO;
             }
 
-            BigDecimal decimalValue = value instanceof BigDecimal
-                    ? (BigDecimal) value
+            BigDecimal decimalValue = value instanceof BigDecimal bd
+                    ? bd
                     : new BigDecimal(((Number) value).longValue());
             sum = sum.add(decimalValue, DECIMAL_MATH_CONTEXT);
             this.count += count;

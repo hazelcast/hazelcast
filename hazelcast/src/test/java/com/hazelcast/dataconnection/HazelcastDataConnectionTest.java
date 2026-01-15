@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -204,19 +205,21 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
                 .containsExactlyInAnyOrder("imapjournal");
     }
 
-    private static DataConnectionConfig nonSharedDataConnectionConfig(String clusterName) {
+    private DataConnectionConfig nonSharedDataConnectionConfig(String clusterName) {
         return sharedDataConnectionConfig(clusterName)
                 .setShared(false);
     }
 
     @Nonnull
-    private static DataConnectionConfig sharedDataConnectionConfig(String clusterName) {
+    private DataConnectionConfig sharedDataConnectionConfig(String clusterName) {
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-connection-name")
                 .setType("HZ")
                 .setShared(true);
         try {
             String str = readFile();
-            String xmlString = str.replace("$CLUSTER_NAME$", clusterName);
+            var socketAddress = ((InetSocketAddress) instance.getLocalEndpoint().getSocketAddress()).getPort();
+            String xmlString = str.replace("$CLUSTER_NAME$", clusterName)
+                                  .replace("$PORT_NUMBER$", String.valueOf(socketAddress));
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
             return dataConnectionConfig;
         } catch (IOException e) {
@@ -233,7 +236,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
             String str = readFile();
             String xmlString = str
                     .replace("$CLUSTER_NAME$", clusterName)
-                    .replace("5701", Integer.toString(port));
+                    .replace("$PORT_NUMBER$", Integer.toString(port));
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
             return dataConnectionConfig;
         } catch (IOException e) {
@@ -242,13 +245,15 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
     }
 
     @Nonnull
-    private static DataConnectionConfig sharedDataConnectionConfigFromFile(String clusterName) {
+    private DataConnectionConfig sharedDataConnectionConfigFromFile(String clusterName) {
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-link-name")
                 .setType(HazelcastDataConnection.class.getName())
                 .setShared(true);
         try {
             String str = readFile();
-            String xmlString = str.replace("$CLUSTER_NAME$", clusterName);
+            int port = ((InetSocketAddress) instance.getLocalEndpoint().getSocketAddress()).getPort();
+            String xmlString = str.replace("$CLUSTER_NAME$", clusterName).replace("$PORT_NUMBER$",
+                                                                                  String.valueOf(port));
             Path tempFile = Files.createTempFile("test_client", ".xml");
             Files.writeString(tempFile, xmlString);
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML_PATH, tempFile.toString());

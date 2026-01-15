@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2025 Hazelcast Inc.
+  ~ Copyright 2026 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -52,35 +52,6 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>jar-with-dependencies</id>
-                        <phase>${shade.jar-with-dependencies.phase}</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration combine.self="override">
-                            <!--
-                            hazelcast-mapstore doesn't have any dependencies which should be included,
-                            no need for jar-with-dependencies
-                            -->
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <relocations>
-                                <relocation>
-                                    <!--
-                                    We need to relocate our usage of org.apache.calcite to the location used in hazelcast-sql
-                                    -->
-                                    <pattern>org.apache.calcite</pattern>
-                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -89,17 +60,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!--
-        We use org.apache.calcite.sql.SqlDialect
-        The scope is provided because calcite is already part of hazelcast-sql
-        -->
-        <dependency>
-            <groupId>org.apache.calcite</groupId>
-            <artifactId>calcite-core</artifactId>
-            <version>${calcite.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -180,7 +140,7 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.5.6</version>
+            <version>3.5.7</version>
             <scope>test</scope>
         </dependency>
 

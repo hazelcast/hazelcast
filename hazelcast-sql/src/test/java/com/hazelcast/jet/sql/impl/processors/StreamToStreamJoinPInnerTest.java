@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,9 +101,9 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
                 Map<Byte, Long> actualWms = new HashMap<>();
 
                 for (Object o : expected) {
-                    if (o instanceof Watermark) {
-                        long newVal = ((Watermark) o).timestamp();
-                        Long oldVal = expectedWms.put(((Watermark) o).key(), newVal);
+                    if (o instanceof Watermark watermark) {
+                        long newVal = watermark.timestamp();
+                        Long oldVal = expectedWms.put(watermark.key(), newVal);
                         if (oldVal != null && oldVal >= newVal) {
                             return false; // not strictly monotonic expected val
                         }
@@ -111,9 +111,9 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
                 }
 
                 for (Object o : actual) {
-                    if (o instanceof Watermark) {
-                        long newVal = ((Watermark) o).timestamp();
-                        Long oldVal = actualWms.put(((Watermark) o).key(), newVal);
+                    if (o instanceof Watermark watermark) {
+                        long newVal = watermark.timestamp();
+                        Long oldVal = actualWms.put(watermark.key(), newVal);
                         if (oldVal != null && oldVal > newVal) {
                             return false; // not monotonic expected val
                         }

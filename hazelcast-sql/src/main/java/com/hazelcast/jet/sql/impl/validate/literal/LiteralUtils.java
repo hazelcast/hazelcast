@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,15 +87,15 @@ public final class LiteralUtils {
         }
 
         if (CHAR_TYPES.contains(typeName)) {
-            if (value instanceof NlsString) {
-                value = ((NlsString) value).getValue();
+            if (value instanceof NlsString string) {
+                value = string.getValue();
             }
             assert value instanceof String : value.getClass().getName();
             return new TypedLiteral(value, SqlTypeName.VARCHAR);
         }
 
-        if (value instanceof SqlIntervalLiteral.IntervalValue) {
-            return new IntervalLiteral((SqlIntervalLiteral.IntervalValue) value, typeName);
+        if (value instanceof SqlIntervalLiteral.IntervalValue intervalValue) {
+            return new IntervalLiteral(intervalValue, typeName);
         }
 
         return new TypedLiteral(value, typeName);

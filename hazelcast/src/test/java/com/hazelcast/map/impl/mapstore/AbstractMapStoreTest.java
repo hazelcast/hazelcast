@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastTestSupport;
+
+import java.util.concurrent.ExecutionException;
 
 public abstract class AbstractMapStoreTest extends HazelcastTestSupport {
 
@@ -52,5 +56,19 @@ public abstract class AbstractMapStoreTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         return smallInstanceConfigWithoutJetAndMetrics();
+    }
+
+    protected static <K, V> void flush(IMap<K, V> map, boolean async) {
+        if (async) {
+            try {
+                ((MapProxyImpl<K, V>) map).flushAsync().get();
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            map.flush();
+        }
     }
 }

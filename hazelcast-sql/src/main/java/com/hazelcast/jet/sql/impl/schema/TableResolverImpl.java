@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,14 +287,14 @@ public class TableResolverImpl implements TableResolver {
         List<Type> types = lastTypesSize == 0 ? new ArrayList<>() : new ArrayList<>(lastTypesSize);
 
         for (Object o : objects) {
-            if (o instanceof Mapping) {
-                tables.add(toTable((Mapping) o));
-                mappings.add((Mapping) o);
-            } else if (o instanceof View) {
-                tables.add(toTable((View) o));
-                views.add((View) o);
-            } else if (o instanceof Type) {
-                types.add((Type) o);
+            if (o instanceof Mapping mapping) {
+                tables.add(toTable(mapping));
+                mappings.add(mapping);
+            } else if (o instanceof View view) {
+                tables.add(toTable(view));
+                views.add(view);
+            } else if (o instanceof Type type) {
+                types.add(type);
             } else if (o instanceof DataConnectionCatalogEntry) {
                 // Note: data connection is not a 'table' or 'relation',
                 // It's stored in a separate namespace.

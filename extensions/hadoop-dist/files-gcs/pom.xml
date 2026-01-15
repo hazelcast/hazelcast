@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2025 Hazelcast Inc.
+  ~ Copyright 2026 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>gcs-connector</artifactId>
-            <version>hadoop3-2.2.21</version>
+            <version>hadoop3-2.2.31</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.apis</groupId>
@@ -107,7 +107,7 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-storage</artifactId>
-            <version>v1-rev20250925-2.0.0</version>
+            <version>v1-rev20251118-2.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.threeten</groupId>

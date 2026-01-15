@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ public final class SqlConnectorUtil {
     @SuppressWarnings("unchecked")
     public static <T extends SqlConnector> T getJetSqlConnector(Table table) {
         SqlConnector connector;
-        if (table instanceof JetTable) {
-            connector = ((JetTable) table).getSqlConnector();
+        if (table instanceof JetTable jetTable) {
+            connector = jetTable.getSqlConnector();
         } else if (table instanceof PartitionedMapTable) {
             connector = IMapSqlConnector.INSTANCE;
         } else {

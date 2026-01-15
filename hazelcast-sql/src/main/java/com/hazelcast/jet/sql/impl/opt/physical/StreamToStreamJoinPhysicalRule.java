@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -284,8 +284,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             long[] constantsSum,
             boolean inverse
     ) {
-        if (expr instanceof RexLiteral) {
-            RexLiteral literal = (RexLiteral) expr;
+        if (expr instanceof RexLiteral literal) {
             if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getType().getSqlTypeName())
                     && !SqlTypeName.INT_TYPES.contains(literal.getType().getSqlTypeName())) {
                 return false;
@@ -299,17 +298,16 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return true;
         }
 
-        if (expr instanceof RexInputRef) {
+        if (expr instanceof RexInputRef ref) {
             Integer[] field = inverse ? positiveField : negativeField;
             if (field[0] != null) {
                 return false;
             }
-            field[0] = ((RexInputRef) expr).getIndex();
+            field[0] = ref.getIndex();
             return true;
         }
 
-        if (expr instanceof RexCall) {
-            RexCall call = (RexCall) expr;
+        if (expr instanceof RexCall call) {
             if (call.isA(SqlKind.CAST)) {
                 RexNode inputRef = call.getOperands().get(0);
                 RelDataType type = inputRef.getType();

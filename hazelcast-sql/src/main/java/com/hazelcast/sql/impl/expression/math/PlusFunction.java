@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,8 +126,8 @@ public final class PlusFunction<T> extends BiExpressionWithType<T> {
             case TIMESTAMP_WITH_TIME_ZONE:
                 Temporal temporal = (Temporal) left;
 
-                if (right instanceof SqlDaySecondInterval) {
-                    return temporal.plus(((SqlDaySecondInterval) right).getMillis(), ChronoUnit.MILLIS);
+                if (right instanceof SqlDaySecondInterval interval) {
+                    return temporal.plus(interval.getMillis(), ChronoUnit.MILLIS);
                 } else {
                     assert family != TIME;
                     assert right instanceof SqlYearMonthInterval;

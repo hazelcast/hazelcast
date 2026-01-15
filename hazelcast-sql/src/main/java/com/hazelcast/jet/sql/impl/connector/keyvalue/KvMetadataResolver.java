@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,8 +127,8 @@ public interface KvMetadataResolver {
         }
 
         public Field(TableField field) {
-            name = field instanceof MapTableField
-                    ? ((MapTableField) field).getPath().getPath() : field.getName();
+            name = field instanceof MapTableField mtf
+                    ? mtf.getPath().getPath() : field.getName();
             type = field.getType();
         }
 

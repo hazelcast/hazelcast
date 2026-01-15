@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.InvocationUtil;
-import com.hazelcast.internal.util.LocalRetryableExecution;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
@@ -50,7 +48,6 @@ import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
-import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
@@ -81,7 +78,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
@@ -97,6 +93,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -116,7 +113,6 @@ import static com.hazelcast.spi.properties.ClusterProperty.EXPENSIVE_IMAP_INVOCA
 import static com.hazelcast.spi.properties.ClusterProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static java.lang.Thread.currentThread;
 
 /**
  * Default implementation of {@link MapServiceContext}.
@@ -512,27 +508,29 @@ class MapServiceContextImpl implements MapServiceContext {
      * @param mapContainer the map container to destroy
      */
     private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
-        final List<LocalRetryableExecution> executions = new ArrayList<>();
+        try {
+            // Mark map container destroyed before the underlying
+            // data structures are destroyed. Marking now means
+            // we don't try to migrate data before it's cleared
+            mapContainer.onBeforeDestroy();
 
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            Operation op = new MapPartitionDestroyOperation(partitionContainer, mapContainer)
-                    .setPartitionId(partitionContainer.getPartitionId())
-                    .setNodeEngine(nodeEngine)
-                    .setCallerUuid(nodeEngine.getLocalMember().getUuid())
-                    .setServiceName(SERVICE_NAME);
-
-            executions.add(InvocationUtil.executeLocallyWithRetry(nodeEngine, op));
-        }
-
-        for (LocalRetryableExecution execution : executions) {
-            try {
-                if (!execution.awaitCompletion(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                    logger.warning("Map partition was not destroyed in expected time, possible leak");
-                }
-            } catch (InterruptedException e) {
-                currentThread().interrupt();
-                nodeEngine.getLogger(getClass()).warning(e);
+            MapOperationProvider operationProvider = getMapOperationProvider(mapContainer.getName());
+            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnRelevantLocalPartitions(SERVICE_NAME,
+                    operationProvider.createMapPartitionDestroyOperationFactory(mapContainer, this),
+                    mapContainer.getTotalBackupCount(), TimeUnit.SECONDS.toMillis(DESTROY_TIMEOUT_SECONDS));
+            // InvokeOnLocalPartitions validates the result set is complete if provided, so only a simple empty check is needed
+            if (results.isEmpty() && !nodeEngine.getLocalMember().isLiteMember()) {
+                logger.warning("No local partitions found to destroy for map " + mapContainer.getName() + ", possible leak");
             }
+        } catch (TimeoutException ex) {
+            logger.warning(String.format("Map partitions for '%s' not destroyed in expected time, possible leak",
+                    mapContainer.getName()));
+        } catch (InterruptedException e) {
+            logger.warning("Interrupted while destroying map partitions for " + mapContainer.getName() + ", possible leak", e);
+            Thread.currentThread().interrupt();
+        } catch (Exception ex) {
+            logger.warning("Encountered exception while destroying map partitions for " + mapContainer.getName()
+                    + ", possible leak", ex);
         }
 
         mapContainer.onDestroy();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static org.junit.Assume.assumeFalse;
  * Test the multicast loopback mode when there is no other
  * network interface than 127.0.0.1.
  *
- * @author St&amp;eacute;phane Galland <galland@arakhne.org>
+ * @author St&amp;eacute;phane Galland &lt;galland{@literal @}arakhne.org&gt;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

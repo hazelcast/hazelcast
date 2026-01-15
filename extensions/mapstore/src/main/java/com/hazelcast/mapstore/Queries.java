@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.sql.SqlColumnMetadata;
-import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import java.util.Iterator;
 import java.util.List;
@@ -26,9 +24,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-class Queries {
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteIdentifier;
 
-    private static final SqlDialect DIALECT = CalciteSqlDialect.DEFAULT;
+class Queries {
 
     private final String loadQuery;
 
@@ -63,9 +61,9 @@ class Queries {
     private static String buildLoadQuery(String mapping, String idColumn) {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT * FROM ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         sb.append(" WHERE ");
-        DIALECT.quoteIdentifier(sb, idColumn);
+        quoteIdentifier(sb, idColumn);
         sb.append(" = ?");
         return sb.toString();
     }
@@ -73,9 +71,9 @@ class Queries {
     private String buildLoadAllQuery(String mapping, String idColumn, int n) {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT * FROM ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         sb.append(" WHERE ");
-        DIALECT.quoteIdentifier(sb, idColumn);
+        quoteIdentifier(sb, idColumn);
         sb.append(" IN (");
         appendQueryParams(sb, n);
         sb.append(')');
@@ -85,20 +83,20 @@ class Queries {
     private static String buildLoadAllKeysQuery(String mapping, String idColumn) {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT ");
-        DIALECT.quoteIdentifier(sb, idColumn);
+        quoteIdentifier(sb, idColumn);
         sb.append(" FROM ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         return sb.toString();
     }
 
     private String buildStoreSinkQuery(String mapping, List<SqlColumnMetadata> columnMetadata) {
         StringBuilder sb = new StringBuilder();
         sb.append("SINK INTO ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         sb.append(" (");
         for (Iterator<SqlColumnMetadata> iterator = columnMetadata.iterator(); iterator.hasNext(); ) {
             SqlColumnMetadata column = iterator.next();
-            DIALECT.quoteIdentifier(sb, column.getName());
+            quoteIdentifier(sb, column.getName());
             if (iterator.hasNext()) {
                 sb.append(", ");
             }
@@ -112,21 +110,21 @@ class Queries {
     private String buildStoreUpdateQuery(String mapping, String idColumn, List<SqlColumnMetadata> columnMetadata) {
         StringBuilder sb = new StringBuilder();
         sb.append("UPDATE ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         sb.append(" SET ");
         for (Iterator<SqlColumnMetadata> iterator = columnMetadata.iterator(); iterator.hasNext(); ) {
             SqlColumnMetadata column = iterator.next();
             if (idColumn.equals(column.getName())) {
                 continue;
             }
-            DIALECT.quoteIdentifier(sb, column.getName());
+            quoteIdentifier(sb, column.getName());
             sb.append(" = ?");
             if (iterator.hasNext()) {
                 sb.append(", ");
             }
         }
         sb.append(" WHERE ");
-        DIALECT.quoteIdentifier(sb, idColumn);
+        quoteIdentifier(sb, idColumn);
         sb.append(" = ?");
         return sb.toString();
     }
@@ -134,9 +132,9 @@ class Queries {
     private static String buildDeleteQuery(String mapping, String idColumn) {
         StringBuilder sb = new StringBuilder();
         sb.append("DELETE FROM ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         sb.append(" WHERE ");
-        DIALECT.quoteIdentifier(sb, idColumn);
+        quoteIdentifier(sb, idColumn);
         sb.append(" = ?");
         return sb.toString();
     }
@@ -153,9 +151,9 @@ class Queries {
     private String buildDeleteAllQuery(String mapping, String idColumn, int n) {
         StringBuilder sb = new StringBuilder();
         sb.append("DELETE FROM ");
-        DIALECT.quoteIdentifier(sb, mapping);
+        quoteIdentifier(sb, mapping);
         sb.append(" WHERE ");
-        DIALECT.quoteIdentifier(sb, idColumn);
+        quoteIdentifier(sb, idColumn);
         sb.append(" IN (");
         appendQueryParams(sb, n);
         sb.append(")");

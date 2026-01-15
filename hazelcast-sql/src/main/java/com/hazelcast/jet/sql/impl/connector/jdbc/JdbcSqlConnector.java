@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.jet.sql.impl.connector.jdbc.GettersProvider.GETTERS;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcSqlConnector implements SqlConnector {
@@ -153,8 +153,8 @@ public class JdbcSqlConnector implements SqlConnector {
     static TypeResolver typeResolver(Connection connection) {
         try {
             SqlDialect dialect = resolveDialect(connection.getMetaData());
-            if (dialect instanceof TypeResolver) {
-                return (TypeResolver) dialect;
+            if (dialect instanceof TypeResolver resolver) {
+                return resolver;
             } else {
                 return DefaultTypeResolver::resolveType;
             }

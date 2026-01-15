@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
     }
 
     public static HazelcastRelMetadataQuery reuseOrCreate(RelMetadataQuery mq) {
-        if (mq instanceof HazelcastRelMetadataQuery) {
-            return (HazelcastRelMetadataQuery) mq;
+        if (mq instanceof HazelcastRelMetadataQuery query) {
+            return query;
         } else {
             return new HazelcastRelMetadataQuery();
         }

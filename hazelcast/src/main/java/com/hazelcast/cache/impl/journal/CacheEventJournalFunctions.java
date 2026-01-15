@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.internal.journal.DeserializingEntry;
+import com.hazelcast.internal.journal.DeserializingJournalEntry;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.jet.pipeline.JournalSourceEntry;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -41,6 +43,10 @@ public final class CacheEventJournalFunctions {
 
     public static <K, V> Function<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
         return new CacheEventToEntryProjection<>();
+    }
+
+    public static <K, V> Function<EventJournalCacheEvent<K, V>, JournalSourceEntry<K, V>> cacheEventToJournalEntry() {
+        return new CacheEventToJournalEntryProjection<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -69,6 +75,19 @@ public final class CacheEventJournalFunctions {
         public Entry<K, V> apply(EventJournalCacheEvent<K, V> e) {
             DeserializingEventJournalCacheEvent<K, V> casted = (DeserializingEventJournalCacheEvent<K, V>) e;
             return new DeserializingEntry<>(casted.getDataKey(), casted.getDataNewValue());
+        }
+    }
+
+    @SerializableByConvention
+    private static class CacheEventToJournalEntryProjection<K, V>
+            implements Function<EventJournalCacheEvent<K, V>, JournalSourceEntry<K, V>>, Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public JournalSourceEntry<K, V> apply(EventJournalCacheEvent<K, V> e) {
+            DeserializingEventJournalCacheEvent<K, V> casted = (DeserializingEventJournalCacheEvent<K, V>) e;
+            return new DeserializingJournalEntry<>(casted.getDataKey(), casted.getDataNewValue(), casted.isAfterLostEvents());
         }
     }
 

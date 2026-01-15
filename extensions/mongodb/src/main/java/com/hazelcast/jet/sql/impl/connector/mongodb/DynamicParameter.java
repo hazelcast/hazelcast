@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ public class DynamicParameter implements DynamicallyReplacedPlaceholder {
     }
 
     public static DynamicParameter matches(Object o) {
-        if (o instanceof String) {
-            Matcher matcher = PATTERN.matcher((String) o);
+        if (o instanceof String string) {
+            Matcher matcher = PATTERN.matcher(string);
             if (matcher.matches()) {
                 return new DynamicParameter(Integer.parseInt(matcher.group(1)));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,8 @@ public class ToCharIntegrationTest extends ExpressionTestSupport {
     private void check(Object input, String format, String locale, String result) {
         String rest = "'" + format + "'" + (locale == null ? "" : ", '" + locale + "'");
         putAndCheckValue(input, "SELECT TO_CHAR(this, " + rest + ") FROM map", VARCHAR, result);
-        input = input instanceof Temporal
-                ? literals.get(input.getClass()).format((Temporal) input)
+        input = input instanceof Temporal t
+                ? literals.get(input.getClass()).format(t)
                 : input.toString();
         checkValue0("SELECT TO_CHAR(" + input + ", " + rest + ")", VARCHAR, result);
     }

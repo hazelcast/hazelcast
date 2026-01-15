@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,8 +108,8 @@ public final class Mappers {
      */
     @Nonnull
     public static Document bsonToDocument(@Nonnull Bson bson) {
-        if (bson instanceof Document) {
-            return (Document) bson;
+        if (bson instanceof Document document) {
+            return document;
         }
         BsonDocument document = bson.toBsonDocument(BsonDocument.class, INSTANCE.pojoCodecRegistry);
         return bsonDocumentToDocument(document);

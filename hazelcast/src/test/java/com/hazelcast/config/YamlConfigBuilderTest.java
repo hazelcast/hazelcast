@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,8 @@ import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.PermissionConfig.PermissionType.SQL;
+import static com.hazelcast.config.PermissionConfig.PermissionType.USER_CODE_NAMESPACE;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
@@ -3984,6 +3986,60 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
         assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
+    }
+
+    @Override
+    @Test
+    public void testUserCodeNamespacePermission() {
+        String yaml = """
+                hazelcast:
+                  security:
+                    enabled: true
+                    client-permissions:
+                      user-code-namespace:
+                        - name: test-ucn
+                          principal: dev
+                          actions:
+                            - create
+                            - destroy
+                            - add
+                            - remove
+                            - use
+                """;
+
+        Config config = buildConfig(yaml);
+        PermissionConfig expected = new PermissionConfig(USER_CODE_NAMESPACE, "test-ucn", "dev");
+        expected.addAction("create").addAction("destroy").addAction("add").addAction("remove").addAction("use");
+        assertPermissionConfig(expected, config);
+    }
+
+    @Override
+    public void testSqlPermission() {
+        String yaml = """
+                hazelcast:
+                  security:
+                    enabled: true
+                    client-permissions:
+                      sql:
+                        - name: test-sql
+                          principal: dev
+                          actions:
+                            - view-mapping
+                            - create-view
+                            - drop-view
+                            - create-type
+                            - drop-type
+                            - view-dataconnection
+                            - create-dataconnection
+                            - drop-dataconnection
+                """;
+
+        Config config = buildConfig(yaml);
+        PermissionConfig expected = new PermissionConfig(SQL, "test-sql", "dev");
+        expected.addAction("view-mapping").addAction("create-view").addAction("drop-view").addAction("create-type")
+                .addAction("drop-type").addAction("view-dataconnection").addAction("create-dataconnection")
+                .addAction("drop-dataconnection");
+        assertPermissionConfig(expected, config);
     }
 
     @Override

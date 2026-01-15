@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public final class ElasticSinks {
      * clientFn and maps items using given mapToRequestFn
      * <p>
      * Usage:
-     * <pre>Sink<Map<String, Object>> sink = ElasticSinks.elastic(
+     * <pre>Sink&lt;Map&lt;String, Object&gt;&gt; sink = ElasticSinks.elastic(
      *   () -> ElasticClients.client("es-host", 9200),
      *   map -> new IndexRequest("my-index").source(map)
      * );</pre>

@@ -41,7 +41,7 @@ jobs:
             return checkoutRef
             
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         continue-on-error: true
         with:
           fetch-depth: 0
@@ -124,7 +124,6 @@ jobs:
         id: find-author-username
         continue-on-error: true
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
             const commitSHA = "${{ steps.find-last-commit.outputs.LAST_COMMIT }}"
@@ -143,7 +142,6 @@ jobs:
         uses: actions/github-script@v8
         continue-on-error: true
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
             const organization = "${{ env.ORGANIZATION_NAME }}"
@@ -251,7 +249,6 @@ jobs:
       - name: Assign user
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |         
             await github.rest.issues.addAssignees({
               owner: context.repo.owner,
@@ -263,7 +260,6 @@ jobs:
       - name: Comment on issue
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |       
             const comment = "${{ fromJson(steps.evaluate-suggested-assignement.outputs.result).comment }}"
             const buildUrl = "${{ env.BUILD_URL }}"

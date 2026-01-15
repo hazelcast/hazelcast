@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
@@ -282,6 +284,12 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
                                                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>,
                                                                 Object> mergePolicy) {
         return new MergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
+    }
+
+    @Override
+    public OperationFactory createMapPartitionDestroyOperationFactory(MapContainer mapContainer,
+                                                                      MapServiceContext mapServiceContext) {
+        return new MapPartitionDestroyOperationFactory(mapContainer, mapServiceContext);
     }
 
     @Override

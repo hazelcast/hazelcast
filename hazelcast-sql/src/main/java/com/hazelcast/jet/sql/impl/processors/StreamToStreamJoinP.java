@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -429,8 +429,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        if (value instanceof BufferSnapshotValue) {
-            BufferSnapshotValue bsv = (BufferSnapshotValue) value;
+        if (value instanceof BufferSnapshotValue bsv) {
             buffer[bsv.bufferOrdinal()].add(bsv.row());
             if (bsv.unused()) {
                 unusedEventsTracker.add(bsv.row());
@@ -438,8 +437,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return;
         }
 
-        if (key instanceof BroadcastKey) {
-            BroadcastKey<?> broadcastKey = (BroadcastKey<?>) key;
+        if (key instanceof BroadcastKey<?> broadcastKey) {
             WatermarkStateValue wmValue = (WatermarkStateValue) value;
             // We pick minimal available watermark (both emitted/received) among all processors
             if (WM_STATE_KEY == broadcastKey.key()) {

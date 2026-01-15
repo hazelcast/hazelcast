@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,23 +20,28 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spring.CustomSpringExtension;
+import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.spring.ConfigCreator.createConfig;
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = BootConfiguredContextTest.SpringHazelcastBootConfiguration.class)
+@ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 public class BootConfiguredContextTest
         extends AppContextTestBase {
 
     @Test
     @Override
-    void testMap() {
+    public void testMap() {
         assertThat((Object) map1).isNotNull();
         assertThat((Object) testMap).isNotNull();
 
@@ -45,6 +50,7 @@ public class BootConfiguredContextTest
     }
 
     @SpringBootApplication(scanBasePackages = "com.hazelcast.non.existing")
+    @ExposeHazelcastObjects
     public static class SpringHazelcastBootConfiguration {
 
         public static void main(String[] args) {

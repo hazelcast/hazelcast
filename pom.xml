@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@
         <module>hazelcast</module>
         <module>hazelcast-archunit-rules</module>
         <module>hazelcast-spring</module>
+        <module>hazelcast-spring-boot-autoconfiguration</module>
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
@@ -702,7 +703,7 @@
         </profile>
 
         <profile>
-            <id>release-devel</id>
+            <id>release-snapshot</id>
             <build>
                 <plugins>
                     <plugin>
@@ -726,21 +727,21 @@
         </profile>
 
         <profile>
-            <id>release</id>
+            <id>enable-maven-central</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>release-repository</serverId>
-                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
-                            <stagingProfileId>com.hazelcast</stagingProfileId>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>com.hazelcast.maven</groupId>
                         <artifactId>attribution-maven-plugin</artifactId>
@@ -1134,7 +1135,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>11.0.13</version>
+            <version>11.0.15</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

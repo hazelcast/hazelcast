@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,11 +55,13 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
+
     private transient int minSize;
     private transient int maxSize;
     private transient IFunction<O, Boolean> filter;
     private transient Predicate<? super O> predicate;
     private transient Projection<? super O, E> projection;
+    private transient boolean markNextEventAsLostEventsDetected;
 
     private Data[] items;
     private long[] seqs;
@@ -152,8 +154,9 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
      *
      * @param seq  the sequence ID of the item
      * @param item the item to add to the result set
+     * @return {@code true} if the item was added, {@code false} otherwise
      */
-    public void addItem(long seq, Object item) {
+    public boolean addItem(long seq, Object item) {
         assert size < maxSize;
         readCount++;
 
@@ -163,7 +166,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
             final boolean passesFilter = filter == null || filter.apply(objectItem);
             final boolean passesPredicate = predicate == null || predicate.test(objectItem);
             if (!passesFilter || !passesPredicate) {
-                return;
+                return false;
             }
             if (projection != null) {
                 resultItem = serializationService.toData(projection.transform(objectItem));
@@ -183,6 +186,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         items[size] = resultItem;
         seqs[size] = seq;
         size++;
+        return true;
     }
 
 
@@ -237,4 +241,17 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         seqs = in.readLongArray();
         nextSeq = in.readLong();
     }
+
+    public void markAsLostEventDetected() {
+        this.markNextEventAsLostEventsDetected = true;
+    }
+
+    protected boolean getLostEventsFlag() {
+        return this.markNextEventAsLostEventsDetected;
+    }
+
+    protected void clearLostEventsFlag() {
+        this.markNextEventAsLostEventsDetected = false;
+    }
+
 }

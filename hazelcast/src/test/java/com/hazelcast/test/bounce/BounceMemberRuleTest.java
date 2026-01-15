@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
+
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,10 +42,14 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BounceMemberRuleTest {
 
+    private static final int TEST_TASK_TIMEOUT_SECS = 15;
+
     private String mapName = randomMapName();
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).clusterSize(3)
+            .shouldFailOnIncompleteTask()
+            .testTaskTimeoutSecs(TEST_TASK_TIMEOUT_SECS)
             .driverType(BounceTestConfiguration.DriverType.MEMBER).build();
 
     @Before
@@ -96,6 +102,17 @@ public class BounceMemberRuleTest {
         bounceMemberRule.testRepeatedly(new Runnable[]{
                 () -> assertFalse(getMapFromTestDriver().containsKey("1")),
         }, 10);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void fails_whenTestTaskTimesOut() {
+        bounceMemberRule.test(new Runnable[]{() -> {
+            try {
+                Thread.sleep(Duration.ofSeconds(2 * TEST_TASK_TIMEOUT_SECS).toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        } });
     }
 
     private IMap<String, String> getMapFromSteadyMember() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,8 +65,8 @@ public class GenericQueryTargetTest extends CoreSqlTestSupport {
 
     private void checkTarget(GenericQueryTarget target, TestObject originalObject, Object object) {
         // Set target.
-        if (object instanceof Data) {
-            target.setTarget(null, (Data) object);
+        if (object instanceof Data data) {
+            target.setTarget(null, data);
         } else {
             target.setTarget(object, null);
         }

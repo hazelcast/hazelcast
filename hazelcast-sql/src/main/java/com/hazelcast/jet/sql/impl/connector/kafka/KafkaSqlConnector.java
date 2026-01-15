@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 

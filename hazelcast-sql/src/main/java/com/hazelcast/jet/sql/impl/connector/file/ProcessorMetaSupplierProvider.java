@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ class ProcessorMetaSupplierProvider implements Supplier<ProcessorMetaSupplier> {
             }
 
             Object value = entry.getValue();
-            if (value instanceof String) {
-                builder.option(key, (String) value);
+            if (value instanceof String string) {
+                builder.option(key, string);
             } else if (value instanceof Map) {
                 for (Map.Entry<String, String> option : ((Map<String, String>) value).entrySet()) {
                     builder.option(option.getKey(), option.getValue());

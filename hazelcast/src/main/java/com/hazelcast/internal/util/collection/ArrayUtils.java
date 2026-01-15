@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,7 @@ public final class ArrayUtils {
      */
     public static <T> T[] append(T[] array1, T[] array2) {
         T[] dst = (T[]) Array.newInstance(array1.getClass().getComponentType(), array1.length + array2.length);
-        System.arraycopy(array1, 0, dst, 0, array1.length);
-        System.arraycopy(array2, 0, dst, array1.length, array2.length);
+        concat(array1, array2, dst);
         return dst;
     }
 

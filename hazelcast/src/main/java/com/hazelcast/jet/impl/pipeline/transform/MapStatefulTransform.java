@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
@@ -37,7 +38,8 @@ public class MapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase
     private static final long serialVersionUID = 1L;
 
     private final TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn;
-    @Nullable private TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn;
+    @Nullable private final TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn;
+    @Nullable private final TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate;
 
     public MapStatefulTransform(
             @Nonnull Transform upstream,
@@ -46,10 +48,12 @@ public class MapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
         super("map-stateful-keyed", upstream, ttl, keyFn, timestampFn, createFn);
         this.statefulMapFn = statefulMapFn;
+        this.deleteStatePredicate = deleteStatePredicate;
         this.onEvictFn = onEvictFn;
     }
 
@@ -57,7 +61,7 @@ public class MapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
-                mapStatefulP(ttl, keyFn, timestampFn, createFn, statefulMapFn, onEvictFn));
+                mapStatefulP(ttl, keyFn, timestampFn, createFn, statefulMapFn, deleteStatePredicate, onEvictFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

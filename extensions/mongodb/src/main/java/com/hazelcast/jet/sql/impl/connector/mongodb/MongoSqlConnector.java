@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
             Object predicateRaw = predicate == null
                     ? Filters.empty()
                     : predicate.unwrap(RexNode.class).accept(visitor);
-            Serializable translated = predicateRaw instanceof Bson
-                    ? Mappers.bsonToDocument((Bson) predicateRaw)
+            Serializable translated = predicateRaw instanceof Bson b
+                    ? Mappers.bsonToDocument(b)
                     : (Serializable) predicateRaw;
 
             return context.getDag().newUniqueVertex(
@@ -128,8 +128,8 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
                     ? UPDATE_ALL_PREDICATE
                     : predicate.unwrap(RexNode.class).accept(new RexToMongoVisitor());
             Serializable predicateToSend;
-            if (predicateTranslated instanceof Bson) {
-                predicateToSend = Mappers.bsonToDocument((Bson) predicateTranslated);
+            if (predicateTranslated instanceof Bson bson) {
+                predicateToSend = Mappers.bsonToDocument(bson);
             } else {
                 assert predicateTranslated instanceof Serializable;
                 predicateToSend = (Serializable) predicateTranslated;

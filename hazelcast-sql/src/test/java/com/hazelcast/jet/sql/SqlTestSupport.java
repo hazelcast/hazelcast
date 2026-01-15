@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -809,8 +809,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static String toSQL(Object value) {
-        if (value instanceof Object[]) {
-            return "(" + Arrays.stream((Object[]) value).map(SqlTestSupport::toSQL).collect(joining(", ")) + ")";
+        if (value instanceof Object[] objects) {
+            return "(" + Arrays.stream(objects).map(SqlTestSupport::toSQL).collect(joining(", ")) + ")";
         }
         return value == null || value instanceof Boolean || value instanceof Number
                 ? String.valueOf(value) : "'" + value + "'";

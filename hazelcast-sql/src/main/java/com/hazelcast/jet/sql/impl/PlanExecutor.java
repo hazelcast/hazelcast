@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
@@ -740,8 +740,7 @@ public class PlanExecutor {
 
             // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
             final List<String> orderedKeyAttributes = new ArrayList<>();
-            if (strategy instanceof AttributePartitioningStrategy) {
-                final var attributeStrategy = (AttributePartitioningStrategy) strategy;
+            if (strategy instanceof AttributePartitioningStrategy attributeStrategy) {
                 orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
             } else {
                 orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
@@ -809,8 +808,8 @@ public class PlanExecutor {
 
     private static int findQueryExceptionCode(Throwable t) {
         while (t != null) {
-            if (t instanceof QueryException) {
-                return ((QueryException) t).getCode();
+            if (t instanceof QueryException exception) {
+                return exception.getCode();
             }
             if (isTopologyException(t)) {
                 return SqlErrorCode.TOPOLOGY_CHANGE;

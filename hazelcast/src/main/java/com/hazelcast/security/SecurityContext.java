@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.security;
 
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -99,6 +100,14 @@ public interface SecurityContext {
      */
     void checkPermission(Subject subject, Permission permission) throws AccessControlException;
 
+    /**
+     * Checks whether all {@link Subject}s have been granted specified permission or not.
+     *
+     * @param permission the specified permission for the subject
+     * @throws AccessControlException if the specified permission has not been granted to the subject
+     */
+    @PrivateApi
+    void checkGlobalPermission(Permission permission) throws AccessControlException;
 
     /**
      * intercepts a request before process if any {@link SecurityInterceptor} configured

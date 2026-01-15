@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,8 +116,8 @@ public class HazelcastCallBinding extends SqlCallBinding {
     private static Collection<SqlNode> getOperands(SqlCall call) {
         SqlOperator operator = call.getOperator();
 
-        if (operator instanceof HazelcastCallBindingSignatureErrorAware) {
-            return ((HazelcastCallBindingSignatureErrorAware) operator).getOperandsForSignatureError(call);
+        if (operator instanceof HazelcastCallBindingSignatureErrorAware aware) {
+            return aware.getOperandsForSignatureError(call);
         } else {
             return call.getOperandList();
         }

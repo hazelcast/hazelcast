@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnectionTest.isClosed;
-import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QuoteIdentifierUtil.quoteCompoundIdentifier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 

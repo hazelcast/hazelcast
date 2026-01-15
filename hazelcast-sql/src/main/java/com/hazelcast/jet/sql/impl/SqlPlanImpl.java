@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -1385,8 +1385,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
-                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression<?> pe
+                    ? pe.getIndex()
                     : -1;
         }
 
@@ -1625,8 +1625,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.updaterSupplier = updaterSupplier;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
-                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression<?> pe
+                    ? pe.getIndex()
                     : -1;
         }
 
@@ -1709,8 +1709,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
-                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression<?> pe
+                    ? pe.getIndex()
                     : -1;
         }
 

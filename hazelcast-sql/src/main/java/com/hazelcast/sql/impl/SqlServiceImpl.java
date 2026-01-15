@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,8 +238,8 @@ public class SqlServiceImpl implements InternalSqlService {
     }
 
     private void updateSqlStreamingQueriesExecuted(SqlResult sqlResult) {
-        if (sqlResult instanceof AbstractSqlResult) {
-            if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
+        if (sqlResult instanceof AbstractSqlResult result) {
+            if (result.isInfiniteRows()) {
                 sqlStreamingQueriesExecuted.inc();
             }
         }

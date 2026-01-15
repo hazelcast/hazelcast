@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,7 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
-            if (node instanceof RexInputRef) {
-                RexInputRef rexInputRef = (RexInputRef) node;
+            if (node instanceof RexInputRef rexInputRef) {
                 SqlIdentifier field = (SqlIdentifier) context.field(rexInputRef.getIndex());
                 QueryDataType fieldType = jdbcTable.getFieldByExternalName(field.getSimple()).getType();
                 converters.add(fieldType::convert);

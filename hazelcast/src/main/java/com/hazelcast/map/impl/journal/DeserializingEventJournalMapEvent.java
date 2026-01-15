@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.EventJournalMapEvent;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.IOException;
 
@@ -39,12 +40,20 @@ public class DeserializingEventJournalMapEvent<K, V>
     private V objectNewValue;
     private V objectOldValue;
 
+    private boolean lostEventsDetected;
+
+
     public DeserializingEventJournalMapEvent() {
     }
 
-    public DeserializingEventJournalMapEvent(SerializationService serializationService, InternalEventJournalMapEvent je) {
+    public DeserializingEventJournalMapEvent(
+            SerializationService serializationService,
+            InternalEventJournalMapEvent je,
+            boolean lostEventsDetected
+    ) {
         super(je.getDataKey(), je.getDataNewValue(), je.getDataOldValue(), je.getEventType());
         this.serializationService = serializationService;
+        this.lostEventsDetected = lostEventsDetected;
     }
 
     @Override
@@ -87,6 +96,25 @@ public class DeserializingEventJournalMapEvent<K, V>
         IOUtil.writeData(out, toData(dataKey, objectKey));
         IOUtil.writeData(out, toData(dataNewValue, objectNewValue));
         IOUtil.writeData(out, toData(dataOldValue, objectOldValue));
+        out.writeBoolean(lostEventsDetected);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        eventType = in.readInt();
+        dataKey = IOUtil.readData(in);
+        dataNewValue = IOUtil.readData(in);
+        dataOldValue = IOUtil.readData(in);
+        // Provides compatibility between the new client version (5.7) and an older member.
+        // This is required to ensure compatibility when a new cluster reads the remote journal
+        // from an older cluster.
+        // This compatibility works only if each entry is serialized individually.
+        // See {@link Sources#remoteMapJournal} and similar methods in Sources.
+        try {
+            lostEventsDetected = in.readBoolean();
+        } catch (IOException ignored) {
+            // ignored
+        }
     }
 
     private Data toData(Data data, Object o) {
@@ -96,5 +124,10 @@ public class DeserializingEventJournalMapEvent<K, V>
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         serializationService = ((SerializationServiceSupport) hazelcastInstance).getSerializationService();
+    }
+
+    @Override
+    public boolean isAfterLostEvents() {
+        return lostEventsDetected;
     }
 }

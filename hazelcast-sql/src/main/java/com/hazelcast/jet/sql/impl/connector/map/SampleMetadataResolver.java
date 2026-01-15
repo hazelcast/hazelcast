@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,7 @@ final class SampleMetadataResolver {
     @SuppressWarnings("checkstyle:returncount")
     static Metadata resolve(InternalSerializationService ss, Object target, boolean key) {
         try {
-            if (target instanceof Data) {
-                Data data = (Data) target;
+            if (target instanceof Data data) {
                 if (data.isPortable()) {
                     ClassDefinition classDefinition = ss.getPortableContext().lookupClassDefinition(data);
                     return resolvePortable(classDefinition, key);
@@ -72,20 +71,18 @@ final class SampleMetadataResolver {
                 } else {
                     return resolveJava(ss.toObject(data).getClass(), key);
                 }
-            } else if (target instanceof VersionedPortable) {
-                VersionedPortable portable = (VersionedPortable) target;
+            } else if (target instanceof VersionedPortable portable) {
                 ClassDefinition classDefinition = ss.getPortableContext()
                         .lookupClassDefinition(portable.getFactoryId(), portable.getClassId(), portable.getClassVersion());
                 return resolvePortable(classDefinition, key);
-            } else if (target instanceof Portable) {
-                Portable portable = (Portable) target;
+            } else if (target instanceof Portable portable) {
                 ClassDefinition classDefinition = ss.getPortableContext()
                         .lookupClassDefinition(portable.getFactoryId(), portable.getClassId(), 0);
                 return resolvePortable(classDefinition, key);
-            } else if (target instanceof PortableGenericRecord) {
-                return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key);
-            } else if (target instanceof CompactGenericRecord) {
-                return resolveCompact(((CompactGenericRecord) target).getSchema(), key);
+            } else if (target instanceof PortableGenericRecord portableRecord) {
+                return resolvePortable(portableRecord.getClassDefinition(), key);
+            } else if (target instanceof CompactGenericRecord genericRecord) {
+                return resolveCompact(genericRecord.getSchema(), key);
             } else if (ss.isCompactSerializable(target)) {
                 Schema schema = ss.extractSchemaFromObject(target);
                 return resolveCompact(schema, key);

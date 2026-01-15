@@ -166,7 +166,7 @@
         <notes><![CDATA[
         False positive - misidentifying Hazelcast as MySQL
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-(enterprise-)?jet-cdc-mysql@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-(enterprise|jet)-cdc-mysql@.*$</packageUrl>
         <cve>CVE-2017-15945</cve>
     </suppress>
     <suppress>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,8 @@ import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.PermissionConfig.PermissionType.SQL;
+import static com.hazelcast.config.PermissionConfig.PermissionType.USER_CODE_NAMESPACE;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
@@ -133,6 +135,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
             + "<action>destroy</action>"
             + "<action>add</action>"
             + "<action>remove</action>"
+            + "<action>use</action>"
             + "</actions>";
 
     @Override
@@ -3863,7 +3866,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertSame("Receive is expected to be default on-join-operation", OnJoinPermissionOperationName.RECEIVE,
                 config.getSecurityConfig().getOnJoinPermissionOperation());
         PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
-        expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
+        expected.addAction("create").addAction("destroy").addAction("add").addAction("remove").addAction("use");
         assertPermissionConfig(expected, config);
         assertFalse(config.getSecurityConfig().isPermissionPriorityGrant());
     }
@@ -3884,6 +3887,52 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
         assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
+    }
+
+    @Override
+    @Test
+    public void testUserCodeNamespacePermission() {
+        String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
+                     + "  <client-permissions>"
+                     + "    <user-code-namespace-permission name=\"test-ucn\" principal=\"dev\">"
+                     + ACTIONS_FRAGMENT
+                     + "    </user-code-namespace-permission>\n"
+                     + "  </client-permissions>"
+                     + SECURITY_END_TAG + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        PermissionConfig expected = new PermissionConfig(USER_CODE_NAMESPACE, "test-ucn", "dev");
+        expected.addAction("create").addAction("destroy").addAction("add").addAction("remove").addAction("use");
+        assertPermissionConfig(expected, config);
+        assertFalse(config.getSecurityConfig().isPermissionPriorityGrant());
+    }
+
+    @Override
+    @Test
+    public void testSqlPermission() {
+        String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
+                     + "  <client-permissions>"
+                     + "    <sql-permission name=\"test-sql\" principal=\"dev\">"
+                     + "      <actions>"
+                     + "        <action>view-mapping</action>"
+                     + "        <action>create-view</action>"
+                     + "        <action>drop-view</action>"
+                     + "        <action>create-type</action>"
+                     + "        <action>drop-type</action>"
+                     + "        <action>view-dataconnection</action>"
+                     + "        <action>create-dataconnection</action>"
+                     + "        <action>drop-dataconnection</action>"
+                     + "      </actions>"
+                     + "    </sql-permission>\n"
+                     + "  </client-permissions>"
+                     + SECURITY_END_TAG + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        PermissionConfig expected = new PermissionConfig(SQL, "test-sql", "dev");
+        expected.addAction("view-mapping").addAction("create-view").addAction("drop-view").addAction("create-type")
+                .addAction("drop-type").addAction("view-dataconnection").addAction("create-dataconnection")
+                .addAction("drop-dataconnection");
+        assertPermissionConfig(expected, config);
+        assertFalse(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override

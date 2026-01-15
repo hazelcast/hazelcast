@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,8 @@ public class AvroQueryTarget implements QueryTarget {
             return null;
         }
         Object value = record.get(path);
-        if (value instanceof Utf8) {
-            return ((Utf8) value).toString();
+        if (value instanceof Utf8 utf8) {
+            return utf8.toString();
         } else {
             return value;
         }

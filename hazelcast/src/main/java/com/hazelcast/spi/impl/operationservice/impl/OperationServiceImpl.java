@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_MAX_RETRY_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -466,6 +467,13 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invoke();
+    }
+
+    @Override
+    public Map<Integer, Object> invokeOnRelevantLocalPartitions(String serviceName, OperationFactory operationFactory,
+                                                                  int maxReplicaIndex, long timeoutMillis) throws Exception {
+        InvokeOnLocalPartitions invokeOnLocal = new InvokeOnLocalPartitions(this, serviceName, operationFactory, maxReplicaIndex);
+        return timeoutMillis > 0 ? invokeOnLocal.invokeAsync().get(timeoutMillis, MILLISECONDS) : invokeOnLocal.invoke();
     }
 
     @Override

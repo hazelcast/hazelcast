@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,6 @@ public interface RaftStateStore extends Closeable {
      * the follower receives a snapshot from the leader. There is no upper bound
      * on the gap between the newest log entry and the index of the received
      * snapshot.
-     * </ul>
      *
      * @see #flushLogs()
      * @see #persistEntry(LogEntry)
@@ -176,7 +175,6 @@ public interface RaftStateStore extends Closeable {
      * the follower receives a snapshot from the leader. There is no upper bound
      * on the gap between the newest log entry and the index of the received
      * snapshot.
-     * </ul>
      *
      * @see #flushLogs()
      * @see #persistEntry(LogEntry)

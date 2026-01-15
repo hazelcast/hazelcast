@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.processor.AggregateP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
@@ -968,7 +969,11 @@ public final class Processors {
      * @param ttl               state object's time to live
      * @param keyFn             function to extract the key from an input item
      * @param createFn          supplier of the state object
-     * @param statefulMapFn the stateful mapping function
+     * @param statefulMapFn     the stateful mapping function
+     * @param deleteStatePredicate
+     *                          predicate that indicates whether the state should be deleted
+     *                          immediately after processing the current item.
+     * @param onEvictFn         function that is invoked when the state is evicted due to TTL expiration
      * @param <T>               type of the input item
      * @param <K>               type of the key
      * @param <S>               type of the state object
@@ -981,6 +986,7 @@ public final class Processors {
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
         return () -> {
@@ -997,6 +1003,7 @@ public final class Processors {
                         mainTrav.accept(statefulMapFn.apply(state, key, item));
                         return mainTrav;
                     },
+                    deleteStatePredicate,
                     onEvictFnCopy != null ? (s, k, wm) -> {
                         evictTrav.accept(onEvictFnCopy.apply(s, k, wm));
                         return evictTrav;
@@ -1026,6 +1033,10 @@ public final class Processors {
      * @param keyFn             function to extract the key from an input item
      * @param createFn          supplier of the state object
      * @param statefulFlatMapFn the stateful mapping function
+     * @param deleteStatePredicate
+     *                          predicate that indicates whether the state should be deleted
+     *                          immediately after processing the current item.
+     * @param onEvictFn         function that is invoked when the state is evicted due to TTL expiration
      * @param <T>               type of the input item
      * @param <K>               type of the key
      * @param <S>               type of the state object
@@ -1038,6 +1049,7 @@ public final class Processors {
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> statefulFlatMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
         return () -> new TransformStatefulP<>(
@@ -1046,6 +1058,7 @@ public final class Processors {
                 timestampFn,
                 createFn,
                 statefulFlatMapFn,
+                deleteStatePredicate,
                 onEvictFn
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -44,12 +44,17 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     }
 
     @Override
-    public void addItem(long seq, Object item) {
+    public boolean addItem(long seq, Object item) {
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalMapEvent e = (InternalEventJournalMapEvent) item;
+        var lostEventsDetected = getLostEventsFlag();
         final DeserializingEventJournalMapEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalMapEvent<>(serializationService, e);
-        super.addItem(seq, deserialisingEvent);
+                = new DeserializingEventJournalMapEvent<>(serializationService, e, lostEventsDetected);
+        var added = super.addItem(seq, deserialisingEvent);
+        if (lostEventsDetected && added) {
+            clearLostEventsFlag();
+        }
+        return added;
     }
 
     @Override

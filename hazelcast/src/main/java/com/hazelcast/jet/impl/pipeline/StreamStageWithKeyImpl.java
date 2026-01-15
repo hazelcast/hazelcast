@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,18 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
             @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
-        return attachMapStateful(ttl, createFn, mapFn, onEvictFn);
+        return attachMapStateful(ttl, createFn, mapFn, null, onEvictFn);
+    }
+
+    @Nonnull @Override
+    public <S, R> StreamStage<R> mapStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
+            @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
+    ) {
+        return attachMapStateful(ttl, createFn, mapFn, deleteStatePredicate, onEvictFn);
     }
 
     @Nonnull @Override
@@ -62,16 +73,18 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
-        return attachMapStateful(0, createFn, mapFn, null);
+        return attachMapStateful(0, createFn, mapFn, null, null);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S> StreamStage<T> filterStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate
     ) {
-        return attachMapStateful(ttl, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, null);
+        return attachMapStateful(ttl, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, deleteStatePredicate, null);
     }
 
     @Nonnull @Override
@@ -81,7 +94,18 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
             @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
-        return attachFlatMapStateful(ttl, createFn, flatMapFn, onEvictFn);
+        return attachFlatMapStateful(ttl, createFn, flatMapFn, null, onEvictFn);
+    }
+
+    @Nonnull @Override
+    public <S, R> StreamStage<R> flatMapStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
+            @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
+    ) {
+        return attachFlatMapStateful(ttl, createFn, flatMapFn, deleteStatePredicate, onEvictFn);
     }
 
     @Nonnull @Override
@@ -89,7 +113,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
-        return attachFlatMapStateful(0, createFn, flatMapFn, null);
+        return attachFlatMapStateful(0, createFn, flatMapFn, null, null);
     }
 
     @Nonnull @Override

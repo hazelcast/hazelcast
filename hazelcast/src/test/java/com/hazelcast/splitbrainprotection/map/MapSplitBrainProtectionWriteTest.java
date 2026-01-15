@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -257,6 +258,22 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
     @Test(expected = SplitBrainProtectionException.class)
     public void flush_failing_whenSplitBrainProtectionSize_met() {
         map(3).flush();
+    }
+
+    @Test
+    public void flushAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(0) instanceof MapProxyImpl);
+
+        ((MapProxyImpl<?, ?>) map(0)).flushAsync().get();
+    }
+
+    @Test
+    public void flushAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(3) instanceof MapProxyImpl);
+
+        assertThat(((MapProxyImpl<?, ?>) map(3)).flushAsync())
+                .failsWithin(ASSERT_TRUE_EVENTUALLY_TIMEOUT_DURATION)
+                .withThrowableThat().withRootCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test

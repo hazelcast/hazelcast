@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,26 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.AbstractInvokeOnPartitions;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
-import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Executes an operation on a set of partitions.
  */
-final class InvokeOnPartitions {
-
-    private static final int TRY_COUNT = 10;
-    private static final int TRY_PAUSE_MILLIS = 300;
+final class InvokeOnPartitions extends AbstractInvokeOnPartitions {
 
     private static final Object NULL_RESULT = new Object() {
         @Override
@@ -55,24 +44,14 @@ final class InvokeOnPartitions {
         }
     };
 
-    private final OperationServiceImpl operationService;
-    private final String serviceName;
-    private final OperationFactory operationFactory;
     private final Map<Address, List<Integer>> memberPartitions;
-    private final ILogger logger;
     private final AtomicReferenceArray<Object> partitionResults;
     private final AtomicInteger latch;
-    private final CompletableFuture future;
-    private final Executor internalAsyncExecutor;
-    private boolean invoked;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
                        Map<Address, List<Integer>> memberPartitions) {
-        this.operationService = operationService;
-        this.serviceName = serviceName;
-        this.operationFactory = operationFactory;
+        super(operationService.nodeEngine, operationService, serviceName, operationFactory);
         this.memberPartitions = memberPartitions;
-        this.logger = operationService.node.loggingService.getLogger(getClass());
         int partitionCount = operationService.nodeEngine.getPartitionService().getPartitionCount();
         // this is the total number of partitions for which we actually have operation
         int actualPartitionCount = 0;
@@ -81,34 +60,12 @@ final class InvokeOnPartitions {
         }
         this.partitionResults = new AtomicReferenceArray<>(partitionCount);
         this.latch = new AtomicInteger(actualPartitionCount);
-        this.future = new CompletableFuture();
-        this.internalAsyncExecutor = operationService.nodeEngine.getExecutionService()
-                .getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
-    /**
-     * Executes all the operations on the partitions.
-     */
-    <T> Map<Integer, T> invoke() throws Exception {
-        return this.<T>invokeAsync().get();
-    }
-
-    /**
-     * Executes all the operations on the partitions.
-     */
-    @SuppressWarnings("unchecked")
-    <T> CompletableFuture<Map<Integer, T>> invokeAsync() {
-        assert !invoked : "already invoked";
-        invoked = true;
+    @Override
+    protected void doInvoke() {
         ensureNotCallingFromPartitionOperationThread();
         invokeOnAllPartitions();
-        return future;
-    }
-
-    private void ensureNotCallingFromPartitionOperationThread() {
-        if (Thread.currentThread() instanceof PartitionOperationThread) {
-            throw new IllegalThreadStateException(Thread.currentThread() + " cannot make invocation on multiple partitions!");
-        }
     }
 
     private void invokeOnAllPartitions() {
@@ -121,32 +78,21 @@ final class InvokeOnPartitions {
             List<Integer> partitions = mp.getValue();
             PartitionIteratingOperation op = new PartitionIteratingOperation(operationFactory, toIntArray(partitions));
             operationService.createInvocationBuilder(serviceName, op, address)
-                    .setTryCount(TRY_COUNT)
-                    .setTryPauseMillis(TRY_PAUSE_MILLIS)
-                    .invoke()
-                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions), internalAsyncExecutor)
-                    .handleAsync((result, exception) -> {
-                        if (exception != null) {
-                            logger.warning(exception);
-                        }
-                        return result;
-                    }, internalAsyncExecutor);
+                            .setTryCount(TRY_COUNT)
+                            .setTryPauseMillis(TRY_PAUSE_MILLIS)
+                            .invoke()
+                            .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions), internalAsyncExecutor)
+                            .handleAsync((result, exception) -> {
+                                if (exception != null) {
+                                    logger.warning(exception);
+                                }
+                                return result;
+                            }, internalAsyncExecutor);
         }
     }
 
     private void retryPartition(final int partitionId) {
-        Operation op;
-        PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
-        if (partitionAwareFactory != null) {
-            op = partitionAwareFactory.createPartitionOperation(partitionId);
-        } else {
-            op = operationFactory.createOperation();
-        }
-        // Only operations which expect a response should be invoked, otherwise they may not be de-registered
-        assert op.returnsResponse() || op instanceof SelfResponseOperation : String.format(
-                "Operation '%s' does not handle responses - this will break Future completion!", op.getClass().getSimpleName());
-
-        operationService.createInvocationBuilder(serviceName, op, partitionId)
+        operationService.createInvocationBuilder(serviceName, createOperation(partitionId), partitionId)
                         .invoke()
                         .whenCompleteAsync((response, throwable) -> {
                             if (throwable == null) {

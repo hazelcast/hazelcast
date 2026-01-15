@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import com.hazelcast.version.Version;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -267,8 +268,10 @@ public class ClusterStateManager {
     // wraps NodeExtension#isNodeVersionCompatibleWith(Version) and throws a VersionMismatchException if incompatibility is found.
     private void validateNodeCompatibleWith(Version clusterVersion) {
         if (!node.getNodeExtension().isNodeVersionCompatibleWith(clusterVersion)) {
+            Set<Version> supportedVersions = node.getNodeExtension().getSupportedVersions();
             throw new VersionMismatchException("Node's codebase version " + node.getVersion() + " is incompatible with "
-                    + "the requested cluster version " + clusterVersion);
+                                                       + "the requested cluster version " + clusterVersion
+                                                       + ". Node is compatible with: " + supportedVersions);
         }
     }
 

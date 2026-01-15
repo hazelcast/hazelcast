@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,8 +129,8 @@ public class SqlExtendedInsert extends SqlInsert {
 
         for (SqlNode fieldNode : getTargetColumnList()) {
             TableField field = fieldsMap.get(((SqlIdentifier) fieldNode).getSimple());
-            if (field instanceof MapTableField) {
-                QueryPath path = ((MapTableField) field).getPath();
+            if (field instanceof MapTableField tableField) {
+                QueryPath path = tableField.getPath();
                 if (path.getPath() == null
                         && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT
                         && !objectTypeSupportsTopLevelUpserts(field.getType())) {

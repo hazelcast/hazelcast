@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ public final class HazelcastRelSubsetUtil {
      *  Otherwise, return the node.
      */
     public static RelNode unwrapSubset(RelNode node) {
-        if (node instanceof RelSubset) {
-            RelNode best = ((RelSubset) node).getBest();
+        if (node instanceof RelSubset subset) {
+            RelNode best = subset.getBest();
             if (best != null) {
                 return unwrapSubset(best);
             }

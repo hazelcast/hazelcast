@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -522,9 +522,9 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
             fail("Execution was successful whereas failure was expected.");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            assertTrue("Cause is of type " + cause.getClass().toString(),
+            assertTrue("Cause is of type " + cause.getClass(),
                     cause.getClass().isAssignableFrom(expectedExceptionType));
-            assertEquals(expectedExceptionMsg, cause.getMessage());
+            assertContains(cause.getMessage(), expectedExceptionMsg);
         }
     }
 

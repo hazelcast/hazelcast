@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
 package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.IOException;
 
@@ -39,13 +40,19 @@ public class DeserializingEventJournalCacheEvent<K, V>
     private K objectKey;
     private V objectNewValue;
     private V objectOldValue;
+    private boolean lostEventsDetected;
 
     public DeserializingEventJournalCacheEvent() {
     }
 
-    public DeserializingEventJournalCacheEvent(SerializationService serializationService, InternalEventJournalCacheEvent je) {
+    public DeserializingEventJournalCacheEvent(
+            SerializationService serializationService,
+            InternalEventJournalCacheEvent je,
+            boolean lostEventsDetected
+    ) {
         super(je.getDataKey(), je.getDataNewValue(), je.getDataOldValue(), je.getEventType());
         this.serializationService = serializationService;
+        this.lostEventsDetected = lostEventsDetected;
     }
 
     @Override
@@ -83,11 +90,35 @@ public class DeserializingEventJournalCacheEvent<K, V>
     }
 
     @Override
+    public boolean isAfterLostEvents() {
+        return lostEventsDetected;
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        eventType = in.readInt();
+        dataKey = IOUtil.readData(in);
+        dataNewValue = IOUtil.readData(in);
+        dataOldValue = IOUtil.readData(in);
+        // Provides compatibility between the new client version (5.7) and an older member.
+        // This is required to ensure compatibility when a new cluster reads the remote journal
+        // from an older cluster.
+        // This compatibility works only if each entry is serialized individually.
+        // See {@link Sources#remoteCacheJournal} and similar methods in Sources.
+        try {
+            lostEventsDetected = in.readBoolean();
+        } catch (IOException ignored) {
+            // ignored
+        }
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(eventType);
         IOUtil.writeData(out, toData(dataKey, objectKey));
         IOUtil.writeData(out, toData(dataNewValue, objectNewValue));
         IOUtil.writeData(out, toData(dataOldValue, objectOldValue));
+        out.writeBoolean(lostEventsDetected);
     }
 
     private Data toData(Data data, Object o) {

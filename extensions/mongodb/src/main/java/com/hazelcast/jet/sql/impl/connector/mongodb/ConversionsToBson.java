@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,8 +207,8 @@ public final class ConversionsToBson {
     }
 
     private static Collection<?> convertToArray(Object value) {
-        if (value instanceof Collection) {
-            return (Collection<?>) value;
+        if (value instanceof Collection<?> collection) {
+            return collection;
         }
 
         return singletonList(value);

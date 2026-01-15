@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ public interface DataSerializerHook {
 
     int F_ID_OFFSET_WEBMODULE = -1000;
     int F_ID_OFFSET_HIBERNATE = -2000;
+    int F_ID_OFFSET_SPRING_SESSION = -3000;
 
     int getFactoryId();
 

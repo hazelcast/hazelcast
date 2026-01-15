@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,27 +63,25 @@ public final class ConversionsFromBson {
         // common unwrapping to standard types
         Object value = BsonTypes.unwrapSimpleWrappers(toConvert);
         if (sqlType.getTypeFamily() == JSON) {
-            if (value instanceof String) {
-                return new HazelcastJsonValue((String) value);
+            if (value instanceof String string) {
+                return new HazelcastJsonValue(string);
             }
-            if (value instanceof Document) {
-                Document doc = (Document) value;
+            if (value instanceof Document doc) {
                 return new HazelcastJsonValue(doc.toJson());
             }
-            if (value instanceof BsonDocument) {
-                BsonDocument doc = (BsonDocument) value;
+            if (value instanceof BsonDocument doc) {
                 return new HazelcastJsonValue(doc.toJson());
             }
         }
 
-        if (value instanceof ObjectId) {
-            value = convertObjectId((ObjectId) value, sqlType);
+        if (value instanceof ObjectId id) {
+            value = convertObjectId(id, sqlType);
         }
-        else if (toConvert instanceof BsonDateTime) {
-            value = convertDateTime((BsonDateTime) toConvert, sqlType);
+        else if (toConvert instanceof BsonDateTime time) {
+            value = convertDateTime(time, sqlType);
         }
-        else if (toConvert instanceof BsonTimestamp) {
-            value = convertTimestamp((BsonTimestamp) toConvert, sqlType);
+        else if (toConvert instanceof BsonTimestamp timestamp) {
+            value = convertTimestamp(timestamp, sqlType);
         }
         else if (toConvert instanceof BsonMinKey || toConvert instanceof BsonMaxKey
                 || toConvert instanceof MinKey || toConvert instanceof MaxKey) {
@@ -91,14 +89,14 @@ public final class ConversionsFromBson {
                 value = toConvert.toString();
             }
         }
-        else if (toConvert instanceof Date) {
-            value = convertJavaDate((Date) toConvert, sqlType);
+        else if (toConvert instanceof Date date) {
+            value = convertJavaDate(date, sqlType);
         }
-        else if (toConvert instanceof Document && sqlType.getTypeFamily() == VARCHAR) {
-            value = ((Document) toConvert).toJson();
+        else if (toConvert instanceof Document document && sqlType.getTypeFamily() == VARCHAR) {
+            value = document.toJson();
         }
-        else if (toConvert instanceof BsonDocument && sqlType.getTypeFamily() == VARCHAR) {
-            value = ((BsonDocument) toConvert).toJson();
+        else if (toConvert instanceof BsonDocument document && sqlType.getTypeFamily() == VARCHAR) {
+            value = document.toJson();
         }
         return sqlType.convert(value);
     }

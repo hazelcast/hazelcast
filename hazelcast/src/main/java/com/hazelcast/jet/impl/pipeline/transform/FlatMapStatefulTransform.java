@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
@@ -39,6 +40,7 @@ public class FlatMapStatefulTransform<T, K, S, R> extends StatefulKeyedTransform
 
     private final TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> statefulFlatMapFn;
     private final TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn;
+    private final TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate;
 
     public FlatMapStatefulTransform(
             @Nonnull Transform upstream,
@@ -47,18 +49,20 @@ public class FlatMapStatefulTransform<T, K, S, R> extends StatefulKeyedTransform
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
         super("flatmap-stateful-keyed", upstream, ttl, keyFn, timestampFn, createFn);
         this.statefulFlatMapFn = flatMapFn;
         this.onEvictFn = onEvictFn;
+        this.deleteStatePredicate = deleteStatePredicate;
     }
 
     @Override
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
-                flatMapStatefulP(ttl, keyFn, timestampFn, createFn, statefulFlatMapFn, onEvictFn));
+                flatMapStatefulP(ttl, keyFn, timestampFn, createFn, statefulFlatMapFn, deleteStatePredicate, onEvictFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,10 @@ class StageWithGroupingBase<T, K> {
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
-        return computeStage.attachMapStateful(ttl, keyFn(), createFn, mapFn, onEvictFn);
+        return computeStage.attachMapStateful(ttl, keyFn(), createFn, mapFn, deleteStatePredicate, onEvictFn);
     }
 
     @Nonnull
@@ -66,9 +67,10 @@ class StageWithGroupingBase<T, K> {
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nullable TriPredicate<? super S, ? super K, ? super T> deleteStatePredicate,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
-        return computeStage.attachFlatMapStateful(ttl, keyFn(), createFn, flatMapFn, onEvictFn);
+        return computeStage.attachFlatMapStateful(ttl, keyFn(), createFn, flatMapFn, deleteStatePredicate, onEvictFn);
     }
 
     @Nonnull

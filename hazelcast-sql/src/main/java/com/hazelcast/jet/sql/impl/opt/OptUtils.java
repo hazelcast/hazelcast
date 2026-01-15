@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Hazelcast Inc.
+ * Copyright 2026 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -288,9 +288,9 @@ public final class OptUtils {
     @SuppressWarnings("unchecked")
     @Nullable
     public static <T> T findMatchingRel(RelNode node, RelOptRuleOperand operandPredicate) {
-        if (node instanceof RelSubset) {
+        if (node instanceof RelSubset subset) {
             RelNode res = null;
-            for (RelNode rel : ((RelSubset) node).getRels()) {
+            for (RelNode rel : subset.getRels()) {
                 if (operandPredicate.matches(rel)) {
                     if (res != null) {
                         throw new RuntimeException("multiple matches found");
@@ -565,7 +565,7 @@ public final class OptUtils {
         for (int i = 0; i < calcProgram.getProjectList().size(); i++) {
             int expressionIndex = calcProgram.getProjectList().get(i).getIndex();
             RexNode expr = calcProgram.getExprList().get(expressionIndex);
-            if (expr instanceof RexInputRef && ((RexInputRef) expr).getIndex() == inputFieldIndex) {
+            if (expr instanceof RexInputRef ref && ref.getIndex() == inputFieldIndex) {
                 return i;
             }
         }
