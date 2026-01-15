@@ -60,7 +60,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void clear(boolean isDuringShutdown) {
+    public void clear() {
         records.clear();
 
         entryCostEstimator.reset();
@@ -115,8 +115,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void destroy(boolean isDuringShutdown) {
-        clear(isDuringShutdown);
+    public void destroy() {
+        clear();
     }
 
     @Override

@@ -1640,7 +1640,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } finally {
             mapDataStore.reset();
             expirySystem.clear();
-            storage.clear(false);
+            storage.clear();
             stats.reset();
         }
     }
@@ -1666,7 +1666,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (onStorageDestroy) {
                 destroyStorageAfterClear(false, false, disposables);
             } else {
-                clearStorage(false);
+                clearStorage();
             }
         }
     }
@@ -1683,7 +1683,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         destroyExpirySystem(disposableQueue);
         destroyMetadataStore();
         // Destroy storage in the end
-        storage.destroy(isDuringShutdown);
+        storage.destroy();
     }
 
     private void destroyExpirySystem(Queue<Disposable> disposableQueue) {
@@ -1705,25 +1705,25 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     /**
-     * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
+     * Calls also {@link #clearStorage()} to release allocated HD memory
      * of key+value pairs because
      * only releases internal resources of backing data structure.
      *
-     * @param isDuringShutdown {@link Storage#clear(boolean)}
+     * @param isDuringShutdown {@link Storage#clear()}
      * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean)}}
      */
     public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal,
                                          @Nullable Queue<Disposable> deferredDisposables) {
-        clearStorage(isDuringShutdown);
+        clearStorage();
         destroyStorageImmediate(isDuringShutdown, internal, deferredDisposables);
     }
 
-    private void clearStorage(boolean isDuringShutdown) {
+    private void clearStorage() {
         try {
             mutationObserver.onClear();
         } finally {
             expirySystem.clear();
-            storage.clear(isDuringShutdown);
+            storage.clear();
         }
     }
 
