@@ -106,12 +106,9 @@ public interface Storage<K, R> {
 
     boolean isEmpty();
 
-    /**
-     * @param isDuringShutdown only used by hot-restart.
-     */
-    void clear(boolean isDuringShutdown);
+    void clear();
 
-    void destroy(boolean isDuringShutdown);
+    void destroy();
 
     EntryCostEstimator getEntryCostEstimator();
 
