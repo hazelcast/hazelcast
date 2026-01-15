@@ -56,6 +56,7 @@ import com.hazelcast.jet.impl.submitjob.memberside.validator.JarOnClientValidato
 import com.hazelcast.jet.impl.submitjob.memberside.validator.JarOnMemberValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
@@ -65,7 +66,10 @@ import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.AccessControlException;
+import java.security.Permission;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -588,5 +592,26 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     private HazelcastInstance getHazelcastInstance() {
         return getNodeEngine().getHazelcastInstance();
+    }
+
+    /**
+     * Add permission checks to given IMap if needed.
+     * Should check permissions except create and read permissions
+     * which are checked by the {@link com.hazelcast.jet.pipeline.ServiceFactory} itself.
+     *
+     * @param imap              IMap to wrap
+     * @param permissionChecker consumer that will check if given permission is granted
+     *                          and throw {@link AccessControlException} if it is not
+     * @param <K>               key type
+     * @param <V>               value type
+     * @return wrapped IMap
+     *
+     * @see com.hazelcast.jet.pipeline.ServiceFactory
+     * @see com.hazelcast.security.SecureCallable
+     */
+    @Nonnull
+    public <K, V> IMap<K, V> wrapInPermissions(@Nonnull IMap<K, V> imap, @Nonnull Consumer<Permission> permissionChecker) {
+        // security is not enabled - do not wrap
+        return imap;
     }
 }

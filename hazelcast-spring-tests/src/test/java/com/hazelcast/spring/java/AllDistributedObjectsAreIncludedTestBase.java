@@ -68,6 +68,7 @@ public abstract class AllDistributedObjectsAreIncludedTestBase {
         Set<Class<? extends  DistributedObject>> typesOfDistributedObjects = REFLECTIONS.getSubTypesOf(DistributedObject.class);
         typesOfDistributedObjects.removeIf(c -> !c.isInterface());
         typesOfDistributedObjects.removeIf(c -> c.getName().startsWith("Base"));
+        typesOfDistributedObjects.removeIf(c -> c.getName().endsWith("Internal"));
         typesOfDistributedObjects.removeIf(EXCEPTIONS::contains);
         typesOfDistributedObjects.removeIf(TransactionalObject.class::isAssignableFrom);
 

@@ -52,6 +52,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.IMapInternal;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -146,7 +147,7 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
 abstract class MapProxySupport<K, V>
         extends AbstractDistributedObject<MapService>
-        implements IMap<K, V>, InitializingObject {
+        implements IMapInternal<K, V>, InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_KEYS_ARE_NOT_ALLOWED = "Null keys collection is not allowed!";
@@ -1164,6 +1165,7 @@ abstract class MapProxySupport<K, V>
         }
     }
 
+    @Override
     public CompletableFuture<Void> flushAsync() {
         return flushAsync(null);
     }
@@ -1180,6 +1182,7 @@ abstract class MapProxySupport<K, V>
      *           {@link #flush()} could be implemented as {@code flushAsync().get()}.
      * @see #flush()
      */
+    @Override
     public CompletableFuture<Void> flushAsync(@Nullable Collection<Integer> partitionsToFlush) {
         try {
             MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);

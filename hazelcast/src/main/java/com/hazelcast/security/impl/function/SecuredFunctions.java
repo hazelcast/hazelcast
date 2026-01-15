@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.getJetServiceBackend;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
@@ -80,11 +81,16 @@ public final class SecuredFunctions {
 
             @Override
             public IMap<K, V> applyEx(Context context) {
-                return context.hazelcastInstance().getMap(name);
+                var jetServiceBackend = getJetServiceBackend(context.hazelcastInstance());
+                return jetServiceBackend.wrapInPermissions(
+                        context.hazelcastInstance().getMap(name),
+                        context::checkPermission);
             }
 
             @Override
             public List<Permission> permissions() {
+                // checks only read permissions, more permissions will be checked
+                // when other methods are used.
                 return singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
             }
         };

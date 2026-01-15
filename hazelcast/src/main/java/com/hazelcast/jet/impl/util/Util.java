@@ -108,6 +108,7 @@ import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 
@@ -790,6 +791,15 @@ public final class Util {
 
     public static NodeEngineImpl getNodeEngine(HazelcastInstance instance) {
         return getHazelcastInstanceImpl(instance).node.nodeEngine;
+    }
+
+    /**
+     * Gets {@link JetServiceBackend} for given instance. Throws if Jet is not enabled.
+     */
+    @Nonnull
+    public static JetServiceBackend getJetServiceBackend(@Nonnull HazelcastInstance instance) {
+        return requireNonNull(getHazelcastInstanceImpl(instance).node.getNodeExtension().getJetServiceBackend(),
+                "Jet is not enabled");
     }
 
     public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance instance) {
