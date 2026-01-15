@@ -87,7 +87,7 @@
         <checkstyle.version>12.3.1</checkstyle.version>
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
-        <avro.version>1.11.4</avro.version>
+        <avro.version>1.11.5</avro.version>
         <aws.sdk.version>1.12.797</aws.sdk.version>
         <aws.sdk2.version>2.41.8</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
@@ -114,7 +114,7 @@
         <confluent.version>7.9.1</confluent.version>
         <kotlin.version>2.3.0</kotlin.version>
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
-        <parquet.version>1.16.0</parquet.version>
+        <parquet.version>1.17.0</parquet.version>
 
         <spring.boot3.version>3.5.7</spring.boot3.version>
         <org.springframework6.version>6.2.14</org.springframework6.version>
