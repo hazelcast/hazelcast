@@ -490,6 +490,7 @@
         <missing-cp-member-auto-removal-seconds>14400</missing-cp-member-auto-removal-seconds>
         <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
         <cp-member-priority>0</cp-member-priority>
+        <auto-step-down-when-leader>false</auto-step-down-when-leader>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

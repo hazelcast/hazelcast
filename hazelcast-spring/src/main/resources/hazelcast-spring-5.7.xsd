@@ -5536,6 +5536,16 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="auto-step-down-when-leader" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        If the CP member is elected as the leader of a CP group, it will refuse client operations
+                        and immediately transfer leadership to a higher priority node. Client operations will
+                        be retried until they succeed under the new leader. Note that this applies only to non-metadata CP groups.
+                        The cpMemberPriority setting is not respected in the case this value is set to true, given this node should automatically step down from leadership.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="semaphores" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

@@ -17,6 +17,7 @@
 package com.hazelcast.config.cp;
 
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.core.IndeterminateOperationStateException;
@@ -291,6 +292,20 @@ public class CPSubsystemConfig {
     private int cpMemberPriority;
 
     /**
+     * If set to {@code true}, when this CP member is elected leader of a CP group, it will
+     * immediately step down and transfer leadership to a leader-capable member. While the
+     * transfer is in progress, replication requests are temporarily suspended.
+     *
+     * <p>This applies only to non-metadata CP groups. A member with this flag enabled cannot
+     * retain leadership, and therefore does not participate in leader priority elections.</p>
+     *
+     * <p>For a CP group to remain safe, the number of members with this setting enabled
+     * must not exceed {@code n = groupSize - (groupSize / 2 + 1)}, ensuring that a
+     * majority of the group remains leader-capable.</p>
+     */
+    private boolean autoStepDownWhenLeader;
+
+    /**
      * Contains configuration options for Hazelcast's Raft consensus algorithm
      * implementation.
      */
@@ -336,6 +351,7 @@ public class CPSubsystemConfig {
         this.baseDir = config.baseDir;
         this.dataLoadTimeoutSeconds = config.dataLoadTimeoutSeconds;
         this.cpMemberPriority = config.cpMemberPriority;
+        this.autoStepDownWhenLeader = config.autoStepDownWhenLeader;
         for (SemaphoreConfig semaphoreConfig : config.semaphoreConfigs.values()) {
             this.semaphoreConfigs.put(semaphoreConfig.getName(), new SemaphoreConfig(semaphoreConfig));
         }
@@ -576,6 +592,9 @@ public class CPSubsystemConfig {
      * @return this config instance
      */
     public CPSubsystemConfig setCPMemberPriority(int cpMemberPriority) {
+        if (this.autoStepDownWhenLeader && cpMemberPriority > 0) {
+            throw new InvalidConfigurationException("CP member priority must be 0 or less if autoStepDownWhenLeader is enabled");
+        }
         this.cpMemberPriority = cpMemberPriority;
         return this;
     }
@@ -587,6 +606,41 @@ public class CPSubsystemConfig {
      */
     public int getCPMemberPriority() {
         return cpMemberPriority;
+    }
+
+    /**
+     * Enables or disables automatic leader step-down for this CP member.
+     *
+     * <p>If enabled, the member will immediately relinquish leadership whenever elected,
+     * transferring it to a leader-capable member. This member therefore cannot act as a
+     * stable leader in non-metadata CP groups.</p>
+     *
+     * <p>Note: When this setting is {@code true}, {@code cpMemberPriority} must be
+     * {@code <= 0}, since priority-based leader elections do not apply to auto-step-down
+     * members.</p>
+     *
+     * @param autoStepDownWhenLeader {@code true} to make this member automatically step down
+     *                               from leadership when elected
+     * @return this config instance
+     * @since 5.7
+     */
+    public CPSubsystemConfig setAutoStepDownWhenLeader(boolean autoStepDownWhenLeader) {
+        if (autoStepDownWhenLeader && cpMemberPriority > 0) {
+            throw new InvalidConfigurationException("CP member priority must be 0 or less if autoStepDownWhenLeader is enabled");
+        }
+        this.autoStepDownWhenLeader = autoStepDownWhenLeader;
+        return this;
+    }
+
+    /**
+     * Returns whether this CP member is configured to automatically step down from
+     * leadership when elected.
+     *
+     * @return {@code true} if this member always relinquishes leadership immediately
+     * @since 5.7
+     */
+    public boolean isAutoStepDownWhenLeader() {
+        return autoStepDownWhenLeader;
     }
 
     /**
@@ -818,7 +872,9 @@ public class CPSubsystemConfig {
                 + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState
                 + ", cpMemberPriority=" + cpMemberPriority + ", raftAlgorithmConfig=" + raftAlgorithmConfig
                 + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs
-                + ", cpMapConfigs=" + cpMapConfigs + ", cpMapLimit=" + cpMapLimit + '}';
+                + ", cpMapConfigs=" + cpMapConfigs + ", cpMapLimit=" + cpMapLimit
+                + ", autoStepDownWhenLeader=" + autoStepDownWhenLeader
+                +  '}';
     }
 
     @Override
@@ -839,6 +895,7 @@ public class CPSubsystemConfig {
                 && persistenceEnabled == that.persistenceEnabled && dataLoadTimeoutSeconds == that.dataLoadTimeoutSeconds
                 && cpMemberPriority == that.cpMemberPriority
                 && cpMapLimit == that.cpMapLimit
+                && autoStepDownWhenLeader == that.autoStepDownWhenLeader
                 && Objects.equals(baseDir, that.baseDir)
                 && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
                 && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
@@ -852,6 +909,6 @@ public class CPSubsystemConfig {
         return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
                 missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, cpMemberPriority,
                 baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher,
-                cpMapConfigs, cpMapLimit);
+                cpMapConfigs, cpMapLimit, autoStepDownWhenLeader);
     }
 }

@@ -70,6 +70,11 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
     }
 
     @Override
+    public CPSubsystemConfig setAutoStepDownWhenLeader(boolean autoStepDownWhenLeader) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public RaftAlgorithmConfig getRaftAlgorithmConfig() {
         return new DynamicRaftAlgorithmConfig(super.getRaftAlgorithmConfig());
     }

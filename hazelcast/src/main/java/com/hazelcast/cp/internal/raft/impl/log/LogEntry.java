@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Represents an entry in the {@code RaftLog}.
@@ -99,5 +100,22 @@ public class LogEntry implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "LogEntry{" + "term=" + term + ", index=" + index + ", operation=" + operation + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        LogEntry logEntry = (LogEntry) o;
+        return term == logEntry.term && index == logEntry.index && Objects.equals(operation, logEntry.operation);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(term, index, operation);
     }
 }

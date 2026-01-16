@@ -204,7 +204,7 @@ class AuthenticationKeyValuePairConstantsTest {
 
     private static class DummyCPGroupsSnapshot extends CPGroupsSnapshot {
         DummyCPGroupsSnapshot() {
-            super(createSimpleMap(DUMMY_RAFT_GROUP_ID, new GroupInfo(new CPMemberInfo(DUMMY_LEADER_UUID, new Address()),
+            super(createSimpleMap(DUMMY_RAFT_GROUP_ID, new GroupInfo(new CPMemberInfo(DUMMY_LEADER_UUID, new Address(), false),
                     Collections.emptySet(), -1)), createSimpleMap(DUMMY_LEADER_UUID, DUMMY_LEADER_UUID));
         }
     }

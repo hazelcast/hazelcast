@@ -1123,7 +1123,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setFailOnIndeterminateOperationState(true)
                 .setPersistenceEnabled(true)
                 .setBaseDir(new File("/custom-dir"))
-                .setCPMemberPriority(-1);
+                .setCPMemberPriority(-1)
+                .setAutoStepDownWhenLeader(true);
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()

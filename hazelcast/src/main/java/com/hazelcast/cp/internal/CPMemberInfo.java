@@ -20,10 +20,13 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -32,36 +35,45 @@ import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
+import static com.hazelcast.cp.internal.RaftServiceUtil.CP_AUTO_STEP_DOWN_WHEN_LEADER_ATTRIBUTE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * {@code CPMember} represents a member in CP group.
  * Each member must have a unique ID and an address.
  */
-public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSerializable {
+public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSerializable, Versioned {
 
     @Serial
     private static final long serialVersionUID = 5628148969327743953L;
 
     private UUID uuid;
     private Address address;
+    private boolean autoStepDownWhenLeader;
     private transient RaftEndpointImpl endpoint;
 
     public CPMemberInfo() {
     }
 
-    public CPMemberInfo(UUID uuid, Address address) {
+    public CPMemberInfo(UUID uuid, Address address, boolean autoStepDownWhenLeader) {
         checkNotNull(uuid);
         checkNotNull(address);
         this.uuid = uuid;
         this.endpoint = new RaftEndpointImpl(uuid);
         this.address = address;
+        this.autoStepDownWhenLeader = autoStepDownWhenLeader;
     }
 
     public CPMemberInfo(Member member) {
-        this(member.getUuid(), member.getAddress());
+        this(member.getUuid(), member.getAddress(), parseBoolean(member.getAttributes()
+                .getOrDefault(CP_AUTO_STEP_DOWN_WHEN_LEADER_ATTRIBUTE, "false")));
+    }
+
+    public CPMemberInfo(UUID uuid, Address address, boolean isAutoStepDownWhenLeaderExists, boolean autoStepDownWhenLeader) {
+        this(uuid, address, autoStepDownWhenLeader);
     }
 
     @Override
@@ -74,6 +86,11 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         return address;
     }
 
+    @Override
+    public boolean isAutoStepDownWhenLeader() {
+        return autoStepDownWhenLeader;
+    }
+
     public RaftEndpoint toRaftEndpoint() {
         return endpoint;
     }
@@ -83,6 +100,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         writeUUID(out, uuid);
         out.writeUTF(address.getHost());
         out.writeInt(address.getPort());
+        out.writeBoolean(autoStepDownWhenLeader);
     }
 
     @Serial
@@ -96,12 +114,20 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         } catch (UnknownHostException ex) {
             address = Address.createUnresolvedAddress(host, port);
         }
+        try {
+            autoStepDownWhenLeader = in.readBoolean();
+        } catch (EOFException ignore) {
+            autoStepDownWhenLeader = false;
+        }
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         writeUUID(out, uuid);
         out.writeObject(address);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_7)) {
+            out.writeBoolean(autoStepDownWhenLeader);
+        }
     }
 
     @Override
@@ -109,6 +135,12 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         uuid = readUUID(in);
         endpoint = new RaftEndpointImpl(uuid);
         address = in.readObject();
+        // RU_COMPAT_5_6
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_7)) {
+            autoStepDownWhenLeader = in.readBoolean();
+        } else {
+            autoStepDownWhenLeader = false;
+        }
     }
 
     @Override
@@ -147,6 +179,10 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     @Override
     public String toString() {
-        return "CPMember{" + "uuid=" + endpoint.getUuid() + ", address=" + address + '}';
+        return "CPMemberInfo{"
+                + "uuid=" + uuid
+                + ", address=" + address
+                + ", autoStepDownWhenLeader=" + autoStepDownWhenLeader
+                + '}';
     }
 }

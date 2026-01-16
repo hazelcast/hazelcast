@@ -1595,6 +1595,7 @@ public class TestFullApplicationContext {
         CPMapConfig mapConfig3 = cpSubsystemConfig.findCPMapConfig("map3");
         assertNotNull(mapConfig3);
         assertEquals(100, mapConfig3.getMaxSizeMb());
+        assertTrue(cpSubsystemConfig.isAutoStepDownWhenLeader());
     }
 
     @Test

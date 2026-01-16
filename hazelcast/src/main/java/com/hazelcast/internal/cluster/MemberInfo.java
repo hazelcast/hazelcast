@@ -191,6 +191,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         if (!address.equals(that.address)) {
             return false;
         }
+
         return uuid != null ? uuid.equals(that.uuid) : that.uuid == null;
     }
 

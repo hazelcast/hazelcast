@@ -575,7 +575,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder cpSubsystemConfigBuilder = createBeanBuilder(CPSubsystemConfig.class);
 
             fillValues(node, cpSubsystemConfigBuilder, "raftAlgorithm", "semaphores", "locks", "cpMemberCount",
-                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority", "maps");
+                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority", "maps", "autoStepDownWhenLeader");
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -606,6 +606,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     } else if ("cp-member-priority".equals(nodeName)) {
                         cpSubsystemConfigBuilder.addPropertyValue("CPMemberPriority",
                                 getIntegerValue("cp-member-priority", value));
+                    } else if ("auto-step-down-when-leader".equals(nodeName)) {
+                        cpSubsystemConfigBuilder.addPropertyValue("AutoStepDownWhenLeader", value);
                     }
                 }
             }

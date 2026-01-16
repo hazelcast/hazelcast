@@ -1082,6 +1082,7 @@
         <base-dir>data</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
         <cp-member-priority>-1</cp-member-priority>
+        <auto-step-down-when-leader>true</auto-step-down-when-leader>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

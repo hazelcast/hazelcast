@@ -779,7 +779,7 @@ public class ReferenceObjects {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        aCpMember = new CPMemberInfo(aUUID, anAddress);
+        aCpMember = new CPMemberInfo(aUUID, anAddress, aBoolean);
         aListOfCpMembers = Collections.singletonList(aCpMember);
     }
 

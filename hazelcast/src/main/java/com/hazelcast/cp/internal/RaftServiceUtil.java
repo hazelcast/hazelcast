@@ -20,6 +20,11 @@ public class RaftServiceUtil {
 
     public static final String SERVICE_NAME = "hz:core:raft";
     public static final String CP_SUBSYSTEM_EXECUTOR = "hz:cpSubsystem";
+    /*
+     Used to propagate autoStepDownWhenLeader through MemberImpl.
+     */
+    public static final String CP_AUTO_STEP_DOWN_WHEN_LEADER_ATTRIBUTE = "hazelcast.cp.auto.step.down.when.leader";
+
 
     private RaftServiceUtil() {
     }

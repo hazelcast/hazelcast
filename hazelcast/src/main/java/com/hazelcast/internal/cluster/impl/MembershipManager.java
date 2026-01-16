@@ -983,7 +983,8 @@ public class MembershipManager {
                     EmptyStatement.ignore(ignored);
                 } catch (TimeoutException ignored) {
                     MemberInfo latestMemberInfo = latestMembersView.getMember(address);
-                    MemberImpl memberImpl = new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid());
+                    MemberImpl memberImpl = new MemberImpl(member.getAddress(), member.getVersion(),
+                            false, member.getUuid());
                     if (mastershipClaimTimeout > 0 && !isMemberSuspected(memberImpl) && latestMemberInfo != null) {
                         // we don't suspect from 'address' and we need to learn its response
                         done = false;
@@ -1013,7 +1014,8 @@ public class MembershipManager {
         for (MemberInfo member : membersView.getMembers()) {
             Address memberAddress = member.getAddress();
             if (!(node.getThisAddress().equals(memberAddress)
-                    || isMemberSuspected(new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid()))
+                    || isMemberSuspected(new MemberImpl(member.getAddress(), member.getVersion(), false,
+                    member.getUuid()))
                     || futures.containsKey(member))) {
                 // this is a new member for us - let's ask its members view
                 if (logger.isFineEnabled()) {

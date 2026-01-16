@@ -35,6 +35,9 @@ class CollectionAnswer extends AbstractAnswer {
         if (arguments.length == 1 && methodName.equals("get")) {
             Method delegateMethod = getDelegateMethod(methodName, Object.class);
             return invoke(delegateMethod, arguments);
+        } else if (arguments.length == 1 && methodName.equals("contains")) {
+            Method delegateMethod = getDelegateMethod(methodName, Object.class);
+            return invoke(delegateMethod, arguments);
         } else if (arguments.length == 0) {
             return invoke(invocation);
         }

@@ -4578,6 +4578,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                     base-dir: /mnt/cp-data
                     data-load-timeout-seconds: 30
                     cp-member-priority: -1
+                    auto-step-down-when-leader: true
                     map-limit: 25
                     raft-algorithm:
                       leader-election-timeout-in-millis: 500
@@ -4648,6 +4649,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("map2", mapConfig2.getName());
         assertEquals(2, mapConfig2.getMaxSizeMb());
         assertEquals(25, cpSubsystemConfig.getCPMapLimit());
+        assertTrue(cpSubsystemConfig.isAutoStepDownWhenLeader());
     }
 
     @Override

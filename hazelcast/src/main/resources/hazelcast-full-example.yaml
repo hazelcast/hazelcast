@@ -3650,6 +3650,7 @@ hazelcast:
     base-dir: custom-cp-dir
     data-load-timeout-seconds: 30
     cp-member-priority: 1
+    auto-step-down-when-leader: false
     map-limit: 5
     raft-algorithm:
       leader-election-timeout-in-millis: 2000

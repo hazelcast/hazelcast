@@ -997,6 +997,7 @@ public class ConfigXmlGenerator {
                 .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
                 .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds())
                 .node("cp-member-priority", cpSubsystemConfig.getCPMemberPriority())
+                .node("auto-step-down-when-leader", cpSubsystemConfig.isAutoStepDownWhenLeader())
                 .node("map-limit", cpSubsystemConfig.getCPMapLimit());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();

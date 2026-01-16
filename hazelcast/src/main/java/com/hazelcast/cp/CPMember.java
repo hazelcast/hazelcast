@@ -54,4 +54,27 @@ public interface CPMember {
      */
     Address getAddress();
 
+    /**
+     * Returns whether this CP member is configured to automatically step down
+     * from leadership in non-metadata CP groups.
+     *
+     * <p>If {@code true}, whenever this member is elected leader, it will suspend
+     * replication, immediately trigger a leadership transfer, and resume normal
+     * operation once a leader-capable member takes over. Client operations are
+     * retried transparently and eventually succeed under the new leader.</p>
+     *
+     * <p>When this flag is enabled, the member's effective priority is treated as
+     * {@link Integer#MIN_VALUE} to prevent leader rebalancing from assigning
+     * leadership to a node that would immediately step down.</p>
+     *
+     * <p>This feature is useful when a node has high latency to the rest of the
+     * CP group, where holding leadership could destabilize replication. A brief
+     * unavailability window may occur during the leadership transfer, proportional
+     * to the RTT and log catch-up required for the target leader.</p>
+     *
+     * @return {@code true} if this member automatically steps down from leadership
+     * @since 5.7
+     */
+    boolean isAutoStepDownWhenLeader();
+
 }

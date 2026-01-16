@@ -2549,6 +2549,11 @@
           "default": 0,
           "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
         },
+        "auto-step-down-when-leader": {
+          "type": "boolean",
+          "default": false,
+          "description": "If the CP member is elected as the leader of a CP group, it will refuse client operations and immediately transfer leadership to a higher-priority node. Client operations will be retried until they succeed under the new leader. Note that this applies only to non-metadata CP groups. The cpMemberPriority setting is not respected when this value is true, as the node will automatically step down from leadership. The maximum number of nodes that can safely enable this setting in any CP group is n = groupSize - (groupSize/2 + 1)."
+        },
         "map-limit": {
           "type": "integer",
           "default": 10,

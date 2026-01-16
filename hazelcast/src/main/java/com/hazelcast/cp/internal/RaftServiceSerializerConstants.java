@@ -80,4 +80,5 @@ public abstract class RaftServiceSerializerConstants {
     public static final int PUBLISH_CP_GROUP_INFO_OP = 54;
     public static final int INSTALL_SNAPSHOT_REQUEST_OP = 55;
     public static final int INSTALL_SNAPSHOT_RESPONSE_OP = 56;
+    public static final int TRIGGER_LEADERSHIP_REBALANCE_OP = 57;
 }

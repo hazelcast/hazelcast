@@ -754,7 +754,8 @@ public class ConfigCompatibilityChecker {
                             && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
                             && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds()
                             && c1.getCPMemberPriority() == c2.getCPMemberPriority()
-                            && c1.getCPMapLimit() == c2.getCPMapLimit();
+                            && c1.getCPMapLimit() == c2.getCPMapLimit()
+                            && c1.isAutoStepDownWhenLeader() == c2.isAutoStepDownWhenLeader();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;

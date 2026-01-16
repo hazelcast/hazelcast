@@ -5446,6 +5446,38 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="auto-step-down-when-leader" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Indicates whether this CP member should automatically step down if it is elected
+                        as the leader of any non-metadata CP group. When enabled, the member will not
+                        serve as a long-term leader and will immediately transfer leadership to another
+                        member.
+
+                        In addition to influencing runtime leadership behavior, this setting also affects
+                        CP group formation and membership changes:
+
+                        • A new CP group can be created only if the cluster contains a majority of
+                        leader-capable members (i.e., members that do not auto-step-down).
+                        • When a CP member is added to or removed from a group, auto-step-down members
+                        are used as substitutes only if they do not violate the majority-of-leader-capable
+                        constraint.
+
+                        The maximum number of auto-step-down members that can safely participate in a CP
+                        group is:
+
+                        n = groupSize - (groupSize / 2 + 1)
+
+                        This follows from the requirement that every CP group must contain a strict
+                        majority of leader-capable members (i.e., members for which
+                        auto-step-down-when-leader is false). If more than n auto-step-down members are
+                        present in a group, the group would lose its ability to maintain a stable leader.
+
+                        Note: When set to true, cpMemberPriority is ignored because this member
+                        is not allowed to hold leadership.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="semaphores" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
