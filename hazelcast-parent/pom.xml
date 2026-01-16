@@ -466,7 +466,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.8</version>
+                <version>42.7.9</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
