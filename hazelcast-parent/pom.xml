@@ -172,6 +172,10 @@
             io.github.*:org.apache.*
         </maven.javadoc.plugin.excludePackageNames>
         <maven.compiler.procfull></maven.compiler.procfull>
+        <!-- Skip API compatibility check against a previous version (japicmp) -->
+        <skip.public.api.check>false</skip.public.api.check>
+        <!-- When false, the public API check does not fail fast and generates a full report for manual verification -->
+        <public.api.check.break.build>true</public.api.check.break.build>
     </properties>
 
     <distributionManagement>
@@ -1140,6 +1144,69 @@
                     <artifactId>docker-maven-plugin</artifactId>
                     <version>0.48.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>com.github.siom79.japicmp</groupId>
+                    <artifactId>japicmp-maven-plugin</artifactId>
+                    <version>0.24.2</version>
+                    <configuration>
+                        <!-- Skip property -->
+                        <skip>${skip.public.api.check}</skip>
+
+                        <!-- Baseline-->
+                        <oldVersion>
+                            <dependency>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <version>${hazelcast.public.api.baseline.version}</version>
+                            </dependency>
+                        </oldVersion>
+
+                        <parameter>
+                            <!-- Basic config -->
+                            <onlyModified>true</onlyModified>
+                            <ignoreMissingClasses>true</ignoreMissingClasses>
+                            <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
+                            <ignoreMissingNewVersion>true</ignoreMissingNewVersion>
+                            <ignoreMissingOptionalDependency>true</ignoreMissingOptionalDependency>
+                            <ignoreNonResolvableArtifacts>true</ignoreNonResolvableArtifacts>
+
+                            <!-- Breaking changes configuration -->
+                            <breakBuildBasedOnSemanticVersioning>${public.api.check.break.build}</breakBuildBasedOnSemanticVersioning>
+
+                            <!-- Validate only public API -->
+                            <accessModifier>public</accessModifier>
+                            <excludes>
+                                <!-- Excluded breaking changes reported: -->
+                                <!--  * StreamStage.filterStateful: METHOD_ABSTRACT_NOW_DEFAULT
+                                This is a public API for user consumption, but not intended to be implemented by users. -->
+                                <exclude>com.hazelcast.jet.pipeline.StreamStageWithKey#filterStateful(long,com.hazelcast.function.SupplierEx,com.hazelcast.function.BiPredicateEx)</exclude>
+
+                                <!-- End of custom exclusions. Remove after release to detect future breaking changes between x.y.0 and patches -->
+
+                                <!-- Exclude Jet core API - we provide patch-level compatibility guarantees only -->
+                                <exclude>com.hazelcast.jet.core.*</exclude>
+
+                                <!-- Exclude internal packages -->
+                                <exclude>*.internal.*</exclude>
+                                <exclude>*.impl.*</exclude>
+
+                                <!-- Exclude by annotation -->
+                                <exclude>@com.hazelcast.spi.annotation.Beta</exclude>
+                                <exclude>@com.hazelcast.spi.annotation.PrivateApi</exclude>
+                                <exclude>@com.hazelcast.jet.annotation.EvolvingApi</exclude>
+
+                                <!-- Exclude included dependencies which are out of this project control -->
+                                <exclude>com.hazelcast.license.*</exclude>
+                                <exclude>${relocation.root}.*</exclude>
+                            </excludes>
+
+                            <!-- Skip .diff file report -->
+                            <skipDiffReport>true</skipDiffReport>
+
+                        </parameter>
+                    </configuration>
+                    <!-- Run with profile - public-api-compatibility -->
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1549,6 +1616,28 @@
                     <scope>test</scope>
                 </dependency>
             </dependencies>
+        </profile>
+        <!-- Profile used to compare the current version with the baseline defined in hazelcast.public.api.baseline.version
+          This comparison is done by japicmp plugin which compares jars - already released one with the current snapshot -->
+        <profile>
+            <id>public-api-compatibility</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.siom79.japicmp</groupId>
+                        <artifactId>japicmp-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>public-api-compatibility</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>cmp</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

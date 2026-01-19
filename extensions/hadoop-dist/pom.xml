@@ -34,6 +34,7 @@
 
     <properties>
         <main.basedir>${project.basedir}/../..</main.basedir>
+        <skip.public.api.check>true</skip.public.api.check>
     </properties>
 
     <modules>
