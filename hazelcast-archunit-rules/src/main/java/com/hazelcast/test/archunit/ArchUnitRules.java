@@ -26,8 +26,10 @@ import static com.hazelcast.test.archunit.BackupOperationShouldNotImplementMutat
 import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
 import static com.hazelcast.test.archunit.MatchersUsageCondition.notUseHamcrestMatchers;
 import static com.hazelcast.test.archunit.MixTestAnnotationsCondition.notMixDifferentJUnitVersionsAnnotations;
+import static com.hazelcast.test.archunit.NotCreateInstanceWithNetworkCondition.notCreateInstanceWithNetwork;
 import static com.hazelcast.test.archunit.OperationShouldNotImplementReadonlyAndMutatingOperation.notImplementReadonlyAndMutatingOperation;
 import static com.hazelcast.test.archunit.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
+import static com.hazelcast.test.archunit.TestsHaveRunnersCondition.hasParallelJvmTestTag;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
 public final class ArchUnitRules {
@@ -97,7 +99,15 @@ public final class ArchUnitRules {
             .and().haveSimpleNameNotEndingWith("Util")
             .should(new PublicApiClassesExposingInternalImplementationCondition());
 
+    /**
+     * Creating Hazelcast instance with network in {@code ParallelJVMTest} test is risky as the instances
+     * from tests running in parallel may see each other. This can be mitigated to some degree by
+     * using unique/random cluster name, but it is not recommended to run such tests in parallel.
+     */
+    public static final ArchRule PARALLEL_JVM_TESTS_MUST_NOT_CREATE_HAZELCAST_INSTANCES_WITH_NETWORK = classes()
+            .that(hasParallelJvmTestTag())
+            .should(notCreateInstanceWithNetwork());
+
     private ArchUnitRules() {
     }
-
 }

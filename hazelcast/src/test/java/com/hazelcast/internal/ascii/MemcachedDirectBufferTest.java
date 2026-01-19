@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -26,7 +25,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_BUFFER_DIRECT;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 public class MemcachedDirectBufferTest extends MemcachedTest {
 
     @Override

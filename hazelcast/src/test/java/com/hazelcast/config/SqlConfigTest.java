@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -76,7 +75,7 @@ public class SqlConfigTest extends HazelcastTestSupport {
         final Config config = new Config();
         config.getSqlConfig().setCatalogPersistenceEnabled(true);
 
-        assertThatThrownBy(() -> Hazelcast.newHazelcastInstance(config))
+        assertThatThrownBy(() -> createHazelcastInstance(config))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("SQL Catalog Persistence requires Hazelcast Enterprise Edition");
     }
