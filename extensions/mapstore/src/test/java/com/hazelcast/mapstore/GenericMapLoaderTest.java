@@ -28,10 +28,8 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import com.hazelcast.test.jdbc.JdbcDatabaseProvider;
 import com.hazelcast.test.jdbc.JdbcObjectProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider;
@@ -41,7 +39,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Map;
@@ -70,7 +67,6 @@ import static org.junit.Assume.assumeTrue;
 /**
  * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
  */
-@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, SerialTest.class})
 public class GenericMapLoaderTest extends SqlTestSupport {
 
@@ -734,7 +730,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
 
     @Test
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() {
-        assumeTrue(objectProvider instanceof JdbcDatabaseProvider);
+        assumeTrue(objectProvider instanceof JdbcObjectProvider);
         var jdbcDatabaseProvider = (JdbcObjectProvider) objectProvider;
         String schemaName = "custom_schema";
         jdbcDatabaseProvider.createSchema(schemaName);
@@ -755,7 +751,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
 
     @Test
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchemaWithDotInName() {
-        assumeTrue(objectProvider instanceof JdbcDatabaseProvider);
+        assumeTrue(objectProvider instanceof JdbcObjectProvider);
         var jdbcDatabaseProvider = (JdbcObjectProvider) objectProvider;
         // See MySQLSchemaJdbcSqlConnectorTest
         assumeFalse(TEST_MYSQL_IMAGE.getVersionPart().startsWith("5"));
