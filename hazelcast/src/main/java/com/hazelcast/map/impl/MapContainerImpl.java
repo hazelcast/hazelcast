@@ -151,11 +151,6 @@ public class MapContainerImpl implements MapContainer {
         wanContext.start();
     }
 
-    @Override
-    public void stop() {
-        mapStoreContext.stop();
-    }
-
     /**
      * @param global      set {@code true} to create global indexes, otherwise set
      *                    {@code false} to have partitioned indexes

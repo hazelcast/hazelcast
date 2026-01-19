@@ -143,8 +143,6 @@ public interface MapContainer {
     void onDestroy();
     boolean isDestroyed();
 
-    void stop();
-
     boolean shouldCloneOnEntryProcessing(int partitionId);
 
     ObjectNamespace getObjectNamespace();
