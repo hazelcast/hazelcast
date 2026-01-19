@@ -671,7 +671,7 @@
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client-bom</artifactId>
-                <version>7.5.0</version>
+                <version>7.5.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
