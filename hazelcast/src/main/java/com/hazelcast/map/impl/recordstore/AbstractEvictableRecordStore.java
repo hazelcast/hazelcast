@@ -21,10 +21,12 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
@@ -37,6 +39,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import javax.annotation.Nonnull;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
@@ -51,6 +54,7 @@ import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.NOT_EXPIRED
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected final Address thisAddress;
+    protected final UUID thisUuid;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final ExpirySystem expirySystem;
@@ -61,6 +65,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
+        thisUuid = nodeEngine.getLocalMember().getUuid();
         expirySystem = createExpirySystem(mapContainer);
     }
 
@@ -165,6 +170,10 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                     eventType, dataKey, value, null);
         }
 
+        if (eventType == EXPIRED) {
+            invalidateNearCache(dataKey);
+        }
+
         // Deal with idleness related expiry
         // of entries on backup replicas
         if (expiryReason == MAX_IDLE_SECONDS) {
@@ -172,6 +181,20 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey, value.hashCode());
         }
+    }
+
+    private void invalidateNearCache(Data key) {
+        if (!mapContainer.hasInvalidationListener() || key == null) {
+            return;
+        }
+
+        Invalidator invalidator = getNearCacheInvalidator();
+        invalidator.invalidateKey(key, name, thisUuid);
+    }
+
+    private Invalidator getNearCacheInvalidator() {
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        return mapNearCacheManager.getInvalidator();
     }
 
     @Override
