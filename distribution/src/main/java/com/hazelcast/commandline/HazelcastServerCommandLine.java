@@ -64,9 +64,6 @@ public class HazelcastServerCommandLine {
 
         String version = getBuildInfo().getVersion();
         cmd.getCommandSpec().usageMessage().header("Hazelcast " + version);
-        if (args.length == 0) {
-            cmd.usage(out);
-        }
     }
 
     static PrintWriter createPrintWriter(PrintStream printStream) {
