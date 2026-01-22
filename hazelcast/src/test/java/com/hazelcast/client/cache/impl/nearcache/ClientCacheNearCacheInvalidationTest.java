@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl.nearcache;
 
+import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
@@ -59,6 +60,7 @@ import javax.cache.spi.CachingProvider;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
@@ -240,6 +242,56 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
                 .fireLifecycleEvent(LifecycleEvent.LifecycleState.SHUTTING_DOWN);
 
         // verify that records in the Near Cache of client-1 are invalidated eventually when instance shutdown
+        for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
+            final String key = entry.getKey();
+            assertTrueEventually(() -> assertNull(getFromNearCache(nearCacheTestContext1, key)));
+        }
+    }
+
+    @Test
+    public void putToCacheWithExpiryPolicyAndGetInvalidationEventWhenExpired() throws ExecutionException, InterruptedException {
+        Config config = getConfig()
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
+
+        warmUpPartitions(testContext.dataInstance, instance);
+        waitAllForSafeState(testContext.dataInstance, instance);
+
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(inMemoryFormat)
+                .setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(LocalUpdatePolicy.CACHE_ON_UPDATE);
+
+        CacheConfig<String, String> cacheConfig = getCacheConfig(inMemoryFormat);
+        final NearCacheTestContext<String, String, Object, String> nearCacheTestContext1
+                = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig, cacheConfig);
+        final NearCacheTestContext<String, String, Object, String> nearCacheTestContext2
+                = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig, cacheConfig);
+
+        Map<String, String> keyAndValues = new HashMap<>();
+
+        // put cache record from client-1 to instance
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            String key = generateKeyOwnedBy(instance);
+            String value = generateValueFromKey(i);
+            HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 0, 0);
+            nearCacheTestContext1.nearCacheAdapter.putAsync(key, value, expiryPolicy).toCompletableFuture().get();
+            keyAndValues.put(key, value);
+        }
+
+        // verify that records are exist at Near Cache of client-1 because `local-update-policy` is `CACHE_ON_UPDATE`
+        for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
+            String key = entry.getKey();
+            String exceptedValue = entry.getValue();
+            String actualValue = getFromNearCache(nearCacheTestContext1, key);
+            assertEquals(exceptedValue, actualValue);
+        }
+
+        // wait for expiry of entries
+
+        // verify that records in the Near Cache of client-1 are invalidated eventually
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
             final String key = entry.getKey();
             assertTrueEventually(() -> assertNull(getFromNearCache(nearCacheTestContext1, key)));

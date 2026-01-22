@@ -508,6 +508,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data recordEventData = toEventData(removedRecord);
         if (removedRecord != null) {
             onProcessExpiredEntry(key, removedRecord, removedRecord.getExpirationTime(), now, source, origin);
+            invalidateEntry(keyEventData, nodeEngine.getLocalMember().getUuid());
             if (isEventsEnabled()) {
                 publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
                         TIME_NOT_AVAILABLE, origin, IGNORE_COMPLETION));
