@@ -25,10 +25,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -582,7 +585,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     @Test
     public void testNearCacheInvalidation() {
         String mapName = randomString();
-        ClientConfig clientConfig = getClientConfigWithNearCacheInvalidationEnabled();
+        ClientConfig clientConfig = getClientConfigWithNearCacheInvalidationEnabled(mapName);
 
         factory.newHazelcastInstance(config);
         HazelcastInstance client1 = factory.newHazelcastClient(clientConfig);
@@ -602,9 +605,40 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNearCacheInvalidationOnExpiry() {
+        String mapName = randomString();
+        ClientConfig clientConfig = getClientConfigWithNearCacheInvalidationEnabled(mapName);
+
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        final ReplicatedMap<Integer, Integer> replicatedMap = client.getReplicatedMap(mapName);
+
+        NearCacheManager nearCacheManager = ((ClientReplicatedMapProxy) replicatedMap).getContext()
+                .getNearCacheManager(replicatedMap.getServiceName());
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(mapName);
+        NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
+
+        // Due to the two clear requests during the listener registration
+        assertTrueEventually(() -> assertEquals(2, nearCacheStats.getInvalidationRequests()));
+
+        replicatedMap.put(1, 1, 10, TimeUnit.SECONDS);
+        // populate near cache
+        assertEquals(1, (int) replicatedMap.get(1));
+        assertEquals(1, nearCacheStats.getMisses());
+
+        assertTrueEventually(() -> {
+            assertNull(replicatedMap.get(1));
+            // one request when `replicatedMap.put` is done + one when entry updated + one on expiry = 3, total 2+3 = 5
+            assertEquals(5, nearCacheStats.getInvalidationRequests());
+            assertEquals(1, nearCacheStats.getInvalidations());
+        });
+    }
+
+    @Test
     public void testNearCacheInvalidation_withClear() {
         String mapName = randomString();
-        ClientConfig clientConfig = getClientConfigWithNearCacheInvalidationEnabled();
+        ClientConfig clientConfig = getClientConfigWithNearCacheInvalidationEnabled(mapName);
 
         factory.newHazelcastInstance(config);
         HazelcastInstance client1 = factory.newHazelcastClient(clientConfig);
@@ -1004,8 +1038,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         return null;
     }
 
-    private static ClientConfig getClientConfigWithNearCacheInvalidationEnabled() {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+    private static ClientConfig getClientConfigWithNearCacheInvalidationEnabled(String mapName) {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName)
                 .setInvalidateOnChange(true)
                 .setInMemoryFormat(OBJECT);
 

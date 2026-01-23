@@ -41,7 +41,9 @@ public class ReplicatedMapPutMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new PutOperation(parameters.name, parameters.key, parameters.value, parameters.ttl);
+        PutOperation putOperation = new PutOperation(parameters.name, parameters.key, parameters.value, parameters.ttl);
+        putOperation.setCallerUuid(endpoint.getUuid());
+        return putOperation;
     }
 
     @Override
