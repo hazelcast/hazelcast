@@ -116,7 +116,7 @@
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <parquet.version>1.17.0</parquet.version>
 
-        <spring.boot3.version>3.5.7</spring.boot3.version>
+        <spring.boot3.version>3.5.9</spring.boot3.version>
         <org.springframework6.version>6.2.14</org.springframework6.version>
 
         <spring.boot4.version>4.0.2</spring.boot4.version>
