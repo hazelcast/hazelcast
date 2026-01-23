@@ -119,7 +119,7 @@
         <spring.boot3.version>3.5.7</spring.boot3.version>
         <org.springframework6.version>6.2.14</org.springframework6.version>
 
-        <spring.boot4.version>4.0.1</spring.boot4.version>
+        <spring.boot4.version>4.0.2</spring.boot4.version>
         <org.springframework7.version>7.0.0</org.springframework7.version>
 
         <!--
