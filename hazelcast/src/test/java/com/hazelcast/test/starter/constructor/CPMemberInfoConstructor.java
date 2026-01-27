@@ -32,35 +32,35 @@ public class CPMemberInfoConstructor extends AbstractStarterObjectConstructor {
 
     @Override
     Object createNew0(Object delegate) throws Exception {
-        UUID    uuid    = (UUID)   getFieldValueReflectively(delegate, "uuid");
-        Object  address =    getFieldValueReflectively(delegate, "address");
-        Boolean auto    = null;
+        UUID uuid = (UUID) getFieldValueReflectively(delegate, "uuid");
+        Object address = getFieldValueReflectively(delegate, "address");
+        Boolean auto = null;
         try {
             auto = (Boolean) getFieldValueReflectively(delegate, "autoStepDownWhenLeader");
         } catch (NoSuchFieldError ignored) {
             // older versions don’t have that flag
         }
 
-        Class<?> cls       = targetClass;
+        Class<?> cls = targetClass;
         ClassLoader loader = cls.getClassLoader();
-        Class<?> eeAddrCl  = loader.loadClass("com.hazelcast.cluster.Address");
+        Class<?> eeAddrCl = loader.loadClass("com.hazelcast.cluster.Address");
 
         Constructor<?> ctor;
-        Object[]    args;
+        Object[] args;
 
         try {
             ctor = cls.getDeclaredConstructor(UUID.class, eeAddrCl, boolean.class, boolean.class);
             boolean exists = auto != null;
-            boolean value  = exists && auto;
-            args = new Object[]{ uuid, address, exists, value };
+            boolean value = exists && auto;
+            args = new Object[]{uuid, address, exists, value};
         } catch (NoSuchMethodException e1) {
             try {
                 ctor = cls.getDeclaredConstructor(UUID.class, eeAddrCl, boolean.class);
                 boolean flag = auto != null && auto;
-                args = new Object[]{ uuid, address, flag };
+                args = new Object[]{uuid, address, flag};
             } catch (NoSuchMethodException e2) {
                 ctor = cls.getDeclaredConstructor(UUID.class, eeAddrCl);
-                args = new Object[]{ uuid, address };
+                args = new Object[]{uuid, address};
             }
         }
 
