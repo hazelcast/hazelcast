@@ -76,7 +76,10 @@ public class StoreWorker implements Runnable {
         this.executionService = nodeEngine.getExecutionService();
         this.writeBehindProcessor = writeBehindProcessor;
         this.backupDelayMillis = getReplicaWaitTimeMillis();
-        this.lastHighestStoreTime = Clock.currentTimeMillis();
+        // Initialize lastHighestStoreTime to current time - 1 millisecond
+        // to avoid processing entries added in the same millisecond
+        // when the worker was initialized.
+        this.lastHighestStoreTime = Clock.currentTimeMillis() - 1;
         this.writeDelayMillis = SECONDS.toMillis(getWriteDelaySeconds(mapStoreContext));
         this.partitionCount = partitionService.getPartitionCount();
     }
@@ -173,7 +176,8 @@ public class StoreWorker implements Runnable {
      * @return highestStoreTime in millis.
      */
     private long calculateHighestStoreTime(long lastHighestStoreTime, long now) {
-        return now >= lastHighestStoreTime + writeDelayMillis ? now : lastHighestStoreTime;
+       // Use subtraction to avoid long overflow in time comparison
+        return now - lastHighestStoreTime >= writeDelayMillis ? now : lastHighestStoreTime;
     }
 
     private boolean hasEntryInWriteBehindQueue(RecordStore recordStore) {

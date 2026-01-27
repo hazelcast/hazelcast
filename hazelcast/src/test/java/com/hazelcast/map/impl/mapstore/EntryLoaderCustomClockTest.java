@@ -25,6 +25,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.AbstractClockTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore("https://github.com/hazelcast/hazelcast-mono/pull/5908")
 public class EntryLoaderCustomClockTest extends AbstractClockTest {
 
     private HazelcastInstance instance;

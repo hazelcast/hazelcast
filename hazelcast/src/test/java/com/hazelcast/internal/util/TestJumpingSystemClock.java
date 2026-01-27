@@ -18,14 +18,22 @@ package com.hazelcast.internal.util;
 
 import java.util.concurrent.TimeUnit;
 
-class JumpingSystemClock extends Clock.ClockImpl {
+
+/**
+ * Clock that jumps forward in time after a configured number of seconds.
+ * <p>
+ * The class name must contain "Test" so the delegating classloader
+ * loads it from the parent classloader.
+ * See {@link AbstractClockTest}.
+ */
+class TestJumpingSystemClock extends Clock.ClockImpl {
 
     static final String JUMP_AFTER_SECONDS_PROPERTY = "com.hazelcast.clock.jump.after";
 
     private final long jumpAfter;
     private final long jumpOffset;
 
-    JumpingSystemClock() {
+    TestJumpingSystemClock() {
         String clockOffset = System.getProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         String jumpAfterSeconds = System.getProperty(JUMP_AFTER_SECONDS_PROPERTY);
         try {

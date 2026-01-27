@@ -58,7 +58,7 @@ public class ClockTest extends AbstractClockTest {
 
         Clock.ClockImpl clock = Clock.createClock();
 
-        assertInstanceOf(JumpingSystemClock.class, clock);
+        assertInstanceOf(TestJumpingSystemClock.class, clock);
     }
 
     @Test
