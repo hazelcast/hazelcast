@@ -108,6 +108,14 @@ public final class ArchUnitRules {
             .that(hasParallelJvmTestTag())
             .should(notCreateInstanceWithNetwork());
 
+    /**
+     * Having a test that have both categories CompatibilityTest and (NightlyTest or SlowTest)
+     * Will lead to that test will executed with under incorrect profile leading to test failure
+     */
+    public static final ArchRule COMPATIBILITY_CATEGORY_NOT_NIGHTLY_OR_SLOW =
+            classes()
+                    .should(CategoryCompatibilityRule.compatibilityCategoryCompatibilityNotRunningNightlyOrSlow());
+
     private ArchUnitRules() {
     }
 }

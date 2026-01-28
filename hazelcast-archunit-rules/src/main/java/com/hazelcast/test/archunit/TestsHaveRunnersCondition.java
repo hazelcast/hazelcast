@@ -28,11 +28,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import static com.hazelcast.test.archunit.TestAnnotationCategoryAndTagCheck.hasJunitTestCategoryOrTagAnnotation;
 
 /** Asserts that tests are annotated with `@RunWith` to ensure property isolation */
 public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
@@ -97,12 +98,7 @@ public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
 
 
     private static boolean hasParallelJvmTestTag(JavaClass classToTest) {
-        return classToTest.isAnnotatedWith("com.hazelcast.test.annotation.ParallelJVMTest")
-                || (classToTest.isAnnotatedWith(Category.class) && Arrays
-                .stream(classToTest.getAnnotationOfType(Category.class)
-                        .value())
-                .map(Class::getName)
-                .anyMatch("com.hazelcast.test.annotation.ParallelJVMTest"::equals));
+        return hasJunitTestCategoryOrTagAnnotation(classToTest, "com.hazelcast.test.annotation.ParallelJVMTest");
     }
 
     private static boolean hasParallelJvmTestTagRecursive(JavaClass classToTest) {
