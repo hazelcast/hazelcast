@@ -623,13 +623,16 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertEquals(2, nearCacheStats.getInvalidationRequests()));
 
         replicatedMap.put(1, 1, 10, TimeUnit.SECONDS);
+        // wait for the invalidation request of this map put (not the expiry)
+        // one request locally when `replicatedMap.put` is done and one from server wit when entry updated event
+        assertTrueEventually(() -> assertEquals(4, nearCacheStats.getInvalidationRequests()));
+
         // populate near cache
         assertEquals(1, (int) replicatedMap.get(1));
         assertEquals(1, nearCacheStats.getMisses());
 
         assertTrueEventually(() -> {
             assertNull(replicatedMap.get(1));
-            // one request when `replicatedMap.put` is done + one when entry updated + one on expiry = 3, total 2+3 = 5
             assertEquals(5, nearCacheStats.getInvalidationRequests());
             assertEquals(1, nearCacheStats.getInvalidations());
         });
