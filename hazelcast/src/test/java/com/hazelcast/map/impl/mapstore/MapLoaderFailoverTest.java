@@ -22,14 +22,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,10 +47,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
-    // debug logging for https://github.com/hazelcast/hazelcast/issues/7959#issuecomment-533283947
-    @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-map.xml");
-
     @Rule
     public Timeout timeout = new Timeout(MINUTE, TimeUnit.MILLISECONDS);
 
@@ -66,6 +60,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
+        assumeNotZing();
         nodeFactory = createHazelcastInstanceFactory(NODE_COUNT + 2);
         mapLoader = new CountingMapLoader(MAP_STORE_ENTRY_COUNT);
     }

@@ -60,6 +60,7 @@ public class PartitionContainerImplTest
 
     @Before
     public void preparePartitionContainerMocksForConstructorAndGetRecord() {
+        assumeNotZing();
         MapService mapService = new MapService();
         mapService.mapServiceContext = mock(MapServiceContext.class);
 

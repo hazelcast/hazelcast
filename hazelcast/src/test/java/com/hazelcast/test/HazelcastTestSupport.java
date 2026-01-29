@@ -84,6 +84,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -1616,6 +1617,15 @@ public abstract class HazelcastTestSupport {
         assumeThat(configuredByteOrder)
                 .as("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder)
                 .isEqualTo(assumedByteOrder);
+    }
+
+    /**
+     * Zing (Azul Prime) has problems with mocks of some internal objects, like Node or HazelcastInstance.
+     * If the tests are using such mocks and cannot avoid them, Zing should be excluded from tested JVMs.
+     */
+    public static void assumeNotZing() {
+        String javaVmName = System.getProperty("java.vm.name");
+        assumeThat(javaVmName.toLowerCase(Locale.ROOT)).doesNotContain("zing");
     }
 
     /**

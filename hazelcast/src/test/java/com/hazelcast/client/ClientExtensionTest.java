@@ -19,32 +19,36 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.ClientExtension;
+import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
+import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientExtension;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientExtensionTest extends HazelcastTestSupport {
+    private final ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Test
     public void test_createServiceProxyFactory() {
@@ -55,40 +59,46 @@ public class ClientExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_createServiceProxyFactory_whenUnknownServicePassed() {
         ClientExtension clientExtension = new DefaultClientExtension();
-        Assertions.assertThatThrownBy(() -> clientExtension.createServiceProxyFactory(TestService.class))
+        assertThatThrownBy(() -> clientExtension.createServiceProxyFactory(TestService.class))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Proxy factory cannot be created. Unknown service");
     }
 
     @Test
-    public void test_createClientClusterServiceWithMultiMemberRouting_throwsInvalidConfigurationException() {
+    public void test_createClientClusterServiceWithMultiMemberRouting_throwsInvalidConfigurationException() throws IOException {
         String expectedMsg = "MULTI_MEMBER routing is an enterprise feature since 5.5. "
                 + "You must use Hazelcast enterprise to enable this feature.";
-        ClientExtension clientExtension = new DefaultClientExtension();
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.MULTI_MEMBER)
-                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
-        HazelcastClientInstanceImpl clientMock = mock(HazelcastClientInstanceImpl.class);
-        when(clientMock.getClientConfig()).thenReturn(clientConfig);
+        try (var classLoader = new URLClassLoader(new URL[0])) {
+            ClientConfig clientConfig = new ClientConfig();
+            // avoid loading anything but DefaultClientExtension
+            clientConfig.setClassLoader(classLoader);
+            clientConfig.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(RoutingMode.MULTI_MEMBER)
+                        .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+            var addressProvider = hazelcastFactory.createAddressProvider(clientConfig);
 
-        Assertions.assertThatThrownBy(() -> clientExtension.createClientClusterService(clientMock))
-                .isInstanceOf(InvalidConfigurationException.class)
-                .hasMessageContaining(expectedMsg);
+            assertThatThrownBy(() -> new HazelcastClientInstanceImpl(UUID.randomUUID().toString(),
+                                                                     clientConfig, null,
+                                                                     factory, addressProvider))
+                    .isInstanceOf(InvalidConfigurationException.class)
+                    .hasMessageContaining(expectedMsg);
+        }
     }
 
     @Test
-    public void test_createClientClusterService() {
+    public void test_createClientClusterService() throws IOException {
         ClientExtension clientExtension = new DefaultClientExtension();
-        LoggingService loggingService = mock(LoggingService.class);
-        when(loggingService.getLogger(any(Class.class))).thenReturn(mock(ILogger.class));
-        HazelcastClientInstanceImpl clientMock = mock(HazelcastClientInstanceImpl.class);
+        ClientConfig clientConfig = new ClientConfig();
+        var addressProvider = hazelcastFactory.createAddressProvider(clientConfig);
 
-        when(clientMock.getLoggingService()).thenReturn(loggingService);
-        when(clientMock.getClientConfig()).thenReturn(new ClientConfig());
-        when(clientMock.getProperties()).thenReturn(mock(HazelcastProperties.class));
-
-        assertInstanceOf(ClientClusterServiceImpl.class,
-                clientExtension.createClientClusterService(clientMock));
+        try (var classLoader = new URLClassLoader(new URL[0])) {
+            // avoid loading anything but DefaultClientExtension
+            clientConfig.setClassLoader(classLoader);
+            var client = new HazelcastClientInstanceImpl(UUID.randomUUID().toString(),
+                                                         clientConfig, null,
+                                                         factory, addressProvider);
+            assertInstanceOf(ClientClusterServiceImpl.class,
+                             clientExtension.createClientClusterService(client));
+        }
     }
 
     private static class TestService {

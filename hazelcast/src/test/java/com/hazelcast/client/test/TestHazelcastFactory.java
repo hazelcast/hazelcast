@@ -105,7 +105,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         return clients.get(clientName);
     }
 
-    private AddressProvider createAddressProvider(ClientConfig config) {
+    public AddressProvider createAddressProvider(ClientConfig config) {
         boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
                 .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);
 
