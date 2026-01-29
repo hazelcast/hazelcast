@@ -60,6 +60,29 @@ public class MembersViewMetadataTest {
                 new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 999));
     }
 
+    @Test
+    public void equalsAndHashCode_withNullMasterAddress() throws Exception {
+        UUID memberUUID = new UUID(1, 1);
+
+        // masterAddress null on both members
+        MembersViewMetadata metadataWithNullMaster1
+                = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, null, 0);
+        MembersViewMetadata metadataWithNullMaster2
+                = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, null, 0);
+        assertEqualAndHashCode(metadataWithNullMaster1, metadataWithNullMaster2);
+
+        // masterAddress null on one, not on the other
+        MembersViewMetadata metadataWithMaster
+                = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 0);
+        assertNotEquals(metadataWithNullMaster1, metadataWithMaster);
+        assertNotEquals(metadataWithMaster, metadataWithNullMaster1);
+
+        // masterAddress null on both, but should fail for other mismatches
+        MembersViewMetadata metadataWithNullMaster3
+                = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, null, 999);
+        assertNotEqualAndHashCode(metadataWithNullMaster1, metadataWithNullMaster3);
+    }
+
     private static void assertEqualAndHashCode(Object o1, Object o2) {
         assertEquals(o1, o2);
         assertEquals(o1.hashCode(), o2.hashCode());
