@@ -807,7 +807,7 @@ public class ClientConfig {
     }
 
     public ClientConfig setClusterName(String clusterName) {
-        this.clusterName = clusterName;
+        this.clusterName = isNotNull(clusterName, "clusterName");
         return this;
     }
 

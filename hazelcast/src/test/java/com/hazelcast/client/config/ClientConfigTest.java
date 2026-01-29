@@ -182,4 +182,10 @@ public class ClientConfigTest {
         assertEquals(10, tpcConfig.getConnectionCount());
         assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
     }
+
+    @Test
+    public void testClusterName_throwExceptionWhenNull() {
+        ClientConfig clientConfig = new ClientConfig();
+        assertThrows(IllegalArgumentException.class, () -> clientConfig.setClusterName(null));
+    }
 }
