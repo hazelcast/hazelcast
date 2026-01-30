@@ -25,7 +25,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
-import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -93,9 +92,10 @@ class PartitionsIndexedTest
         Member hzAsMember = hz.getCluster().getLocalMember();
         long ownedPartitions = hz.getPartitionService().getPartitions().stream().filter(p -> hzAsMember.equals(p.getOwner()))
                                  .count();
-        LocalIndexStats stats = getTestMap(hz).getLocalMapStats().getIndexStats().get("testIndex");
-        long partitionsCovered = ((LocalIndexStatsImpl) stats).getPartitionsIndexed();
-        assertThat(partitionsCovered).isEqualTo(ownedPartitions);
+        LocalIndexStatsImpl stats = (LocalIndexStatsImpl) getTestMap(hz).getLocalMapStats().getIndexStats().get("testIndex");
+        // Even though migration was reported as finished migration finalization (including index building) may still
+        // be ongoing so we allow time for it to complete.
+        assertTrueEventually(() -> assertThat(stats.getPartitionsIndexed()).isEqualTo(ownedPartitions));
         ObjectName metricName = buildMapIndexMetricName(hz, "testMap", "testIndex");
         assertAttributeEquals(ownedPartitions, metricName, MAP_METRIC_INDEX_PARTITIONS_INDEXED);
     }
