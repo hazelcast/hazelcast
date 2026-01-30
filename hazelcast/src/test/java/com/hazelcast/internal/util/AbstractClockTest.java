@@ -26,6 +26,7 @@ import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.HazelcastStarter;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -69,7 +70,7 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
                 new URL[]{classesUrl, tpcClassesUrl},
                 classLoader
             );
-            isolatedNode =  HazelcastStarter.newHazelcastInstance(config, isolatedClassLoader);
+            isolatedNode = HazelcastStarter.newHazelcastInstance(config, isolatedClassLoader);
         } catch (MalformedURLException e) {
             throw new RuntimeException("Could not create Hazelcast member with custom classloader", e);
         }
@@ -102,15 +103,57 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
         return isolatedNode.getCluster().getClusterTime();
     }
 
-    protected <T> T invokeIsolatedInstanceMethod(String className, String methodName)  {
+    @SuppressWarnings("unchecked")
+    protected <T> T invokeIsolatedInstanceMethod(
+        String className,
+        String methodName,
+        Class<?>[] parameterTypes,
+        Object... args
+    ) {
         try {
             Class<?> clazz = Class.forName(className, true, isolatedClassLoader);
-            Object object = clazz.getDeclaredConstructor().newInstance();
-            Method method = clazz.getMethod(methodName);
-            return (T) method.invoke(object);
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+
+            Method method = clazz.getMethod(methodName, parameterTypes);
+            return (T) method.invoke(instance, args);
+
+        } catch (InvocationTargetException e) {
+            throw rethrowTargetException(e.getTargetException(), className, methodName);
+
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Could not invoke method " + methodName + " on object " + className, e);
+            throw new RuntimeException(
+                "Could not invoke method " + methodName + " on object " + className, e
+            );
         }
+    }
+
+    protected <T> T invokeIsolatedInstanceMethod(
+        String className,
+        String methodName
+    ) {
+        return invokeIsolatedInstanceMethod(
+            className,
+            methodName,
+            new Class<?>[0]
+        );
+    }
+
+    private RuntimeException rethrowTargetException(
+        Throwable target,
+        String className,
+        String methodName
+    ) {
+        if (target instanceof RuntimeException rex) {
+            throw rex;
+        }
+        if (target instanceof Error err) {
+            throw err;
+        }
+
+        return new RuntimeException(
+            "Could not invoke method " + methodName + " on object " + className,
+            target
+        );
     }
 
     protected static void assertClusterTime(HazelcastInstance expectedHz, HazelcastInstance hz) {

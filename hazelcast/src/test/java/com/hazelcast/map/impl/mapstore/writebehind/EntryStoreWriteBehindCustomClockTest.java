@@ -18,12 +18,11 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.AbstractClockTest;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.mapstore.TestEntryStore;
+import com.hazelcast.map.impl.mapstore.SingletonTestEntryStoreFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.AbstractClockTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -31,48 +30,69 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 @Ignore("https://github.com/hazelcast/hazelcast-mono/pull/5908")
 public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
-    private HazelcastInstance instance;
     private IMap<String, String> map;
-    private final TestEntryStore<String, String> testEntryStore = new TestEntryStore<>();
 
     @Before
     public void setup() {
-        setClockOffset(100000);
-        instance = startNode();
-        map = instance.getMap(randomMapName());
+        setClockOffset(Duration.ofHours(12).toMillis());
+        startIsolatedNode(getConfig());
+        map = isolatedNode.getMap(randomMapName());
     }
 
     @After
     public void teardown() {
-        instance.getLifecycleService().terminate();
+        shutdownIsolatedNode();
         resetClock();
     }
 
+    // If the Hazelcast server clock differs from the system clock,
+    // then when storing a value to the external system, the server time is converted to system time.
     @Test
     public void testPutWithExpirationTime() {
         map.put("key", "val", 1, TimeUnit.DAYS);
         long expectedExpirationTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
         long delta = 5000;
-        assertTrueEventually(() -> testEntryStore.assertRecordStored("key", "val", expectedExpirationTime, delta));
+        assertTrueEventually(
+            () -> invokeIsolatedInstanceMethod(
+                SingletonTestEntryStoreFactory.class.getName(),
+                "assertRecordStored",
+                new Class[]{String.class, String.class, long.class, long.class},
+                new Object[]{"key", "val", expectedExpirationTime, delta}
+            )
+        );
     }
 
+    // If the Hazelcast server clock differs from the system clock,
+    // then when storing a value without expiration to the external system,
+    // the correct time in the map store is NO_TIME.
     @Test
     public void testPutWithoutExpirationTime() {
         map.put("key", "val");
-        assertTrueEventually(() -> testEntryStore.assertRecordStored("key", "val"));
+        assertTrueEventually(
+            () -> invokeIsolatedInstanceMethod(
+                SingletonTestEntryStoreFactory.class.getName(),
+                "assertRecordStored",
+                new Class[]{String.class, String.class},
+                new Object[]{"key", "val"}
+            )
+        );
     }
 
     @Override
     protected Config getConfig() {
         Config config = smallInstanceConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(testEntryStore).setWriteDelaySeconds(3).setEnabled(true);
+        mapStoreConfig
+            .setFactoryClassName(SingletonTestEntryStoreFactory.class.getName())
+            .setWriteDelaySeconds(3)
+            .setEnabled(true);
         config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
         return config;
     }
