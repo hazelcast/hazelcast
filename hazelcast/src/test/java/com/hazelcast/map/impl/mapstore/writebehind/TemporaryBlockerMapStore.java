@@ -24,8 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 
 public class TemporaryBlockerMapStore extends MapStoreAdapter<String, String> {
-
-    private final int blockStoreOperationSeconds;
+    private int blockStoreOperationSeconds;
     private final AtomicInteger storeOperationCount = new AtomicInteger();
 
     public TemporaryBlockerMapStore(int blockStoreOperationSeconds) {
@@ -47,5 +46,13 @@ public class TemporaryBlockerMapStore extends MapStoreAdapter<String, String> {
 
     public int getStoreOperationCount() {
         return storeOperationCount.get();
+    }
+
+    public void setBlockStoreOperationSeconds(int blockStoreOperationSeconds) {
+        this.blockStoreOperationSeconds = blockStoreOperationSeconds;
+    }
+
+    public void clear() {
+        storeOperationCount.set(0);
     }
 }

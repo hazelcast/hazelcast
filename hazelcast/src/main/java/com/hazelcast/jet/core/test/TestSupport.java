@@ -216,6 +216,7 @@ public final class TestSupport {
     private List<TestEventInt> testEvents = new ArrayList<>();
     private boolean assertProgress = true;
     private boolean doSnapshots = true;
+    private boolean doTransactionCommits;
     private boolean logInputOutput = true;
     private boolean callComplete = true;
     private int outputOrdinalCount;
@@ -478,6 +479,16 @@ public final class TestSupport {
      */
     public TestSupport disableSnapshots() {
         this.doSnapshots = false;
+        return this;
+    }
+
+    /**
+     * Enables transaction commits after each snapshot.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    public TestSupport enableTransactionCommits() {
+        this.doTransactionCommits = true;
         return this;
     }
 
@@ -940,6 +951,10 @@ public final class TestSupport {
             outbox[0].drainQueuesAndReset(actualOutput, logInputOutput);
         } while (!done[0]);
 
+        if (doTransactionCommits) {
+            doTransactionCommits(processor[0]);
+        }
+
         if (!willRestore) {
             return;
         }
@@ -969,6 +984,20 @@ public final class TestSupport {
             assertTrue("finishSnapshotRestore() call without progress",
                     !assertProgress || done[0] || !outbox[0].queue(0).isEmpty());
             outbox[0].drainQueuesAndReset(actualOutput, logInputOutput);
+        } while (!done[0]);
+    }
+
+    private void doTransactionCommits(Processor processor) {
+        // transaction commit phase 1
+        boolean[] done = {false};
+        do {
+            doCall("snapshotCommitPrepare", processor.isCooperative(), () -> done[0] = processor.snapshotCommitPrepare());
+        } while (!done[0]);
+
+        // transaction commit phase 2
+        done[0] = false;
+        do {
+            doCall("snapshotCommitFinish", processor.isCooperative(), () -> done[0] = processor.snapshotCommitFinish(true));
         } while (!done[0]);
     }
 

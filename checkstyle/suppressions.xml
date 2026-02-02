@@ -204,6 +204,8 @@
 
     <!-- Javadoc suppressions -->
     <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]security[\\/]"/>
+    <!-- Split OS/EE package -->
+    <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/][^\\/]*$"/>
 
     <!-- Hot restart module -->
     <suppress checks="FileLength"
