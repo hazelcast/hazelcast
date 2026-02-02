@@ -16,12 +16,12 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
+import tools.jackson.core.JsonParser;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DataInputNavigableJsonAdapter;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.internal.serialization.Data;
+import tools.jackson.core.json.JsonFactory;
 
 import java.io.IOException;
 

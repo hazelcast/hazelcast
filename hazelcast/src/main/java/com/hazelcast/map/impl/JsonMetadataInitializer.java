@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonParser;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.json.internal.JsonSchemaHelper;
 import com.hazelcast.internal.serialization.Data;

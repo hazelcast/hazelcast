@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.json;
 
-import com.fasterxml.jackson.jr.ob.impl.DeferredMap;
+import tools.jackson.jr.ob.impl.DeferredMap;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

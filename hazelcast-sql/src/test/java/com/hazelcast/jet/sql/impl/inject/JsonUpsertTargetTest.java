@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;

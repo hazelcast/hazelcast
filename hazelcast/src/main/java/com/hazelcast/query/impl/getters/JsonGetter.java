@@ -16,14 +16,12 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonParser;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.internal.serialization.impl.StringNavigableJsonAdapter;
 import com.hazelcast.query.QueryException;
-
-import java.io.IOException;
 
 public final class JsonGetter extends AbstractJsonGetter {
 
@@ -42,7 +40,7 @@ public final class JsonGetter extends AbstractJsonGetter {
     }
 
     @Override
-    JsonParser createParser(Object obj) throws IOException {
+    JsonParser createParser(Object obj) {
         if (obj instanceof HazelcastJsonValue) {
             return factory.createParser(obj.toString());
         } else {

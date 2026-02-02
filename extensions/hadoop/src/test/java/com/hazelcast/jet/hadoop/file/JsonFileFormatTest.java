@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.hadoop.file;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
@@ -27,6 +25,8 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.core.exc.UnexpectedEndOfInputException;
 
 import java.util.Map;
 
@@ -164,7 +164,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
                                                     .glob("invalid-data.png")
                                                     .format(FileFormat.json(User.class));
 
-        assertJobFailed(source, JsonParseException.class, "Unexpected character");
+        assertJobFailed(source, StreamReadException.class, "Unexpected character");
     }
 
     @Test
@@ -173,7 +173,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
                                                     .glob("file-invalid.jsonl")
                                                     .format(FileFormat.json(User.class));
 
-        assertJobFailed(source, JsonParseException.class, "Unexpected character");
+        assertJobFailed(source, StreamReadException.class, "Unexpected character");
     }
 
     @Test
@@ -198,6 +198,6 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
                                                     .glob("file-multiline.jsonl")
                                                     .format(FileFormat.json(User.class).multiline(false));
 
-        assertJobFailed(source, JsonEOFException.class, "expected close marker for Object");
+        assertJobFailed(source, UnexpectedEndOfInputException.class, "Unexpected end-of-input: expected close marker for Object ");
     }
 }

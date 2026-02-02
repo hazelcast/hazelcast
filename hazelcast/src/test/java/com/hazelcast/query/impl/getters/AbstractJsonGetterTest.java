@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.fasterxml.jackson.core.JsonFactory;
+import tools.jackson.core.json.JsonFactory;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;

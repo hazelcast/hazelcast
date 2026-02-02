@@ -36,7 +36,6 @@
 
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
-        <javax.inject.version>1</javax.inject.version>
     </properties>
 
     <build>
@@ -263,6 +262,12 @@
                                     </includes>
                                 </filter>
                                 <filter>
+                                    <artifact>tools.jackson.core:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>com.fasterxml.jackson.core:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
@@ -319,6 +324,7 @@
                                 <Import-Package>
                                     !org.junit,
                                     !com.hazelcast.*,
+                                    !tools.jackson.*,
                                     !com.fasterxml.jackson.*,
                                     !com.zaxxer.hikari.*,
                                     !org.snakeyaml.*,
@@ -608,16 +614,35 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.jr</groupId>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- many libs and extensions still depend on old Jackson, include it as well -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson2.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson2.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.jr</groupId>
             <artifactId>jackson-jr-objects</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.jr</groupId>
+            <groupId>tools.jackson.jr</groupId>
             <artifactId>jackson-jr-annotation-support</artifactId>
         </dependency>
         <dependency>
@@ -810,12 +835,6 @@
             <groupId>org.ops4j.pax.runner</groupId>
             <artifactId>pax-runner-no-jcl</artifactId>
             <version>${pax.runner.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>${javax.inject.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- HyperLogLog testing -->

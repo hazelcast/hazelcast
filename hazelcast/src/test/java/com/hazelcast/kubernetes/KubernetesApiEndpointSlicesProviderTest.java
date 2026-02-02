@@ -16,9 +16,8 @@
 
 package com.hazelcast.kubernetes;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -30,14 +29,14 @@ import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpointSliceList;
 public class KubernetesApiEndpointSlicesProviderTest
         extends KubernetesApiProviderTest {
 
-    private static final ObjectWriter WRITER = new ObjectMapper().writer();
+    private static final ObjectWriter WRITER = new JsonMapper().writer();
 
     public KubernetesApiEndpointSlicesProviderTest() {
         super(new KubernetesApiEndpointSlicesProvider());
     }
 
     @Override
-    public String getEndpointsResponseWithServices() throws JsonProcessingException {
+    public String getEndpointsResponseWithServices() {
         return WRITER.writeValueAsString(endpointSliceList(
                 endpointSlice("hazelcast-0", List.of("192.168.0.25"), List.of(5701), "hazelcast-0", "nodeName-1"),
                 endpointSlice("service-1", List.of("172.17.0.5"), List.of(5701), "hazelcast-1", "nodeName-2"),
@@ -48,7 +47,7 @@ public class KubernetesApiEndpointSlicesProviderTest
     }
 
     @Override
-    public String getEndpointsResponse() throws JsonProcessingException {
+    public String getEndpointsResponse() {
         return WRITER.writeValueAsString(endpointSliceList(
                 endpointSlice("service-0", List.of(5701),
                         endpointSliceEndpoint(List.of("172.17.0.5"), "pod-0", "nodeName-0", true),
@@ -56,7 +55,7 @@ public class KubernetesApiEndpointSlicesProviderTest
     }
 
     @Override
-    public String getEndpointsListResponse() throws JsonProcessingException {
+    public String getEndpointsListResponse() {
         return WRITER.writeValueAsString(endpointSliceList(
                 endpointSlice("service-0", Map.of("5701", 5701, "hazelcast", 5702),
                         endpointSliceEndpoint(List.of("172.17.0.5"), "pod-0", "nodeName-0", true),

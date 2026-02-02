@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.fasterxml.jackson.jr.ob.JSON;
+import tools.jackson.jr.ob.JSON;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.json.internal;
 
-import com.fasterxml.jackson.core.JsonParser;
+import tools.jackson.core.JsonParser;
 import com.hazelcast.internal.json.Json;
 import org.junit.Test;
 

@@ -16,26 +16,23 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.TreeNode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
 class JsonUpsertTarget implements UpsertTarget {
 
-    private static final JsonFactory JSON_FACTORY = new ObjectMapper().getFactory();
+    private static final JsonMapper JSON_MAPPER = new JsonMapper();
 
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private JsonGenerator generator;
@@ -51,61 +48,57 @@ class JsonUpsertTarget implements UpsertTarget {
         }
 
         return value -> {
-            try {
-                if (value == null) {
-                    generator.writeNullField(path);
-                } else {
-                    switch (type.getTypeFamily()) {
-                        case BOOLEAN:
-                            generator.writeBooleanField(path, (Boolean) value);
-                            break;
-                        case TINYINT:
-                            generator.writeNumberField(path, (Byte) value);
-                            break;
-                        case SMALLINT:
-                            generator.writeNumberField(path, (Short) value);
-                            break;
-                        case INTEGER:
-                            generator.writeNumberField(path, (Integer) value);
-                            break;
-                        case BIGINT:
-                            generator.writeNumberField(path, (Long) value);
-                            break;
-                        case REAL:
-                            generator.writeNumberField(path, (Float) value);
-                            break;
-                        case DOUBLE:
-                            generator.writeNumberField(path, (Double) value);
-                            break;
-                        case DECIMAL:
-                        case TIME:
-                        case DATE:
-                        case TIMESTAMP:
-                        case TIMESTAMP_WITH_TIME_ZONE:
-                        case VARCHAR:
-                            generator.writeStringField(path, (String) QueryDataType.VARCHAR.convert(value));
-                            break;
-                        case OBJECT:
-                            injectObject(path, value);
-                            break;
-                        default:
-                            throw QueryException.error("Unsupported type: " + type);
-                    }
+            if (value == null) {
+                generator.writeNullProperty(path);
+            } else {
+                switch (type.getTypeFamily()) {
+                    case BOOLEAN:
+                        generator.writeBooleanProperty(path, (Boolean) value);
+                        break;
+                    case TINYINT:
+                        generator.writeNumberProperty(path, (Byte) value);
+                        break;
+                    case SMALLINT:
+                        generator.writeNumberProperty(path, (Short) value);
+                        break;
+                    case INTEGER:
+                        generator.writeNumberProperty(path, (Integer) value);
+                        break;
+                    case BIGINT:
+                        generator.writeNumberProperty(path, (Long) value);
+                        break;
+                    case REAL:
+                        generator.writeNumberProperty(path, (Float) value);
+                        break;
+                    case DOUBLE:
+                        generator.writeNumberProperty(path, (Double) value);
+                        break;
+                    case DECIMAL:
+                    case TIME:
+                    case DATE:
+                    case TIMESTAMP:
+                    case TIMESTAMP_WITH_TIME_ZONE:
+                    case VARCHAR:
+                        generator.writeStringProperty(path, (String) QueryDataType.VARCHAR.convert(value));
+                        break;
+                    case OBJECT:
+                        injectObject(path, value);
+                        break;
+                    default:
+                        throw QueryException.error("Unsupported type: " + type);
                 }
-            } catch (IOException e) {
-                throw sneakyThrow(e);
             }
         };
     }
 
-    private void injectObject(String path, Object value) throws IOException {
-        generator.writeFieldName(path);
+    private void injectObject(String path, Object value) {
+        generator.writeName(path);
         if (value == null) {
             generator.writeNull();
         } else if (value instanceof TreeNode node) {
             generator.writeTree(node);
         } else if (value instanceof Map) {
-            generator.writeObject(value);
+            generator.writePOJO(value);
         } else if (value instanceof Boolean b) {
             generator.writeBoolean(b);
         } else if (value instanceof Byte b) {
@@ -128,22 +121,14 @@ class JsonUpsertTarget implements UpsertTarget {
     @Override
     public void init() {
         baos.reset();
-        try {
-            generator = JSON_FACTORY.createGenerator(baos);
-            generator.writeStartObject();
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
+        generator = JSON_MAPPER.createGenerator(baos);
+        generator.writeStartObject();
     }
 
     @Override
     public Object conclude() {
-        try {
-            generator.writeEndObject();
-            generator.close();
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
+        generator.writeEndObject();
+        generator.close();
         return baos.toByteArray();
     }
 }

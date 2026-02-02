@@ -16,25 +16,26 @@
 
 package com.hazelcast.jet.kafka.connect;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceRecord;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public final class TestUtil {
 
     static Pattern mongoIndexExtraction = Pattern.compile(".*numberLong\": \"(\\d*).*");
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final JsonMapper MAPPER = JsonMapper.builder()
+                                                       .disable(FAIL_ON_UNKNOWN_PROPERTIES)
+                                                       .build();
 
     private TestUtil() {
     }
@@ -44,11 +45,7 @@ public final class TestUtil {
     }
 
     static <T> T convertToType(SourceRecord rec, Class<T> clazz) {
-        try {
-            return MAPPER.readValue(Values.convertToString(rec.valueSchema(), rec.value()), clazz);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return MAPPER.readValue(Values.convertToString(rec.valueSchema(), rec.value()), clazz);
     }
 
     static String convertToStringWithJustIndexForMongo(SourceRecord rec) {

@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
@@ -30,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,7 +46,7 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
-    private static final ObjectMapper SERIALIZER = new ObjectMapper();
+    private static final JsonMapper SERIALIZER = new JsonMapper();
 
     @BeforeClass
     public static void beforeClass() {
@@ -281,12 +279,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
     private void initMultiTypeObject() {
         final MultiTypeObject value = new MultiTypeObject();
-        final String serializedValue;
-        try {
-            serializedValue = SERIALIZER.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
-            throw new HazelcastException(e);
-        }
+        final String serializedValue = SERIALIZER.writeValueAsString(value);
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue(serializedValue));
     }

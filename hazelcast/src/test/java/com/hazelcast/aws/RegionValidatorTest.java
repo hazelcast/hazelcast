@@ -16,9 +16,8 @@
 
 package com.hazelcast.aws;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Streams;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.jupiter.api.Named;
@@ -29,6 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -37,14 +37,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegionValidatorTest {
 
-    private static Stream<String> getAWSRegions() throws IOException {
+    private static Collection<String> getAWSRegions() throws IOException {
         URL source = new URL("https://raw.githubusercontent.com/boto/botocore/develop/botocore/data/endpoints.json");
-        JsonNode tree = new ObjectMapper().readTree(source);
-        JsonNode partitions = tree.get("partitions");
-        Stream<JsonNode> regionArrays = partitions.valueStream().map(partition -> partition.get("regions"));
-        Stream<String> regionNames = regionArrays.flatMap(region -> Streams.stream(region.fieldNames()));
+        try (var is = source.openStream()) {
+            JsonNode tree = new ObjectMapper().readTree(is);
+            JsonNode partitions = tree.get("partitions");
+            Stream<JsonNode> regionArrays = partitions.valueStream().map(partition -> partition.get("regions"));
 
-        return regionNames;
+            return regionArrays
+                    .flatMap(region -> region.propertyNames().stream())
+                    .toList();
+        }
     }
 
     /**

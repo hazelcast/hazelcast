@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.fasterxml.jackson.jr.ob.JSON;
+import tools.jackson.jr.ob.JSON;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.sql.impl.QueryException;
@@ -24,16 +24,15 @@ import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
-import org.jsfr.json.JacksonJrParser;
+import org.jsfr.json.JacksonCoreParser;
 import org.jsfr.json.JsonSurfer;
 import org.jsfr.json.ValueBox;
 import org.jsfr.json.compiler.JsonPathCompiler;
 import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.exception.JsonSurfingException;
 import org.jsfr.json.path.JsonPath;
-import org.jsfr.json.provider.JacksonJrProvider;
+import org.jsfr.json.provider.JacksonCoreProvider;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -53,7 +52,7 @@ public final class JsonPathUtil {
         }
     };
     private static final JsonSurfer SURFER =
-            new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE, ERROR_HANDLING_STRATEGY);
+            new JsonSurfer(new JacksonCoreParser(), JacksonCoreProvider.INSTANCE, ERROR_HANDLING_STRATEGY);
 
     private JsonPathUtil() { }
 
@@ -109,11 +108,6 @@ public final class JsonPathUtil {
     }
 
     public static String serialize(Object object) {
-        try {
-            return JSON.std.asString(object);
-        } catch (IOException e) {
-            // should not happen
-            throw new RuntimeException(e);
-        }
+        return JSON.std.asString(object);
     }
 }

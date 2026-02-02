@@ -101,9 +101,12 @@
         <new.debezium.version>3.1.3.Final</new.debezium.version>
         <grpc.version>1.73.0</grpc.version>
         <hadoop.version>3.4.2</hadoop.version>
+        <jackson.version>3.0.3</jackson.version>
+        <jackson2.version>2.20.1</jackson2.version>
+        <jackson.annotation.version>2.20</jackson.annotation.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.30.6</jline.version>
-        <json-surfer.version>0.12</json-surfer.version>
+        <json-surfer.version>0.13</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
         Confluent depends on Kafka, and consideration should be given when upgrading
@@ -206,9 +209,17 @@
             <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
             <!-- When upgrades Jackson, update version in jet-files-hz-hadoop-cp-image module too. -->
             <dependency>
+                <groupId>tools.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <!-- Kept for dependency convergence, as many libs still use Jackson 2.x -->
+            <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.20.1</version>
+                <version>${jackson2.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -855,6 +866,10 @@
                             -->
                             <relocation>
                                 <!-- Covers non-versioned classes and service providers (META-INF/services/*). -->
+                                <pattern>tools.jackson</pattern>
+                                <shadedPattern>${relocation.root}.tools.jackson</shadedPattern>
+                            </relocation>
+                            <relocation>
                                 <pattern>com.fasterxml.jackson</pattern>
                                 <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
                                 <excludes>
@@ -865,14 +880,19 @@
                                     <exclude>com.fasterxml.jackson.annotation.*</exclude>
                                 </excludes>
                             </relocation>
+                            <!--
+                            We use rawString to relocate versioned classes (META-INF/versions/{n}/**),
+                            where lookbehind is necessary to avoid matching already relocated classes.
+                            See also: https://issues.apache.org/jira/browse/MSHADE-406
+                            -->
                             <relocation>
-                                <!--
-                                We use rawString to relocate versioned classes (META-INF/versions/{n}/**),
-                                where lookbehind is necessary to avoid matching already relocated classes.
-                                See also: https://issues.apache.org/jira/browse/MSHADE-406
-                                -->
                                 <pattern>(?&lt;=META-INF/versions/\d{1,2}/)com/fasterxml/jackson(?!/annotation)</pattern>
                                 <shadedPattern>${relocation.dir}/com/fasterxml/jackson</shadedPattern>
+                                <rawString>true</rawString>
+                            </relocation>
+                            <relocation>
+                                <pattern>(?&lt;=META-INF/versions/\d{1,2}/)tools/jackson(?!/annotation)</pattern>
+                                <shadedPattern>${relocation.dir}/tools/jackson</shadedPattern>
                                 <rawString>true</rawString>
                             </relocation>
                         </relocations>
@@ -1029,7 +1049,7 @@
                               are actually not the copyright lines. Let's exclude them here.
 
                               Example:
-                              com.fasterxml.jackson.core:jackson-databind:2.12.1
+                              tools.jackson.core:jackson-databind:2.12.1
                                  (c) per-property override (from annotation on specific property or
                              -->
                             <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>

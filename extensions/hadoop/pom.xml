@@ -93,9 +93,13 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-csv</artifactId>
             <scope>provided</scope> <!-- part of hazelcast-jet-csv, which user needs to have on CP -->
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-csv</artifactId>
         </dependency>
 
         <!-- Test dependencies -->

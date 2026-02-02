@@ -16,8 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ClassInfo;
 import com.hazelcast.config.Config;
@@ -49,6 +48,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -331,10 +331,14 @@ public class HazelcastPropertiesTest {
     public static void main(final String[] args) throws Exception {
         // Load translation data
         // https://github.com/hyperreality/American-British-English-Translator/
-        final Map<String, String> rawMap = new ObjectMapper().readValue(URI.create(
-                "https://raw.githubusercontent.com/hyperreality/American-British-English-Translator/master/data/american_spellings.json")
-                .toURL(), new TypeReference<>() {
-        });
+        URI uri = URI.create(
+                "https://raw.githubusercontent.com/hyperreality/American-British-English-Translator/master/data/american_spellings.json");
+
+        Map<String, String> rawMap;
+        try (var is = uri.toURL().openStream()) {
+            rawMap = new JsonMapper().readValue(is, new TypeReference<>() {
+            });
+        }
 
         final Map<String, String> americanToBritish = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 

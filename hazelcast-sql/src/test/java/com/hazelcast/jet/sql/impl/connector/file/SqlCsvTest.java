@@ -71,7 +71,7 @@ public class SqlCsvTest extends SqlTestSupport {
     @Test
     public void test_dynamicParameters() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " "
+        sqlService.executeUpdate("CREATE MAPPING " + name + " "
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_FORMAT + "'='" + CSV_FORMAT + '\''
@@ -157,7 +157,7 @@ public class SqlCsvTest extends SqlTestSupport {
     @Test
     public void test_schemaDiscovery() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
+        sqlService.executeUpdate("CREATE MAPPING " + name + ' '
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
                 + '\'' + OPTION_FORMAT + "'='" + CSV_FORMAT + '\''

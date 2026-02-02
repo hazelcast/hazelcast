@@ -16,9 +16,7 @@
 
 package com.hazelcast.kubernetes;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import tools.jackson.databind.ObjectWriter;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
@@ -41,6 +39,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,7 +90,7 @@ public class KubernetesClientTest {
     private static final String TOKEN = "sample-token";
     private static final String NAMESPACE = "sample-namespace";
     private static final int RETRIES = 3;
-    private static final ObjectWriter WRITER = new ObjectMapper().writer();
+    private static final ObjectWriter WRITER = new JsonMapper().writer();
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
@@ -139,14 +138,14 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void buildKubernetesApiUrlProviderReturnsEndpointSlicesProvider() throws JsonProcessingException {
+    public void buildKubernetesApiUrlProviderReturnsEndpointSlicesProvider() {
         stub(String.format("/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", NAMESPACE),
                 endpointSliceList(Collections.singletonList(443), "34.68.96.71"));
         assertThat(kubernetesClient.buildKubernetesApiUrlProvider()).isInstanceOf(KubernetesApiEndpointSlicesProvider.class);
     }
 
     @Test
-    public void endpointsByNamespace() throws JsonProcessingException {
+    public void endpointsByNamespace() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsList(
                 pod("hazelcast-0", NAMESPACE, "node-name-1", "192.168.0.25", 5701),
@@ -165,7 +164,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceAndServiceLabel() throws JsonProcessingException {
+    public void endpointsByNamespaceAndServiceLabel() {
         // given
         String serviceLabel = "sample-service-label";
         String serviceLabelValue = "sample-service-label-value";
@@ -191,7 +190,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceAndMultipleServiceLabels() throws JsonProcessingException {
+    public void endpointsByNamespaceAndMultipleServiceLabels() {
         // given
         String serviceLabels = "service-label-1,service-label-2";
         String serviceLabelValues = "service-label-value-1,service-label-value-2";
@@ -216,7 +215,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceAndServiceName() throws JsonProcessingException {
+    public void endpointsByNamespaceAndServiceName() {
         // given
         String serviceName = "service-name";
         stub(String.format("/api/v1/namespaces/%s/endpoints/%s", NAMESPACE, serviceName),
@@ -234,7 +233,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceAndPodLabel() throws JsonProcessingException {
+    public void endpointsByNamespaceAndPodLabel() {
         // given
         String podLabel = "sample-pod-label";
         String podLabelValue = "sample-pod-label-value";
@@ -257,7 +256,7 @@ public class KubernetesClientTest {
 
 
     @Test
-    public void endpointsByNamespaceAndMultiplePodLabels() throws JsonProcessingException {
+    public void endpointsByNamespaceAndMultiplePodLabels() {
         // given
         String podLabel = "pod-label-1,pod-label-2";
         String podLabelValue = "pod-label-value-1,pod-label-value-2";
@@ -279,7 +278,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void zoneBeta() throws JsonProcessingException {
+    public void zoneBeta() {
         // given
         String podName = "pod-name";
         stub(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName), pod("hazelcast-0", NAMESPACE, "node-name"));
@@ -305,7 +304,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void zoneFailureDomain() throws JsonProcessingException {
+    public void zoneFailureDomain() {
         // given
         String podName = "pod-name";
         stub(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName), pod("hazelcast-0", NAMESPACE, "node-name"));
@@ -334,7 +333,7 @@ public class KubernetesClientTest {
 
 
     @Test
-    public void nodeName() throws JsonProcessingException {
+    public void nodeName() {
         // given
         String podName = "pod-name";
         stub(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName), pod("hazelcast-0", NAMESPACE, "kubernetes-node-f0bbd602-f7cw"));
@@ -347,7 +346,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void zone() throws JsonProcessingException {
+    public void zone() {
         // given
         String podName = "pod-name";
         stub(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName), pod("hazelcast-0", NAMESPACE, "node-name"));
@@ -375,7 +374,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithLoadBalancerPublicIp() throws JsonProcessingException {
+    public void endpointsByNamespaceWithLoadBalancerPublicIp() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -393,7 +392,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithLoadBalancerHostname() throws JsonProcessingException {
+    public void endpointsByNamespaceWithLoadBalancerHostname() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -415,7 +414,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithNodePortPublicIp() throws JsonProcessingException {
+    public void endpointsByNamespaceWithNodePortPublicIp() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -439,7 +438,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithNodePortPublicIpPrintWarningLog() throws JsonProcessingException {
+    public void endpointsByNamespaceWithNodePortPublicIpPrintWarningLog() {
         // given
         kubernetesClient = newKubernetesClient(ExposeExternallyMode.ENABLED, false, null, null);
 
@@ -471,7 +470,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByName() throws JsonProcessingException {
+    public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByName() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -497,7 +496,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByServicePerPodLabel() throws JsonProcessingException {
+    public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByServicePerPodLabel() {
         // given
         String servicePerPodLabel = "sample-service-per-pod-service-label";
         String servicePerPodLabelValue = "sample-service-per-pod-service-label-value";
@@ -526,7 +525,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithNodeName() throws JsonProcessingException {
+    public void endpointsByNamespaceWithNodeName() {
         // given
         // create KubernetesClient with useNodeNameAsExternalAddress=true
         cleanUpClient();
@@ -555,7 +554,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithPublicIpExposingMultiplePorts()throws JsonProcessingException {
+    public void endpointsByNamespaceWithPublicIpExposingMultiplePorts() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -577,7 +576,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsIgnoreNoPublicAccess() throws JsonProcessingException {
+    public void endpointsIgnoreNoPublicAccess() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -600,7 +599,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsIgnoreLbServiceHasNoPublicAddress() throws JsonProcessingException {
+    public void endpointsIgnoreLbServiceHasNoPublicAddress() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
@@ -621,7 +620,7 @@ public class KubernetesClientTest {
     }
 
     @Test(expected = KubernetesClientException.class)
-    public void endpointsFailFastWhenNoPublicAccess() throws JsonProcessingException {
+    public void endpointsFailFastWhenNoPublicAccess() {
         // given
         cleanUpClient();
         kubernetesClient = newKubernetesClient(ExposeExternallyMode.ENABLED, false, null, null);
@@ -646,7 +645,7 @@ public class KubernetesClientTest {
     }
 
     @Test(expected = KubernetesClientException.class)
-    public void endpointsFailFastWhenLbServiceHasNoPublicAddress() throws JsonProcessingException {
+    public void endpointsFailFastWhenLbServiceHasNoPublicAddress() {
         // given
         kubernetesClient = newKubernetesClient(ExposeExternallyMode.ENABLED, false, null, null);
 
@@ -668,7 +667,7 @@ public class KubernetesClientTest {
     }
 
     @Test(expected = KubernetesClientException.class)
-    public void endpointsFailFastWhenLbServiceHasNoHazelcastPort() throws JsonProcessingException {
+    public void endpointsFailFastWhenLbServiceHasNoHazelcastPort() {
         // given
         kubernetesClient = newKubernetesClient(ExposeExternallyMode.ENABLED, false, null, null);
 
@@ -780,7 +779,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsWithoutNodeName() throws JsonProcessingException {
+    public void endpointsWithoutNodeName() {
         stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE),
                 serviceLb(servicePort(32124, 5701, 31916), "35.232.226.200"));
         stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE),
@@ -801,7 +800,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void advancedNetworkExternalIpServicePerPod() throws JsonProcessingException {
+    public void advancedNetworkExternalIpServicePerPod() {
         // given
         String servicePerPodLabel = "hazelcast.com/service-per-pod";
         String servicePerPodLabelValue = "true";
@@ -835,7 +834,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void portValuesForPodWithMultipleContainer() throws JsonProcessingException {
+    public void portValuesForPodWithMultipleContainer() {
         PodList podList = new PodList();
         List<Pod> pods = new ArrayList<>();
         for (int i = 0; i <= 1; i++) {
@@ -867,7 +866,7 @@ public class KubernetesClientTest {
             pods.add(pod);
         }
         podList.setItems(pods);
-        ObjectMapper mapper = new ObjectMapper();
+        JsonMapper mapper = new JsonMapper();
         String prodsJsonResponse = mapper.writeValueAsString(podList);
 
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), prodsJsonResponse);
@@ -899,7 +898,7 @@ public class KubernetesClientTest {
         );
     }
 
-    private static String endpointsListResponseWithoutNodeName() throws JsonProcessingException {
+    private static String endpointsListResponseWithoutNodeName() {
         return WRITER.writeValueAsString(endpointsList(
                 endpoints("my-release-hazelcast", new HashMap<>() {{
                     put("172.17.0.5", null);
@@ -977,7 +976,7 @@ public class KubernetesClientTest {
         return result;
     }
 
-    private static void stub(String url, KubernetesResource response) throws JsonProcessingException {
+    private static void stub(String url, KubernetesResource response) {
         stub(url, HttpURLConnection.HTTP_OK, WRITER.writeValueAsString(response));
     }
 
@@ -991,7 +990,7 @@ public class KubernetesClientTest {
                 .willReturn(aResponse().withStatus(status).withBody(response)));
     }
 
-    private static void stub(String url, Map<String, String> queryParams, KubernetesResource response) throws JsonProcessingException {
+    private static void stub(String url, Map<String, String> queryParams, KubernetesResource response) {
         stub(url, queryParams, WRITER.writeValueAsString(response));
     }
 

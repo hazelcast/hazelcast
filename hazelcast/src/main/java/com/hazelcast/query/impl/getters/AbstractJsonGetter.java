@@ -16,9 +16,10 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.JsonTokenId;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.JsonTokenId;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
@@ -31,7 +32,7 @@ import com.hazelcast.json.internal.JsonSchemaNode;
 import java.io.IOException;
 import java.util.List;
 
-import static com.fasterxml.jackson.core.JsonToken.START_OBJECT;
+import static tools.jackson.core.JsonToken.START_OBJECT;
 
 public abstract class AbstractJsonGetter extends Getter {
 
@@ -135,7 +136,7 @@ public abstract class AbstractJsonGetter extends Getter {
                 }
             }
             return convertJsonTokenToValue(parser);
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             // Just return null in case of exception. Json strings are allowed to be invalid.
             return null;
         }
@@ -205,7 +206,7 @@ public abstract class AbstractJsonGetter extends Getter {
      * @throws IOException
      */
     private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor) throws IOException {
-        JsonToken token = parser.getCurrentToken();
+        JsonToken token = parser.currentToken();
         if (token != START_OBJECT) {
             return false;
         }
@@ -214,7 +215,7 @@ public abstract class AbstractJsonGetter extends Getter {
             if (token == JsonToken.END_OBJECT) {
                 return false;
             }
-            if (token == JsonToken.FIELD_NAME && pathCursor.getCurrent().equals(parser.getCurrentName())) {
+            if (token == JsonToken.PROPERTY_NAME && pathCursor.getCurrent().equals(parser.currentName())) {
                 // current token matched, advance to next token before returning
                 parser.nextToken();
                 return true;

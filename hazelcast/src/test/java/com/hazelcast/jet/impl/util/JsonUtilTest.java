@@ -44,6 +44,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JsonUtilTest extends JetTestSupport {
@@ -188,13 +189,9 @@ public class JsonUtilTest extends JetTestSupport {
 
     @Test
     public void when_inputReader_then_parseSequenceObject() throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 20; i++) {
-            sb.append(jsonString);
-        }
-
+        String testJson = String.valueOf(jsonString).repeat(20);
         Iterator<TestJsonObject> iterator = JsonUtil.beanSequenceFrom(
-                new StringReader(sb.toString()), TestJsonObject.class);
+                new StringReader(testJson), TestJsonObject.class);
 
         assertIteratorObject(iterator, 20);
     }

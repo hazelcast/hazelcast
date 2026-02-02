@@ -17,9 +17,8 @@
 package com.hazelcast.kubernetes;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public class KubernetesApiEndpointProviderTest
     }
 
     @Override
-    public String getEndpointsResponseWithServices() throws JsonProcessingException {
+    public String getEndpointsResponseWithServices() {
         return WRITER.writeValueAsString(endpointsList(
                 endpoints("my-release-hazelcast", 5701,
                         endpointAddress("192.168.0.25", "hazelcast-0", "node-name-1"),
@@ -52,13 +51,13 @@ public class KubernetesApiEndpointProviderTest
     }
 
     @Override
-    public String getEndpointsResponse() throws JsonProcessingException {
+    public String getEndpointsResponse() {
         return WRITER.writeValueAsString(
                 endpoints(Map.of("192.168.0.25", "hazelcast-0", "172.17.0.5", "hazelcast-1"), 5701));
     }
 
     @Override
-    public String getEndpointsListResponse() throws JsonProcessingException {
+    public String getEndpointsListResponse() {
         return WRITER.writeValueAsString(endpointsList(
                 endpoints(Map.of("172.17.0.5", "hazelcast-0", "192.168.0.25", "hazelcast-1"),
                         Map.of("172.17.0.6", "hazelcast-2"), Map.of("5701", 5701, "hazelcast", 5702))));

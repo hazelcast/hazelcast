@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.hadoop.file;
 
-import com.fasterxml.jackson.dataformat.csv.CsvReadException;
+import tools.jackson.dataformat.csv.CsvReadException;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;

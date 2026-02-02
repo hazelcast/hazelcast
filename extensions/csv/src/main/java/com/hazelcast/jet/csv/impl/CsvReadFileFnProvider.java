@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.csv.impl;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvParser.Feature;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvReadFeature;
+import tools.jackson.dataformat.csv.CsvSchema;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.file.CsvFileFormat;
@@ -38,7 +38,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.fasterxml.jackson.dataformat.csv.CsvParser.Feature.SKIP_EMPTY_LINES;
 import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.Spliterator.ORDERED;
@@ -67,10 +66,12 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
             MappingIterator<T> iterator;
             Function<T, T> projection = identity();
             if (formatClazz == String[].class) {
-                ObjectReader reader = new CsvMapper().enable(Feature.WRAP_AS_ARRAY)
-                                                     .readerFor(String[].class)
-                                                     .with(SKIP_EMPTY_LINES)
-                                                     .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
+                ObjectReader reader = CsvMapper.builder()
+                                               .enable(CsvReadFeature.WRAP_AS_ARRAY)
+                                               .enable(CsvReadFeature.SKIP_EMPTY_LINES)
+                                               .build()
+                                               .reader(CsvSchema.emptySchema().withSkipFirstDataRow(false))
+                                               .forType(String[].class);
 
                 iterator = reader.readValues(inputStream);
                 if (!iterator.hasNext()) {
@@ -82,11 +83,13 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
                     projection = (Function<T, T>) createFieldProjection(header, fieldNames);
                 }
             } else {
-                iterator = new CsvMapper().readerFor(formatClazz)
-                                          .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                                          .with(SKIP_EMPTY_LINES)
-                                          .with(CsvSchema.emptySchema().withHeader())
-                                          .readValues(inputStream);
+                iterator = CsvMapper.builder()
+                                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                    .enable(CsvReadFeature.SKIP_EMPTY_LINES)
+                                    .build()
+                                    .readerFor(formatClazz)
+                                    .with(CsvSchema.emptySchema().withHeader())
+                                    .readValues(inputStream);
             }
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, ORDERED), false)
                     .map(projection)

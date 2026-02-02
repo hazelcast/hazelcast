@@ -39,7 +39,6 @@
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <immutables.version>2.12.1</immutables.version>
-        <json-surfer.version>0.12</json-surfer.version>
     </properties>
 
     <build>
@@ -215,7 +214,7 @@
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.checkerframework:checker-qual</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-core</include>
-                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-core</include>
                                     <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
@@ -228,7 +227,11 @@
                                     <include>com.google.guava:failureaccess</include>
                                     <include>org.locationtech.jts:jts-core</include>
                                     <include>org.slf4j:slf4j-api</include>
-                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
+                                    <include>tools.jackson.core:jackson-core</include>
+                                    <include>tools.jackson.core:jackson-databind</include>
+                                    <!-- added while JSurfer don't upgrade -->
+                                    <include>tools.jackson.jr:jackson-jr-objects</include>
+                                    <include>tools.jackson.jr:jackson-jr-annotation-support</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -408,15 +411,19 @@
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.databind</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -521,7 +528,7 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jsurfer</groupId>
-            <artifactId>jsurfer-jackson-jr</artifactId>
+            <artifactId>jsurfer-jackson-core</artifactId>
             <version>${json-surfer.version}</version>
         </dependency>
         <dependency>
@@ -529,13 +536,23 @@
             <artifactId>gson</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.jr</groupId>
+            <artifactId>jackson-jr-objects</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.jr</groupId>
+            <artifactId>jackson-jr-annotation-support</artifactId>
             <scope>compile</scope>
         </dependency>
 

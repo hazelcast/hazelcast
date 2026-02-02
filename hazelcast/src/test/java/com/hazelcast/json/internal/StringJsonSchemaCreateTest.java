@@ -16,8 +16,8 @@
 
 package com.hazelcast.json.internal;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonParser;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

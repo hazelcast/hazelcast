@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonParser;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.query.impl.getters.JsonPathCursor;

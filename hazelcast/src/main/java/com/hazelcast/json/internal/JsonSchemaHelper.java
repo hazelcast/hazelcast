@@ -16,10 +16,10 @@
 
 package com.hazelcast.json.internal;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.json.ReaderBasedJsonParser;
-import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.json.ReaderBasedJsonParser;
+import tools.jackson.core.json.UTF8StreamJsonParser;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
@@ -173,7 +173,7 @@ public final class JsonSchemaHelper {
                 parent.addChild(nameValue);
                 parent = structNode;
                 nameLocation = -1;
-            } else if (currentToken == JsonToken.FIELD_NAME) {
+            } else if (currentToken == JsonToken.PROPERTY_NAME) {
                 nameLocation = (int) getTokenLocation(parser);
             } else if (currentToken.isStructEnd()) {
                 parent = parent.getParent();
@@ -206,9 +206,9 @@ public final class JsonSchemaHelper {
 
     private static long getTokenLocation(JsonParser parser) {
         if (parser instanceof ReaderBasedJsonParser) {
-            return parser.getTokenLocation().getCharOffset();
+            return parser.currentTokenLocation().getCharOffset();
         } else if (parser instanceof UTF8StreamJsonParser) {
-            return parser.getTokenLocation().getByteOffset();
+            return parser.currentTokenLocation().getByteOffset();
         } else {
             throw new HazelcastException("Provided parser does not support location: "
                     + parser.getClass().getName());

@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.query.impl.Metadata;
+import tools.jackson.core.JacksonException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -150,7 +151,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
                     }
                 }
             };
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             // silently ignore exception. Json string is allowed to be invalid.
             ignore(e);
         } catch (Exception e) {
@@ -174,7 +175,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
                 return metadata;
             }
             return null;
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             // silently ignore exception. Json string is allowed to be invalid.
             return null;
         } catch (Exception e) {
