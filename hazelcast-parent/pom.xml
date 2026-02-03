@@ -88,7 +88,6 @@
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.5</avro.version>
-        <aws.sdk.version>1.12.797</aws.sdk.version>
         <aws.sdk2.version>2.41.19</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
@@ -509,11 +508,6 @@
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>stax2-api</artifactId>
                 <version>4.2.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-bundle</artifactId>
-                <version>${aws.sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
