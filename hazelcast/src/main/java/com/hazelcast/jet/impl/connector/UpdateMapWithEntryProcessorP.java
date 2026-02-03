@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Outbox;
@@ -27,6 +27,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.impl.InternalSecurityContext;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,6 +36,8 @@ import java.io.IOException;
 import java.io.Serial;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 
 public final class UpdateMapWithEntryProcessorP<T, K, V, R> extends AsyncHazelcastWriterP {
 
@@ -136,11 +140,17 @@ public final class UpdateMapWithEntryProcessorP<T, K, V, R> extends AsyncHazelca
         @Override
         public void readData(ObjectDataInput in)
                 throws IOException {
+            NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+            InternalSecurityContext securityContext = engine.getNode().getNodeExtension().getSecurityContextOrNull();
+            if (securityContext != null && securityContext.isThreadRunningClientTask()) {
+                throw new IllegalArgumentException(
+                        "Clients are not permitted to use " + getClass() + " directly when security is enabled.");
+            }
             userCodeNamespace = in.readString();
             if (userCodeNamespace == null) {
                 throw new NullPointerException("Unexpected null namespace read from stream");
             }
-            delegate = NamespaceUtil.tryReadObjectFromNamespace(in, userCodeNamespace);
+            delegate = callWithNamespace(engine, userCodeNamespace, in::readObject);
         }
     }
 }

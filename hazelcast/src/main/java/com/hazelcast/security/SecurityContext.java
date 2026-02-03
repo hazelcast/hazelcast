@@ -18,7 +18,6 @@ package com.hazelcast.security;
 
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -26,7 +25,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-
 import java.net.InetAddress;
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -99,15 +97,6 @@ public interface SecurityContext {
      * @throws AccessControlException if the specified permission has not been granted to the subject
      */
     void checkPermission(Subject subject, Permission permission) throws AccessControlException;
-
-    /**
-     * Checks whether all {@link Subject}s have been granted specified permission or not.
-     *
-     * @param permission the specified permission for the subject
-     * @throws AccessControlException if the specified permission has not been granted to the subject
-     */
-    @PrivateApi
-    void checkGlobalPermission(Permission permission) throws AccessControlException;
 
     /**
      * intercepts a request before process if any {@link SecurityInterceptor} configured

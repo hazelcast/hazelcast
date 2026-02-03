@@ -50,6 +50,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.security.impl.InternalSecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
@@ -227,11 +228,21 @@ public interface NodeExtension {
     MemberSchemaService createSchemaService();
 
     /**
-     * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.
+     * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise logs a warning
+     * and returns null.
      *
      * @return security context
      */
-    SecurityContext getSecurityContext();
+    InternalSecurityContext getSecurityContext();
+
+    /**
+     * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null
+     * without logging any warning.
+     *
+     * @return The {@link SecurityContext} instance if present else null
+     */
+    @Nullable
+    InternalSecurityContext getSecurityContextOrNull();
 
     /**
      * Creates a service which is an implementation of given type parameter.

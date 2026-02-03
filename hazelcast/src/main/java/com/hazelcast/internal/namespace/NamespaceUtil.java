@@ -21,19 +21,12 @@ import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.internal.namespace.impl.NamespaceThreadLocalContext;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.jet.impl.deployment.MapResourceClassLoader;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.security.SecurityContext;
-import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.NodeEngine;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.security.AccessControlException;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_USE;
 
 /**
  * Utility to simplify accessing the NamespaceService and Namespace-aware wrapping,
@@ -308,42 +301,5 @@ public class NamespaceUtil {
         // Call with `null` namespace, which will fallback to a default Namespace if available
         ClassLoader loader = engine.getNamespaceService().getClassLoaderForNamespace(null);
         return loader != null ? loader : engine.getConfigClassLoader();
-    }
-
-    /**
-     * Try to read an object from the supplied input stream using the classloader associated with the UCN with
-     * the given name. If the read fails it will be retried with the current classloader. If security is enabled
-     * on the cluster then the UCN must be globally usable, i.e. any subject has the use permission on it. If this
-     * condition is not met we skip straight to reading with the current classloader.
-     *
-     * @param in The input stream
-     * @param namespaceName The name of the UCN to use
-     * @return The deserialized object
-     * @param <T> The expected object return type
-     * @throws IOException
-     */
-    public static <T> T tryReadObjectFromNamespace(@Nonnull ObjectDataInput in, @Nonnull String namespaceName)
-            throws IOException {
-        if (isNamespaceGloballyUsable(namespaceName)) {
-            NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
-            return callWithNamespace(engine, namespaceName, in::readObject);
-        } else {
-            // Immediately fallback to reading from current namespace as the given namespace is not globally usable
-            return in.readObject();
-        }
-    }
-
-    private static boolean isNamespaceGloballyUsable(String namespaceName) {
-        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
-        SecurityContext securityContext = engine.getNode().getNodeExtension().getSecurityContext();
-        if (securityContext == null) {
-            return true;
-        }
-        try {
-            securityContext.checkGlobalPermission(new UserCodeNamespacePermission(namespaceName, ACTION_USE));
-            return true;
-        } catch (AccessControlException e) {
-            return false;
-        }
     }
 }

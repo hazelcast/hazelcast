@@ -115,7 +115,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.impl.InternalSecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -340,8 +340,14 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public SecurityContext getSecurityContext() {
+    public InternalSecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise!");
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public InternalSecurityContext getSecurityContextOrNull() {
         return null;
     }
 

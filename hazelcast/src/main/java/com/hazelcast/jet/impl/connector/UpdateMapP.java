@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -32,6 +32,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.security.impl.InternalSecurityContext;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -43,6 +45,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
 
+import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
@@ -256,11 +259,20 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
         @Override
         protected BiFunctionEx<? super V, ? super T, ? extends V> readUpdateFn(ObjectDataInput in)
                 throws IOException {
+            NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+            InternalSecurityContext securityContext = engine.getNode().getNodeExtension().getSecurityContextOrNull();
+            if (securityContext != null && securityContext.isThreadRunningClientTask()) {
+                throw new IllegalArgumentException(
+                        "Clients are not permitted to use " + getClass() + " directly when security is enabled.");
+            }
             userCodeNamespace = in.readString();
             if (userCodeNamespace == null) {
                 throw new NullPointerException("Unexpected null namespace read from stream");
             }
-            return NamespaceUtil.tryReadObjectFromNamespace(in, userCodeNamespace);
+            // If it were the case that the function definition was in the IMap namespace instead of the Job
+            // namespace we would have already failed earlier at the Job deserialization stage so implementing
+            // a fallback here would be pointless.
+            return callWithNamespace(engine, userCodeNamespace, in::readObject);
         }
 
         @Override

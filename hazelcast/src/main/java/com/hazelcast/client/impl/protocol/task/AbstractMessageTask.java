@@ -144,6 +144,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     @Override
     public final void run() {
+        MessageTaskExecutionTracker.markThreadRunningTask();
         try {
             Address address = connection.getRemoteAddress();
             if (isManagementTask() && !clientEngine.getManagementTasksChecker().isTrusted(address)) {
@@ -158,6 +159,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             }
         } catch (Throwable e) {
             handleProcessingFailure(e);
+        } finally {
+            MessageTaskExecutionTracker.unmarkThreadRunningTask();
         }
     }
 
