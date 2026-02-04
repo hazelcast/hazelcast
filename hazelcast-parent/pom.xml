@@ -173,7 +173,7 @@
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder:
             io.github.*:org.apache.*
         </maven.javadoc.plugin.excludePackageNames>
-        <maven.compiler.procfull></maven.compiler.procfull>
+        <maven.compiler.procfull/>
         <!-- Skip API compatibility check against a previous version (japicmp) -->
         <skip.public.api.check>false</skip.public.api.check>
         <!-- When false, the public API check does not fail fast and generates a full report for manual verification -->
