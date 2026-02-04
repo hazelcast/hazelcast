@@ -37,6 +37,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -54,6 +55,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
+import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
@@ -120,6 +122,32 @@ public class GenericMapStoreIT extends JdbcSqlTestSupport {
         mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
+    }
+
+    @After
+    public void dropTable() throws SQLException {
+        dropTable(tableName);
+    }
+
+    @Test
+    public void spacesInColumns() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        mapStoreConfig.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
+        mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
+        mapStoreConfig.setProperty(COLUMNS_PROPERTY, "  id, name ");
+
+        String mapName = tableName + "_spacesInColumns";
+        MapConfig mapConfig = new MapConfig(mapName);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        instance().getConfig().addMapConfig(mapConfig);
+
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(mapName);
+        // triggers load
+       assertThat((Map<Integer, Person>) map).hasSize(1);
     }
 
     @Test

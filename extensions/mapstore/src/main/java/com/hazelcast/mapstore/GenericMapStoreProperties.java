@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.SqlColumnMetadata;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +37,7 @@ import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.SINGLE_COLUMN_AS_VALUE;
 import static java.lang.System.lineSeparator;
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -71,8 +71,7 @@ class GenericMapStoreProperties {
 
         String columnsProperty = properties.getProperty(COLUMNS_PROPERTY);
         if (columnsProperty != null) {
-            List<String> columnsList = Arrays.asList(columnsProperty.split(","));
-            this.columns = Collections.unmodifiableList(columnsList);
+            this.columns = stream(columnsProperty.split(",")).map(String::strip).toList();
         } else {
             columns = Collections.emptyList();
         }
@@ -121,12 +120,12 @@ class GenericMapStoreProperties {
                 text += (", but is configured as id column or mentioned in the column list property. "
                         + "You need to either add '%s' column to the mapping "
                         + "used by GenericMapStore or change the '%s' or '%s' property of the GenericMapStore")
-                        .formatted(idColumn, ID_COLUMN_PROPERTY, COLUMNS_PROPERTY);
+                        .formatted(columnName, ID_COLUMN_PROPERTY, COLUMNS_PROPERTY);
             } else {
                 text += (", but is mentioned in the column list property. "
                         + "You need to either add '%s' column to the mapping "
                         + "used by GenericMapStore or change the '%s' property of the GenericMapStore")
-                        .formatted(idColumn, COLUMNS_PROPERTY);
+                        .formatted(columnName, COLUMNS_PROPERTY);
             }
             return text;
         }

@@ -151,6 +151,13 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
     }
 
+    /**
+     * Creates table with given column definitions
+     */
+    public static void dropTable(String tableName) throws SQLException {
+        executeJdbc("DROP TABLE " + tableName);
+    }
+
     public static void executeJdbc(String sql) throws SQLException {
         requireNonNull(dbConnectionUrl, "dbConnectionUrl must be set");
 
