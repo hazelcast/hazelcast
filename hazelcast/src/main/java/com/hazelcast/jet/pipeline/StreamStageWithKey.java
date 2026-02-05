@@ -33,6 +33,7 @@ import com.hazelcast.map.IMap;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -540,4 +541,69 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
 
     @Nonnull @Override
     <R> StreamStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
+
+
+    /**
+     * Extension of {@link StreamStageWithKey} providing additional capabilities
+     * or convenience methods on top of the default stage API using fluent
+     * interface.
+     *
+     * @param <T> the type of the stream items
+     * @param <K> the type of the key (if applicable)
+     * @param <S> the type implementing additional methods for {@link StreamStageWithKey}
+     *
+     * @apiNote This interface in essence is a visitor pattern for different stage types.
+     * @implNote Extension API type {@code S} should be an interface. It is not mandatory for
+     * {@code S} to extend {@link StreamStageWithKey}. Single extension class can be
+     * applicable to multiple stage types by implementing multiple interfaces.
+     *
+     * @since 5.7
+     */
+    interface StageExtension<T, K, S> {
+        /**
+         * Provides additional API to given stage in a fluent way.
+         *
+         * @param streamStage stage to be extended
+         * @return extended stage
+         *
+         * @implNote The simplest implementation is just to wrap given stage
+         * and use its methods to implement extension's methods.
+         */
+        @Nonnull
+        S extend(@Nonnull StreamStageWithKey<T, K> streamStage);
+    }
+
+    /**
+     * Applies extension to this stage in a fluent way.
+     *
+     * <pre>{@code
+     * srcStage.groupingKey(e -> e % 10)
+     *         .using(IMapExtension.iMapExtension())
+     *         // additional methods available here
+     *         .mapUsingPutIfAbsent("my-map", e -> e + 5, Tuple3::tuple3)
+     *         .writeTo(Sinks.logger());
+     * }</pre>
+     * <p>
+     * Usually if the extension creates a pipeline stage, the new stage should be returned
+     * at the end so the pipeline can be continued. {@link Stage#setName(String)} and
+     * {@link Stage#setLocalParallelism(int)} can be used to adjust such stage
+     * in the usual way, for example:
+     * <pre>{@code
+     * srcStage.groupingKey(e -> e % 10)
+     *         .using(IMapExtension.iMapExtension())
+     *         .mapUsingPutIfAbsent("my-map", e -> e + 5, Tuple3::tuple3)
+     *         .setName("check-if-known").setLocalParallelism(2);
+     * }</pre>
+     *
+     * @param extension extension to be applied to this stage
+     * @param <S> the type implementing additional methods for {@link StreamStageWithKey}
+     * @return extended stage
+     *
+     * @since 5.7
+     */
+    @Nonnull
+    default <S> S using(@Nonnull StageExtension<T, K, S> extension) {
+        Objects.requireNonNull(extension, "extension cannot be null");
+        return extension.extend(this);
+    }
 }
