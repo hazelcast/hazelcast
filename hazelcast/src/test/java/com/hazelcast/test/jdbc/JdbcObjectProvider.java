@@ -56,16 +56,18 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
     }
 
     public void createSchema(String schemaName) {
-        String query = createSchemaQuery(schemaName);
+        List<String> queries = createSchemaQuery(schemaName);
         try {
-            executeJdbc(databaseProvider.url(), query);
+            for (String query : queries) {
+                executeJdbc(databaseProvider.url(), query);
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String createSchemaQuery(String schemaName) {
-        return "CREATE SCHEMA IF NOT EXISTS " + databaseProvider.quote(schemaName);
+    public List<String> createSchemaQuery(String schemaName) {
+        return List.of("CREATE SCHEMA IF NOT EXISTS " + databaseProvider.quote(schemaName));
     }
 
     @Override

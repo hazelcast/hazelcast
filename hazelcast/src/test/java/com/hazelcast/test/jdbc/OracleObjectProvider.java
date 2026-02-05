@@ -37,14 +37,14 @@ public class OracleObjectProvider extends JdbcObjectProvider {
     }
 
     @Override
-    public String createSchemaQuery(String schemaName) {
-        return "CREATE USER " + databaseProvider.quote(schemaName) + " IDENTIFIED BY \"password\"\n\n"
-                + "GRANT UNLIMITED TABLESPACE TO " + databaseProvider.quote(schemaName);
+    public List<String> createSchemaQuery(String schemaName) {
+        return List.of("CREATE USER " + databaseProvider.quote(schemaName) + " IDENTIFIED BY \"password\"",
+                "GRANT UNLIMITED TABLESPACE TO " + databaseProvider.quote(schemaName));
     }
 
     @Override
     public void createObject(ObjectSpec spec) {
-        String objectName = databaseProvider.quote(spec.name);
+        String objectName = getObjectName(spec.name);
         List<Column> columns = spec.columns;
         String columnString = columns.stream().map(c -> databaseProvider.quote(c.name) + " " + resolveType(c.type) + pk(c)).collect(joining(", "));
         String sql = createSql(objectName, columnString);
@@ -57,7 +57,7 @@ public class OracleObjectProvider extends JdbcObjectProvider {
 
     @Override
     public void insertItems(ObjectSpec spec, int count) {
-        var objectName = databaseProvider.quote(spec.name);
+        String objectName = getObjectName(spec.name);
         int start = 0;
         int end = start + count;
 
@@ -120,6 +120,16 @@ public class OracleObjectProvider extends JdbcObjectProvider {
             case INT: return "NUMBER(9)";
             case STRING: return "VARCHAR(100)";
             default: throw new UnsupportedOperationException("type " + type + " is not supported in OracleDatabaseProvider");
+        }
+    }
+
+    private String getObjectName(String name) {
+        if (name.contains("\"")) {
+            // name contains double quote, it should not be quoted again
+            // since it will cause a SQL syntax error
+            return name;
+        } else {
+            return databaseProvider.quote(name);
         }
     }
 }

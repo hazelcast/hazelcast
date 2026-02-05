@@ -15,17 +15,19 @@
  */
 package com.hazelcast.test.jdbc;
 
+import java.util.List;
+
 public class MSSQLObjectProvider extends JdbcObjectProvider {
 
     public MSSQLObjectProvider(JdbcDatabaseProvider<?> databaseProvider) {
         super(databaseProvider);
     }
     @Override
-    public String createSchemaQuery(String schemaName) {
-        return "IF NOT EXISTS ("
-                + " SELECT 0 FROM information_schema.schemata WHERE schema_name = '" + schemaName + "')"
-                + " BEGIN"
-                + " EXEC sp_executesql N'CREATE SCHEMA " + databaseProvider.quote(schemaName) + "';"
-                + " END";
+    public List<String> createSchemaQuery(String schemaName) {
+        return List.of("IF NOT EXISTS ("
+                       + " SELECT 0 FROM information_schema.schemata WHERE schema_name = '" + schemaName + "')"
+                       + " BEGIN"
+                       + " EXEC sp_executesql N'CREATE SCHEMA " + databaseProvider.quote(schemaName) + "';"
+                       + " END");
     }
 }

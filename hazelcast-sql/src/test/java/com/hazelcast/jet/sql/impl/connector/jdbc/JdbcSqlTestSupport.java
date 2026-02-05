@@ -171,6 +171,12 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
+    public static void executeJdbc(List<String> sql) throws SQLException {
+        for (String s : sql) {
+            executeJdbc(s);
+        }
+    }
+
     public static void executeJdbcWithQuotes(String sql, String tableName) throws SQLException {
         requireNonNull(dbConnectionUrl, "dbConnectionUrl must be set");
         //Put the table name in quotations

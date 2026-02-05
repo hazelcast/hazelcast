@@ -735,7 +735,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         String schemaName = "custom_schema";
         jdbcDatabaseProvider.createSchema(schemaName);
         String tableName = randomName() + "-with-hyphen";
-        String fullTableName = schemaName + "." + databaseProvider.quote(tableName);
+        String fullTableName = databaseProvider.quote(schemaName, tableName);
 
         ObjectSpec spec = objectProvider.createObject(fullTableName, false);
         objectProvider.insertItems(spec, 1);
@@ -759,7 +759,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         String schemaName = "custom_schema2";
         jdbcDatabaseProvider.createSchema(schemaName);
         String tableName = randomName() + ".with_dot";
-        String fullTableName = schemaName + "." + databaseProvider.quote(tableName);
+        String fullTableName = databaseProvider.quote(schemaName, tableName);
 
         ObjectSpec spec = objectProvider.createObject(fullTableName, false);
         objectProvider.insertItems(spec, 1);
