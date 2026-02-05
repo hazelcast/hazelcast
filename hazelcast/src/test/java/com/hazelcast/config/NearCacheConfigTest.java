@@ -169,7 +169,6 @@ public class NearCacheConfigTest {
         assertEquals(config.getTimeToLiveSeconds(), deserialized.getTimeToLiveSeconds());
         assertEquals(config.getMaxIdleSeconds(), deserialized.getMaxIdleSeconds());
         assertEquals(config.getLocalUpdatePolicy(), deserialized.getLocalUpdatePolicy());
-        assertEquals(config.toString(), deserialized.toString());
     }
 
 

@@ -26,6 +26,7 @@
         <time-to-live-seconds>10000</time-to-live-seconds>
         <max-idle-seconds>5000</max-idle-seconds>
         <invalidate-on-change>false</invalidate-on-change>
+        <serialize-keys>false</serialize-keys>
         <in-memory-format>OBJECT</in-memory-format>
         <eviction size="100" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
         <preloader enabled="true" directory="/tmp/myNearCache"

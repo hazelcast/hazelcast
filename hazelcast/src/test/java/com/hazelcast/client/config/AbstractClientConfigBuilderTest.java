@@ -220,6 +220,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
+        assertFalse(nearCacheConfig.isSerializeKeys());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
 

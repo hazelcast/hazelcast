@@ -1542,7 +1542,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      near-cache:\n"
                 + "        name: test\n"
                 + "        in-memory-format: OBJECT\n"
-                + "        serialize-keys: false\n"
+                + "        serialize-keys: true\n"
                 + "        time-to-live-seconds: 77\n"
                 + "        max-idle-seconds: 92\n"
                 + "        invalidate-on-change: false\n"
@@ -1557,6 +1557,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+        assertTrue(nearCacheConfig.isSerializeKeys());
         assertEquals(77, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(92, nearCacheConfig.getMaxIdleSeconds());
         assertFalse(nearCacheConfig.isInvalidateOnChange());

@@ -30,6 +30,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.DiagnosticsConfig;
 import com.hazelcast.internal.diagnostics.DiagnosticsOutputType;
@@ -483,6 +485,33 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         assertConfigurationsEqualOnAllMembers(config);
         assertConfigurationsEqualOnAllMembers(reordered);
+    }
+
+    @Test
+    public void testMapConfig_withNearCacheConfig() {
+        MapConfig config = getMapConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(name)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setSerializeKeys(true)
+                .setCacheLocalEntries(true)
+                .setInvalidateOnChange(true)
+                .setMaxIdleSeconds(100)
+                .setTimeToLiveSeconds(200)
+                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE)
+                .setEvictionConfig(new EvictionConfig()
+                        .setEvictionPolicy(EvictionPolicy.NONE)
+                        .setSize(1000)
+                        .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT))
+                .setPreloaderConfig(new NearCachePreloaderConfig()
+                        .setEnabled(false)
+                        .setDirectory("/test")
+                        .setStoreInitialDelaySeconds(1)
+                        .setStoreIntervalSeconds(1));
+        config.setNearCacheConfig(nearCacheConfig);
+
+        driver.getConfig().addMapConfig(config);
+
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
