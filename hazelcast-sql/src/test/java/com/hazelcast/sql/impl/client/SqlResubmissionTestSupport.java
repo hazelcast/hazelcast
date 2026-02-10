@@ -20,12 +20,15 @@ import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
     protected static final String FAILING_MAP_NAME = randomName();
     protected static final int COMMON_MAP_SIZE = 10_000;

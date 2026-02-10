@@ -27,8 +27,10 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import junit.framework.TestCase;
 import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -50,6 +52,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     public static final Character CHAR_VAL = 'f';

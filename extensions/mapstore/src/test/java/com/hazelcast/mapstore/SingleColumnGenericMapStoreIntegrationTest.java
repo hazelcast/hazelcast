@@ -24,17 +24,13 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -49,20 +45,12 @@ import static com.hazelcast.mapstore.GenericMapStore.SINGLE_COLUMN_AS_VALUE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@QuickTest
 public class SingleColumnGenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
-
-    private static Config memberConfig;
-
-    @Rule
-    public TestName testName = new TestName();
-
-    private String prefix = "generic_";
 
     private String tableName;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         assumeDockerEnabled();
         initializeBeforeClass(new H2DatabaseProvider());
@@ -73,12 +61,12 @@ public class SingleColumnGenericMapStoreIntegrationTest extends JdbcSqlTestSuppo
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
         // Do not use small config to run with more threads and partitions
-        memberConfig = new Config()
+        Config memberConfig = new Config()
                 .addDataConnectionConfig(
                         new DataConnectionConfig(TEST_DATABASE_REF)
                                 .setType("jdbc")
                                 .setProperty("jdbcUrl", dbConnectionUrl)
-                );
+                                        );
         memberConfig.getJetConfig().setEnabled(true);
 
         ClientConfig clientConfig = new ClientConfig();
@@ -87,9 +75,9 @@ public class SingleColumnGenericMapStoreIntegrationTest extends JdbcSqlTestSuppo
         sqlService = instance().getSql();
     }
 
-    @Before
-    public void setUp() throws Exception {
-        tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        tableName =  "generic_" + testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 

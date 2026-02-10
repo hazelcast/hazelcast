@@ -29,16 +29,14 @@ import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.JdbcObjectProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ObjectSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -61,14 +59,15 @@ import static com.hazelcast.jet.TestedVersions.TEST_MYSQL_IMAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
-import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
  */
-@Category({QuickTest.class, SerialTest.class})
-public class GenericMapLoaderTest extends SqlTestSupport {
+@QuickTest
+@SerialTest
+public abstract class GenericMapLoaderTest extends SqlTestSupport {
 
     protected static final String TEST_DATABASE_REF = "testDatabaseRef";
 
@@ -84,12 +83,7 @@ public class GenericMapLoaderTest extends SqlTestSupport {
     private GenericMapLoader<Integer, GenericRecord> mapLoader;
     private GenericMapLoader<Integer, String> mapLoaderSingleColumn;
 
-    @BeforeClass
-    public static void beforeClass() {
-        initialize(new H2DatabaseProvider());
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void checkDockerEnabled() {
         assumeDockerEnabled();
     }
@@ -112,13 +106,13 @@ public class GenericMapLoaderTest extends SqlTestSupport {
         sqlService = instance().getSql();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         hz = instances()[0];
         mapName = "people_" + randomName();
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (mapLoader != null && mapLoader.initHasFinished()) {
             mapLoader.destroy();

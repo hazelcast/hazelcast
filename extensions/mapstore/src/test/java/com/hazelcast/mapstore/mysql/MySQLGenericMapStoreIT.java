@@ -19,10 +19,9 @@ package com.hazelcast.mapstore.mysql;
 import com.hazelcast.mapstore.GenericMapStoreIT;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeAll;
 
-@Category({NightlyTest.class})
+@NightlyTest
 public class MySQLGenericMapStoreIT extends GenericMapStoreIT {
 
     public MySQLGenericMapStoreIT() {
@@ -30,7 +29,7 @@ public class MySQLGenericMapStoreIT extends GenericMapStoreIT {
     }
 
     // Shadow the parent's @BeforeClass method by using the same method name
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         initializeBeforeClass(new MySQLDatabaseProvider());
     }

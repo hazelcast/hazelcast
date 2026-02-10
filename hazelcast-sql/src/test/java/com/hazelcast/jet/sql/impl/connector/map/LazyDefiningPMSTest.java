@@ -26,8 +26,10 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.sql.impl.connector.map.LazyDefiningSpecificMemberPms.lazyForceTotalParallelismOne;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class LazyDefiningPMSTest extends SimpleTestInClusterSupport {
     private static final int ITERATIONS = 1000;
 

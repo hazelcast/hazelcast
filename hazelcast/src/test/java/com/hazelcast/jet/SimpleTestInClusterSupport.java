@@ -32,10 +32,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.model.TestClass;
@@ -74,7 +75,6 @@ import static org.junit.Assert.assertFalse;
  * parallel due to potential concurrent destruction and usage of some Jet
  * distributed objects.
  */
-@RunWith(HazelcastSerialClassRunner.class)
 public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
@@ -134,6 +134,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     @After
+    @AfterEach
     public void supportAfter() {
         if (instances == null) {
             return;
@@ -248,6 +249,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     @AfterClass
+    @AfterAll
     public static void supportAfterClass() throws Exception {
         try {
             if (factory != null) {

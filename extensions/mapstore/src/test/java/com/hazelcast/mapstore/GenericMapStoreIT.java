@@ -31,20 +31,15 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -60,19 +55,15 @@ import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
-import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
-public class GenericMapStoreIT extends JdbcSqlTestSupport {
+@QuickTest
+public abstract class GenericMapStoreIT extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
-
-    @Rule
-    public TestName testName = new TestName();
 
     private String prefix = "generic_";
 
@@ -80,12 +71,6 @@ public class GenericMapStoreIT extends JdbcSqlTestSupport {
 
     protected void setPrefix(String prefix) {
         this.prefix = prefix;
-    }
-
-    @BeforeClass
-    public static void beforeClass() {
-        assumeDockerEnabled();
-        initializeBeforeClass(new H2DatabaseProvider());
     }
 
     protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider) {
@@ -109,9 +94,9 @@ public class GenericMapStoreIT extends JdbcSqlTestSupport {
         sqlService = instance().getSql();
     }
 
-    @Before
-    public void setUp() throws Exception {
-        tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        tableName = prefix + testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 
@@ -435,8 +420,8 @@ public class GenericMapStoreIT extends JdbcSqlTestSupport {
     /**
      * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
      */
-    @Test(timeout = 180_000L)
-    @Category(NightlyTest.class)
+    @NightlyTest
+    @Timeout(value = 3, unit = MINUTES)
     public void testClear() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);

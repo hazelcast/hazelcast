@@ -19,9 +19,11 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
 
     private static SqlService sqlService;

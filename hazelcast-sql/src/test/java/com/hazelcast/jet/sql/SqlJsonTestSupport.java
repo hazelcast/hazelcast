@@ -27,6 +27,8 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +43,7 @@ import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class SqlJsonTestSupport extends SqlTestSupport {
     private static final JsonMapper SERIALIZER = new JsonMapper();
 

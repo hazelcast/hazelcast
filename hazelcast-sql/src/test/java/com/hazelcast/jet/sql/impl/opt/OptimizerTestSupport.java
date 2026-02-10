@@ -46,12 +46,14 @@ import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.tools.RuleSets;
+import org.junit.runner.RunWith;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -68,6 +70,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     protected RelNode preOptimize(String sql, HazelcastTable... tables) {

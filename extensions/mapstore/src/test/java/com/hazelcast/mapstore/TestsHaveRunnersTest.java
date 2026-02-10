@@ -20,7 +20,7 @@ import com.hazelcast.test.archunit.ArchUnitRules;
 import com.hazelcast.test.archunit.ArchUnitTestSupport;
 import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestsHaveRunnersTest extends ArchUnitTestSupport {
 

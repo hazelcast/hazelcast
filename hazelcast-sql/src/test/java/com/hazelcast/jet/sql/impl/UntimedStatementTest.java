@@ -18,11 +18,14 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class UntimedStatementTest
         extends SqlTestSupport {
 

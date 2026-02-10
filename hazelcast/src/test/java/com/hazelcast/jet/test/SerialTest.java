@@ -16,11 +16,22 @@
 
 package com.hazelcast.jet.test;
 
+import org.junit.jupiter.api.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Category marker for the tests which are executed in series within a single JVM
  * <p>
  * These typically need to create a real Hazelcast or Jet instance which can
  * conflict with other such instances created in other tests
  */
-public interface SerialTest {
+@Retention(RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Tag("com.hazelcast.jet.test.SerialTest")
+public @interface SerialTest {
 }

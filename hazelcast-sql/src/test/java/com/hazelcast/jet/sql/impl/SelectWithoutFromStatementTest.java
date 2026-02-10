@@ -22,8 +22,10 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,6 +34,7 @@ import java.time.ZoneId;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SelectWithoutFromStatementTest extends SqlTestSupport {
     private final SqlService sqlService = instance().getSql();
 

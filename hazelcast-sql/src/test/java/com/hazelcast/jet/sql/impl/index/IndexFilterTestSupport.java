@@ -21,6 +21,8 @@ import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +31,7 @@ import java.util.Collections;
  * Utility stuff for index filter tests.
  */
 @SuppressWarnings("rawtypes")
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class IndexFilterTestSupport extends SqlTestSupport {
 
     public static ConstantExpression constant(Object value, QueryDataType type) {

@@ -19,13 +19,12 @@ package com.hazelcast.mapstore.mysql;
 import com.hazelcast.mapstore.GenericMapStoreBasicIT;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeAll;
 
-@Category(NightlyTest.class)
+@NightlyTest
 public class MySQLGenericMapStoreBasicIT extends GenericMapStoreBasicIT {
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
     }

@@ -21,12 +21,15 @@ import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.A;
 import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.B;
 import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.C;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class CyclicUDTAreNotAllowedByDefaultTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {

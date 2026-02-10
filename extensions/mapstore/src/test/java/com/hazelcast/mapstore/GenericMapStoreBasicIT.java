@@ -23,14 +23,11 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ObjectSpec;
 import com.hazelcast.test.jdbc.JdbcObjectProvider;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -50,20 +47,20 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.util.Lists.newArrayList;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test runs the MapStore methods directly, but it runs within real Hazelcast instance
  */
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, SerialTest.class})
-public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
+@QuickTest
+@SerialTest
+public abstract class GenericMapStoreBasicIT extends GenericMapLoaderTest {
 
     private GenericMapStore<Integer, GenericRecord> mapStore;
     private GenericMapStore<Integer, String> mapStoreSingleColAsValue;
 
-    @After
+    @AfterEach
     @Override
     public void after() {
         if (mapStore != null && mapStore.initHasFinished()) {

@@ -23,18 +23,15 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
-import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -54,27 +51,28 @@ import static java.time.OffsetDateTime.of;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
+@ParallelJVMTest
+@ParameterizedClass(name = "type:{0}, mappingType:{1}, javaValue:{2} value:{3}, expected:{4}, valueForSingleColumn:{5}")
+@MethodSource("parameters")
 public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
 
-    @Parameterized.Parameter()
+    @Parameter(0)
     public String type;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public String value;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public Object singleColumn;
 
-    @Parameterized.Parameter(3)
+    @Parameter(3)
     public BiConsumer<GenericRecord, String> verify;
 
-    @Parameterized.Parameter(4)
+    @Parameter(4)
     public Consumer<Tuple3<GenericRecordBuilder, String, Object>> setField;
 
-    @Parameterized.Parameter(5)
+    @Parameter(5)
     public Consumer<Object> verifySingleColumn;
 
 
@@ -83,7 +81,6 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
     private GenericMapStore<Integer, GenericRecord> mapStore;
     private GenericMapStore<Integer, Object> mapStoreSingleColumn;
 
-    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, javaValue:{2} value:{3}, expected:{4}, valueForSingleColumn:{5}")
     @SuppressWarnings("all")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
@@ -149,14 +146,14 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
         });
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         Config config = smallInstanceConfig();
 
         initialize(new H2DatabaseProvider(), config);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "table_column " + type);

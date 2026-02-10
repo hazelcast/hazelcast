@@ -19,14 +19,17 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertFalse;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlCatalogInitTest extends SqlTestSupport {
     public static final String MAP_NAME = randomName();
     public static final Config CONFIG = smallInstanceConfig();

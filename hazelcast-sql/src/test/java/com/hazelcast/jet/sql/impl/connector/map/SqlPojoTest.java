@@ -25,8 +25,10 @@ import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -56,6 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlPojoTest extends SqlTestSupport {
     private static SqlService sqlService;
 

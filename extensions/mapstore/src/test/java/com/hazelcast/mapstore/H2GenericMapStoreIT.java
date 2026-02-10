@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hazelcast.mapstore;
 
-package com.hazelcast.mapstore.postgres;
-
-import com.hazelcast.mapstore.GenericMapStoreIT;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.jupiter.api.BeforeAll;
 
-@NightlyTest
-public class PostgreGenericMapStoreIT extends GenericMapStoreIT {
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
-    public PostgreGenericMapStoreIT() {
-        setPrefix("postgre_");
-    }
+public class H2GenericMapStoreIT extends GenericMapStoreIT {
 
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeAll
     public static void beforeClass() {
-        initializeBeforeClass(new PostgresDatabaseProvider());
+        assumeDockerEnabled();
+        initializeBeforeClass(new H2DatabaseProvider());
     }
 }

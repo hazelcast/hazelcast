@@ -18,12 +18,14 @@ package com.hazelcast.jet.sql.impl.misc;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static java.util.Collections.singletonList;
 
@@ -31,6 +33,7 @@ import static java.util.Collections.singletonList;
  * Tests for the issue reported in https://github.com/hazelcast/hazelcast/issues/17554
  */
 @Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlMaterializationBugTest extends SqlTestSupport {
 
     @BeforeClass

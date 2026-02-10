@@ -19,13 +19,12 @@ package com.hazelcast.mapstore.postgres;
 import com.hazelcast.mapstore.GenericMapStoreBasicIT;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeAll;
 
-@Category(NightlyTest.class)
+@NightlyTest
 public class PostgresGenericMapStoreSimpleIT extends GenericMapStoreBasicIT {
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass()  {
         initialize(new PostgresDatabaseProvider());
     }

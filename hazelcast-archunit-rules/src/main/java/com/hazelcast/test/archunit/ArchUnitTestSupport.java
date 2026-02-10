@@ -17,6 +17,7 @@
 package com.hazelcast.test.archunit;
 
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import static org.assertj.core.api.Assumptions.assumeThat;
 
@@ -27,6 +28,7 @@ public abstract class ArchUnitTestSupport {
     // ArchUnit releases lag behind the JDK releases.
     // Skip the test if JDK version is higher than the specified assumption
     @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         assumeThat(getMajorJavaVersion())
                 .as("ArchUnit %2$s supports Java %1$s or below - https://github.com/TNG/ArchUnit/releases/tag/v%2$s",

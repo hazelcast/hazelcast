@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.postgres;
+package com.hazelcast.mapstore;
 
-import com.hazelcast.mapstore.GenericMapStoreIT;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
+import com.hazelcast.jet.test.SerialTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.jupiter.api.BeforeAll;
 
-@NightlyTest
-public class PostgreGenericMapStoreIT extends GenericMapStoreIT {
+/**
+ * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
+ */
+@QuickTest
+@SerialTest
+public class H2GenericMapLoaderTest extends GenericMapLoaderTest {
 
-    public PostgreGenericMapStoreIT() {
-        setPrefix("postgre_");
-    }
-
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeAll
     public static void beforeClass() {
-        initializeBeforeClass(new PostgresDatabaseProvider());
+        initialize(new H2DatabaseProvider());
     }
+
 }

@@ -21,9 +21,11 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests for the {@code information_schema}.
  */
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlInfoSchemaTest extends SqlTestSupport {
     private static final String LE = System.lineSeparator();
 

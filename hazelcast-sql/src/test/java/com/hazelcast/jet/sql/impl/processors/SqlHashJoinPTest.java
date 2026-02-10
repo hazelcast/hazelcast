@@ -27,9 +27,11 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.List;
 
@@ -43,6 +45,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.apache.calcite.rel.core.JoinRelType.LEFT;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlHashJoinPTest extends SqlTestSupport {
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;

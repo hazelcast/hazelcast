@@ -20,12 +20,15 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlServiceImplInstantiationTest extends SqlTestSupport {
 
     @BeforeClass

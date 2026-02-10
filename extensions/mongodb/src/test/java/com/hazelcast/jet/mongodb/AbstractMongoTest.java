@@ -21,6 +21,7 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -37,6 +38,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
     public static MongoDBContainer mongoContainer = new MongoDBContainer(MONGO_IMAGE);

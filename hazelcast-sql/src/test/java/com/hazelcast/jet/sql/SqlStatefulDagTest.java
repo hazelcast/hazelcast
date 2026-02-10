@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
@@ -23,6 +24,7 @@ import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.nio.file.Files;
 
 import static java.util.Arrays.asList;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlStatefulDagTest extends SqlTestSupport {
     private static MiniDFSCluster cluster;
 

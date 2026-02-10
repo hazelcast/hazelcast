@@ -59,6 +59,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.apache.avro.Schema;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
@@ -116,6 +117,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
 
     @After
+    @AfterEach
     public void tearDown() {
         //noinspection ConstantConditions
         if (instances() == null) {

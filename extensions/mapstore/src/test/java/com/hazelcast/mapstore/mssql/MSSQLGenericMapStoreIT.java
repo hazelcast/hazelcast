@@ -19,20 +19,19 @@ package com.hazelcast.mapstore.mssql;
 import com.hazelcast.mapstore.GenericMapStoreIT;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 
-@Ignore
-@Category({NightlyTest.class})
+@Disabled
+@NightlyTest
 public class MSSQLGenericMapStoreIT extends GenericMapStoreIT {
 
     public MSSQLGenericMapStoreIT() {
         setPrefix("mssql_");
     }
 
-    // Shadow the parent's @BeforeClass method by using the same method name
-    @BeforeClass
+    // Shadow the parent's @BeforeAll method by using the same method name
+    @BeforeAll
     public static void beforeClass() {
         initializeBeforeClass(new MSSQLDatabaseProvider());
     }

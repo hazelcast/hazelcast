@@ -18,12 +18,15 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static java.util.Arrays.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlPlanCacheTest extends SqlTestSupport {
 
     @BeforeClass

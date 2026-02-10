@@ -22,6 +22,7 @@ import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -32,6 +33,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
@@ -40,6 +42,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class KafkaSqlTestSupport extends SqlTestSupport {
     protected static KafkaTestSupport kafkaTestSupport;
     protected static SqlService sqlService;

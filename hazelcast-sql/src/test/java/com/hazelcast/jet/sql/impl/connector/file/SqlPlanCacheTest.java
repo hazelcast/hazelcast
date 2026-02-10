@@ -18,8 +18,10 @@ package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.nio.file.Paths;
 
@@ -27,6 +29,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.CSV_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlPlanCacheTest extends SqlTestSupport {
 
     private static final String RESOURCES_PATH = Paths.get("src/test/resources").toFile().getAbsolutePath();

@@ -28,7 +28,9 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
+import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -43,6 +45,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected static final String MAP_NAME = "map";

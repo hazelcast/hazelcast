@@ -20,10 +20,12 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -37,6 +39,7 @@ import static org.junit.Assert.assertNotNull;
  for those. The reason is that we currently only support INSERT and SINK in CREATE
  JOB command, and a streaming DML must use CREATE JOB.
  */
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlAggregationWithDmlTest extends SqlTestSupport {
 
     private static KafkaTestSupport kafkaTestSupport;

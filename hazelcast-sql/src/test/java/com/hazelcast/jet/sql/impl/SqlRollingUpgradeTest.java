@@ -21,14 +21,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlRollingUpgradeTest extends SqlTestSupport {
 
     private static HazelcastInstance client;

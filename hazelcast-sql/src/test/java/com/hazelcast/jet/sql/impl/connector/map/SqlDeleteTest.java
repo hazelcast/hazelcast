@@ -20,8 +20,10 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -29,6 +31,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class SqlDeleteTest extends SqlTestSupport {
 
     @BeforeClass

@@ -28,6 +28,8 @@ import com.hazelcast.test.jdbc.TestDatabaseRecordProvider;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -61,6 +63,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     protected static SqlService sqlService;
 
     @BeforeClass
+    @BeforeAll
     public static void checkDockerEnabled() {
         assumeDockerEnabled();
     }
@@ -85,6 +88,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     @AfterClass
+    @AfterAll
     public static void afterClass() {
         if (databaseProvider != null) {
             databaseProvider.shutdown();
