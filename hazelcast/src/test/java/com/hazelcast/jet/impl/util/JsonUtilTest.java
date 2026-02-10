@@ -98,6 +98,46 @@ public class JsonUtilTest extends JetTestSupport {
     }
 
     @Test
+    public void when_inputString_then_parseToRecordWithAnnotation() throws IOException {
+        TestJsonRecordWithAnnotations jsonObject = JsonUtil.beanFrom(jsonString, TestJsonRecordWithAnnotations.class);
+        assertEquals(TestJsonRecordWithAnnotations.withDefaults(), jsonObject);
+    }
+
+    @Test
+    public void when_inputStringPrettyPrint_then_parseToRecordWithAnnotation() throws IOException {
+        TestJsonRecordWithAnnotations jsonObject
+                = JsonUtil.beanFrom(jsonStringPrettyPrinted, TestJsonRecordWithAnnotations.class);
+        assertEquals(TestJsonRecordWithAnnotations.withDefaults(), jsonObject);
+    }
+    @Test
+    public void when_inputRecordWithAnnotation_then_ableToReadAgain() throws IOException {
+        String json = JsonUtil.toJson(TestJsonRecordWithAnnotations.withDefaults());
+        TestJsonRecordWithAnnotations jsonObject
+                = JsonUtil.beanFrom(json, TestJsonRecordWithAnnotations.class);
+        assertEquals(TestJsonRecordWithAnnotations.withDefaults(), jsonObject);
+    }
+
+    @Test
+    public void when_inputString_then_parseToRecord() throws IOException {
+        TestJsonRecord jsonObject = JsonUtil.beanFrom(jsonString, TestJsonRecord.class);
+        assertEquals(TestJsonRecord.withDefaults(), jsonObject);
+    }
+
+    @Test
+    public void when_inputStringPrettyPrint_then_parseToRecord() throws IOException {
+        TestJsonRecord jsonObject
+                = JsonUtil.beanFrom(jsonStringPrettyPrinted, TestJsonRecord.class);
+        assertEquals(TestJsonRecord.withDefaults(), jsonObject);
+    }
+
+    @Test
+    public void when_inputRecord_then_ableToParseAgain() throws IOException {
+        String json = JsonUtil.toJson(TestJsonRecord.withDefaults());
+        TestJsonRecord jsonObject = JsonUtil.beanFrom(json, TestJsonRecord.class);
+        assertEquals(TestJsonRecord.withDefaults(), jsonObject);
+    }
+
+    @Test
     public void when_inputString_then_parseToMap() throws IOException {
         Map<String, Object> map = JsonUtil.mapFrom(jsonString);
         assertTestObjectAsMap(map, testJsonObject);
@@ -206,6 +246,7 @@ public class JsonUtilTest extends JetTestSupport {
         assertNull(birthdate2.date);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void assertIteratorObject(Iterator<TestJsonObject> iterator, int expectedCount) {
         int count = 0;
         while (iterator.hasNext()) {
@@ -285,10 +326,9 @@ public class JsonUtilTest extends JetTestSupport {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof TestJsonObject)) {
+            if (!(o instanceof TestJsonObject that)) {
                 return false;
             }
-            TestJsonObject that = (TestJsonObject) o;
             return age == that.age &&
                     status == that.status &&
                     Objects.equals(name, that.name) &&
@@ -321,10 +361,9 @@ public class JsonUtilTest extends JetTestSupport {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof InnerTestJsonObject)) {
+            if (!(o instanceof InnerTestJsonObject that)) {
                 return false;
             }
-            InnerTestJsonObject that = (InnerTestJsonObject) o;
             return Objects.equals(val, that.val);
         }
 
@@ -356,10 +395,9 @@ public class JsonUtilTest extends JetTestSupport {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof TestJsonObjectWithAnnotations)) {
+            if (!(o instanceof TestJsonObjectWithAnnotations that)) {
                 return false;
             }
-            TestJsonObjectWithAnnotations that = (TestJsonObjectWithAnnotations) o;
             return userage == that.userage && Objects.equals(username, that.username);
         }
 
@@ -368,6 +406,27 @@ public class JsonUtilTest extends JetTestSupport {
             return Objects.hash(username, userage);
         }
 
+    }
+
+    public record TestJsonRecordWithAnnotations (@JsonProperty(value = "name") String username,
+                                                 @JsonProperty(value = "age") int userage,
+                                                 @JsonProperty(value = "objects") List<InnerTestJsonObject> objects,
+                                                 @JsonProperty(value = "innerObject") InnerTestJsonObject innerObject) {
+
+        public static TestJsonRecordWithAnnotations withDefaults() {
+            return new TestJsonRecordWithAnnotations("foo", 1,
+                                                     Arrays.asList(new InnerTestJsonObject("x"), new InnerTestJsonObject("y")),
+                                                                   new InnerTestJsonObject("z"));
+        }
+    }
+
+    public record TestJsonRecord(String name, int age, List<InnerTestJsonObject> objects, InnerTestJsonObject innerObject) {
+
+        public static TestJsonRecord withDefaults() {
+            return new TestJsonRecord("foo", 1,
+                                      Arrays.asList(new InnerTestJsonObject("x"), new InnerTestJsonObject("y")),
+                                      new InnerTestJsonObject("z"));
+        }
     }
 
     public static class Birthdate {
