@@ -41,6 +41,9 @@ public interface CPMember {
      * Returns the UUID of this CP member. The CP member UUID does not have to
      * be same with the UUID of the local member that is accessed via
      * {@link Cluster#getLocalMember()}.
+     * <p>
+     * This UUID is used as the primary identifier of CP members. It cannot be
+     * changed without impacting the identity of this member in the CP subsystem.
      *
      * @return the UUID of this CP Member
      */
@@ -48,7 +51,11 @@ public interface CPMember {
 
     /**
      * Returns the address of this CP member.
-     * It is same with the address of {@link Cluster#getLocalMember()}
+     * It is same with the address of {@link Cluster#getLocalMember()}.
+     * <p>
+     * This Address can be changed, and the CP member will retain its identity,
+     * as the UUID is used to identify uniqueness in the CP subsystem. See
+     * {@code RaftService#replaceLocalMemberIfAddressChanged}.
      *
      * @return the address of this CP member
      */
