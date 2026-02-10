@@ -117,13 +117,13 @@ class GenericMapStoreProperties {
         if (column == null) {
             String text = "Column '" + columnName + "' not found";
             if (columnName.equals(idColumn)) {
-                text += (", but is configured as id column or mentioned in the column list property. "
-                        + "You need to either add '%s' column to the mapping "
+                text += (", but is configured as `id-column` or referenced in the `columns` property. "
+                        + "Please either add '%s' column to the mapping "
                         + "used by GenericMapStore or change the '%s' or '%s' property of the GenericMapStore")
                         .formatted(columnName, ID_COLUMN_PROPERTY, COLUMNS_PROPERTY);
             } else {
-                text += (", but is mentioned in the column list property. "
-                        + "You need to either add '%s' column to the mapping "
+                text += (", but is referenced in the `columns` property. "
+                        + "Please either add '%s' column to the mapping "
                         + "used by GenericMapStore or change the '%s' property of the GenericMapStore")
                         .formatted(columnName, COLUMNS_PROPERTY);
             }
