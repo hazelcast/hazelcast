@@ -165,7 +165,7 @@ public class MavenInterface {
         // https://stackoverflow.com/q/76866880
         // We use `--quiet` to only output the expression result
         ProcessBuilder processBuilder =
-                new ProcessBuilder(MVN.get(), "help:evaluate", "--quiet", "-Dexpression=" + expression, "-DforceStdout");
+                new ProcessBuilder(MVN.get(), "help:evaluate", "--quiet", "-Dexpression=" + expression, "-DforceStdout", "--raw-streams");
         configureMavenEnvironment(processBuilder);
 
         try (InputStream stream = processBuilder.start()
