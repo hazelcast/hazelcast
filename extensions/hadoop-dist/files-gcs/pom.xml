@@ -71,7 +71,7 @@
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>gcs-connector</artifactId>
-            <version>hadoop3-2.2.31</version>
+            <version>hadoop3-2.2.32</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.apis</groupId>
