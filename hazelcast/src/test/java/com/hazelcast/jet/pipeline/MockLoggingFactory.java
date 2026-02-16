@@ -21,13 +21,13 @@ import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
 public class MockLoggingFactory implements LoggerFactory {
 
-    public static List<String> capturedMessages = new ArrayList<>();
+    public static List<String> capturedMessages = new CopyOnWriteArrayList<>();
 
     @Override
     public ILogger getLogger(String name) {
