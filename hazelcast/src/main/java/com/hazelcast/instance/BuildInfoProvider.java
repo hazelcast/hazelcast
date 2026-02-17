@@ -108,7 +108,7 @@ public final class BuildInfoProvider {
         requireNonNull(serialVersionString, "serialization version must not be null");
         byte serialVersion = Byte.parseByte(serialVersionString);
         return overrides.apply(version, build, revision, buildNumber, enterprise, serialVersion, commitId, upstreamBuildInfo,
-                MemberVersion.of(lastLtsVersion), lastLtsVersion, MemberVersion.of(previousVersion));
+                MemberVersion.of(lastLtsVersion), MemberVersion.of(previousVersion));
     }
 
     private static String checkMissingExpressionValue(@Nullable String value, String expression) {
@@ -140,7 +140,7 @@ public final class BuildInfoProvider {
         @SuppressWarnings("checkstyle:ParameterNumber")
         private BuildInfo apply(String version, String build, String revision, int buildNumber,
                                 boolean enterprise, byte serialVersion, String commitId, BuildInfo upstreamBuildInfo,
-                                MemberVersion lastLtsVersion, String lastLtsVersionString, MemberVersion previousVersion) {
+                                MemberVersion lastLtsVersion, MemberVersion previousVersion) {
             if (buildNo != -1) {
                 build = String.valueOf(buildNo);
                 buildNumber = buildNo;
