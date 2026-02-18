@@ -39,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Timeout;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -109,7 +109,7 @@ public abstract class GenericMapStoreIT extends JdbcSqlTestSupport {
         instance().getConfig().addMapConfig(mapConfig);
     }
 
-    @After
+    @AfterEach
     public void dropTable() throws SQLException {
         dropTable(tableName);
     }

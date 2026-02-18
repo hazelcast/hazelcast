@@ -17,9 +17,11 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
 import org.ops4j.pax.exam.junit.ExamReactorStrategy;
@@ -38,6 +40,7 @@ import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
 
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
 class HazelcastOSGiIT {
