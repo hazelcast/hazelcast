@@ -77,7 +77,7 @@ public class RestCallCollector {
     private final MwCounter queueTotalRequestCount = MwCounter.newMwCounter();
 
     private final MwCounter configUpdateSuccCount = MwCounter.newMwCounter();
-    private final MwCounter configUpdateFailCount = MwCounter.newMwCounter();;
+    private final MwCounter configUpdateFailCount = MwCounter.newMwCounter();
     private final MwCounter configReloadSuccCount = MwCounter.newMwCounter();
     private final MwCounter configReloadFailCount = MwCounter.newMwCounter();
 
