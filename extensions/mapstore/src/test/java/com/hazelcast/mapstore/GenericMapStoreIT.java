@@ -23,6 +23,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
@@ -111,6 +112,10 @@ public abstract class GenericMapStoreIT extends JdbcSqlTestSupport {
 
     @AfterEach
     public void dropTable() throws SQLException {
+        // ditch all jobs before dropping table
+        for (Job job : instances()[0].getJet().getJobs()) {
+            ditchJob(job, instances());
+        }
         dropTable(tableName);
     }
 
