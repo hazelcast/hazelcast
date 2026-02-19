@@ -96,7 +96,7 @@ public interface TestDatabaseProvider {
         return Arrays.stream(parts)
                      .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
                      .collect(joining("."));
-    };
+    }
 
     default Properties properties() {
         Properties properties = new Properties();
