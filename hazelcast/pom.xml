@@ -845,23 +845,23 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.activemq</groupId>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>artemis-jakarta-server</artifactId>
-            <version>${activemq-artemis.version}</version>
+            <version>${artemis.version}</version>
             <type>pom</type>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.activemq</groupId>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>artemis-junit</artifactId>
-            <version>${activemq-artemis.version}</version>
+            <version>${artemis.version}</version>
             <scope>test</scope>
 
             <!-- Exclude dependencies that bring in jms namespace -->
             <exclusions>
                 <exclusion>
-                    <groupId>org.apache.activemq</groupId>
+                    <groupId>*</groupId>
                     <artifactId>artemis-jms-client</artifactId>
                 </exclusion>
                 <exclusion>
