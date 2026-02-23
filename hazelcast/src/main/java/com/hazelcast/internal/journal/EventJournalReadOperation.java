@@ -31,6 +31,8 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
+import static java.lang.Math.min;
+
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
  * the minimum required number of items in the response, the maximum number of items
@@ -48,8 +50,6 @@ import java.io.IOException;
  */
 public abstract class EventJournalReadOperation<T, J> extends Operation
         implements IdentifiedDataSerializable, PartitionAwareOperation, BlockingOperation, ReadonlyOperation {
-    public static final long OLDEST_INITIAL_SEQUENCE = Long.MIN_VALUE;
-    public static final long NEWEST_INITIAL_SEQUENCE = Long.MAX_VALUE;
 
     protected String name;
     protected int minSize;
@@ -218,16 +218,11 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         // Persistence for the event journal is not supported at the moment,
         // so there is no need to check for it.
         if (requestedSequence < oldestSequence) {
-            if (requestedSequence != OLDEST_INITIAL_SEQUENCE) {
-                resultSet.markAsLostEventDetected();
-            }
+            resultSet.markAsLostEventDetected();
             return oldestSequence;
         }
 
         // jump back if too far in future
-        if (requestedSequence > newestSequence + 1) {
-            return newestSequence + 1;
-        }
-        return requestedSequence;
+        return min(requestedSequence, newestSequence + 1);
     }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
@@ -63,8 +64,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.internal.journal.EventJournalReadOperation.NEWEST_INITIAL_SEQUENCE;
-import static com.hazelcast.internal.journal.EventJournalReadOperation.OLDEST_INITIAL_SEQUENCE;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
@@ -160,9 +159,16 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        var startSequence = getInitialSequence();
-        for (int i = 0; i < partitionIds.length; i++) {
-            emitOffsets[i] = readOffsets[i] = startSequence;
+        // We first subscribe and then read from the map journal.
+        // The initial offset is fixed at initialization time.
+        // The separate subscribe step ensures the offset is established
+        // even for empty partitions or partitions that haven’t produced
+        // any data in the snapshot yet.
+        @SuppressWarnings("unchecked")
+        CompletableFuture<EventJournalInitialSubscriberState>[] futures = new CompletableFuture[partitionIds.length];
+        Arrays.setAll(futures, i -> eventJournalReader.subscribeToEventJournal(partitionIds[i]));
+        for (int i = 0; i < futures.length; i++) {
+            emitOffsets[i] = readOffsets[i] = getSequence(futures[i].get());
         }
         if (!isRemoteReader) {
             // try to serde projection/predicate to fail fast if they aren't known to IMDG
@@ -276,8 +282,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
     }
 
-    private long getInitialSequence() {
-        return initialPos == START_FROM_CURRENT ? NEWEST_INITIAL_SEQUENCE : OLDEST_INITIAL_SEQUENCE;
+    private long getSequence(EventJournalInitialSubscriberState state) {
+        return initialPos == START_FROM_CURRENT ? state.getNewestSequence() + 1 : state.getOldestSequence();
     }
 
     private void tryGetNextResultSet() {
@@ -292,7 +298,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 assert resultSet.size() > 0 : "empty resultSet";
                 long prevSequence = readOffsets[currentPartitionIndex];
                 long lostCount = resultSet.getNextSequenceToReadFrom() - resultSet.readCount() - prevSequence;
-                if (lostCount > 0 && prevSequence != OLDEST_INITIAL_SEQUENCE) {
+                if (lostCount > 0) {
                     getLogger().warning(lostCount + " events lost for partition "
                             + partitionId + " due to journal overflow when reading from event journal."
                             + " Increase journal size to avoid this error. nextSequenceToReadFrom="

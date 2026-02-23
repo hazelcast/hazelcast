@@ -49,8 +49,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.hazelcast.internal.journal.EventJournalReadOperation.NEWEST_INITIAL_SEQUENCE;
-import static com.hazelcast.internal.journal.EventJournalReadOperation.OLDEST_INITIAL_SEQUENCE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
@@ -582,14 +580,14 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     }
 
     @Test
-    public void startFromOldestSequence() throws ExecutionException, InterruptedException {
+    public void whenRequestedSequenceIsBelowHead_thenStartFromOldestAvailable() throws ExecutionException, InterruptedException {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 
         var key = generateKeyForPartition(instances[0], 0);
         for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION; i++) {
             context.dataAdapter.put(key, i);
         }
-        var result = readFromEventJournal(context.dataAdapter, OLDEST_INITIAL_SEQUENCE,
+        var result = readFromEventJournal(context.dataAdapter, Long.MIN_VALUE,
                 1, 0, TRUE_PREDICATE, IDENTITY_FUNCTION);
         ReadResultSet<EJ_TYPE> items = result.toCompletableFuture().get();
 
@@ -598,14 +596,14 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     }
 
     @Test(timeout = 5000)
-    public void startFromNewestSequence() throws ExecutionException, InterruptedException {
+    public void whenRequestedSequenceIsAboveTail_thenReadFromNextPublishedEvent() throws ExecutionException, InterruptedException {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 
         var key = generateKeyForPartition(instances[0], 0);
         for (int i = 0; i < JOURNAL_CAPACITY_PER_PARTITION; i++) {
             context.dataAdapter.put(key, i);
         }
-        var result = readFromEventJournal(context.dataAdapter, NEWEST_INITIAL_SEQUENCE,
+        var result = readFromEventJournal(context.dataAdapter, Long.MAX_VALUE,
                 1, 0, TRUE_PREDICATE, IDENTITY_FUNCTION);
         var future = result.toCompletableFuture();
         // A put operation may occur before the read operation actually starts,
