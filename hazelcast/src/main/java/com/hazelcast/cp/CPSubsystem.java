@@ -566,6 +566,15 @@ public interface CPSubsystem {
     CPSessionManagementService getCPSessionManagementService();
 
     /**
+     * Returns the {@link CPDataStructureManagementService} of this Hazelcast
+     * instance. {@link CPDataStructureManagementService} offers APIs for managing CP
+     * data structures.
+     *
+     * @return the {@link CPDataStructureManagementService} of this Hazelcast instance
+     */
+    CPDataStructureManagementService getCPDataStructureManagementService();
+
+    /**
      * Registers a new CPMembershipListener to listen CP membership changes.
      *
      * @param listener membership listener

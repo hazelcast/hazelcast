@@ -4099,10 +4099,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <map>\n"
                 + "      <name>map1</name>\n"
                 + "      <max-size-mb>1</max-size-mb>\n"
+                + "      <purge-enabled>true</purge-enabled>\n"
                 + "    </map>\n"
                 + "    <map>\n"
                 + "      <name>map2</name>\n"
                 + "      <max-size-mb>2</max-size-mb>\n"
+                + "      <purge-enabled>false</purge-enabled>\n"
                 + "    </map>\n"
                 + "  </maps>\n"
                 + "  <map-limit>20</map-limit>\n"
@@ -4148,8 +4150,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(mapConfig2);
         assertEquals("map1", mapConfig1.getName());
         assertEquals(1, mapConfig1.getMaxSizeMb());
+        assertTrue(mapConfig1.isPurgeEnabled());
         assertEquals("map2", mapConfig2.getName());
         assertEquals(2, mapConfig2.getMaxSizeMb());
+        assertFalse(mapConfig2.isPurgeEnabled());
         assertEquals(20, cpSubsystemConfig.getCPMapLimit());
         assertTrue(cpSubsystemConfig.isAutoStepDownWhenLeader());
     }

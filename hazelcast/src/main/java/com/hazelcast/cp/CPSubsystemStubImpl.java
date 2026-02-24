@@ -100,6 +100,11 @@ public class CPSubsystemStubImpl implements CPSubsystem, Consumer<ClientContext>
     }
 
     @Override
+    public CPDataStructureManagementService getCPDataStructureManagementService() {
+        throw new UnsupportedOperationException(cpSubsystemNotAvailableMessage);
+    }
+
+    @Override
     public UUID addMembershipListener(CPMembershipListener listener) {
         throw new UnsupportedOperationException(cpSubsystemNotAvailableMessage);
     }

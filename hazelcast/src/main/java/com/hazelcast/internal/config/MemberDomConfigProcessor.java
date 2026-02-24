@@ -3205,6 +3205,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     cpMapConfig.setName(getTextContent(subChild));
                 } else if (matches("max-size-mb", nodeName)) {
                     cpMapConfig.setMaxSizeMb(Integer.parseInt(getTextContent(subChild)));
+                } else if (matches("purge-enabled", nodeName)) {
+                    cpMapConfig.setPurgeEnabled(Boolean.parseBoolean(getTextContent(subChild)));
                 }
             }
             cpSubsystemConfig.addCPMapConfig(cpMapConfig);

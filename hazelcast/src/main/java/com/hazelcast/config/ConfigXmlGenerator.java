@@ -1037,6 +1037,7 @@ public class ConfigXmlGenerator {
             gen.open("map")
                .node("name", cpMapConfig.getName())
                .node("max-size-mb", cpMapConfig.getMaxSizeMb())
+               .node("purge-enabled", cpMapConfig.isPurgeEnabled())
                .close();
         }
 

@@ -5700,6 +5700,17 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="purge-enabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Enables time-based purging of CPMap entries.
+                        When enabled, entries exceeding a given age can be removed
+                        based on timestamps assigned by the Raft leader rather than
+                        local timestamps of follower nodes.
+                        Default is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 

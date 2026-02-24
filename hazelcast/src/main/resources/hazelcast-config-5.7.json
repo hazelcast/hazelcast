@@ -2656,6 +2656,11 @@
                 "default": 100,
                 "minimum": 1,
                 "description": "Maximum size in MB that the constituent key-value pairs of the CPMap can total."
+              },
+              "purge-enabled": {
+                "type": "boolean",
+                "default": false,
+                "description": "Enables time-based purging of CPMap entries. When enabled, entries exceeding a given age can be removed based on timestamps assigned by the Raft leader rather than local timestamps of follower nodes. Default is false."
               }
             }
           }

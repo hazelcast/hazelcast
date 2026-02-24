@@ -3790,10 +3790,12 @@
             <map>
                 <name>map1</name>
                 <max-size-mb>50</max-size-mb>
+                <purge-enabled>false</purge-enabled>
             </map>
             <map>
                 <name>map2</name>
                 <max-size-mb>25</max-size-mb>
+                <purge-enabled>true</purge-enabled>
             </map>
         </maps>
     </cp-subsystem>

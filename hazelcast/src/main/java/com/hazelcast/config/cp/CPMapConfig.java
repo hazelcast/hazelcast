@@ -24,6 +24,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for {@link com.hazelcast.cp.CPMap}.
+ *
  * @since 5.4
  */
 public class CPMapConfig {
@@ -43,6 +44,7 @@ public class CPMapConfig {
      * Maximum size in MB that the key-value pairs of the CPMap can total.
      */
     private int maxSizeMb = DEFAULT_MAX_SIZE_MB;
+    private boolean purgeEnabled;
 
     /**
      * @deprecated exists only for DOM processing.
@@ -54,6 +56,7 @@ public class CPMapConfig {
     /**
      * Creates a configuration for a {@link com.hazelcast.cp.CPMap} with the given {@code name} and the default map capacity of
      * {@link CPMapConfig#DEFAULT_MAX_SIZE_MB}.
+     *
      * @param name of the {@link com.hazelcast.cp.CPMap} the configuration is applicable for
      */
     public CPMapConfig(String name) {
@@ -64,7 +67,8 @@ public class CPMapConfig {
      * Creates a configuration for a {@link com.hazelcast.cp.CPMap} with the given {@code name} and maximum capacity in MB as
      * specified by {@code maxSizeMb}.
      * {@link CPMapConfig#DEFAULT_MAX_SIZE_MB}.
-     * @param name of the {@link com.hazelcast.cp.CPMap} the configuration is applicable for
+     *
+     * @param name      of the {@link com.hazelcast.cp.CPMap} the configuration is applicable for
      * @param maxSizeMb maximum MB capacity of the {@link com.hazelcast.cp.CPMap}
      */
     public CPMapConfig(String name, int maxSizeMb) {
@@ -73,10 +77,13 @@ public class CPMapConfig {
 
     /**
      * Copy constructor.
+     *
      * @param config to copy
      */
     public CPMapConfig(CPMapConfig config) {
-        setName(config.name).setMaxSizeMb(config.maxSizeMb);
+        setName(config.name)
+                .setMaxSizeMb(config.maxSizeMb)
+                .setPurgeEnabled(config.purgeEnabled);
     }
 
     /**
@@ -88,6 +95,7 @@ public class CPMapConfig {
 
     /**
      * Sets the maximum capacity of the {@link com.hazelcast.cp.CPMap}.
+     *
      * @param maxSizeMb capacity of the {@link com.hazelcast.cp.CPMap} in MB
      * @throws IllegalArgumentException if {@code maxSizeMb} is not positive or exceeds 2000MB
      */
@@ -101,6 +109,50 @@ public class CPMapConfig {
     }
 
     /**
+     * Enables time-based purging of CPMap entries.
+     * <p>
+     * When enabled, entries exceeding a given age may be removed based on
+     * logical timestamps assigned by the current Raft leader at write or update
+     * time, rather than local clocks of follower nodes.
+     * Default is {@code false}.
+     *
+     * <h3>Requirements and Constraints</h3>
+     * <ul>
+     *   <li><b>Fresh maps only:</b> Purge must be enabled at map creation time.
+     *       Changing this setting on an existing CPMap results in undefined behavior.</li>
+     *   <li><b>Minimum cluster version:</b> Requires cluster version {@code 5.7} or later.</li>
+     *   <li><b>Licensing:</b> Available only when {@code ADVANCED_CP} is enabled.</li>
+     * </ul>
+     *
+     * <h3>Caveats</h3>
+     * <ul>
+     *   <li>Purge execution may introduce latency proportional to the number of
+     *       entries and can temporarily affect other cluster operations.</li>
+     *   <li>Purge is triggered explicitly via
+     *       {@link com.hazelcast.cp.CPDataStructureManagementService#purgeCPMap}.</li>
+     *   <li>Using a monotonic clock is recommended to preserve logical correctness
+     *       across leader changes. Clock drift does not affect safety but may cause
+     *       entries to become eligible earlier or later than expected.</li>
+     * </ul>
+     *
+     * @see com.hazelcast.cp.CPDataStructureManagementService#purgeCPMap
+     */
+    public CPMapConfig setPurgeEnabled(boolean purgeEnabled) {
+        this.purgeEnabled = purgeEnabled;
+        return this;
+    }
+
+    /**
+     * Returns whether time-based purging is enabled for this CPMap.
+     *
+     * @return {@code true} if purge is enabled, {@code false} otherwise
+     * @see #setPurgeEnabled(boolean)
+     */
+    public boolean isPurgeEnabled() {
+        return purgeEnabled;
+    }
+
+    /**
      * Gets the name of the configuration.
      */
     @Nullable
@@ -110,6 +162,7 @@ public class CPMapConfig {
 
     /**
      * Sets the name of the configuration.
+     *
      * @throws NullPointerException if the {@code name} is null
      */
     public CPMapConfig setName(String name) {
@@ -126,16 +179,22 @@ public class CPMapConfig {
             return false;
         }
         CPMapConfig that = (CPMapConfig) object;
-        return maxSizeMb == that.maxSizeMb && Objects.equals(name, that.name);
+        return maxSizeMb == that.maxSizeMb
+                && purgeEnabled == that.purgeEnabled
+                && Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, maxSizeMb);
+        return Objects.hash(name, maxSizeMb, purgeEnabled);
     }
 
     @Override
     public String toString() {
-        return "CPMapConfig{" + "name='" + name + '\'' + ", maxSizeMb=" + maxSizeMb + '}';
+        return "CPMapConfig{"
+                + "name='" + name + '\''
+                + ", maxSizeMb=" + maxSizeMb
+                + ", purgeEnabled=" + purgeEnabled
+                + '}';
     }
 }

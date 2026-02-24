@@ -4604,8 +4604,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                     maps:
                       map1:
                         max-size-mb: 1
+                        purge-enabled: true
                       map2:
                         max-size-mb: 2
+                        purge-enabled: false
                 """;
         Config config = buildConfig(yaml);
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
@@ -4647,8 +4649,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(mapConfig2);
         assertEquals("map1", mapConfig1.getName());
         assertEquals(1, mapConfig1.getMaxSizeMb());
+        assertTrue(mapConfig1.isPurgeEnabled());
         assertEquals("map2", mapConfig2.getName());
         assertEquals(2, mapConfig2.getMaxSizeMb());
+        assertFalse(mapConfig2.isPurgeEnabled());
         assertEquals(25, cpSubsystemConfig.getCPMapLimit());
         assertTrue(cpSubsystemConfig.isAutoStepDownWhenLeader());
     }

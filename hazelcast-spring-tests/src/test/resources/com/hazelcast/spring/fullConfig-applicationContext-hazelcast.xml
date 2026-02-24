@@ -1111,13 +1111,16 @@
                     <hz:map>
                         <hz:name>map1</hz:name>
                         <hz:max-size-mb>50</hz:max-size-mb>
+                        <hz:purge-enabled>true</hz:purge-enabled>
                     </hz:map>
                     <hz:map>
                         <hz:name>map2</hz:name>
                         <hz:max-size-mb>75</hz:max-size-mb>
+                        <hz:purge-enabled>false</hz:purge-enabled>
                     </hz:map>
                     <hz:map>
                         <hz:name>map3</hz:name>
+                        <hz:purge-enabled>true</hz:purge-enabled>
                     </hz:map>
                 </hz:maps>
             </hz:cp-subsystem>

@@ -3675,8 +3675,10 @@ hazelcast:
     maps:
       map1:
         max-size-mb: 50
+        purge-enabled: false
       map2:
         max-size-mb: 25
+        purge-enabled: true
 
   #
   # ===== HAZELCAST METRICS CONFIGURATION =====

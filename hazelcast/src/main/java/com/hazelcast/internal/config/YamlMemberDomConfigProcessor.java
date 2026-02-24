@@ -997,6 +997,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 String nodeName = cleanNodeName(subChild);
                 if (matches("max-size-mb", nodeName)) {
                     cpMapConfig.setMaxSizeMb(Integer.parseInt(getTextContent(subChild)));
+                } else if (matches("purge-enabled", nodeName)) {
+                    cpMapConfig.setPurgeEnabled(Boolean.parseBoolean(getTextContent(subChild)));
                 }
             }
             cpSubsystemConfig.addCPMapConfig(cpMapConfig);

@@ -57,7 +57,11 @@ public abstract class AbstractXmlConfigHelper extends AbstractConfigBuilder {
 
     final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
 
-    private final String hazelcastSchemaLocation = getConfigType().name + "-config-" + getReleaseVersion() + ".xsd";
+    private final String hazelcastSchemaLocation;
+
+    {
+        hazelcastSchemaLocation = getConfigType().name + "-config-" + getReleaseVersion() + ".xsd";
+    }
 
     public String getNamespaceType() {
         return getConfigType().name.equals("hazelcast") ? "config" : "client-config";

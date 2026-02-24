@@ -18,7 +18,6 @@ package com.hazelcast.internal.util;
 
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -28,10 +27,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class TimeUtil {
 
+    private static final int NANOS_PER_MICROSECOND = 1000;
     private static final int MILLIS_PER_SECOND = 1000;
     private static final int SECONDS_PER_MINUTE = 60;
     private static final int MINUTES_PER_HOUR = 60;
     private static final int HOURS_PER_DAY = 24;
+    private static final int BUILDER_CAPACITY = 32;
 
     private TimeUtil() {
     }
@@ -40,7 +41,7 @@ public final class TimeUtil {
      * Convert nanoseconds to milliseconds
      * If conversion result is 0 and {@code nanos} was &gt; 0, then 1 is returned.
      *
-     * @param nanos     The number of nanoseconds
+     * @param nanos The number of nanoseconds
      * @return The millisecond representation of the input
      */
     public static long convertNanosToMillis(long nanos) {
@@ -50,7 +51,7 @@ public final class TimeUtil {
     /**
      * Convert milliseconds to nanoseconds
      *
-     * @param millis     The number of milliseconds
+     * @param millis The number of milliseconds
      * @return The nanoseconds representation of the input
      */
     public static long convertMillisToNanos(long millis) {
@@ -98,23 +99,52 @@ public final class TimeUtil {
         return SECONDS.toMillis(MILLISECONDS.toSeconds(timestamp));
     }
 
-    public static String toHumanReadableMillis(long givenMillis) {
-        long time = givenMillis;
+    public static String toHumanReadableNanos(long nanos) {
+        if (nanos < NANOS_PER_MICROSECOND) {
+            return nanos + "ns";
+        }
 
-        long millis = time % MILLIS_PER_SECOND;
-        time /= MILLIS_PER_SECOND;
+        long millis = TimeUnit.NANOSECONDS.toMillis(nanos);
+        long remainingNanos = nanos - TimeUnit.MILLISECONDS.toNanos(millis);
 
-        long seconds = time % SECONDS_PER_MINUTE;
-        time /= SECONDS_PER_MINUTE;
+        // If no full millisecond, just nanos
+        if (millis == 0) {
+            return remainingNanos + "ns";
+        }
 
-        long minutes = time % MINUTES_PER_HOUR;
-        time /= MINUTES_PER_HOUR;
+        long seconds = millis / MILLIS_PER_SECOND;
+        long ms = millis % MILLIS_PER_SECOND;
 
-        long hours = time % HOURS_PER_DAY;
-        time /= HOURS_PER_DAY;
+        long minutes = seconds / SECONDS_PER_MINUTE;
+        long s = seconds % SECONDS_PER_MINUTE;
 
-        long days = time;
+        long hours = minutes / MINUTES_PER_HOUR;
+        long m = minutes % MINUTES_PER_HOUR;
 
-        return format("%02dd %02dh %02dm %02ds %02dms", days, hours, minutes, seconds, millis);
+        long days = hours / HOURS_PER_DAY;
+        long h = hours % HOURS_PER_DAY;
+
+        StringBuilder sb = new StringBuilder(BUILDER_CAPACITY);
+
+        appendIfNonZero(sb, days, "d");
+        appendIfNonZero(sb, h, "h");
+        appendIfNonZero(sb, m, "m");
+        appendIfNonZero(sb, s, "s");
+        appendIfNonZero(sb, ms, "ms");
+
+        if (remainingNanos > 0) {
+            appendIfNonZero(sb, remainingNanos, "ns");
+        }
+
+        return sb.isEmpty() ? "0ms" : sb.toString().trim();
+    }
+
+    private static void appendIfNonZero(StringBuilder sb, long value, String suffix) {
+        if (value > 0) {
+            if (!sb.isEmpty()) {
+                sb.append(' ');
+            }
+            sb.append(value).append(suffix);
+        }
     }
 }
