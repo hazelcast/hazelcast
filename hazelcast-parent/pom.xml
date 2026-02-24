@@ -133,7 +133,7 @@
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
-        <mongodb.version>5.6.3</mongodb.version>
+        <mongodb.version>5.6.4</mongodb.version>
 
         <!-- test dependencies -->
         <artemis.version>2.51.0</artemis.version>
