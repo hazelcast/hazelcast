@@ -31,6 +31,9 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.CapturingCollector;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -1442,6 +1445,22 @@ public abstract class HazelcastTestSupport {
     public static void assertThatIsNotMultithreadedTest() {
         assertThat(Thread.currentThread()).as("Test cannot run with parallel runner")
                 .isNotInstanceOf(MultithreadedTestRunnerThread.class);
+    }
+
+    public static void assertLastMetricValue(NodeEngine engine, int value, MetricDescriptor... metrics) {
+        MetricsRegistry metricsRegistry = engine.getMetricsRegistry();
+        CapturingCollector collector = new CapturingCollector();
+        metricsRegistry.collect(collector);
+
+        for (MetricDescriptor metric : metrics) {
+            CapturingCollector.Capture capture = collector.captures().get(metric);
+            if (capture == null) {
+                assertEquals("Metric " + metric + " not collected, but non-zero value expected!", 0, value);
+            } else {
+                List<Number> values = capture.values();
+                assertEquals("Metric " + metric + " had unexpected last value", value, values.get(values.size() - 1).intValue());
+            }
+        }
     }
 
     // ###################################

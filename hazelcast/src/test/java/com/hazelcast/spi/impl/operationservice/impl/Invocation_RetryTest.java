@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -35,6 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,6 +50,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.test.Accessors.getPartitionService;
@@ -60,9 +66,15 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
     private static final int NUMBER_OF_INVOCATIONS = 100;
 
+    private TestHazelcastInstanceFactory factory;
+
+    @Before
+    public void setup() {
+        factory = createHazelcastInstanceFactory();
+    }
+
     @Test
     public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance();
         HazelcastInstance remote = factory.newHazelcastInstance();
         warmUpPartitions(local, remote);
@@ -83,7 +95,6 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
     @Test(expected = MemberLeftException.class)
     public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance();
         HazelcastInstance remote = factory.newHazelcastInstance();
         warmUpPartitions(local, remote);
@@ -104,27 +115,13 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
         NodeEngineImpl localNodeEngine = getNodeEngineImpl(local);
-        NodeEngineImpl remoteNodeEngine = getNodeEngineImpl(remote);
         final OperationServiceImpl operationService = localNodeEngine.getOperationService();
-
-        NonResponsiveOperation op = new NonResponsiveOperation();
-        op.setValidateTarget(false);
-        op.setPartitionId(1);
-
-        InvocationFuture future = operationService.invokeOnTarget(null, op, remoteNodeEngine.getThisAddress());
-
-        Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
-        invocationField.setAccessible(true);
-        Invocation invocation = (Invocation) invocationField.get(future);
-
-        invocation.notifyError(new RetryableHazelcastException());
-        invocation.notifyError(new RetryableHazelcastException());
+        invokeNonResponseOpWithRetries(localNodeEngine.getOperationService(), getNodeEngineImpl(remote).getThisAddress(), 2);
 
         assertTrueEventually(() -> {
             Iterator<Invocation> invocations = operationService.invocationRegistry.iterator();
@@ -133,8 +130,45 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMetricCollection() throws Exception {
+        HazelcastInstance local = factory.newHazelcastInstance();
+        NodeEngineImpl localNodeEngine = getNodeEngineImpl(local);
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        warmUpPartitions(local, remote);
+
+        // assert no metrics collected at the test start
+        MetricDescriptor operationRetryMetric = DEFAULT_DESCRIPTOR_SUPPLIER
+                .get()
+                .withPrefix(OPERATION_PREFIX)
+                .withMetric(OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT)
+                .withUnit(COUNT);
+        assertLastMetricValue(localNodeEngine, 0, operationRetryMetric);
+
+        invokeNonResponseOpWithRetries(localNodeEngine.getOperationService(), getNodeEngineImpl(remote).getThisAddress(), 3);
+
+        // verify metrics are collected for retries
+        assertLastMetricValue(localNodeEngine, 3, operationRetryMetric);
+    }
+
+    private void invokeNonResponseOpWithRetries(OperationServiceImpl operationService,
+                                                Address target, int retries) throws Exception {
+        NonResponsiveOperation op = new NonResponsiveOperation();
+        op.setValidateTarget(false);
+        op.setPartitionId(1);
+
+        InvocationFuture future = operationService.invokeOnTarget(null, op, target);
+
+        Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
+        invocationField.setAccessible(true);
+        Invocation invocation = (Invocation) invocationField.get(future);
+
+        for (int i = 0; i < retries; i++) {
+            invocation.notifyError(new RetryableHazelcastException());
+        }
+    }
+
+    @Test
     public void invocationShouldComplete_whenRetried_DuringShutdown() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
@@ -168,7 +202,6 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
     @Test
     public void invocationShouldComplete_whenOperationsPending_DuringShutdown() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -32,6 +33,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -70,7 +75,6 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
         // now we verify if the wait timeout is still inifinite
         assertEquals(-1, op.getWaitTimeout());
     }
-
 
     @Test
     public void testTimedWait_andNearingZero() {
@@ -111,6 +115,30 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
         assertTrue("op.waitTimeout " + op.getWaitTimeout() + " is too small", op.getWaitTimeout() >= SECONDS.toMillis(40));
         // we also need to verify that the wait timeout has decreased.
         assertTrue("op.waitTimeout " + op.getWaitTimeout() + " is too small", op.getWaitTimeout() <= SECONDS.toMillis(55));
+    }
+
+    @Test
+    public void testMetricCollection() {
+        // assert no metrics collected at the test start
+        MetricDescriptor callTimeoutMetric = DEFAULT_DESCRIPTOR_SUPPLIER
+                .get()
+                .withPrefix(OPERATION_PREFIX)
+                .withMetric(OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT)
+                .withUnit(COUNT);
+
+        assertLastMetricValue(node.getNodeEngine(), 0, callTimeoutMetric);
+
+        DummyBlockingOperation op = new DummyBlockingOperation(waitNotifyKey);
+        op.setPartitionId(0).setWaitTimeout(-1);
+
+        Invocation invocation = new PartitionInvocation(
+                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2),
+                false, false);
+        OperationAccessor.setInvocationTime(op, node.getClusterService().getClusterClock().getClusterTime());
+        invocation.notifyCallTimeout();
+
+        // verify metrics are collected for the call timeout
+        assertLastMetricValue(node.getNodeEngine(), 1, callTimeoutMetric);
     }
 
     private static class WaitNotifyKeyImpl implements WaitNotifyKey {

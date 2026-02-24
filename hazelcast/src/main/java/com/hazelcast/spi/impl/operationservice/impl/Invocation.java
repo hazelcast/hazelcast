@@ -391,6 +391,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 //    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
 //            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
+        context.callTimeoutCount.inc();
         if (!(op instanceof BlockingOperation)) {
             // if the call is not a BlockingOperation, then in case of a call-timeout, we are not going to retry;
             // only blocking operations are going to be retried, because they rely on a repeated execution mechanism
@@ -865,6 +866,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         final OperationServiceImpl operationService;
         final OperationExecutor operationExecutor;
         final MwCounter retryCount;
+        final MwCounter callTimeoutCount;
         final InternalSerializationService serializationService;
         final Address thisAddress;
         final OutboundOperationHandler outboundOperationHandler;
@@ -886,6 +888,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 OperationServiceImpl operationService,
                 OperationExecutor operationExecutor,
                 MwCounter retryCount,
+                MwCounter callTimeoutCount,
                 InternalSerializationService serializationService,
                 Address thisAddress,
                 OutboundOperationHandler outboundOperationHandler,
@@ -905,6 +908,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             this.operationService = operationService;
             this.operationExecutor = operationExecutor;
             this.retryCount = retryCount;
+            this.callTimeoutCount = callTimeoutCount;
             this.serializationService = serializationService;
             this.thisAddress = thisAddress;
             this.outboundOperationHandler = outboundOperationHandler;

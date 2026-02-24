@@ -419,6 +419,7 @@ public final class MetricDescriptorConstants {
     public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING = "pending";
     public static final String OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT = "executedOperationsCount";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS = "asyncOperations";
+    // OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT will be removed in a future version
     public static final String OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT = "operationTimeoutCount";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT = "callTimeoutCount";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT = "retryCount";
