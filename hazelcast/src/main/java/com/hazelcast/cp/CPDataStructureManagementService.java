@@ -31,13 +31,13 @@ public interface CPDataStructureManagementService {
      *
      * @param mapName          name of the CPMap
      * @param age age threshold for entries to be purged
-     * @return number of entries purged
+     * @return a response object which holds the number of entries purged and the oldest remaining entry timestamp
      * @throws IllegalArgumentException      if no CPGroup exists for the given mapName
      * @throws UnsupportedOperationException if purge is not enabled for the given mapName
      *                                       or if the cluster version is earlier than 5.7
      * @throws NullPointerException          if mapName or age is {@code null}
      * @see com.hazelcast.config.cp.CPMapConfig#setPurgeEnabled
      */
-    CompletableFuture<Integer> purgeCPMap(String mapName, Duration age);
+    CompletableFuture<CPMapPurgeResponse> purgeCPMap(String mapName, Duration age);
 
 }
