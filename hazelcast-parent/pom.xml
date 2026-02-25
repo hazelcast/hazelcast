@@ -755,7 +755,7 @@
             <dependency>
                 <groupId>org.jctools</groupId>
                 <artifactId>jctools-core</artifactId>
-                <version>4.0.5</version>
+                <version>4.0.6</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
