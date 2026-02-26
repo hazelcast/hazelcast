@@ -50,7 +50,6 @@
         <target.dir>target</target.dir>
         <timestamp>${maven.build.timestamp}</timestamp>
 
-        <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
 

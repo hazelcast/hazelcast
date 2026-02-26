@@ -73,14 +73,14 @@ public final class BuildInfoProvider {
     private static BuildInfo getBuildInfoInternalVersion(Overrides overrides) {
         // If you have a compilation error at GeneratedBuildProperties then run 'mvn clean install'
         // the GeneratedBuildProperties class is generated at a compile-time
-        BuildInfo buildInfo = readBuildPropertiesClass(GeneratedBuildProperties.class, null, overrides);
+        BuildInfo buildInfo = readBuildPropertiesClass(GeneratedBuildProperties.class, null, overrides, false);
         try {
             Class<?> enterpriseClass = BuildInfoProvider.class.getClassLoader()
                     .loadClass("com.hazelcast.instance.GeneratedEnterpriseBuildProperties");
             if (enterpriseClass.getClassLoader() == BuildInfoProvider.class.getClassLoader()) {
                 //only read the enterprise properties if there were loaded by the same classloader
                 //as BuildInfoProvider and not e.g. a parent classloader.
-                buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo, overrides);
+                buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo, overrides, true);
             }
         } catch (ClassNotFoundException e) {
             ignore(e);
@@ -89,11 +89,11 @@ public final class BuildInfoProvider {
         return buildInfo;
     }
 
-    private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo, Overrides overrides) {
+    private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo, Overrides overrides,
+            boolean enterprise) {
         String version = readStaticField(clazz, "VERSION");
         String build = readStaticField(clazz, "BUILD");
         String revision = readStaticField(clazz, "REVISION");
-        String distribution = readStaticFieldOrNull(clazz, "DISTRIBUTION");
         String commitId = readStaticFieldOrNull(clazz, "COMMIT_ID");
 
         revision = checkMissingExpressionValue(revision, "${git.commit.id.abbrev}");
@@ -102,7 +102,6 @@ public final class BuildInfoProvider {
         String previousVersion = readStaticField(clazz, "PREVIOUS_MINOR_VERSION");
 
         int buildNumber = Integer.parseInt(build);
-        boolean enterprise = !"Hazelcast".equals(distribution);
 
         String serialVersionString = readStaticFieldOrNull(clazz, "SERIALIZATION_VERSION");
         requireNonNull(serialVersionString, "serialization version must not be null");
