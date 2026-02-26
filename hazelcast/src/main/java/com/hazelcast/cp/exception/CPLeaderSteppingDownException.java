@@ -17,7 +17,6 @@
 package com.hazelcast.cp.exception;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
-import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.Serial;
 import java.util.UUID;
@@ -28,25 +27,25 @@ import java.util.UUID;
  * see {@link com.hazelcast.config.cp.CPSubsystemConfig#isAutoStepDownWhenLeader()}.
  * @since 5.7
  */
-public class CpLeaderSteppingDownException extends CPSubsystemException implements RetryableException {
+public class CPLeaderSteppingDownException extends CPSubsystemException  {
 
     @Serial
     private static final long serialVersionUID = -6750771858377660079L;
 
-    public CpLeaderSteppingDownException(RaftEndpoint leader) {
+    public CPLeaderSteppingDownException(RaftEndpoint leader) {
         super("Service unavailable, leader is auto stepping down", leader != null ? leader.getUuid() : null);
     }
 
-    public CpLeaderSteppingDownException(String message, UUID leaderUuid) {
+    public CPLeaderSteppingDownException(String message, UUID leaderUuid) {
         super(message, leaderUuid);
     }
 
-    public CpLeaderSteppingDownException(String message, UUID leaderUuid, Throwable cause) {
+    public CPLeaderSteppingDownException(String message, UUID leaderUuid, Throwable cause) {
         super(message, cause, leaderUuid);
     }
 
     @Override
-    public CpLeaderSteppingDownException wrap() {
-        return new CpLeaderSteppingDownException(getMessage(), getLeaderUuid(), this);
+    public CPLeaderSteppingDownException wrap() {
+        return new CPLeaderSteppingDownException(getMessage(), getLeaderUuid(), this);
     }
 }
