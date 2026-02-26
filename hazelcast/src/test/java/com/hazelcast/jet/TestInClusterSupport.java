@@ -63,8 +63,8 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     protected static volatile HazelcastInstance member;
     protected static volatile HazelcastInstance client;
 
-    private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
-    private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
+    protected static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
+    protected static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
     protected static int parallelism;
 
     @Parameter

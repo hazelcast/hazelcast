@@ -71,7 +71,7 @@ public final class ExceptionUtil {
      */
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isRestartableException(Throwable t) {
-        return isTopologyException(t)
+        return isTopologyExceptionCause(t)
                 || (t instanceof RestartableException)
                 || (t instanceof JetException && isOrHasCause(t, RestartableException.class))
                 || (t instanceof CompletionException && isOrHasCause(t, RestartableException.class))
@@ -81,13 +81,35 @@ public final class ExceptionUtil {
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isTopologyException(Throwable t) {
         return t instanceof TopologyChangedException
-                || t instanceof MemberLeftException
-                || t instanceof TargetNotMemberException
-                || t instanceof HazelcastInstanceNotActiveException
-                || t instanceof EnteringPassiveClusterStateException
-                || t instanceof OperationTimeoutException
-                    && (t.getMessage().contains(InitExecutionOperation.class.getSimpleName())
-                        || t.getMessage().contains(StartExecutionOperation.class.getSimpleName()));
+            || t instanceof MemberLeftException
+            || t instanceof TargetNotMemberException
+            || t instanceof HazelcastInstanceNotActiveException
+            || t instanceof EnteringPassiveClusterStateException
+            || t instanceof OperationTimeoutException
+            && (t.getMessage().contains(InitExecutionOperation.class.getSimpleName())
+            || t.getMessage().contains(StartExecutionOperation.class.getSimpleName()));
+    }
+
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    private static boolean isTopologyExceptionCause(Throwable t) {
+        return isOrHasCause(t, TopologyChangedException.class)
+            || isOrHasCause(t, MemberLeftException.class)
+            || isOrHasCause(t, TargetNotMemberException.class)
+            || isOrHasCause(t, HazelcastInstanceNotActiveException.class)
+            || isOrHasCause(t, EnteringPassiveClusterStateException.class)
+            || isCauseOperationTimeoutFromExecution(t);
+    }
+
+    private static boolean isCauseOperationTimeoutFromExecution(Throwable t) {
+        if (!isOrHasCause(t, OperationTimeoutException.class)) {
+            return false;
+        }
+        String message = t.getMessage();
+        if (message == null) {
+            return false;
+        }
+        return message.contains(InitExecutionOperation.class.getSimpleName())
+            || message.contains(StartExecutionOperation.class.getSimpleName());
     }
 
     /**
