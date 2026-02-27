@@ -113,6 +113,17 @@
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
             <version>7.17.29</version>
+            <!-- Replace abandoned `lz4-java` artifact with supported one to avoid CVE-2025-12183 / CVE-2025-66566 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.lz4</groupId>
+                    <artifactId>lz4-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>at.yawk.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
         </dependency>
 
         <!-- TEST -->

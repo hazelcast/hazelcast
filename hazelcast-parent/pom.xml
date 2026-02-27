@@ -111,7 +111,7 @@
         Confluent depends on Kafka, and consideration should be given when upgrading
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
-        <kafka.version>3.9.1</kafka.version>
+        <kafka.version>3.9.2</kafka.version>
         <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
         <confluent.version>7.9.1</confluent.version>
         <kotlin.version>2.3.10</kotlin.version>
@@ -573,9 +573,9 @@
                 <version>1.2.26</version>
             </dependency>
             <dependency>
-                <groupId>org.lz4</groupId>
+                <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>1.8.1</version>
+                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>net.minidev</groupId>
@@ -1291,6 +1291,26 @@
                             <rules>
                                 <dependencyConvergence/>
                             </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-banned-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <!--
+                                    org.lz4:lz4-java is vulnerable to multiple CVEs and is abandoned.
+                                    We use at.yawk.lz4:lz4-java instead, which is a community fork.
+                                    -->
+                                    <excludes>
+                                        <exclude>org.lz4:lz4-java</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
                         </configuration>
                     </execution>
                 </executions>
