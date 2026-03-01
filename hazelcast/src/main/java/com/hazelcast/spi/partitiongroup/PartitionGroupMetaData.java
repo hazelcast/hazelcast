@@ -31,6 +31,7 @@ package com.hazelcast.spi.partitiongroup;
  * which Hazelcast members run. Unlike zone aware, this strategy can group members within a single
  * availability zone based on their racks, power sources, network, etc.
  */
+@SuppressWarnings("checkstyle:EmptyStatement")
 public enum PartitionGroupMetaData {
     ;
 
