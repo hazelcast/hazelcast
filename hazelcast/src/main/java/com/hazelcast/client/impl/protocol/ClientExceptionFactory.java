@@ -32,6 +32,7 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.CPLeaderSteppingDownException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -122,6 +123,7 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CONCUR
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CONFIG_MISMATCH;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CONSISTENCY_LOST_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CP_GROUP_DESTROYED_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CP_LEADER_STEPPING_DOWN_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.DISTRIBUTED_OBJECT_DESTROYED;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.DUPLICATE_TASK;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ENTRY_PROCESSOR;
@@ -203,6 +205,7 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAIT_K
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WRONG_TARGET;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.XA;
+
 
 /**
  * This class has the error codes and means of
@@ -362,6 +365,8 @@ public class ClientExceptionFactory {
         register(NO_SUCH_FIELD_ERROR, NoSuchFieldError.class, ((message, cause) -> new NoSuchFieldError(message)));
         register(NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class, ((message, cause) -> new NoSuchFieldException(message)));
         register(NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class, ((message, cause) -> new NoClassDefFoundError(message)));
+        register(CP_LEADER_STEPPING_DOWN_EXCEPTION, CPLeaderSteppingDownException.class,
+                (message, cause) -> new CPLeaderSteppingDownException(message, null));
     }
 
     public Throwable createException(ClientMessage clientMessage) {

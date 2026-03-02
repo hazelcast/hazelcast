@@ -122,6 +122,8 @@ public final class ClientProtocolErrorCodes {
     public static final int NO_SUCH_FIELD_ERROR = 97;
     public static final int NO_SUCH_FIELD_EXCEPTION = 98;
     public static final int NO_CLASS_DEF_FOUND_ERROR = 99;
+    public static final int CP_LEADER_STEPPING_DOWN_EXCEPTION = 100;
+
 
     // These exception codes are reserved to by used by hazelcast-jet project
     public static final int JET_EXCEPTIONS_RANGE_START = 500;

@@ -28,6 +28,7 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.cp.exception.CPLeaderSteppingDownException;
 import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
@@ -86,6 +87,7 @@ import java.net.URISyntaxException;
 import java.security.AccessControlException;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
@@ -264,7 +266,8 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new CustomExceptions.CustomExceptionWithMessageAndCause(randomString(),
                         new CustomExceptions.CustomExceptionWithMessage(randomString()))},
                 new Object[]{new CustomExceptions.CustomExceptionWithCause(new RuntimeException())},
-                new Object[]{new RuntimeException("blabla", new CustomExceptions.CustomExceptionWithMessage(randomString()))}
-        );
+                new Object[]{new RuntimeException("blabla", new CustomExceptions.CustomExceptionWithMessage(randomString()))},
+                new Object[]{new CPLeaderSteppingDownException(randomString(), UUID.randomUUID())}
+                );
     }
 }
