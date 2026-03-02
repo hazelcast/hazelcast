@@ -97,23 +97,50 @@ final class AwsClientConfigurator {
         return new AwsEcsApi(ecsEndpoint, awsConfig, ecsRequestSigner, Clock.systemUTC());
     }
 
+    private static String defaultEc2Host(String region) {
+        if (region.startsWith("cn-")) {
+            return "ec2.amazonaws.com.cn";
+        } else if (region.startsWith("us-isob-")) {
+            return "ec2.sc2s.sgov.gov";
+        } else if (region.startsWith("us-isof-")) {
+            return "ec2.csp.hci.ic.gov";
+        } else if (region.startsWith("us-iso-")) {
+            return "ec2.c2s.ic.gov";
+        }
+        return DEFAULT_EC2_HOST_HEADER;
+    }   
+
     static String resolveEc2Endpoint(AwsConfig awsConfig, String region) {
         String ec2HostHeader = awsConfig.getHostHeader();
         if (isNullOrEmptyAfterTrim(ec2HostHeader)
             || ec2HostHeader.startsWith("ecs")
             || ec2HostHeader.equals("ec2")
         ) {
-            ec2HostHeader = DEFAULT_EC2_HOST_HEADER;
+            ec2HostHeader = defaultEc2Host(region);
         }
         return ec2HostHeader.replace("ec2.", "ec2." + region + ".");
     }
+
+    private static String defaultEcsHost(String region) {
+        if (region.startsWith("cn-")) {
+            return "ecs.amazonaws.com.cn";
+        } else if (region.startsWith("us-isob-")) {
+            return "ecs.sc2s.sgov.gov";
+        } else if (region.startsWith("us-isof-")) {
+            return "ecs.csp.hci.ic.gov";
+        } else if (region.startsWith("us-iso-")) {
+            return "ecs.c2s.ic.gov";
+        }
+        return DEFAULT_ECS_HOST_HEADER;
+    }    
+
 
     static String resolveEcsEndpoint(AwsConfig awsConfig, String region) {
         String ecsHostHeader = awsConfig.getHostHeader();
         if (isNullOrEmptyAfterTrim(ecsHostHeader)
             || ecsHostHeader.equals("ecs")
         ) {
-            ecsHostHeader = DEFAULT_ECS_HOST_HEADER;
+            ecsHostHeader = defaultEcsHost(region);
         }
         return ecsHostHeader.replace("ecs.", "ecs." + region + ".");
     }
