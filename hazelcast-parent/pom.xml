@@ -110,6 +110,7 @@
         <!--
         Confluent depends on Kafka, and consideration should be given when upgrading
         https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
+        `at.yawk.lz4:lz4-java` also needs upgrading at the same time
         -->
         <kafka.version>3.9.2</kafka.version>
         <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
@@ -572,6 +573,12 @@
                 <artifactId>reload4j</artifactId>
                 <version>1.2.26</version>
             </dependency>
+            <!--
+              Resolves dependency convergence between:
+              - `org.apache.kafka:kafka-clients`
+              - `org.elasticsearch:elasticsearch-lz4`
+              Should be set to the dependency version specified in the former
+            -->
             <dependency>
                 <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
