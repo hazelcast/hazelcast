@@ -18,5 +18,7 @@
  * Contains sources and sinks for Elasticsearch 7
  *
  * @since Jet 4.2
+ * @deprecated <a href="https://www.elastic.co/support/eol"> Elasticsearch 7 is no longer supported</a>
  */
+@Deprecated(forRemoval = true, since = "5.7")
 package com.hazelcast.jet.elastic;
