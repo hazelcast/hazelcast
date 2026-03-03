@@ -402,12 +402,16 @@ public class MasterJobContext {
                 throw new JobTerminateRequestedException(RESTART_FORCEFUL);
             }
 
+            // Termination may be requested while the job is still initializing.
+            // To avoid race conditions, perform termination at this point even if it was
+            // requested with restart. The restart will be rescheduled in finalizeExecution()
+            // according to the standard execution flow.
+            // If termination is requested after this point, the job will start normally
+            // and then be terminated.
             if (terminationRequest != null) {
-                if (terminationRequest.mode.actionAfterTerminate() != RESTART) {
-                    throw new JobTerminateRequestedException(terminationRequest.mode);
-                }
-                // requested termination mode is RESTART, ignore it because we are just starting
-                terminationRequest = null;
+                logger.info("Termination was requested while starting the job " + mc.jobIdString()
+                    + ", termination mode: " + terminationRequest.mode);
+                throw new JobTerminateRequestedException(terminationRequest.mode);
             }
 
             // save a copy of the vertex list because it is going to change
@@ -704,6 +708,7 @@ public class MasterJobContext {
         if (failures.stream().allMatch(entry -> entry.getValue() instanceof TerminatedWithSnapshotException)) {
             assert opName.equals("Execution") : "opName is '" + opName + "', expected 'Execution'";
             logger.fine(opName + " of " + mc.jobIdString() + " terminated after a terminal snapshot");
+            getTerminationRequest().orElseThrow(() -> new AssertionError("terminationRequest is null"));
             TerminationMode mode = requestedTerminationMode().orElseThrow(() -> new AssertionError("mode is null"));
             assert mode.isWithTerminalSnapshot() : "mode=" + mode;
             return mode == CANCEL_GRACEFUL ? createCancellationException() : new JobTerminateRequestedException(mode);
