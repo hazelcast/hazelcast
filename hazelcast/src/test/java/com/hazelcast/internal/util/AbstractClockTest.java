@@ -87,13 +87,13 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, String.valueOf(offset));
     }
 
-    protected static void setJumpingClock(long offset) {
+    public static void setJumpingClock(long offset) {
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_IMPL, TestJumpingSystemClock.class.getName());
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, String.valueOf(offset));
         System.setProperty(TestJumpingSystemClock.JUMP_AFTER_SECONDS_PROPERTY, String.valueOf(JUMP_AFTER_SECONDS));
     }
 
-    protected static void resetClock() {
+    public static void resetClock() {
         System.clearProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
         System.clearProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         System.clearProperty(TestJumpingSystemClock.JUMP_AFTER_SECONDS_PROPERTY);
