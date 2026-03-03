@@ -65,6 +65,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.kafka.test.TestUtils.DEFAULT_MAX_WAIT_MS;
+import static org.apache.kafka.test.TestUtils.waitForCondition;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -109,6 +111,24 @@ public abstract class KafkaTestSupport {
 
     /** Returns the broker connection string. */
     protected abstract String createKafkaCluster0() throws IOException;
+
+    public void waitForKafkaReady() {
+        try {
+            waitForCondition(() -> {
+                try {
+                    // Send a real request to the cluster to check if it is ready
+                    admin.describeCluster().nodes().get();
+                    // Cluster is ready
+                    return true;
+                } catch (Exception e) {
+                    // Cluster is not ready yet
+                    return false;
+                }
+            }, DEFAULT_MAX_WAIT_MS, "Kafka cluster not ready within " + DEFAULT_MAX_WAIT_MS + "ms.");
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Failed waiting for Kafka cluster to be ready.", e);
+        }
+    }
 
     public void shutdownKafkaCluster() {
         shutdownKafkaCluster0();

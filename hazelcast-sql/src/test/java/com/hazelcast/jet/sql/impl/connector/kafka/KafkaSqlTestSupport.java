@@ -66,6 +66,8 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         sqlService = instance().getSql();
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
+        // wait until the kafka cluster is ready
+        kafkaTestSupport.waitForKafkaReady();
     }
 
     protected static void createSchemaRegistry() throws Exception {
