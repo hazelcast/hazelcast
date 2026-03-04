@@ -324,14 +324,14 @@ public final class CompactTestUtil {
      * reflective serializer.
      */
     public static Iterable<Schema> getSchemasFor(Class<?>... classes) {
-        CompactStreamSerializer compactStreamSerializer =
-                new CompactStreamSerializer(null, new CompactSerializationConfig(), null, null, null) {
+        CompactStreamSerializer compactStreamSerializer = new CompactStreamSerializer(null, new CompactSerializationConfig(),
+                null, null, null, null, null) {
                     @Override
                     public boolean canBeSerializedAsCompact(Class<?> clazz) {
                         return true;
                     }
                 };
-        ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer(compactStreamSerializer);
+        ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer(compactStreamSerializer, null, null);
 
         return Arrays.stream(classes)
                      .map(clazz -> {

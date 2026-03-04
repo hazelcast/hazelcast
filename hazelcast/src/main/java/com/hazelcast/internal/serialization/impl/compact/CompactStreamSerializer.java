@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -59,8 +60,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
-    private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer(this);
     private final JavaRecordSerializer javaRecordSerializer = new JavaRecordSerializer(this);
+    private final ReflectiveCompactSerializer<?> reflectiveSerializer;
     private final SchemaService schemaService;
     private final ManagedContext managedContext;
     private final ClassLoader classLoader;
@@ -69,11 +70,12 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     public CompactStreamSerializer(AbstractSerializationService serializationService,
                                    CompactSerializationConfig compactSerializationConfig,
                                    ManagedContext managedContext, SchemaService schemaService,
-                                   ClassLoader classLoader) {
+                                   ClassLoader classLoader, ClassFilter reflectiveBlockList, ClassFilter reflectiveAllowList) {
         this.serializationService = serializationService;
         this.managedContext = managedContext;
         this.schemaService = schemaService;
         this.classLoader = classLoader;
+        this.reflectiveSerializer = new ReflectiveCompactSerializer<>(this, reflectiveBlockList, reflectiveAllowList);
         registerSerializers(compactSerializationConfig);
         registerDeclarativeConfigSerializers(compactSerializationConfig);
         registerDeclarativeConfigClasses(compactSerializationConfig);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.ClassFilter;
 import com.hazelcast.internal.serialization.impl.compact.zeroconfig.ValueReaderWriter;
 import com.hazelcast.internal.serialization.impl.compact.zeroconfig.ValueReaderWriters;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -24,6 +25,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -68,9 +70,19 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
     private final Map<Class, ReaderWriter[]> readerWritersCache = new ConcurrentHashMap<>();
     private final CompactStreamSerializer compactStreamSerializer;
+    @Nullable
+    private final ClassFilter blockList;
+    @Nullable
+    private final ClassFilter allowList;
 
-    public ReflectiveCompactSerializer(CompactStreamSerializer compactStreamSerializer) {
+    public ReflectiveCompactSerializer(
+            CompactStreamSerializer compactStreamSerializer,
+            ClassFilter blockList,
+            ClassFilter allowList
+    ) {
         this.compactStreamSerializer = compactStreamSerializer;
+        this.blockList = blockList;
+        this.allowList = allowList;
     }
 
     @Override
@@ -169,6 +181,9 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     private void createFastReadWriteCaches(Class clazz) {
         // The top level class might not be Compact serializable
         CompactUtil.verifyClassIsCompactSerializable(clazz);
+        if (isCompactSerializationBlocked(clazz)) {
+            throw new ReflectiveCompactSerializationUnsupportedException(clazz);
+        }
 
         // get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
@@ -307,6 +322,20 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
         }
 
         readerWritersCache.put(clazz, readerWriters);
+    }
+
+    private boolean isCompactSerializationBlocked(Class<?> clazz) {
+        return isOnBlockList(clazz) || !isOnAllowList(clazz);
+    }
+
+    private boolean isOnBlockList(Class<?> clazz) {
+        // null blocklist is empty set
+        return blockList != null && blockList.isListed(clazz.getName());
+    }
+
+    private boolean isOnAllowList(Class<?> clazz) {
+        // null allowList is universal set
+        return allowList == null || allowList.isListed(clazz.getName());
     }
 
     private static final class ReaderWriterAdapter implements ReaderWriter {
