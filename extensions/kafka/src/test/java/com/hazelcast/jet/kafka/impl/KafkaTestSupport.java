@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import io.confluent.kafka.schemaregistry.CompatibilityLevel;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
-import io.confluent.kafka.schemaregistry.client.rest.entities.Config;
+import io.confluent.kafka.schemaregistry.client.rest.entities.requests.ConfigUpdateRequest;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
@@ -313,9 +313,9 @@ public abstract class KafkaTestSupport {
      */
     public void setCompatibilityLevel(String subject, CompatibilityLevel level)
             throws SchemaRegistryException {
-        Config config = Optional.ofNullable(schemaRegistry.getConfig(subject)).orElseGet(Config::new);
-        config.setCompatibilityLevel(level.name);
-        schemaRegistry.updateConfig(subject, config);
+        ConfigUpdateRequest cur = new ConfigUpdateRequest();
+        cur.setCompatibilityLevel(level.name);
+        schemaRegistry.updateConfig(subject, cur);
     }
 
     public void assertTopicContentsEventually(
