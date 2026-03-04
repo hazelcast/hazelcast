@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -88,7 +89,7 @@ public class CachePutBackupOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         NodeEngine nodeEngine = getNodeEngineThreadLocalContext();
-        CacheService service = nodeEngine.getService(CacheService.SERVICE_NAME);
+        ICacheService service = nodeEngine.getService(CacheService.SERVICE_NAME);
         var cacheConfig = service.getCacheConfig(this.name);
         String ucn = cacheConfig != null ? cacheConfig.getUserCodeNamespace() : null;
         cacheRecord = callWithNamespace(nodeEngine, ucn, in::readObject);
