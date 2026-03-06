@@ -608,7 +608,14 @@ public class JobRepository {
         return jobRecordsMap().values();
     }
 
-    public boolean jobRecordsMapExists() {
+    public Collection<JobRecord> getJobRecords(@Nonnull Predicate<Long, JobRecord> predicate) {
+        if (jobRecords.remembered() != null || jobRecordsMapExists()) {
+            return jobRecords.get().values(predicate);
+        }
+        return Collections.emptyList();
+    }
+
+    private boolean jobRecordsMapExists() {
         return ((AbstractJetInstance<?>) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME);
     }
 

@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -58,7 +56,6 @@ import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -436,14 +433,8 @@ public class ClusterWideConfigurationService implements
      * @return {@code true} if the namespace is referenced by a hot restart
      * enabled data structure, {@code false} otherwise.
      */
-    private boolean isNamespaceReferencedWithHRPersistence(NodeEngine nodeEngine, UserCodeNamespaceConfig namespace) {
-        CacheService cacheService = nodeEngine.getServiceOrNull(ICacheService.SERVICE_NAME);
-        if (cacheService == null) {
-            return MapService.isNamespaceReferencedWithHotRestart(nodeEngine, namespace.getName());
-        } else {
-            return MapService.isNamespaceReferencedWithHotRestart(nodeEngine, namespace.getName())
-                    || cacheService.isNamespaceReferencedWithHotRestart(namespace.getName());
-        }
+    protected boolean isNamespaceReferencedWithHRPersistence(NodeEngine nodeEngine, UserCodeNamespaceConfig namespace) {
+        return false;
     }
 
 

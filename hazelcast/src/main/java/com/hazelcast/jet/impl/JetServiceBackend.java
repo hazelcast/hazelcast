@@ -340,6 +340,15 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return jobRepository;
     }
 
+    public static boolean isNamespaceReferencedInActiveJobs(NodeEngine nodeEngine, String namespace) {
+        JetServiceBackend jet = nodeEngine.getServiceOrNull(JetServiceBackend.SERVICE_NAME);
+        return jet != null && jet.isNamespaceReferencedInActiveJobs(namespace);
+    }
+
+    public boolean isNamespaceReferencedInActiveJobs(String namespace) {
+        return false;
+    }
+
     public NodeEngineImpl getNodeEngine() {
         return nodeEngine;
     }
