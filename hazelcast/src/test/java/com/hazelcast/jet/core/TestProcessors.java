@@ -495,6 +495,10 @@ public final class TestProcessors {
             blockingSemaphore.release();
         }
 
+        public static void unblockAll() {
+            blockingSemaphore.release(Integer.MAX_VALUE);
+        }
+
         public MockP nonCooperative() {
             isCooperative = false;
             return this;

@@ -19,7 +19,11 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobAssertions;
+import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -34,16 +38,21 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(QuickTest.class)
 public class JobExceptionHandlerTest extends PipelineStreamTestSupport {
 
-    private static final AtomicBoolean fail = new AtomicBoolean(true);
+    private static final AtomicBoolean shouldFail = new AtomicBoolean(true);
 
     @Parameter(1)
     public boolean suspendOnFailure;
@@ -57,29 +66,50 @@ public class JobExceptionHandlerTest extends PipelineStreamTestSupport {
 
     @Before
     public void before() {
-        fail.set(true);
+        shouldFail.set(true);
+        TestProcessors.reset(0);
     }
 
     private void jobRestartOnExceptionTest(Exception exception) {
         int size = 100;
-        int failOn = 99;
+        int failOn = size / 2;
 
-        StreamStage<Integer> srcStage = streamStageFromList(range(0, 100).boxed().toList());
+        AtomicInteger restartCounter = new AtomicInteger();
+
+        StreamStage<Integer> srcStage =
+            streamStageFromList(range(0, size).boxed().toList());
+
         srcStage
+            .customTransform("block", () -> new MockP().initBlocks())
+            .setLocalParallelism(1)
             .rebalance()
-            .map((e) -> {
-                if (e == failOn && fail.get()) {
-                    fail.set(false);
+            .map(e -> {
+                if ((int) e == failOn && shouldFail.get()) {
+                    shouldFail.set(false);
                     throw exception;
                 }
                 return e;
             })
-            .writeTo(sink);
+            .writeTo(Sinks.noop());
 
-        var config = new JobConfig().setSuspendOnFailure(suspendOnFailure);
-        execute(config);
-        assertThat(fail).isFalse();
-        assertTrueEventually(() -> assertThat(sinkList.size()).isGreaterThan(size));
+        JobConfig config = new JobConfig()
+            .setSuspendOnFailure(suspendOnFailure);
+
+        Job job = start(config);
+        JobAssertions.assertThat(job).eventuallyHasStatus(RUNNING);
+
+        job.addStatusListener(status -> {
+            if (status.getNewStatus() == NOT_RUNNING) {
+                restartCounter.incrementAndGet();
+            }
+        });
+
+        MockP.unblockAll();
+
+        assertThatNoException().isThrownBy(() -> job.getFuture().get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
+
+        assertThat(shouldFail).isFalse();
+        assertThat(restartCounter.get()).isEqualTo(1);
     }
 
     @Test
