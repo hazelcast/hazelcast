@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.services.kinesis.model.Record;
-import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
@@ -28,6 +26,8 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
+import software.amazon.awssdk.services.kinesis.model.Record;
+import software.amazon.awssdk.services.kinesis.model.Shard;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -299,10 +299,10 @@ public final class KinesisSources {
 
         /**
          * Specifies projection function, that will map input {@link Record}
-         * and {@link com.amazonaws.services.kinesis.model.Shard} from which this record was read into user-defined type.
+         * and {@link Shard} from which this record was read into user-defined type.
          * <p>
-         * If not provided, source will return {@code Map.Entry<String, byte[]>} with {@link Record#getPartitionKey()}
-         * as key and {@link Record#getData()} as value.
+         * If not provided, source will return {@code Map.Entry<String, byte[]>} with {@link Record#partitionKey()}
+         * as key and {@link Record#data()} as value.
          */
         @Nonnull
         @SuppressWarnings("unchecked") // here we base on Java's type erasure, that's why we use that casting
@@ -346,11 +346,11 @@ public final class KinesisSources {
 
         @Override
         public T applyEx(Record record, Shard shard) {
-            return (T) entry(record.getPartitionKey(), toArray(record));
+            return (T) entry(record.partitionKey(), toArray(record));
         }
 
         private static byte[] toArray(Record record) {
-            ByteBuffer buffer = record.getData();
+            ByteBuffer buffer = record.data().asByteBuffer();
             int position = buffer.position();
             int limit = buffer.limit();
             byte[] array;

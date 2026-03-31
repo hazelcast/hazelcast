@@ -16,13 +16,6 @@
 
 package com.hazelcast.jet.kinesis.impl.sink;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededException;
-import com.amazonaws.services.kinesis.model.PutRecordsRequest;
-import com.amazonaws.services.kinesis.model.PutRecordsRequestEntry;
-import com.amazonaws.services.kinesis.model.PutRecordsResult;
-import com.amazonaws.services.kinesis.model.PutRecordsResultEntry;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -38,6 +31,14 @@ import com.hazelcast.jet.kinesis.impl.KinesisUtil;
 import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.ProvisionedThroughputExceededException;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsResultEntry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -80,7 +81,7 @@ public class KinesisSinkP<T> implements Processor {
     private static final int MAX_REQUEST_SIZE_IN_BYTES = 5 * 1024 * 1024;
 
     @Nonnull
-    private final AmazonKinesisAsync kinesis;
+    private final KinesisAsyncClient kinesis;
     @Nonnull
     private final String stream;
     @Nonnull
@@ -97,14 +98,14 @@ public class KinesisSinkP<T> implements Processor {
     private int shardCount;
     private int sinkCount;
 
-    private Future<PutRecordsResult> sendResult;
+    private Future<PutRecordsResponse> sendResult;
     private long nextSendTime = nanoTime();
     private final RetryTracker sendRetryTracker;
 
     private final ThroughputController throughputController = new ThroughputController();
 
     public KinesisSinkP(
-            @Nonnull AmazonKinesisAsync kinesis,
+            @Nonnull KinesisAsyncClient kinesis,
             @Nonnull String stream,
             @Nonnull FunctionEx<T, String> keyFn,
             @Nonnull FunctionEx<T, byte[]> valueFn,
@@ -211,23 +212,24 @@ public class KinesisSinkP<T> implements Processor {
         nextSendTime = currentTime;
     }
 
-    private Future<PutRecordsResult> putRecordsAsync(Collection<PutRecordsRequestEntry> entries) {
-        PutRecordsRequest request = new PutRecordsRequest();
-        request.setRecords(entries);
-        request.setStreamName(stream);
-        return kinesis.putRecordsAsync(request);
+    private Future<PutRecordsResponse> putRecordsAsync(Collection<PutRecordsRequestEntry> entries) {
+        PutRecordsRequest request = PutRecordsRequest.builder()
+                .records(entries)
+                .streamName(stream)
+                .build();
+        return kinesis.putRecords(request);
     }
 
     private void checkIfSendingFinished() {
         if (sendResult.isDone()) {
-            PutRecordsResult result;
+            PutRecordsResponse result;
             try {
                 result = KinesisUtil.readResult(this.sendResult);
             } catch (ProvisionedThroughputExceededException pte) {
                 dealWithThroughputExceeded("Data throughput rate exceeded. Backing off and retrying in %d ms");
                 return;
-            } catch (SdkClientException sce) {
-                dealWithSendFailure(sce);
+            } catch (SdkException se) {
+                dealWithSendFailure(se);
                 return;
             } catch (Throwable t) {
                 throw rethrow(t);
@@ -236,9 +238,9 @@ public class KinesisSinkP<T> implements Processor {
             }
 
             pruneSentFromBuffer(result);
-            if (result.getFailedRecordCount() > 0) {
-                dealWithThroughputExceeded("Failed to send " + result.getFailedRecordCount() + " (out of " +
-                        result.getRecords().size() + ") record(s) to stream '" + stream +
+            if (result.failedRecordCount() > 0) {
+                dealWithThroughputExceeded("Failed to send " + result.failedRecordCount() + " (out of " +
+                        result.records().size() + ") record(s) to stream '" + stream +
                         "'. Sending will be retried in %d ms, message reordering is likely.");
             } else {
                 long sleepTimeNanos = throughputController.markSuccess();
@@ -269,13 +271,13 @@ public class KinesisSinkP<T> implements Processor {
         logger.warning(String.format(message, NANOSECONDS.toMillis(sleepTimeNanos)));
     }
 
-    private void pruneSentFromBuffer(@Nullable PutRecordsResult result) {
+    private void pruneSentFromBuffer(@Nullable PutRecordsResponse result) {
         if (result == null) {
             return;
         }
 
-        List<PutRecordsResultEntry> resultEntries = result.getRecords();
-        if (result.getFailedRecordCount() > 0) {
+        List<PutRecordsResultEntry> resultEntries = result.records();
+        if (result.failedRecordCount() > 0) {
             buffer.retainFailedEntries(resultEntries);
         } else {
             buffer.clear();
@@ -348,7 +350,7 @@ public class KinesisSinkP<T> implements Processor {
 
             int startIndex = 0;
             for (int index = 0; index < results.size(); index++) {
-                if (results.get(index).getErrorCode() != null) {
+                if (results.get(index).errorCode() != null) {
                     swap(startIndex++, index);
                 } else {
                     totalEntrySize -= entries[index].encodedSize;
@@ -403,21 +405,32 @@ public class KinesisSinkP<T> implements Processor {
         private int encodedSize;
 
         public void set(String partitionKey, byte[] data, int size) {
+            ByteBuffer byteBuffer = null;
+            PutRecordsRequestEntry.Builder builder;
+
             if (putRecordsRequestEntry == null) {
-                putRecordsRequestEntry = new PutRecordsRequestEntry();
+                builder = PutRecordsRequestEntry.builder();
+            } else {
+                SdkBytes sdkBytes = putRecordsRequestEntry.data();
+
+                if (sdkBytes != null) {
+                    byteBuffer = sdkBytes.asByteBuffer();
+                }
+
+                builder = putRecordsRequestEntry.toBuilder();
             }
 
-            putRecordsRequestEntry.setPartitionKey(partitionKey);
+            builder = builder.partitionKey(partitionKey);
 
-            ByteBuffer byteBuffer = putRecordsRequestEntry.getData();
             if (byteBuffer == null || byteBuffer.isReadOnly() || byteBuffer.capacity() < data.length) {
-                putRecordsRequestEntry.setData(ByteBuffer.wrap(data));
+                builder = builder.data(SdkBytes.fromByteArray(data));
             } else {
                 ((java.nio.Buffer) byteBuffer).clear(); //cast needed due to JDK 9 breaking compatibility
                 byteBuffer.put(data);
                 ((java.nio.Buffer) byteBuffer).flip(); //cast needed due to JDK 9 breaking compatibility
             }
 
+            putRecordsRequestEntry = builder.build();
             encodedSize = size;
         }
     }

@@ -16,19 +16,18 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.ListShardsRequest;
-import com.amazonaws.services.kinesis.model.ListShardsResult;
-import com.amazonaws.services.kinesis.model.Shard;
-import com.amazonaws.services.kinesis.model.ShardFilter;
-import com.amazonaws.services.kinesis.model.ShardFilterType;
 import com.hazelcast.jet.kinesis.impl.AbstractShardWorker;
 import com.hazelcast.jet.kinesis.impl.KinesisUtil;
 import com.hazelcast.jet.kinesis.impl.RandomizedRateTracker;
 import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.ListShardsRequest;
+import software.amazon.awssdk.services.kinesis.model.ListShardsResponse;
+import software.amazon.awssdk.services.kinesis.model.Shard;
+import software.amazon.awssdk.services.kinesis.model.ShardFilterType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -61,12 +60,12 @@ public class RangeMonitor extends AbstractShardWorker {
     private final RetryTracker listShardRetryTracker;
 
     private String nextToken;
-    private Future<ListShardsResult> listShardsResult;
+    private Future<ListShardsResponse> listShardsResult;
     private long nextListShardsTimeMs;
 
     public RangeMonitor(
             int totalInstances,
-            AmazonKinesisAsync kinesis,
+            KinesisAsyncClient kinesis,
             String stream,
             HashRange memberHashRange,
             HashRange[] rangePartitions,
@@ -89,10 +88,10 @@ public class RangeMonitor extends AbstractShardWorker {
             initShardListing(currentTimeMs);
         } else {
             if (listShardsResult.isDone()) {
-                ListShardsResult result;
+                ListShardsResponse result;
                 try {
                     result = KinesisUtil.readResult(listShardsResult);
-                } catch (SdkClientException e) {
+                } catch (SdkException e) {
                     dealWithListShardsFailure(e);
                     return;
                 } catch (Throwable t) {
@@ -105,7 +104,7 @@ public class RangeMonitor extends AbstractShardWorker {
 
                 checkForNewShards(currentTimeMs, result);
 
-                nextToken = result.getNextToken();
+                nextToken = result.nextToken();
                 if (nextToken == null) {
                     checkForExpiredShards(currentTimeMs);
                 }
@@ -121,12 +120,12 @@ public class RangeMonitor extends AbstractShardWorker {
         nextListShardsTimeMs = currentTimeMs + listShardsRateTracker.next();
     }
 
-    private Future<ListShardsResult> listAllShardsAsync(String nextToken) {
+    private Future<ListShardsResponse> listAllShardsAsync(String nextToken) {
         ShardFilterType filterType = ShardFilterType.FROM_TRIM_HORIZON;
         //all shards within the retention period (including closed, excluding expired)
 
         ListShardsRequest request = listAllShardsRequest(streamName, nextToken, filterType);
-        return kinesis.listShardsAsync(request);
+        return kinesis.listShards(request);
     }
 
     public static ListShardsRequest listAllShardsRequest(
@@ -134,28 +133,27 @@ public class RangeMonitor extends AbstractShardWorker {
             @Nullable String nextToken,
             ShardFilterType filterType
     ) {
-        ListShardsRequest request = new ListShardsRequest();
+        ListShardsRequest.Builder builder = ListShardsRequest.builder();
         if (nextToken == null) {
-            request.setStreamName(stream);
+            builder = builder.streamName(stream);
         } else {
-            request.setNextToken(nextToken);
+            builder = builder.nextToken(nextToken);
         }
 
-        //include all the shards within the retention period of the data stream
-        request.setShardFilter(new ShardFilter().withType(filterType));
-
-        return request;
+        // include all the shards within the retention period of the data stream
+        return builder.shardFilter(shardFilderBuilder -> shardFilderBuilder.type(filterType))
+                .build();
     }
 
-    private void checkForNewShards(long currentTimeMs, ListShardsResult result) {
-        Set<Shard> shards = result.getShards().stream()
+    private void checkForNewShards(long currentTimeMs, ListShardsResponse result) {
+        Set<Shard> shards = result.shards().stream()
                 .filter(shard -> KinesisUtil.shardBelongsToRange(shard, memberHashRange))
                 .collect(Collectors.toSet());
         Map<Shard, Integer> newShards = shardTracker.markDetections(shards, currentTimeMs);
 
         if (!newShards.isEmpty()) {
             logger.info("New shards detected: " +
-                    newShards.keySet().stream().map(Shard::getShardId).collect(joining(", ")));
+                    newShards.keySet().stream().map(Shard::shardId).collect(joining(", ")));
 
             for (Map.Entry<Shard, Integer> e : newShards.entrySet()) {
                 Shard shard = e.getKey();

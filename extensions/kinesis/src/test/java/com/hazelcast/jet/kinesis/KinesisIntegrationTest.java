@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.PutRecordsResult;
-import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -41,6 +38,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse;
+import software.amazon.awssdk.services.kinesis.model.Shard;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,11 +51,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_SEQUENCE_NUMBER;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_TIMESTAMP;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.LATEST;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZON;
 import static com.hazelcast.jet.TestedVersions.LOCALSTACK_IMAGE;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
@@ -69,6 +64,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.AT_SEQUENCE_NUMBER;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.AT_TIMESTAMP;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.LATEST;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.TRIM_HORIZON;
 
 @SuppressWarnings("StaticVariableName")
 @Category(NightlyTest.class)
@@ -78,7 +78,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     public static final AtomicInteger threadCounter = new AtomicInteger();
 
     private static AwsConfig AWS_CONFIG;
-    private static AmazonKinesisAsync KINESIS;
+    private static KinesisAsyncClient KINESIS;
     private static KinesisTestHelper HELPER;
     private static boolean useRealKinesis;
 
@@ -117,7 +117,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     @AfterClass
     public static void afterClass() {
         if (KINESIS != null) {
-            KINESIS.shutdown();
+            KINESIS.close();
         }
 
         if (localStack != null) {
@@ -162,9 +162,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
             Pipeline pipeline = Pipeline.create();
             StreamSource<String> source = kinesisSource()
                     .withProjectionFn((r, s) -> {
-                        byte[] payload = new byte[r.getData().remaining()];
-                        r.getData().get(payload);
-                        return r.getSequenceNumber();
+                        byte[] payload = new byte[r.data().asByteBuffer().remaining()];
+                        r.data().asByteBuffer().get(payload);
+                        return r.sequenceNumber();
                     })
                     .build();
             pipeline.readFrom(source)
@@ -551,13 +551,13 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         HELPER.createStream(1);
 
         //send out some records, make sure they are in the shard
-        PutRecordsResult putRecordsResult = HELPER.putRecords(messages(0, 100));
+        PutRecordsResponse putRecordsResult = HELPER.putRecords(messages(0, 100));
         Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
 
-        String sequenceNumber = putRecordsResult.getRecords().get(50).getSequenceNumber();
+        String sequenceNumber = putRecordsResult.records().get(50).sequenceNumber();
 
         //start a new job which reads records from the sequence number (inclusive)
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
@@ -572,13 +572,13 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         HELPER.createStream(1);
 
         //send out some records, make sure they are in the shard
-        PutRecordsResult putRecordsResult = HELPER.putRecords(messages(0, 100));
+        PutRecordsResponse putRecordsResult = HELPER.putRecords(messages(0, 100));
         Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
 
-        String sequenceNumber = putRecordsResult.getRecords().get(50).getSequenceNumber();
+        String sequenceNumber = putRecordsResult.records().get(50).sequenceNumber();
 
         //start a new job which reads records from the sequence number (inclusive)
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
@@ -620,10 +620,10 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     private void assertOpenShards(int count, Shard... excludedShards) {
         assertTrueEventually(() -> {
-            Set<String> openShards = listOpenShards().stream().map(Shard::getShardId).collect(Collectors.toSet());
+            Set<String> openShards = listOpenShards().stream().map(Shard::shardId).collect(Collectors.toSet());
             assertEquals(count, openShards.size());
             for (Shard excludedShard : excludedShards) {
-                assertFalse(openShards.contains(excludedShard.getShardId()));
+                assertFalse(openShards.contains(excludedShard.shardId()));
             }
         });
 

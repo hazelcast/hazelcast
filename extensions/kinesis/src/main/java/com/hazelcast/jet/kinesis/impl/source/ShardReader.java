@@ -16,16 +16,6 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.GetRecordsRequest;
-import com.amazonaws.services.kinesis.model.GetRecordsResult;
-import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
-import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
-import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededException;
-import com.amazonaws.services.kinesis.model.Record;
-import com.amazonaws.services.kinesis.model.Shard;
-import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -42,6 +32,16 @@ import com.hazelcast.jet.kinesis.impl.RandomizedRateTracker;
 import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.GetRecordsRequest;
+import software.amazon.awssdk.services.kinesis.model.GetRecordsResponse;
+import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
+import software.amazon.awssdk.services.kinesis.model.GetShardIteratorResponse;
+import software.amazon.awssdk.services.kinesis.model.ProvisionedThroughputExceededException;
+import software.amazon.awssdk.services.kinesis.model.Record;
+import software.amazon.awssdk.services.kinesis.model.Shard;
+import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -77,17 +77,17 @@ class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider 
     private State state = State.NO_SHARD_ITERATOR;
     private String shardIterator;
 
-    private Future<GetShardIteratorResult> shardIteratorResult;
+    private Future<GetShardIteratorResponse> shardIteratorResult;
     private long nextGetShardIteratorTime = System.nanoTime();
 
-    private Future<GetRecordsResult> recordsResult;
+    private Future<GetRecordsResponse> recordsResult;
     private long nextGetRecordsTime = System.nanoTime();
 
     private List<Record> data = Collections.emptyList();
     private String lastSeenSeqNo;
 
     ShardReader(
-            AmazonKinesisAsync kinesis,
+            KinesisAsyncClient kinesis,
             String stream,
             Shard shard,
             String lastSeenSeqNo,
@@ -136,7 +136,7 @@ class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider 
             return false;
         }
         GetShardIteratorRequest request = getShardIteratorRequest();
-        shardIteratorResult = kinesis.getShardIteratorAsync(request);
+        shardIteratorResult = kinesis.getShardIterator(request);
         nextGetShardIteratorTime = currentTime;
         return true;
     }
@@ -146,21 +146,21 @@ class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider 
         if (lastSeenSeqNo == null) {
             return initialShardIterators.request(streamName, shard);
         } else {
-            GetShardIteratorRequest request = new GetShardIteratorRequest();
-            request.setStreamName(streamName);
-            request.setShardId(shard.getShardId());
-            request.setShardIteratorType(ShardIteratorType.AFTER_SEQUENCE_NUMBER);
-            request.setStartingSequenceNumber(lastSeenSeqNo);
-            return request;
+            return GetShardIteratorRequest.builder()
+                    .streamName(streamName)
+                    .shardId(shard.shardId())
+                    .shardIteratorType(ShardIteratorType.AFTER_SEQUENCE_NUMBER)
+                    .startingSequenceNumber(lastSeenSeqNo)
+                    .build();
         }
     }
 
     private Result handleWaitingForShardIterator() {
         if (shardIteratorResult.isDone()) {
             try {
-                shardIterator = KinesisUtil.readResult(shardIteratorResult).getShardIterator();
-            } catch (SdkClientException sce) {
-                return dealWithGetShardIteratorFailure(sce);
+                shardIterator = KinesisUtil.readResult(shardIteratorResult).shardIterator();
+            } catch (SdkException se) {
+                return dealWithGetShardIteratorFailure(se);
             } catch (Throwable t) {
                 throw rethrow(t);
             }
@@ -197,24 +197,24 @@ class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider 
 
     private Result handleWaitingForRecords() {
         if (recordsResult.isDone()) {
-            GetRecordsResult result;
+            GetRecordsResponse result;
             try {
                 result = KinesisUtil.readResult(recordsResult);
             } catch (ProvisionedThroughputExceededException pte) {
                 return dealWithThroughputExceeded();
-            } catch (SdkClientException sce) {
-                return dealWithReadRecordFailure(sce);
+            } catch (SdkException se) {
+                return dealWithReadRecordFailure(se);
             } catch (Throwable t) {
                 throw rethrow(t);
             }
 
             readRecordRetryTracker.reset();
 
-            shardIterator = result.getNextShardIterator();
-            data = result.getRecords();
+            shardIterator = result.nextShardIterator();
+            data = result.records();
             if (!data.isEmpty()) {
-                lastSeenSeqNo = data.get(data.size() - 1).getSequenceNumber();
-                millisBehindLatestMetric.set(result.getMillisBehindLatest());
+                lastSeenSeqNo = data.get(data.size() - 1).sequenceNumber();
+                millisBehindLatestMetric.set(result.millisBehindLatest());
             }
             if (shardIterator == null) {
                 state = State.SHARD_CLOSED;
@@ -279,10 +279,11 @@ class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider 
         return true;
     }
 
-    private Future<GetRecordsResult> getRecordsAsync(String shardIterator) {
-        GetRecordsRequest request = new GetRecordsRequest();
-        request.setShardIterator(shardIterator);
-        return kinesis.getRecordsAsync(request);
+    private Future<GetRecordsResponse> getRecordsAsync(String shardIterator) {
+        GetRecordsRequest request = GetRecordsRequest.builder()
+                .shardIterator(shardIterator)
+                .build();
+        return kinesis.getRecords(request);
     }
 
     public Shard getShard() {
@@ -305,7 +306,7 @@ class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider 
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        descriptor = descriptor.withTag("shard", shard.getShardId());
+        descriptor = descriptor.withTag("shard", shard.shardId());
         context.collect(descriptor, this);
     }
 

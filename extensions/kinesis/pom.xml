@@ -74,14 +74,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-kinesis</artifactId>
-            <version>1.12.797</version>
-        </dependency>
-
-        <dependency>
-            <groupId>tools.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>kinesis</artifactId>
         </dependency>
 
         <!-- TEST -->

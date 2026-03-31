@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
@@ -41,6 +40,7 @@ import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -70,7 +70,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     private static ToxiproxyContainer toxiproxy;
     private static AwsConfig AWS_CONFIG;
-    private static AmazonKinesisAsync KINESIS;
+    private static KinesisAsyncClient KINESIS;
     private static Proxy PROXY;
     private static KinesisTestHelper HELPER;
 
@@ -119,7 +119,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @AfterClass
     public static void afterClass() {
         if (KINESIS != null) {
-            KINESIS.shutdown();
+            KINESIS.close();
         }
 
         if (toxiproxy != null) {

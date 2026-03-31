@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
-import com.amazonaws.services.kinesis.model.Shard;
+import software.amazon.awssdk.services.kinesis.model.Shard;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

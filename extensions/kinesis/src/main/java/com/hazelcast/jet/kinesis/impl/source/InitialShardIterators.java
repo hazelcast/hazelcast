@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
-import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
-import com.amazonaws.services.kinesis.model.Shard;
-import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
+import software.amazon.awssdk.services.kinesis.model.Shard;
+import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,9 +37,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_SEQUENCE_NUMBER;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_TIMESTAMP;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.AT_SEQUENCE_NUMBER;
+import static software.amazon.awssdk.services.kinesis.model.ShardIteratorType.AT_TIMESTAMP;
 
 public class InitialShardIterators implements IdentifiedDataSerializable, Serializable {
     @Serial
@@ -58,12 +58,13 @@ public class InitialShardIterators implements IdentifiedDataSerializable, Serial
 
     @Nonnull
     private GetShardIteratorRequest defaultRequest(String stream, Shard shard) {
-        GetShardIteratorRequest request = new GetShardIteratorRequest();
-        request.setStreamName(stream);
-        request.setShardId(shard.getShardId());
-        request.setShardIteratorType(AT_SEQUENCE_NUMBER);
-        request.setStartingSequenceNumber(shard.getSequenceNumberRange().getStartingSequenceNumber());
-        return request;
+        return GetShardIteratorRequest.builder()
+                .streamName(stream)
+                .shardId(shard.shardId())
+                .shardIteratorType(AT_SEQUENCE_NUMBER)
+                .startingSequenceNumber(shard.sequenceNumberRange()
+                        .startingSequenceNumber())
+                .build();
     }
 
     @Override
@@ -162,22 +163,22 @@ public class InitialShardIterators implements IdentifiedDataSerializable, Serial
         }
 
         public boolean matches(Shard shard) {
-            String shardId = shard.getShardId();
+            String shardId = shard.shardId();
             Matcher matcher = pattern.matcher(shardId);
             return matcher.matches();
         }
 
         public GetShardIteratorRequest request(String stream, Shard shard) {
-            GetShardIteratorRequest request = new GetShardIteratorRequest();
-            request.setStreamName(stream);
-            request.setShardId(shard.getShardId());
-            request.setShardIteratorType(shardIteratorType);
+            GetShardIteratorRequest.Builder builder = GetShardIteratorRequest.builder()
+                    .streamName(stream)
+                    .shardId(shard.shardId())
+                    .shardIteratorType(shardIteratorType);
             if (shardIteratorType == AT_SEQUENCE_NUMBER || shardIteratorType == AFTER_SEQUENCE_NUMBER) {
-                request.setStartingSequenceNumber((String) parameter);
+                builder = builder.startingSequenceNumber((String) parameter);
             } else if (shardIteratorType == AT_TIMESTAMP) {
-                request.setTimestamp((Date) parameter);
+                builder = builder.timestamp(((Date) parameter).toInstant());
             }
-            return request;
+            return builder.build();
         }
     }
 }

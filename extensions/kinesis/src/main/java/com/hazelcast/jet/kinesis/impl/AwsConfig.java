@@ -16,18 +16,21 @@
 
 package com.hazelcast.jet.kinesis.impl;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
 import com.hazelcast.function.SupplierEx;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
 
 import javax.annotation.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.concurrent.ExecutorService;
 
 public class AwsConfig implements Serializable {
@@ -95,23 +98,27 @@ public class AwsConfig implements Serializable {
         return executorServiceSupplier;
     }
 
-    public AmazonKinesisAsync buildClient() {
-        AmazonKinesisAsyncClientBuilder builder = AmazonKinesisAsyncClientBuilder.standard();
-        if (endpoint == null) {
-            if (region != null) {
-                builder.setRegion(region);
-            }
-        } else {
-            builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region));
+    public KinesisAsyncClient buildClient() {
+        KinesisAsyncClientBuilder builder = KinesisAsyncClient.builder();
+        if (region != null) {
+            builder.region(Region.of(region));
         }
 
-        builder.withCredentials(accessKey == null ? new DefaultAWSCredentialsProviderChain() :
-                new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey))
+        if (endpoint != null) {
+            builder.endpointOverride(URI.create(endpoint));
+        }
+
+        builder.credentialsProvider(accessKey == null ? DefaultCredentialsProvider.builder()
+                .build() :
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey))
         );
 
-        builder.withClientConfiguration(new ClientConfiguration());
+        builder.overrideConfiguration(ClientOverrideConfiguration.builder()
+                .build());
         if (executorServiceSupplier != null) {
-            builder.withExecutorFactory(() -> executorServiceSupplier.get());
+            builder.asyncConfiguration(ClientAsyncConfiguration.builder()
+                    .advancedOption(SdkAdvancedAsyncClientOption.FUTURE_COMPLETION_EXECUTOR, executorServiceSupplier.get())
+                    .build());
         }
 
         return builder.build();

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -34,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
@@ -54,7 +54,7 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
     public static LocalStackContainer localStack;
 
     private static AwsConfig AWS_CONFIG;
-    private static AmazonKinesisAsync KINESIS;
+    private static KinesisAsyncClient KINESIS;
     private static KinesisTestHelper HELPER;
 
     public KinesisLimitExceededIntegrationTest() {
@@ -94,7 +94,7 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
     @AfterClass
     public static void afterClass() {
         if (KINESIS != null) {
-            KINESIS.shutdown();
+            KINESIS.close();
         }
 
         if (localStack != null) {
@@ -136,8 +136,7 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
          .map(Entry::getKey)
          .peek()
          .writeTo(Sinks.list("result"));
-        Job readJob = hz().getJet().newJob(p,
-                new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
+        hz().getJet().newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
 
         for (int i = 0; i < 10; i++) {
             // Make sure job is running before we suspend it

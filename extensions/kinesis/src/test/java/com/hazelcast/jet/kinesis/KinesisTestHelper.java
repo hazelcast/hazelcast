@@ -15,24 +15,6 @@
  */
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.CreateStreamRequest;
-import com.amazonaws.services.kinesis.model.DescribeStreamSummaryRequest;
-import com.amazonaws.services.kinesis.model.ExpiredNextTokenException;
-import com.amazonaws.services.kinesis.model.InvalidArgumentException;
-import com.amazonaws.services.kinesis.model.LimitExceededException;
-import com.amazonaws.services.kinesis.model.ListShardsRequest;
-import com.amazonaws.services.kinesis.model.ListShardsResult;
-import com.amazonaws.services.kinesis.model.PutRecordsRequest;
-import com.amazonaws.services.kinesis.model.PutRecordsRequestEntry;
-import com.amazonaws.services.kinesis.model.PutRecordsResult;
-import com.amazonaws.services.kinesis.model.ResourceInUseException;
-import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
-import com.amazonaws.services.kinesis.model.Shard;
-import com.amazonaws.services.kinesis.model.ShardFilterType;
-import com.amazonaws.services.kinesis.model.StreamDescriptionSummary;
-import com.amazonaws.services.kinesis.model.StreamStatus;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.kinesis.impl.source.RangeMonitor;
 import com.hazelcast.jet.retry.IntervalFunction;
@@ -40,8 +22,27 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest;
+import software.amazon.awssdk.services.kinesis.model.DeleteStreamRequest;
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamSummaryRequest;
+import software.amazon.awssdk.services.kinesis.model.ExpiredNextTokenException;
+import software.amazon.awssdk.services.kinesis.model.InvalidArgumentException;
+import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
+import software.amazon.awssdk.services.kinesis.model.ListShardsRequest;
+import software.amazon.awssdk.services.kinesis.model.ListShardsResponse;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse;
+import software.amazon.awssdk.services.kinesis.model.ResourceInUseException;
+import software.amazon.awssdk.services.kinesis.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.kinesis.model.Shard;
+import software.amazon.awssdk.services.kinesis.model.ShardFilterType;
+import software.amazon.awssdk.services.kinesis.model.StreamDescriptionSummary;
+import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -62,12 +64,12 @@ public class KinesisTestHelper {
             .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 2000L))
             .build();
 
-    private final AmazonKinesisAsync kinesis;
+    private final KinesisAsyncClient kinesis;
     private final String stream;
 
     private final ILogger logger = Logger.getLogger(KinesisIntegrationTest.class);
 
-    public KinesisTestHelper(AmazonKinesisAsync kinesis, String stream) {
+    public KinesisTestHelper(KinesisAsyncClient kinesis, String stream) {
         this.kinesis = kinesis;
         this.stream = stream;
     }
@@ -114,10 +116,10 @@ public class KinesisTestHelper {
         }
 
         callSafely(() -> {
-            CreateStreamRequest request = new CreateStreamRequest();
-            request.setShardCount(shardCount);
-            request.setStreamName(stream);
-            return kinesis.createStream(request);
+            CreateStreamRequest.Builder request = CreateStreamRequest.builder();
+            request.shardCount(shardCount);
+            request.streamName(stream);
+            return kinesis.createStream(request.build()).get();
         }, "stream creation");
 
         waitForStreamToActivate();
@@ -125,7 +127,7 @@ public class KinesisTestHelper {
 
     public void deleteStream() {
         if (streamExists()) {
-            callSafely(() -> kinesis.deleteStream(stream), "stream deletion");
+            callSafely(() -> kinesis.deleteStream(DeleteStreamRequest.builder().streamName(stream).build()).get(), "stream deletion");
             waitForStreamToDisappear();
         }
     }
@@ -136,47 +138,43 @@ public class KinesisTestHelper {
                 .collect(Collectors.toList());
     }
 
-    public PutRecordsResult putRecords(List<Map.Entry<String, String>> messages) {
-        PutRecordsRequest request = new PutRecordsRequest();
-        request.setStreamName(stream);
-        request.setRecords(messages.stream()
+    public PutRecordsResponse putRecords(List<Map.Entry<String, String>> messages) {
+        PutRecordsRequest request = PutRecordsRequest.builder().streamName(stream).records(messages.stream()
                 .map(entry -> {
-                    PutRecordsRequestEntry putEntry = new PutRecordsRequestEntry();
-                    putEntry.setPartitionKey(entry.getKey());
-                    putEntry.setData(ByteBuffer.wrap(entry.getValue().getBytes(StandardCharsets.UTF_8)));
-                    return putEntry;
+                    PutRecordsRequestEntry.Builder putEntry = PutRecordsRequestEntry.builder();
+                    putEntry.partitionKey(entry.getKey());
+                    putEntry.data(SdkBytes.fromString(entry.getValue(), StandardCharsets.UTF_8));
+                    return putEntry.build();
                 })
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList())).build();
         return callSafely(() -> putRecords(request), "put records");
     }
 
-    private PutRecordsResult putRecords(PutRecordsRequest request) {
-        return kinesis.putRecords(request);
+    private PutRecordsResponse putRecords(PutRecordsRequest request) throws InterruptedException, ExecutionException {
+        return kinesis.putRecords(request).get();
     }
 
-    private List<String> listStreams() {
-        return kinesis.listStreams().getStreamNames();
+    private List<String> listStreams() throws InterruptedException, ExecutionException {
+        return kinesis.listStreams().get().streamNames();
     }
 
-    private StreamStatus getStreamStatus() {
-        DescribeStreamSummaryRequest request = new DescribeStreamSummaryRequest();
-        request.setStreamName(stream);
+    private StreamStatus getStreamStatus() throws InterruptedException, ExecutionException {
+        DescribeStreamSummaryRequest request = DescribeStreamSummaryRequest.builder().streamName(stream).build();
 
-        StreamDescriptionSummary description = kinesis.describeStreamSummary(request).getStreamDescriptionSummary();
-        String statusString = description.getStreamStatus();
+        StreamDescriptionSummary description = kinesis.describeStreamSummary(request).get().streamDescriptionSummary();
 
-        return StreamStatus.valueOf(statusString);
+        return description.streamStatus();
     }
 
-    private List<Shard> listOpenShards() {
+    private List<Shard> listOpenShards() throws InterruptedException, ExecutionException {
         List<Shard> shards = new ArrayList<>();
         String nextToken = null;
         do {
             ShardFilterType filterType = ShardFilterType.AT_LATEST; //only the currently open shards
             ListShardsRequest request = RangeMonitor.listAllShardsRequest(stream, nextToken, filterType);
-            ListShardsResult response = kinesis.listShards(request);
-            shards.addAll(response.getShards());
-            nextToken = response.getNextToken();
+            ListShardsResponse response = kinesis.listShards(request).get();
+            shards.addAll(response.shards());
+            nextToken = response.nextToken();
         } while (nextToken != null);
         return shards;
     }
@@ -203,9 +201,9 @@ public class KinesisTestHelper {
             } catch (InvalidArgumentException iae) {
                 String message = "A specified parameter exceeds its restrictions, is not supported, or can't be used.";
                 throw new JetException(message, iae);
-            } catch (SdkClientException sce) {
+            } catch (SdkException se) {
                 String message = "Amazon SDK failure, ignoring and retrying.";
-                logger.warning(message, sce);
+                logger.warning(message, se);
             } catch (Exception e) {
                 throw rethrow(e);
             }

@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.kinesis.impl.sink;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.DescribeStreamSummaryRequest;
-import com.amazonaws.services.kinesis.model.DescribeStreamSummaryResult;
-import com.amazonaws.services.kinesis.model.StreamDescriptionSummary;
 import com.hazelcast.jet.kinesis.impl.AbstractShardWorker;
 import com.hazelcast.jet.kinesis.impl.KinesisUtil;
 import com.hazelcast.jet.kinesis.impl.RandomizedRateTracker;
 import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamSummaryRequest;
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamSummaryResponse;
+import software.amazon.awssdk.services.kinesis.model.StreamDescriptionSummary;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.Future;
@@ -52,12 +52,12 @@ final class ShardCountMonitorImpl extends AbstractShardWorker implements ShardCo
     private final RandomizedRateTracker describeStreamRateTracker;
     private final RetryTracker describeStreamRetryTracker;
 
-    private Future<DescribeStreamSummaryResult> describeStreamResult;
+    private Future<DescribeStreamSummaryResponse> describeStreamResult;
     private long nextDescribeStreamTime;
 
     ShardCountMonitorImpl(
             int knownShardCounterInstances,
-            AmazonKinesisAsync kinesis,
+            KinesisAsyncClient kinesis,
             String streamName,
             RetryStrategy retryStrategy,
             ILogger logger
@@ -95,10 +95,11 @@ final class ShardCountMonitorImpl extends AbstractShardWorker implements ShardCo
         nextDescribeStreamTime = currentTime + describeStreamRateTracker.next();
     }
 
-    private Future<DescribeStreamSummaryResult> describeStreamSummaryAsync() {
-        DescribeStreamSummaryRequest request = new DescribeStreamSummaryRequest();
-        request.setStreamName(streamName);
-        return kinesis.describeStreamSummaryAsync(request);
+    private Future<DescribeStreamSummaryResponse> describeStreamSummaryAsync() {
+        DescribeStreamSummaryRequest request = DescribeStreamSummaryRequest.builder()
+                .streamName(streamName)
+                .build();
+        return kinesis.describeStreamSummary(request);
     }
 
     private void checkForStreamDescription() {
@@ -106,10 +107,10 @@ final class ShardCountMonitorImpl extends AbstractShardWorker implements ShardCo
             return;
         }
 
-        DescribeStreamSummaryResult result;
+        DescribeStreamSummaryResponse result;
         try {
             result = KinesisUtil.readResult(describeStreamResult);
-        } catch (SdkClientException e) {
+        } catch (SdkException e) {
             dealWithDescribeStreamFailure(e);
             return;
         } catch (Throwable t) {
@@ -119,12 +120,12 @@ final class ShardCountMonitorImpl extends AbstractShardWorker implements ShardCo
         }
         describeStreamRetryTracker.reset();
 
-        StreamDescriptionSummary streamDescription = result.getStreamDescriptionSummary();
+        StreamDescriptionSummary streamDescription = result.streamDescriptionSummary();
         if (streamDescription == null) {
             return;
         }
 
-        Integer newShardCount = streamDescription.getOpenShardCount();
+        Integer newShardCount = streamDescription.openShardCount();
         if (newShardCount == null) {
             return;
         }

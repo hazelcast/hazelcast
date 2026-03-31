@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.kinesis.impl;
 
-import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.kinesis.impl.source.HashRange;
+import software.amazon.awssdk.services.kinesis.model.Shard;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -45,7 +45,7 @@ public final class KinesisUtil {
     }
 
     public static boolean shardBelongsToRange(@Nonnull Shard shard, @Nonnull HashRange range) {
-        BigInteger startingHashKey = new BigInteger(shard.getHashKeyRange().getStartingHashKey());
+        BigInteger startingHashKey = new BigInteger(shard.hashKeyRange().startingHashKey());
         return shardBelongsToRange(startingHashKey, range);
     }
 }
