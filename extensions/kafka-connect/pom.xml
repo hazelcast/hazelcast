@@ -261,7 +261,8 @@
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
-            <version>7.5.0.RELEASE</version>
+            <!-- When bumping this version check our netty version is compatible -->
+            <version>6.8.2.RELEASE</version>
             <scope>test</scope>
         </dependency>
         <!-- AWS SQS-->
