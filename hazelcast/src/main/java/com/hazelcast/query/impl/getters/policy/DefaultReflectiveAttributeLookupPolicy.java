@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.getters.policy;
 
+import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigBuilder;
 import com.hazelcast.console.SimulateLoadTask;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.Set;
 
 /**
@@ -47,7 +48,7 @@ public final class DefaultReflectiveAttributeLookupPolicy
             SerializationService.class, NodeExtension.class, SecurityContext.class, Class.class, File.class,
             getNonPublicClass("com.hazelcast.kubernetes.KubernetesTokenProvider"), ExternalConfigurationOverride.class,
             javax.sql.DataSource.class, SimulateLoadTask.class, java.sql.Connection.class, Config.class,
-            ConfigBuilder.class, InputStream.class);
+            AbstractConfigBuilder.class, InputStream.class, URL.class);
 
     private DefaultReflectiveAttributeLookupPolicy() {
     }
