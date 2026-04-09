@@ -63,8 +63,8 @@
                 <configuration combine.self="append">
                     <relocations>
                         <relocation>
-                            <pattern>com.amazonaws</pattern>
-                            <shadedPattern>${relocation.root}.com.amazonaws</shadedPattern>
+                            <pattern>software.amazon.awssdk</pattern>
+                            <shadedPattern>${relocation.root}.software.amazon.awssdk</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
