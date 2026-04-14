@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,29 +40,27 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test to verify the FIX for memory leak issue #26463.
- *
+ * <p>
  * Original bug scenario:
  * 1. Client requests metrics with sequence == tail
  * 2. ConcurrentArrayRingbuffer.copyFrom() returns EMPTY slice
  * 3. MetricsService.tryCompleteRead() used to skip future.complete() for empty slices
  * 4. Future never completes → doSendResponse() never called → deregister() never called
  * 5. Operation leaks in LiveOperationRegistry
- *
+ * <p>
  * Fix:
  * - MetricsService.tryCompleteRead() now ALWAYS calls future.complete(), even with empty slice
  * - Added timeout mechanism as safety net (60 seconds)
  * - Empty slice is a valid response meaning "no data available yet"
- *
+ * <p>
  * This test verifies the fix works correctly.
  */
 @RunWith(HazelcastParallelClassRunner.class)
@@ -70,10 +68,7 @@ import static org.junit.Assert.fail;
 public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private HazelcastInstance member;
-    private HazelcastInstance client;
     private HazelcastClientInstanceImpl clientImpl;
-    private NodeEngineImpl nodeEngine;
     private MetricsService metricsService;
     private UUID memberUuid;
 
@@ -87,11 +82,11 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
         config.getMetricsConfig().getManagementCenterConfig().setEnabled(true);
         config.getMetricsConfig().getManagementCenterConfig().setRetentionSeconds(60); // Very small - only 1 minute
 
-        member = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient();
+        HazelcastInstance member = factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
 
         clientImpl = getHazelcastClientInstanceImpl(client);
-        nodeEngine = getNode(member).getNodeEngine();
+        NodeEngineImpl nodeEngine = getNode(member).getNodeEngine();
         metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
         memberUuid = member.getCluster().getLocalMember().getUuid();
     }
@@ -103,7 +98,7 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
 
     /**
      * This test verifies the FIX for issue #26463.
-     *
+     * <p>
      * Expected behavior: NO LEAK - operations are properly cleaned up even when requesting sequence == tail
      */
     @Test
@@ -137,10 +132,9 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
         }
 
         // Wait for operations to be cleaned up deterministically
-        int expectedSize = initialSize;
         assertTrueEventually(() -> {
             int currentSize = getLiveOperationRegistrySize();
-            assertEquals("Operations should be cleaned up after the fix", expectedSize, currentSize);
+            assertEquals("Operations should be cleaned up after the fix", initialSize, currentSize);
         });
     }
 
@@ -167,10 +161,9 @@ public class ReadMetricsOperationMemoryLeakImprovedTest extends ClientTestSuppor
         assertFalse("Expected at least one metric entry", params.elements.isEmpty());
 
         // Wait for operations to be cleaned up deterministically
-        int expectedSize = initialSize;
         assertTrueEventually(() -> {
             int currentSize = getLiveOperationRegistrySize();
-            assertEquals("Operations should be cleaned up in normal scenario", expectedSize, currentSize);
+            assertEquals("Operations should be cleaned up in normal scenario", initialSize, currentSize);
         });
     }
 
