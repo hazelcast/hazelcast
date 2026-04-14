@@ -29,7 +29,6 @@ import org.ops4j.pax.exam.options.CompositeOption;
 import org.ops4j.pax.exam.options.UrlProvisionOption;
 import org.ops4j.pax.exam.spi.reactors.AllConfinedStagedReactorFactory;
 import org.ops4j.pax.exam.util.PathUtils;
-import org.ops4j.pax.url.maven.commons.MavenConstants;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -48,7 +47,8 @@ class HazelcastOSGiIT {
     @Inject
     private BundleContext bundleContext;
 
-    private static final String MAVEN_REPOSITORIES_PROP = ServiceConstants.PID + MavenConstants.PROPERTY_REPOSITORIES;
+    // https://github.com/ops4j/org.ops4j.pax.runner/blob/76bfcebd32da1f4b155d9f992566ebb60c0f7c43/pax-runner/src/main/java/org/ops4j/pax/runner/OptionResolverImpl.java#L102
+    private static final String MAVEN_REPOSITORIES_PROP = ServiceConstants.PID + "." + ServiceConstants.PROPERTY_REPOSITORIES;
     private static final String MAVEN_REPOSITORIES = "https://osgi.sonatype.org/content/groups/pax-runner@id=paxrunner,"
             + "https://repo1.maven.org/maven2@id=central";
     private String oldMavenRepoProperty;

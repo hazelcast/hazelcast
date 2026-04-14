@@ -74,7 +74,11 @@
     </build>
 
     <dependencies>
-        <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.codehaus.woodstox` should be upgraded -->
+        <!--
+            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies `org.codehaus.woodstox` should be upgraded:
+            - `org.checkerframework`
+            - `org.codehaus.woodstox:woodstox-core`
+        -->
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>gcs-connector</artifactId>
