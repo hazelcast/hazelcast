@@ -417,11 +417,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Map.Entry<Data, Record> entry = entryIterator.next();
 
             Data key = entry.getKey();
-            Record record = entry.getValue();
-
-            if (evictIfExpired(key, now, false)) {
+            if (isExpired(key, now, false)) {
                 continue;
             }
+
+            Record record = entry.getValue();
             if (valueComparator.isEqual(value, record.getValue(), serializationService)) {
                 return true;
             }
