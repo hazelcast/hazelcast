@@ -26,6 +26,7 @@ import static java.lang.String.format;
 public class ReflectionClassNameFilter implements ClassNameFilter {
     private static final String LOAD_CLASS_ERROR = "Creation of class %s is not allowed.";
     private static final String[] DEFAULT_WHITELIST_PREFIX = new String[]{"com.hazelcast.", "java", "["};
+    private static final String[] DEFAULT_BLOCKLIST_PREFIX = new String[]{"com.hazelcast.shaded."};
 
     private final ClassFilter blacklist;
     private final ClassFilter whitelist;
@@ -36,6 +37,7 @@ public class ReflectionClassNameFilter implements ClassNameFilter {
         whitelist = config.getWhitelist();
         if (!config.isDefaultsDisabled()) {
             whitelist.addPrefixes(DEFAULT_WHITELIST_PREFIX);
+            blacklist.addPrefixes(DEFAULT_BLOCKLIST_PREFIX);
         }
     }
 

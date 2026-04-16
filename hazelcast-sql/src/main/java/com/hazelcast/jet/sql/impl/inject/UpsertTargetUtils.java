@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.type.converter.ToConverter;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.PortableId;
@@ -33,6 +34,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -46,7 +48,10 @@ public final class UpsertTargetUtils {
 
     private UpsertTargetUtils() { }
 
-    public static Object convertRowToJavaType(final Object value, final QueryDataType type) {
+    public static Object convertRowToJavaType(final Object value, final QueryDataType type, @Nullable ClassNameFilter filter) {
+        if (filter != null) {
+            filter.filter(type.getObjectTypeName());
+        }
         final Class<?> targetClass = ReflectionUtils.loadClass(type.getObjectTypeMetadata());
         if (value.getClass().isAssignableFrom(targetClass)) {
             return value;
@@ -67,7 +72,7 @@ public final class UpsertTargetUtils {
             final QueryDataTypeField typeField = type.getObjectFields().get(i);
             final boolean isRowValueField = rowValue.getValues().get(i) instanceof RowValue;
             final Object fieldValue = isRowValueField
-                    ? convertRowToJavaType(rowValue.getValues().get(i), typeField.getType())
+                    ? convertRowToJavaType(rowValue.getValues().get(i), typeField.getType(), filter)
                     : rowValue.getValues().get(i);
             Method setter = ReflectionUtils.findPropertySetter(targetClass, typeField.getName());
 

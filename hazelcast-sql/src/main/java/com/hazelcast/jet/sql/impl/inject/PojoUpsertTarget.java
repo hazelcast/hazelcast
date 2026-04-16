@@ -40,14 +40,16 @@ class PojoUpsertTarget implements UpsertTarget {
 
     private final Class<?> clazz;
     private final Map<String, Class<?>> typesByPaths;
+    private final ClassNameFilter filter;
 
     private Object pojo;
 
     PojoUpsertTarget(String className, Map<String, String> typeNamesByPaths, ClassNameFilter filter) {
-        this.clazz = loadClass(className);
+        this.filter = filter;
         if (filter != null) {
-            filter.filter(clazz.getName());
+            filter.filter(className);
         }
+        this.clazz = loadClass(className);
         this.typesByPaths = typeNamesByPaths.entrySet().stream()
                                             .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
     }
@@ -78,7 +80,7 @@ class PojoUpsertTarget implements UpsertTarget {
             }
             try {
                 if (value instanceof RowValue) {
-                    method.invoke(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType));
+                    method.invoke(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType, filter));
                 } else {
                     method.invoke(pojo, value);
                 }
@@ -95,7 +97,7 @@ class PojoUpsertTarget implements UpsertTarget {
             }
             try {
                 if (value instanceof RowValue) {
-                    field.set(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType));
+                    field.set(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType, filter));
                 } else {
                     field.set(pojo, value);
                 }
