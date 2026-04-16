@@ -72,6 +72,13 @@ public interface Job {
      * Joining a suspended job will block until that job is resumed and
      * completes.
      * <p>
+     * The exception thrown by this method if the job completed with an error
+     * may differ depending on the moment when this method is invoked.
+     * If it is invoked after the job has already finished, the original
+     * exception stacktrace may be flattened and reported as exception message
+     * text, whereas in other cases it will be returned as ordinary exception
+     * chain.
+     * <p>
      * Shorthand for <code>job.getFuture().join()</code>.
      *
      * @throws CancellationException if the job was cancelled
