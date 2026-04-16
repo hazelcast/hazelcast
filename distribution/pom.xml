@@ -201,12 +201,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
             <version>5.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Jet extensions -->

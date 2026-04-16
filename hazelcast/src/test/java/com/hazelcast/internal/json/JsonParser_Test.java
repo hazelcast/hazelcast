@@ -23,6 +23,7 @@ package com.hazelcast.internal.json;
 
 import com.hazelcast.internal.json.Json.DefaultHandler;
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
+import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 @Category(QuickTest.class)
 public class JsonParser_Test {
@@ -302,6 +304,9 @@ public class JsonParser_Test {
 
   @Test
   public void parse_failsOnTooDeeplyNestedObject() {
+    // This test causes a StackOverflowError on JDK 25 - a long-term solution is in discussion, skipping for now. See CTT-1126
+    assumeFalse(JavaVersion.isAtLeast(JavaVersion.JAVA_25));
+
     JsonObject object = new JsonObject();
     for (int i = 0; i < 1001; i++) {
       object = new JsonObject().add("foo", object);

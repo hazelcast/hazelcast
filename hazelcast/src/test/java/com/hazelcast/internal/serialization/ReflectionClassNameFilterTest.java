@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -56,6 +55,18 @@ public class ReflectionClassNameFilterTest {
     @Test(expected = SecurityException.class)
     public void testDefaultFail() {
         new ReflectionClassNameFilter(new JavaSerializationFilterConfig()).filter("bsh.XThis");
+    }
+
+    /**
+     * <pre>
+     * Given: Default configuration is used
+     * When: {@link ReflectionClassNameFilter#filter(String)} is called for a class name which matches default blacklist.
+     * Then: {@link SecurityException} is thrown
+     * </pre>
+     */
+    @Test(expected = SecurityException.class)
+    public void testDefaultFailBlacklisted() {
+        new ReflectionClassNameFilter(new JavaSerializationFilterConfig()).filter("com.hazelcast.shaded.bsh.XThis");
     }
 
     /**

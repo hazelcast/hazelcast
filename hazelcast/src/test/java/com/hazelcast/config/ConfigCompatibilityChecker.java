@@ -56,7 +56,6 @@ import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedD
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static java.text.MessageFormat.format;
 import static java.util.Collections.singletonMap;
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.junit.Assert.assertEquals;
 
 public class ConfigCompatibilityChecker {
@@ -1891,8 +1890,8 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            List<PermissionConfig> configs1 = asList(c1.toArray());
-            List<PermissionConfig> configs2 = asList(c2.toArray());
+            List<PermissionConfig> configs1 = List.copyOf(c1);
+            Set<PermissionConfig> configs2 = Set.copyOf(c2);
 
             for (PermissionConfig a : configs1) {
                 if (!configs2.contains(a)) {

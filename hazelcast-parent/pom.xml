@@ -89,7 +89,9 @@
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.5</avro.version>
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.checkerframework:checker-qual` should be upgraded -->
-        <aws.sdk2.version>2.42.31</aws.sdk2.version>
+        <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
+          and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
+        <aws.sdk2.version>2.42.34</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -353,10 +355,6 @@
                         <artifactId>kerb-core</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.apache.kerby</groupId>
-                        <artifactId>kerb-simplekdc</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.apache.curator</groupId>
                         <artifactId>curator-client</artifactId>
                     </exclusion>
@@ -394,16 +392,6 @@
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet.version}</version>
-                <exclusions>
-                    <!--
-                    The following library is not required, it only contains annotations and doclets
-                    It also requires JDK11 since version 0.14
-                    -->
-                    <exclusion>
-                        <groupId>org.apache.yetus</groupId>
-                        <artifactId>audience-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -505,6 +493,28 @@
                 <version>4.5.14</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.6</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>5.4</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
                 <version>7.1.1</version>
@@ -552,7 +562,7 @@
                 <version>${jline.version}</version>
                 <classifier>jdk8</classifier>
             </dependency>
-            <!-- 
+            <!--
                 Addresses convergence between:
                 - `org.apache.calcite`
                 - `com.google.cloud:google-cloud-storage` (transitively from `com.google.cloud.bigdataoss:gcs-connector`)
@@ -654,7 +664,7 @@
                 <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
                 <version>1.4.1</version>
             </dependency>
-            <!-- 
+            <!--
                 Addresses convergence between:
                 - `com.google.guava:guava`
                 - `io.grpc:grpc-stub` / `io.grpc:grpc-api`
@@ -707,7 +717,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.79.0</version>
+                <version>26.80.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -1068,7 +1078,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>3.7.1</version>
+                    <version>3.8.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1154,7 +1164,7 @@
                 <plugin>
                     <groupId>com.github.siom79.japicmp</groupId>
                     <artifactId>japicmp-maven-plugin</artifactId>
-                    <version>0.24.2</version>
+                    <version>0.25.5</version>
                     <configuration>
                         <!-- Skip property -->
                         <skip>${skip.public.api.check}</skip>
@@ -1205,6 +1215,10 @@
                                 <!-- Exclude included dependencies which are out of this project control -->
                                 <exclude>com.hazelcast.license.*</exclude>
                                 <exclude>${relocation.root}.*</exclude>
+
+                                <!-- Fixed convention, equals and hashCode were missing final keyword -->
+                                <exclude>com.hazelcast.config.PermissionConfig#equals(java.lang.Object)</exclude>
+                                <exclude>com.hazelcast.config.PermissionConfig#hashCode()</exclude>
                             </excludes>
 
                             <!-- Skip .diff file report -->

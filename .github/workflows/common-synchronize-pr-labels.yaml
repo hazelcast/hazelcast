@@ -28,11 +28,8 @@ jobs:
               done <<< "$CONTENT"
            env:
               GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
-         - uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
+         - uses: hazelcast/docker-actions/slack-notification@master
            if: failure()
            with:
-              fields: repo,message,author,action,eventName,workflow,job,pullRequest
-              status: failure
-              channel: "#monorepo-notifications"
-           env:
-              SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
+            slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
+            slack-channel: "#monorepo-notifications"

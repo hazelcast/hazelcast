@@ -131,9 +131,8 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
-        if (client != null) {
-            client.close();
-        }
+    public void close(@Nullable Throwable error) throws Exception {
+        // no-op
+        // See CTT-661 and KinesisStressIntegrationTest for more context
     }
 }

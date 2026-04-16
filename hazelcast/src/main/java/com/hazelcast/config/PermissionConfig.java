@@ -59,6 +59,7 @@ import com.hazelcast.security.permission.VectorCollectionPermission;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
@@ -90,12 +91,9 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
         this.type = permissionConfig.type;
         this.name = permissionConfig.getName();
         this.principal = permissionConfig.getPrincipal();
-        for (String endpoint : permissionConfig.getEndpoints()) {
-            this.endpoints.add(endpoint);
-        }
-        for (String action : permissionConfig.getActions()) {
-            this.actions.add(action);
-        }
+        this.endpoints.addAll(permissionConfig.getEndpoints());
+        this.actions.addAll(permissionConfig.getActions());
+        this.deny = permissionConfig.isDeny();
     }
 
     /**
@@ -397,35 +395,24 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
         if (!(o instanceof PermissionConfig that)) {
             return false;
         }
-
-        if (type != that.type) {
-            return false;
-        }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
-            return false;
-        }
-        if (principal != null ? !principal.equals(that.principal) : that.principal != null) {
-            return false;
-        }
-        if (endpoints != null ? !endpoints.equals(that.endpoints) : that.endpoints != null) {
-            return false;
-        }
-        if (deny != that.deny) {
-            return false;
-        }
-        return actions != null ? actions.equals(that.actions) : that.actions == null;
+        return type == that.type
+                && Objects.equals(name, that.name)
+                && Objects.equals(principal, that.principal)
+                && Objects.equals(endpoints, that.endpoints)
+                && deny == that.deny
+                && Objects.equals(actions, that.actions);
     }
 
     @Override
-    public int hashCode() {
-        int result = type.hashCode();
+    public final int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (principal != null ? principal.hashCode() : 0);
         result = 31 * result + (endpoints != null ? endpoints.hashCode() : 0);
