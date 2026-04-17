@@ -18,8 +18,9 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.ClassNameFilter;
+
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 
@@ -31,14 +32,29 @@ public class ReflectionClassNameFilter implements ClassNameFilter {
     private final ClassFilter blacklist;
     private final ClassFilter whitelist;
 
-    public ReflectionClassNameFilter(JavaSerializationFilterConfig config) {
-        Preconditions.checkNotNull(config, "JavaReflectionFilterConfig has to be provided");
-        blacklist = config.getBlacklist();
-        whitelist = config.getWhitelist();
-        if (!config.isDefaultsDisabled()) {
-            whitelist.addPrefixes(DEFAULT_WHITELIST_PREFIX);
-            blacklist.addPrefixes(DEFAULT_BLOCKLIST_PREFIX);
+    public ReflectionClassNameFilter(@Nullable JavaSerializationFilterConfig config) {
+        if (config != null) {
+            blacklist = config.getBlacklist();
+            whitelist = config.getWhitelist();
+            if (!config.isDefaultsDisabled()) {
+                whitelist.addPrefixes(DEFAULT_WHITELIST_PREFIX);
+                addDefaultBlocklist();
+            }
+        } else {
+            // if the filter is not explicitly configured, use only defaults for blocked classes
+            // all classes that are not blocked, are allowed
+            whitelist = null;
+            blacklist = new ClassFilter();
+            addDefaultBlocklist();
         }
+    }
+
+    private void addDefaultBlocklist() {
+        blacklist.addPrefixes(DEFAULT_BLOCKLIST_PREFIX);
+        blacklist.addClasses(
+                // See: https://hazelcast.atlassian.net/browse/CTT-1112 and https://hazelcast.atlassian.net/browse/CTT-1090
+                "com.zaxxer.hikari.HikariDataSource"
+        );
     }
 
     @Override
@@ -46,7 +62,7 @@ public class ReflectionClassNameFilter implements ClassNameFilter {
         if (blacklist.isListed(className)) {
             throw new SecurityException(format(LOAD_CLASS_ERROR, className));
         }
-        if (!whitelist.isListed(className)) {
+        if (whitelist != null && !whitelist.isListed(className)) {
             throw new SecurityException(format(LOAD_CLASS_ERROR, className));
         }
     }

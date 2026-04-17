@@ -50,7 +50,6 @@ import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
 import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
-import static java.util.Objects.isNull;
 
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
@@ -91,7 +90,7 @@ public class SqlServiceImpl implements InternalSqlService {
         assert queryTimeout >= 0L;
         this.queryTimeout = queryTimeout;
         var reflectionConfig = nodeEngine.getConfig().getSqlConfig().getJavaReflectionFilterConfig();
-        this.reflectionClassNameFilter = isNull(reflectionConfig) ? null : new ReflectionClassNameFilter(reflectionConfig);
+        this.reflectionClassNameFilter = new ReflectionClassNameFilter(reflectionConfig);
     }
 
     @Override

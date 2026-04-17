@@ -35,6 +35,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -72,19 +73,19 @@ public class UdtRestrictionTest extends SqlTestSupport {
         return true;
     }
 
+    boolean customizedFilters() {
+        return true;
+    }
+
     @Test
     public void when_valueClassRestricted_then_fails() {
         String name = "map";
         javaMapping(name, ALLOWED_CLASS, DENIED_CLASS).create();
 
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, 1)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, null)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (1, null)"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (1, 1)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (4, null)"));
     }
 
     @Test
@@ -92,14 +93,10 @@ public class UdtRestrictionTest extends SqlTestSupport {
         String name = "map";
         javaMapping(name, DENIED_CLASS, ALLOWED_CLASS).create();
 
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, 1)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (1, 2)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (null, 1)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (null, 2)"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (1, 1)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (null, 2)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (null, 1)"));
     }
 
     @Test
@@ -173,16 +170,38 @@ public class UdtRestrictionTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_selectValueWithRestrictedClass_then_success() {
+        String name = "map";
+        javaMapping(name, Integer.class, NotAllowedClass.class).create();
+        var value = new NotAllowedClass();
+        value.setRestricted(2);
+        instance().getMap(name).put(1, value);
+        // filter affects only object creation by SQL, not queries
+        assertThat(executeScalar("SELECT this FROM map WHERE __key = 1")).isInstanceOf(NotAllowedClass.class);
+        assertThat(executeScalar("SELECT restricted FROM map WHERE __key = 1")).isEqualTo(2);
+    }
+
+    @Test
+    public void when_selectValueWithShadedClass_then_success() {
+        String name = "map";
+        javaMapping(name, Integer.class, SomeShadedClass.class).create();
+        var value = new SomeShadedClass();
+        value.setShaded(2);
+        instance().getMap(name).put(1, value);
+        // filter affects only object creation by SQL, not queries
+        assertThat(executeScalar("SELECT this FROM map WHERE __key = 1")).isInstanceOf(SomeShadedClass.class);
+        assertThat(executeScalar("SELECT shaded FROM map WHERE __key = 1")).isEqualTo(2);
+    }
+
+    @Test
     public void when_updateValueWithRestrictedClass_then_failed() {
         String name = "map";
         javaMapping(name, Integer.class, NotAllowedClass.class).create();
         instance().getMap(name).put(1, "initial");
 
-        assertThatThrownBy(() -> execute("UPDATE map SET restricted = 100 WHERE __key = 1"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("UPDATE map SET restricted = 100 WHERE __key = 1"));
 
-        assertThatThrownBy(() -> execute("UPDATE map SET restricted = null WHERE __key = 1"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("UPDATE map SET restricted = null WHERE __key = 1"));
     }
 
     @Test
@@ -230,12 +249,27 @@ public class UdtRestrictionTest extends SqlTestSupport {
         try (var ignore = sqlService.execute(sql)) { }
     }
 
+    private Object executeScalar(String sql) {
+        try (var result = sqlService.execute(sql)) {
+            return result.iterator().next().getObject(0);
+        }
+    }
+
     private void assertThatRejectedWithDefaultsDisabled(ThrowableAssert.ThrowingCallable callable) {
         if (defaultsEnabled()) {
             assertThatNoException().isThrownBy(callable);
         } else {
             assertThatThrownBy(callable)
                     .hasMessageContaining(expectedMessageInDefault);
+        }
+    }
+
+    private void assertThatRejectedWithCustomizedFilters(ThrowableAssert.ThrowingCallable callable) {
+        if (customizedFilters()) {
+            assertThatThrownBy(callable)
+                    .hasMessageContaining(expectedMessage);
+        } else {
+            assertThatNoException().isThrownBy(callable);
         }
     }
 
