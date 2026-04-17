@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
@@ -40,9 +41,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
@@ -260,6 +263,13 @@ public class JsonUtilTest extends JetTestSupport {
     @Test
     public void testConvertToJsonString() throws IOException {
         assertEquals(jsonString, JsonUtil.toJson(testJsonObject));
+    }
+
+    @Test
+    public void testRejectToJsonString() {
+        assertThatThrownBy(() -> JsonUtil.toJson(mock(DataSource.class)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("cannot be serialized using JSON");
     }
 
     private void assertListOfObjects(List<TestJsonObject> list) {
