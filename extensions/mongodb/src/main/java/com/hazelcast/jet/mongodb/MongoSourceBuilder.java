@@ -40,8 +40,6 @@ import javax.annotation.Nullable;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
-import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
-import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
 
 /**
  * Top-level class for MongoDB custom source builders.
@@ -316,7 +314,7 @@ public final class MongoSourceBuilder {
             this.params = new ReadMongoParams<>(false);
             params
                     .setClientSupplier(clientSupplier)
-                    .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
+                    .setItemClass(Document.class);
         }
         @SuppressWarnings("unchecked")
         private Batch(
@@ -328,7 +326,7 @@ public final class MongoSourceBuilder {
             this.params = new ReadMongoParams<>(false);
             params
                     .setDataConnectionRef(dataConnectionRef)
-                    .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
+                    .setItemClass(Document.class);
         }
 
         /**
@@ -395,7 +393,7 @@ public final class MongoSourceBuilder {
         public <T_NEW> Batch<T_NEW> collection(String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
             newThis.params.setCollectionName(collectionName);
-            newThis.params.setMapItemFn(toClass(mongoType));
+            newThis.params.setItemClass(mongoType);
             return newThis;
         }
 
@@ -439,8 +437,7 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setClientSupplier(clientSupplier);
-            this.params.setMapStreamFn(
-                    (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
+            this.params.setItemClass(Document.class);
         }
         @SuppressWarnings("unchecked")
         private Stream(
@@ -451,8 +448,7 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setDataConnectionRef(dataConnectionRef);
-            this.params.setMapStreamFn(
-                    (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
+            this.params.setItemClass(Document.class);
         }
 
         /**
@@ -506,7 +502,7 @@ public final class MongoSourceBuilder {
         public <T_NEW> Stream<T_NEW> collection(@Nonnull String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.params.setCollectionName(collectionName);
-            newThis.params.setMapStreamFn(streamToClass(mongoType));
+            newThis.params.setItemClass(mongoType);
             return newThis;
         }
 
