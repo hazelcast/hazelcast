@@ -53,6 +53,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.starter.ReflectionUtils;
+import org.apache.commons.lang.SerializationUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,6 +76,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -227,6 +230,30 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         person.finalizeFields();
         company.finalizeFields();
         checkSerialization(person);
+    }
+
+    @Test
+    public void testJavaDeserializationRejectsEmptyFieldsForCustomType() throws IllegalAccessException {
+        QueryDataType person = new QueryDataType("Person", TypeKind.JAVA, "PersonType");
+        ReflectionUtils.setFieldValueReflectively(person, "objectFields", emptyList());
+
+        // check plain Java serialization
+        var serialized = SerializationUtils.serialize(person);
+        assertThatThrownBy(() -> SerializationUtils.deserialize(serialized))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Type has no fields");
+
+        // check Java serialization with SerializationService
+        assertThatThrownBy(() -> serde((SupplierEx<?>) () -> person))
+                .rootCause()
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Type has no fields");
+
+        // check IDS with SerializationService
+        assertThatThrownBy(() -> serde(person))
+                .rootCause()
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Type has no fields");
     }
 
     @Test
