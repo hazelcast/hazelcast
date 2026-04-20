@@ -205,6 +205,9 @@ public final class ReflectionHelper {
             // verify the final returned type
             policy.verifyClass(getter.getReturnType());
             return getter;
+        } catch (ReflectiveAttributeLookupException e) {
+            // do not expose internal exception class directly
+            throw new QueryException(e.getMessage());
         } catch (Throwable e) {
             throw new QueryException(e);
         }
