@@ -662,7 +662,7 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
-                <version>1.4.1</version>
+                <version>1.4.2</version>
             </dependency>
             <!--
                 Addresses convergence between:
