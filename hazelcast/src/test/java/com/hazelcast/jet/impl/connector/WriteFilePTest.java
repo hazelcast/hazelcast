@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.internal.util.JavaVersion;
+import com.hazelcast.internal.util.JavaVm;
 import tools.jackson.jr.ob.JSON;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Job;
@@ -84,6 +86,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteFilePTest extends SimpleTestInClusterSupport {
@@ -196,6 +199,9 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testCharset() throws Exception {
+        // Oracle 21 bug - https://bugs.openjdk.org/browse/JDK-8325605
+        assumeFalse(JavaVm.CURRENT_VM == JavaVm.HOTSPOT && JavaVersion.CURRENT_VERSION == JavaVersion.JAVA_21);
+
         // Given
         Charset charset = Charset.forName("iso-8859-2");
         String text = "ľščťž";
