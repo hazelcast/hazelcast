@@ -190,19 +190,30 @@ public class ReflectionHelperTest {
     }
 
     @Test
-    public void extractValue_whenArrElementIsBlockedClass_thenThrowException() {
+    public void extractValue_whenArrFetchedAndComponentTypeIsBlockedClass_thenThrowException() {
         ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("q");
+        assertRestrictedLookupFailure(object, "hazelcastInstanceArray");
+    }
+
+    @Test
+    public void extractValue_whenMultiDimArrFetchedAndComponentTypeIsBlockedClass_thenThrowException() {
+        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("r");
+        assertRestrictedLookupFailure(object, "hazelcastInstanceMultiDimArray");
+    }
+
+    @Test
+    public void extractValue_whenArrElementIsBlockedClass_thenThrowException() {
+        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("s");
         assertRestrictedLookupFailure(object, "hazelcastInstanceArray[0].name");
     }
 
     @Test
     public void extractValue_whenArrElementIsBlockedClass_thenThrowException_WithPolicyHint() {
-        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("r");
+        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("t");
         assertThatThrownBy(() -> extractValue(object, "hazelcastInstanceArray[0].name", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining(ReflectiveAttributeLookupException.POLICY_HINT);
-
     }
 
     @SuppressWarnings("unused")

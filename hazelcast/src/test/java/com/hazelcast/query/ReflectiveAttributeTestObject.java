@@ -46,6 +46,7 @@ public class ReflectiveAttributeTestObject implements Serializable, HazelcastIns
     private final ReflectiveAttributeTestObject[] objectAsArray;
 
     private final HazelcastInstance[] hazelcastInstanceArray = new HazelcastInstance[1];
+    private final HazelcastInstance[][][] hazelcastInstanceMultiDimArray = new HazelcastInstance[1][][];
     private final List<HazelcastInstance> hazelcastInstanceList = new ArrayList<>(1);
 
     public ReflectiveAttributeTestObject(String name) {
