@@ -50,7 +50,7 @@ public final class UpsertTargetUtils {
 
     public static Object convertRowToJavaType(final Object value, final QueryDataType type, @Nullable ClassNameFilter filter) {
         if (filter != null) {
-            filter.filter(type.getObjectTypeName());
+            filter.filter(type.getObjectTypeMetadata());
         }
         final Class<?> targetClass = ReflectionUtils.loadClass(type.getObjectTypeMetadata());
         if (value.getClass().isAssignableFrom(targetClass)) {
