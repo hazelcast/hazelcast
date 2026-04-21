@@ -19,11 +19,15 @@ package com.hazelcast.jet.json.impl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.json.JsonUtil;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junitpioneer.jupiter.ClearSystemProperty;
 import org.junitpioneer.jupiter.SetSystemProperty;
+import org.junitpioneer.jupiter.cartesian.CartesianTest;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -35,26 +39,26 @@ public class JsonUtilImplTest {
 
     static final String JSON = "{}";
 
-    enum FunctionUnderTest implements Function<Class<?>, Object> {
+    enum FunctionUnderTest implements BiFunction<Class<?>, String, Object> {
 
         PublicToBean {
             @Override
-            public Object apply(Class<?> type) {
-                return JsonUtil.toBean(type).apply(JSON);
+            public Object apply(Class<?> type, String json) {
+                return JsonUtil.toBean(type).apply(json);
             }
         },
 
         BeanFromFn {
             @Override
-            public Object apply(Class<?> type) {
-                return JsonUtilImpl.toBean(type).apply(JSON);
+            public Object apply(Class<?> type, String json) {
+                return JsonUtilImpl.toBean(type).apply(json);
             }
         },
 
         BeanFromBiFn {
             @Override
-            public Object apply(Class<?> type) {
-                return JsonUtilImpl.toBeanBiFn(type).apply(null, JSON);
+            public Object apply(Class<?> type, String json) {
+                return JsonUtilImpl.toBeanBiFn(type).apply(null, json);
             }
         }
     }
@@ -83,39 +87,39 @@ public class JsonUtilImplTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource
-    void shouldCreate_whenAllowedClass(FunctionUnderTest functionUnderTest) {
-        assertThat(functionUnderTest.apply(MyDto.class)).isInstanceOf(MyDto.class);
+    @CartesianTest
+    void shouldCreate_whenAllowedClass(@CartesianTest.Enum FunctionUnderTest functionUnderTest,
+                                       @ClassesAllowedByDefault Class<?> clazz) {
+        assertThat(functionUnderTest.apply(clazz, wrapJsonInArrayIfNeeded(JSON, clazz))).isInstanceOf(clazz);
     }
 
-    @ParameterizedTest
-    @EnumSource
+    @CartesianTest
     @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldCreate_whenAllowedClassAndDefaultsDisabled(FunctionUnderTest functionUnderTest) {
-        assertThat(functionUnderTest.apply(MyDto.class)).isInstanceOf(MyDto.class);
+    void shouldCreate_whenAllowedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionUnderTest functionUnderTest,
+                                                          @ClassesAllowedByDefault Class<?> clazz) {
+        assertThat(functionUnderTest.apply(clazz, wrapJsonInArrayIfNeeded(JSON, clazz))).isInstanceOf(clazz);
     }
 
-    @ParameterizedTest
-    @EnumSource
-    void shouldNotCreate_whenBlocklistedClass(FunctionUnderTest functionUnderTest) {
-        assertThatThrownBy(() -> functionUnderTest.apply(MapConfig.class))
+    @CartesianTest
+    void shouldNotCreate_whenBlocklistedClass(@CartesianTest.Enum FunctionUnderTest functionUnderTest,
+                                              @ClassesBlocklistedByDefault Class<?> clazz) {
+        assertThatThrownBy(() -> functionUnderTest.apply(clazz, wrapJsonInArrayIfNeeded(JSON, clazz)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cannot be deserialized using JSON");
     }
 
-    @ParameterizedTest
-    @EnumSource
+    @CartesianTest
     @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldCreate_whenBlocklistedClassAndDefaultsDisabled(FunctionUnderTest functionUnderTest) {
-        assertThat(functionUnderTest.apply(MapConfig.class)).isInstanceOf(MapConfig.class);
+    void shouldCreate_whenBlocklistedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionUnderTest functionUnderTest,
+                                                              @ClassesBlocklistedByDefault Class<?> clazz) {
+        assertThat(functionUnderTest.apply(clazz, wrapJsonInArrayIfNeeded(JSON, clazz))).isInstanceOf(clazz);
     }
 
-    @ParameterizedTest
-    @EnumSource
-    void shouldDeserialize_whenAllowedClass(FunctionForSerialization functionUnderTest) {
+    @CartesianTest
+    void shouldDeserialize_whenAllowedClass(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
+                                            @ClassesAllowedByDefault Class<?> clazz) {
         // given
-        var function = functionUnderTest.apply(MyDto.class);
+        var function = functionUnderTest.apply(clazz);
         var ss = new DefaultSerializationServiceBuilder().build();
         var bytes = ss.toData(function);
 
@@ -123,15 +127,15 @@ public class JsonUtilImplTest {
         var deserialized = ss.toObject(bytes);
 
         // then
-        assertThatDeserializedFunctionCreates(deserialized, MyDto.class);
+        assertThatDeserializedFunctionCreates(deserialized, clazz);
     }
 
-    @ParameterizedTest
-    @EnumSource
+    @CartesianTest
     @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldDeserialize_whenAllowedClassAndDefaultsDisabled(FunctionForSerialization functionUnderTest) {
+    void shouldDeserialize_whenAllowedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
+                                                               @ClassesAllowedByDefault Class<?> clazz) {
         // given
-        var function = functionUnderTest.apply(MyDto.class);
+        var function = functionUnderTest.apply(clazz);
         var ss = new DefaultSerializationServiceBuilder().build();
         var bytes = ss.toData(function);
 
@@ -139,15 +143,15 @@ public class JsonUtilImplTest {
         var deserialized = ss.toObject(bytes);
 
         // then
-        assertThatDeserializedFunctionCreates(deserialized, MyDto.class);
+        assertThatDeserializedFunctionCreates(deserialized, clazz);
     }
 
-    @ParameterizedTest
-    @EnumSource
+    @CartesianTest
     @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldDeserialize_whenBlocklistedClassAndDefaultsDisabled(FunctionForSerialization functionUnderTest) {
+    void shouldDeserialize_whenBlocklistedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
+                                                                   @ClassesBlocklistedByDefault Class<?> clazz) {
         // given
-        var function = functionUnderTest.apply(MapConfig.class);
+        var function = functionUnderTest.apply(clazz);
         var ss = new DefaultSerializationServiceBuilder().build();
         var bytes = ss.toData(function);
 
@@ -155,14 +159,14 @@ public class JsonUtilImplTest {
         var deserialized = ss.toObject(bytes);
 
         // then
-        assertThatDeserializedFunctionCreates(deserialized, MapConfig.class);
+        assertThatDeserializedFunctionCreates(deserialized, clazz);
     }
 
-    @ParameterizedTest
-    @EnumSource
+    @CartesianTest
     @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldNotDeserializeFunction_whenBlocklistedClass(FunctionForSerialization functionUnderTest) {
-        var function = functionUnderTest.apply(MapConfig.class);
+    void shouldNotDeserializeFunction_whenBlocklistedClass(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
+                                                           @ClassesBlocklistedByDefault Class<?> clazz) {
+        var function = functionUnderTest.apply(clazz);
         var ss = new DefaultSerializationServiceBuilder().build();
         var bytes = ss.toData(function);
 
@@ -177,9 +181,11 @@ public class JsonUtilImplTest {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void assertThatDeserializedFunctionCreates(Object deserialized, Class<?> expectedType) {
         if (deserialized instanceof Function fun) {
-            assertThat(fun.apply(JSON)).isInstanceOf(expectedType);
+            assertThat(fun.apply(wrapJsonInArrayIfNeeded(JSON, expectedType)))
+                    .isInstanceOf(expectedType);
         } else {
-            assertThat(((BiFunction) deserialized).apply(null, JSON)).isInstanceOf(expectedType);
+            assertThat(((BiFunction) deserialized).apply(null, wrapJsonInArrayIfNeeded(JSON, expectedType)))
+                    .isInstanceOf(expectedType);
         }
     }
 
@@ -187,4 +193,28 @@ public class JsonUtilImplTest {
         public MyDto() {
         }
     }
+
+    @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @CartesianTest.Values(classes = {MyDto.class, MyDto[].class, MyDto[][].class, MyDto[][][].class})
+    @interface ClassesAllowedByDefault {
+    }
+
+    @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @CartesianTest.Values(classes = {MapConfig.class, MapConfig[].class, MapConfig[][].class, MapConfig[][][].class})
+    @interface ClassesBlocklistedByDefault {
+    }
+
+    private static String wrapJsonInArrayIfNeeded(String json, Class<?> type) {
+        int levels = 0;
+        while (type.isArray()) {
+            levels++;
+            type = type.getComponentType();
+        }
+        return "[".repeat(levels) + json + "]".repeat(levels);
+    }
 }
+

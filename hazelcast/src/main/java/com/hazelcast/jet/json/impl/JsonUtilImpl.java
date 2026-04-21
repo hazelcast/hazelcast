@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 
 public final class JsonUtilImpl {
     /**
@@ -64,9 +65,10 @@ public final class JsonUtilImpl {
 
         protected final Class<T> type;
 
-        protected JsonFilteredFunction(Class<T> type) {
+        protected JsonFilteredFunction(@Nonnull Class<T> type) {
             // validate type once to avoid overhead during processing
-            this.type = ensureTypeIsAllowed(type);
+            ensureTypeIsAllowed(type);
+            this.type = type;
         }
 
         @Serial
@@ -76,15 +78,15 @@ public final class JsonUtilImpl {
             ensureTypeIsAllowed(type);
         }
 
-        static <T> Class<T> ensureTypeIsAllowed(Class<T> type) {
+        static void ensureTypeIsAllowed(@Nonnull Class<?> type) {
+            Objects.requireNonNull(type, "type must not be null");
             if (!Boolean.getBoolean(JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY)) {
-                if (JSON_DEFAULT_BLOCKLIST.isListed(type.getName())) {
+                if (JSON_DEFAULT_BLOCKLIST.isListed(getElementType(type).getName())) {
                     throw new IllegalArgumentException(String.format("Class %s cannot be deserialized using JSON.%n"
-                            + "If you want to deserialize it, set system property '%s' to 'true'",
+                                    + "If you want to deserialize it, set system property '%s' to 'true'",
                             type.getName(), JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY));
                 }
             }
-            return type;
         }
 
         private static ClassFilter createJsonDefaultBlocklist() {
@@ -108,12 +110,25 @@ public final class JsonUtilImpl {
         }
     }
 
+    /**
+     * Gets element type of potentially multidimensional array if this is array, otherwise returns the type.
+     * @param type type than can be an array
+     * @return element type of array or the type itself if it is not array
+     */
+    @Nonnull
+    public static Class<?> getElementType(@Nonnull Class<?> type) {
+        while (type.isArray()) {
+            type = type.getComponentType();
+        }
+        return type;
+    }
+
     private static class BeanFromJsonFn<T> extends JsonFilteredFunction<T> implements FunctionEx<String, T> {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
-        BeanFromJsonFn(Class<T> type) {
+        BeanFromJsonFn(@Nonnull Class<T> type) {
             super(type);
         }
 
@@ -128,7 +143,7 @@ public final class JsonUtilImpl {
         @Serial
         private static final long serialVersionUID = 1L;
 
-        BeanFromJsonBiFn(Class<T> type) {
+        BeanFromJsonBiFn(@Nonnull Class<T> type) {
             super(type);
         }
 
