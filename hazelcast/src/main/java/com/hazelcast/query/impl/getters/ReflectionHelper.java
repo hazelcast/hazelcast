@@ -203,7 +203,11 @@ public final class ReflectionHelper {
             }
             getter = parent;
             // verify the final returned type
-            policy.verifyClass(getter.getReturnType());
+            Class<?> type = getter.getReturnType();
+            while (type.isArray()) {
+                type = type.getComponentType();
+            }
+            policy.verifyClass(type);
             return getter;
         } catch (ReflectiveAttributeLookupException e) {
             // do not expose internal exception class directly
