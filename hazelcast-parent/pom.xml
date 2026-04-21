@@ -1726,8 +1726,8 @@
             </snapshots>
         </repository>
         <repository>
-            <id>hazelcast-private-repository</id>
-            <name>Hazelcast Private Repository</name>
+            <id>hazelcast-public-repository</id>
+            <name>Hazelcast Public Release Repository</name>
             <url>https://repository.hazelcast.com/release/</url>
             <releases>
                 <enabled>true</enabled>
@@ -1737,8 +1737,8 @@
             </snapshots>
         </repository>
         <repository>
-            <id>hazelcast-private-snapshot-repository</id>
-            <name>Hazelcast Private Repository</name>
+            <id>hazelcast-public-snapshot-repository</id>
+            <name>Hazelcast Public Snapshot Repository</name>
             <url>https://repository.hazelcast.com/snapshot/</url>
             <releases>
                 <enabled>false</enabled>
