@@ -173,7 +173,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private ClientExceptionFactory initClientExceptionFactory() {
         ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
         boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(configClassLoader);
-        return new ClientExceptionFactory(jcacheAvailable, configClassLoader);
+        return new ClientExceptionFactory(jcacheAvailable, configClassLoader, node.getLoggingService());
     }
 
     private Executor newClientExecutor() {
