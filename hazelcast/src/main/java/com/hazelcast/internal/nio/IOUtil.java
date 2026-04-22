@@ -55,6 +55,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -634,6 +635,18 @@ public final class IOUtil {
 
     public static String toFileName(String name) {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
+    }
+
+    public static Path getResourceDir(String resourceName) {
+        try {
+            URL resource = IOUtil.class.getClassLoader().getResource(resourceName);
+            if (resource == null) {
+                throw new IllegalArgumentException("Resource not found: " + resourceName);
+            }
+            return Paths.get(resource.toURI());
+        } catch (Exception e) {
+            throw new RuntimeException("Could not load resource dir: " + resourceName, e);
+        }
     }
 
     public static File getFileFromResources(String resourceFileName) {
