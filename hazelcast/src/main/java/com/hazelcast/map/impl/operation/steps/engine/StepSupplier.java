@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
@@ -37,25 +36,24 @@ import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedE
 import static com.hazelcast.map.impl.operation.steps.engine.LinkerStep.linkSteps;
 
 /**
- * <lu>
- * <li>This is a single operation's step supplier</li>
- * <li>Supplies steps and decides next step after executed one.</li>
- * <li>Must be thread safe</li>
- * </lu>
+ * <ul>
+ * <li>Supplies steps for a single operation.</li>
+ * <li>Determines the next step after the executed one.</li>
+ * <li>Must be thread-safe.</li>
+ * </ul>
  */
 public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
     private final State state;
     private final OperationRunnerImpl operationRunner;
+    /**
+     * Only here to disable the thread check for testing purposes.
+     */
+    private final boolean checkCurrentThread;
 
     private volatile Runnable currentRunnable;
     private volatile Step currentStep;
     private volatile boolean firstStep = true;
-
-    /**
-     * Only here to disable check for testing purposes.
-     */
-    private final boolean checkCurrentThread;
 
     public StepSupplier(MapOperation operation) {
         this(operation, true);
@@ -68,47 +66,47 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
-        collectCustomSteps(operation, this);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
+
+        collectCustomSteps(operation, this);
 
         assert this.currentStep != null;
     }
 
     @Override
     public void accept(Step headStep) {
-        if (headStep == null) {
+        if (headStep != null) {
+            this.currentStep = linkSteps(headStep, currentStep);
+        }
+    }
+
+    public static void collectCustomSteps(MapOperation operation, Consumer<Step> consumer) {
+        RecordStore recordStore = operation.getRecordStore();
+        if (recordStore == null) {
             return;
         }
 
-        this.currentStep = linkSteps(headStep, currentStep);
-    }
-
-    public static void collectCustomSteps(MapOperation operation,
-                                          Consumer<Step> consumer) {
-        Storage storage = operation.getRecordStore().getStorage();
+        Storage storage = recordStore.getStorage();
         if (storage instanceof CustomStepAwareStorage awareStorage) {
             awareStorage.collectCustomSteps(consumer);
         }
     }
 
     public static Step injectCustomStepsToOperation(MapOperation operation,
-                                                    Step injectCustomStepsBeforeThisStep) {
-        List<Step> steps = new ArrayList<>();
-
-        collectCustomSteps(operation, customStep -> {
-            if (customStep == null) {
-                return;
+                                                    Step targetStep) {
+        List<Step> customSteps = new ArrayList<>();
+        collectCustomSteps(operation, step -> {
+            if (step != null) {
+                customSteps.add(step);
             }
-
-            steps.add(customStep);
         });
 
-        Step injectionStep = injectCustomStepsBeforeThisStep;
-        for (int i = 0; i < steps.size(); i++) {
-            injectionStep = linkSteps(steps.get(i), injectionStep);
+        Step result = targetStep;
+        for (int i = 0; i < customSteps.size(); i++) {
+            result = linkSteps(customSteps.get(i), result);
         }
-        return injectionStep;
+        return result;
     }
 
     // used only for testing
@@ -142,7 +140,6 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
                 @Override
                 public void run() {
                     assert !checkCurrentThread || !isRunningOnPartitionThread();
-
                     runStepWithState(step, state);
                 }
 
@@ -175,86 +172,100 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     }
 
     /**
-     * Responsibilities of this method:
-     * <lu>
-     * <li>Runs passed step with passed state</li>
-     * <li>Sets next step to run</li>
-     * </lu>
+     * Runs the supplied step with the supplied state and schedules the next step.
      */
     private void runStepWithState(Step step, State state) {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
-        boolean metWithPreconditions = true;
+        boolean shouldAdvance = true;
+
         try {
-            refreshSate(state);
-
-            int threadIndex = -1;
-            // we check for error step here to handle potential
-            // errors in `beforeOperation`/`afterOperation` calls.
-            boolean errorStep = step == UtilSteps.HANDLE_ERROR;
-            if (!errorStep) {
-                threadIndex = state.getRecordStore().beforeOperation();
-            }
-            try {
-                if (runningOnPartitionThread && state.getThrowable() == null) {
-                    metWithPreconditions = metWithPreconditions();
-                }
-
-                if (metWithPreconditions) {
-                    step.runStep(state);
-                }
-            } catch (NativeOutOfMemoryError e) {
-                if (runningOnPartitionThread) {
-                    rerunWithForcedEviction(() -> step.runStep(state));
-                } else {
-                    throw e;
-                }
-            } finally {
-                if (!errorStep) {
-                    state.getRecordStore().afterOperation(threadIndex);
-                }
-            }
+            refreshState(state);
+            shouldAdvance = executeStep(step, state, runningOnPartitionThread);
         } catch (Throwable throwable) {
-            if (runningOnPartitionThread) {
-                state.getOperation().disposeDeferredBlocks();
-            }
-            state.setThrowable(throwable);
+            handleStepFailure(state, runningOnPartitionThread, throwable);
         } finally {
-            if (metWithPreconditions) {
-                currentStep = nextStep(step);
-                currentRunnable = createRunnable(currentStep, state);
-            } else {
-                currentStep = null;
-                currentRunnable = null;
+            advanceStep(step, state, shouldAdvance);
+        }
+    }
+
+    private boolean executeStep(Step step, State state, boolean runningOnPartitionThread) {
+        final boolean errorStep = step == UtilSteps.HANDLE_ERROR;
+        final RecordStore recordStore = state.getRecordStore();
+        final int threadIndex = beforeOperation(recordStore, errorStep);
+        try {
+            if (runningOnPartitionThread
+                    && state.getThrowable() == null
+                    && !checkPreconditions()) {
+                return false;
             }
+
+            runStep(step, state, runningOnPartitionThread);
+            return true;
+        } finally {
+            afterOperation(recordStore, errorStep, threadIndex);
+        }
+    }
+
+    private int beforeOperation(RecordStore recordStore, boolean errorStep) {
+        if (errorStep || recordStore == null) {
+            return -1;
+        }
+        return recordStore.beforeOperation();
+    }
+
+    private void afterOperation(RecordStore recordStore, boolean errorStep, int threadIndex) {
+        if (!errorStep && recordStore != null) {
+            recordStore.afterOperation(threadIndex);
+        }
+    }
+
+    private void runStep(Step step, State state, boolean runningOnPartitionThread) {
+        try {
+            step.runStep(state);
+        } catch (NativeOutOfMemoryError e) {
+            if (runningOnPartitionThread) {
+                rerunWithForcedEviction(() -> step.runStep(state));
+                return;
+            }
+            throw e;
+        }
+    }
+
+    private void handleStepFailure(State state, boolean runningOnPartitionThread, Throwable throwable) {
+        if (runningOnPartitionThread) {
+            state.getOperation().disposeDeferredBlocks();
+        }
+        state.setThrowable(throwable);
+    }
+
+    private void advanceStep(Step step, State state, boolean shouldAdvance) {
+        if (shouldAdvance) {
+            currentStep = nextStep(step);
+            currentRunnable = createRunnable(currentStep, state);
+        } else {
+            currentStep = null;
+            currentRunnable = null;
         }
     }
 
     /**
-     * Refreshes this {@code StepSupplier} {@link State} by
-     * resetting its record-store and operation objects.
+     * Refreshes this {@code StepSupplier} {@link State} by resetting its
+     * record-store and operation objects.
      * <p>
-     * Reasoning:
-     * <p>
-     * This is needed because while an offloaded operation is waiting
-     * in queue, a previously queued operation can be a map#destroy
-     * operation and it can remove all current IMap state. In this
-     * case later operations' state in the queue become stale.
-     * By refreshing the {@link State} we are fixing this issue.
+     * This is needed because while an offloaded operation is waiting in a queue,
+     * a previously queued {@code map#destroy} operation can remove the current
+     * IMap state. In that case, later queued operations may hold stale state.
      */
-    private void refreshSate(State state) {
+    private void refreshState(State state) {
         MapOperation operation = state.getOperation();
-        boolean mapExists = operation.checkMapExists();
-        RecordStore recordStore = operation.getRecordStore();
-        if (!mapExists || recordStore == null) {
-            state.setThrowable(new DistributedObjectDestroyedException("No such map exists with name="
-                    + operation.getName() + ", op=" + operation.getClass().getSimpleName()));
+        if (!operation.checkMapExists()) {
             return;
         }
 
-        state.init(recordStore, operation);
+        state.init(operation.getRecordStore(), operation);
     }
 
-    private boolean metWithPreconditions() {
+    private boolean checkPreconditions() {
         assert isRunningOnPartitionThread();
 
         // check node and cluster health before running each step
@@ -271,8 +282,8 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     }
 
     /**
-     * In case of exception, sets next step as {@link UtilSteps#HANDLE_ERROR},
-     * otherwise finds next step by calling {@link Step#nextStep}
+     * In case of exception, sets the next step as {@link UtilSteps#HANDLE_ERROR};
+     * otherwise finds the next step by calling {@link Step#nextStep}.
      */
     private Step nextStep(Step step) {
         if (state.getThrowable() != null
@@ -297,6 +308,5 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     }
 
     private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {
-
     }
 }

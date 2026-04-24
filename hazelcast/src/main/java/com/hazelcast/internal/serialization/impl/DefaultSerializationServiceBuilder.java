@@ -355,6 +355,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                 HeapData.class.getName(),
                 Packet.class.getName(),
                 UnsafeObjectDataInput.class.getName(),
+                "com.hazelcast.kubernetes.KubernetesConfig$DefaultFileContentsReader",
                 "org.agrona.concurrent.status.AtomicCounter"
         );
         return blockList;

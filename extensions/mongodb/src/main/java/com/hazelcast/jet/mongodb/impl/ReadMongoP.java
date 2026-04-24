@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.mongodb.impl;
 
-import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -50,6 +48,8 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -115,12 +115,12 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     public ReadMongoP(ReadMongoParams<I> params) {
         if (params.isStream()) {
-            EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
+            EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.getEventTimePolicy());
             eventTimeMapper.addPartitions(1);
-            this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
+            this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.getMapStreamFn(),
                     params.getStartAtTimestamp(), params.getAggregates(), eventTimeMapper);
         } else {
-            this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
+            this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.getMapItemFn(),
                     params.getAggregates());
         }
         this.connection = new MongoConnection(
@@ -302,7 +302,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     }
 
     private final class BatchMongoReader extends MongoChunkedReader {
-        private final FunctionEx<Document, I> mapItemFn;
+        private final Function<Document, I> mapItemFn;
         private final Aggregates aggregates;
         private Traverser<Document> delegate;
         private Object lastKey;
@@ -310,7 +310,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private BatchMongoReader(
                 String databaseName,
                 String collectionName,
-                FunctionEx<Document, I> mapItemFn,
+                Function<Document, I> mapItemFn,
                 Aggregates aggregates) {
             super(databaseName, collectionName);
             this.mapItemFn = mapItemFn;
@@ -405,7 +405,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     }
 
     private final class StreamMongoReader extends MongoChunkedReader {
-        private final BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn;
+        private final BiFunction<ChangeStreamDocument<Document>, Long, I> mapFn;
         private final BsonTimestamp startTimestamp;
         private final Aggregates aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
@@ -415,7 +415,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private StreamMongoReader(
                 String databaseName,
                 String collectionName,
-                BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn,
+                BiFunction<ChangeStreamDocument<Document>, Long, I> mapFn,
                 BsonTimestamp startTimestamp,
                 Aggregates aggregates,
                 EventTimeMapper<I> eventTimeMapper
