@@ -126,7 +126,7 @@
         <spring.boot3.version>3.5.13</spring.boot3.version>
         <org.springframework6.version>6.2.14</org.springframework6.version>
 
-        <spring.boot4.version>4.0.5</spring.boot4.version>
+        <spring.boot4.version>4.0.6</spring.boot4.version>
         <org.springframework7.version>7.0.0</org.springframework7.version>
 
         <!--
