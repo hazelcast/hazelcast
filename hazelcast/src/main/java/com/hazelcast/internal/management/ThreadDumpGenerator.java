@@ -32,12 +32,14 @@ public final class ThreadDumpGenerator {
 
     private static final ILogger LOGGER = Logger.getLogger(ThreadDumpGenerator.class);
 
-  
     private static final String THREAD_PRINT_OPERATION = "threadPrint";
     private static final String[] THREAD_PRINT_ARGS = {"-l"};
     private static final Object[] THREAD_PRINT_PARAMS = {THREAD_PRINT_ARGS};
     private static final String[] STRING_ARRAY_SIGNATURE = {String[].class.getName()};
     private static final ObjectName DIAGNOSTIC_COMMAND_MBEAN = createDiagnosticCommandObjectName();
+
+    private ThreadDumpGenerator() {
+    }
 
     private static ObjectName createDiagnosticCommandObjectName() {
         try {
@@ -46,14 +48,13 @@ public final class ThreadDumpGenerator {
             throw new ExceptionInInitializerError(e);
         }
     }
-    
-    private ThreadDumpGenerator() {
-    }
 
     public static String dumpAllThreads() {
         LOGGER.finest("Generating full thread dump...");
-        String dump = dumpAllThreadsViaDiagnosticCommand();
-        LOGGER.finest(() -> System.lineSeparator() + dump);
+        String dump = dumpAllThreadsViaDiagnosticCommandOrMxBean();
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("\n%s", dump);
+        }
         return dump;
     }
 
@@ -65,7 +66,9 @@ public final class ThreadDumpGenerator {
     private static String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        LOGGER.finest(() -> System.lineSeparator() + s);
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("\n%s", s);
+        }
         return s.toString();
     }
 
@@ -100,14 +103,14 @@ public final class ThreadDumpGenerator {
         return threadMXBean.getThreadInfo(threadIds, Integer.MAX_VALUE);
     }
 
-    private static String dumpAllThreadsViaDiagnosticCommand() {
+    private static String dumpAllThreadsViaDiagnosticCommandOrMxBean() {
         try {
             MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-     
             // Equivalent to: jcmd <pid> Thread.print -l
-            return (String) mBeanServer.invoke(DIAGNOSTIC_COMMAND_MBEAN, THREAD_PRINT_OPERATION, THREAD_PRINT_PARAMS, STRING_ARRAY_SIGNATURE);
+            return (String) mBeanServer.invoke(
+                    DIAGNOSTIC_COMMAND_MBEAN, THREAD_PRINT_OPERATION, THREAD_PRINT_PARAMS, STRING_ARRAY_SIGNATURE);
         } catch (Exception e) {
-            LOGGER.warning("Failed to generate thread dump via DiagnosticCommand MBean, falling back to ThreadMXBean", e);
+            LOGGER.finest("Failed to generate thread dump via DiagnosticCommand MBean, falling back to ThreadMXBean", e);
 
             StringBuilder s = new StringBuilder();
             s.append("Full thread dump ");
