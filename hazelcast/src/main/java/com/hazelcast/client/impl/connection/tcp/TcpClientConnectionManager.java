@@ -156,6 +156,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     public static final HazelcastProperty SKIP_MEMBER_LIST_DURING_RECONNECTION =
             new HazelcastProperty("hazelcast.client.internal.skip.member.list.during.reconnection", false);
 
+    private static final int DEFAULT_IO_THREAD_COUNT_SMALL_MACHINE = 1;
     private static final int DEFAULT_IO_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
@@ -343,11 +344,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
 
         if (routingMode == RoutingMode.SINGLE_MEMBER) {
-            return 1;
+            return DEFAULT_IO_THREAD_COUNT_SMALL_MACHINE;
         }
 
         return (RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT)
-                ? DEFAULT_IO_THREAD_COUNT : 1;
+                ? DEFAULT_IO_THREAD_COUNT : DEFAULT_IO_THREAD_COUNT_SMALL_MACHINE;
     }
 
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {

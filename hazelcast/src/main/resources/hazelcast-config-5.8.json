@@ -3451,7 +3451,7 @@
             },
             "zero-config-filter": {
               "$ref": "#/definitions/JavaSerializationFilter",
-              "description": "Beta API. Configure blacklisting and whitelisting for restricting zero-config compact serialization."
+              "description": "Configure blacklisting and whitelisting for restricting zero-config compact serialization."
             }
           }
         }
