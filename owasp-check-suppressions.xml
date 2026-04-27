@@ -176,4 +176,12 @@
         <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet\.testjob.*$</packageUrl>
         <cpe>cpe:/a:hazelcast:hazelcast</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - this CVE affects the Go implementation of gRPC (grpc/grpc-go).
+        The io.grpc:* artifacts are the Java implementation and are not affected.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.grpc/.*@.*$</packageUrl>
+        <cve>CVE-2026-33186</cve>
+    </suppress>
 </suppressions>
