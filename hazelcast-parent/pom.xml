@@ -303,7 +303,11 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
             </dependency>
-            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.codehaus.woodstox:stax2-api` should be upgraded -->
+            <!--
+                When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies `org.codehaus.woodstox` should be upgraded:
+                - `org.codehaus.woodstox:stax2-api`
+                - `commons-codec:commons-codec`
+            -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client</artifactId>
@@ -404,11 +408,15 @@
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>3.0.1</version>
             </dependency>
-            <!-- Addresses dependency convergence -->
+            <!-- 
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client`
+                - `org.apache.commons:commons-compress` (transitively from `org.apache.avro:avro`)
+            -->
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.21.0</version>
+                <version>1.19.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -435,6 +443,7 @@
                 <artifactId>commons-logging</artifactId>
                 <version>1.3.6</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `commons-codec:commons-codec` should be upgraded -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
