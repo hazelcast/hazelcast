@@ -17,14 +17,23 @@
 package com.hazelcast.cp;
 
 /**
- * Represents returned response of a {@link CPDataStructureManagementService#purgeCPMap} call.
- *
- * @param purgedCount                   number of entries purge
- * @param oldestRemainingEntryTimestamp the timestamp of oldest entry
+ * Represents the result of a {@link CPDataStructureManagementService#purgeCPMap} operation.
  *
  * @since 5.7.0
  */
-public record CPMapPurgeResponse(
-        int purgedCount,
-        long oldestRemainingEntryTimestamp) {
+public interface CPMapPurgeResponse {
+
+    /**
+     * Returns the number of entries removed during the purge operation.
+     *
+     * @return number of purged entries; always non-negative
+     */
+    int purgedCount();
+
+    /**
+     * Returns the timestamp of the oldest entry that remains after the purge.
+     *
+     * @return timestamp of the oldest remaining entry
+     */
+    long oldestRemainingEntryTimestamp();
 }
