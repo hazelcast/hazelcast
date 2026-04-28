@@ -19,8 +19,9 @@ package com.hazelcast.jet.kafka.connect.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
+import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
+import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
@@ -33,6 +34,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -191,12 +193,13 @@ public class SourceConnectorWrapper {
         requestTaskReconfiguration();
         return taskRunner;
     }
+
     private SourceTask createSourceTask() {
         Class<? extends SourceTask> taskClass = sourceConnector.taskClass().asSubclass(SourceTask.class);
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-     void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
+    void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
         this.activeStatusSetter = activeStatusSetter;
     }
 
@@ -362,12 +365,22 @@ public class SourceConnectorWrapper {
             }
             // Publish taskConfigs
             TaskConfigMessage taskConfigMessage = new TaskConfigMessage();
-            taskConfigMessage.setTaskConfigs(taskConfigs);
+            // This message is serialized and submitted to a topic, it has to be deserializable
+            // independently of the jet classloader associated with a job (if any).
+            taskConfigMessage.setTaskConfigs(ensureIndependentFromJetClassLoader(taskConfigs));
             publishMessage(taskConfigMessage);
             logger.fine(taskConfigs.size() + " task configs were sent");
         } finally {
             reconfigurationLock.unlock();
         }
+    }
+
+    private List<Map<String, String>> ensureIndependentFromJetClassLoader(List<Map<String, String>> input) {
+        if (input.getClass().getClassLoader() instanceof JetClassLoader || input.stream().anyMatch(
+                m -> m.getClass().getClassLoader() instanceof JetClassLoader)) {
+            return input.stream().<Map<String, String>>map(HashMap::new).toList();
+        }
+        return input;
     }
 
     @Override
