@@ -106,7 +106,7 @@
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.4.3</hadoop.version>
         <jackson.version>3.1.2</jackson.version>
-        <jackson2.version>2.21.2</jackson2.version>
+        <jackson2.version>2.21.3</jackson2.version>
         <jackson.annotation.version>2.21</jackson.annotation.version>
         <jline.version>3.30.11</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
