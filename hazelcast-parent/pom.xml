@@ -91,7 +91,7 @@
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.checkerframework:checker-qual` should be upgraded -->
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.42.41</aws.sdk2.version>
+        <aws.sdk2.version>2.43.1</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
