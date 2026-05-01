@@ -25,8 +25,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 
-import javax.management.MBeanServer;
 import javax.management.InstanceNotFoundException;
+import javax.management.MBeanServer;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 
@@ -44,8 +44,10 @@ public class ThreadDumpGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testDumpAllThreads() {
         String dump = ThreadDumpGenerator.dumpAllThreads();
+        // DiagnosticCommand produces native JVM thread dump format
         assertNotNull(dump);
-        assertTrue(!dump.isEmpty());
+        assertTrue("Expected 'Full thread dump' header in output", dump.contains("Full thread dump"));
+        assertTrue("Expected current thread to appear in dump", dump.contains(Thread.currentThread().getName()));
     }
 
     @Test
@@ -61,15 +63,16 @@ public class ThreadDumpGeneratorTest extends HazelcastTestSupport {
             return invocation.callRealMethod();
         })) {
             String dump = ThreadDumpGenerator.dumpAllThreads();
-            assertNotNull(dump);
-            assertTrue(!dump.isEmpty());
+            // Fallback via ThreadMXBean prepends "Full thread dump " and includes live thread info
+            assertTrue("Expected 'Full thread dump' prefix from ThreadMXBean fallback", dump.startsWith("Full thread dump "));
+            assertTrue("Expected current thread to appear in fallback dump", dump.contains(Thread.currentThread().getName()));
         }
     }
 
     @Test
     public void testDumpDeadlocks() {
         String dump = ThreadDumpGenerator.dumpDeadlocks();
-        assertNotNull(dump);
+        assertTrue("Expected 'Deadlocked thread dump' header in output", dump.contains("Deadlocked thread dump"));
     }
 
     @Test
@@ -83,6 +86,14 @@ public class ThreadDumpGeneratorTest extends HazelcastTestSupport {
     public void testGetAllThreads() {
         ThreadInfo[] threads = ThreadDumpGenerator.getAllThreads();
         assertNotNull(threads);
-        assertTrue(threads.length > 0);
+        assertTrue("Expected at least one thread", threads.length > 0);
+        boolean currentThreadFound = false;
+        for (ThreadInfo thread : threads) {
+            if (Thread.currentThread().getName().equals(thread.getThreadName())) {
+                currentThreadFound = true;
+                break;
+            }
+        }
+        assertTrue("Expected current thread to appear in getAllThreads()", currentThreadFound);
     }
 }
