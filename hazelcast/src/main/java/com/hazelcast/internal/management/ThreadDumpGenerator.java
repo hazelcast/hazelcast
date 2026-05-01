@@ -52,9 +52,7 @@ public final class ThreadDumpGenerator {
     public static String dumpAllThreads() {
         LOGGER.finest("Generating full thread dump...");
         String dump = dumpAllThreadsViaDiagnosticCommandOrMxBean();
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("\n%s", dump);
-        }
+        LOGGER.finest(dump);
         return dump;
     }
 
@@ -66,9 +64,7 @@ public final class ThreadDumpGenerator {
     private static String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("\n%s", s);
-        }
+        LOGGER.finest("%s", s);
         return s.toString();
     }
 
