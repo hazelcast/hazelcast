@@ -114,15 +114,17 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>download-ne4j-zip-file</id>
+                        <id>download-neo4j-jar-file</id>
                         <goals>
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://repository.hazelcast.com/download/tests/neo4j-kafka-connect-neo4j-2.0.1.zip
+                            <!-- The connector bundles netty with it, when bumping the version check compatibility with our netty dep -->
+                            <url>https://repository.hazelcast.com/download/tests/neo4j-kafka-connect-5.1.19.jar
                             </url>
                             <unpack>false</unpack>
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                            <sha256>0e557923709c0a6b0d1ac6adb2fa4e9bc2a0de50e80bccc4b3f30804933c9447</sha256>
                         </configuration>
                     </execution>
                     <execution>

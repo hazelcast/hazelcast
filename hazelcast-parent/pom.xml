@@ -91,7 +91,7 @@
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.checkerframework:checker-qual` should be upgraded -->
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.42.39</aws.sdk2.version>
+        <aws.sdk2.version>2.43.1</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -106,9 +106,9 @@
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.4.3</hadoop.version>
         <jackson.version>3.1.2</jackson.version>
-        <jackson2.version>2.21.2</jackson2.version>
+        <jackson2.version>2.21.3</jackson2.version>
         <jackson.annotation.version>2.21</jackson.annotation.version>
-        <jline.version>3.30.9</jline.version>
+        <jline.version>3.30.12</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
@@ -303,7 +303,11 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
             </dependency>
-            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.codehaus.woodstox:stax2-api` should be upgraded -->
+            <!--
+                When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies `org.codehaus.woodstox` should be upgraded:
+                - `org.codehaus.woodstox:stax2-api`
+                - `commons-codec:commons-codec`
+            -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client</artifactId>
@@ -404,11 +408,15 @@
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>3.0.1</version>
             </dependency>
-            <!-- Addresses dependency convergence -->
+            <!-- 
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client`
+                - `org.apache.commons:commons-compress` (transitively from `org.apache.avro:avro`)
+            -->
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.21.0</version>
+                <version>1.19.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -435,6 +443,7 @@
                 <artifactId>commons-logging</artifactId>
                 <version>1.3.6</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `commons-codec:commons-codec` should be upgraded -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
@@ -473,7 +482,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.10</version>
+                <version>42.7.11</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
@@ -758,7 +767,8 @@
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
-                <version>6.0.5</version>
+                <!-- Before bumping check the slow tests which use the driver still work -->
+                <version>5.28.13</version>
             </dependency>
             <dependency>
                 <groupId>org.jctools</groupId>
@@ -1027,7 +1037,7 @@
                                 The Hazelcast Community License
                             </licenseMerge>
                             <licenseMerge>
-                                Go License
+                                Go License |
                                 The Go License
                             </licenseMerge>
                         </licenseMerges>
