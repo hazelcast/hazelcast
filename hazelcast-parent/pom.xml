@@ -112,7 +112,7 @@
         <jackson.version>3.1.3</jackson.version>
         <jackson2.version>2.21.3</jackson2.version>
         <jackson.annotation.version>2.21</jackson.annotation.version>
-        <jline.version>3.30.12</jline.version>
+        <jline.version>3.30.13</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
