@@ -30,6 +30,7 @@ import javax.management.MBeanServer;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,12 +43,21 @@ import static org.mockito.Mockito.when;
 public class ThreadDumpGeneratorTest extends HazelcastTestSupport {
 
     @Test
-    public void testDumpAllThreads() {
-        String dump = ThreadDumpGenerator.dumpAllThreads();
-        // DiagnosticCommand produces native JVM thread dump format
-        assertNotNull(dump);
-        assertTrue("Expected 'Full thread dump' header in output", dump.contains("Full thread dump"));
-        assertTrue("Expected current thread to appear in dump", dump.contains(Thread.currentThread().getName()));
+    public void testDumpAllThreads_viaDiagnosticCommand() throws Exception {
+        String expectedDump = "DiagnosticCommand thread dump output";
+        MBeanServer mockMBeanServer = mock(MBeanServer.class);
+        when(mockMBeanServer.invoke(any(), any(), any(), any())).thenReturn(expectedDump);
+
+        try (MockedStatic<ManagementFactory> mf = mockStatic(ManagementFactory.class, invocation -> {
+            if (invocation.getMethod().getName().equals("getPlatformMBeanServer")) {
+                return mockMBeanServer;
+            }
+            return invocation.callRealMethod();
+        })) {
+            String dump = ThreadDumpGenerator.dumpAllThreads();
+            // Result must be exactly what DiagnosticCommand returned — proving that path was taken
+            assertEquals(expectedDump, dump);
+        }
     }
 
     @Test
