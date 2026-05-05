@@ -61,11 +61,10 @@ public class Schema implements IdentifiedDataSerializable {
 
     private void init() {
         // Construct the fields map for field lookups
-        Map<String, FieldDescriptor> fieldsMap = new HashMap<>(fields.size());
+        this.fieldsMap = new HashMap<>(fields.size());
         for (FieldDescriptor field : fields) {
             fieldsMap.put(field.getFieldName(), field);
         }
-        this.fieldsMap = fieldsMap;
 
         // Sort the fields by the field name so that the field offsets/indexes
         // can be set correctly.
@@ -79,12 +78,10 @@ public class Schema implements IdentifiedDataSerializable {
             FieldKind fieldKind = descriptor.getKind();
             if (fieldOperations(fieldKind).kindSizeInBytes() == VARIABLE_SIZE) {
                 variableSizeFields.add(descriptor);
+            } else if (FieldKind.BOOLEAN == fieldKind) {
+                booleanFields.add(descriptor);
             } else {
-                if (FieldKind.BOOLEAN == fieldKind) {
-                    booleanFields.add(descriptor);
-                } else {
-                    fixedSizeFields.add(descriptor);
-                }
+                fixedSizeFields.add(descriptor);
             }
         }
 
@@ -94,8 +91,8 @@ public class Schema implements IdentifiedDataSerializable {
         // method is stable, only sorting by the size in bytes is enough for
         // this invariant to hold.
         fixedSizeFields.sort(
-                Comparator.comparingInt(
-                        d -> fieldOperations(((FieldDescriptor) d).getKind()).kindSizeInBytes()
+                Comparator.<FieldDescriptor>comparingInt(
+                        d -> fieldOperations(d.getKind()).kindSizeInBytes()
                 ).reversed()
         );
 
