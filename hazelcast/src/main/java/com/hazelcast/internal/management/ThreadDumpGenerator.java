@@ -64,7 +64,7 @@ public final class ThreadDumpGenerator {
     private static String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        LOGGER.finest("%s", s);
+        LOGGER.finest(s.toString());
         return s.toString();
     }
 
