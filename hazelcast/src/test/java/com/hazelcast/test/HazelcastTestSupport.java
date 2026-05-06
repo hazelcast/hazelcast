@@ -64,7 +64,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
@@ -147,9 +146,6 @@ public abstract class HazelcastTestSupport {
             "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
-
-    @ClassRule
-    public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
