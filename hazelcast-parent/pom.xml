@@ -121,8 +121,8 @@
         <spring.boot3.version>3.5.14</spring.boot3.version>
         <org.springframework6.version>6.2.18</org.springframework6.version>
 
-        <spring.boot4.version>4.0.5</spring.boot4.version>
-        <org.springframework7.version>7.0.0</org.springframework7.version>
+        <spring.boot4.version>4.0.6</spring.boot4.version>
+        <org.springframework7.version>7.0.7</org.springframework7.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -1611,8 +1611,8 @@
             </activation>
             <properties>
                 <!-- should only be Spring 5 -->
-                <spring.boot.version>2.7.18</spring.boot.version>
-                <org.springframework.version>5.3.39</org.springframework.version>
+                <spring.boot.version>2.7.33</spring.boot.version>
+                <org.springframework.version>5.3.48</org.springframework.version>
             </properties>
             <dependencies>
                 <dependency>
