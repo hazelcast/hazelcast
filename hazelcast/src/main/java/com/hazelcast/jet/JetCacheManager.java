@@ -23,7 +23,7 @@ import com.hazelcast.cache.ICache;
  * @deprecated
  * Use {@link com.hazelcast.core.ICacheManager} instead.
  */
-@Deprecated(since = "5.0")
+@Deprecated(since = "5.0", forRemoval = true)
 public interface JetCacheManager {
 
     /**
@@ -31,6 +31,6 @@ public interface JetCacheManager {
      * @deprecated
      * Use {@link com.hazelcast.core.ICacheManager#getCache(String)} instead.
      */
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     <K, V> ICache<K, V> getCache(String name);
 }
