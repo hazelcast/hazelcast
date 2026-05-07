@@ -85,7 +85,7 @@ public final class PythonTransforms {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     @Nonnull
     public static <K> FunctionEx<StreamStage<String>, StreamStage<String>> mapUsingPython(
             @Nonnull FunctionEx<? super String, ? extends K> keyFn,
@@ -143,11 +143,11 @@ public final class PythonTransforms {
      * pyConfig))}. See {@link com.hazelcast.jet.python.PythonServiceConfig}
      * for more details.
      *
-     *       @deprecated Jet now has first-class support for data rebalancing, see
-     *      {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     *  @deprecated Jet now has first-class support for data rebalancing, see
+     *  {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     public static <K> FunctionEx<BatchStage<String>, BatchStage<String>> mapUsingPythonBatch(
             @Nonnull FunctionEx<? super String, ? extends K> keyFn,
             @Nonnull PythonServiceConfig cfg

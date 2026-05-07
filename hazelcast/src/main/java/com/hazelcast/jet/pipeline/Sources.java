@@ -1349,7 +1349,7 @@ public final class Sources {
      * @deprecated see {@linkplain #jmsQueue(String, SupplierEx)}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static StreamSource<Message> jmsQueue(
             @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
             @Nonnull String name
@@ -1420,7 +1420,7 @@ public final class Sources {
      * @deprecated see {@linkplain #jmsTopic(String, SupplierEx)}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static StreamSource<Message> jmsTopic(
             @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
             @Nonnull String name
