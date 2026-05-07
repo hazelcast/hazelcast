@@ -96,16 +96,17 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return classToRegistrationMap.keySet();
     }
 
-    public boolean canBeSerializedAsCompact(Class<?> clazz) {
-        Class<? extends SerializerAdapter> assignedSerializerType = lookupSerializerType.apply(clazz);
-        return CompactStreamSerializerAdapter.class.isAssignableFrom(assignedSerializerType) && (
-                classToRegistrationMap.containsKey(clazz) || !classFilter.isRestricted(clazz));
-    }
-
     public void verifyFieldCanBeSerializedAsCompact(Class<?> clazz, Class<?> fieldClazz) {
-        if (!canBeSerializedAsCompact(fieldClazz)) {
+        boolean fieldSerializerIsNotCompact = !CompactStreamSerializerAdapter.class.isAssignableFrom(
+                lookupSerializerType.apply(fieldClazz));
+
+        if (fieldSerializerIsNotCompact || classIsUnregisteredAndRestricted(fieldClazz)) {
             throw new ReflectiveCompactSerializationUnsupportedException(clazz, fieldClazz);
         }
+    }
+
+    private boolean classIsUnregisteredAndRestricted(Class<?> clazz) {
+        return !classToRegistrationMap.containsKey(clazz) && classFilter.isRestricted(clazz);
     }
 
     @Override
@@ -244,7 +245,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
     private CompactSerializableRegistration getOrCreateRegistration(Class clazz) {
         return classToRegistrationMap.computeIfAbsent(clazz, aClass -> {
-            if (!canBeSerializedAsCompact(clazz)) {
+            if (classFilter.isRestricted(clazz)) {
                 throw new ReflectiveCompactSerializationUnsupportedException(clazz);
             }
             CompactSerializer serializer = javaRecordSerializer.isRecord(aClass) ? javaRecordSerializer : reflectiveSerializer;
