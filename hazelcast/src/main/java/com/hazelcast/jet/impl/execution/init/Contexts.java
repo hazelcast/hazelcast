@@ -135,7 +135,7 @@ public final class Contexts {
         }
 
         @Nonnull @Override
-        @Deprecated
+        @Deprecated(since = "5.0", forRemoval = true)
         public JetInstance jetInstance() {
             return (JetInstance) hazelcastInstance().getJet();
         }

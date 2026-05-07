@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  * that encapsulates {@link HazelcastInstance}. Please use {@link
  * JetService} instead.
  */
-@Deprecated(since = "5.0")
+@Deprecated(since = "5.0", forRemoval = true)
 public interface JetInstance extends JetService {
 
     /**
@@ -53,7 +53,7 @@ public interface JetInstance extends JetService {
      * sense when the entry point was {@link Jet}.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     HazelcastInstance getHazelcastInstance();
 
     /**
@@ -62,7 +62,7 @@ public interface JetInstance extends JetService {
      * Use {@link HazelcastInstance#getName()} instead.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     String getName();
 
     /**
@@ -71,7 +71,7 @@ public interface JetInstance extends JetService {
      * Use {@link HazelcastInstance#getCluster()} instead.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     Cluster getCluster();
 
     /**
@@ -81,7 +81,7 @@ public interface JetInstance extends JetService {
      */
     @Beta
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     SqlService getSql();
 
     /**
@@ -90,7 +90,7 @@ public interface JetInstance extends JetService {
      * Use {@link HazelcastInstance#getMap(String)} instead.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     <K, V> IMap<K, V> getMap(@Nonnull String name);
 
     /**
@@ -99,7 +99,7 @@ public interface JetInstance extends JetService {
      * Use {@link HazelcastInstance#getReplicatedMap(String)} instead.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name);
 
     /**
@@ -108,7 +108,7 @@ public interface JetInstance extends JetService {
      * Use {@link HazelcastInstance#getList(String)} instead.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     <E> IList<E> getList(@Nonnull String name);
 
     /**
@@ -117,7 +117,7 @@ public interface JetInstance extends JetService {
      * Use {@link HazelcastInstance#getReliableTopic(String)} instead.
      */
     @Nonnull
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     <E> ITopic<E> getReliableTopic(@Nonnull String name);
 
     /**
@@ -125,7 +125,7 @@ public interface JetInstance extends JetService {
      * @deprecated
      * Use {@link HazelcastInstance#getCacheManager()} instead.
      */
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     @Nonnull
     JetCacheManager getCacheManager();
 
@@ -133,6 +133,6 @@ public interface JetInstance extends JetService {
      * @deprecated
      * Use {@link HazelcastInstance#shutdown()} instead.
      */
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     void shutdown();
 }
