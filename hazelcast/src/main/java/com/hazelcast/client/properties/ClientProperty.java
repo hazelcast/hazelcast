@@ -250,7 +250,7 @@ public final class ClientProperty {
      * @deprecated Use {@link #METRICS_ENABLED}
      * ({@code "hazelcast.client.metrics.enabled"}) instead.
      */
-    @Deprecated(since = "4.0")
+    @Deprecated(since = "4.0", forRemoval = true)
     public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
             false);
 
@@ -263,7 +263,7 @@ public final class ClientProperty {
      * @deprecated Use {@link #METRICS_COLLECTION_FREQUENCY}
      * ({@code "hazelcast.client.metrics.collection.frequency"}) instead.
      */
-    @Deprecated(since = "4.0")
+    @Deprecated(since = "4.0", forRemoval = true)
     public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 
