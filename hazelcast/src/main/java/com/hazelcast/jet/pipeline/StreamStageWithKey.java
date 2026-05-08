@@ -464,7 +464,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.7.0")
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     default <V, R> StreamStage<R> mapUsingIMap(
             @Nonnull String mapName,
@@ -477,7 +477,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.7.0")
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     default <V, R> StreamStage<R> mapUsingIMap(
@@ -491,7 +491,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -502,7 +502,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     default <S, R> StreamStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -515,7 +515,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -528,7 +528,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -540,7 +540,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -553,7 +553,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S> StreamStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -564,7 +564,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,

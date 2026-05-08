@@ -3293,7 +3293,7 @@ public class Config {
 
     /**
      * @return the namespaces configuration object
-     * @since 5.4.0
+     * @since 5.4
      */
     public UserCodeNamespacesConfig getNamespacesConfig() {
         return userCodeNamespacesConfig;
@@ -3303,7 +3303,7 @@ public class Config {
      * Sets the namespaces configuration.
      * Internal API used for Spring configuration.
      *
-     * @since 5.4.0
+     * @since 5.4
      */
     @PrivateApi
     public @Nonnull Config setNamespacesConfig(@Nonnull UserCodeNamespacesConfig userCodeNamespacesConfig) {

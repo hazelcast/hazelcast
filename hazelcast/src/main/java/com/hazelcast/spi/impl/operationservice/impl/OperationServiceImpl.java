@@ -124,7 +124,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
      * @deprecated to be removed in 6.0 as this metric is not incremented.
      * Use {@code operation.invocations.normalTimeouts} to monitor operation timeouts instead.
      */
-    @Deprecated (forRemoval = true, since = "5.7.0")
+    @Deprecated (forRemoval = true, since = "5.7")
     @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT, level = MANDATORY)
     final MwCounter operationTimeoutCount = newMwCounter();
 

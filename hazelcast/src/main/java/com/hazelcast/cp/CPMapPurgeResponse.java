@@ -19,7 +19,7 @@ package com.hazelcast.cp;
 /**
  * Represents the result of a {@link CPDataStructureManagementService#purgeCPMap} operation.
  *
- * @since 5.7.0
+ * @since 5.7
  */
 public interface CPMapPurgeResponse {
 

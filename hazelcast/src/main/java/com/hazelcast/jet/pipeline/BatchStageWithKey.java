@@ -168,7 +168,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.7.0")
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull String mapName,
@@ -181,7 +181,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.7.0")
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
@@ -194,7 +194,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -205,7 +205,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     default <S, R> BatchStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -218,7 +218,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -231,7 +231,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -243,7 +243,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -256,7 +256,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S> BatchStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -267,7 +267,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
-    @Deprecated(since = "5.4.0")
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,

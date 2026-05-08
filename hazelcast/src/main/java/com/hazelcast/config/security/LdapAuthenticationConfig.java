@@ -102,7 +102,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
      *
      * @deprecated Use {@link #getParseDn()}
      */
-    @Deprecated(forRemoval = true, since = "5.4.0")
+    @Deprecated(forRemoval = true, since = "5.4")
     public boolean isParseDn() {
         return parseDn != null && parseDn.booleanValue();
     }
