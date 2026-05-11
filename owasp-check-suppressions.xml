@@ -157,6 +157,15 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        False positive - Maven artifacts from OpenTelemetry Java Contrib are identified as Go libraries.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.contrib/opentelemetry.*$</packageUrl>
+        <cve>CVE-2026-29181</cve>
+        <cve>CVE-2026-39882</cve>
+        <cve>CVE-2026-39883</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         False positive - misidentifying Hazelcast as MongoDB
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-jet-mongodb@.*$</packageUrl>
@@ -183,5 +192,15 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/io\.grpc/.*@.*$</packageUrl>
         <cve>CVE-2026-33186</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CPE overmatch for Jetty module.
+        CVE-2026-2332 affects org.eclipse.jetty:jetty-http, not org.eclipse.jetty:jetty-util.
+        CVE-2026-5795 affects org.eclipse.jetty:jetty-jaspi, not org.eclipse.jetty:jetty-util.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-util@.*$</packageUrl>
+        <cve>CVE-2026-2332</cve>
+        <cve>CVE-2026-5795</cve>
     </suppress>
 </suppressions>
