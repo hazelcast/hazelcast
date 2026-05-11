@@ -1611,7 +1611,7 @@
             </activation>
             <properties>
                 <!-- should only be Spring 5 -->
-                <spring.boot.version>2.7.33</spring.boot.version>
+                <spring.boot.version>2.7.18</spring.boot.version>
                 <org.springframework.version>5.3.39</org.springframework.version>
             </properties>
             <dependencies>
