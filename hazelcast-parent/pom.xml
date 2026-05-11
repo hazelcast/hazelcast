@@ -1612,7 +1612,7 @@
             <properties>
                 <!-- should only be Spring 5 -->
                 <spring.boot.version>2.7.33</spring.boot.version>
-                <org.springframework.version>5.3.48</org.springframework.version>
+                <org.springframework.version>5.3.39</org.springframework.version>
             </properties>
             <dependencies>
                 <dependency>
