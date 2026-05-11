@@ -29,7 +29,7 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
     /**
      * @deprecated for the sake of better naming. Use {@link #readString()} instead
      */
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     @Nullable
     @Override
     String readUTF() throws IOException;
@@ -103,7 +103,7 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      * @deprecated for the sake of better naming. Use {@link #readStringArray()} instead
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     String[] readUTFArray() throws IOException;
 
     /**

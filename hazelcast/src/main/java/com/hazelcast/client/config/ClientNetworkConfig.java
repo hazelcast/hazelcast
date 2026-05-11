@@ -157,7 +157,7 @@ public class ClientNetworkConfig {
      * @deprecated this option is superseded by {@link ClusterRoutingConfig#getRoutingMode()}
      * @return true if client is smart
      */
-    @Deprecated(since = "5.5")
+    @Deprecated(since = "5.5", forRemoval = true)
     public boolean isSmartRouting() {
         return clusterRoutingConfig.getRoutingMode() == RoutingMode.ALL_MEMBERS;
     }
@@ -177,7 +177,7 @@ public class ClientNetworkConfig {
      * @param smartRouting true if smart routing should be enabled.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
-    @Deprecated(since = "5.5")
+    @Deprecated(since = "5.5", forRemoval = true)
     public ClientNetworkConfig setSmartRouting(boolean smartRouting) {
         clusterRoutingConfig.setRoutingMode(smartRouting ? RoutingMode.ALL_MEMBERS : RoutingMode.SINGLE_MEMBER);
         return this;

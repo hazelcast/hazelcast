@@ -29,7 +29,7 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
     /**
      * @deprecated for the sake of better naming. Use {@link #writeString(String)} instead
      */
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     @Override
     void writeUTF(@Nullable String string) throws IOException;
 
@@ -92,7 +92,7 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
      * @throws IOException in case of any exceptional case
      * @deprecated for the sake of better naming. Use {@link #writeStringArray(String[])} instead
      */
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     void writeUTFArray(@Nullable String[] values) throws IOException;
 
     /**

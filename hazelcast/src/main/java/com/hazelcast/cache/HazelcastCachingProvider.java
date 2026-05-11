@@ -169,7 +169,7 @@ public final class HazelcastCachingProvider implements CachingProvider {
      * Same value as {@link #MEMBER_CACHING_PROVIDER}. This field is maintained for backwards compatibility.
      * Its use is discouraged and will be removed in a future version.
      */
-    @Deprecated
+    @Deprecated(since = "4.1", forRemoval = true)
     public static final String SERVER_CACHING_PROVIDER = HazelcastMemberCachingProvider.class.getName();
 
     /**
