@@ -21,4 +21,4 @@ jobs:
         if: failure()
         with:
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
-          slack-channel: "#monorepo-notifications"
+          slack-channel: ${{ vars.MONOREPO_SLACK_CHANNEL }}
