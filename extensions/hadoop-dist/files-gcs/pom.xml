@@ -89,10 +89,6 @@
                     <artifactId>google-api-services-storage</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.threeten</groupId>
-                    <artifactId>threetenbp</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>com.google.api</groupId>
                     <artifactId>api-common</artifactId>
                 </exclusion>
@@ -119,11 +115,6 @@
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-storage</artifactId>
             <version>v1-rev20251118-2.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.threeten</groupId>
-            <artifactId>threetenbp</artifactId>
-            <version>1.7.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.api</groupId>
