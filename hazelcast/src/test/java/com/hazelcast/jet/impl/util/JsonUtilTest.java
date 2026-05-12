@@ -29,23 +29,27 @@ import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
@@ -267,9 +271,24 @@ public class JsonUtilTest extends JetTestSupport {
 
     @Test
     public void testRejectToJsonString() {
-        assertThatThrownBy(() -> JsonUtil.toJson(mock(DataSource.class)))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("cannot be serialized using JSON");
+        assertThatThrownBy(() -> JsonUtil.toJson(new DummyDataSource()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot be serialized using JSON");
+
+        assertThatThrownBy(() -> JsonUtil.toJson(List.of("aa", new DummyDataSource())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot be serialized using JSON");
+
+        assertThatThrownBy(() -> JsonUtil.toJson(new Object[]{"aa", null, new DummyDataSource()}))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot be serialized using JSON");
+    }
+
+    @Test
+    public void testRejectParseToObject() {
+        assertThatThrownBy(() -> JsonUtil.beanFrom("{}", DummyDataSource.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot be deserialized using JSON");
     }
 
     private void assertListOfObjects(List<TestJsonObject> list) {
@@ -443,4 +462,50 @@ public class JsonUtilTest extends JetTestSupport {
         public Date date;
     }
 
+    public static class DummyDataSource implements DataSource {
+        @Override
+        public Connection getConnection() throws SQLException {
+            return null;
+        }
+
+        @Override
+        public Connection getConnection(String username, String password) throws SQLException {
+            return null;
+        }
+
+        @Override
+        public PrintWriter getLogWriter() throws SQLException {
+            return null;
+        }
+
+        @Override
+        public void setLogWriter(PrintWriter out) throws SQLException {
+
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) throws SQLException {
+
+        }
+
+        @Override
+        public int getLoginTimeout() throws SQLException {
+            return 0;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) throws SQLException {
+            return null;
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) throws SQLException {
+            return false;
+        }
+
+        @Override
+        public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+            return null;
+        }
+    }
 }
