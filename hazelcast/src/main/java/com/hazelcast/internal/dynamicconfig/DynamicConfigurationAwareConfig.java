@@ -91,6 +91,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -178,8 +179,19 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public String getProperty(HazelcastProperty property) {
+        return staticConfig.getProperty(property);
+    }
+
+    @Override
     public Config setProperty(@Nonnull String name, @Nonnull String value) {
         return staticConfig.setProperty(name, value);
+    }
+
+
+    @Override
+    public Config setProperty(@Nonnull HazelcastProperty property, @Nonnull String value) {
+        return staticConfig.setProperty(property, value);
     }
 
     @Override
