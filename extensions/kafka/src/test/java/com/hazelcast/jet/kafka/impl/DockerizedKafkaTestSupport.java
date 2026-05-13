@@ -23,8 +23,10 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 class DockerizedKafkaTestSupport extends KafkaTestSupport {
     // TODO This should lookup "confluent.version" Maven property
@@ -34,13 +36,14 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
     private KafkaContainer kafkaContainer;
 
     @Override
-    protected String createKafkaCluster0() throws IOException {
+    protected String createKafkaCluster0(Map<String, String> properties) {
         String kafkaContainerStarterScript = (String) Objects
                 .requireNonNull(ReflectionUtils.readStaticFieldOrNull(KafkaContainer.class.getName(), "STARTER_SCRIPT"));
 
         kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka").withTag(TEST_KAFKA_VERSION))
                 .withEmbeddedZookeeper()
-                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+            .withEnv(toKafkaEnvironments(properties))
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 // Workaround for https://github.com/testcontainers/testcontainers-java/issues/3288
                 // It adds 0.5s sleep before running the script copied from the host to the container.
                 .withCommand("-c",
@@ -48,6 +51,18 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
         kafkaContainer.start();
 
         return kafkaContainer.getBootstrapServers();
+    }
+
+    private String toKafkaEnvironment(String property) {
+        return "KAFKA_" + property.toUpperCase(Locale.ROOT).replace('.', '_');
+    }
+
+    private Map<String, String> toKafkaEnvironments(Map<String, String> properties) {
+        return properties
+            .entrySet()
+            .stream()
+            .map(entry -> Map.entry(toKafkaEnvironment(entry.getKey()), entry.getValue()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Override

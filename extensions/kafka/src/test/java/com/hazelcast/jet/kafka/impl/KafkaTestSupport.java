@@ -103,14 +103,19 @@ public abstract class KafkaTestSupport {
     }
 
     public void createKafkaCluster() throws IOException {
-        brokerConnectionString = createKafkaCluster0();
+        createKafkaCluster(emptyMap());
+    }
+
+    public void createKafkaCluster(Map<String, String> properties) throws IOException {
+        brokerConnectionString = createKafkaCluster0(properties);
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", brokerConnectionString);
         admin = Admin.create(props);
     }
 
     /** Returns the broker connection string. */
-    protected abstract String createKafkaCluster0() throws IOException;
+    protected abstract String createKafkaCluster0(Map<String, String> properties) throws IOException;
+
 
     public void waitForKafkaReady() {
         try {
