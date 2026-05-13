@@ -220,6 +220,10 @@ public class MasterJobContext {
         return jobCompletionFuture;
     }
 
+    public boolean isExecutionCompleted() {
+        return executionCompletionFuture.isDone();
+    }
+
     Optional<TerminationRequest> getTerminationRequest() {
         return Optional.ofNullable(terminationRequest);
     }
