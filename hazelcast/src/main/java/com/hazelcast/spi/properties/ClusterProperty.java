@@ -1248,6 +1248,8 @@ public final class ClusterProperty {
 
     /**
      * Scheduler delay for map tasks those are executed on backup members.
+     * Backup flush always lags behind the primary flush for this value,
+     * for both regular and manual flush operations.
      */
     public static final HazelcastProperty MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.map.replica.scheduled.task.delay.seconds", 10, SECONDS);
