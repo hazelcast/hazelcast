@@ -247,7 +247,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>4.1.132.Final</version>
+                <version>4.1.133.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
