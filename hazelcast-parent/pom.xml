@@ -818,6 +818,11 @@
                 <artifactId>javax.annotation-api</artifactId>
                 <version>1.3.2</version>
             </dependency>
+            <dependency>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>7.3.5.Final</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

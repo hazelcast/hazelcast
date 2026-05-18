@@ -36,9 +36,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>7.3.4.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
