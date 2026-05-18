@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -46,7 +46,7 @@ import java.util.function.BiConsumer;
  */
 public class TransactionLog {
 
-    private final Map<Object, TransactionLogRecord> recordMap = new HashMap<>();
+    private final Map<Object, TransactionLogRecord> recordMap = new LinkedHashMap<>();
 
     public TransactionLog() {
     }
