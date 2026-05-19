@@ -14,21 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.annotation;
+package com.hazelcast.test;
 
-import java.lang.annotation.Documented;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For JUnit 5+ tests, please use {@link org.junit.jupiter.api.RepeatedTest}.
+ * Annotates tests that needs to be executed one after another. It applies {@link HazelcastSerialTestExtension}
+ * and sets the {@link Execution execution} to {@link ExecutionMode#SAME_THREAD}.
+ * <p>
+ * When using this annotation, the tests will have a local copy of system properties, ensuring that the tests won't
+ * interfere with each other's modifications to system properties.
  */
-@Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface Repeat {
-
-    int value() default 1;
+@Target({ElementType.TYPE, ElementType.METHOD })
+@Inherited
+@ExtendWith(HazelcastSerialTestExtension.class)
+@Execution(ExecutionMode.SAME_THREAD)
+public @interface SerialTest {
 }

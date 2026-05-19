@@ -35,11 +35,17 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.test.archunit.TestAnnotationCategoryAndTagCheck.hasJunitTestCategoryOrTagAnnotation;
 
-/** Asserts that tests are annotated with `@RunWith` to ensure property isolation */
+/** Asserts that tests are annotated with `@RunWith` or (Enterprise)SerialTest/(Enterprise)ParallelTest
+ * to ensure property isolation */
 public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
     private static final Collection<String> SYSTEM_PROPERTY_MODIFICATION_METHODS =
             Set.of("java.lang.System.setProperty(java.lang.String, java.lang.String)", "java.lang.System.clearProperty(String)",
                     "com.hazelcast.spi.properties.HazelcastProperty.setSystemProperty(java.lang.String)");
+
+    private static final Set<String> EXTENSION_ANNOTATIONS = Set.of(
+        "com.hazelcast.test.ParallelTest", "com.hazelcast.test.SerialTest",
+        "com.hazelcast.enterprise.EnterpriseParallelTest", "com.hazelcast.enterprise.EnterpriseSerialTest"
+                                                                   );
 
     public TestsHaveRunnersCondition() {
         super("All tests should have @RunWith annotation");
@@ -60,6 +66,10 @@ public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
                 .isPresent(); classToTest = classToTest.getSuperclass()
                         .orElseThrow()
                         .toErasure()) {
+            if (EXTENSION_ANNOTATIONS.stream().anyMatch(classToTest::isAnnotatedWith)) {
+                return true;
+            }
+
             // Check if class is:
             // Annotated with "RunWith"/"UseParametersRunnerFactory"
             if (classToTest.isAnnotatedWith(RunWith.class) || classToTest.isAnnotatedWith(UseParametersRunnerFactory.class)) {
