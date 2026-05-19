@@ -18,11 +18,16 @@ package com.hazelcast.test;
 
 import com.google.common.collect.Lists;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -80,6 +85,7 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -240,6 +246,26 @@ public abstract class HazelcastTestSupport {
 
     protected Config getConfig() {
         return regularInstanceConfig();
+    }
+
+    public static Config addToCompactSerializationAllowList(Config config, Class<?>... classes) {
+        addToCompactSerializationAllowList(config.getSerializationConfig(), classes);
+        return config;
+    }
+
+    public static ClientConfig addToCompactSerializationAllowList(ClientConfig config, Class<?>... classes) {
+        addToCompactSerializationAllowList(config.getSerializationConfig(), classes);
+        return config;
+    }
+
+    public static SerializationConfig addToCompactSerializationAllowList(SerializationConfig config, Class<?>... classes) {
+        CompactSerializationConfig compactConfig = config.getCompactSerializationConfig();
+        if (compactConfig.getZeroConfigFilter() == null) {
+            compactConfig.setZeroConfigFilter(new JavaSerializationFilterConfig());
+        }
+        ClassFilter allowList = compactConfig.getZeroConfigFilter().getWhitelist();
+        Arrays.stream(classes).forEach(cls -> allowList.addClasses(cls.getName()));
+        return config;
     }
 
     // ###############################################

@@ -107,6 +107,7 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
     private void setup(Query query) {
         Config config = new Config();
 
+        ComplexTestDataStructure.addToAllowList(config);
         doWithConfig(config);
         setupIndexes(config, query);
         setupInstance(config);

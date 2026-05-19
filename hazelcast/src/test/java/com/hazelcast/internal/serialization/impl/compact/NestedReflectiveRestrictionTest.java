@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.test.HazelcastTestSupport.addToCompactSerializationAllowList;
 import static java.util.Map.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,14 +60,20 @@ public class NestedReflectiveRestrictionTest {
     @Before
     public void before() {
         member = factory.newHazelcastInstance(createConfig());
-        client = factory.newHazelcastClient();
+        client = factory.newHazelcastClient(createClientConfig());
+    }
+
+    private ClientConfig createClientConfig() {
+        ClientConfig config = new ClientConfig();
+        addToCompactSerializationAllowList(config.getSerializationConfig(),
+                TestDto.class, TestRecordDto.class, IntWrapper.class, LongWrapper.class, MyInterface.class);
+        return config;
     }
 
     private Config createConfig() {
         Config config = HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics();
-        JavaSerializationFilterConfig filter = new JavaSerializationFilterConfig();
-        filter.getBlacklist().addClasses(IntWrapper.class.getName());
-        config.getSerializationConfig().getCompactSerializationConfig().setZeroConfigFilter(filter);
+        addToCompactSerializationAllowList(config.getSerializationConfig(),
+                TestDto.class, TestRecordDto.class, LongWrapper.class, MyInterface.class);
         return config;
     }
 

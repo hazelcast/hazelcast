@@ -36,6 +36,7 @@ public class RecordSerializationWithClientIntegrationTest extends RecordSerializ
     @Override
     public HazelcastInstance getDriver() {
         ClientConfig config = new ClientConfig();
+        AllTypesRecord.addToAllowList(config.getSerializationConfig());
         return factory.newHazelcastClient(config);
     }
 
@@ -44,6 +45,7 @@ public class RecordSerializationWithClientIntegrationTest extends RecordSerializ
         ClientConfig config = new ClientConfig();
         config.getSerializationConfig()
                 .setCompactSerializationConfig(compactSerializationConfig);
+        AllTypesRecord.addToAllowList(config.getSerializationConfig());
         return factory.newHazelcastClient(config);
     }
 }

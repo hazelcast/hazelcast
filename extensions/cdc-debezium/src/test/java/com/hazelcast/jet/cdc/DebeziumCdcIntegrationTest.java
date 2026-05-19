@@ -69,7 +69,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
-            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            HazelcastInstance hz = createTestCluster();
             IList<CustomerInfo> results = hz.getList(randomName());
 
             // given
@@ -89,6 +89,10 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             //then
             assertContainsAddedRecords(results);
         }
+    }
+
+    private HazelcastInstance createTestCluster() {
+        return createHazelcastInstances(getConfigWithCompactSerializationAllowed(), 2)[0];
     }
 
     @Nonnull
@@ -112,7 +116,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
-            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            HazelcastInstance hz = createTestCluster();
             IList<CustomerInfo> results = hz.getList(randomName());
 
             // given
@@ -178,7 +182,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         try (PostgreSQLContainer<?> container = postgresContainer()) {
             container.start();
 
-            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            HazelcastInstance hz = createTestCluster();
             IList<CustomerInfo> results = hz.getList(randomName());
 
             // given
@@ -218,7 +222,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         try (PostgreSQLContainer<?> container = postgresContainer()) {
             container.start();
 
-            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            HazelcastInstance hz = createTestCluster();
             IList<CustomerInfo> results = hz.getList(randomName());
 
             // given

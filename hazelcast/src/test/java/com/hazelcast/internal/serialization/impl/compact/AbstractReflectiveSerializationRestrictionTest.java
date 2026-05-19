@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 
 public abstract class AbstractReflectiveSerializationRestrictionTest {
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory().withSerializationRestrictionsDisabled();
 
     @Parameter
     public Object underTest;

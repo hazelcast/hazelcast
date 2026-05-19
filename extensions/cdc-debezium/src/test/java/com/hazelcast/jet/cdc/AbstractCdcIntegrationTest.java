@@ -19,6 +19,7 @@ package com.hazelcast.jet.cdc;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.dockerjava.api.DockerClient;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -117,6 +118,10 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
             var subset = results.stream().filter(s -> s.op() != SYNC).toList();
             assertThat(subset).containsExactlyInAnyOrderElementsOf(expectedRecords);
         });
+    }
+
+    protected static Config getConfigWithCompactSerializationAllowed() {
+        return addToCompactSerializationAllowList(smallInstanceConfig(), CustomerInfo.class, Customer.class);
     }
 
     protected record CustomerInfo(Operation op, Customer cust) {
