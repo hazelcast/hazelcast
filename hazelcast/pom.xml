@@ -1009,7 +1009,6 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-testkit</artifactId>
-            <version>6.0.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
