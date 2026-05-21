@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
@@ -73,7 +73,7 @@ public class QueryBounceTest {
     }
 
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfigWithoutJetAndMetrics();
     }
 
     // XXX: It's better to use parametrized test here, but parameters don't play
