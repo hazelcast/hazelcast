@@ -49,17 +49,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <configuration combine.self="append">
-                    <filters>
-                        <filter>
-                            <artifact>software.amazon.awssdk:bundle</artifact>
-                            <includes>
-                                <include>**/s3/**</include>
-                                <include>**/slf4j/**</include>
-                            </includes>
-                        </filter>
-                    </filters>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -98,16 +87,12 @@
             </exclusions>
         </dependency>
         <!--
-            Jet S3 connector was developed using a different AWS SDK version than
-            the one bundled with Hadoop AWS support. For the basic functionality,
-            software.amazon.awssdk:s3 is enough, but unlike com.amazonaws:aws-java-sdk-s3,
-            it does not include all **/s3/** classes, such as **/transfer/s3/**. Shading
-            whole software.amazon.awssdk:bundle results in a huge artifact: ~30M vs ~300M.
+			The `bundle` dependency is very large
+            By replacing the transitive dependency with a subset of the dependencies we can avoid a huge artifact: ~30M vs ~300M.
         -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>bundle</artifactId>
-            <version>${aws.sdk2.version}</version>
+            <artifactId>s3-transfer-manager</artifactId>
         </dependency>
     </dependencies>
 </project>
