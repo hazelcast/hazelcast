@@ -25,6 +25,7 @@ import org.apache.kafka.common.utils.Time;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.internal.tpcengine.util.OS.isWindows;
@@ -38,7 +39,7 @@ class EmbeddedKafkaTestSupport extends KafkaTestSupport {
     private int brokerPort = -1;
 
     @Override
-    protected String createKafkaCluster0() throws IOException {
+    protected String createKafkaCluster0(Map<String, String> properties) throws IOException {
         System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
         zkServer = new EmbeddedZookeeper();
         zkConnect = ZK_HOST + ':' + zkServer.port();
@@ -57,6 +58,9 @@ class EmbeddedKafkaTestSupport extends KafkaTestSupport {
         brokerProps.setProperty("transaction.state.log.min.isr", "1");
         brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
         brokerProps.setProperty("group.initial.rebalance.delay.ms", "0");
+
+        properties.forEach(brokerProps::setProperty);
+
         KafkaConfig config = new KafkaConfig(brokerProps);
         kafkaServer = TestUtils.createServer(config, Time.SYSTEM);
         brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);

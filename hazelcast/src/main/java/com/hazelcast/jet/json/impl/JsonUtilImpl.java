@@ -22,6 +22,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.json.JsonUtil;
 
 import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
@@ -34,6 +35,9 @@ public final class JsonUtilImpl {
      * Disabling defaults is insecure.
      */
     static final String JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY = "hazelcast.jet.json.blocklist.defaultsDisabled";
+    static final ClassFilter JSON_DEFAULT_BLOCKLIST = createJsonDefaultBlocklist();
+    static final String JSON_DEFAULT_BLOCKLIST_HINT = String.format(
+            "%nThis restriction can be disabled by setting property `%s` to true", JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY);
 
     private JsonUtilImpl() {
     }
@@ -56,10 +60,7 @@ public final class JsonUtilImpl {
         return new BeanFromJsonBiFn<>(type);
     }
 
-
-    private abstract static class JsonFilteredFunction<T> implements Serializable {
-        private static final ClassFilter JSON_DEFAULT_BLOCKLIST = createJsonDefaultBlocklist();
-
+    abstract static class JsonFilteredFunction<T> implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
 
@@ -78,36 +79,36 @@ public final class JsonUtilImpl {
             ensureTypeIsAllowed(type);
         }
 
-        static void ensureTypeIsAllowed(@Nonnull Class<?> type) {
+        private static void ensureTypeIsAllowed(@Nonnull Class<?> type) {
             Objects.requireNonNull(type, "type must not be null");
             if (!Boolean.getBoolean(JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY)) {
-                if (JSON_DEFAULT_BLOCKLIST.isListed(getElementType(type).getName())) {
-                    throw new IllegalArgumentException(String.format("Class %s cannot be deserialized using JSON.%n"
-                                    + "If you want to deserialize it, set system property '%s' to 'true'",
-                            type.getName(), JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY));
+                if (isBlockedByDefaultBlocklist(getElementType(type))) {
+                    throw new IllegalArgumentException(String.format("Class %s cannot be deserialized using JSON.%s",
+                            type.getName(), JSON_DEFAULT_BLOCKLIST_HINT));
                 }
             }
         }
+    }
 
-        private static ClassFilter createJsonDefaultBlocklist() {
-            ClassFilter blockList = new ClassFilter();
-            blockList.addPrefixes(
-                    "com.hazelcast.shaded",
-                    "com.hazelcast.internal",
-                    "com.hazelcast.map.impl",
-                    "org.springframework.context",
-                    "org.springframework.beans"
-            );
-            blockList.addPackages(
-                    "com.hazelcast.config",
-                    "com.hazelcast.client.config"
-            );
-            blockList.addClasses(
-                    // unshaded reference
-                    "com.zaxxer.hikari.HikariDataSource"
-            );
-            return blockList;
-        }
+    private static ClassFilter createJsonDefaultBlocklist() {
+        ClassFilter blockList = new ClassFilter();
+        blockList.addPrefixes(
+                "com.hazelcast.shaded",
+                "com.hazelcast.internal",
+                "com.hazelcast.map.impl",
+                "org.springframework.context",
+                "org.springframework.beans"
+        );
+        blockList.addPackages(
+                "com.hazelcast.config",
+                "com.hazelcast.client.config"
+        );
+        return blockList;
+    }
+
+    static boolean isBlockedByDefaultBlocklist(Class<?> type) {
+        return DataSource.class.isAssignableFrom(type)
+                || JSON_DEFAULT_BLOCKLIST.isListed(type.getName());
     }
 
     /**

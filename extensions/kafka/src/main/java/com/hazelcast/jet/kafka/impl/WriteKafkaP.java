@@ -34,6 +34,7 @@ import com.hazelcast.logging.ILogger;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.errors.InvalidProducerEpochException;
 import org.apache.kafka.common.errors.InvalidTxnStateException;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -53,10 +54,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * See {@link KafkaProcessors#writeKafkaP}.
@@ -75,7 +77,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     private final Callback callback = (metadata, exception) -> {
         // Note: this method may be called on different thread.
         if (exception != null) {
-            lastError.compareAndSet(null, exception);
+            lastError.compareAndSet(null, wrapIfProducerException(exception, context.logger()));
         }
     };
 
@@ -113,6 +115,20 @@ public final class WriteKafkaP<T, K, V> implements Processor {
                 },
                 txnId -> recoverTransaction(txnId, false)
         );
+    }
+
+    private static Exception wrapIfProducerException(Exception e, ILogger logger) {
+        if (e instanceof ProducerFencedException || e instanceof InvalidProducerEpochException) {
+            String msg =
+                "Kafka transactional producer became invalid (fenced or epoch mismatch). " +
+                    "This most likely occurred because the transaction exceeded Kafka's transaction timeout " +
+                    "(transaction.timeout.ms) on the broker side. " +
+                    "Consider increasing transaction.timeout.ms configuration";
+
+            logger.warning(msg, e);
+            return new IllegalStateException(msg, e);
+        }
+        return e;
     }
 
     @Override
@@ -193,6 +209,16 @@ public final class WriteKafkaP<T, K, V> implements Processor {
                             "happens normally when the transaction was committed in phase 2 of the snapshot and can " +
                             "be ignored, but can happen also if the transaction wasn't committed in phase 2 and the " +
                             "broker lost it (in this case data written in it is lost). Transaction ID: " + txnId, e);
+                } catch (ProducerFencedException | InvalidProducerEpochException e) {
+                    context.logger().severe(
+                        "Failed to commit transaction restored from snapshot. " +
+                            "This can occur if phase 2 of the snapshot was not completed properly: " +
+                            "data may have been sent to the Kafka broker " +
+                            "but the transaction was not committed. " +
+                            "The job will continue, but some data may have been lost. " +
+                            "Transactional ID: " + txnId,
+                        e
+                    );
                 }
             } else {
                 p.initTransactions();
@@ -368,28 +394,37 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
         @Override
         public boolean flush() {
-            producer.flush();
+            runWithProducerExceptionHandling(producer::flush);
             return true;
         }
 
         @Override
         public void commit() {
             if (transactionId != null) {
-                producer.commitTransaction();
+                runWithProducerExceptionHandling(producer::commitTransaction);
             }
         }
 
         @Override
         public void rollback() {
             if (transactionId != null) {
-                producer.abortTransaction();
+                runWithProducerExceptionHandling(producer::abortTransaction);
             }
         }
 
         @Override
         public void release() {
-            producer.close(Duration.ZERO);
+            runWithProducerExceptionHandling(() -> producer.close(Duration.ZERO));
         }
+
+        private void runWithProducerExceptionHandling(Runnable r) {
+            try {
+                r.run();
+            } catch (Exception e) {
+                throw rethrow(wrapIfProducerException(e, logger));
+            }
+        }
+
     }
 
     public static class KafkaTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {

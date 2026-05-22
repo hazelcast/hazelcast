@@ -687,11 +687,12 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
     /**
      * @deprecated due to ambiguity between User Code Namespaces (used in
-     * most data structures) and ObjectNamespaces not used in most data structures
+     * most data structures) and ObjectNamespaces not used in most data structures.
+     * Use {@link #getObjectNamespace()} instead.
      *
      * @return This container's {@link ObjectNamespace}
      */
-    @Deprecated(since = "5.4")
+    @Deprecated(since = "5.4", forRemoval = true)
     public ObjectNamespace getNamespace() {
         return objectNamespace;
     }

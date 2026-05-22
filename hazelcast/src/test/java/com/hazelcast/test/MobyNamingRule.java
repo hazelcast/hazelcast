@@ -27,4 +27,9 @@ public class MobyNamingRule extends TestWatcher {
         String className = description.getTestClass().getSimpleName();
         System.setProperty(MOBY_NAMING_PREFIX, className);
     }
+
+    @Override
+    protected void finished(Description description) {
+        System.clearProperty(MOBY_NAMING_PREFIX);
+    }
 }

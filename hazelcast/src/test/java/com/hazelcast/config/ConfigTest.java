@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.memory.Capacity;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -115,6 +116,17 @@ public class ConfigTest extends HazelcastTestSupport {
         Config cfg = Config.load();
 
         assertEquals("123", cfg.getProperty(randomPropertyName));
+    }
+
+    @Test
+    public void testPropertyReading() {
+        final String value = "SOME_TEST_VALUE";
+        System.setProperty(ClusterProperty.LOGGING_TYPE.getName(), value);
+
+        Config cfg = Config.load();
+
+        assertEquals(value, cfg.getProperty(ClusterProperty.LOGGING_TYPE.getName()));
+        assertEquals(value, cfg.getProperty(ClusterProperty.LOGGING_TYPE));
     }
 
     @Test
@@ -290,7 +302,7 @@ public class ConfigTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetConfigPropertyNameNull() {
-        config.setProperty(null, "test");
+        config.setProperty((String) null, "test");
     }
 
     @Test(expected = IllegalArgumentException.class)

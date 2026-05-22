@@ -32,6 +32,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -61,6 +62,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({ QuickTest.class })
@@ -97,7 +99,8 @@ public class AuthenticationInformationLeakTest {
             assertNotNull(res.get());
         });
         assertEquals(ErrorsCodec.EXCEPTION_MESSAGE_TYPE, res.get().getMessageType());
-        ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
+        ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader(),
+                mock(LoggingService.class));
         Throwable err = factory.createException(res.get());
         String message = err.getMessage();
         assertInstanceOf(AuthenticationException.class, err.getCause());

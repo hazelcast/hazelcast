@@ -78,6 +78,8 @@
             -Djava.net.preferIPv4Stack=true
             -XX:+HeapDumpOnOutOfMemoryError
             -XX:HeapDumpPath=${project.build.directory}
+            -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+            -Djunit.jupiter.execution.parallel.enabled=true
         </argLine>
 
         <!-- needed for CheckStyle -->

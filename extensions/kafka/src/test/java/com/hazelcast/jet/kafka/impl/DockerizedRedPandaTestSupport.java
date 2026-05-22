@@ -24,6 +24,7 @@ import org.testcontainers.redpanda.RedpandaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -37,7 +38,11 @@ class DockerizedRedPandaTestSupport extends KafkaTestSupport {
     private RedpandaContainer redpandaContainer;
 
     @Override
-    protected String createKafkaCluster0() {
+    protected String createKafkaCluster0(Map<String, String> properties) {
+        if (!properties.isEmpty()) {
+            LOGGER.warn("RedPanda container does not support configuration properties, but the following were provided: {}. They will be ignored.",
+                    properties);
+        }
         DockerImageName imageName = parse("docker.redpanda.com/redpandadata/redpanda:" + TEST_REDPANDA_VERSION);
         redpandaContainer = new RedpandaContainer(imageName)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER));

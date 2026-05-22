@@ -9,16 +9,24 @@ jobs:
   create-tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
       - name: Create Tag
         run: |
-          BRANCH_NAME="${GITHUB_REF_NAME}"
-          TAG_NAME="${BRANCH_NAME#tag-}"          
-          git tag --force $TAG_NAME
-          git push origin --force $TAG_NAME
-          git push origin --delete $BRANCH_NAME
+          # Create-or-replace tag
+          gh api \
+            --method PATCH \
+            repos/${GITHUB_REPOSITORY}/git/refs/tags/${GITHUB_REF_NAME#tag-}} \
+            -f sha="${GITHUB_SHA}" \
+            -f force=true
+
+          # Delete branch
+          gh api \
+            --method DELETE \
+            repos/${GITHUB_REPOSITORY}/git/refs/heads/${GITHUB_REF_NAME}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - uses: hazelcast/docker-actions/slack-notification@master
         if: failure()
         with:
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
-          slack-channel: "#monorepo-notifications"
+          slack-channel: ${{ vars.MONOREPO_SLACK_CHANNEL }}

@@ -518,7 +518,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     @Override
     @Nullable
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     public String[] readUTFArray() throws IOException {
         return readStringArray();
     }
@@ -580,7 +580,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     @Override
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     public final String readUTF() throws IOException {
         return readString();
     }

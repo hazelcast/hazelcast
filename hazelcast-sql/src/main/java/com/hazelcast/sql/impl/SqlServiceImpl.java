@@ -94,6 +94,10 @@ public class SqlServiceImpl implements InternalSqlService {
     }
 
     @Override
+    public void ensureSqlIsEnabled() {
+    }
+
+    @Override
     public void start() {
         if (!Util.isJetEnabled(nodeEngine)) {
             return;

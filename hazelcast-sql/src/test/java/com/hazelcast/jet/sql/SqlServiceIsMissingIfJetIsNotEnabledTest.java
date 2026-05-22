@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.sql.impl.MissingSqlService;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +31,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.io.Serializable;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlServiceIsMissingIfJetIsNotEnabledTest extends HazelcastTestSupport {
 
@@ -43,7 +52,42 @@ public class SqlServiceIsMissingIfJetIsNotEnabledTest extends HazelcastTestSuppo
 
         assertInstanceOf(MissingSqlService.class, sqlService);
 
+        assertThrows(JetDisabledException.class, sqlService::ensureSqlIsEnabled);
         // HZ-3438
         assertThrows(JetDisabledException.class, () -> sqlService.mappingDdl("abxy"));
+    }
+
+    @Test
+    public void shouldNotDeserializeParametersIfJetIsNotEnabled() {
+        TestHazelcastFactory factory = new TestHazelcastFactory();
+        Config config = new Config();
+        config.getJetConfig().setEnabled(false);
+
+        try {
+            factory.newHazelcastInstance(config);
+            var client = factory.newHazelcastClient();
+
+            ShouldNotBeDeserialized.attemptedDeserialization = false;
+            assertThatThrownBy(() ->  client.getSql().execute("select ?", new ShouldNotBeDeserialized()))
+                    .isInstanceOf(HazelcastSqlException.class)
+                    .hasMessageContaining("The Jet engine is disabled.");
+            assertThat(ShouldNotBeDeserialized.attemptedDeserialization)
+                    .as("Should not deserialize parameters").isFalse();
+        } finally {
+            factory.terminateAll();
+        }
+    }
+
+    private static class ShouldNotBeDeserialized implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        static volatile boolean attemptedDeserialization = false;
+
+        @Serial
+        private void readObject(ObjectInputStream in) {
+            attemptedDeserialization = true;
+            throw new UnsupportedOperationException("Should not be deserialized");
+        }
     }
 }

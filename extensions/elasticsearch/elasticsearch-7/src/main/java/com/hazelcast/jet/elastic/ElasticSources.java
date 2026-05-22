@@ -31,7 +31,9 @@ import javax.annotation.Nonnull;
  * Alternatively you can use {@link ElasticSourceBuilder}
  *
  * @since Jet 4.2
+ * @deprecated <a href="https://www.elastic.co/support/eol"> Elasticsearch 7 is no longer supported</a>
  */
+@Deprecated(forRemoval = true, since = "5.7")
 public final class ElasticSources {
 
     private ElasticSources() {

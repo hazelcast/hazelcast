@@ -305,9 +305,9 @@ public class NetworkConfig {
      * be used.
      *
      * @return the SymmetricEncryptionConfig
-     * @deprecated
+     * @deprecated Symmetric encryption is deprecated in favor of TLS.
      */
-    @Deprecated(since = "4.2")
+    @Deprecated(since = "4.2", forRemoval = true)
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
@@ -318,9 +318,9 @@ public class NetworkConfig {
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
-     * @deprecated
+     * @deprecated Symmetric encryption is deprecated in favor of TLS.
      */
-    @Deprecated(since = "4.2")
+    @Deprecated(since = "4.2", forRemoval = true)
     public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;

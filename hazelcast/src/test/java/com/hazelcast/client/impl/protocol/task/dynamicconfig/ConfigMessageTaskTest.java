@@ -32,6 +32,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -74,8 +75,9 @@ public abstract class ConfigMessageTaskTest<V extends AbstractMessageTask<?>> {
         InternalCompletableFuture<Object> mockFuture = mock(InternalCompletableFuture.class);
 
         when(mockClientEngine.getEndpointManager()).thenReturn(mockClientEndpointManager);
-        when(mockClientEngine.getExceptionFactory()).thenReturn(new ClientExceptionFactory(false,
-                config.getClassLoader()));
+        ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory(false,
+                config.getClassLoader(), mock(LoggingService.class));
+        when(mockClientEngine.getExceptionFactory()).thenReturn(clientExceptionFactory);
         when(mockClientEngine.getManagementTasksChecker().isTrusted(any())).thenReturn(true);
 
         when(mockClientEndpoint.getClientType()).thenReturn(ConnectionType.JAVA_CLIENT);

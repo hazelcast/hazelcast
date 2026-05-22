@@ -45,6 +45,11 @@ public class MissingSqlService implements InternalSqlService {
     }
 
     @Override
+    public void ensureSqlIsEnabled() {
+        throw throwDisabled();
+    }
+
+    @Override
     public void start() {
     }
 

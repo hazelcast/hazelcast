@@ -301,6 +301,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         return new AfterClassesStatement(originalStatement);
     }
 
+    @Override
+    protected List<TestRule> classRules() {
+        List<TestRule> rules = new ArrayList<>(super.classRules());
+        rules.add(new MobyNamingRule());
+        return rules;
+    }
+
     private String generateThreadDump() {
         StringBuilder dump = new StringBuilder();
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();

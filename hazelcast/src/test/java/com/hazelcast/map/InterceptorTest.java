@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.test.HazelcastTestSupport.addToCompactSerializationAllowList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -92,6 +93,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         var config = smallInstanceConfigWithoutJetAndMetrics();
+        addToCompactSerializationAllowList(config, Dummy.class);
         config.getMapConfig("default")
                 .setInMemoryFormat(inMemoryFormat);
         return config;

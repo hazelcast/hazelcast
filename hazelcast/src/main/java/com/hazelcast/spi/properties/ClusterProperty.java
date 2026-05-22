@@ -219,7 +219,7 @@ public final class ClusterProperty {
      *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
      * </ul>
      *
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
      */
@@ -237,7 +237,7 @@ public final class ClusterProperty {
      *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
      * </ul>
      *
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href=
      *      "https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
      *      jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
@@ -256,7 +256,7 @@ public final class ClusterProperty {
      *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
      *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
      * </ul>
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
      */
@@ -593,7 +593,7 @@ public final class ClusterProperty {
      * <p>
      * Async reduces latency significantly when new members join clusters, often reducing startup time.
      *
-     * @since 5.4.0
+     * @since 5.4
      */
     public static final HazelcastProperty ASYNC_JOIN_STRATEGY_ENABLED
             = new HazelcastProperty("hazelcast.async.join.strategy.enabled", true);
@@ -1248,6 +1248,8 @@ public final class ClusterProperty {
 
     /**
      * Scheduler delay for map tasks those are executed on backup members.
+     * Backup flush always lags behind the primary flush for this value,
+     * for both regular and manual flush operations.
      */
     public static final HazelcastProperty MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.map.replica.scheduled.task.delay.seconds", 10, SECONDS);
@@ -1688,7 +1690,7 @@ public final class ClusterProperty {
      * If the JVM process is expected to continue executing other application bits after Hazelcast is shut down, then
      * if this property is {@code true}, logging may be disrupted.
      *
-     * @since 5.4.0
+     * @since 5.4
      */
     public static final HazelcastProperty LOGGING_SHUTDOWN
             = new HazelcastProperty("hazelcast.logging.shutdown", false);

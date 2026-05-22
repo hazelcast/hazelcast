@@ -284,7 +284,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     public void writeUTF(final String str) throws IOException {
         writeString(str);
     }
@@ -390,7 +390,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     public void writeUTFArray(String[] strings) throws IOException {
        writeStringArray(strings);
     }

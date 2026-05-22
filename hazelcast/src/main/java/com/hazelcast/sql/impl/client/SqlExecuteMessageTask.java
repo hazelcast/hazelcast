@@ -42,6 +42,9 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     @Override
     protected Object call() {
+        InternalSqlService sqlService = nodeEngine.getSqlService();
+        sqlService.ensureSqlIsEnabled();
+
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
 
         SqlStatement query = new SqlStatement(parameters.sql);
@@ -54,8 +57,6 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         query.setTimeoutMillis(parameters.timeoutMillis);
         query.setCursorBufferSize(parameters.cursorBufferSize);
         query.setExpectedResultType(SqlExpectedResultType.fromId(parameters.expectedResultType));
-
-        InternalSqlService sqlService = nodeEngine.getSqlService();
 
         boolean skipUpdateStatistics = parameters.isSkipUpdateStatisticsExists && parameters.skipUpdateStatistics;
         return sqlService.execute(query, sqlSecurityContext, parameters.queryId, skipUpdateStatistics);

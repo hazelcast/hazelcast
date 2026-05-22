@@ -98,6 +98,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
     public void rollingCount() throws InterruptedException {
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
+        addToCompactSerializationAllowList(config, MyRecord.class, ChangeStreamDoc.class);
         var instances = createHazelcastInstances(config, 2);
         final HazelcastInstance instance = instances[0];
 

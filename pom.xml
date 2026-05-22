@@ -221,6 +221,8 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.test.use.network=false
                         -Dlog4j.skipJansi=true
+                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                        -Djunit.jupiter.execution.parallel.enabled=true
                         ${extraVmArgs}
                     </argLine>
                     <includes>
@@ -255,6 +257,8 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.test.use.network=true
                         -Dlog4j.skipJansi=true
+                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                        -Djunit.jupiter.execution.parallel.enabled=true
                         ${extraVmArgs}
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -386,6 +390,8 @@
                                         -Dhazelcast.test.multiple.jvm=true
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
+                                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                        -Djunit.jupiter.execution.parallel.enabled=true
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
@@ -429,6 +435,8 @@
                                         -Dhazelcast.test.use.network=false
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
+                                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                        -Djunit.jupiter.execution.parallel.enabled=true
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
@@ -465,6 +473,8 @@
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.configurationFile=log4j2.xml
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -585,6 +595,8 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -623,6 +635,8 @@
                     -Dhazelcast.operation.call.timeout.millis=120000
                     -Dhazelcast.graceful.shutdown.max.wait=240
                     -Dlog4j.skipJansi=true
+                    -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                    -Djunit.jupiter.execution.parallel.enabled=true
                     ${extraVmArgs}
                 </argLine>
             </properties>
@@ -686,6 +700,8 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=true
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <excludedGroups>
@@ -794,6 +810,8 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <groups>
@@ -825,6 +843,8 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=true
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -872,6 +892,8 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -901,6 +923,8 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=true
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -965,6 +989,8 @@
                                 -Dhazelcast.test.use.network=false
                                 -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
                                 -Dlog4j.skipJansi=true
+                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -1140,7 +1166,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>11.0.21</version>
+            <version>11.0.22</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

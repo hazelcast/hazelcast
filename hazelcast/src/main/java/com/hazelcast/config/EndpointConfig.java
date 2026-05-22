@@ -132,11 +132,11 @@ public class EndpointConfig implements NamedConfig {
      * Gets the {@link SymmetricEncryptionConfig}. The value can be {@code null} which means that no symmetric encryption should
      * be used.
      *
-     * @deprecated
+     * @deprecated Symmetric encryption is deprecated in favor of TLS.
      *
      * @return the SymmetricEncryptionConfig
      */
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
@@ -144,13 +144,13 @@ public class EndpointConfig implements NamedConfig {
     /**
      * Sets the {@link SymmetricEncryptionConfig}. The value can be {@code null} if no symmetric encryption should be used.
      *
-     * @deprecated
+     * @deprecated Symmetric encryption is deprecated in favor of TLS.
      *
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
      */
-    @Deprecated(since = "5.0")
+    @Deprecated(since = "5.0", forRemoval = true)
     public EndpointConfig setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;
@@ -357,7 +357,7 @@ public class EndpointConfig implements NamedConfig {
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @return the configured value of Keep-Alive idle time.
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
      */
@@ -373,7 +373,7 @@ public class EndpointConfig implements NamedConfig {
      * Requires a recent JDK 8, JDK 11 or greater version that includes the required
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
      *      jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
      */
@@ -392,7 +392,7 @@ public class EndpointConfig implements NamedConfig {
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @return the configured value of Keep-Alive interval time.
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href=
      *      "https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
      *      jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
@@ -408,7 +408,7 @@ public class EndpointConfig implements NamedConfig {
      * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}. Requires a recent JDK 8, JDK
      * 11 or greater version that includes the required <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href=
      *      "https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
      *      jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
@@ -429,7 +429,7 @@ public class EndpointConfig implements NamedConfig {
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @return the configured value of Keep-Alive probe count.
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
      */
@@ -445,7 +445,7 @@ public class EndpointConfig implements NamedConfig {
      * Requires a recent JDK 8, JDK 11 or greater version that includes the required
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
-     * @since 5.3.0
+     * @since 5.3
      * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
      */

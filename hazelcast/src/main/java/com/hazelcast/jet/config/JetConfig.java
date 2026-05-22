@@ -312,7 +312,7 @@ public class JetConfig {
      * {@link JetConfig}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     public InstanceConfig getInstanceConfig() {
         return instanceConfig;
     }
@@ -325,7 +325,7 @@ public class JetConfig {
      * {@link JetConfig}.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     public JetConfig setInstanceConfig(@Nonnull InstanceConfig instanceConfig) {
         Preconditions.checkNotNull(instanceConfig, "instanceConfig");
         this.instanceConfig.set(instanceConfig);

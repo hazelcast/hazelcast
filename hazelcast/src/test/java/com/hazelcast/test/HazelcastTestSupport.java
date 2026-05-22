@@ -18,11 +18,16 @@ package com.hazelcast.test;
 
 import com.google.common.collect.Lists;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -64,7 +69,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
@@ -81,6 +85,7 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -147,9 +152,6 @@ public abstract class HazelcastTestSupport {
             "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
-
-    @ClassRule
-    public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -244,6 +246,26 @@ public abstract class HazelcastTestSupport {
 
     protected Config getConfig() {
         return regularInstanceConfig();
+    }
+
+    public static Config addToCompactSerializationAllowList(Config config, Class<?>... classes) {
+        addToCompactSerializationAllowList(config.getSerializationConfig(), classes);
+        return config;
+    }
+
+    public static ClientConfig addToCompactSerializationAllowList(ClientConfig config, Class<?>... classes) {
+        addToCompactSerializationAllowList(config.getSerializationConfig(), classes);
+        return config;
+    }
+
+    public static SerializationConfig addToCompactSerializationAllowList(SerializationConfig config, Class<?>... classes) {
+        CompactSerializationConfig compactConfig = config.getCompactSerializationConfig();
+        if (compactConfig.getZeroConfigFilter() == null) {
+            compactConfig.setZeroConfigFilter(new JavaSerializationFilterConfig());
+        }
+        ClassFilter allowList = compactConfig.getZeroConfigFilter().getWhitelist();
+        Arrays.stream(classes).forEach(cls -> allowList.addClasses(cls.getName()));
+        return config;
     }
 
     // ###############################################

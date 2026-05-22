@@ -19,7 +19,6 @@
         <jaxb-core.version>3.0.2</jaxb-core.version>
         <activation.version>1.1.1</activation.version>
         <hsqldb.version>2.7.4</hsqldb.version>
-        <hibernate-core.version>5.6.15.Final</hibernate-core.version>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}/..</main.basedir>
     </properties>
@@ -37,9 +36,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>${hibernate-core.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

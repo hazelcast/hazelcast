@@ -89,10 +89,6 @@
                     <artifactId>google-api-services-storage</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.threeten</groupId>
-                    <artifactId>threetenbp</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>com.google.api</groupId>
                     <artifactId>api-common</artifactId>
                 </exclusion>
@@ -109,8 +105,8 @@
                     <artifactId>animal-sniffer-annotations</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.google.re2j</groupId>
-                    <artifactId>re2j</artifactId>
+                    <groupId>com.google.flogger</groupId>
+                    <artifactId>flogger</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -119,11 +115,6 @@
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-storage</artifactId>
             <version>v1-rev20251118-2.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.threeten</groupId>
-            <artifactId>threetenbp</artifactId>
-            <version>1.7.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.api</groupId>
@@ -139,11 +130,11 @@
             <artifactId>opencensus-contrib-grpc-metrics</artifactId>
             <version>0.31.1</version>
         </dependency>
-        <!-- com.google.cloud.bigdataoss:gcsio has internal depdency convergence -->
+        <!-- com.google.cloud.bigdataoss:gcs-connector has internal depdency convergence -->
         <dependency>
-            <groupId>com.google.re2j</groupId>
-            <artifactId>re2j</artifactId>
-            <version>1.8</version>
+            <groupId>com.google.flogger</groupId>
+            <artifactId>flogger</artifactId>
+            <version>0.8</version>
         </dependency>
     </dependencies>
 </project>

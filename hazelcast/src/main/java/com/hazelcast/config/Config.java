@@ -62,6 +62,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
@@ -583,6 +584,23 @@ public class Config {
     }
 
     /**
+     * Returns the value for a {@link HazelcastProperty Hazelcast property}. If it has not been previously
+     * set, it will try to get the value from the system properties.
+     *
+     * @param property property object
+     * @return property value
+     * @see #setProperty(String, String)
+     * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
+     * Hazelcast System Properties</a>
+     *
+     * @since 5.8
+     */
+    @Nullable
+    public String getProperty(@Nonnull HazelcastProperty property) {
+        return getProperty(property.getName());
+    }
+
+    /**
      * Sets the value of a named property.
      *
      * @param name  property name
@@ -600,6 +618,23 @@ public class Config {
         isNotNull(value, "value");
         properties.setProperty(name, value);
         return this;
+    }
+
+    /**
+     * Sets the value of a {@link HazelcastProperty Hazelcast property}.
+     *
+     * @param property Hazelcast property
+     * @param value value of the property
+     * @return this config instance
+     * @throws IllegalArgumentException if either {@code value} is {@code null} or if {@code property} is
+     *                                  {@code null}
+     * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
+     * Hazelcast System Properties</a>
+     *
+     * @since 5.8
+     */
+    public Config setProperty(@Nonnull HazelcastProperty property, @Nonnull String value) {
+        return setProperty(property.getName(), value);
     }
 
     /**
@@ -3293,7 +3328,7 @@ public class Config {
 
     /**
      * @return the namespaces configuration object
-     * @since 5.4.0
+     * @since 5.4
      */
     public UserCodeNamespacesConfig getNamespacesConfig() {
         return userCodeNamespacesConfig;
@@ -3303,7 +3338,7 @@ public class Config {
      * Sets the namespaces configuration.
      * Internal API used for Spring configuration.
      *
-     * @since 5.4.0
+     * @since 5.4
      */
     @PrivateApi
     public @Nonnull Config setNamespacesConfig(@Nonnull UserCodeNamespacesConfig userCodeNamespacesConfig) {

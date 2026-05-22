@@ -42,6 +42,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -391,7 +392,7 @@ public class MongoSourceTest extends AbstractMongoTest {
     }
 
     @SuppressWarnings("unused") // getters/setters are for Mongo converter
-    public static class KV {
+    public static class KV implements Serializable {
         private Integer key;
         private Integer val;
         private String testName;
