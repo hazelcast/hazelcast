@@ -41,6 +41,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.TestNameHolder.removeThreadLocalTestMethodName;
+import static com.hazelcast.test.TestNameHolder.setThreadLocalTestMethodName;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Runtime.getRuntime;

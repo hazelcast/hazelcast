@@ -26,6 +26,9 @@ import org.junit.runners.model.InitializationError;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.test.TestNameHolder.removeThreadLocalTestMethodName;
+import static com.hazelcast.test.TestNameHolder.setThreadLocalTestMethodName;
+
 /**
  * Run the tests in series and log the duration of the running test.
  */

@@ -132,23 +132,13 @@ public abstract class AbstractHazelcastExtension
     }
 
     public static String getTestMethodName() {
-        return TEST_NAME_THREAD_LOCAL.get();
-    }
-
-    static void setThreadLocalTestMethodName(String name) {
-        TestLoggingUtils.setThreadLocalTestMethodName(name);
-        TEST_NAME_THREAD_LOCAL.set(name);
-    }
-
-    static void removeThreadLocalTestMethodName() {
-        TestLoggingUtils.removeThreadLocalTestMethodName();
-        TEST_NAME_THREAD_LOCAL.remove();
+        return TestNameHolder.getTestMethodName();
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
         String testName = context.getRequiredTestMethod().getName();
-        setThreadLocalTestMethodName(testName);
+        TestNameHolder.setThreadLocalTestMethodName(testName);
         context.getStore(NAMESPACE).put(START_TIME_KEY, System.currentTimeMillis());
         System.out.println("Started Running Test: " + testName);
     }
@@ -165,7 +155,7 @@ public abstract class AbstractHazelcastExtension
                 logMessageIfTestOverran(testName, tookSeconds);
             }
         } finally {
-            removeThreadLocalTestMethodName();
+            TestNameHolder.removeThreadLocalTestMethodName();
         }
     }
 
