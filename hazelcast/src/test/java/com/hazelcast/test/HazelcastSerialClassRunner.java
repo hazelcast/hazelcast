@@ -23,7 +23,6 @@ import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.test.TestNameHolder.removeThreadLocalTestMethodName;
@@ -76,9 +75,7 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
         }
 
         private void init(Properties properties) {
-            for (Map.Entry entry : properties.entrySet()) {
-                put(entry.getKey(), entry.getValue());
-            }
+            this.putAll(properties);
         }
     }
 }

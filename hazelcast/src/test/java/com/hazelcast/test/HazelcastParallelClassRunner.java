@@ -195,9 +195,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         }
 
         private Properties init(Properties properties) {
-            for (Map.Entry entry : globalProperties.entrySet()) {
-                properties.put(entry.getKey(), entry.getValue());
-            }
+            properties.putAll(globalProperties);
             return properties;
         }
 

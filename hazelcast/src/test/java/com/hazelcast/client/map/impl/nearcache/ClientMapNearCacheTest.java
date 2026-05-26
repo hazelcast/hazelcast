@@ -549,7 +549,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             .collect(Collectors.toMap(Function.identity(), Function.identity()));
 
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        hashMap.forEach(clientMap::put);
+        clientMap.putAll(hashMap);
         hashMap.keySet().forEach(clientMap::get);
 
         IMap<Integer, Integer> memberMap = member.getMap(mapName);
