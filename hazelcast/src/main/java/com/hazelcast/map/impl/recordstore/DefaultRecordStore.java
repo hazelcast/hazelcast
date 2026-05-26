@@ -1209,7 +1209,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 //  only the resultant value. Long-term we need to address this shortfall in merge policies, but
                 //  for now the additional check below allows us to make an educated guess about whether the merge
                 //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
-                //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
+                //  additional overhead by checking provenance. Fixes HZOLD-3392, Backlog for merge changes: HZOLD-3397
                 boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
                         || valueComparator.isEqual(existingEntry.getRawValue(), mergingEntry.getRawValue(), serializationService);
                 if (shouldMergeExpiration && mergeRecordExpiration(key, record, mergingEntry, now)) {

@@ -2,7 +2,7 @@
 
 |||
 |---|---|
-|---|------------------- https://hazelcast.atlassian.net/browse/HZ-1098 https://hazelcast.atlassian.net/browse/HZ-1098 |
+|---|------------------- https://hazelcast.atlassian.net/browse/HZOLD-1098 https://hazelcast.atlassian.net/browse/HZOLD-1098 |
 |Related Github issues|https://github.com/hazelcast/hazelcast/pull/21635|
 |Document Status / Completeness| Complete                                          |
 |Requirement owner| Sandeep Akhouri                                              |

@@ -196,8 +196,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     // visible for tests
     static MapConfig createSqlCatalogConfig() {
-        // TODO HZ-1743 when implemented properly align this with the chosen
-        //  approach that HZ-1743 follows
+        // TODO HZOLD-1743 when implemented properly align this with the chosen
+        //  approach that HZOLD-1743 follows
         return new MapConfig(SQL_CATALOG_MAP_NAME)
                 .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
                 .setAsyncBackupCount(MapConfig.MIN_BACKUP_COUNT)

@@ -19,7 +19,7 @@
 
 |||
 |---|---|
-|Related Jira|_https://hazelcast.atlassian.net/browse/HZ-922_|
+|Related Jira|_https://hazelcast.atlassian.net/browse/HZOLD-922_|
 |Related Github issues|_https://github.com/hazelcast/hazelcast/issues/17489_ _https://github.com/hazelcast/hazelcast/issues/17490_ _https://github.com/hazelcast/hazelcast/issues/18661_ _https://github.com/hazelcast/hazelcast/issues/20331_|
 |Document Status / Completeness|DRAFT|
 |Requirement owner|_Jiri Holusa_|

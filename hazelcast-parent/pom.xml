@@ -733,7 +733,7 @@
             </dependency>
 
             <!-- All of this is needed to upgrade GCS -->
-            <!-- see https://hazelcast.atlassian.net/browse/HZ-4706 -->
+            <!-- see https://hazelcast.atlassian.net/browse/HZOLD-4706 -->
             <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
             <dependency>
                 <groupId>com.google.cloud</groupId>

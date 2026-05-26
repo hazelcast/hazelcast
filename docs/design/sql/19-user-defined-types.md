@@ -2,7 +2,7 @@
 
 |||
 |---|---|
-|Related Jira|[HZ-1121](https://hazelcast.atlassian.net/browse/HZ-1121)|
+|Related Jira|[HZOLD-1121](https://hazelcast.atlassian.net/browse/HZOLD-1121)|
 |Document Status / Completeness|DRAFT|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Ivan Yaschishin|

@@ -15,7 +15,7 @@
 
 |||
 |---|---|
-|Related Jira|[HZ-710](https://hazelcast.atlassian.net/browse/HZ-710)|
+|Related Jira|[HZOLD-710](https://hazelcast.atlassian.net/browse/HZOLD-710)|
 |Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|

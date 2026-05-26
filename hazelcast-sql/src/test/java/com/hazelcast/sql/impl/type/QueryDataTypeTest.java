@@ -293,7 +293,7 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         assertThatThrownBy(person::finalizeFields).hasMessage("Type fields are already finalized");
     }
 
-    // TODO This test will be removed by HZ-3691.
+    // TODO This test will be removed by HZOLD-3691.
     @Test
     public void testResolutionByFamily() {
         checkFamily(QueryDataType.VARCHAR, QueryDataTypeFamily.VARCHAR);

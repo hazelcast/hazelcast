@@ -2,7 +2,7 @@
 
 |                                |                                                           |
 |--------------------------------|-----------------------------------------------------------|
-| Related Jira                   | [HZ-1605](https://hazelcast.atlassian.net/browse/HZ-1605) |
+| Related Jira                   | [HZOLD-1605](https://hazelcast.atlassian.net/browse/HZOLD-1605) |
 | Related Github issues          | _GH issue list_                                           |
 | Document Status / Completeness | IN PROGRESS                                               |
 | Requirement owner              | Sandeep Akhouri                                           |
