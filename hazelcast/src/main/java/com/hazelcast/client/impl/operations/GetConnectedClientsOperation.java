@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
@@ -42,8 +41,7 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
         final Collection<Client> serviceClients = service.getClients();
         this.clients = createHashMap(serviceClients.size());
         for (Client clientEndpoint : serviceClients) {
-            ClientEndpointImpl clientEndpointImpl = (ClientEndpointImpl) clientEndpoint;
-            this.clients.put(clientEndpointImpl.getUuid(), clientEndpointImpl.getClientType());
+            this.clients.put(clientEndpoint.getUuid(), clientEndpoint.getClientType());
         }
     }
 

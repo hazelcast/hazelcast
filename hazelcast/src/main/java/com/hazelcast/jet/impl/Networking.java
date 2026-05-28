@@ -29,7 +29,6 @@ import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.serialization.MemoryReader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -52,7 +51,7 @@ public class Networking {
     private static final int TERMINAL_VERTEX_ID = -1;
     private static final long TERMINAL_EXECUTION_ID = Long.MIN_VALUE;
 
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     private final ILogger logger;
     private final JobExecutionService jobExecutionService;
     private final ScheduledFuture<?> flowControlSender;
@@ -61,7 +60,7 @@ public class Networking {
     private int lastFlowPacketSize;
 
     Networking(NodeEngine nodeEngine, JobExecutionService jobExecutionService, int flowControlPeriodMs) {
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobExecutionService = jobExecutionService;
         this.flowControlSender = nodeEngine.getExecutionService().scheduleWithRepetition(

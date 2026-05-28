@@ -27,7 +27,6 @@ import com.hazelcast.internal.metrics.managementcenter.ManagementCenterPublisher
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
@@ -78,7 +77,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     private final Supplier<MetricsRegistry> metricsRegistrySupplier;
 
     public MetricsService(NodeEngine nodeEngine) {
-        this(nodeEngine, ((NodeEngineImpl) nodeEngine)::getMetricsRegistry);
+        this(nodeEngine, nodeEngine::getMetricsRegistry);
     }
 
     public MetricsService(NodeEngine nodeEngine, Supplier<MetricsRegistry> metricsRegistrySupplier) {

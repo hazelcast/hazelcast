@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -150,7 +149,7 @@ public final class LockSupportServiceImpl implements LockSupportService, Managed
     }
 
     private void releaseLocksOwnedBy(final UUID uuid) {
-        final OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        final OperationService operationService = nodeEngine.getOperationService();
         for (final LockStoreContainer container : containers) {
             operationService.execute(new PartitionSpecificRunnable() {
                 @Override
