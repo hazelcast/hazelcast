@@ -18,6 +18,7 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -25,11 +26,18 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 
 /**
  * The transaction log contains all {@link
@@ -93,6 +101,46 @@ public class TransactionLog {
             futures.add(future);
         }
         return futures;
+    }
+
+    public void commitOrdered(NodeEngine nodeEngine, long timeoutMillis, TimeUnit timeUnit,
+                       FutureUtil.ExceptionHandler commitExceptionHandler) {
+        record CommitEntry(TransactionLogRecord txRecord, Operation operation) {}
+
+        Map<Integer, Queue<CommitEntry>> partitionedRecords
+                = new HashMap<>();
+
+        for (TransactionLogRecord record : recordMap.values()) {
+            Operation op = record.newCommitOperation();
+            int partitionId = op.getPartitionId();
+
+            partitionedRecords
+                    .computeIfAbsent(partitionId, k -> new LinkedList<>())
+                    .add(new CommitEntry(record, op));
+        }
+
+        while (!partitionedRecords.isEmpty()) {
+            List<Future> futures = new ArrayList<>();
+            Iterator<Queue<CommitEntry>> iterator
+                    = partitionedRecords.values().iterator();
+
+            while (iterator.hasNext()) {
+                Queue<CommitEntry> queue = iterator.next();
+                CommitEntry entry = queue.poll();
+                if (entry != null) {
+                    Future future = invoke(nodeEngine, entry.txRecord, entry.operation);
+                    if (future != null) {
+                        futures.add(future);
+                    }
+                } else {
+                    iterator.remove();
+                }
+            }
+
+            if (!futures.isEmpty()) {
+                waitWithDeadline(futures, timeoutMillis, timeUnit, commitExceptionHandler);
+            }
+        }
     }
 
     public void onCommitSuccess() {
