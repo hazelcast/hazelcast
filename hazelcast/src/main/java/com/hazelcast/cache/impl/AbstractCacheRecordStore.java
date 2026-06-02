@@ -612,21 +612,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected long updateAccessDuration(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
         long expiryTime = TIME_NOT_AVAILABLE;
-        try {
-            Duration expiryDuration = expiryPolicy.getExpiryForAccess();
-            if (expiryDuration != null) {
-                expiryTime = getAdjustedExpireTime(expiryDuration, now);
-                record.setExpirationTime(expiryTime);
-                if (isEventsEnabled()) {
-                    CacheEventContext cacheEventContext =
-                            createBaseEventContext(CacheEventType.EXPIRATION_TIME_UPDATED, toEventData(key),
-                                    toEventData(record.getValue()), expiryTime, null, IGNORE_COMPLETION);
-                    cacheEventContext.setAccessHit(record.getHits());
-                    publishEvent(cacheEventContext);
-                }
+        Duration expiryDuration = expiryPolicy.getExpiryForAccess();
+        if (expiryDuration != null) {
+            expiryTime = getAdjustedExpireTime(expiryDuration, now);
+            record.setExpirationTime(expiryTime);
+            if (isEventsEnabled()) {
+                CacheEventContext cacheEventContext =
+                    createBaseEventContext(CacheEventType.EXPIRATION_TIME_UPDATED, toEventData(key),
+                                           toEventData(record.getValue()), expiryTime, null, IGNORE_COMPLETION);
+                cacheEventContext.setAccessHit(record.getHits());
+                publishEvent(cacheEventContext);
             }
-        } catch (Exception e) {
-            ignore(e);
         }
         return expiryTime;
     }

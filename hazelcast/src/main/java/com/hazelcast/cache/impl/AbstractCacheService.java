@@ -550,12 +550,12 @@ public abstract class AbstractCacheService implements ICacheService,
 
     @Override
     public void publishEvent(CacheEventContext cacheEventContext) {
-        cacheEventHandler.publishEvent(cacheEventContext);
+        cacheEventHandler.publishEntryEvent(cacheEventContext);
     }
 
     @Override
     public void publishEvent(String cacheNameWithPrefix, CacheEventSet eventSet, int orderKey) {
-        cacheEventHandler.publishEvent(cacheNameWithPrefix, eventSet, orderKey);
+        cacheEventHandler.publishEntryEvent(cacheNameWithPrefix, eventSet, orderKey);
     }
 
     @Override
