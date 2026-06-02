@@ -23,6 +23,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -86,23 +87,27 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 
+    @Nonnull
     @Override
     public QueryCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 
+    @Nonnull
     @Override
     public QueryCacheConfig setIncludeValue(boolean includeValue) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 
+    @Nonnull
     @Override
     public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 
+    @Nonnull
     @Override
-    public QueryCacheConfig setName(String name) {
+    public QueryCacheConfig setName(@Nonnull String name) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 
