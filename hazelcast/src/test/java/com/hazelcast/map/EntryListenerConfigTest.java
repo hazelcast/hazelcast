@@ -16,15 +16,21 @@
 
 package com.hazelcast.map;
 
+import classloading.NonHzTestEntryListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.FilteringClassLoader;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.LogEntryMatcher;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.logging.log4j.core.LogEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,10 +38,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.EventListener;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static java.lang.Thread.currentThread;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -119,6 +130,81 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
         createInstanceAndInitializeListeners();
 
         assertInstanceSet(TestEntryListener.INSTANCE_AWARE);
+    }
+
+
+    /**
+     * Scenario:
+     * <ol>
+     *     <li>Member started in isolated classloading environment</li>
+     *     <li>Member adds dynamic config (it's still done via operations)</li>
+     *     <li>Second node fails due to lack of given class.</li>
+     * </ol>
+     */
+    @Test
+    public void testHazelcastInstanceAwareness_whenEntryListenerAdded_withImplementationMissing() {
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(1);
+
+        FilteringClassLoader filteringClassLoader = new FilteringClassLoader(List.of("classloading"), null);
+
+        Config blankConfig = new Config();
+        blankConfig.setClassLoader(filteringClassLoader);
+        instance = instanceFactory.newHazelcastInstance(blankConfig);
+
+        ClassLoader before = Thread.currentThread().getContextClassLoader();
+        try {
+            currentThread().setContextClassLoader(filteringClassLoader);
+
+            listenerConfig.setImplementation(new NonHzTestEntryListener());
+            MapConfig mapConfig = new MapConfig(mapName);
+            mapConfig.getEntryListenerConfigs().add(listenerConfig);
+
+            assertThatThrownBy(() -> instance.getConfig().addMapConfig(mapConfig))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("ListenerConfig's implementation");
+        } finally {
+            currentThread().setContextClassLoader(before);
+        }
+    }
+
+    /**
+     * Scenario:
+     * <ol>
+     *     <li>Member started</li>
+     *     <li>Member adds dynamic config</li>
+     *     <li>Second member starts in isolated classloading environment</li>
+     *     <li>startup Ops cause the exchange of dynamic config</li>
+     *     <li>Second node fails due to lack of given class.</li>
+     * </ol>
+     */
+    @Test
+    public void testHazelcastInstanceAwareness_whenEntryListenerAndScaling_withImplementationMissing() {
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        FilteringClassLoader filteringClassLoader = new FilteringClassLoader(List.of("classloading"), null);
+
+        var config = new Config();
+        config.setClassLoader(filteringClassLoader);
+
+        listenerConfig.setImplementation(new NonHzTestEntryListener());
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.getEntryListenerConfigs().add(listenerConfig);
+
+        instance = instanceFactory.newHazelcastInstance(config);
+        instance.getConfig().addMapConfig(mapConfig);
+
+        ClassLoader before = Thread.currentThread().getContextClassLoader();
+        Predicate<LogEvent> logEventPredicate = event ->
+            event.getThrown() != null
+                && event.getThrown().getMessage().contains("Unable to deserialize EntryListenerConfig's implementation");
+        try (LogEntryMatcher matcher = LogEntryMatcher.install(logEventPredicate)) {
+            currentThread().setContextClassLoader(filteringClassLoader);
+
+            assertThatThrownBy(() -> instanceFactory.newHazelcastInstance(config))
+                            .isInstanceOf(IllegalStateException.class);
+            assertThat(matcher.matched()).isTrue();
+        } finally {
+            currentThread().setContextClassLoader(before);
+        }
     }
 
     @Test
