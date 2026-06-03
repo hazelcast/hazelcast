@@ -16,12 +16,9 @@
 
 package com.hazelcast.test;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.Map;
@@ -39,35 +36,33 @@ abstract class BaseClassUnderTest {
     private static final String PARENT_VALUE = "PARENT_VALUE";
     private final String name = getClass().getSimpleName() + SUFFIX;
 
-    @BeforeAll
-    static void beforeAll(TestInfo testInfo) {
-        System.setProperty(testInfo.getTestClass().orElseThrow().getSimpleName() + SUFFIX, PARENT_VALUE);
+    static void setProperties(Class<?> testClass) {
+        System.setProperty(testClass.getSimpleName() + SUFFIX, PARENT_VALUE);
     }
 
-    @AfterAll
-    static void afterAll(TestInfo testInfo) {
-        assertThat(System.getProperty(testInfo.getTestClass().orElseThrow().getSimpleName() + SUFFIX)).isEqualTo(PARENT_VALUE);
-        System.clearProperty(testInfo.getTestClass().orElseThrow().getSimpleName() + SUFFIX);
+    static void assertPropertiesRestored(Class<?> testClass) {
+        assertThat(System.getProperty(testClass.getSimpleName() + SUFFIX)).isEqualTo(PARENT_VALUE);
+        System.clearProperty(testClass.getSimpleName() + SUFFIX);
     }
 
     @Test
     void test1() {
         testToThreadName.put("test1", Thread.currentThread().getName());
-        testSystemProperties(name);
+        testSystemProperties(name, "test1");
         sleepSeconds(1);
     }
 
     @Test
     void test2() {
         testToThreadName.put("test2", Thread.currentThread().getName());
-        testSystemProperties(name);
+        testSystemProperties(name, "test2");
         sleepSeconds(1);
     }
 
     @RepeatedTest(2)
     void test3(RepetitionInfo repInfo) {
         testToThreadName.put("test3-" + repInfo.getCurrentRepetition(), Thread.currentThread().getName());
-        testSystemProperties(name);
+        testSystemProperties(name, "test3-" + repInfo.getCurrentRepetition());
     }
 
     @Test
@@ -83,13 +78,12 @@ abstract class BaseClassUnderTest {
      * For serial execution testing we need only one invocation, but for parallel tests we do few iterations
      * to make it possible for tests to override each other's values.
      */
-    private void testSystemProperties(String name) {
-        assertThat(System.getProperty(name)).isEqualTo(PARENT_VALUE);
+    private void testSystemProperties(String name, String testName) {
         int count = parallel() ? 137 : 1;
         for (int i = 0; i < count; i++) {
-            System.setProperty(name, "test1");
+            System.setProperty(name, testName);
             sleepAtLeastMillis(10);
-            assertThat(System.getProperty(name)).isEqualTo("test1");
+            assertThat(System.getProperty(name)).isEqualTo(testName);
         }
     }
 
