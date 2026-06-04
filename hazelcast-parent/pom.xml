@@ -193,6 +193,9 @@
         <skip.public.api.check>false</skip.public.api.check>
         <!-- When false, the public API check does not fail fast and generates a full report for manual verification -->
         <public.api.check.break.build>true</public.api.check.break.build>
+
+        <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
+        <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
     </properties>
 
     <distributionManagement>
@@ -1706,6 +1709,23 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
+            <id>pr-builder</id>
+            <properties>
+                <!--
+                    To improve PR builder runtime, skip *some* assembly-plugins that are not required for build validation
+                    https://github.com/hazelcast/hazelcast/pull/18521
+                -->
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+            </properties>
         </profile>
     </profiles>
 

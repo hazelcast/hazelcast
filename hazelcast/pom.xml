@@ -597,6 +597,54 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
+            <id>pr-builder</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>usercodedeployment-child-parent</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-entry-processor-with-anonymous-and-inner</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-incrementing-entry-processor</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-incrementing-entry-processor-conflicting</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-shaded-classes</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <!-- Needed for TPC -->
         <dependency>
