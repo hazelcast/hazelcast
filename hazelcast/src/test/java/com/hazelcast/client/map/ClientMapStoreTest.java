@@ -386,9 +386,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         @Override
         public void storeAll(Map<Object, Object> map) {
-            for (Map.Entry<Object, Object> kvp : map.entrySet()) {
-                store.put(kvp.getKey(), kvp.getValue());
-            }
+            store.putAll(map);
         }
 
         @Override

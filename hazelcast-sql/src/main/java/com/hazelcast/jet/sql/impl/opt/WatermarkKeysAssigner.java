@@ -190,11 +190,8 @@ public class WatermarkKeysAssigner {
                     throw QueryException.error("Right input of stream-to-stream JOIN doesn't contain watermarks");
                 }
 
-                Map<Integer, MutableByte> joinedRefByteMap = new HashMap<>();
                 int leftFieldCount = join.getLeft().getRowType().getFieldCount();
-                for (Entry<Integer, MutableByte> en : leftWmKeyMapping.entrySet()) {
-                    joinedRefByteMap.put(en.getKey(), en.getValue());
-                }
+                Map<Integer, MutableByte> joinedRefByteMap = new HashMap<>(leftWmKeyMapping);
                 for (Entry<Integer, MutableByte> en : rightWmKeyMapping.entrySet()) {
                     joinedRefByteMap.put(en.getKey() + leftFieldCount, en.getValue());
                 }

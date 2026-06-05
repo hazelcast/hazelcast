@@ -133,9 +133,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
     @Before
     public void setUp() throws Exception {
-        // https://hazelcast.atlassian.net/browse/HZ-3187
+        // https://hazelcast.atlassian.net/browse/HZOLD-3187
         if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
-            logger.warning("Test skipped: https://hazelcast.atlassian.net/browse/HZ-3187");
+            logger.warning("Test skipped: https://hazelcast.atlassian.net/browse/HZOLD-3187");
             return;
         }
 
@@ -184,7 +184,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
     @After
     public void after() throws InterruptedException {
-        // https://hazelcast.atlassian.net/browse/HZ-3187
+        // https://hazelcast.atlassian.net/browse/HZOLD-3187
         if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
             return;
         }
@@ -211,7 +211,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
     @Test(timeout = 900_000L)
     public void stressTest() throws Exception {
-        // https://hazelcast.atlassian.net/browse/HZ-3187
+        // https://hazelcast.atlassian.net/browse/HZOLD-3187
         if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
             return;
         }

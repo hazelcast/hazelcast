@@ -91,7 +91,7 @@ public class EventRegistrationTest extends HazelcastTestSupport {
     }
 
     /**
-     * <a href="https://hazelcast.atlassian.net/browse/HZ-2797">Related to HZ-2797</a>
+     * <a href="https://hazelcast.atlassian.net/browse/HZOLD-2797">Related to HZOLD-2797</a>
      */
     @Test
     public void testEventRegistrationsForAllMembers_AfterJoin() {

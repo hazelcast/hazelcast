@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -197,7 +196,7 @@ public class TransactionLog {
     private void invokeAsync(NodeEngine nodeEngine, BiConsumer callback,
                              TransactionLogRecord transactionLogRecord, Operation op) {
 
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationService operationService = nodeEngine.getOperationService();
 
         if (transactionLogRecord instanceof TargetAwareTransactionLogRecord logRecord) {
             Address target = logRecord.getTarget();

@@ -91,7 +91,7 @@
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.checkerframework:checker-qual` should be upgraded -->
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.44.5</aws.sdk2.version>
+        <aws.sdk2.version>2.46.3</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -109,9 +109,9 @@
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.4.3</hadoop.version>
-        <jackson.version>3.1.3</jackson.version>
-        <jackson2.version>2.21.3</jackson2.version>
-        <jackson.annotation.version>2.21</jackson.annotation.version>
+        <jackson.version>3.1.4</jackson.version>
+        <jackson2.version>2.22.0</jackson2.version>
+        <jackson.annotation.version>2.22</jackson.annotation.version>
         <jline.version>3.30.13</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
@@ -126,7 +126,7 @@
         <kafka.version>3.9.2</kafka.version>
         <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
         <confluent.version>7.9.5</confluent.version>
-        <kotlin.version>2.3.21</kotlin.version>
+        <kotlin.version>2.4.0</kotlin.version>
         <!--
             Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro
             When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
@@ -151,8 +151,8 @@
         <mongodb.version>5.6.5</mongodb.version>
 
         <!-- test dependencies -->
-        <artemis.version>2.53.0</artemis.version>
-        <bytebuddy.version>1.18.8</bytebuddy.version>
+        <artemis.version>2.54.0</artemis.version>
+        <bytebuddy.version>1.18.10</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -193,6 +193,9 @@
         <skip.public.api.check>false</skip.public.api.check>
         <!-- When false, the public API check does not fail fast and generates a full report for manual verification -->
         <public.api.check.break.build>true</public.api.check.break.build>
+
+        <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
+        <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
     </properties>
 
     <distributionManagement>
@@ -531,7 +534,7 @@
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.1.1</version>
+                <version>7.2.0</version>
             </dependency>
             <!-- 
                 Addresses convergence between:
@@ -648,7 +651,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>6.0.3</version>
+                <version>6.1.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -733,7 +736,7 @@
             </dependency>
 
             <!-- All of this is needed to upgrade GCS -->
-            <!-- see https://hazelcast.atlassian.net/browse/HZ-4706 -->
+            <!-- see https://hazelcast.atlassian.net/browse/HZOLD-4706 -->
             <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
             <dependency>
                 <groupId>com.google.cloud</groupId>
@@ -821,7 +824,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.3.5.Final</version>
+                <version>7.4.0.Final</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -947,7 +950,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.5</version>
+                    <version>3.5.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -1095,7 +1098,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.10.0</version>
+                    <version>3.11.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1110,7 +1113,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.5.5</version>
+                    <version>3.5.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -1119,7 +1122,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.6.2</version>
+                    <version>3.6.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1133,9 +1136,9 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <groupId>io.github.download-maven-plugin</groupId>
                     <artifactId>download-maven-plugin</artifactId>
-                    <version>1.13.0</version>
+                    <version>2.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
@@ -1191,7 +1194,7 @@
                 <plugin>
                     <groupId>com.github.siom79.japicmp</groupId>
                     <artifactId>japicmp-maven-plugin</artifactId>
-                    <version>0.25.7</version>
+                    <version>0.26.1</version>
                     <configuration>
                         <!-- Skip property -->
                         <skip>${skip.public.api.check}</skip>
@@ -1706,6 +1709,23 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
+            <id>pr-builder</id>
+            <properties>
+                <!--
+                    To improve PR builder runtime, skip *some* assembly-plugins that are not required for build validation
+                    https://github.com/hazelcast/hazelcast/pull/18521
+                -->
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+            </properties>
         </profile>
     </profiles>
 

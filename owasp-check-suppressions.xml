@@ -176,4 +176,20 @@
         <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet\.testjob.*$</packageUrl>
         <cpe>cpe:/a:hazelcast:hazelcast</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - only affects `azure-security-keyvault-keys`, not _all_ Azure libraries
+        https://github.com/dependency-check/DependencyCheck/issues/8553
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/azure-data-lake-store-sdk@.*$</packageUrl>
+        <cve>CVE-2026-33117</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - only affects `azure-security-keyvault-keys`, not _all_ Azure libraries
+        https://github.com/dependency-check/DependencyCheck/issues/8553
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/azure-keyvault-core@.*$</packageUrl>
+        <cve>CVE-2026-33117</cve>
+    </suppress>
 </suppressions>

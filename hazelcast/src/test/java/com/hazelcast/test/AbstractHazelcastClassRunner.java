@@ -66,7 +66,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
     private static final boolean THREAD_DUMP_ON_FAILURE;
 
-    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<>();
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
@@ -145,17 +144,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     public static String getTestMethodName() {
-        return TEST_NAME_THREAD_LOCAL.get();
-    }
-
-    static void setThreadLocalTestMethodName(String name) {
-        TestLoggingUtils.setThreadLocalTestMethodName(name);
-        TEST_NAME_THREAD_LOCAL.set(name);
-    }
-
-    static void removeThreadLocalTestMethodName() {
-        TestLoggingUtils.removeThreadLocalTestMethodName();
-        TEST_NAME_THREAD_LOCAL.remove();
+        return TestNameHolder.getTestMethodName();
     }
 
     @Override

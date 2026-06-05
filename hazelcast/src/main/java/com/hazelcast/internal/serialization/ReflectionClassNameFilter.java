@@ -18,6 +18,9 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
+import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 
 import javax.annotation.Nullable;
@@ -52,6 +55,10 @@ public class ReflectionClassNameFilter implements ClassNameFilter {
     private void addDefaultBlocklist() {
         blacklist.addPrefixes(DEFAULT_BLOCKLIST_PREFIX);
         blacklist.addClasses(
+                // See https://hazelcast.atlassian.net/browse/CTT-1202
+                TestProcessorContext.class.getName(),
+                TestProcessorSupplierContext.class.getName(),
+                TestProcessorMetaSupplierContext.class.getName(),
                 // See: https://hazelcast.atlassian.net/browse/CTT-1112 and https://hazelcast.atlassian.net/browse/CTT-1090
                 "com.zaxxer.hikari.HikariDataSource"
         );

@@ -106,7 +106,7 @@ public class SqlPrunedMemberLeftTest extends JetTestSupport {
     }
 
     @Test
-    // https://hazelcast.atlassian.net/browse/HZ-2992
+    // https://hazelcast.atlassian.net/browse/HZOLD-2992
     public void test_queryDoesNotTerminateWhenPrunedMemberLeavesCluster() {
         // Given
         String query = (analyze ? "ANALYZE " : "") + "SELECT * FROM " + MAP_NAME + " WHERE f0 = " + CONSTANT;

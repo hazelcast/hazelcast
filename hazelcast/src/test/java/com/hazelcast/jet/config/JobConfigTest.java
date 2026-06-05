@@ -272,7 +272,7 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     /**
-     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-4712">HZ-4712 - Not being able to add more than one ZIP file with
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZOLD-4712">HZOLD-4712 - Not being able to add more than one ZIP file with
      *      JARs to Jet instances classpath [GH#26320]</a>
      */
     @Test

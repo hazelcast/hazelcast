@@ -127,8 +127,10 @@ public class SqlCompactTest extends SqlTestSupport {
                 return Person.class;
             }
         });
+        addToCompactSerializationAllowList(config, Primitives.class);
 
         ClientConfig clientConfig = new ClientConfig();
+        addToCompactSerializationAllowList(clientConfig, Primitives.class);
         initializeWithClient(1, config, clientConfig);
         sqlService = instance().getSql();
         clientSqlService = client().getSql();

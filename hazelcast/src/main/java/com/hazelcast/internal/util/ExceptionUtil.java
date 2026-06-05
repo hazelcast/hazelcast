@@ -368,4 +368,21 @@ public final class ExceptionUtil {
             }
         }
     }
+
+    /**
+     *  Checks, if {@code t} itself or any exception in its cause chain is an
+     *  instance of {@code classToFind} and returns it.
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static <T extends Throwable> T findCause(Throwable throwable, Class<T> classToFind) {
+        Throwable t = throwable;
+        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
+            t = t.getCause();
+        }
+        if (t != null && classToFind.isAssignableFrom(t.getClass())) {
+            return (T) t;
+        }
+        return null;
+    }
 }

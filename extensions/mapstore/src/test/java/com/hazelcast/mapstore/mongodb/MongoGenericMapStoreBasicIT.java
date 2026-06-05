@@ -16,12 +16,15 @@
 package com.hazelcast.mapstore.mongodb;
 
 import com.hazelcast.mapstore.GenericMapStoreBasicIT;
+import com.hazelcast.test.HazelcastSerialTestExtension;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 @QuickTest
+@ExtendWith(HazelcastSerialTestExtension.class)
 public class MongoGenericMapStoreBasicIT extends GenericMapStoreBasicIT {
 
     @BeforeAll

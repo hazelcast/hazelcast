@@ -448,8 +448,8 @@ public class MapStoreConfig implements IdentifiedDataSerializable, Versioned {
         factoryClassName = in.readString();
         writeDelaySeconds = in.readInt();
         writeBatchSize = in.readInt();
-        implementation = in.readObject();
-        factoryImplementation = in.readObject();
+        implementation = ConfigDeserializationUtil.readObject(in, getClass(), "implementation");
+        factoryImplementation = ConfigDeserializationUtil.readObject(in, getClass(), "factoryImplementation");
         properties = in.readObject();
         initialLoadMode = InitialLoadMode.valueOf(in.readString());
         offload = in.readBoolean();

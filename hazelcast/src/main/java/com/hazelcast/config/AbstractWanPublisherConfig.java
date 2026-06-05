@@ -139,7 +139,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
             properties.put(in.readString(), in.readObject());
         }
         className = in.readString();
-        implementation = in.readObject();
+        implementation = ConfigDeserializationUtil.readObject(in, getClass(), "implementation");
         publisherId = in.readString();
     }
 

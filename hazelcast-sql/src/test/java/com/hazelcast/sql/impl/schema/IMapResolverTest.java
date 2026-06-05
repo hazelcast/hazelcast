@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
@@ -39,7 +40,11 @@ public class IMapResolverTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initializeWithClient(1, null, null);
+        initializeWithClient(
+                1,
+                addToCompactSerializationAllowList(smallInstanceConfig(), CompactClass.class),
+                addToCompactSerializationAllowList(new ClientConfig(), CompactClass.class)
+        );
     }
 
     @Before
