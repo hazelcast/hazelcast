@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>5.8.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <name>Hazelcast Vector Search</name>
+    <artifactId>hazelcast-vector</artifactId>
+
+    <packaging>jar</packaging>
+
+    <properties>
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
+    </properties>
+
+    <organization>
+        <name>Hazelcast, Inc.</name>
+        <url>http://www.hazelcast.com/</url>
+    </organization>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>${shade.jar-with-dependencies.phase}</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.hazelcast:hazelcast-vector</include>
+                                    <!-- hazelcast-vector dependencies -->
+                                    <!-- Apache commons-math3 is needed only for searches with threshold>0 which is not exposed,
+                                         so commons-math3 is not included. -->
+                                    <include>io.github.jbellis:jvector</include>
+                                    <include>org.jctools:jctools-core</include>
+                                    <include>org.agrona:agrona</include>
+                                    <!-- binomial distribution computation -->
+                                    <include>org.apache.commons:commons-statistics-distribution</include>
+                                    <include>org.apache.commons:commons-numbers-gamma</include>
+                                    <include>org.apache.commons:commons-numbers-fraction</include>
+                                </includes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>org.jctools:jctools-core</artifact>
+                                    <includes>
+                                        <include>org/jctools/maps/*</include>
+                                    </includes>
+                                </filter>
+                            </filters>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.commons</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.agrona</pattern>
+                                    <shadedPattern>${relocation.root}.org.agrona</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jctools</pattern>
+                                    <shadedPattern>${relocation.root}.org.jctools</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.github.jbellis.jvector</pattern>
+                                    <shadedPattern>${relocation.root}.io.github.jbellis.jvector</shadedPattern>
+                                </relocation>
+                                <!-- Relocate files in META-INF/versions -->
+                                <!-- Workaround for shading multi-release JAR (https://issues.apache.org/jira/browse/MSHADE-406) -->
+                                <relocation>
+                                    <!-- The more complex regex ensures that the classes are relocated once.
+                                         Without `mvn clean` it might happen that already shaded JAR is shaded again - this module
+                                         does not use `shadedArtifactAttached`, but shaded artifact replaces main artifact.
+                                         Also already relocated classes from dependencies might match and be relocated again.
+                                         maven-shade-plugin basically uses `pathAsString.replaceAll(pattern, shadedPattern)`
+                                         and `rawString` pattern is not required to match from the beginning of path/class name.
+                                         String.replaceAll method replaces also non-capturing groups, so lookbehind has to be used instead.
+                                         See also https://github.com/hazelcast/hazelcast-mono/issues/2671.
+                                    -->
+                                    <!-- This pattern matches only classes in META-INF/versions (regular classes are processed
+                                         using regular pattern) and only non-relocated ones (located in root version directory). -->
+                                    <pattern>(?&lt;=META-INF/versions/\d{1,10}/)io/github/jbellis/jvector</pattern>
+                                    <shadedPattern>${relocation.dir}/io/github/jbellis/jvector</shadedPattern>
+                                    <rawString>true</rawString>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Multi-Release>true</Multi-Release>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.jbellis</groupId>
+            <artifactId>jvector</artifactId>
+            <version>3.0.6</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-statistics-distribution</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- JVector uses Slf4j2 for logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- split brain test parent class requires jcache -->
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${jsr107.api.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>nl.jqno.equalsverifier</groupId>
+            <artifactId>equalsverifier</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

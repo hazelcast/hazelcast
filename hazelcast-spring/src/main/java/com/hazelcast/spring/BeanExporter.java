@@ -39,6 +39,8 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
+import com.hazelcast.vector.VectorCollection;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -106,6 +108,24 @@ final class BeanExporter
             reg.register(hazelcastConfiguration.getCacheConfigs(), ICache.class,
                          (instance, name) -> instance.getCacheManager().getCache(name));
         }
+
+        if (vectorCollectionPresent()) {
+            registerVectorCollections(reg, hazelcastConfiguration);
+        }
+    }
+
+    private boolean vectorCollectionPresent() {
+        if (VectorCollectionLocator.isAvailable()) {
+            return true;
+        }
+        LOGGER.fine("Hazelcast vector module is not found, skipping adding VectorCollection beans");
+        return false;
+    }
+
+    private void registerVectorCollections(HazelcastObjectExtractionConfiguration.RegistrationChain reg,
+                                           Config hazelcastConfiguration) {
+        reg.register(hazelcastConfiguration.getVectorCollectionConfigs(), VectorCollection.class,
+            (hz, name) -> VectorCollectionLocator.get().getVectorCollection(hz, name));
     }
 
     private boolean cachePresent() {

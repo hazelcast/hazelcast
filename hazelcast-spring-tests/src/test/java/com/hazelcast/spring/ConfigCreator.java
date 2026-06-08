@@ -19,6 +19,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 
 public final class ConfigCreator {
     private ConfigCreator() {
@@ -55,6 +57,10 @@ public final class ConfigCreator {
 
         var ringbufferConfig = new RingbufferConfig("ringbuffer");
         config.addRingBufferConfig(ringbufferConfig);
+
+        var vectorConfig = new VectorCollectionConfig("vectors")
+            .addVectorIndexConfig(new VectorIndexConfig().setDimension(1));
+        config.addVectorCollectionConfig(vectorConfig);
 
         return config;
     }
