@@ -498,12 +498,6 @@
                 <version>23.26.2.0.0</version>
                 <scope>test</scope>
             </dependency>
-            <!-- NOTE: httpcore and httpclient versions are not in sync -->
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>4.4.16</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
