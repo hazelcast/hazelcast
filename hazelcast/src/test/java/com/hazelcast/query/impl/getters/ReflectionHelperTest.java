@@ -29,6 +29,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import tools.jackson.databind.introspect.MemberKey;
 
 import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -211,6 +212,15 @@ public class ReflectionHelperTest {
     public void extractValue_whenArrElementIsBlockedClass_thenThrowException_WithPolicyHint() {
         ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("t");
         assertThatThrownBy(() -> extractValue(object, "hazelcastInstanceArray[0].name", true,
+                DefaultReflectiveAttributeLookupPolicy.INSTANCE))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining(ReflectiveAttributeLookupException.POLICY_HINT);
+    }
+
+    @Test
+    public void extractValue_whenJacksonBlockedClass_thenThrowException_WithPolicyHint() {
+        var object = new MemberKey("someKey", null);
+        assertThatThrownBy(() -> extractValue(object, "argCount", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining(ReflectiveAttributeLookupException.POLICY_HINT);
