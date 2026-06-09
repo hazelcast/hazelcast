@@ -105,6 +105,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -1222,6 +1223,7 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     @Nonnull
     public Config addVectorCollectionConfig(@Nonnull VectorCollectionConfig vectorCollectionConfig) {
+        VectorCollectionLocator.assertAvailable();
         ClientMessage request = DynamicConfigAddVectorCollectionConfigCodec.encodeRequest(
                 vectorCollectionConfig.getName(),
                 vectorCollectionConfig.getVectorIndexConfigs(),

@@ -25,6 +25,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.File;
@@ -58,6 +59,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private ManagedExecutorServiceMBean clientQueryExecutorMBean;
     private ManagedExecutorServiceMBean clientBlockingExecutorMBean;
     private ManagedExecutorServiceMBean queryExecutorMBean;
+    private ManagedExecutorServiceMBean vectorQueryExecutorMBean;
     private ManagedExecutorServiceMBean ioExecutorMBean;
     private ManagedExecutorServiceMBean offloadableExecutorMBean;
     private PartitionServiceMBean partitionServiceMBean;
@@ -115,6 +117,12 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
                 hazelcastInstance, executionService.getExecutor(ExecutionService.CLIENT_BLOCKING_EXECUTOR), service);
         this.queryExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.QUERY_EXECUTOR), service);
+        this.vectorQueryExecutorMBean = VectorCollectionLocator.isAvailable()
+            ? new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.VECTOR_QUERY_EXECUTOR),
+                service
+            )
+            : null;
         this.ioExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.IO_EXECUTOR), service);
         this.offloadableExecutorMBean = new ManagedExecutorServiceMBean(
@@ -132,6 +140,9 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         register(clientQueryExecutorMBean);
         register(clientBlockingExecutorMBean);
         register(queryExecutorMBean);
+        if (vectorQueryExecutorMBean != null) {
+            register(vectorQueryExecutorMBean);
+        }
         register(ioExecutorMBean);
         register(offloadableExecutorMBean);
         register(loggingServiceMBean);
@@ -175,6 +186,10 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     public ManagedExecutorServiceMBean getQueryExecutorMBean() {
         return queryExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getVectorQueryExecutorMBean() {
+        return vectorQueryExecutorMBean;
     }
 
     public ManagedExecutorServiceMBean getIoExecutorMBean() {

@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
 
@@ -48,7 +49,9 @@ public final class DefaultReflectiveAttributeLookupPolicy
             SerializationService.class, NodeExtension.class, SecurityContext.class, Class.class, File.class,
             getNonPublicClass("com.hazelcast.kubernetes.KubernetesTokenProvider"), ExternalConfigurationOverride.class,
             javax.sql.DataSource.class, SimulateLoadTask.class, java.sql.Connection.class, Config.class,
-            AbstractConfigBuilder.class, InputStream.class, URL.class);
+            AbstractConfigBuilder.class, InputStream.class, URL.class,
+            // https://hazelcast.atlassian.net/browse/CTT-1201
+            Traverser.class);
 
     private DefaultReflectiveAttributeLookupPolicy() {
     }
@@ -57,9 +60,11 @@ public final class DefaultReflectiveAttributeLookupPolicy
     public Class<?> verifyClass(Class<?> clazz) throws ReflectiveAttributeLookupException {
         for (Class<?> blockedClass : BLOCKED_CLASSES) {
             if (blockedClass.isAssignableFrom(clazz)) {
-                throw new ReflectiveAttributeLookupException("Class " + clazz.getName()
-                        + " cannot be used for attribute extraction");
+                throwClassRejected(clazz);
             }
+        }
+        if (clazz.getName().contains(".jackson.databind.introspect.")) {
+            throwClassRejected(clazz);
         }
         return clazz;
     }
@@ -98,5 +103,10 @@ public final class DefaultReflectiveAttributeLookupPolicy
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void throwClassRejected(Class<?> clazz) throws ReflectiveAttributeLookupException {
+        throw new ReflectiveAttributeLookupException("Class " + clazz.getName()
+                + " cannot be used for attribute extraction");
     }
 }

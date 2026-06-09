@@ -124,6 +124,11 @@ public interface ExecutionService {
     String JOB_OFFLOADABLE_EXECUTOR = "hz:jet-job-offloadable";
 
     /**
+     * Name of the vector query executor.
+     */
+    String VECTOR_QUERY_EXECUTOR = "hz:vector-query";
+
+    /**
      * @param name          for the executor service
      * @param poolSize      the maximum number of threads to allow in the pool
      * @param queueCapacity the queue to use for holding tasks before they are executed.

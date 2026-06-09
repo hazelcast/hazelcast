@@ -143,6 +143,11 @@
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-vector</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- HazelcastCommandLine dependencies-->
         <dependency>
             <groupId>info.picocli</groupId>

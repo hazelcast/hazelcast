@@ -48,9 +48,12 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.vector.VectorCollection;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
@@ -67,6 +70,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @see Hazelcast#newHazelcastInstance(Config config)
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface HazelcastInstance {
 
     /**
@@ -128,6 +132,33 @@ public interface HazelcastInstance {
      */
     @Nonnull
     <K, V> IMap<K, V> getMap(@Nonnull String name);
+
+    /**
+     * Creates or returns the vector collection instance with the specified name.
+     *
+     * <p>Vector collections require the {@code hazelcast-vector} module
+     * to be present on the application classpath. The module is not included by
+     * default and must be added explicitly.</p>
+     * <p>
+     * The vector collection configuration must already exist before this method
+     * is invoked. Attempting to access a non-configured vector collection results
+     * in an {@link IllegalArgumentException}.</p>
+     * <p>
+     * @param name name of the vector collection
+     * @param <K> key type
+     * @param <V> value type
+     * @return vector collection instance with the specified name
+     * @throws UnsupportedOperationException if the {@code hazelcast-vector}
+     *         module is not present on the classpath
+     * @throws IllegalArgumentException if no configuration exists for the
+     *         specified vector collection name
+     * @since 6.0
+     */
+    @Nonnull
+    default <K, V> VectorCollection<K, V> getVectorCollection(@Nonnull String name) {
+        Objects.requireNonNull(name, "Retrieving a vector collection instance with a null name is not allowed!");
+        return VectorCollectionLocator.get().getVectorCollection(this, name);
+    }
 
     /**
      * Creates or returns the replicated map instance with the specified name.

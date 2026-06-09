@@ -50,6 +50,7 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
+        <module>hazelcast-vector</module>
     </modules>
 
     <properties>
