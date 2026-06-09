@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * Tests map store behaviour under key-load and value-load failures,
- * verifying that failed loads do not leave the map in a permanently broken state</li>
+ * verifying that failed loads do not leave the map in a permanently broken state
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
