@@ -61,17 +61,6 @@
         </plugins>
     </build>
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- org.apache.hadoop:hadoop-client has internal dependency convergence -->
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>4.4.16</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
