@@ -17,10 +17,12 @@
 package com.hazelcast.commandline;
 
 import com.hazelcast.jet.function.RunnableEx;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.util.RestoreSystemProperties;
 import org.junitpioneer.jupiter.SetSystemProperty;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +39,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @ParallelJVMTest
+@SerialTest
 class HazelcastServerCommandLineTest {
     private HazelcastServerCommandLine hazelcastServerCommandLine;
 
@@ -49,6 +52,7 @@ class HazelcastServerCommandLineTest {
     }
 
     @Test
+    @RestoreSystemProperties
     void test_start() {
         // when
         hazelcastServerCommandLine.start(null, null, null);
@@ -57,6 +61,7 @@ class HazelcastServerCommandLineTest {
     }
 
     @Test
+    @RestoreSystemProperties
     void test_start_withConfigFile() {
         // given
         String configFile = "path/to/test-hazelcast.xml";
@@ -67,6 +72,7 @@ class HazelcastServerCommandLineTest {
     }
 
     @Test
+    @RestoreSystemProperties
     void test_start_withPort() {
         // given
         String port = "9999";
@@ -77,6 +83,7 @@ class HazelcastServerCommandLineTest {
     }
 
     @Test
+    @RestoreSystemProperties
     void test_start_withInterface() {
         // given
         String hzInterface = "1.1.1.1";
@@ -87,19 +94,19 @@ class HazelcastServerCommandLineTest {
     }
 
     @Test
-    @SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
-    @SetSystemProperty(key = "log4j2.configurationFile", value = "faulty-log.properties")
-    void test_log4j2_exception() throws Exception {
+    @SetSystemProperty(key = "hz.network.port.port", value = "-1")
+    @RestoreSystemProperties
+    void test_exception_stack_traces_are_logged() throws Exception {
         try (ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
              PrintStream errorPrintStream = new PrintStream(outputStreamCaptor)) {
             CommandLine cmd = new CommandLine(new HazelcastServerCommandLine())
                     .setOut(createPrintWriter(System.out)).setErr(createPrintWriter(errorPrintStream))
                     .setTrimQuotes(true).setExecutionExceptionHandler(new ExceptionHandler());
+
             cmd.execute("start");
 
             String string = outputStreamCaptor.toString(StandardCharsets.UTF_8);
-            assertThat(string).contains("org.apache.logging.log4j.core.config.ConfigurationException: "
-                    + "No type attribute provided for Layout on Appender STDOUT");
+            assertThat(string).contains("IllegalArgumentException: Port out of range: -1. Allowed range [0,65535]");
         }
     }
 }

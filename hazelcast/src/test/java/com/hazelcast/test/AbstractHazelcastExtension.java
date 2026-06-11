@@ -45,6 +45,7 @@ import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
+import static com.hazelcast.internal.util.ExceptionUtil.tryGetOrElse;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 
@@ -72,8 +73,6 @@ public abstract class AbstractHazelcastExtension
     private static final ExtensionContext.Namespace NAMESPACE =
             ExtensionContext.Namespace.create(AbstractHazelcastExtension.class);
     private static final String START_TIME_KEY = "startTime";
-
-    static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<>();
 
     static {
         initialize();
@@ -162,7 +161,7 @@ public abstract class AbstractHazelcastExtension
     @Override
     public void afterAll(@NonNull ExtensionContext context) throws Exception {
         // check for running Hazelcast instances
-        Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+        Set<HazelcastInstance> instances = tryGetOrElse(() -> Hazelcast.getAllHazelcastInstances(), Set.of());
         if (!instances.isEmpty()) {
             String message = "Instances haven't been shut down: " + instances;
             HazelcastInstanceFactory.terminateAll();
@@ -171,7 +170,7 @@ public abstract class AbstractHazelcastExtension
         }
 
         // check for running client instances
-        Collection<HazelcastInstance> clientInstances = HazelcastClient.getAllHazelcastClients();
+        Collection<HazelcastInstance> clientInstances = tryGetOrElse(() -> HazelcastClient.getAllHazelcastClients(), Set.of());
         if (!clientInstances.isEmpty()) {
             String message = "Client instances haven't been shut down: " + clientInstances;
             HazelcastClient.shutdownAll();

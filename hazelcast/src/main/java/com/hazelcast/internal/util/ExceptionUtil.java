@@ -29,6 +29,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -232,6 +233,22 @@ public final class ExceptionUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Tries to invoke given callable and return the result, in case of any {@link Throwable} being thrown (that is not
+     * an {@link OutOfMemoryError}), it will return defaultValue.
+     * @since 5.8
+     */
+    @Nullable
+    public static <T> T tryGetOrElse(@Nonnull Callable<T> callable, @Nullable T defaultValue) {
+        try {
+            return callable.call();
+        } catch (OutOfMemoryError e) {
+            throw e;
+        } catch (Throwable t) {
+            return defaultValue;
+        }
     }
 
     /**

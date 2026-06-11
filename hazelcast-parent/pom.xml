@@ -196,6 +196,18 @@
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
+
+        <commonArgLine>
+            -ea
+            -Dhazelcast.phone.home.enabled=false
+            -Dlog4j2.isThreadContextMapInheritable=true
+            -Dlog4j2.configurationFile="classpath:log4j2.xml"
+            -Dlog4j.skipJansi=true
+            -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+            -Djunit.jupiter.execution.parallel.enabled=true
+            -Duser.timezone=UTC
+            -Djava.net.preferIPv4Stack=true
+        </commonArgLine>
     </properties>
 
     <distributionManagement>
