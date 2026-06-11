@@ -54,7 +54,7 @@ import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStatus;
 import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStore;
 import com.hazelcast.jet.impl.submitjob.memberside.validator.JarOnClientValidator;
 import com.hazelcast.jet.impl.submitjob.memberside.validator.JarOnMemberValidator;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -88,7 +88,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -154,7 +154,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
         if (clientExceptionFactory != null) {
-            ExceptionUtil.registerJetExceptions(clientExceptionFactory);
+            JetExceptionUtil.registerJetExceptions(clientExceptionFactory);
         } else {
             logger.fine("Jet exceptions are not registered to the ClientExceptionFactory%s",
                     " since the ClientExceptionFactory is not accessible.");

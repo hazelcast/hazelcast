@@ -26,7 +26,6 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
@@ -49,35 +48,42 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.internal.util.ExceptionUtil.isOrHasCause;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowIfError;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.JetExceptionData.data;
 
-public final class ExceptionUtil {
-    private static final List<Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>> EXCEPTIONS = Arrays.asList(
-            tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 6, CancellationByUserException.class, CancellationByUserException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 7, TaskletExecutionException.class, TaskletExecutionException::new)
+public final class JetExceptionUtil {
+    private static final List<JetExceptionData> EXCEPTIONS = Arrays.asList(
+            data(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 6, CancellationByUserException.class, CancellationByUserException::new),
+            data(JET_EXCEPTIONS_RANGE_START + 7, TaskletExecutionException.class, TaskletExecutionException::new)
     );
 
-    private ExceptionUtil() { }
-
-    /**
-     * Returns true if the exception is one of a kind upon which the job
-     * restarts rather than fails.
-     */
-    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
-    public static boolean isRestartableException(Throwable t) {
-        return isTopologyExceptionCause(t)
-                || (t instanceof RestartableException)
-                || (t instanceof JetException && isOrHasCause(t, RestartableException.class))
-                || (t instanceof CompletionException && isOrHasCause(t, RestartableException.class))
-                ;
+    record JetExceptionData (int id, Class<? extends Throwable> exceptionClass, ExceptionFactory  exceptionFactory) {
+        static JetExceptionData data(int id, Class<? extends Throwable> exceptionClass, ExceptionFactory  exceptionFactory) {
+            return new JetExceptionData(id, exceptionClass, exceptionFactory);
+        }
     }
 
+    private JetExceptionUtil() { }
+
+    /**
+     * Called during startup to make our exceptions known to Hazelcast serialization
+     */
+    public static void registerJetExceptions(@Nonnull ClientExceptionFactory factory) {
+        for (JetExceptionData exception : EXCEPTIONS) {
+            factory.register(exception.id(), exception.exceptionClass(), exception.exceptionFactory());
+        }
+    }
+
+    /**
+     * Returns true if given argument is a throwable caused by changes in cluster topology.
+     */
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isTopologyException(Throwable t) {
         return t instanceof TopologyChangedException
@@ -88,6 +94,19 @@ public final class ExceptionUtil {
             || t instanceof OperationTimeoutException
             && (t.getMessage().contains(InitExecutionOperation.class.getSimpleName())
             || t.getMessage().contains(StartExecutionOperation.class.getSimpleName()));
+    }
+
+    /**
+     * Returns true if the exception is one of a kind upon which the job
+     * restarts rather than fails.
+     */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+    public static boolean isRestartableException(Throwable t) {
+        return isTopologyExceptionCause(t)
+            || (t instanceof RestartableException)
+            || (t instanceof JetException && isOrHasCause(t, RestartableException.class))
+            || (t instanceof CompletionException && isOrHasCause(t, RestartableException.class))
+            ;
     }
 
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
@@ -113,18 +132,9 @@ public final class ExceptionUtil {
     }
 
     /**
-     * Called during startup to make our exceptions known to Hazelcast serialization
-     */
-    public static void registerJetExceptions(@Nonnull ClientExceptionFactory factory) {
-        for (Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory> exception : EXCEPTIONS) {
-            factory.register(exception.f0(), exception.f1(), exception.f2());
-        }
-    }
-
-    /**
      * If {@code t} is either of {@link CompletionException}, {@link ExecutionException}
      * or {@link InvocationTargetException}, returns its cause, peeling it recursively.
-     * Otherwise returns {@code t}.
+     * Otherwise, returns {@code t}.
      *
      * @param t Throwable to peel
      * @see #peeledAndUnchecked(Throwable)
@@ -145,6 +155,9 @@ public final class ExceptionUtil {
      * Same as {@link #peel(Throwable)}, but additionally if the resulting
      * throwable is not an instance of {@link RuntimeException}, wraps it as
      * {@link JetException}.
+     * <p>
+     * Similar to {@link com.hazelcast.internal.util.ExceptionUtil#peel(Throwable)}, just simpler and returns
+     * {@link JetException} instead of {@link com.hazelcast.core.HazelcastException}.
      *
      * @param t Throwable to peel
      * @see #peel(Throwable)
@@ -160,9 +173,13 @@ public final class ExceptionUtil {
         return new JetException(t);
     }
 
+    /**
+     * Similar to {@link com.hazelcast.internal.util.ExceptionUtil#rethrow(Throwable)}, main difference
+     * is that it rethrows as {@link JetException}, not {@link com.hazelcast.core.HazelcastException}.
+     */
     @Nonnull
     public static RuntimeException rethrow(@Nonnull final Throwable t) {
-        com.hazelcast.internal.util.ExceptionUtil.rethrowIfError(t);
+        rethrowIfError(t);
         throw peeledAndUnchecked(t);
     }
 
@@ -190,17 +207,6 @@ public final class ExceptionUtil {
         }
 
         throw e;
-    }
-
-    /**
-     * Checks, if {@code t} itself or any exception in its cause chain is an
-     * instance of {@code classToFind}.
-     */
-    public static boolean isOrHasCause(Throwable t, Class<?> classToFind) {
-        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
-            t = t.getCause();
-        }
-        return t != null && classToFind.isAssignableFrom(t.getClass());
     }
 
     public static boolean isTechnicalCancellationException(Throwable t) {

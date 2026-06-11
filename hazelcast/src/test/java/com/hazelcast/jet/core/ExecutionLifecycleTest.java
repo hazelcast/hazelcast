@@ -93,7 +93,7 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.lang.String.format;
 import static java.util.Collections.nCopies;

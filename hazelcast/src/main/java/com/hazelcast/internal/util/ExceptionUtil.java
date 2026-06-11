@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,6 +41,16 @@ import static java.lang.invoke.MethodType.methodType;
  * Contains various exception related utility methods.
  */
 public final class ExceptionUtil {
+    /**
+     * Max number of iterations of {@link #isOrHasCause(Throwable, Class)}, before it
+     * assumes negative result due to very long exception cause chain.
+     * <p>
+     * Should be kept reasonably small to avoid OutOfMemoryErrors.
+     *
+     * @since 5.8
+     */
+    public static final HazelcastProperty MAX_SEARCH_DEPTH
+            = new HazelcastProperty("hazelcast.internal.max.search.depth.of.exception.cause", 50);
 
     static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
 
@@ -138,6 +149,7 @@ public final class ExceptionUtil {
         throw (RuntimeException) peel(t, null, null, exceptionWrapper);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Throwable> RuntimeException rethrow(final Throwable t, Class<T> allowedType) throws T {
         rethrowIfError(t);
         throw (T) peel(t, allowedType, null);
@@ -146,6 +158,7 @@ public final class ExceptionUtil {
     /**
      * This rethrow the exception providing an allowed Exception in first priority, even it is a Runtime exception
      */
+    @SuppressWarnings("unchecked")
     public static <T extends Throwable> RuntimeException rethrowAllowedTypeFirst(final Throwable t,
                                                                                  Class<T> allowedType) throws T {
         rethrowIfError(t);
@@ -221,7 +234,8 @@ public final class ExceptionUtil {
      * described above, otherwise returns newly constructed exception
      */
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<T> exceptionClass, String message,
+    public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<T> exceptionClass,
+                                                                                String message,
                                                                                 @Nullable Throwable cause) {
         for (ConstructorMethod method : ConstructorMethod.values()) {
             try {
@@ -252,10 +266,45 @@ public final class ExceptionUtil {
     }
 
     /**
+     * Checks, if {@code t} itself or any exception in its cause chain is an
+     * instance of {@code classToFind}.
+     *
+     * <p>
+     * Search is limited to {@link #MAX_SEARCH_DEPTH} iterations. After that, it is assumed it's a cycle
+     * and it returns false.
+     */
+    public static boolean isOrHasCause(Throwable t, Class<?> classToFind) {
+        final int maxIterations = MaxSearchDepthHolder.MAX_SEARCH_DEPTH;
+        int i = 0;
+        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
+            t = t.getCause();
+            i++;
+            // cycle detected/assumed
+            if (i > maxIterations) {
+                return false;
+            }
+        }
+        return t != null && classToFind.isAssignableFrom(t.getClass());
+    }
+
+    private static final class MaxSearchDepthHolder {
+        private static final int MAX_SEARCH_DEPTH = parse();
+
+        private static int parse() {
+            String systemProperty = ExceptionUtil.MAX_SEARCH_DEPTH.getSystemProperty();
+            if (systemProperty != null && !systemProperty.isEmpty()) {
+                return Integer.parseInt(systemProperty);
+            }
+            return Integer.parseInt(ExceptionUtil.MAX_SEARCH_DEPTH.getDefaultValue());
+        }
+    }
+
+    /**
      * Supplies constructor method types to {@link #tryCreateExceptionWithMessageAndCause}.
      * <p>
      * Keep order of enums as is.
      */
+    @SuppressWarnings("unchecked")
     private enum ConstructorMethod {
         // new Throwable(String message, Throwable cause)
         MT_INIT_STRING_THROWABLE() {
@@ -342,6 +391,7 @@ public final class ExceptionUtil {
      * cause and the message as the original exception
      */
     @Nonnull
+    @SuppressWarnings("unchecked")
     public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(@Nonnull T original) {
         StackTraceElement[] fixedStackTrace = getFixedStackTrace(original, Thread.currentThread().getStackTrace());
 

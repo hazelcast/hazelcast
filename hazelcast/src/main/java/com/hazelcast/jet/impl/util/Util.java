@@ -101,7 +101,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static java.lang.Math.abs;
 import static java.lang.String.format;

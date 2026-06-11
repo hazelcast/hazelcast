@@ -48,7 +48,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 class ShardReader extends AbstractShardWorker implements DynamicMetricsProvider {

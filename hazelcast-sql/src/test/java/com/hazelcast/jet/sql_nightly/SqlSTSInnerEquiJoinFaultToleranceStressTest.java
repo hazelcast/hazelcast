@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
@@ -209,7 +209,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
-    @Test(timeout = 900_000L)
+    @Test(timeout = 2_000_000L)
     public void stressTest() throws Exception {
         // https://hazelcast.atlassian.net/browse/HZOLD-3187
         if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {

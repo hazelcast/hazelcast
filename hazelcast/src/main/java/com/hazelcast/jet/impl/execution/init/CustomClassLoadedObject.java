@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -64,7 +64,7 @@ public final class CustomClassLoadedObject {
         try {
             return serializationService.toObject(data);
         } catch (HazelcastSerializationException e) {
-            throw ExceptionUtil.handleSerializedLambdaCce(e);
+            throw JetExceptionUtil.handleSerializedLambdaCce(e);
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

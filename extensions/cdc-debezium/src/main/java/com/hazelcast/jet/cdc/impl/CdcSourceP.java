@@ -62,8 +62,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.EventTimeMapper.NO_NATIVE_TIME;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 public abstract class CdcSourceP<T> extends AbstractProcessor {
 

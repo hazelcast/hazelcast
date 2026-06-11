@@ -46,7 +46,7 @@ import static com.hazelcast.jet.cdc.Operation.DELETE;
 import static com.hazelcast.jet.cdc.Operation.INSERT;
 import static com.hazelcast.jet.cdc.Operation.SYNC;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
