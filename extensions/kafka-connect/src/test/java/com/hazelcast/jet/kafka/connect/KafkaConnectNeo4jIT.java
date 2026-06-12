@@ -32,15 +32,12 @@ import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -49,6 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -65,23 +64,22 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Testcontainers
+@SerialTest
+@SlowTest
+@ParallelJVMTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectNeo4jIT extends JetTestSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectNeo4jIT.class);
     private static final String CONNECTOR_JAR_FILE = "neo4j-kafka-connect-5.1.19.jar";
 
     @SuppressWarnings("resource")
-    @ClassRule
+    @Container
     public static final Neo4jContainer<?> container = new Neo4jContainer<>(TEST_NEO4J_IMAGE)
             .withoutAuthentication()
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
@@ -89,7 +87,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
     private static final int ITEM_COUNT = 1_000;
 
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpDocker() {
         assumeDockerEnabled();
     }
@@ -125,10 +123,10 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
-
             String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertThat(errorMsg)
+                .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                .contains(AssertionCompletedException.class.getName());
         }
     }
 

@@ -26,20 +26,17 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.WindowDefinition;
-import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.bson.Document;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.Arrays;
@@ -57,9 +54,11 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
 
-@RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({SlowTest.class, NightlyTest.class})
+@SerialTest
+@SlowTest
+@NightlyTest
+@ParameterizedClass(name = "tasksMax_{0}_localParallelism_{1}")
+@MethodSource("parameters")
 public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
     private static MongoDBContainer mongoContainer;
     private static MongoClient mongoClient;
@@ -69,7 +68,6 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
     @Parameter(1)
     public int localParallelism;
 
-    @Parameterized.Parameters(name = "tasksMax_{0}_localParallelism_{1}")
     public static Collection<Object[]> parameters() {
         // tasks.max, local parallelism
         // note: total parallelism = local * 2
@@ -81,7 +79,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
         });
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
         assumeDockerEnabled();
         mongoContainer = new MongoDBContainer(MONGO_IMAGE);
