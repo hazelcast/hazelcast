@@ -52,6 +52,8 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.version.Version;
 import org.junit.After;
 import org.junit.ClassRule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.junit.rules.Timeout;
 
 import javax.annotation.Nonnull;
@@ -88,6 +90,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SetSystemProperty(key = "hz.jet.enabled", value = "true")
+@org.junit.jupiter.api.Timeout(value = 15, unit = TimeUnit.MINUTES)
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static final InternalSerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
@@ -110,6 +114,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     private TestHazelcastFactory instanceFactory;
 
     @After
+    @AfterEach
     public void shutdownFactory() throws Exception {
         if (instanceFactory != null) {
             Map<Long, String> leakedClassloaders = shutdownJobsAndGetLeakedClassLoaders();
