@@ -146,6 +146,7 @@
         <protobuf.version>25.8</protobuf.version>
         <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
+        <python.protobuf.version.3.14>7.35.1</python.protobuf.version.3.14>
 
         <scala.version>2.13</scala.version>
         <mongodb.version>5.6.5</mongodb.version>
