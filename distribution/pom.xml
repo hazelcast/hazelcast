@@ -130,6 +130,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.version}</version>
+            <!-- 
+                Should be a shaded JAR with no dependencies
+                But when built as part of a multi-module build, may use original, un-shaded dependencies
+                As such, explicitly ignore instead
+                https://github.com/apache/maven-shade-plugin/issues/278
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -142,6 +154,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.version}</version>
+            <!-- 
+                Should be a shaded JAR with no dependencies
+                But when built as part of a multi-module build, may use original, un-shaded dependencies
+                As such, explicitly ignore instead
+                https://github.com/apache/maven-shade-plugin/issues/278
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
