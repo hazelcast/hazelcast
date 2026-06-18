@@ -330,9 +330,10 @@
                 <classifier>test</classifier>
             </dependency>
             <!--
-                When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies `org.codehaus.woodstox` should be upgraded:
+                When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
                 - `org.codehaus.woodstox:stax2-api`
                 - `commons-codec:commons-codec`
+                - `commons-logging:commons-logging`
             -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -464,6 +465,11 @@
                 <artifactId>commons-collections</artifactId>
                 <version>3.2.2</version>
             </dependency>
+            <!-- 
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client`
+                - `org.apache.httpcomponents:httpclient`
+            -->
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
@@ -517,6 +523,7 @@
                 <artifactId>httpcore</artifactId>
                 <version>4.4.16</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `commons-logging:commons-logging` should be upgraded -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
