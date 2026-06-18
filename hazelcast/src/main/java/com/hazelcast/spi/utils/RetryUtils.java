@@ -69,8 +69,8 @@ public final class RetryUtils {
                     throw ExceptionUtil.rethrow(e);
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
-                LOGGER.warning(String.format("Couldn't connect to the service, [%s] retrying in %s seconds...", retryCount,
-                        waitIntervalMs / MS_IN_SECOND));
+                LOGGER.warning(String.format("Couldn't connect to the service, [%s] retrying in %s seconds. Cause: %s",
+                        retryCount, waitIntervalMs / MS_IN_SECOND, e));
                 sleep(waitIntervalMs);
             }
         }
