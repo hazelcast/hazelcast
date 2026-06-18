@@ -12,11 +12,11 @@ runs:
   steps:
     - shell: bash
       id: get-maintenance-versions
-      run: echo "versions=['5.4', '5.5', '5.6', '5.7']" >> ${GITHUB_OUTPUT}
+      run: echo "versions=['5.5', '5.6', '5.7']" >> ${GITHUB_OUTPUT}
 
     - shell: ${{ env.shell }}
       id: get-extended-support-plus-versions
-      run: echo "versions=['5.3']" >> ${GITHUB_OUTPUT}
+      run: echo "versions=['5.3', '5.4']" >> ${GITHUB_OUTPUT}
 
     - shell: ${{ env.shell }}
       id: get-maintenance-versions-including-extended-support-plus
