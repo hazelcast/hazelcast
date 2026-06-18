@@ -17,12 +17,14 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
@@ -44,16 +46,31 @@ import static com.hazelcast.map.impl.operation.steps.engine.LinkerStep.linkSteps
  */
 public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
+    private static final int UNINITIALIZED_PARTITION_MIGRATION_STAMP = Integer.MIN_VALUE;
+
     private final State state;
     private final OperationRunnerImpl operationRunner;
+    private final int partitionId;
     /**
      * Only here to disable the thread check for testing purposes.
      */
     private final boolean checkCurrentThread;
+    private final boolean isAllowedToExecuteDuringMigration;
 
     private volatile Runnable currentRunnable;
     private volatile Step currentStep;
-    private volatile boolean firstStep = true;
+    private volatile boolean firstPartitionStep = true;
+    /**
+     * This stamp guarantees that it is safe for the system
+     * to access partition-state during the "partition" step.
+     * <p>
+     * To keep things running correctly, any steps running on separate
+     * (offloaded) threads must not touch this partition-state.
+     * Only the partition thread is allowed to access it.
+     *
+     * @see Step#isOffloadStep(Object)
+     */
+    private volatile int partitionMigrationStamp = UNINITIALIZED_PARTITION_MIGRATION_STAMP;
 
     public StepSupplier(MapOperation operation) {
         this(operation, true);
@@ -67,7 +84,10 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
+        this.partitionId = state.getPartitionId();
         this.checkCurrentThread = checkCurrentThread;
+        this.isAllowedToExecuteDuringMigration
+                = operationRunner.isAllowedToExecuteDuringMigration(operation);
 
         collectCustomSteps(operation, this);
 
@@ -161,7 +181,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
             @Override
             public int getPartitionId() {
-                return state.getPartitionId();
+                return partitionId;
             }
 
             @Override
@@ -175,7 +195,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
      * Runs the supplied step with the supplied state and schedules the next step.
      */
     private void runStepWithState(Step step, State state) {
-        boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        final boolean runningOnPartitionThread = isRunningOnPartitionThread();
         boolean shouldAdvance = true;
 
         try {
@@ -193,9 +213,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         final RecordStore recordStore = state.getRecordStore();
         final int threadIndex = beforeOperation(recordStore, errorStep);
         try {
-            if (runningOnPartitionThread
-                    && state.getThrowable() == null
-                    && !checkPreconditions()) {
+            if (!errorStep && !checkPreconditions(runningOnPartitionThread)) {
                 return false;
             }
 
@@ -265,20 +283,59 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         state.init(operation.getRecordStore(), operation);
     }
 
-    private boolean checkPreconditions() {
+    private boolean checkPreconditions(boolean runningOnPartitionThread) {
+        if (runningOnPartitionThread && !checkPartitionThreadPreconditions()) {
+            return false;
+        }
+        if (!isAllowedToExecuteDuringMigration) {
+            validatePartitionMigrationStamp();
+        }
+        return true;
+    }
+
+    private boolean checkPartitionThreadPreconditions() {
         assert isRunningOnPartitionThread();
 
-        // check node and cluster health before running each step
+        // Check node and cluster health before every partition-thread step.
         operationRunner.ensureNodeAndClusterHealth(state.getOperation());
 
-        // check timeout for only first step,
-        // as in regular operation-runner
-        if (firstStep) {
-            assert firstStep;
-            firstStep = false;
+        // Check timeout only for the first partition-thread step, as in the regular operation runner.
+        if (firstPartitionStep) {
+            firstPartitionStep = false;
             return !operationRunner.timeout(state.getOperation());
         }
         return true;
+    }
+
+    /**
+     * Verifies that the partition owned by this operation has not started a primary
+     * replica migration since this {@code StepSupplier} first observed its migration
+     * stamp.
+     * <p>
+     * Step-based map operations can move between partition-thread and offloaded
+     * execution. The stamp is captured lazily on the first validation and then
+     * checked before subsequent steps that are not allowed to execute during
+     * migration. If the stamp is no longer valid, the operation is failed with
+     * {@link PartitionMigratingException} so it can be retried against the current
+     * partition owner instead of continuing with stale partition state.
+     *
+     * @see Step#isOffloadStep(Object)
+     */
+    private void validatePartitionMigrationStamp() {
+        MapService mapService = getMapService();
+        if (partitionMigrationStamp == UNINITIALIZED_PARTITION_MIGRATION_STAMP) {
+            partitionMigrationStamp = mapService.getPartitionMigrationStamp(partitionId);
+        }
+
+        if (!mapService.validatePartitionMigrationStamp(partitionId, partitionMigrationStamp)) {
+            MapOperation operation = state.getOperation();
+            throw new PartitionMigratingException(operation.getNodeEngine().getThisAddress(),
+                    partitionId, operation.getClass().getName(), operation.getServiceName());
+        }
+    }
+
+    private MapService getMapService() {
+        return state.getOperation().getService();
     }
 
     /**

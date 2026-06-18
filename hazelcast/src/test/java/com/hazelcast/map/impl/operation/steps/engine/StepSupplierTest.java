@@ -19,6 +19,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil;
@@ -30,6 +32,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.steps.IMapOpStep;
 import com.hazelcast.map.impl.operation.steps.PutOpSteps;
+import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -44,6 +47,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,6 +56,8 @@ import java.util.stream.IntStream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -96,6 +102,34 @@ public class StepSupplierTest extends HazelcastTestSupport {
         Runnable get1 = stepSupplier.get();
         Runnable get2 = stepSupplier.get();
         assertEquals(get1, get2);
+    }
+
+    @Test
+    public void migrationOfAnotherPartition_doesNotFailStepSupplier() throws Exception {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        int partitionId = 1;
+        StepSupplier stepSupplier = newStepSupplier(node, partitionId);
+
+        stepSupplier.get().run();
+        getMapService(node).beforeMigration(new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId + 1, 0, 1, UUID.randomUUID()));
+        stepSupplier.get().run();
+
+        assertNotSame(UtilSteps.HANDLE_ERROR, stepSupplier.getCurrentStep());
+    }
+
+    @Test
+    public void migrationOfOperationPartition_failsStepSupplier() throws Exception {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        int partitionId = 1;
+        StepSupplier stepSupplier = newStepSupplier(node, partitionId);
+
+        stepSupplier.get().run();
+        getMapService(node).beforeMigration(new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
+        stepSupplier.get().run();
+
+        assertSame(UtilSteps.HANDLE_ERROR, stepSupplier.getCurrentStep());
     }
 
     @Test
@@ -179,6 +213,19 @@ public class StepSupplierTest extends HazelcastTestSupport {
         assertFalse(DummyPutOpSteps.executed);
     }
 
+    private StepSupplier newStepSupplier(HazelcastInstance node, int partitionId) throws Exception {
+        Data data = Accessors.getSerializationService(node).toData("data");
+        MapOperation operation = new SetOperation("map", data, data);
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(partitionId);
+        operation.beforeRun();
+        return new StepSupplier(operation, false);
+    }
+
+    private MapService getMapService(HazelcastInstance node) {
+        return Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+    }
+
     private enum DummyPutOpSteps implements IMapOpStep {
         DUMMY_READ {
             @Override
@@ -245,7 +292,7 @@ public class StepSupplierTest extends HazelcastTestSupport {
 
         StepSupplier stepSupplier = new StepSupplier(operation, false);
         for (int i = expectedSteps.size() - 1; i >= 0; i--) {
-              stepSupplier.accept(expectedSteps.get(i));
+            stepSupplier.accept(expectedSteps.get(i));
         }
 
         List<Step> actualSteps = new ArrayList<>();
