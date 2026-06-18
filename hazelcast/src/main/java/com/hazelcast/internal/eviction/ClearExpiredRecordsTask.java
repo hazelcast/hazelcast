@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -272,10 +273,12 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         }
         List<T> partitionIds = partitionContainers.subList(start, end);
         for (T container : partitionIds) {
-            // mark partition container as has ongoing expiration operation.
-            setHasRunningCleanup(container);
-            Operation operation = newPrimaryExpiryOp(cleanupPercentage, container);
-            operationService.execute(operation);
+            Operation operation = newPrimaryExpiryOp(container, cleanupPercentage);
+            if (operation != null) {
+                // mark partition container as has ongoing expiration operation.
+                setHasRunningCleanup(container);
+                operationService.execute(operation);
+            }
         }
     }
 
@@ -321,7 +324,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     protected abstract ProcessablePartitionType getProcessablePartitionType();
 
-    protected abstract Operation newPrimaryExpiryOp(int cleanupPercentage, T container);
+    @Nullable
+    protected abstract Operation newPrimaryExpiryOp(T container, int cleanupPercentage);
 
     protected abstract Operation newBackupExpiryOp(S store, Collection<ExpiredKey> expiredKeys);
 
