@@ -68,18 +68,17 @@
 
     <properties>
         <argLine> <!-- surefire parameters -->
+            ${commonArgLine}
+            ${vmHeapSettings}
+            ${javaModuleArgs}
             -Xmx1G
             -Xms1G
             -XX:+AlwaysPreTouch
-            -Dhazelcast.phone.home.enabled=false
-            -Dhazelcast.logging.type=log4j2
             -Dhazelcast.logging.details.enabled=true
             -Dhazelcast.test.use.network=false
-            -Djava.net.preferIPv4Stack=true
             -XX:+HeapDumpOnOutOfMemoryError
             -XX:HeapDumpPath=${project.build.directory}
-            -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-            -Djunit.jupiter.execution.parallel.enabled=true
+            ${extraVmArgs}
         </argLine>
 
         <!-- needed for CheckStyle -->
@@ -193,5 +192,14 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <!-- needed to take argLine into consideration and avoid picking log4j2.yml from Kafka -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration combine.self="override" />
+            </plugin>
+        </plugins>
     </build>
 </project>

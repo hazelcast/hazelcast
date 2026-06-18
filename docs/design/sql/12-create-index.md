@@ -5,7 +5,7 @@
 
 |||
 |---|---|
-|Related Jira|[HZ-566](https://hazelcast.atlassian.net/browse/HZ-566)|
+|Related Jira|[HZOLD-566](https://hazelcast.atlassian.net/browse/HZOLD-566)|
 |Related Github issues|_-_|
 |Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|

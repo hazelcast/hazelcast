@@ -179,6 +179,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @param name the name of {@code QueryCache}
      * @return this {@code QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig setName(@Nonnull String name) {
         this.name = checkHasText(name, "name");
         return this;
@@ -199,6 +200,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @param predicateConfig config for predicate
      * @return this {@code QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig setPredicateConfig(PredicateConfig predicateConfig) {
         this.predicateConfig = checkNotNull(predicateConfig, "predicateConfig can not be null");
         return this;
@@ -285,6 +287,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @param inMemoryFormat the memory format
      * @return this {@code QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         checkNotNull(inMemoryFormat, "inMemoryFormat cannot be null");
         checkFalse(inMemoryFormat == InMemoryFormat.NATIVE, "InMemoryFormat." + inMemoryFormat + " is not supported.");
@@ -312,6 +315,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @param includeValue Set {@code true} if value caching is enabled, otherwise set {@code false}
      * @return this {@code QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig setIncludeValue(boolean includeValue) {
         this.includeValue = includeValue;
         return this;
@@ -385,6 +389,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      *                      serialized format, {@code false} if stored by-reference
      * @return this {@link  QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig setSerializeKeys(boolean serializeKeys) {
         this.serializeKeys = serializeKeys;
         return this;
@@ -405,6 +410,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @param evictionConfig the {@link EvictionConfig} instance for eviction configuration to set
      * @return this {@code QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
         checkNotNull(evictionConfig, "evictionConfig cannot be null");
 
@@ -418,6 +424,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @param listenerConfig the {@link EntryListenerConfig} to add
      * @return this {@code QueryCacheConfig} instance
      */
+    @Nonnull
     public QueryCacheConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
         checkNotNull(listenerConfig, "listenerConfig cannot be null");
 

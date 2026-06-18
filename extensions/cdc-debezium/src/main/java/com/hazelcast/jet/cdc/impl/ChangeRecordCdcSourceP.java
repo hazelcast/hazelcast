@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Properties;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
 

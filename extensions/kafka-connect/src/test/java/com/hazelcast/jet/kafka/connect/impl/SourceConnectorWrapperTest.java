@@ -19,13 +19,11 @@ package com.hazelcast.jet.kafka.connect.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -38,11 +36,12 @@ import static com.hazelcast.jet.retry.RetryStrategies.never;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
+@ParallelJVMTest
+@SerialTest
 public class SourceConnectorWrapperTest extends SimpleTestInClusterSupport {
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         initialize(1, smallInstanceConfig());
     }

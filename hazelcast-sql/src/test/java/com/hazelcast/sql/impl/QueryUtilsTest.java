@@ -20,6 +20,9 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType.Field;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,11 +31,16 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.version.MemberVersion;
+
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,6 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,7 +61,14 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryUtilsTest extends CoreSqlTestSupport {
 
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
+    private static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
+
+    private static RelDataType leafType() {
+        return TYPE_FACTORY.createTypeWithNullability(
+                TYPE_FACTORY.createSqlType(SqlTypeName.INTEGER), true);
+    }
+
+   private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
 
     @After
     public void after() {
@@ -175,6 +191,116 @@ public class QueryUtilsTest extends CoreSqlTestSupport {
         // older version group larger - must choose one of the older
         assertTrueEventuallyFast(() -> assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
         assertTrueEventuallyFast(() -> assertSame(mv1_1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
+    }
+
+    @Test
+    public void test_singleNode_noCycle() {
+        HazelcastObjectType a = new HazelcastObjectType("A");
+        HazelcastObjectType.finalizeFields(List.of(a));
+
+        assertFalse(QueryUtils.containsCycles(a, new HashSet<>()));
+    }
+
+    @Test
+    public void test_linearChain_noCycle() {
+        // A -> B -> C (leaf)
+        HazelcastObjectType c = new HazelcastObjectType("C");
+        HazelcastObjectType b = new HazelcastObjectType("B");
+        HazelcastObjectType a = new HazelcastObjectType("A");
+
+        c.addField(new Field("val", 0, leafType()));
+        b.addField(new Field("c", 0, c));
+        a.addField(new Field("b", 0, b));
+
+        HazelcastObjectType.finalizeFields(List.of(c, b, a));
+
+        assertFalse(QueryUtils.containsCycles(a, new HashSet<>()));
+    }
+
+    @Test
+    public void test_directSelfReference_cycle() {
+        // A -> A
+        HazelcastObjectType a = new HazelcastObjectType("A");
+        a.addField(new Field("self", 0, a));
+        HazelcastObjectType.finalizeFields(List.of(a));
+
+        assertTrue(QueryUtils.containsCycles(a, new HashSet<>()));
+    }
+
+    @Test
+    public void test_indirectCycle() {
+        // A -> B -> C -> A
+        HazelcastObjectType a = new HazelcastObjectType("A");
+        HazelcastObjectType b = new HazelcastObjectType("B");
+        HazelcastObjectType c = new HazelcastObjectType("C");
+
+        a.addField(new Field("b", 0, b));
+        b.addField(new Field("c", 0, c));
+        c.addField(new Field("a", 0, a));   // closes the cycle
+
+        HazelcastObjectType.finalizeFields(List.of(a, b, c));
+
+        assertTrue(QueryUtils.containsCycles(a, new HashSet<>()));
+    }
+
+    @Test
+    public void test_diamond_noCycle() {
+        // A -> B -> D
+        // A -> C -> D
+        // D is shared but there is no cycle — this is the bug case.
+        HazelcastObjectType d = new HazelcastObjectType("D");
+        HazelcastObjectType b = new HazelcastObjectType("B");
+        HazelcastObjectType c = new HazelcastObjectType("C");
+        HazelcastObjectType a = new HazelcastObjectType("A");
+
+        d.addField(new Field("val", 0, leafType()));
+        b.addField(new Field("d", 0, d));
+        c.addField(new Field("d", 0, d));
+        a.addField(new Field("b", 0, b));
+        a.addField(new Field("c", 1, c));
+
+        HazelcastObjectType.finalizeFields(List.of(d, b, c, a));
+
+        // The unfixed code returns true here (false positive). The fix returns false.
+        assertFalse(QueryUtils.containsCycles(a, new HashSet<>()));
+    }
+
+    @Test
+    public void test_diamondWithCycle() {
+        // A -> B -> D
+        // A -> C -> D -> A   (cycle through the diamond)
+        HazelcastObjectType a = new HazelcastObjectType("A");
+        HazelcastObjectType b = new HazelcastObjectType("B");
+        HazelcastObjectType c = new HazelcastObjectType("C");
+        HazelcastObjectType d = new HazelcastObjectType("D");
+
+        b.addField(new Field("d", 0, d));
+        c.addField(new Field("d", 0, d));
+        d.addField(new Field("a", 0, a));   // closes the cycle
+        a.addField(new Field("b", 0, b));
+        a.addField(new Field("c", 1, c));
+
+        HazelcastObjectType.finalizeFields(List.of(a, b, c, d));
+
+        assertTrue(QueryUtils.containsCycles(a, new HashSet<>()));
+    }
+
+    @Test
+    public void test_siblingsNoSharedDescendant_noCycle() {
+        // A -> B (leaf fields only)
+        // A -> C (leaf fields only)
+        HazelcastObjectType b = new HazelcastObjectType("B");
+        HazelcastObjectType c = new HazelcastObjectType("C");
+        HazelcastObjectType a = new HazelcastObjectType("A");
+
+        b.addField(new Field("val", 0, leafType()));
+        c.addField(new Field("val", 0, leafType()));
+        a.addField(new Field("b", 0, b));
+        a.addField(new Field("c", 1, c));
+
+        HazelcastObjectType.finalizeFields(List.of(b, c, a));
+
+        assertFalse(QueryUtils.containsCycles(a, new HashSet<>()));
     }
 
     private static void assertTrueEventuallyFast(Runnable r) {

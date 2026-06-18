@@ -65,6 +65,7 @@ class PythonServiceContext {
     private static final String USER_INIT_SHELL_SCRIPT = "init.sh";
     private static final String USER_CLEANUP_SHELL_SCRIPT = "cleanup.sh";
     private static final String PYTHON_GRPC_SCRIPT = JET_TO_PYTHON_PREFIX + "grpc_server.py";
+    private static final int PYTHON_RUNTIME_COMPATIBILITY_CHECK_FAILED_EXIT_CODE = 86;
     private static final List<String> EXECUTABLE_SCRIPTS = asList(
             INIT_SHELL_SCRIPT, MAIN_SHELL_SCRIPT, CLEANUP_SHELL_SCRIPT);
     private static final List<String> USER_EXECUTABLE_SCRIPTS = asList(
@@ -94,17 +95,15 @@ class PythonServiceContext {
                         .start();
                 Thread stdoutLoggingThread = logStdOut(logger, initProcess, "python-init");
                 initProcess.waitFor();
+                stdoutLoggingThread.join();
                 if (initProcess.exitValue() != 0) {
                     try {
                         performCleanup();
                     } catch (Exception e) {
                         logger.warning("Cleanup failed with exception", e);
                     }
-                    throw new Exception(
-                            "Initialization script finished with non-zero exit code: " + initProcess.exitValue()
-                    );
+                    throw new Exception(initScriptFailureMessage(initProcess.exitValue()));
                 }
-                stdoutLoggingThread.join();
             }
             makeFilesReadOnly(runtimeBaseDir);
             context.logger().info(String.format("Initialization script took %,d ms",
@@ -112,6 +111,13 @@ class PythonServiceContext {
         } catch (Exception e) {
             throw new JetException("PythonService initialization failed: " + e, e);
         }
+    }
+
+    private static String initScriptFailureMessage(int exitValue) {
+        if (exitValue == PYTHON_RUNTIME_COMPATIBILITY_CHECK_FAILED_EXIT_CODE) {
+            return "Python runtime compatibility check failed - see python-init logs";
+        }
+        return "Initialization script finished with non-zero exit code: " + exitValue;
     }
 
     private void checkIfPythonIsAvailable() {
@@ -129,8 +135,11 @@ class PythonServiceContext {
                     throw new IllegalStateException("python3 is not available");
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IllegalStateException("python3 is not available", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("python3 version check was interrupted", e);
         }
     }
 

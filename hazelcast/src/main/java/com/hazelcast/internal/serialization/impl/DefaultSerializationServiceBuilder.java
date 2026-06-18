@@ -349,8 +349,17 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected ClassFilter createReflectiveCompactSerializerDefaultBlockList() {
         ClassFilter blockList = new ClassFilter();
-        blockList.addPrefixes("com.hazelcast.shaded");
-        blockList.addPackages("org.jctools.queues");
+        blockList.addPrefixes(
+                // https://hazelcast.atlassian.net/browse/CTT-1202
+                "com.hazelcast.instance.impl",
+                "com.hazelcast.shaded"
+        );
+        blockList.addPackages(
+                // https://hazelcast.atlassian.net/browse/CTT-1202
+                "com.hazelcast.client.impl.clientside",
+                "com.hazelcast.osgi.impl",
+                "org.jctools.queues"
+        );
         blockList.addClasses(
                 HeapData.class.getName(),
                 Packet.class.getName(),

@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import javax.annotation.Nullable;
 import java.util.Set;
@@ -76,8 +75,8 @@ public class StepRunner extends Offload
         this.offloadedOperations = getOffloadedOperations(mapOperation);
         this.partitionId = mapOperation.getPartitionId();
         NodeEngine nodeEngine = mapOperation.getNodeEngine();
-        this.operationExecutor = ((OperationServiceImpl) nodeEngine
-                .getOperationService()).getOperationExecutor();
+        this.operationExecutor = nodeEngine
+                .getOperationService().getOperationExecutor();
         this.maxRunNanos = mapOperation.getMapContainer()
                 .getMapServiceContext().getMaxSuccessiveOffloadedOpRunNanos();
         this.namespace = mapOperation.getMapContainer().getMapConfig().getUserCodeNamespace();

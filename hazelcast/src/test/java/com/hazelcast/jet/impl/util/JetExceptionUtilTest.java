@@ -31,9 +31,9 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.isOrHasCause;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ExceptionUtilTest extends JetTestSupport {
+public class JetExceptionUtilTest extends JetTestSupport {
 
     @Test
     public void when_throwableIsRuntimeException_then_peelReturnsOriginal() {

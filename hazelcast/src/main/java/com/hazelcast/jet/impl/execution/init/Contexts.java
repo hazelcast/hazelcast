@@ -33,7 +33,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.deployment.IMapInputStream;
 import com.hazelcast.jet.impl.metrics.MetricsContext;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.security.SecurityContext;
@@ -324,7 +324,7 @@ public final class Contexts {
                 unzip(inputStream, destPath);
                 return destPath.toFile();
             } catch (IOException e) {
-                throw ExceptionUtil.rethrow(e);
+                throw JetExceptionUtil.rethrow(e);
             }
         }
 
@@ -344,7 +344,7 @@ public final class Contexts {
                 }
                 extractFileToDisk(id, dirFile);
             } catch (IOException e) {
-                throw ExceptionUtil.rethrow(e);
+                throw JetExceptionUtil.rethrow(e);
             }
         }
 

@@ -92,11 +92,12 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      */
     @Override
     public boolean removeFirstOccurrence(DelayedEntry entry) {
-        DelayedEntry removedEntry = deque.pollFirst();
-        if (removedEntry == null) {
+        DelayedEntry firstEntry = deque.peekFirst();
+        if (firstEntry != entry) {
             return false;
         }
-        decreaseCountIndex(entry);
+        deque.pollFirst();
+        decreaseCountIndex(firstEntry);
         return true;
     }
 

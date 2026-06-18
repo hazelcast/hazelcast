@@ -27,18 +27,18 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -61,19 +61,18 @@ import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Testcontainers
+@SerialTest
+@SlowTest
+@ParallelJVMTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectSQSIT extends JetTestSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
-    @ClassRule
+    @Container
     public static LocalStackContainer container =
             new LocalStackContainer(LOCALSTACK_IMAGE)
             .withServices(LocalStackContainer.Service.SQS)
@@ -87,7 +86,7 @@ public class KafkaConnectSQSIT extends JetTestSupport {
 
     private String queueUrl;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpDocker() {
         assumeDockerEnabled();
     }
@@ -116,7 +115,7 @@ public class KafkaConnectSQSIT extends JetTestSupport {
         streamStage.writeTo(Sinks.logger());
 
         Sink<String> sink = AssertionSinks.assertCollectedEventually(60,
-                list -> assertEquals(ITEM_COUNT, list.size()));
+                list -> assertThat(list).hasSize(ITEM_COUNT));
         streamStage.writeTo(sink);
 
         JobConfig jobConfig = new JobConfig();
@@ -133,8 +132,9 @@ public class KafkaConnectSQSIT extends JetTestSupport {
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
             String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertThat(errorMsg)
+                .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                .contains(AssertionCompletedException.class.getName());
         }
     }
 

@@ -1094,21 +1094,9 @@ public class DynamicConfigYamlGenerator {
             return Collections.emptyMap();
         }
         Map<String, Object> classFilterMap = new LinkedHashMap<>();
-        List<String> packagesAsList = new ArrayList<>();
-        List<String> classesAsList = new ArrayList<>();
-        List<String> prefixesAsList = new ArrayList<>();
-        for (String p : classFilter.getPackages()) {
-            packagesAsList.add(p);
-        }
-        for (String c : classFilter.getClasses()) {
-            classesAsList.add(c);
-        }
-        for (String p : classFilter.getPrefixes()) {
-            prefixesAsList.add(p);
-        }
-        classFilterMap.put("package", packagesAsList);
-        classFilterMap.put("class", classesAsList);
-        classFilterMap.put("prefix", prefixesAsList);
+        classFilterMap.put("package", new ArrayList<>(classFilter.getPackages()));
+        classFilterMap.put("class", new ArrayList<>(classFilter.getClasses()));
+        classFilterMap.put("prefix", new ArrayList<>(classFilter.getPrefixes()));
         return classFilterMap;
     }
 

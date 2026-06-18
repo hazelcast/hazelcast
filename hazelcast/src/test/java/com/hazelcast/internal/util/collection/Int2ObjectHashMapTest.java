@@ -196,11 +196,7 @@ public class Int2ObjectHashMapTest {
             initialSet.add(value);
         }
 
-        final Collection<String> copyToSet = new HashSet<>();
-
-        for (final String s : intToObjectMap.values()) {
-            copyToSet.add(s);
-        }
+        final Collection<String> copyToSet = new HashSet<>(intToObjectMap.values());
 
         assertThat(copyToSet).isEqualTo(initialSet);
     }

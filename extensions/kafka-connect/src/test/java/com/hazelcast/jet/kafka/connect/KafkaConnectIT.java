@@ -35,19 +35,16 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,20 +69,16 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.kafka.connect.data.Values.convertToString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@Category({QuickTest.class})
-@RunWith(HazelcastSerialClassRunner.class)
+@SerialTest
+@QuickTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectIT extends SimpleTestInClusterSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIT.class);
@@ -103,7 +96,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         enableEventJournal(CONFIG);
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         initialize(1, CONFIG);
     }
@@ -136,7 +129,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                 .setLocalParallelism(1);
         streamStage
                 .writeTo(assertCollectedEventually(60,
-                        list -> assertEquals(ITEM_COUNT, list.size())));
+                        list -> assertThat(list).hasSize(ITEM_COUNT)));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
@@ -148,8 +141,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
             String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertThat(errorMsg)
+                .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                .contains(AssertionCompletedException.class.getName());
         }
     }
 
@@ -194,8 +188,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
             String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertThat(errorMsg)
+                .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                .contains(AssertionCompletedException.class.getName());
         }
     }
 
@@ -211,7 +206,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.map(randomMapName()));
         streamStage
                 .writeTo(assertCollectedEventually(60,
-                        list -> assertEquals(ITEM_COUNT, list.size())));
+                        list -> assertThat(list).hasSize(ITEM_COUNT)));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
@@ -224,8 +219,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                 fail("Job should have completed with an AssertionCompletedException, but completed normally");
             } catch (CompletionException e) {
                 String errorMsg = e.getCause().getMessage();
-                assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                        + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+                assertThat(errorMsg)
+                    .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                    .contains(AssertionCompletedException.class.getName());
                 assertTrueEventually(() -> assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
             }
         }

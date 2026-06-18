@@ -53,7 +53,7 @@ public class SqlServiceIsMissingIfJetIsNotEnabledTest extends HazelcastTestSuppo
         assertInstanceOf(MissingSqlService.class, sqlService);
 
         assertThrows(JetDisabledException.class, sqlService::ensureSqlIsEnabled);
-        // HZ-3438
+        // HZOLD-3438
         assertThrows(JetDisabledException.class, () -> sqlService.mappingDdl("abxy"));
     }
 

@@ -47,7 +47,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
+import static com.hazelcast.internal.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;

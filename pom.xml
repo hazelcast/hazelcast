@@ -50,6 +50,7 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
+        <module>hazelcast-vector</module>
     </modules>
 
     <properties>
@@ -70,9 +71,6 @@
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
-
-        <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
-        <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
 
         <!--
         Allow access to Operating system metrics:
@@ -216,13 +214,10 @@
                     <parallel>methods</parallel -->
                     <!-- JaCoCo will use the argLine set here. Test profiles override it. -->
                     <argLine>
+                        ${commonArgLine}
                         ${vmHeapSettings}
                         ${javaModuleArgs}
-                        -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.test.use.network=false
-                        -Dlog4j.skipJansi=true
-                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                        -Djunit.jupiter.execution.parallel.enabled=true
                         ${extraVmArgs}
                     </argLine>
                     <includes>
@@ -252,13 +247,10 @@
                 <configuration combine.self="override">
                     <trimStackTrace>false</trimStackTrace>
                     <argLine>
+                        ${commonArgLine}
                         ${vmHeapSettings}
                         ${javaModuleArgs}
-                        -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.test.use.network=true
-                        -Dlog4j.skipJansi=true
-                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                        -Djunit.jupiter.execution.parallel.enabled=true
                         ${extraVmArgs}
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -382,16 +374,11 @@
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
+                                        ${commonArgLine}
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
-                                        -ea
-                                        -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
-                                        -Dlog4j.configurationFile=log4j2.xml
-                                        -Dlog4j.skipJansi=true
-                                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                        -Djunit.jupiter.execution.parallel.enabled=true
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
@@ -429,14 +416,10 @@
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <argLine>
+                                        ${commonArgLine}
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
-                                        -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.test.use.network=false
-                                        -Dlog4j.configurationFile=log4j2.xml
-                                        -Dlog4j.skipJansi=true
-                                        -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                        -Djunit.jupiter.execution.parallel.enabled=true
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
@@ -467,14 +450,10 @@
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
-                                -Dlog4j.configurationFile=log4j2.xml
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -495,62 +474,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <!--
-            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
-            -->
-            <id>pr-builder</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>usercodedeployment-child-parent</id>
-                                <configuration>
-                                    <skipAssembly>false</skipAssembly>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>usercodedeployment-entry-processor-with-anonymous-and-inner</id>
-                                <configuration>
-                                    <skipAssembly>false</skipAssembly>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>usercodedeployment-incrementing-entry-processor</id>
-                                <configuration>
-                                    <skipAssembly>false</skipAssembly>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>usercodedeployment-incrementing-entry-processor-conflicting</id>
-                                <configuration>
-                                    <skipAssembly>false</skipAssembly>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>usercodedeployment-shaded-classes</id>
-                                <configuration>
-                                    <skipAssembly>false</skipAssembly>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <properties>
-                <!--
-                    To improve PR builder runtime, skip *some* assembly-plugins that are not required for build validation
-                    https://github.com/hazelcast/hazelcast/pull/18521
-                -->
-                <assembly.skipAssembly>true</assembly.skipAssembly>
-                <!-- Set the classifier to empty in this profile to use regular jar-->
-                <fat.dependency.classifier/>
-                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
-            </properties>
         </profile>
 
         <profile>
@@ -590,13 +513,10 @@
                             <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -628,15 +548,12 @@
             </modules>
             <properties>
                 <argLine>
+                    ${commonArgLine}
                     ${vmHeapSettings}
                     ${javaModuleArgs}
-                    -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.test.use.network=false
                     -Dhazelcast.operation.call.timeout.millis=120000
                     -Dhazelcast.graceful.shutdown.max.wait=240
-                    -Dlog4j.skipJansi=true
-                    -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                    -Djunit.jupiter.execution.parallel.enabled=true
                     ${extraVmArgs}
                 </argLine>
             </properties>
@@ -695,13 +612,10 @@
                         <configuration combine.self="override">
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=true
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <excludedGroups>
@@ -805,13 +719,10 @@
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <groups>
@@ -838,13 +749,10 @@
                         <configuration combine.self="override">
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=true
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -887,13 +795,10 @@
                             <trimStackTrace>false</trimStackTrace>
                             <parallel>none</parallel>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -918,13 +823,10 @@
                         <configuration combine.self="override">
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=true
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -983,14 +885,11 @@
                             <trimStackTrace>false</trimStackTrace>
                             <runOrder>failedfirst</runOrder>
                             <argLine>
+                                ${commonArgLine}
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
-                                -Dlog4j.skipJansi=true
-                                -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
-                                -Djunit.jupiter.execution.parallel.enabled=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -1076,6 +975,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.jet.RestartableException;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.version.Version;
 
@@ -50,7 +50,7 @@ public final class CoreQueryUtils {
         } else {
             Throwable copy = e;
             while (copy != null) {
-                if (ExceptionUtil.isTopologyException(copy)) {
+                if (JetExceptionUtil.isTopologyException(copy)) {
                     return new HazelcastSqlException(localMemberId, SqlErrorCode.TOPOLOGY_CHANGE, e.getMessage(), e, null);
                 } else if (copy instanceof RestartableException) {
                     return new HazelcastSqlException(localMemberId, SqlErrorCode.RESTARTABLE_ERROR, e.getMessage(), e, null);

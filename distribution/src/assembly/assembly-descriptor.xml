@@ -26,36 +26,7 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>com.hazelcast:hazelcast</include>
-                <include>com.hazelcast:hazelcast-sql</include>
-                <include>com.hazelcast:hazelcast-wm</include>
-                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
-                <include>javax.cache:cache-api</include>
-                <include>org.apache.logging.log4j:*</include>
-                <include>org.slf4j:*</include>
-                <include>info.picocli:picocli</include>
-                <include>org.jline:*</include>
-                <include>org.fusesource.jansi:jansi</include>
-                <include>com.hazelcast.jet:hazelcast-jet-avro</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-postgres</include>
-                <include>com.hazelcast.jet:hazelcast-jet-csv</include>
-                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>
-                <include>com.hazelcast.jet:hazelcast-jet-grpc</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-azure</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-gcs</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>
-                <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kafka-connect</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
-                <include>com.hazelcast.jet:hazelcast-jet-mongodb</include>
-                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
-                <include>com.hazelcast.jet:hazelcast-jet-python</include>
-                <include>com.hazelcast.jet:hazelcast-jet-s3</include>
-                <include>com.hazelcast:hazelcast-distribution</include>
-                <include>com.hazelcast:hazelcast-mapstore</include>
+                <include>*</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>

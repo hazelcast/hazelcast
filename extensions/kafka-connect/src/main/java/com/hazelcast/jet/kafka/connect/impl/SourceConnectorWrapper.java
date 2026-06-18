@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 

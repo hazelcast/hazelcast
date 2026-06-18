@@ -211,6 +211,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readString();
         sql = in.readString();
-        implementation = in.readObject();
+        implementation = ConfigDeserializationUtil.readObject(in, getClass(), "implementation");
     }
 }

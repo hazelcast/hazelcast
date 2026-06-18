@@ -29,9 +29,9 @@ import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.isTechnicalCancellationException;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.isTopologyException;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;

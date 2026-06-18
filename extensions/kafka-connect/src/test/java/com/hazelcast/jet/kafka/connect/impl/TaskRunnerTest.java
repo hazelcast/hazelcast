@@ -17,16 +17,13 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -35,21 +32,20 @@ import java.util.Map;
 
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
+@ParallelJVMTest
+@SerialTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class TaskRunnerTest {
 
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     private static final int CONFIGURED_ITEMS_SIZE = 3;
     private final DummySourceConnector connector = new DummySourceConnector();
     private final TaskRunner taskRunner = new TaskRunner("some-task-name", new State(), DummyTask::new);
 
 
-    @Before
+    @BeforeEach
     public void setUp() {
         connector.start(minimalProperties());
         taskRunner.updateTaskConfig(dummyTaskConfig());

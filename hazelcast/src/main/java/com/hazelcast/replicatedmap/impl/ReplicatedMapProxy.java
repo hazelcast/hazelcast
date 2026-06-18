@@ -19,7 +19,7 @@ package com.hazelcast.replicatedmap.impl;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.ResultSet;
@@ -98,7 +98,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private final ReplicatedMapService service;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final SerializationService serializationService;
-    private final InternalPartitionServiceImpl partitionService;
+    private final IPartitionService partitionService;
     private final ReplicatedMapConfig config;
 
     ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service, ReplicatedMapConfig config) {
@@ -108,7 +108,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         this.service = service;
         this.eventPublishingService = service.getEventPublishingService();
         this.serializationService = nodeEngine.getSerializationService();
-        this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+        this.partitionService = nodeEngine.getPartitionService();
         this.config = config;
     }
 

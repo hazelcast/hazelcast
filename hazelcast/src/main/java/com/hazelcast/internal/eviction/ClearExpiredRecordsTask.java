@@ -24,7 +24,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -61,7 +61,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     private final int cleanupOperationCount;
 
     private final Address thisAddress;
-    private final OperationServiceImpl operationService;
+    private final OperationService operationService;
     private final AtomicBoolean singleRunPermit = new AtomicBoolean();
     private final AtomicInteger lostPartitionCounter = new AtomicInteger();
     private final AtomicInteger nextExpiryQueueToScanIndex = new AtomicInteger();
@@ -79,7 +79,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                                       NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.containers = containers;
-        this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        this.operationService = nodeEngine.getOperationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.thisAddress = nodeEngine.getThisAddress();

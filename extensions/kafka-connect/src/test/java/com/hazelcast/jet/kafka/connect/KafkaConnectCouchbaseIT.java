@@ -32,17 +32,14 @@ import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -60,14 +57,13 @@ import java.util.Properties;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@SerialTest
+@SlowTest
+@ParallelJVMTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectCouchbaseIT extends JetTestSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectCouchbaseIT.class);
 
     private static final String BUCKET_NAME = "mybucket";
@@ -82,13 +78,13 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
     private static final String COUCHBASE_LOGS_IN_CONTAINER = "/opt/couchbase/var/lib/couchbase/logs";
     private static final String COUCHBASE_LOGS_FILE = "couchbase-logs.tar.gz";
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpDocker() {
         assumeDockerEnabled();
         container.start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterAll() throws Exception {
         if (container != null) {
             container.execInContainer("tar", "-czvf", "/tmp/" + COUCHBASE_LOGS_FILE, COUCHBASE_LOGS_IN_CONTAINER);
@@ -99,7 +95,7 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
     }
 
 
-    @After
+    @AfterEach
     public void clearDb() {
         try (Cluster cluster = connectToCluster()) {
             Bucket bucket = cluster.bucket(BUCKET_NAME);

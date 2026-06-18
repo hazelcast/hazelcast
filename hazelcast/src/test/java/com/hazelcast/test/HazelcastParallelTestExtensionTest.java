@@ -34,6 +34,7 @@ class HazelcastParallelTestExtensionTest {
     @SetSystemProperty(key = "hazelcast.test.enableExtensionTest", value = "true")
     void executesTestInParallel() {
         assumeThat(ForkJoinPool.getCommonPoolParallelism()).isGreaterThanOrEqualTo(2);
+        BaseClassUnderTest.setProperties(ClassWithParallelTest.class);
         EngineTestKit.engine("junit-jupiter")//
                      .selectors(selectClass(ClassWithParallelTest.class))
                      .configurationParameter("junit.jupiter.execution.parallel.enabled", "true")
@@ -44,6 +45,7 @@ class HazelcastParallelTestExtensionTest {
 
         System.out.println("Test to thread map: " + ClassWithParallelTest.testToThreadName);
 
+        BaseClassUnderTest.assertPropertiesRestored(ClassWithParallelTest.class);
         assertThat(ClassWithParallelTest.testToThreadName).hasSize(5);
         // it was not all in the same thread
         assertThat(new HashSet<>(ClassWithParallelTest.testToThreadName.values())).hasSizeGreaterThan(2);

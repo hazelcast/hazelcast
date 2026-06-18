@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.ICache;
 
 import javax.cache.event.CacheEntryEvent;
@@ -35,18 +36,22 @@ import javax.cache.event.EventType;
  * @see javax.cache.event.CacheEntryRemovedListener#onRemoved(Iterable)
  * @see javax.cache.event.CacheEntryExpiredListener#onExpired(Iterable)
  */
-public class CacheEntryEventImpl<K, V>
-        extends CacheEntryEvent<K, V> {
+public class CacheEntryEventImpl<K, V> extends CacheEntryEvent<K, V> {
 
     private final K key;
     private final V newValue;
     private final V oldValue;
+    private final CacheEventType cacheEventType;
 
-    public CacheEntryEventImpl(ICache<K, V> source, EventType eventType, K key, V newValue, V oldValue) {
+    public CacheEntryEventImpl(ICache<K, V> source,
+                               EventType eventType,
+                               CacheEventType cacheEventType,
+                               K key, V newValue, V oldValue) {
         super(source, eventType);
         this.key = key;
         this.newValue = newValue;
         this.oldValue = oldValue;
+        this.cacheEventType = cacheEventType;
     }
 
     @Override
@@ -67,6 +72,13 @@ public class CacheEntryEventImpl<K, V>
     @Override
     public V getValue() {
         return newValue;
+    }
+
+    /**
+     * @since 5.8
+     */
+    public CacheEventType getCacheEventType() {
+        return cacheEventType;
     }
 
     @Override

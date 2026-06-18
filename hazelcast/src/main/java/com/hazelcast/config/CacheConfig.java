@@ -736,9 +736,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
     }
 
     protected void readFactories(ObjectDataInput in) throws IOException {
-        setCacheLoaderFactory(in.readObject());
-        setCacheWriterFactory(in.readObject());
-        setExpiryPolicyFactory(in.readObject());
+        setCacheLoaderFactory(ConfigDeserializationUtil.readObject(in, getClass(), "cacheLoaderFactory"));
+        setCacheWriterFactory(ConfigDeserializationUtil.readObject(in, getClass(), "cacheWriterFactory"));
+        setExpiryPolicyFactory(ConfigDeserializationUtil.readObject(in, getClass(), "expiryPolicyFactory"));
     }
 
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {

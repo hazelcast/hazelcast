@@ -62,7 +62,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;

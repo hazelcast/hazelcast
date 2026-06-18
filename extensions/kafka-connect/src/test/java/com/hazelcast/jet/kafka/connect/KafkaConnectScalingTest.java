@@ -23,12 +23,10 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.hazelcast.test.SerialTest;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -38,18 +36,15 @@ import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@SerialTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectScalingTest extends SimpleTestInClusterSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -89,8 +84,9 @@ public class KafkaConnectScalingTest extends SimpleTestInClusterSupport {
                 fail("Job should have completed with an AssertionCompletedException, but completed normally");
             } catch (CompletionException e) {
                 String errorMsg = e.getCause().getMessage();
-                assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                        + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+                assertThat(errorMsg)
+                    .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                    .contains(AssertionCompletedException.class.getName());
 
                 assertTrueEventually(() -> assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
             }

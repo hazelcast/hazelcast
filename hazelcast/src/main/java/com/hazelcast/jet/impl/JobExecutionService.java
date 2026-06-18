@@ -47,7 +47,6 @@ import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -79,8 +78,8 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.isOrHasCause;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
@@ -591,7 +590,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       )
                       .thenCompose(stage -> stage)
                       .whenComplete((metrics, e) -> {
-                          if (ExceptionUtil.isOrHasCause(e, CancellationException.class)) {
+                          if (com.hazelcast.internal.util.ExceptionUtil.isOrHasCause(e, CancellationException.class)) {
                               logger.fine("Execution of %s was cancelled", execCtx.jobNameAndExecutionId());
                           } else if (e != null) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId()

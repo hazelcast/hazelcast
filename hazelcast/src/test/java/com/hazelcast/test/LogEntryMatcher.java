@@ -71,7 +71,7 @@ public final class LogEntryMatcher implements AutoCloseable {
     }
 
     private static String currentTestName() {
-        String testName = AbstractHazelcastClassRunner.getTestMethodName();
+        String testName = TestNameHolder.getTestMethodName();
         if (testName == null) {
             throw new IllegalStateException("LogEntryMatcher requires the current Hazelcast runner test name context");
         }

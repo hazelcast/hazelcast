@@ -28,17 +28,14 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
@@ -67,17 +64,14 @@ import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class})
+@SerialTest
+@SlowTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectScalingIT extends JetTestSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
-
     public static final String USERNAME = "mysql";
     public static final String PASSWORD = "mysql";
     private static final int TABLE_COUNT = 8;
@@ -91,13 +85,13 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     private static final int ITEM_COUNT = 1_000;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpDocker() {
         assumeDockerEnabled();
     }
 
     @SuppressWarnings("resource")
-    @Before
+    @BeforeEach
     public void setUpContainer() {
         mysql = new MySQLContainer<>(TEST_MYSQL_IMAGE)
                 .withUsername(USERNAME).withPassword(PASSWORD)
@@ -109,7 +103,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         mysql.start();
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (mysql != null) {
             mysql.stop();
@@ -343,7 +337,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         }
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testDynamicReconfiguration() throws Exception {
         final int localParallelism = 2;

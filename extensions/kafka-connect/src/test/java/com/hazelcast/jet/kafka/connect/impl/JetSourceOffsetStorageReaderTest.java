@@ -16,12 +16,10 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.ParallelTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -29,8 +27,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
+@ParallelJVMTest
+@ParallelTest
 public class JetSourceOffsetStorageReaderTest {
     @Test
     public void should_return_null_offset_for_non_existing_partition() {

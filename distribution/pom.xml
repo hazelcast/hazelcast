@@ -130,6 +130,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.version}</version>
+            <!-- 
+                Should be a shaded JAR with no dependencies
+                But when built as part of a multi-module build, may use original, un-shaded dependencies
+                As such, explicitly ignore instead
+                https://github.com/apache/maven-shade-plugin/issues/278
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -141,6 +153,23 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
+            <version>${project.version}</version>
+            <!-- 
+                Should be a shaded JAR with no dependencies
+                But when built as part of a multi-module build, may use original, un-shaded dependencies
+                As such, explicitly ignore instead
+                https://github.com/apache/maven-shade-plugin/issues/278
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-vector</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- HazelcastCommandLine dependencies-->
@@ -196,6 +225,13 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
             <version>5.1</version>
+            <!-- Workaround https://github.com/hazelcast/hazelcast-wm/pull/303 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Jet extensions -->
@@ -204,84 +240,168 @@
             <artifactId>hazelcast-jet-avro</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-debezium</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-mysql</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-postgres</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-csv</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-grpc</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-azure</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-gcs</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-s3</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-hadoop-all</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-kafka</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-kinesis</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-protobuf</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
@@ -300,6 +420,12 @@
             <artifactId>hazelcast-jet-s3</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -311,12 +437,24 @@
             <artifactId>hazelcast-jet-mongodb</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-kafka-connect</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
