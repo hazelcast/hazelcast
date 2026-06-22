@@ -17,6 +17,7 @@
 package com.hazelcast.it;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
@@ -96,9 +97,15 @@ public class HzStartIT extends HazelcastTestSupport {
 
     @Test
     public void shouldStartHazelcastWithHzStart() {
-        assertTrueEventually(() -> assertThat(client.getCluster().getMembers()).hasSize(1));
-        IMap<String, Integer> map = client.getMap("map");
-        map.put("key", 42);
-        assertThat(map.get("key")).isEqualTo(42);
+        assertTrueEventually(() -> {
+            try {
+                assertThat(client.getCluster().getMembers()).hasSize(1);
+                IMap<String, Integer> map = client.getMap("map");
+                map.put("key", 42);
+                assertThat(map.get("key")).isEqualTo(42);
+            } catch (HazelcastClientOfflineException e) {
+                throw new AssertionError(e);
+            }
+        });
     }
 }
