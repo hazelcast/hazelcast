@@ -10,9 +10,10 @@ jobs:
    synchronize-pr-reviewers:
       runs-on: ubicloud-standard-2
       steps:
-         - uses: actions/checkout@v6
+         - uses: actions/checkout@v7
            with:
               sparse-checkout: .github
+              allow-unsafe-pr-checkout: true
          - name: Copy reviewers to other PR
            run: |
               SOURCE_REPO="${GITHUB_REPOSITORY}"

@@ -16,7 +16,9 @@ jobs:
   copybara-os-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+        with:
+          allow-unsafe-pr-checkout: true
       - name: Reopen referenced PRs
         if: github.event.action == 'reopened'
         run: |
