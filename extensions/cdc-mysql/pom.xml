@@ -68,6 +68,13 @@
                             <exclude>io.debezium:debezium-core</exclude>
                         </excludes>
                     </artifactSet>
+                    <relocations>
+                        <!-- Relocation is done to avoid issues with deserializing via ATNDeserializer -->
+                        <relocation>
+                            <pattern>org.antlr</pattern>
+                            <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
+                        </relocation>
+                    </relocations>
                 </configuration>
             </plugin>
             <plugin>
