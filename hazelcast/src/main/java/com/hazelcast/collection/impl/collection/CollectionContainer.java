@@ -215,8 +215,11 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();
+            TxCollectionItem existing = txMap.get(item.getItemId());
+            if (existing != null && existing.isRemoveOperation()) {
+                continue;
+            }
             if (value.equals(item.getValue())) {
-                iterator.remove();
                 txMap.put(item.getItemId(), new TxCollectionItem(item)
                         .setTransactionId(transactionId)
                         .setRemoveOperation(true));
@@ -230,7 +233,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public void reserveRemoveBackup(long itemId, UUID transactionId) {
-        final CollectionItem item = getMap().remove(itemId);
+        final CollectionItem item = getMap().get(itemId);
         if (item == null) {
             throw new TransactionException("Transaction reservation failed on backup member. "
                     + "Reservation item ID: " + itemId);
@@ -260,19 +263,14 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public void rollbackRemove(long itemId) {
-        final TxCollectionItem txItem = txMap.remove(itemId);
-        if (txItem == null) {
+        if (txMap.remove(itemId) == null) {
             logger.warning("Transaction log cannot be found for rolling back 'remove()' operation."
                     + " Missing log item ID: " + itemId);
-        } else {
-            CollectionItem item = new CollectionItem(itemId, txItem.value);
-            getCollection().add(item);
         }
     }
 
     public void rollbackRemoveBackup(long itemId) {
-        final TxCollectionItem item = txMap.remove(itemId);
-        if (item == null) {
+        if (txMap.remove(itemId) == null) {
             logger.warning("Transaction log cannot be found for rolling back 'remove()' operation on backup member."
                     + " Missing log item ID: " + itemId);
         }
@@ -295,12 +293,21 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public CollectionItem commitRemove(long itemId) {
-        final CollectionItem item = txMap.remove(itemId);
-        if (item == null) {
+        if (txMap.remove(itemId) == null) {
             logger.warning("Transaction log cannot be found for committing 'remove()' operation."
                     + " Missing log item ID: " + itemId);
         }
-        return item;
+        final Iterator<CollectionItem> iterator = getCollection().iterator();
+        while (iterator.hasNext()) {
+            CollectionItem item = iterator.next();
+            if (item.getItemId() == itemId) {
+                iterator.remove();
+                return item;
+            }
+        }
+        logger.warning("Item not found in collection for committing 'remove()' operation."
+                + " Missing item ID: " + itemId);
+        return null;
     }
 
     public void commitRemoveBackup(long itemId) {
@@ -308,6 +315,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
             logger.warning("Transaction log cannot be found for committing 'remove()' operation on backup member."
                     + " Missing log item ID:" + itemId);
         }
+        getMap().remove(itemId);
     }
 
     public void rollbackTransaction(UUID transactionId) {
@@ -317,10 +325,6 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
             final TxCollectionItem txItem = iterator.next();
             if (transactionId.equals(txItem.getTransactionId())) {
                 iterator.remove();
-                if (txItem.isRemoveOperation()) {
-                    CollectionItem item = new CollectionItem(txItem.itemId, txItem.value);
-                    getCollection().add(item);
-                }
             }
         }
     }

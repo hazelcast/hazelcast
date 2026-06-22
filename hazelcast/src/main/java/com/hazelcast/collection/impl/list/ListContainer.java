@@ -19,7 +19,6 @@ package com.hazelcast.collection.impl.list;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
-import com.hazelcast.collection.impl.collection.TxCollectionItem;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -52,30 +51,6 @@ public class ListContainer extends CollectionContainer {
             config = nodeEngine.getConfig().findListConfig(name);
         }
         return config;
-    }
-
-    @Override
-    public void rollbackRemove(long itemId) {
-        TxCollectionItem txItem = txMap.remove(itemId);
-        if (txItem == null) {
-            logger.warning("Transaction log cannot be found for rolling back 'remove()' operation."
-                    + " Missing log item ID: " + itemId);
-            return;
-        }
-        CollectionItem item = new CollectionItem(itemId, txItem.getValue());
-        addTxItemOrdered(item);
-    }
-
-    private void addTxItemOrdered(CollectionItem item) {
-        ListIterator<CollectionItem> iterator = getCollection().listIterator();
-        while (iterator.hasNext()) {
-            CollectionItem collectionItem = iterator.next();
-            if (item.getItemId() < collectionItem.getItemId()) {
-                iterator.previous();
-                break;
-            }
-        }
-        iterator.add(item);
     }
 
     public CollectionItem add(int index, Data value) {

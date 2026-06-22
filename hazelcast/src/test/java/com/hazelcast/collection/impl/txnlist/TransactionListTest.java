@@ -198,7 +198,6 @@ public class TransactionListTest extends HazelcastTestSupport {
             assertEquals(i, l.get(i));
         }
     }
-
     @Test
     public void transactionShouldBeRolledBack_whenInitiatorTerminatesBeforeCommit() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -227,6 +226,171 @@ public class TransactionListTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertEquals(1, list2.size()));
 
         assertTrueAllTheTime(() -> assertEquals(1, list2.size()), 3);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tests for issue #26472: TransactionalList.remove() must not affect the
+    // backing IList before commitTransaction() is called.
+    // All tests below are EXPECTED TO FAIL until the fix is applied.
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testRemove_sizeOfBackingListIsNotChangedBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        context.getList(name).remove(item);
+
+        assertEquals("backing list size must be 1 before commit", 1, list.size());
+
+        context.commitTransaction();
+        assertEquals("backing list size must be 0 after commit", 0, list.size());
+    }
+
+    @Test
+    public void testRemove_sizeOfBackingListIsRestoredAfterRollback() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        context.getList(name).remove(item);
+        context.rollbackTransaction();
+
+        assertEquals("backing list size must be 1 after rollback", 1, list.size());
+    }
+
+    @Test
+    public void testRemove_containsOnBackingListReturnsTrueBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        context.getList(name).remove(item);
+
+        assertTrue("backing list must still contain item before commit", list.contains(item));
+
+        context.commitTransaction();
+        assertFalse("backing list must not contain item after commit", list.contains(item));
+    }
+
+    @Test
+    public void testRemove_getByIndexOnBackingListReturnsItemBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        context.getList(name).remove(item);
+
+        assertEquals("backing list must still return item at index 0 before commit", item, list.get(0));
+
+        context.commitTransaction();
+        assertEquals("backing list must be empty after commit", 0, list.size());
+    }
+
+    @Test
+    public void testRemove_indexOfOnBackingListFindsItemBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        context.getList(name).remove(item);
+
+        assertEquals("backing list must find item at index 0 before commit", 0, list.indexOf(item));
+
+        context.commitTransaction();
+        assertEquals("backing list must not find item after commit", -1, list.indexOf(item));
+    }
+
+    @Test
+    public void testRemove_subListOnBackingListIncludesItemBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add("A");
+        list.add("B");
+        list.add("C");
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        context.getList(name).remove("B");
+
+        assertEquals("backing list must still have 3 items before commit", 3, list.size());
+        assertEquals("subList before commit must contain all 3 items", 3, list.subList(0, 3).size());
+        assertTrue("subList before commit must contain 'B'", list.subList(0, 3).contains("B"));
+
+        context.commitTransaction();
+        assertEquals("backing list must have 2 items after commit", 2, list.size());
+        assertFalse("subList after commit must not contain 'B'", list.subList(0, 2).contains("B"));
+    }
+
+    @Test
+    public void testRemove_twoPhaseTransaction_sizeNotChangedBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+
+        TransactionOptions options = new TransactionOptions()
+                .setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+        TransactionContext context = instance.newTransactionContext(options);
+        context.beginTransaction();
+        context.getList(name).remove(item);
+
+        assertEquals("backing list size must be 1 before commit (TWO_PHASE)", 1, list.size());
+
+        context.commitTransaction();
+        assertEquals("backing list size must be 0 after commit (TWO_PHASE)", 0, list.size());
+    }
+
+    // Reproduces the exact scenario from https://github.com/hazelcast/hazelcast/issues/26472:
+    // add + remove in the same TWO_PHASE transaction must not affect the backing IList before commit.
+    @Test
+    public void testAddAndRemove_backingListIsNotAffectedBeforeCommit() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        IList<String> list = instance.getList(name);
+        list.add("initial");
+
+        TransactionOptions options = new TransactionOptions()
+                .setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+        TransactionContext context = instance.newTransactionContext(options);
+        context.beginTransaction();
+
+        TransactionalList<String> transactionalList = context.getList(name);
+        transactionalList.add("transactionalAdd");
+        transactionalList.remove("initial");
+
+        assertEquals("backing list size must be 1 before commit", 1, list.size());
+        assertTrue("backing list must still contain 'initial' before commit", list.contains("initial"));
+        assertFalse("backing list must not contain 'transactionalAdd' before commit", list.contains("transactionalAdd"));
+
+        context.commitTransaction();
+
+        assertEquals("backing list size must be 1 after commit", 1, list.size());
+        assertFalse("backing list must not contain 'initial' after commit", list.contains("initial"));
+        assertTrue("backing list must contain 'transactionalAdd' after commit", list.contains("transactionalAdd"));
     }
 
 }
