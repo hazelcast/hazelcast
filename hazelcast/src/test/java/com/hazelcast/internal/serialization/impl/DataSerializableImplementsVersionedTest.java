@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.DataReader;
 import com.hazelcast.internal.nio.DataWriter;
 import com.hazelcast.internal.serialization.InternalSerializationService;

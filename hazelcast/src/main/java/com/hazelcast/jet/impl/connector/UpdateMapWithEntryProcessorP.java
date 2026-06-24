@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Outbox;

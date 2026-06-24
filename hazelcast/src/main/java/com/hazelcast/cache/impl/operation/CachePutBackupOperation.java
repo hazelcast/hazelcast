@@ -29,7 +29,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import java.io.IOException;
 
 import static com.hazelcast.internal.namespace.NamespaceUtil.callWithNamespace;
-import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext;
+import static com.hazelcast.spi.impl.NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext;
 
 /**
  * Backup operation for the operation of adding cache entries into record stores.

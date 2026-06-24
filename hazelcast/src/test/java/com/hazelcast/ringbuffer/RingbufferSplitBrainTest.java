@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
+import static com.hazelcast.spi.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
 import static com.hazelcast.ringbuffer.RingbufferTestUtil.getBackupRingbuffer;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;

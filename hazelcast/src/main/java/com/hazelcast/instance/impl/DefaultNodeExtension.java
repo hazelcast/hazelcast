@@ -84,7 +84,7 @@ import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.impl.NoOpUserCodeNamespaceService;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -722,13 +722,13 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onThreadStart(Thread thread) {
-        // Setup NodeEngine context for User Code Deployment Namespacing in operations
+        // Setup NodeEngine context for operations
         NodeEngineThreadLocalContext.declareNodeEngineReference(node.getNodeEngine());
     }
 
     @Override
     public void onThreadStop(Thread thread) {
-        // Destroy NodeEngine context from User Code Deployment Namespacing
+        // Destroy NodeEngine context
         NodeEngineThreadLocalContext.destroyNodeEngineReference();
     }
 

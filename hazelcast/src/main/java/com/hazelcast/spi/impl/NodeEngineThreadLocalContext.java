@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.namespace.impl;
-
-import com.hazelcast.spi.impl.NodeEngine;
+package com.hazelcast.spi.impl;
 
 /**
- * A thread-local context that maintains a {@link NodeEngine} instance to be retrieved in
- * areas of execution where Namespace awareness is required, which needs a {@link NodeEngine}
- * instance to access the {@link NodeEngine#getNamespaceService()} method, but there is
- * no local variable available.
+ * A thread-local context that provides access to a {@link NodeEngine}
+ * instance when no local variable is available in the current execution context.
  * <p>
  * The use of this thread-local context allows us to reduce code complexity that would otherwise
  * be introduced by passing {@link NodeEngine} references through long function chains.
+ * <p>
+ * Not all threads have a {@link NodeEngine} bound to this context. It is
+ * currently safe to use in operation threads, where the context is explicitly set.
  */
 public final class NodeEngineThreadLocalContext {
 
@@ -35,8 +34,7 @@ public final class NodeEngineThreadLocalContext {
     }
 
     /**
-     * Sets the provided {@link NodeEngine} reference as this thread's {@link ThreadLocal}
-     * instance for use in Namespace awareness.
+     * Sets the provided {@link NodeEngine} reference as this thread's {@link ThreadLocal} instance.
      *
      * @param nodeEngine the {@link NodeEngine} reference to use.
      */
@@ -62,7 +60,7 @@ public final class NodeEngineThreadLocalContext {
     public static NodeEngine getNodeEngineThreadLocalContext() {
         NodeEngine tlContext = NE_THREAD_LOCAL.get();
         if (tlContext == null) {
-            throw new IllegalStateException("NodeEngine context is not available for Namespaces! Current thread: "
+            throw new IllegalStateException("NodeEngine context is not available for the current thread! Current thread: "
                     + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ")");
         } else {
             return tlContext;

@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;

@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
