@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.config.vector.Metric.COSINE;
 import static com.hazelcast.vector.impl.VectorTestUtils.toVectorFloat;
@@ -38,7 +39,8 @@ class VectorIndexTest extends AbstractVectorIndexTest {
                 COSINE,
                 100,
                 10,
-                2
+                2,
+                ForkJoinPool.commonPool()
         );
     }
 

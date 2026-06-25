@@ -26,6 +26,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.vector.Metric.EUCLIDEAN;
@@ -67,7 +68,8 @@ public class UndeterminedIndexOperationTest {
                 EUCLIDEAN,
                 16,
                 100,
-                dimension
+                dimension,
+                ForkJoinPool.commonPool()
         );
     }
 

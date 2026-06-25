@@ -24,8 +24,10 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.vector.impl.VectorCollectionService;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.vector.impl.VectorCollectionSerializerHook;
+import com.hazelcast.vector.impl.VectorCollectionService;
+import com.hazelcast.vector.impl.service.VectorCollectionServiceImpl;
 import io.github.jbellis.jvector.disk.RandomAccessReader;
 
 import java.io.IOException;
@@ -61,7 +63,16 @@ public class ReplicationStateHolder implements IdentifiedDataSerializable {
             private void readData(ObjectDataInput in) throws IOException {
                 // This uses VectorIndexFactory to simplify creation, but the index is not usable
                 // until entire migration is executed. It contains only JVector parts and vectorSupplier.
-                index = VectorIndexFactory.create(indexConfig);
+                var nodeEngine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContextOrNull();
+                if (nodeEngine == null) {
+                    throw new IllegalStateException(
+                        "NodeEngine is not available for the current thread: " + Thread.currentThread().getName()
+                    );
+                }
+
+                VectorCollectionServiceImpl vectorServiceInternal = nodeEngine.getService(VectorCollectionService.SERVICE_NAME);
+                index = vectorServiceInternal.getVectorIndexFactory().create(indexConfig);
+
                 vectorsSupplier = index.vectorsSupplier;
 
                 idGeneratorState = in.readInt();

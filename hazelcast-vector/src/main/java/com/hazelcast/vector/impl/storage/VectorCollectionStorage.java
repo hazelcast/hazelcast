@@ -162,7 +162,8 @@ public class VectorCollectionStorage implements Measurable {
             String name,
             int partitionId,
             VectorCollectionConfig config,
-            VectorCollectionObjectProvider memoryObjectProvider
+            VectorCollectionObjectProvider memoryObjectProvider,
+            VectorIndexFactory vectorIndexFactory
     ) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(VectorCollectionStorage.class);
@@ -171,7 +172,7 @@ public class VectorCollectionStorage implements Measurable {
         this.partitionId = partitionId;
         this.recordStore = new StorageImpl<>(InMemoryFormat.BINARY, ExpirySystem.NULL, nodeEngine.getSerializationService());
         this.binaryMetadataFormat = true;
-        this.vectorIndexes = new VectorIndexHolder(config.getVectorIndexConfigs());
+        this.vectorIndexes = new VectorIndexHolder(config.getVectorIndexConfigs(), vectorIndexFactory);
         this.vectorConverter = memoryObjectProvider.createVectorFloatConverter();
     }
 
@@ -735,12 +736,14 @@ public class VectorCollectionStorage implements Measurable {
         private final int size;
         private final String singleIndexName;
         private final List<VectorIndexConfig> indexConfigs;
+        private final VectorIndexFactory vectorIndexFactory;
 
-        private VectorIndexHolder(List<VectorIndexConfig> indexConfigs) {
+        private VectorIndexHolder(List<VectorIndexConfig> indexConfigs, VectorIndexFactory vectorIndexFactory) {
             this.indexConfigs = indexConfigs;
             this.size = indexConfigs.size();
             this.singleIndexName = size == 1 ? indexConfigs.get(0).getName() : null;
             this.vectorIndexMap = new HashMap<>();
+            this.vectorIndexFactory = vectorIndexFactory;
             initIndexMap(indexConfigs);
         }
 
@@ -748,7 +751,7 @@ public class VectorCollectionStorage implements Measurable {
             for (var indexConfig : indexConfigs) {
                 vectorIndexMap.put(
                         indexConfig.getName(),
-                        VectorIndexFactory.create(indexConfig)
+                        vectorIndexFactory.create(indexConfig)
                 );
             }
         }

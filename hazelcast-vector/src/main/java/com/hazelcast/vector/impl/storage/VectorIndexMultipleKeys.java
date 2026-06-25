@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
@@ -80,9 +81,10 @@ public class VectorIndexMultipleKeys extends AbstractVectorIndex {
             Metric metric,
             int maxDegree,
             int efConstruction,
-            int dimensions
+            int dimensions,
+            ForkJoinPool parallelExecutor
     ) {
-        super(indexName, metric, maxDegree, efConstruction, dimensions);
+        super(indexName, metric, maxDegree, efConstruction, dimensions, parallelExecutor);
         nodeIdToKeyMap = new NonBlockingHashMapLong<>(1024);
         // `keyToNodeIdMap` is used only on partition thread
         keyToNodeIdMap = new HashMap<>(1024);

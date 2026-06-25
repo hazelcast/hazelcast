@@ -34,6 +34,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.vector.impl.service.VectorCollectionServiceImpl;
 import com.hazelcast.vector.impl.storage.OnHeapVectorCollectionObjectProvider;
 import com.hazelcast.vector.impl.storage.VectorCollectionStorage;
+import com.hazelcast.vector.impl.storage.VectorIndexFactory;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -216,7 +217,7 @@ public class VectorCollectionMigrationAndOptimizationTest extends VectorCollecti
         public OptimizeBlockingStorage(VectorCollectionStorage original, NodeEngine nodeEngine,
                                        CountDownLatch optimizeStarted, CountDownLatch optimizeAwait) {
             super(nodeEngine, original.getName(), original.getPartitionId(), original.getConfig(),
-                    OnHeapVectorCollectionObjectProvider.getInstance());
+                    OnHeapVectorCollectionObjectProvider.getInstance(), new VectorIndexFactory(nodeEngine));
             this.optimizeStarted = optimizeStarted;
             this.optimizeAwait = optimizeAwait;
         }

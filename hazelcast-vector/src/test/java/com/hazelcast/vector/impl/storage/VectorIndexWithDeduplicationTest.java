@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.config.vector.Metric.COSINE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +41,8 @@ class VectorIndexWithDeduplicationTest extends AbstractVectorIndexTest {
                 COSINE,
                 100,
                 10,
-                2
+                2,
+                ForkJoinPool.commonPool()
         );
     }
 

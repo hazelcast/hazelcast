@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Vector index implementation where each vector corresponds precisely to one key.
@@ -73,9 +74,10 @@ public class VectorIndexSingleKey extends AbstractVectorIndex {
             Metric metric,
             int maxDegree,
             int efConstruction,
-            int dimensions
+            int dimensions,
+            ForkJoinPool parallelExecutor
     ) {
-        super(indexName, metric, maxDegree, efConstruction, dimensions);
+        super(indexName, metric, maxDegree, efConstruction, dimensions, parallelExecutor);
         nodeIdToKeyMap = new NonBlockingHashMapLong<>(1024);
         // `keyToNodeIdMap` is used only on partition thread
         keyToNodeIdMap = new HashMap<>(1024);

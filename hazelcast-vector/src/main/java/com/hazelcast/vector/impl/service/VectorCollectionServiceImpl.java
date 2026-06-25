@@ -55,6 +55,7 @@ import com.hazelcast.vector.impl.stats.OnDemandStatsImpl;
 import com.hazelcast.vector.impl.stats.VectorIndexStatsImpl;
 import com.hazelcast.vector.impl.storage.OnHeapVectorCollectionObjectProvider;
 import com.hazelcast.vector.impl.storage.VectorCollectionStorage;
+import com.hazelcast.vector.impl.storage.VectorIndexFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -155,6 +156,8 @@ public class VectorCollectionServiceImpl implements VectorCollectionService,
     private final VectorCollectionSplitBrainHandlerService splitBrainHandlerService;
     private final VectorCollectionOptimizationManager optimizationManager;
 
+    private final VectorIndexFactory vectorIndexFactory;
+
     public VectorCollectionServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(VectorCollectionServiceImpl.class);
@@ -162,7 +165,6 @@ public class VectorCollectionServiceImpl implements VectorCollectionService,
         this.namespaces = new ConcurrentHashMap<>();
         this.splitBrainProtectionNames = new ConcurrentHashMap<>();
         this.maxOffloadedRunNanos = nodeEngine.getProperties().getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_MILLIS);
-
         this.optimizationManager = new VectorCollectionOptimizationManagerImpl(nodeEngine);
 
         // pre-create some singletons
@@ -175,6 +177,7 @@ public class VectorCollectionServiceImpl implements VectorCollectionService,
         splitBrainHandlerService = new VectorCollectionSplitBrainHandlerService(nodeEngine);
 
         registerVectorQueryExecutor(nodeEngine);
+        vectorIndexFactory = new VectorIndexFactory(nodeEngine);
     }
 
     @SuppressWarnings("resource")
@@ -211,6 +214,7 @@ public class VectorCollectionServiceImpl implements VectorCollectionService,
         // This implementation is simplified and works with the assumptions described in destroyDistributedObject
         storage.clear();
         namespaces.clear();
+        vectorIndexFactory.shutdown();
     }
 
     @Override
@@ -258,7 +262,8 @@ public class VectorCollectionServiceImpl implements VectorCollectionService,
                 vectorCollectionName,
                 partitionId,
                 config,
-                OnHeapVectorCollectionObjectProvider.getInstance()
+                OnHeapVectorCollectionObjectProvider.getInstance(),
+                vectorIndexFactory
         );
     }
 
@@ -583,6 +588,11 @@ public class VectorCollectionServiceImpl implements VectorCollectionService,
     @Override
     public VectorCollectionOptimizationManager getOptimizationManager() {
         return optimizationManager;
+    }
+
+    // used only for migration
+    public VectorIndexFactory getVectorIndexFactory() {
+        return vectorIndexFactory;
     }
 
     /**

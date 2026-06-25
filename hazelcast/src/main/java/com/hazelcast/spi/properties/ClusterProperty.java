@@ -2031,6 +2031,50 @@ public final class ClusterProperty {
     public static final HazelcastProperty EXPENSIVE_IMAP_INVOCATION_REPORTING_THRESHOLD
             = new HazelcastProperty("hazelcast.expensive.imap.invocation.reporting.threshold", 100);
 
+
+    /**
+     * Enables or disables the use of a dedicated executor for vector collection
+     * index maintenance operations, such as optimization and cleanup of deleted nodes.
+     * <p>
+     * When enabled, index maintenance tasks are executed in an isolated executor
+     * instead of sharing the common {@link java.util.concurrent.ForkJoinPool}.
+     * <p>
+     * Default value is {@code true}.
+     *
+     * @since 6.0
+     */
+    public static final HazelcastProperty USE_INDEX_ISOLATED_EXECUTOR =
+        new HazelcastProperty("hazelcast.vector.maintenance.executor.enabled", true);
+
+    /**
+     * Property that defines the maximum parallelism level for the isolated vector collection index executor.
+     * <p>
+     * This controls the number of threads that can execute index-related
+     * tasks concurrently when the isolated executor is enabled.
+     * <p>
+     * If the property is not set, or is set to {@code 0} or a negative value, the default parallelism is used:
+     * <pre>{@code
+     * max(1, Runtime.getRuntime().availableProcessors() - 1)
+     * }</pre>
+     * The maximum parallelism is limited to:
+     * <pre>{@code
+     * Runtime.getRuntime().availableProcessors() * 2
+     * }</pre>
+     * If a value greater than this limit is provided, it will be capped and
+     * the effective parallelism will be set to:
+     * <pre>{@code
+     * Runtime.getRuntime().availableProcessors() * 2
+     * }</pre>
+     *
+     * @see #USE_INDEX_ISOLATED_EXECUTOR
+     *
+     * @since 6.0
+     */
+    public static final HazelcastProperty INDEX_ISOLATED_EXECUTOR_MAX_PARALLELISM
+        = new HazelcastProperty(
+            "hazelcast.vector.maintenance.executor.maxParallelism",
+        RuntimeAvailableProcessors.get() - 1);
+
     private ClusterProperty() {
     }
 }

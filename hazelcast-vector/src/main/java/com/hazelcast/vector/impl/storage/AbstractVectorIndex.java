@@ -43,6 +43,7 @@ import io.github.jbellis.jvector.graph.similarity.ScoreFunction;
 import io.github.jbellis.jvector.graph.similarity.SearchScoreProvider;
 import io.github.jbellis.jvector.util.BitSet;
 import io.github.jbellis.jvector.util.Bits;
+import io.github.jbellis.jvector.util.PhysicalCoreExecutor;
 import io.github.jbellis.jvector.vector.types.VectorFloat;
 
 import javax.annotation.Nonnull;
@@ -51,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -176,7 +178,8 @@ public abstract class AbstractVectorIndex implements Measurable {
             Metric metric,
             int maxDegree,
             int efConstruction,
-            int dimensions
+            int dimensions,
+            ForkJoinPool parallelExecutor
     ) {
         this.indexName = indexName;
         this.maxDegree = maxDegree;
@@ -184,11 +187,11 @@ public abstract class AbstractVectorIndex implements Measurable {
         this.dimensions = dimensions;
         this.similarityFunction = asVectorSimilarityFunction(metric);
         vectorsSupplier = new UpdatableVectorsSource(dimensions);
-        indexBuilder = createIndexBuilder(vectorsSupplier);
+        indexBuilder = createIndexBuilder(vectorsSupplier, parallelExecutor);
         searcherPool = createSearcherPool(indexBuilder);
     }
 
-    protected GraphIndexBuilder createIndexBuilder(RandomAccessVectorValues vectorsSource) {
+    protected GraphIndexBuilder createIndexBuilder(RandomAccessVectorValues vectorsSource, ForkJoinPool parallelExecutor) {
         // TODO: It would be better to create different BuildScoreProvider for different similarity function
         //  because the current implementation still calculates the centroid for cosine similarity incorrectly.
         return new GraphIndexBuilder(
@@ -197,7 +200,9 @@ public abstract class AbstractVectorIndex implements Measurable {
                 maxDegree,
                 efConstruction,
                 1.2f,
-                1.4f
+                1.4f,
+                PhysicalCoreExecutor.pool(),
+                parallelExecutor
         );
     }
 

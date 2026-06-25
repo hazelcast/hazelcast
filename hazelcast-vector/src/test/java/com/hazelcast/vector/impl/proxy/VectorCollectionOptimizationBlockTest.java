@@ -34,6 +34,7 @@ import com.hazelcast.vector.VectorDocument;
 import com.hazelcast.vector.impl.VectorCollectionService;
 import com.hazelcast.vector.impl.storage.OnHeapVectorCollectionObjectProvider;
 import com.hazelcast.vector.impl.storage.VectorCollectionStorage;
+import com.hazelcast.vector.impl.storage.VectorIndexFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -303,7 +304,8 @@ public class VectorCollectionOptimizationBlockTest extends HazelcastTestSupport 
                 CountDownLatch optimizeAwait,
                 AtomicBoolean optimizationFails,
                 AtomicReference<UUID> optimizationUUID) {
-            super(nodeEngine, name, partitionId, config, OnHeapVectorCollectionObjectProvider.getInstance());
+            super(nodeEngine, name, partitionId, config,
+                OnHeapVectorCollectionObjectProvider.getInstance(), new VectorIndexFactory(nodeEngine));
             this.optimizeStarted = optimizeStarted;
             this.optimizeAwait = optimizeAwait;
             this.optimizationFails = optimizationFails;
