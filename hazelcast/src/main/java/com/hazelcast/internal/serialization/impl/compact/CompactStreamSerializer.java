@@ -378,7 +378,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 serializer = ClassLoaderUtil.newInstance(classLoader, className);
             } catch (Exception e) {
                 throw new InvalidConfigurationException("Cannot create an instance "
-                        + "of the Compact serializer '" + className + "'.");
+                        + "of the Compact serializer '" + className + "'.", e);
             }
 
             CompactSerializableRegistration registration = new CompactSerializableRegistration(
@@ -400,7 +400,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 clazz = ClassLoaderUtil.loadClass(classLoader, className);
             } catch (ClassNotFoundException e) {
                 throw new InvalidConfigurationException("Cannot load the Compact "
-                        + "serializable class '" + className + "'.");
+                        + "serializable class '" + className + "'.", e);
             }
 
             CompactSerializer serializer;
