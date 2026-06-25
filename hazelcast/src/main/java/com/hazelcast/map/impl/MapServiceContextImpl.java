@@ -341,15 +341,18 @@ class MapServiceContextImpl implements MapServiceContext {
 
     /**
      * Removes all record stores from all partitions.
-     *
-     * Calls {@link #removeRecordStoresFromPartitionMatchingWith} internally and
+     * <p>
+     * This method calls {@link #removeRecordStoresFromPartitionMatchingWith} internally.
      *
      * @param onShutdown           {@code true} if this method is called during map service shutdown,
-     *                             otherwise set {@code false}
-     * @param onRecordStoreDestroy {@code true} if this method is called during to destroy record store,
-     *                             otherwise set {@code false}
+     *                             {@code false} otherwise
+     * @param onRecordStoreDestroy {@code true} if this method is called during record store destruction,
+     *                             {@code false} otherwise
+     * @param terminate            {@code true} if shutdown is immediate, {@code false} if it is graceful
      */
-    protected void removeAllRecordStoresOfAllMaps(boolean onShutdown, boolean onRecordStoreDestroy) {
+    protected void removeAllRecordStoresOfAllMaps(boolean onShutdown,
+                                                  boolean onRecordStoreDestroy,
+                                                  boolean terminate) {
         for (PartitionContainer partitionContainer : partitionContainers) {
             if (partitionContainer != null) {
                 removeRecordStoresFromPartitionMatchingWith(recordStore -> true,
@@ -363,7 +366,6 @@ class MapServiceContextImpl implements MapServiceContext {
                                                                   int partitionId,
                                                                   boolean onShutdown,
                                                                   boolean onRecordStoreDestroy) {
-
         PartitionContainer container = partitionContainers[partitionId];
         if (container == null) {
             return;
@@ -396,7 +398,6 @@ class MapServiceContextImpl implements MapServiceContext {
                 }
             }
         }
-
         postProcessNonEmptyRemovedRecordStores(removedRecordStores, partitionId, onShutdown);
         processDisposalQueue(disposalQueue, partitionId, onShutdown);
     }
@@ -538,14 +539,14 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        removeAllRecordStoresOfAllMaps(false, false);
+        removeAllRecordStoresOfAllMaps(false, false, false);
         mapNearCacheManager.reset();
         offloadedExecutorStats.clear();
     }
 
     @Override
-    public void shutdown() {
-        removeAllRecordStoresOfAllMaps(true, false);
+    public void shutdown(boolean terminate) {
+        removeAllRecordStoresOfAllMaps(true, false, terminate);
         mapNearCacheManager.shutdown();
         mapContainers.clear();
         expirationManager.onShutdown();
