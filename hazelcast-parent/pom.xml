@@ -133,7 +133,7 @@
         -->
         <parquet.version>1.17.1</parquet.version>
 
-        <spring.boot3.version>3.5.15</spring.boot3.version>
+        <spring.boot3.version>3.5.16</spring.boot3.version>
         <org.springframework6.version>6.2.18</org.springframework6.version>
 
         <spring.boot4.version>4.1.0</spring.boot4.version>
