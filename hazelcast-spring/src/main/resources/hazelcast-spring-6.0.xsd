@@ -2055,6 +2055,18 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
+    <xs:element name="vectorCollection" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast Vector Collection instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.vector.VectorCollection"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
 
     <xs:element name="hibernate-region-factory" type="hibernate-cache"/>
 

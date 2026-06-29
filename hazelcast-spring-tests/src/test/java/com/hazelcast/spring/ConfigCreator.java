@@ -22,6 +22,8 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 
+import static com.hazelcast.config.vector.Metric.COSINE;
+
 public final class ConfigCreator {
     private ConfigCreator() {
     }
@@ -58,8 +60,10 @@ public final class ConfigCreator {
         var ringbufferConfig = new RingbufferConfig("ringbuffer");
         config.addRingBufferConfig(ringbufferConfig);
 
-        var vectorConfig = new VectorCollectionConfig("vectors")
-            .addVectorIndexConfig(new VectorIndexConfig().setDimension(1));
+        var vectorConfig = new VectorCollectionConfig("vector-collection")
+            .addVectorIndexConfig(
+                new VectorIndexConfig().setMetric(COSINE).setDimension(1)
+            );
         config.addVectorCollectionConfig(vectorConfig);
 
         return config;

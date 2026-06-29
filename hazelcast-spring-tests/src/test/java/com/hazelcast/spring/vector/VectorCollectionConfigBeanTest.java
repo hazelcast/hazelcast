@@ -20,27 +20,23 @@ import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringExtension;
-import com.hazelcast.spring.java.SpringHazelcastConfiguration;
 import com.hazelcast.vector.VectorCollection;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static com.hazelcast.config.vector.Metric.COSINE;
+import static com.hazelcast.config.vector.Metric.DOT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-
 @EnabledIfSystemProperty(named = "vector.module", matches = "true")
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
-@ContextConfiguration(classes = SpringHazelcastConfiguration.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class VectorCollectionBeanTest {
+@ContextConfiguration(locations = {"vector-application-context.xml"})
+public class VectorCollectionConfigBeanTest {
 
     @Autowired
     @Qualifier("vector-collection")
@@ -54,7 +50,7 @@ public class VectorCollectionBeanTest {
         assertNotNull(instance);
         assertNotNull(vectorCollection);
         var expected = new VectorCollectionConfig("vector-collection")
-            .addVectorIndexConfig(new VectorIndexConfig().setMetric(COSINE).setDimension(1));
+            .addVectorIndexConfig(new VectorIndexConfig().setMetric(DOT).setDimension(1));
         var actual = instance.getConfig().getVectorCollectionConfigOrNull(vectorCollection.getName());
         assertEquals(expected, actual);
     }
