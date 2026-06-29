@@ -154,14 +154,6 @@ public final class Util {
         return argument == null || argument;
     }
 
-    public static <T> Supplier<T> memoize(Supplier<T> onceSupplier) {
-        return new MemoizingSupplier<>(onceSupplier);
-    }
-
-    public static <T> Supplier<T> memoizeConcurrent(Supplier<T> onceSupplier) {
-        return new ConcurrentMemoizingSupplier<>(onceSupplier);
-    }
-
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
         try {
             return callable.call();

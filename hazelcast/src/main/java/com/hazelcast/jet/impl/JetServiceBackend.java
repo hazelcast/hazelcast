@@ -89,7 +89,7 @@ import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

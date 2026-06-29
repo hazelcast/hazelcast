@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.vector.impl.proxy;
+package com.hazelcast.internal.util;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.jupiter.api.Test;
 
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.util.MemoizingSupplier.memoize;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class ClientVectorCollectionProxyTest extends VectorCollectionProxyTest {
+@QuickTest
+class MemoizingSupplierTest {
 
-    private final Supplier<HazelcastInstance> clientSupplier = memoize(() -> factory.newHazelcastClient());
+    @Test
+    void calculatesOnce() {
+        AtomicInteger counter = new AtomicInteger();
+        MemoizingSupplier<Integer> ms = MemoizingSupplier.memoize(counter::incrementAndGet);
 
-    @Override
-    protected HazelcastInstance hz() {
-        return clientSupplier.get();
+        assertThat(ms.get()).isEqualTo(1);
+        // second result should be the same
+        assertThat(ms.get()).isEqualTo(1);
     }
 }

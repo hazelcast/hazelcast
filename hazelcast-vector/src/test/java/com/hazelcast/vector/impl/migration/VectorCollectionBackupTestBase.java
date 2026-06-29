@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.internal.util.MemoizingSupplier.memoize;
 import static com.hazelcast.vector.impl.VectorTestUtils.randomVec;
 import static com.hazelcast.vector.impl.VectorTestUtils.warmupOneIndexCollection;
 import static java.util.stream.IntStream.range;

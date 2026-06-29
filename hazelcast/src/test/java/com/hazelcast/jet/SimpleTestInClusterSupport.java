@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.util.MemoizingSupplier;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
@@ -83,7 +84,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static Config config;
     private static HazelcastInstance[] instances;
     private static HazelcastInstance client;
-    private final Supplier<Boolean> parallelExecution = com.hazelcast.jet.impl.util.Util.memoize(this::isParallelTestExecution);
+    private final Supplier<Boolean> parallelExecution = MemoizingSupplier.memoize(this::isParallelTestExecution);
 
     protected static void initialize(int memberCount, @Nullable Config config) {
         assertNoRunningInstances();

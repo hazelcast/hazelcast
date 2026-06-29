@@ -33,7 +33,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.Memoizer;
+import com.hazelcast.internal.util.MappingMemoizer;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.Memoizers.mappingMemoizer;
 
 /**
  * Service responsible for {@link PNCounter} proxies and replication operation.
@@ -77,13 +78,13 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
             };
 
     /** Cache for split brain protection config names */
-    private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<>(
+    private final MappingMemoizer<String, Object> splitBrainProtectionConfigCache = mappingMemoizer(
         new ConstructorFunction<>() {
             @Override
             public Object createNew(String name) {
                 final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);
                 final String splitBrainProtectionName = counterConfig.getSplitBrainProtectionName();
-                return splitBrainProtectionName == null ? Memoizer.NULL_OBJECT : splitBrainProtectionName;
+                return splitBrainProtectionName == null ? MappingMemoizer.NULL_OBJECT : splitBrainProtectionName;
             }
         });
 

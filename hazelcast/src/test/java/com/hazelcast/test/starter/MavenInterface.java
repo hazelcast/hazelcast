@@ -18,6 +18,7 @@ package com.hazelcast.test.starter;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -31,7 +32,7 @@ import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
 
 import com.hazelcast.internal.tpcengine.util.OS;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +50,7 @@ import java.util.stream.Stream;
 public class MavenInterface {
     /** The path to the {@code mvn} executable */
     private static final ConcurrentMemoizingSupplier<String> MVN =
-            new ConcurrentMemoizingSupplier<>(() -> {
+            memoizeConcurrent(() -> {
                 Path path = Paths.get(".")
                         .toAbsolutePath();
 

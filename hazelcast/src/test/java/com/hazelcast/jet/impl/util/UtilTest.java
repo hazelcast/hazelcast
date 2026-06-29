@@ -28,9 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
@@ -43,7 +41,6 @@ import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.gcd;
-import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.roundRobinPart;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static java.util.Arrays.asList;
@@ -93,33 +90,6 @@ public class UtilTest {
         // overflow over MIN_VALUE
         assertEquals(Long.MIN_VALUE, subtractClamped(Long.MIN_VALUE, 1));
         assertEquals(Long.MIN_VALUE, subtractClamped(Long.MIN_VALUE, Long.MAX_VALUE));
-    }
-
-    @Test
-    public void when_memoizeConcurrent_then_threadSafe() {
-        final Object obj = new Object();
-        Supplier<Object> supplier = new Supplier<>() {
-            boolean supplied;
-
-            @Override
-            public Object get() {
-                if (supplied) {
-                    throw new IllegalStateException("Supplier was already called once.");
-                }
-                supplied = true;
-                return obj;
-            }
-        };
-
-        // does not fail 100% with non-concurrent memoize, but about 50% of the time.
-        List<Object> list = Stream.generate(memoizeConcurrent(supplier)).limit(4).parallel().collect(Collectors.toList());
-        assertTrue("Not all objects matched expected", list.stream().allMatch(o -> o.equals(obj)));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void when_memoizeConcurrentWithNullSupplier_then_exception() {
-        Supplier<Object> supplier = () -> null;
-        memoizeConcurrent(supplier).get();
     }
 
     @Test

@@ -45,7 +45,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.internal.util.MemoizingSupplier.memoize;
 import static com.hazelcast.vector.impl.VectorTestUtils.vec;
 import static com.hazelcast.vector.impl.proxy.VectorCollectionProxyTest.DOC_1D_NEGATIVE;
 import static com.hazelcast.vector.impl.proxy.VectorCollectionProxyTest.DOC_1D_POSITIVE;

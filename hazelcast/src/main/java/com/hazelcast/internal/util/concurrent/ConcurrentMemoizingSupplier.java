@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.util;
+package com.hazelcast.internal.util.concurrent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,8 +31,12 @@ public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
     private final Supplier<T> onceSupplier;
     private volatile T remembered;
 
-    public ConcurrentMemoizingSupplier(Supplier<T> onceSupplier) {
+    private ConcurrentMemoizingSupplier(Supplier<T> onceSupplier) {
         this.onceSupplier = onceSupplier;
+    }
+
+    public static <T> ConcurrentMemoizingSupplier<T> memoizeConcurrent(Supplier<T> onceSupplier) {
+        return new ConcurrentMemoizingSupplier<>(onceSupplier);
     }
 
     @Override @Nonnull

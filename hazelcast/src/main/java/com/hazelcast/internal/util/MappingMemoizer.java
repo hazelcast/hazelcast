@@ -27,7 +27,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
  * @param <K> key type
  * @param <V> value type
  */
-public class Memoizer<K, V> {
+public class MappingMemoizer<K, V> {
     /** Null object to be kept as values which are {@code null} */
     public static final Object NULL_OBJECT = new Object();
 
@@ -44,7 +44,7 @@ public class Memoizer<K, V> {
      *
      * @param calculationFunction the function for retrieving the value for a specific key
      */
-    public Memoizer(ConstructorFunction<K, V> calculationFunction) {
+    public MappingMemoizer(ConstructorFunction<K, V> calculationFunction) {
         this.constructorFunction = calculationFunction;
     }
 

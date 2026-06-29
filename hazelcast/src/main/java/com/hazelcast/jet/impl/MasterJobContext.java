@@ -120,7 +120,7 @@ import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
-import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.internal.util.MemoizingSupplier.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;

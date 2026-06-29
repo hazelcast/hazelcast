@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.util;
+package com.hazelcast.internal.util;
 
 import java.util.function.Supplier;
 
@@ -23,12 +23,16 @@ import java.util.function.Supplier;
  * it only on the first invocation of {@code get()}, and afterwards
  * returns the remembered instance.
  */
-final class MemoizingSupplier<T> implements Supplier<T> {
+public final class MemoizingSupplier<T> implements Supplier<T> {
     private Supplier<T> onceSupplier;
     private T remembered;
 
-    MemoizingSupplier(Supplier<T> onceSupplier) {
+    private MemoizingSupplier(Supplier<T> onceSupplier) {
         this.onceSupplier = onceSupplier;
+    }
+
+    public static <T>  MemoizingSupplier<T> memoize(Supplier<T> onceSupplier) {
+        return new MemoizingSupplier<>(onceSupplier);
     }
 
     @Override

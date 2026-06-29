@@ -56,7 +56,7 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
