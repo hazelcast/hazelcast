@@ -72,7 +72,7 @@
                         <!-- Relocation is done to avoid issues with deserializing via ATNDeserializer -->
                         <relocation>
                             <pattern>org.antlr</pattern>
-                            <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
+                            <shadedPattern>${relocation.root}.cdc.mysql.org.antlr</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
