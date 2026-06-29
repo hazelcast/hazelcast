@@ -56,7 +56,7 @@ public final class MapUtil {
     }
 
     /**
-     * Utility method that creates an {@link java.util.LinkedHashMap} with its initialCapacity calculated
+     * Utility method that creates an {@link ConcurrentHashMap} with its initialCapacity calculated
      * to minimize rehash operations
      */
     public static <K, V> ConcurrentMap<K, V> createConcurrentHashMap(int expectedMapSize) {
