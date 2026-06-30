@@ -29,7 +29,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
+import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
@@ -259,14 +262,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     @Override
     public void readFully(final byte[] b) throws IOException {
-        if (read(b) == -1) {
+        if (read(b) != b.length) {
             throw new EOFException("End of stream reached");
         }
     }
 
     @Override
     public void readFully(final byte[] b, final int off, final int len) throws EOFException {
-        if (read(b, off, len) == -1) {
+        if (read(b, off, len) != len) {
             throw new EOFException("End of stream reached");
         }
     }
@@ -389,6 +392,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, BYTE_SIZE_IN_BYTES);
             byte[] b = new byte[len];
             readFully(b);
             return b;
@@ -404,6 +409,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, BOOLEAN_SIZE_IN_BYTES);
             boolean[] values = new boolean[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readBoolean();
@@ -421,6 +428,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, CHAR_SIZE_IN_BYTES);
             char[] values = new char[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readChar();
@@ -438,6 +447,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, INT_SIZE_IN_BYTES);
             int[] values = new int[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readInt();
@@ -455,6 +466,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, LONG_SIZE_IN_BYTES);
             long[] values = new long[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readLong();
@@ -472,6 +485,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, DOUBLE_SIZE_IN_BYTES);
             double[] values = new double[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readDouble();
@@ -489,9 +504,10 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
-            float[] values = new float[len];
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, FLOAT_SIZE_IN_BYTES);
             int sizeInBytes = len * FLOAT_SIZE_IN_BYTES;
-            checkAvailable(pos, sizeInBytes);
+            float[] values = new float[len];
             ByteBuffer.wrap(data, pos, sizeInBytes).order(getByteOrder()).asFloatBuffer().get(values);
             pos += sizeInBytes;
             return values;
@@ -507,6 +523,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            checkAvailableItems(pos, len, SHORT_SIZE_IN_BYTES);
             short[] values = new short[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readShort();
@@ -531,6 +549,9 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
         if (len > 0) {
+            // check available data before allocating potentially huge array
+            // string uses at least 1 int value for length of empty string
+            checkAvailableItems(pos, len, INT_SIZE_IN_BYTES);
             String[] values = new String[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readString();
@@ -668,6 +689,15 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         }
     }
 
+    final void checkAvailableItems(int pos, int k, int itemSize) throws EOFException {
+        long expected = (long) k * (long) itemSize;
+        if ((int) expected != expected) {
+            throw new EOFException("Data length for " + k + " items of size " + itemSize
+                    + " would be larger than integer range!");
+        }
+        checkAvailable(pos, (int) expected);
+    }
+
     @Override
     public final int available() {
         return size - pos;
@@ -715,6 +745,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
 
+        checkAvailable(pos, numberOfBytes);
         String result = new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
         pos += numberOfBytes;
         return result;
