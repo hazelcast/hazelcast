@@ -17,7 +17,7 @@
 package com.hazelcast.commandline;
 
 import com.hazelcast.core.server.HazelcastMemberStarter;
-import com.hazelcast.jet.function.RunnableEx;
+import com.hazelcast.function.ThrowingRunnable;
 import picocli.CommandLine;
 
 import java.io.OutputStreamWriter;
@@ -38,13 +38,13 @@ import static picocli.CommandLine.Option;
         versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
 public class HazelcastServerCommandLine {
 
-    private final RunnableEx start;
+    private final ThrowingRunnable start;
 
     public HazelcastServerCommandLine() {
         start = () -> HazelcastMemberStarter.main(new String[]{});
     }
 
-    HazelcastServerCommandLine(RunnableEx start) {
+    HazelcastServerCommandLine(ThrowingRunnable start) {
         this.start = start;
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.commandline;
 
-import com.hazelcast.jet.function.RunnableEx;
+import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,7 @@ class HazelcastServerCommandLineTest {
     private HazelcastServerCommandLine hazelcastServerCommandLine;
 
     @Mock
-    private RunnableEx start;
+    private ThrowingRunnable start;
 
     @BeforeEach
     void setUp() {
