@@ -37,6 +37,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import org.apache.logging.log4j.util.Strings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -377,8 +378,17 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             try {
                 serializer = ClassLoaderUtil.newInstance(classLoader, className);
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Cannot create an instance "
-                        + "of the Compact serializer '" + className + "'.", e);
+                String baseMessage = String.format("unable to create instance of compact serializer '%s' " +
+                        "using class loader '%s'", className, ClassLoaderUtil.retrieveClassLoaderID(classLoader));
+                String classNotFoundExceptionMessage = ClassLoaderUtil.checkStackForClassNotFound(e);
+                String messageToInsert;
+                if (Strings.isBlank(classNotFoundExceptionMessage)) {
+                    messageToInsert = String.format("%s.", baseMessage);
+                } else {
+                    messageToInsert = String.format("%s because class was missing from class path: %s",
+                            baseMessage, classNotFoundExceptionMessage);
+                }
+                throw new InvalidConfigurationException(messageToInsert, e);
             }
 
             CompactSerializableRegistration registration = new CompactSerializableRegistration(
