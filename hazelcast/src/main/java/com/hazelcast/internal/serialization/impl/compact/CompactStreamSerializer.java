@@ -409,8 +409,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             try {
                 clazz = ClassLoaderUtil.loadClass(classLoader, className);
             } catch (ClassNotFoundException e) {
-                throw new InvalidConfigurationException("Cannot load the Compact "
-                        + "serializable class '" + className + "'.", e);
+                throw new InvalidConfigurationException(String.format("unable to load compact serializable " +
+                        "class '%s' because it was missing from the class path", className), e);
             }
 
             CompactSerializer serializer;
