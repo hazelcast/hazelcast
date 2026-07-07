@@ -663,12 +663,10 @@
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>compile</scope>
         </dependency>
 
         <!-- many libs and extensions still depend on old Jackson, include it as well -->
@@ -676,13 +674,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson2.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson2.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>tools.jackson.jr</groupId>
@@ -695,18 +691,15 @@
         <dependency>
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.objenesis</groupId>
             <artifactId>objenesis</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
             <version>4.8.184</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
@@ -726,7 +719,6 @@
                     <artifactId>commons-validator</artifactId>
                 </exclusion>
             </exclusions>
-            <scope>compile</scope>
         </dependency>
 
         <!-- HazelcastCommandLine dependencies - optional, packaged in server distribution -->
