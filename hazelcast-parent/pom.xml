@@ -504,7 +504,7 @@
             <dependency>
                 <groupId>com.zendesk</groupId>
                 <artifactId>mysql-binlog-connector-java</artifactId>
-                <version>0.30.3</version>
+                <version>0.31.0</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
