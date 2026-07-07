@@ -153,7 +153,7 @@
 
         <!-- test dependencies -->
         <artemis.version>2.55.0</artemis.version>
-        <bytebuddy.version>1.18.10</bytebuddy.version>
+        <bytebuddy.version>1.18.11</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
