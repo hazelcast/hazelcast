@@ -96,7 +96,6 @@
             <artifactId>hazelcast-jet-cdc-debezium</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
-            <classifier>jar-with-dependencies</classifier>
         </dependency>
 
         <dependency>
