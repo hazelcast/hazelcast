@@ -132,6 +132,7 @@ public class StreamKafkaPTest {
 
     private String topic1Name;
     private String topic2Name;
+    private boolean mustRecreateCluster = true;
 
     @BeforeAll
     public static void beforeClass() throws IOException {
