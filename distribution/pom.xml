@@ -171,6 +171,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-vector</artifactId>
             <version>${project.version}</version>
+            <!--
+                hazelcast-vector already bundles all required third-party dependencies inside the artifact.
+
+                Therefore, we explicitly exclude transitive dependencies here to prevent Maven from
+                copying them again into the distribution/lib directory as separate JARs.
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- HazelcastCommandLine dependencies-->
         <dependency>

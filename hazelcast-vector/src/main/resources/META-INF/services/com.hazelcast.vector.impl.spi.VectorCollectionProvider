@@ -1,1 +1,1 @@
-com.hazelcast.vector.impl.DefaultVectorCollectionProvider
+com.hazelcast.vector.internal.impl.DefaultVectorCollectionProvider

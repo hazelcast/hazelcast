@@ -23,7 +23,6 @@ import com.hazelcast.config.vector.Metric;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -32,6 +31,7 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.vector.VectorCollection;
@@ -48,8 +48,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.vector.impl.VectorTestUtils.vec;
-import static com.hazelcast.vector.impl.proxy.VectorCollectionProxyTest.TIMEOUT;
+import static com.hazelcast.vector.internal.impl.VectorTestUtils.vec;
+import static com.hazelcast.vector.internal.impl.proxy.VectorCollectionProxyTest.TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)

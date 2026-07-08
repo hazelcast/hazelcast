@@ -1,1 +1,1 @@
-com.hazelcast.vector.impl.service.VectorCollectionMetricsProvider
+com.hazelcast.vector.internal.impl.service.VectorCollectionMetricsProvider

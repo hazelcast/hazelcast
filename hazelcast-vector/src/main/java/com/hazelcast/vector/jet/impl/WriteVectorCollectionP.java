@@ -31,7 +31,7 @@ import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.security.permission.VectorCollectionPermission;
 import com.hazelcast.vector.VectorCollection;
 import com.hazelcast.vector.VectorDocument;
-import com.hazelcast.vector.impl.VectorUtil;
+import com.hazelcast.vector.internal.impl.VectorUtil;
 
 import javax.annotation.Nonnull;
 import java.io.Serial;

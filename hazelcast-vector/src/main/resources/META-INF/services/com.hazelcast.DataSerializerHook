@@ -1,1 +1,1 @@
-com.hazelcast.vector.impl.VectorCollectionSerializerHook
+com.hazelcast.vector.internal.impl.VectorCollectionSerializerHook

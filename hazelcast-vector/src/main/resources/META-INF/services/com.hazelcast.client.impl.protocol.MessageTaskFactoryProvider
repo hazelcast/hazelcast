@@ -1,1 +1,1 @@
-com.hazelcast.vector.impl.protocol.task.VectorMessageTaskFactoryProvider
+com.hazelcast.vector.internal.impl.protocol.task.VectorMessageTaskFactoryProvider

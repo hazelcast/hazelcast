@@ -1,1 +1,1 @@
-com.hazelcast.vector.impl.service.VectorCollectionServiceDescriptorProvider
+com.hazelcast.vector.internal.impl.service.VectorCollectionServiceDescriptorProvider

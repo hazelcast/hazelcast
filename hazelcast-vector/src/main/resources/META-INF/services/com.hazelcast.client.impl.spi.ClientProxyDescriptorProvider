@@ -1,1 +1,1 @@
-com.hazelcast.client.impl.vector.VectorClientProxyDescriptorProvider
+com.hazelcast.vector.internal.client.impl.VectorClientProxyDescriptorProvider

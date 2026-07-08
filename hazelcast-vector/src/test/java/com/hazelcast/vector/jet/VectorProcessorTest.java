@@ -20,17 +20,17 @@ import com.hazelcast.config.vector.Metric;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.vector.SearchOptions;
 import com.hazelcast.vector.VectorCollection;
 import com.hazelcast.vector.VectorDocument;
 import com.hazelcast.vector.VectorValues;
-import com.hazelcast.vector.impl.SearchResultsImpl;
+import com.hazelcast.vector.internal.impl.SearchResultsImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,10 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.vector.impl.VectorTestUtils.sr;
-import static com.hazelcast.vector.impl.VectorTestUtils.srs;
-import static com.hazelcast.vector.impl.VectorTestUtils.usingOverriddenEqualsIgnoringFields;
-import static com.hazelcast.vector.impl.VectorTestUtils.vec;
+import static com.hazelcast.vector.internal.impl.VectorTestUtils.sr;
+import static com.hazelcast.vector.internal.impl.VectorTestUtils.srs;
+import static com.hazelcast.vector.internal.impl.VectorTestUtils.usingOverriddenEqualsIgnoringFields;
+import static com.hazelcast.vector.internal.impl.VectorTestUtils.vec;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)

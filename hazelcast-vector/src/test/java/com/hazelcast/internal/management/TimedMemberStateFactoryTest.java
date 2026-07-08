@@ -41,7 +41,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.HazelcastTestSupport.waitClusterForSafeState;
-import static com.hazelcast.vector.impl.VectorTestUtils.warmupOneIndexCollection;
+import static com.hazelcast.vector.internal.impl.VectorTestUtils.warmupOneIndexCollection;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)

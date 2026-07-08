@@ -16,7 +16,7 @@
 
 package com.hazelcast.vector.impl;
 
-abstract class VectorCollectionSerializerConstants {
+public abstract class VectorCollectionSerializerConstants {
 
     public static final int FACTORY_ID = -100;
 
