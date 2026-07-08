@@ -88,7 +88,6 @@
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.5</avro.version>
-        <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.checkerframework:checker-qual` should be upgraded -->
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
         <aws.sdk2.version>2.45.1</aws.sdk2.version>
@@ -96,15 +95,10 @@
         <!--
         Calcite 1.35 dependency that has CVE
         Explicitly upgrade to a version not vulnerable to CVE - https://github.com/advisories/GHSA-gcg6-xv4f-f749
-        Not required with Calcite >=1.37, 
+        Not required with Calcite >=1.37,
          -->
         <janino.version>3.1.10</janino.version>
-        <debezium.version>1.9.8.Final</debezium.version>
-        <!--
-            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-            - `org.checkerframework`
-        -->
-        <new.debezium.version>3.2.7.Final</new.debezium.version>
+        <debezium.version>3.6.0.Final</debezium.version>
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.4.3</hadoop.version>
@@ -160,7 +154,7 @@
         -->
         <license.skipAddThirdParty>true</license.skipAddThirdParty>
 
-        <!-- 
+        <!--
         Sources JAR properties
         Typically `sources` are only required for release
         -->
@@ -428,7 +422,7 @@
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>3.0.1</version>
             </dependency>
-            <!-- 
+            <!--
                 Addresses convergence between:
                 - `org.apache.hadoop:hadoop-client`
                 - `org.apache.commons:commons-compress` (transitively from `org.apache.avro:avro`)
@@ -458,7 +452,7 @@
                 <artifactId>commons-collections</artifactId>
                 <version>3.2.2</version>
             </dependency>
-            <!-- 
+            <!--
                 Addresses convergence between:
                 - `org.apache.hadoop:hadoop-client`
                 - `org.apache.httpcomponents:httpclient`
@@ -533,7 +527,7 @@
                 <artifactId>woodstox-core</artifactId>
                 <version>7.2.1</version>
             </dependency>
-            <!-- 
+            <!--
                 Addresses convergence between:
                 - `com.fasterxml.woodstox:woodstox-core` (transitively via `org.apache.hadoop:hadoop-client`)
                 - com.google.cloud:google-cloud-storage (transitively via `com.google.cloud.bigdataoss:gcs-connector`)
@@ -572,17 +566,6 @@
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
                 <classifier>jdk8</classifier>
-            </dependency>
-            <!--
-                Addresses convergence between:
-                - `org.apache.calcite`
-                - `com.google.cloud:google-cloud-storage` (transitively from `com.google.cloud.bigdataoss:gcs-connector`)
-                - `org.postgresql:postgresql` (transitively from `io.debezium:debezium-connector-postgres`)
-            -->
-            <dependency>
-                <groupId>org.checkerframework</groupId>
-                <artifactId>checker-qual</artifactId>
-                <version>3.52.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1208,10 +1191,6 @@
 
                                 <!-- Exclude Jet core API - we provide patch-level compatibility guarantees only -->
                                 <exclude>com.hazelcast.jet.core.*</exclude>
-
-                                <!-- Temporary until CTT-1216 is done -->
-                                <exclude>com.hazelcast.jet.cdc.*</exclude>
-                                <exclude>com.hazelcast.enterprise.jet.cdc.*</exclude>
 
                                 <!-- Exclude internal packages -->
                                 <exclude>*.internal.*</exclude>

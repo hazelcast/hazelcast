@@ -40,6 +40,9 @@
 <!--        <module>cdc-mysql</module>-->
 <!--        <module>cdc-postgres</module>-->
         <module>csv</module>
+        <module>cdc-debezium</module>
+        <module>cdc-postgres</module>
+        <module>cdc-mysql</module>
         <module>elasticsearch/elasticsearch-7</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>

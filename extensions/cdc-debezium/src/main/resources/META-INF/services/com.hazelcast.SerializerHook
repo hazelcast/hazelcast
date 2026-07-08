@@ -1,0 +1,3 @@
+com.hazelcast.jet.cdc.impl.CdcSerializerHooks$ChangeRecordImplHook
+com.hazelcast.jet.cdc.impl.CdcSerializerHooks$RecordPartImplHook
+com.hazelcast.jet.cdc.impl.CdcSerializerHooks$CdcSourceStateHook

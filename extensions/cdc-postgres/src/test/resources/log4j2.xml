@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="ERROR">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n"/>
+        </Console>
+        <Console name="ConsoleNoExceptions" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n">
+                <alwaysWriteExceptions>false</alwaysWriteExceptions>
+            </PatternLayout>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+        <Logger name="com.hazelcast.jet" level="INFO"/>
+        <Logger name="com.hazelcast.jet.impl.MasterSnapshotContext" level="WARN"/>
+        <Logger name="com.hazelcast.jet.core.JetTestSupport" level="WARN"/>
+        <Logger name="io.debezium.pipeline.JmxUtils" level="ERROR"/>
+        <Logger name="io.debezium.relational.RelationalSnapshotChangeEventSource" level="WARN"/>
+        <Logger name="io.debezium.embedded" level="WARN">
+            <AppenderRef ref="ConsoleNoExceptions" />
+        </Logger>
+        <Logger name="io.debezium.pipeline.ErrorHandler" level="WARN">
+            <AppenderRef ref="ConsoleNoExceptions" />
+        </Logger>
+        <Logger name="io.debezium.connector.postgresql" level="WARN">
+            <AppenderRef ref="ConsoleNoExceptions" />
+        </Logger>
+        <Logger name="io.debezium.connector.common.BaseSourceTask" level="WARN">
+            <AppenderRef ref="ConsoleNoExceptions" />
+        </Logger>
+    </Loggers>
+</Configuration>
