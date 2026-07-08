@@ -30,7 +30,11 @@ import static java.lang.String.format;
 public class ReflectionClassNameFilter implements ClassNameFilter {
     private static final String LOAD_CLASS_ERROR = "Creation of class %s is not allowed.";
     private static final String[] DEFAULT_WHITELIST_PREFIX = new String[]{"com.hazelcast.", "java", "["};
-    private static final String[] DEFAULT_BLOCKLIST_PREFIX = new String[]{"com.hazelcast.shaded."};
+    private static final String[] DEFAULT_BLOCKLIST_PREFIX = new String[]{
+            "com.hazelcast.shaded.",
+            // https://hazelcast.atlassian.net/browse/CTT-1213
+            "org.springframework.beans."
+    };
 
     private final ClassFilter blacklist;
     private final ClassFilter whitelist;

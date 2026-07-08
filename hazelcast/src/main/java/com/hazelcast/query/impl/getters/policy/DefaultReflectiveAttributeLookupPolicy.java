@@ -63,7 +63,9 @@ public final class DefaultReflectiveAttributeLookupPolicy
                 throwClassRejected(clazz);
             }
         }
-        if (clazz.getName().contains(".jackson.databind.introspect.")) {
+        if (clazz.getName().contains(".jackson.databind.introspect.")
+                // https://hazelcast.atlassian.net/browse/CTT-1213
+                || clazz.getName().startsWith("org.springframework.beans.")) {
             throwClassRejected(clazz);
         }
         return clazz;

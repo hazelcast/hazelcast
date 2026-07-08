@@ -35,6 +35,7 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.impl.connector.DataSourceFromJdbcUrl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -352,7 +353,10 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         blockList.addPrefixes(
                 // https://hazelcast.atlassian.net/browse/CTT-1202
                 "com.hazelcast.instance.impl",
-                "com.hazelcast.shaded"
+                "com.hazelcast.shaded",
+                // https://hazelcast.atlassian.net/browse/CTT-1204
+                "org.springframework.beans",
+                "org.apache.logging.log4j"
         );
         blockList.addPackages(
                 // https://hazelcast.atlassian.net/browse/CTT-1202
@@ -365,7 +369,9 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                 Packet.class.getName(),
                 UnsafeObjectDataInput.class.getName(),
                 "com.hazelcast.kubernetes.KubernetesConfig$DefaultFileContentsReader",
-                "org.agrona.concurrent.status.AtomicCounter"
+                "org.agrona.concurrent.status.AtomicCounter",
+                // https://hazelcast.atlassian.net/browse/CTT-1204
+                DataSourceFromJdbcUrl.class.getName()
         );
         return blockList;
     }
