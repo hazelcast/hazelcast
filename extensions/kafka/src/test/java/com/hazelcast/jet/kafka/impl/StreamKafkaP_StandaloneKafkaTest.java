@@ -22,14 +22,12 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.kafka.KafkaProcessors;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -38,10 +36,11 @@ import java.util.concurrent.CancellationException;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@SerialTest
+@ParallelJVMTest
+@NightlyTest
 public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
 
     @Test
@@ -67,7 +66,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
         // There was an issue claimed that when the broker was down, job did not cancel.
         // Let's assert the cancellation didn't take too long.
         long durationSeconds = NANOSECONDS.toSeconds(System.nanoTime() - start);
-        assertTrue("durationSeconds=" + durationSeconds, durationSeconds < 10);
+        assertTrue(durationSeconds < 10, "durationSeconds=" + durationSeconds);
         logger.info("Job cancelled in " + durationSeconds + " seconds");
     }
 

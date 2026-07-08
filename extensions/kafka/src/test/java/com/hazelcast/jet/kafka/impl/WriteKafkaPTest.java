@@ -40,7 +40,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -54,12 +54,10 @@ import org.apache.kafka.common.errors.InvalidTxnStateException;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -76,11 +74,12 @@ import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
-@RunWith(HazelcastSerialClassRunner.class)
+@SerialTest
+@QuickTest
+@ParallelJVMTest
 public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     private static final int PARTITION_COUNT = 20;
@@ -93,7 +92,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     private String topic;
     private IMap<Integer, String> sourceIMap;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws IOException {
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster(kafkaProperties());
@@ -111,7 +110,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         return config;
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         properties = new Properties();
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
@@ -128,7 +127,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         if (kafkaTestSupport != null) {
             kafkaTestSupport.shutdownKafkaCluster();
@@ -419,7 +418,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         TestInbox inbox = new TestInbox();
         inbox.add("foo");
         processor.process(0, inbox);
-        assertEquals("inbox size", 0, inbox.size());
+        assertEquals(0, inbox.size(), "inbox size");
         assertTrue(processor.saveToSnapshot());
         assertTrue(processor.snapshotCommitPrepare());
         processor.close();

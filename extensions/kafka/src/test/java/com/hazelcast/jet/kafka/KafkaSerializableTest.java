@@ -16,18 +16,16 @@
 
 package com.hazelcast.jet.kafka;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.archunit.ArchUnitRules;
 import com.hazelcast.test.archunit.ArchUnitTestSupport;
 import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(ParallelJVMTest.class)
+@SerialTest
+@ParallelJVMTest
 public class KafkaSerializableTest extends ArchUnitTestSupport {
 
     @Test

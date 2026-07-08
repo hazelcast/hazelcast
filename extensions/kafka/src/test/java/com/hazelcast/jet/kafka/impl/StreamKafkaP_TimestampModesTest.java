@@ -19,26 +19,25 @@ package com.hazelcast.jet.kafka.impl;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStageTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@SerialTest
+@NightlyTest
+@ParallelJVMTest
 public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
 
     private static final KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
@@ -47,7 +46,7 @@ public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
 
     private String topicName;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass1() throws IOException {
         kafkaTestSupport.createKafkaCluster();
         properties = new Properties();
@@ -57,12 +56,12 @@ public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
         properties.setProperty("auto.offset.reset", "earliest");
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass1() {
         kafkaTestSupport.shutdownKafkaCluster();
     }
 
-    @Before
+    @BeforeEach
     public void before1() {
         topicName = randomString();
         kafkaTestSupport.createTopic(topicName, 1);

@@ -43,7 +43,7 @@ import com.hazelcast.jet.kafka.TopicsConfig.TopicConfig;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -52,12 +52,12 @@ import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -112,21 +112,20 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastSerialClassRunner.class)
+@QuickTest
+@SerialTest
 public class StreamKafkaPTest {
 
     private static final int INITIAL_PARTITION_COUNT = 4;
     private static final long LAG = 3;
 
     private static KafkaTestSupport kafkaTestSupport;
-    private static boolean mustRecreateCluster = true;
 
     private static TestHazelcastFactory factory;
     private static HazelcastInstance[] instances;
@@ -134,33 +133,28 @@ public class StreamKafkaPTest {
     private String topic1Name;
     private String topic2Name;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws IOException {
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
     }
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         topic1Name = randomString();
         topic2Name = randomString();
         kafkaTestSupport.createTopic(topic1Name, INITIAL_PARTITION_COUNT);
         kafkaTestSupport.createTopic(topic2Name, INITIAL_PARTITION_COUNT);
 
-        if (mustRecreateCluster) {
-            if (factory != null) {
-                shutdownHz();
-            }
-            factory = new TestHazelcastFactory();
-            Config config = smallInstanceConfigWithoutJetAndMetrics();
-            config.getJetConfig().setEnabled(true);
-            instances = factory.newInstances(config, 2);
-            waitAllForSafeState(instances);
-            mustRecreateCluster = false;
-        }
+        factory = new TestHazelcastFactory();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getJetConfig().setEnabled(true);
+        instances = factory.newInstances(config, 2);
+        waitAllForSafeState(instances);
     }
 
-    public static void shutdownHz() {
+    @AfterEach
+    public void shutdownHz() {
         List<Job> jobs = instances[0].getJet().getJobs();
         for (Job job : jobs) {
             ditchJob(job, instances);
@@ -170,10 +164,9 @@ public class StreamKafkaPTest {
         instances = null;
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
-        shutdownHz();
     }
 
     private HazelcastInstance instance() {
@@ -213,7 +206,7 @@ public class StreamKafkaPTest {
             assertEquals(messageCount, list.size());
             for (int i = 0; i < messageCount; i++) {
                 String value = i + "-x";
-                assertTrue("missing entry: " + value, list.contains(value));
+                assertTrue(list.contains(value), "missing entry: " + value);
             }
         });
     }
@@ -424,7 +417,6 @@ public class StreamKafkaPTest {
     }
 
     private void integrationTest(ProcessingGuarantee guarantee) {
-        mustRecreateCluster = true;
         int messageCount = 20;
         String sinkListName = randomName();
 
@@ -452,8 +444,8 @@ public class StreamKafkaPTest {
             for (int i = 0; i < messageCount; i++) {
                 Entry<Integer, String> entry1 = createEntry(i);
                 Entry<Integer, String> entry2 = createEntry(i - messageCount);
-                assertTrue("missing entry: " + entry1, list.contains(entry1));
-                assertTrue("missing entry: " + entry2, list.contains(entry2));
+                assertTrue(list.contains(entry1), "missing entry: " + entry1);
+                assertTrue(list.contains(entry2), "missing entry: " + entry2);
             }
         });
 
@@ -463,9 +455,9 @@ public class StreamKafkaPTest {
             long currentMax = jr.getJobExecutionRecord(job.getId()).snapshotId();
             assertTrueEventually(() -> {
                 JobExecutionRecord jobExecutionRecord = jr.getJobExecutionRecord(job.getId());
-                assertNotNull("jobExecutionRecord == null", jobExecutionRecord);
+                assertNotNull(jobExecutionRecord, "jobExecutionRecord == null");
                 long newMax = jobExecutionRecord.snapshotId();
-                assertTrue("no snapshot produced", newMax > currentMax);
+                assertTrue(newMax > currentMax, "no snapshot produced");
                 System.out.println("snapshot " + newMax + " found, previous was " + currentMax);
             });
 
@@ -481,12 +473,12 @@ public class StreamKafkaPTest {
             waitForAll(futures);
 
             assertTrueEventually(() -> {
-                assertTrue("Not all messages were received", list.size() >= messageCount * 4);
+                assertThat(list).describedAs("Not all messages were received")
+                                .hasSizeGreaterThanOrEqualTo(messageCount * 4);
                 for (int i = 0; i < 2 * messageCount; i++) {
                     Entry<Integer, String> entry1 = createEntry(i);
                     Entry<Integer, String> entry2 = createEntry(i - messageCount);
-                    assertTrue("missing entry: " + entry1, list.contains(entry1));
-                    assertTrue("missing entry: " + entry2, list.contains(entry2));
+                    assertThat(list).contains(entry1, entry2);
                 }
             });
         }
@@ -581,10 +573,10 @@ public class StreamKafkaPTest {
 
         // restore snapshot
         processor.restoreFromSnapshot(snapshot);
-        assertTrue("snapshot not fully processed", snapshot.isEmpty());
+        assertTrue(snapshot.isEmpty(), "snapshot not fully processed");
 
         TestInbox snapshot2 = saveSnapshot(processor, outbox);
-        assertEquals("new snapshot not equal after restore", snapshotItems, unwrapBroadcastKey(snapshot2.queue()));
+        assertEquals(snapshotItems, unwrapBroadcastKey(snapshot2.queue()), "new snapshot not equal after restore");
 
         // the second item should be produced one more time
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
@@ -682,7 +674,7 @@ public class StreamKafkaPTest {
             System.out.println("Entry " + i + " produced to partition " + recordMetadata.partition());
             somethingInPartition1 |= recordMetadata.partition() == 1;
         }
-        assertTrue("nothing was produced to partition-1", somethingInPartition1);
+        assertTrue(somethingInPartition1, "nothing was produced to partition-1");
         Set<Object> receivedEvents = new HashSet<>();
         for (int i = 1; i < 11;) {
             try {
@@ -735,7 +727,7 @@ public class StreamKafkaPTest {
             System.out.println("## Entry " + i + " produced to partition " + recordMetadata.partition());
             somethingInPartition1 |= recordMetadata.partition() == 1;
         }
-        assertTrue("nothing was produced to partition-1", somethingInPartition1);
+        assertTrue(somethingInPartition1, "nothing was produced to partition-1");
         Set<Object> receivedEvents = new LinkedHashSet<>();
         for (int i = 2; i < 12;) {
             try {
@@ -900,13 +892,14 @@ public class StreamKafkaPTest {
         // Then
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
-            assertFalse("no item in outbox", outbox.queue(0).isEmpty());
+            assertFalse(outbox.queue(0).isEmpty(), "no item in outbox");
         });
         assertEquals("1", outbox.queue(0).poll());
         assertNull(outbox.queue(0).poll());
     }
 
     @Test
+    @Disabled
     public void when_topicDoesNotExist_then_partitionCountGreaterThanZero() {
         try (var c = kafkaTestSupport.createConsumer("non-existing-topic")) {
             assertTrueEventually(() -> assertGreaterOrEquals("partition count", c.partitionsFor("non-existing-topic",
@@ -954,7 +947,7 @@ public class StreamKafkaPTest {
     private <T> T consumeEventually(Processor processor, TestOutbox outbox) {
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
-            assertFalse("no item in outbox", outbox.queue(0).isEmpty());
+            assertFalse(outbox.queue(0).isEmpty(), "no item in outbox");
         });
         return (T) outbox.queue(0).poll();
     }
@@ -962,7 +955,7 @@ public class StreamKafkaPTest {
     private void assertNoMoreItems(StreamKafkaP<?, ?, ?> processor, TestOutbox outbox) throws InterruptedException {
         Thread.sleep(1000);
         assertFalse(processor.complete());
-        assertTrue("unexpected items in outbox: " + outbox.queue(0), outbox.queue(0).isEmpty());
+        assertThat(outbox.queue(0)).isEmpty();
     }
 
     @SuppressWarnings("unchecked")

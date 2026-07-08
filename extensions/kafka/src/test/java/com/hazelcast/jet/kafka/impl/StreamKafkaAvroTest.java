@@ -25,19 +25,17 @@ import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecordBuilder;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.util.Map;
@@ -55,8 +53,9 @@ import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CL
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
-@RunWith(HazelcastSerialClassRunner.class)
+@SerialTest
+@ParallelJVMTest
+@NightlyTest
 public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 4;
@@ -77,14 +76,14 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
     private String topicName;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws IOException {
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
         initialize(2, null);
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         topicName = randomString();
         kafkaTestSupport.setProducerProperties(
@@ -94,7 +93,7 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
         kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
         kafkaTestSupport = null;
