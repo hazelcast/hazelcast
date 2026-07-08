@@ -102,10 +102,9 @@
         <debezium.version>1.9.8.Final</debezium.version>
         <!--
             When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-            - `com.github.luben:zstd-jni`
             - `org.checkerframework`
         -->
-        <new.debezium.version>3.1.3.Final</new.debezium.version>
+        <new.debezium.version>3.2.7.Final</new.debezium.version>
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.4.3</hadoop.version>
@@ -118,18 +117,12 @@
         <!--
             Confluent depends on Kafka, and consideration should be given when upgrading
             https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
-
-            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-            - `at.yawk.lz4:lz4-java`
-            - `com.github.luben:zstd-jni`
         -->
-        <kafka.version>3.9.2</kafka.version>
-        <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
-        <confluent.version>7.9.5</confluent.version>
+        <kafka.version>4.3.0</kafka.version>
+        <confluent.version>8.1.3</confluent.version>
         <kotlin.version>2.4.0</kotlin.version>
         <!--
             Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro
-            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
         -->
         <parquet.version>1.17.1</parquet.version>
 
@@ -502,11 +495,6 @@
                 <version>9.7.0</version>
             </dependency>
             <dependency>
-                <groupId>com.zendesk</groupId>
-                <artifactId>mysql-binlog-connector-java</artifactId>
-                <version>0.31.0</version>
-            </dependency>
-            <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>42.7.13</version>
@@ -565,17 +553,6 @@
                 <artifactId>objenesis</artifactId>
                 <version>3.5</version>
             </dependency>
-            <!--
-                Addresses convergence between:
-                - `com.zendesk:mysql-binlog-connector-java` (transitively via `io.debezium:debezium-connector-mysql`)
-                - `org.apache.parquet:parquet-hadoop` (transitively via `org.apache.parquet:parquet-avro`)
-                - `org.apache.kafka:kafka-clients`
-            -->
-            <dependency>
-                <groupId>com.github.luben</groupId>
-                <artifactId>zstd-jni</artifactId>
-                <version>1.5.7-3</version>
-            </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-bom</artifactId>
@@ -616,17 +593,6 @@
                 <groupId>ch.qos.reload4j</groupId>
                 <artifactId>reload4j</artifactId>
                 <version>1.2.26</version>
-            </dependency>
-            <!--
-              Resolves dependency convergence between:
-              - `org.apache.kafka:kafka-clients`
-              - `org.elasticsearch:elasticsearch-lz4`
-              Should be set to the dependency version specified in the former
-            -->
-            <dependency>
-                <groupId>at.yawk.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.janino</groupId>
@@ -1242,6 +1208,10 @@
 
                                 <!-- Exclude Jet core API - we provide patch-level compatibility guarantees only -->
                                 <exclude>com.hazelcast.jet.core.*</exclude>
+
+                                <!-- Temporary until CTT-1216 is done -->
+                                <exclude>com.hazelcast.jet.cdc.*</exclude>
+                                <exclude>com.hazelcast.enterprise.jet.cdc.*</exclude>
 
                                 <!-- Exclude internal packages -->
                                 <exclude>*.internal.*</exclude>

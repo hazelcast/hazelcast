@@ -50,6 +50,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.InvalidProducerEpochException;
+import org.apache.kafka.common.errors.InvalidTxnStateException;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -199,14 +200,14 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     private void validateJobFailureReason(Job job) {
         JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
         String msg =
-            "Kafka transactional producer became invalid (fenced or epoch mismatch). " +
+            "Kafka transactional producer became invalid (fenced, epoch or txn state mismatch). " +
                 "This most likely occurred because the transaction exceeded Kafka's transaction timeout " +
                 "(transaction.timeout.ms) on the broker side. " +
                 "Consider increasing transaction.timeout.ms configuration";
         assertThatCode(job::join)
             .hasMessageContaining(msg)
             .rootCause()
-            .isInstanceOfAny(InvalidProducerEpochException.class, ProducerFencedException.class);
+            .isInstanceOfAny(InvalidProducerEpochException.class, ProducerFencedException.class, InvalidTxnStateException.class);
     }
 
     @Test

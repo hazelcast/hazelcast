@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.starter;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
@@ -161,7 +162,7 @@ public class MavenInterface {
     }
 
     /** @return a {@link String} output of {@code mvn help:evaluate -Dexpression=EXPRESSION} */
-    public static String evaluateExpression(String expression) throws IOException {
+    public static String evaluateExpression(String expression) {
         // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
         // https://stackoverflow.com/q/76866880
         // We use `--quiet` to only output the expression result
@@ -179,6 +180,8 @@ public class MavenInterface {
                 throw new IOException("Maven expression (\"%s\") returned unexpected response:%n%s".formatted(expression,
                         String.join(System.lineSeparator(), output)));
             }
+        } catch (IOException e) {
+            throw rethrow(e);
         }
     }
 }

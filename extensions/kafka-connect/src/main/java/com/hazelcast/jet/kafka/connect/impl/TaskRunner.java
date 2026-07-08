@@ -18,6 +18,7 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import org.apache.kafka.common.metrics.PluginMetrics;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
@@ -31,6 +32,7 @@ import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 public class TaskRunner {
     private final ILogger logger;
+    private final PluginMetrics pluginMetrics;
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
@@ -40,11 +42,12 @@ public class TaskRunner {
     private SourceTask task;
     private volatile Map<String, String> taskConfigReference;
 
-    TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory) {
+    TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory, PluginMetrics pluginMetrics) {
         this.name = name;
         this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
         this.logger = Logger.getLogger(getClass().getName() + " " + name);
+        this.pluginMetrics = pluginMetrics;
     }
 
     public List<SourceRecord> poll() {
@@ -113,7 +116,7 @@ public class TaskRunner {
                 if (taskConfig != null) {
                     SourceTask taskLocal = sourceTaskFactory.create();
                     logger.info("Initializing task '" + name + "'");
-                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
+                    taskLocal.initialize(new JetSourceTaskContext(pluginMetrics, taskConfig, state));
                     logger.info("Starting task '" + name + "'");
                     taskLocal.start(taskConfig);
                     this.task = taskLocal;

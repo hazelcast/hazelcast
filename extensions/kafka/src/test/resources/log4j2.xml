@@ -25,7 +25,7 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast" level="DEBUG"/>
-        <Logger name="org.apache.kafka.clients.producer" level="DEBUG"/>
+        <Logger name="com.hazelcast" level="INFO"/>
+        <Logger name="org.apache.kafka" level="WARN"/>
     </Loggers>
 </Configuration>

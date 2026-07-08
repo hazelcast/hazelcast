@@ -74,6 +74,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.AfterEach;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -163,6 +164,22 @@ public abstract class HazelcastTestSupport {
     public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
     private TestHazelcastInstanceFactory factory;
+
+    /**
+     * Blocks until all futures in the list return {@code .get()}
+     */
+    public static void waitForAll(@Nonnull List<Future<?>> futures) {
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);

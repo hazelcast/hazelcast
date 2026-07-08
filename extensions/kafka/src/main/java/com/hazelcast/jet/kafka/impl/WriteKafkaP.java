@@ -54,6 +54,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.idToString;
@@ -118,9 +119,12 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     }
 
     private static Exception wrapIfProducerException(Exception e, ILogger logger) {
-        if (e instanceof ProducerFencedException || e instanceof InvalidProducerEpochException) {
+        e = peel(e);
+        if (e instanceof ProducerFencedException
+            || e instanceof InvalidProducerEpochException
+            || e instanceof InvalidTxnStateException) {
             String msg =
-                "Kafka transactional producer became invalid (fenced or epoch mismatch). " +
+                "Kafka transactional producer became invalid (fenced, epoch or txn state mismatch). " +
                     "This most likely occurred because the transaction exceeded Kafka's transaction timeout " +
                     "(transaction.timeout.ms) on the broker side. " +
                     "Consider increasing transaction.timeout.ms configuration";

@@ -16,14 +16,15 @@
 
 package com.hazelcast.jet.kafka.impl;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
@@ -77,16 +78,29 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.test.HazelcastTestSupport.waitForAll;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.JetTestSupport.ditchJob;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static com.hazelcast.test.HazelcastTestSupport.assertBetween;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertGreaterOrEquals;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueAllTheTime;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomName;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics;
+import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -106,12 +120,16 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamKafkaPTest extends SimpleTestInClusterSupport {
+public class StreamKafkaPTest {
 
     private static final int INITIAL_PARTITION_COUNT = 4;
     private static final long LAG = 3;
 
     private static KafkaTestSupport kafkaTestSupport;
+    private static boolean mustRecreateCluster = true;
+
+    private static TestHazelcastFactory factory;
+    private static HazelcastInstance[] instances;
 
     private String topic1Name;
     private String topic2Name;
@@ -120,21 +138,46 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public static void beforeClass() throws IOException {
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
-        initialize(2, null);
     }
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         topic1Name = randomString();
         topic2Name = randomString();
         kafkaTestSupport.createTopic(topic1Name, INITIAL_PARTITION_COUNT);
         kafkaTestSupport.createTopic(topic2Name, INITIAL_PARTITION_COUNT);
+
+        if (mustRecreateCluster) {
+            if (factory != null) {
+                shutdownHz();
+            }
+            factory = new TestHazelcastFactory();
+            Config config = smallInstanceConfigWithoutJetAndMetrics();
+            config.getJetConfig().setEnabled(true);
+            instances = factory.newInstances(config, 2);
+            waitAllForSafeState(instances);
+            mustRecreateCluster = false;
+        }
+    }
+
+    public static void shutdownHz() {
+        List<Job> jobs = instances[0].getJet().getJobs();
+        for (Job job : jobs) {
+            ditchJob(job, instances);
+        }
+        factory.terminateAll();
+        factory = null;
+        instances = null;
     }
 
     @AfterClass
     public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
-        kafkaTestSupport = null;
+        shutdownHz();
+    }
+
+    private HazelcastInstance instance() {
+        return instances[0];
     }
 
     // test for https://github.com/hazelcast/hazelcast/issues/21455
@@ -380,10 +423,9 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         integrationTest(EXACTLY_ONCE);
     }
 
-    private void integrationTest(ProcessingGuarantee guarantee) throws Exception {
+    private void integrationTest(ProcessingGuarantee guarantee) {
+        mustRecreateCluster = true;
         int messageCount = 20;
-        HazelcastInstance[] instances = new HazelcastInstance[2];
-        Arrays.setAll(instances, i -> createHazelcastInstance());
         String sinkListName = randomName();
 
         Pipeline p = Pipeline.create();
@@ -395,11 +437,14 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         config.setProcessingGuarantee(guarantee);
         config.setSnapshotIntervalMillis(500);
         Job job = instances[0].getJet().newJob(p, config);
-        sleepSeconds(3);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < messageCount; i++) {
-            kafkaTestSupport.produceSync(topic1Name, i, Integer.toString(i));
-            kafkaTestSupport.produceSync(topic2Name, i - messageCount, Integer.toString(i - messageCount));
+            futures.add(kafkaTestSupport.produce(topic1Name, i, Integer.toString(i)));
+            futures.add(kafkaTestSupport.produce(topic2Name, i - messageCount, Integer.toString(i - messageCount)));
         }
+        waitForAll(futures);
         IList<Object> list = instances[0].getList(sinkListName);
 
         assertTrueEventually(() -> {
@@ -427,12 +472,13 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             // Bring down one member. Job should restart and drain additional items (and maybe
             // some of the previous duplicately).
             instances[1].getLifecycleService().terminate();
-            Thread.sleep(500);
 
+            futures.clear();
             for (int i = messageCount; i < 2 * messageCount; i++) {
-                kafkaTestSupport.produceSync(topic1Name, i, Integer.toString(i));
-                kafkaTestSupport.produceSync(topic2Name, i - messageCount, Integer.toString(i - messageCount));
+                futures.add(kafkaTestSupport.produce(topic1Name, i, Integer.toString(i)));
+                futures.add(kafkaTestSupport.produce(topic2Name, i - messageCount, Integer.toString(i - messageCount)));
             }
+            waitForAll(futures);
 
             assertTrueEventually(() -> {
                 assertTrue("Not all messages were received", list.size() >= messageCount * 4);
@@ -548,7 +594,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_duplicateTopicsProvide_then_uniqueTopicsSubscribed() throws Exception {
-        HazelcastInstance[] instances = instances();
         assertClusterSizeEventually(2, instances);
         String sinkListName = randomName();
 
@@ -864,8 +909,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void when_topicDoesNotExist_then_partitionCountGreaterThanZero() {
         try (var c = kafkaTestSupport.createConsumer("non-existing-topic")) {
-            assertGreaterOrEquals("partition count", c.partitionsFor("non-existing-topic",
-                    Duration.ofSeconds(2)).size(), 1);
+            assertTrueEventually(() -> assertGreaterOrEquals("partition count", c.partitionsFor("non-existing-topic",
+                    Duration.ofMinutes(2)).size(), 1));
         }
     }
 

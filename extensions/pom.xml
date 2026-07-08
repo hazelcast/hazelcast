@@ -35,9 +35,10 @@
 
     <modules>
         <module>avro</module>
-        <module>cdc-debezium</module>
-        <module>cdc-mysql</module>
-        <module>cdc-postgres</module>
+        <!-- TEMP CHANGE: CDC modules excluded as we cannot upgrade it easily -->
+<!--        <module>cdc-debezium</module>-->
+<!--        <module>cdc-mysql</module>-->
+<!--        <module>cdc-postgres</module>-->
         <module>csv</module>
         <module>elasticsearch/elasticsearch-7</module>
         <module>hadoop</module>

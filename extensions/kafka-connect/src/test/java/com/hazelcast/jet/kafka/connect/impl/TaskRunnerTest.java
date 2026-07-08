@@ -42,7 +42,7 @@ public class TaskRunnerTest {
 
     private static final int CONFIGURED_ITEMS_SIZE = 3;
     private final DummySourceConnector connector = new DummySourceConnector();
-    private final TaskRunner taskRunner = new TaskRunner("some-task-name", new State(), DummyTask::new);
+    private final TaskRunner taskRunner = new TaskRunner("some-task-name", new State(), DummyTask::new, null);
 
 
     @BeforeEach

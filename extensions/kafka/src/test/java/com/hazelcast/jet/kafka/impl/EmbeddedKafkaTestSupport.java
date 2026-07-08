@@ -16,72 +16,61 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.TestUtils;
-import kafka.zk.EmbeddedZookeeper;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.utils.Time;
+import org.apache.kafka.common.test.KafkaClusterTestKit;
+import org.apache.kafka.common.test.TestKitNodes;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
-import static com.hazelcast.internal.tpcengine.util.OS.isWindows;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 class EmbeddedKafkaTestSupport extends KafkaTestSupport {
-    private static final String ZK_HOST = "127.0.0.1";
     private static final String BROKER_HOST = "127.0.0.1";
-    private EmbeddedZookeeper zkServer;
-    private String zkConnect;
-    private KafkaServer kafkaServer;
-    private int brokerPort = -1;
+    private KafkaClusterTestKit cluster;
 
     @Override
     protected String createKafkaCluster0(Map<String, String> properties) throws IOException {
-        System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
-        zkServer = new EmbeddedZookeeper();
-        zkConnect = ZK_HOST + ':' + zkServer.port();
-
-        Properties brokerProps = new Properties();
-        brokerProps.setProperty("zookeeper.connect", zkConnect);
-        brokerProps.setProperty("broker.id", "0");
-        brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
-        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ":0");
-        brokerProps.setProperty("offsets.topic.replication.factor", "1");
-        brokerProps.setProperty("offsets.topic.num.partitions", "1");
+        Map<String, String> brokerProps = new HashMap<>();
+        brokerProps.put("broker.id", "0");
+        brokerProps.put("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
+        brokerProps.put("listeners", "PLAINTEXT://" + BROKER_HOST + ":0");
+        brokerProps.put("offsets.topic.replication.factor", "1");
+        brokerProps.put("offsets.topic.num.partitions", "1");
         // we need this due to avoid OOME while running tests, see https://issues.apache.org/jira/browse/KAFKA-3872
-        brokerProps.setProperty("log.cleaner.dedupe.buffer.size", Long.toString(2 * 1024 * 1024L));
-        brokerProps.setProperty("transaction.state.log.replication.factor", "1");
-        brokerProps.setProperty("transaction.state.log.num.partitions", "1");
-        brokerProps.setProperty("transaction.state.log.min.isr", "1");
-        brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
-        brokerProps.setProperty("group.initial.rebalance.delay.ms", "0");
+        brokerProps.put("log.cleaner.dedupe.buffer.size", Long.toString(2 * 1024 * 1024L));
+        brokerProps.put("transaction.state.log.replication.factor", "1");
+        brokerProps.put("transaction.state.log.num.partitions", "1");
+        brokerProps.put("transaction.state.log.min.isr", "1");
+        brokerProps.put("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
+        brokerProps.put("group.initial.rebalance.delay.ms", "0");
 
-        properties.forEach(brokerProps::setProperty);
+        brokerProps.putAll(properties);
 
-        KafkaConfig config = new KafkaConfig(brokerProps);
-        kafkaServer = TestUtils.createServer(config, Time.SYSTEM);
-        brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
+        TestKitNodes nodes = new TestKitNodes.Builder()
+            .setCombined(true)
+            .setNumBrokerNodes(1)
+            .setNumControllerNodes(1)
+            .setPerServerProperties(Map.of(0, brokerProps))
+            .build();
 
-        return BROKER_HOST + ':' + brokerPort;
+        try {
+            this.cluster = new KafkaClusterTestKit.Builder(nodes).build();
+            cluster.startup();
+            cluster.waitForReadyBrokers();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return cluster.bootstrapServers();
     }
 
     @Override
     protected void shutdownKafkaCluster0() {
-        if (kafkaServer != null) {
-            kafkaServer.shutdown();
-            kafkaServer = null;
-            try {
-                zkServer.shutdown();
-                zkServer = null;
-            } catch (Exception e) {
-                // ignore error on Windows, it fails there, see https://issues.apache.org/jira/browse/KAFKA-6291
-                if (!isWindows()) {
-                    throw e;
-                }
-            }
+        if (cluster != null) {
+            closeResource(cluster);
+            cluster = null;
         }
     }
 }

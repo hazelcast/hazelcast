@@ -639,6 +639,18 @@
                     <groupId>org.apache.yetus</groupId>
                     <artifactId>audience-annotations</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.ee10.websocket</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.http2</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.ee10</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -790,6 +802,11 @@
             <artifactId>apiguardian-api</artifactId>
             <version>1.1.2</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-resolver-provider</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
