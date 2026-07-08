@@ -118,7 +118,7 @@
             Confluent depends on Kafka, and consideration should be given when upgrading
             https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
         -->
-        <kafka.version>4.3.0</kafka.version>
+        <kafka.version>4.3.1</kafka.version>
         <confluent.version>8.1.3</confluent.version>
         <kotlin.version>2.4.0</kotlin.version>
         <!--
