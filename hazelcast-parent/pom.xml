@@ -1183,9 +1183,8 @@
                             <accessModifier>public</accessModifier>
                             <excludes>
                                 <!-- Excluded breaking changes reported: -->
-                                <!--  * StreamStage.filterStateful: METHOD_ABSTRACT_NOW_DEFAULT
-                                This is a public API for user consumption, but not intended to be implemented by users. -->
-                                <exclude>com.hazelcast.jet.pipeline.StreamStageWithKey#filterStateful(long,com.hazelcast.function.SupplierEx,com.hazelcast.function.BiPredicateEx)</exclude>
+                                <!--  * JsonUtil.toBean removal is intended breaking change for 6.0 (hazelcast.atlassian.net/browse/CTT-1212)-->
+                                <exclude>com.hazelcast.jet.json.JsonUtil#toBean(java.lang.Class)</exclude>
 
                                 <!-- End of custom exclusions. Remove after release to detect future breaking changes between x.y.0 and patches -->
 

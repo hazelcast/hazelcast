@@ -39,7 +39,6 @@ import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.json.JsonUtil;
-import com.hazelcast.jet.json.impl.JsonUtilImpl;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
@@ -1330,7 +1329,7 @@ public final class Sources {
     @Nonnull
     public static <T> StreamSource<T> jsonWatcher(@Nonnull String watchedDirectory, @Nonnull Class<T> type) {
         return filesBuilder(watchedDirectory)
-                .buildWatcher(JsonUtilImpl.toBeanBiFn(type));
+                .buildWatcher((fileName, line) -> JsonUtil.beanFrom(line, type));
     }
 
     /**

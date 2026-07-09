@@ -17,8 +17,8 @@
 package com.hazelcast.jet.json.impl;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.impl.util.JsonUtilTest;
 import com.hazelcast.jet.json.JsonUtil;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,14 +41,10 @@ import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.json.impl.JsonUtilImpl.getElementType;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assumptions.assumeThat;
 
 /**
  * Note: {@link JsonUtil} has a static {@link JSON} instance with {@link JacksonJrFilteringExtension}
@@ -65,52 +61,14 @@ public class JsonUtilImplTest {
                     .add("backupCount", "2"))
             .toString();
 
-    enum FunctionUnderTest implements BiFunction<Class<?>, String, Object> {
+    enum FunctionUnderTest implements BiFunctionEx<Class<?>, String, Object> {
 
         PublicToBean {
             @Override
-            public Object apply(Class<?> type, String json) {
-                return JsonUtil.toBean(type).apply(json);
+            public Object applyEx(Class<?> type, String json) throws IOException {
+                return JsonUtil.beanFrom(json, type);
             }
         },
-
-        BeanFromFn {
-            @Override
-            public Object apply(Class<?> type, String json) {
-                return JsonUtilImpl.toBean(type).apply(json);
-            }
-        },
-
-        BeanFromBiFn {
-            @Override
-            public Object apply(Class<?> type, String json) {
-                return JsonUtilImpl.toBeanBiFn(type).apply(null, json);
-            }
-        }
-    }
-
-    enum FunctionForSerialization implements Function<Class<?>, Object> {
-
-        PublicToBean {
-            @Override
-            public Object apply(Class<?> type) {
-                return JsonUtil.toBean(type);
-            }
-        },
-
-        BeanFromFn {
-            @Override
-            public Object apply(Class<?> type) {
-                return JsonUtilImpl.toBean(type);
-            }
-        },
-
-        BeanFromBiFn {
-            @Override
-            public Object apply(Class<?> type) {
-                return JsonUtilImpl.toBeanBiFn(type);
-            }
-        }
     }
 
     @BeforeAll
@@ -133,105 +91,12 @@ public class JsonUtilImplTest {
     }
 
     @CartesianTest
-    void shouldNotCreate_whenBlocklistedClass(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
-                                              @ClassesBlocklistedByDefault Class<?> clazz) {
-        assumeThat(getElementType(clazz))
-                .as("High-level functions do not check fields")
-                .isNotEqualTo(MyDtoWithBlockedField.class);
-
-        assertThatThrownBy(() -> functionUnderTest.apply(clazz))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("cannot be deserialized using JSON");
-    }
-
-    @CartesianTest
-    @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldCreate_whenBlocklistedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
-                                                              @ClassesBlocklistedByDefault Class<?> clazz) {
-        assertThatNoException().isThrownBy(() -> functionUnderTest.apply(clazz));
-    }
-
-    @CartesianTest
     void shouldCreate_allowedClassAfterBlocklisted(@CartesianTest.Enum FunctionUnderTest functionUnderTest,
                                                    @ClassesAllowedByDefault Class<?> clazz) {
         // ensure that the blocking does not interfere
         assertThatThrownBy(() -> functionUnderTest.apply(MapConfig.class, wrapJsonInArrayIfNeeded(TEST_JSON, clazz)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(functionUnderTest.apply(clazz, wrapJsonInArrayIfNeeded(TEST_JSON, clazz))).isInstanceOf(clazz);
-    }
-
-    @CartesianTest
-    void shouldDeserialize_whenAllowedClass(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
-                                            @ClassesAllowedByDefault Class<?> clazz) {
-        // given
-        var function = functionUnderTest.apply(clazz);
-        var ss = new DefaultSerializationServiceBuilder().build();
-        var bytes = ss.toData(function);
-
-        // when
-        var deserialized = ss.toObject(bytes);
-
-        // then
-        assertThatDeserializedFunctionCreates(deserialized, clazz);
-    }
-
-    @CartesianTest
-    @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldDeserialize_whenAllowedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
-                                                               @ClassesAllowedByDefault Class<?> clazz) {
-        // given
-        var function = functionUnderTest.apply(clazz);
-        var ss = new DefaultSerializationServiceBuilder().build();
-        var bytes = ss.toData(function);
-
-        // when
-        var deserialized = ss.toObject(bytes);
-
-        // then
-        assertThatDeserializedFunctionCreates(deserialized, clazz);
-    }
-
-    @CartesianTest
-    @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldDeserialize_whenBlocklistedClassAndDefaultsDisabled(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
-                                                                   @ClassesBlocklistedByDefault Class<?> clazz) {
-        // given
-        var function = functionUnderTest.apply(clazz);
-        var ss = new DefaultSerializationServiceBuilder().build();
-        var bytes = ss.toData(function);
-
-        assertThatNoException().isThrownBy(() -> ss.toObject(bytes));
-    }
-
-    @CartesianTest
-    @SetSystemProperty(key = JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY, value = "true")
-    void shouldNotDeserializeFunction_whenBlocklistedClass(@CartesianTest.Enum FunctionForSerialization functionUnderTest,
-                                                           @ClassesBlocklistedByDefault Class<?> clazz) {
-        assumeThat(getElementType(clazz))
-                .as("High-level functions do not check fields")
-                .isNotEqualTo(MyDtoWithBlockedField.class);
-
-        var function = functionUnderTest.apply(clazz);
-        var ss = new DefaultSerializationServiceBuilder().build();
-        var bytes = ss.toData(function);
-
-        System.clearProperty(JsonUtilImpl.JSON_BLOCKLIST_DEFAULTS_DISABLED_PROPERTY);
-
-        assertThatThrownBy(() -> ss.toObject(bytes))
-                .rootCause()
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("cannot be deserialized using JSON");
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private void assertThatDeserializedFunctionCreates(Object deserialized, Class<?> expectedType) {
-        if (deserialized instanceof Function fun) {
-            assertThat(fun.apply(wrapJsonInArrayIfNeeded(TEST_JSON, expectedType)))
-                    .isInstanceOf(expectedType);
-        } else {
-            assertThat(((BiFunction) deserialized).apply(null, wrapJsonInArrayIfNeeded(TEST_JSON, expectedType)))
-                    .isInstanceOf(expectedType);
-        }
     }
 
     public static class MyDto {
