@@ -35,10 +35,6 @@
 
     <modules>
         <module>avro</module>
-        <!-- TEMP CHANGE: CDC modules excluded as we cannot upgrade it easily -->
-<!--        <module>cdc-debezium</module>-->
-<!--        <module>cdc-mysql</module>-->
-<!--        <module>cdc-postgres</module>-->
         <module>csv</module>
         <module>cdc-debezium</module>
         <module>cdc-postgres</module>
