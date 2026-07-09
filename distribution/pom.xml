@@ -297,42 +297,6 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-cdc-debezium</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-cdc-mysql</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-cdc-postgres</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-csv</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
