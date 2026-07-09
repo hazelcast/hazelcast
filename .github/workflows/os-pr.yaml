@@ -40,7 +40,7 @@ jobs:
           GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
       - name: Generate copybara config file
         run: |
-          curl --fail --silent https://raw.githubusercontent.com/hazelcast/mono-actions/main/copybara/copy-commit-to-os/common-copybara.bara.sky.template | \
+          curl --fail --retry 5 --retry-all-errors --show-error --silent https://raw.githubusercontent.com/hazelcast/mono-actions/main/copybara/copy-commit-to-os/common-copybara.bara.sky.template | \
           sed -e "s#<branch_to_sync>#${branch_to_sync}#" \
               -e "s#<sot_repo>#${sot_repo}#" \
               -e "s#<destination_repo>#${destination_repo}#" \
