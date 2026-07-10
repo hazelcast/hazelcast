@@ -318,6 +318,7 @@
                             <instructions>
                                 <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
                                 <Export-Package>
+                                    !com.hazelcast.shaded.*,
                                     com.hazelcast.*
                                 </Export-Package>
                                 <Import-Package>
