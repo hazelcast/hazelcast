@@ -222,16 +222,10 @@ public final class IOUtil {
     }
 
     public static LocalDateTime readLocalDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
+        LocalDate date = readLocalDate(in);
+        LocalTime time = readLocalTime(in);
 
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
-
-        return LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano);
+        return LocalDateTime.of(date, time);
     }
 
     public static void writeOffsetDateTime(ObjectDataOutput out, OffsetDateTime value) throws IOException {
@@ -244,18 +238,11 @@ public final class IOUtil {
     }
 
     public static OffsetDateTime readOffsetDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
+        LocalDateTime dateTime = readLocalDateTime(in);
 
         int zoneTotalSeconds = in.readInt();
         ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
-        return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
+        return OffsetDateTime.of(dateTime, zoneOffset);
     }
 
     public static void writeData(ObjectDataOutput out, Data data) throws IOException {

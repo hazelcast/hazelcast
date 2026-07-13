@@ -33,22 +33,11 @@ public final class PortableUtil {
     }
 
     public static void writeLocalTime(ObjectDataOutput out, LocalTime value) throws IOException {
-        int hour = value.getHour();
-        int minute = value.getMinute();
-        int second = value.getSecond();
-        int nano = value.getNano();
-        out.writeByte(hour);
-        out.writeByte(minute);
-        out.writeByte(second);
-        out.writeInt(nano);
+        IOUtil.writeLocalTime(out, value);
     }
 
     public static LocalTime readLocalTime(ObjectDataInput in) throws IOException {
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
-        return LocalTime.of(hour, minute, second, nano);
+        return IOUtil.readLocalTime(in);
     }
 
     public static void writeLocalDate(ObjectDataOutput out, LocalDate value) throws IOException {
@@ -75,21 +64,14 @@ public final class PortableUtil {
     }
 
     public static LocalDateTime readLocalDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
+        LocalDate date = readLocalDate(in);
+        LocalTime time = readLocalTime(in);
 
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
-
-        return LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano);
+        return LocalDateTime.of(date, time);
     }
 
     public static void writeOffsetDateTime(ObjectDataOutput out, OffsetDateTime value) throws IOException {
-        writeLocalDate(out, value.toLocalDate());
-        writeLocalTime(out, value.toLocalTime());
+        writeLocalDateTime(out, value.toLocalDateTime());
 
         ZoneOffset offset = value.getOffset();
         int totalSeconds = offset.getTotalSeconds();
@@ -97,17 +79,10 @@ public final class PortableUtil {
     }
 
     public static OffsetDateTime readOffsetDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
+        LocalDateTime dateTime = readLocalDateTime(in);
 
         int zoneTotalSeconds = in.readInt();
         ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
-        return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
+        return OffsetDateTime.of(dateTime, zoneOffset);
     }
 }
