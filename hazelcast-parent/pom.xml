@@ -794,7 +794,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.4.Final</version>
+                <version>7.4.5.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
