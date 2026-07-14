@@ -133,7 +133,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] newInstances() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
-        return factory.newInstances();
+        return factory.newInstances(smallInstanceConfig());
     }
 
     protected HazelcastInstance getDriver() {
