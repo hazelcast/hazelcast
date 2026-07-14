@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.iobuffer;
 
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -209,20 +210,8 @@ public class IOBuffer {
     }
 
     public void write(ByteBuffer src) {
-        write(src, src.remaining());
-    }
-
-    public void write(ByteBuffer src, int count) {
-        ensureRemaining(count);
-
-        if (src.remaining() <= count) {
-            buff.put(src);
-        } else {
-            int limit = src.limit();
-            src.limit(src.position() + count);
-            buff.put(src);
-            src.limit(limit);
-        }
+        ensureRemaining(src.remaining());
+        BufferUtil.put(buff, src);
     }
 
     // very inefficient
