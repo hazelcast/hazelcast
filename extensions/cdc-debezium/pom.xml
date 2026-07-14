@@ -46,7 +46,7 @@
     <dependencies>
         <dependency>
             <groupId>io.debezium</groupId>
-            <artifactId>debezium-core</artifactId>
+            <artifactId>debezium-connector-common</artifactId>
             <version>${debezium.version}</version>
         </dependency>
         <!-- this dependency is added to be shaded and avoid having classes 3 times on classpath -->

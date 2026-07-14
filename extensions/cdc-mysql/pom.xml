@@ -45,6 +45,7 @@
                         <excludes>
                             <exclude>com.hazelcast.jet:hazelcast-jet-cdc-debezium</exclude>
                             <exclude>io.debezium:debezium-core</exclude>
+                            <exclude>io.debezium:debezium-connector-common</exclude>
                             <exclude>io.debezium:debezium-ddl-parser</exclude>
                             <exclude>io.debezium:debezium-embedded</exclude>
                             <exclude>com.mysql:mysql-connector-j</exclude>
