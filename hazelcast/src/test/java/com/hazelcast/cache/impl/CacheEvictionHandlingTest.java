@@ -26,7 +26,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.apache.logging.log4j.core.LogEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.SetSystemProperty;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

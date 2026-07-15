@@ -18,8 +18,8 @@ package com.hazelcast.test;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.junit.platform.testkit.engine.EngineTestKit;
-import org.junitpioneer.jupiter.SetSystemProperty;
 
 import java.util.HashSet;
 import java.util.concurrent.ForkJoinPool;

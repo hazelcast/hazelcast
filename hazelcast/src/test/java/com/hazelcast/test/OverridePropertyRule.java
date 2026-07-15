@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * Can be used for finer control of the scope of a System property.
  * <p>
- * When migrating to JUnit5 consider using {@link org.junitpioneer.jupiter.SetEnvironmentVariable} and related.
+ * When migrating to JUnit5 consider using {@link org.junit.jupiter.api.util.SetSystemProperty} and related.
  */
 public final class OverridePropertyRule implements TestRule {
 

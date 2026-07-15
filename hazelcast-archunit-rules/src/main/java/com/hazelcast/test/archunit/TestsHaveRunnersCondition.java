@@ -81,12 +81,12 @@ public class TestsHaveRunnersCondition extends ArchCondition<JavaClass> {
                 return true;
             }
 
-            // Uses JUnit Pioneer's SetSystemProperty/RestoreSystemProperties
+            // Uses JUnit's SetSystemProperty/RestoreSystemProperties
             if (clazz.getAllMethods()
                     .stream()
                     .anyMatch(method -> Stream
-                            .of("org.junitpioneer.jupiter.SetSystemProperty",
-                                    "org.junitpioneer.jupiter.RestoreSystemProperties")
+                            .of("org.junit.jupiter.api.util.SetSystemProperty",
+                                    "org.junit.jupiter.api.util.RestoreSystemProperties")
                             .map(method::tryGetAnnotationOfType)
                             .anyMatch(Optional::isPresent))) {
                 return true;
