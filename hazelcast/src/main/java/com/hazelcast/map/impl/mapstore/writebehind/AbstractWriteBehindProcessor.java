@@ -22,9 +22,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.internal.serialization.SerializationService;
+import org.apache.logging.log4j.util.Strings;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Contains common functionality which is required by a {@link WriteBehindProcessor}
@@ -42,6 +45,7 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
     protected final MapStoreWrapper mapStore;
 
     private final SerializationService serializationService;
+    private final String mapName;
 
     AbstractWriteBehindProcessor(MapStoreContext mapStoreContext) {
         this.serializationService = mapStoreContext.getSerializationService();
@@ -50,6 +54,7 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
         MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         this.writeBatchSize = mapStoreConfig.getWriteBatchSize();
         this.writeCoalescing = mapStoreConfig.isWriteCoalescing();
+        this.mapName = mapStoreContext.getMapName();
     }
 
     protected Object toObject(Object obj) {
@@ -75,6 +80,28 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
             return null;
         }
         return list.subList(start, end);
+    }
+
+    protected void logWithMapName(BiConsumer<String, Throwable> loggingConsumer, String msg, Throwable t) {
+
+        loggingConsumer.accept(addMapNameIfGiven(msg), t);
+
+    }
+
+    protected void logWithMapName(Consumer<String> loggingConsumer, String msg) {
+
+        loggingConsumer.accept(addMapNameIfGiven(msg));
+
+    }
+
+    private String addMapNameIfGiven(String msg) {
+
+        if (Strings.isBlank(mapName)) {
+            return msg;
+        }
+
+        return String.format("(in context of map '%s') %s", mapName, msg);
+
     }
 
     /**
