@@ -151,10 +151,6 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <!--
-                                Distinct from the shaded jar's `com.hazelcast.core` so both can coexist
-                                on the Java module path without a duplicate-module resolution error.
-                            -->
                             <Automatic-Module-Name>com.hazelcast.core.slim</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
