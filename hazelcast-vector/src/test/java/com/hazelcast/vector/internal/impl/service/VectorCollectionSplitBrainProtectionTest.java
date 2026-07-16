@@ -51,6 +51,7 @@ public class VectorCollectionSplitBrainProtectionTest extends HazelcastTestSuppo
                 .setSplitBrainProtectionName("atLeastThreeMembers"));
         var members = createHazelcastInstances(config, 3);
         collection = members[0].getVectorCollection("test");
+        assertClusterSizeEventually(3, members[0]);
 
         // while cluster has 3 members, VectorCollection operates normally
         assertThat(collection.putAsync(1, VectorDocument.of(1, VectorValues.of(new float[] {1, 1}))))
@@ -88,6 +89,7 @@ public class VectorCollectionSplitBrainProtectionTest extends HazelcastTestSuppo
                 .setSplitBrainProtectionName("atLeastThreeMembers"));
         var members = createHazelcastInstances(config, 3);
         collection = members[0].getVectorCollection("test");
+        assertClusterSizeEventually(3, members[0]);
 
         // while cluster has 3 members, VectorCollection operates normally
         assertThat(collection.putAsync(1, VectorDocument.of(1, VectorValues.of(new float[] {1, 1}))))
