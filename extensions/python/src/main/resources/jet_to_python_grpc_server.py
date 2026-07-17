@@ -52,7 +52,12 @@ def serve(phoneback_port, handler_module_name, handler_function_name):
     jet_to_python_pb2_grpc.add_JetToPythonServicer_to_server(
         JetToPythonServicer(handler_function), server
     )
-    listen_port = server.add_insecure_port("localhost:0")
+    # Bind explicitly to 127.0.0.1 - the address the Java side connects to.
+    # "localhost" may resolve to both ::1 and 127.0.0.1, and grpcio >= 1.80
+    # reports success even if only ::1 could be bound, handing out a port that
+    # on 127.0.0.1 may belong to another process (e.g. the phone-back socket
+    # of another tasklet), which corrupts the port handshake with Jet.
+    listen_port = server.add_insecure_port("127.0.0.1:0")
     if listen_port == 0:
         logger.error("Couldn't find a port to bind to")
         return
