@@ -632,14 +632,6 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.yetus</groupId>
-                    <artifactId>audience-annotations</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.eclipse.jetty.ee10.websocket</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
@@ -669,12 +661,6 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_${scala.version}</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.yetus</groupId>
-                    <artifactId>audience-annotations</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>

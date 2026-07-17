@@ -86,12 +86,6 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_${scala.version}</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.yetus</groupId>
-                    <artifactId>audience-annotations</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>

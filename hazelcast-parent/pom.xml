@@ -185,6 +185,8 @@
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
 
+        <dependency.analyze.phase>validate</dependency.analyze.phase>
+
         <commonArgLine>
             -ea
             -Dhazelcast.phone.home.enabled=false
@@ -526,12 +528,6 @@
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
                 <version>5.4.3</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
@@ -1385,6 +1381,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze-exclusions</id>
+                        <phase>${dependency.analyze.phase}</phase>
+                        <goals>
+                            <goal>analyze-exclusions</goal>
+                        </goals>
+                        <configuration>
+                            <exclusionFail>true</exclusionFail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -1426,6 +1438,8 @@
                 <enforcer.skip>true</enforcer.skip>
                 <!-- https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#useIncrementalCompilation -->
                 <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
+                <!-- Skip running maven-dependency-plugin analysis -->
+                <dependency.analyze.phase>none</dependency.analyze.phase>
             </properties>
         </profile>
 

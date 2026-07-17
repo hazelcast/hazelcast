@@ -65,10 +65,6 @@
                     <artifactId>jersey-container-servlet</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.glassfish.jersey.inject</groupId>
                     <artifactId>jersey-hk2</artifactId>
                 </exclusion>
