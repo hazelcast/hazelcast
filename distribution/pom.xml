@@ -89,6 +89,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <formats>
+                        <format>zip</format>
+                        <format>tar.gz</format>
+                    </formats>
+                    <tarLongFileMode>posix</tarLongFileMode>
+                </configuration>
                 <executions>
                     <execution>
                         <id>distro-assembly-hazelcast</id>
@@ -103,7 +110,6 @@
                                 <descriptor>src/assembly/assembly-descriptor.xml</descriptor>
                             </descriptors>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <tarLongFileMode>posix</tarLongFileMode>
                         </configuration>
                     </execution>
                     <execution>
@@ -118,7 +124,6 @@
                             <descriptors>
                                 <descriptor>src/assembly/assembly-descriptor-slim.xml</descriptor>
                             </descriptors>
-                            <tarLongFileMode>posix</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
