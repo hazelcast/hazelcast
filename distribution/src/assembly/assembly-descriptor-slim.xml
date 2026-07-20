@@ -23,12 +23,19 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>*</include>
+                <include>com.hazelcast:hazelcast</include>
+                <include>com.hazelcast:hazelcast-sql</include>
+                <include>com.hazelcast:hazelcast-vector</include>
+                <include>com.hazelcast:hazelcast-wm</include>
+                <include>com.hazelcast:hazelcast-distribution</include>
+                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
+                <include>javax.cache:cache-api</include>
+                <include>org.apache.logging.log4j:*</include>
+                <include>org.slf4j:*</include>
+                <include>info.picocli:picocli</include>
+                <include>org.jline:*</include>
+                <include>org.fusesource.jansi:jansi</include>
             </includes>
-            <excludes>
-                <exclude>com.hazelcast:hazelcast-mapstore</exclude>
-                <exclude>com.hazelcast.jet:*</exclude>
-            </excludes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
         </dependencySet>
