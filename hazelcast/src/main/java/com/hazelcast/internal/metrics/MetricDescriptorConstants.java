@@ -281,6 +281,7 @@ public final class MetricDescriptorConstants {
     public static final String MEMORY_METRIC_FREE_NATIVE = "freeNative";
     public static final String MEMORY_METRIC_MAX_METADATA = "maxMetadata";
     public static final String MEMORY_METRIC_USED_METADATA = "usedMetadata";
+    public static final String MEMORY_METRIC_POOLED_BUDDY_MERGES = "pooled.buddyMerges";
     // ===[/MEMORY]=====================================================
 
     // ===[MEMORY MANAGER]==============================================
