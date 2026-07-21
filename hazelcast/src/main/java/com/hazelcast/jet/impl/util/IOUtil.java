@@ -24,7 +24,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -145,4 +147,68 @@ public final class IOUtil {
     public static String canonicalName(String directory) {
         return Util.uncheckCall(() -> new File(directory).getCanonicalPath());
     }
+
+    /**
+     * Resolves the user-provided path against a base directory and validates that the resolved path
+     * is contained within that base directory, resolving symbolic links (including links in
+     * intermediate directories) to prevent directory traversal.
+     * <p>
+     * @param baseDir  the trusted base/sandbox directory; must exist
+     * @param userPath the user-supplied relative path/filename string
+     * @return the resolved and validated absolute Path (may not yet exist)
+     * @throws IllegalArgumentException if the path is absolute or rooted, is a symbolic link,
+     *                                  resolves outside the base directory, or names the base directory itself
+     * @throws IOException              if an I/O error occurs during path resolution
+     */
+    public static Path resolveAndValidatePath(@Nonnull Path baseDir, @Nonnull String userPath) throws IOException {
+        if (!Files.isDirectory(baseDir)) {
+            throw new IllegalArgumentException("Base directory does not exist or is not a directory: " + baseDir);
+        }
+        Path resolvedBase = baseDir.toRealPath();
+
+        Path userPathObj;
+        try {
+            userPathObj = Paths.get(userPath);
+        } catch (java.nio.file.InvalidPathException e) {
+            throw new IllegalArgumentException("Invalid path: " + userPath, e);
+        }
+        // getRoot() != null also catches Windows drive-relative paths like "C:foo",
+        // which are not absolute but has a root component
+        if (userPathObj.isAbsolute() || userPathObj.getRoot() != null) {
+            throw new IllegalArgumentException("Absolute or rooted paths are not allowed: " + userPath);
+        }
+
+        Path targetPath = resolvedBase.resolve(userPathObj).normalize();
+
+
+        // Reject a symlink at the target itself; Files.exists() follows links, so a dangling
+        // symlink would otherwise be treated as a non-existent file and returned unresolved
+        if (Files.isSymbolicLink(targetPath)) {
+            throw new IllegalArgumentException("Symbolic links are not allowed: " + userPath);
+        }
+
+        if (Files.exists(targetPath, LinkOption.NOFOLLOW_LINKS)) {
+            targetPath = targetPath.toRealPath();
+        } else {
+            // Walk up to the nearest existing ancestor and resolve its real path, so a
+            // symlinked intermediate directory cannot escape the target outside the base
+            Path existing = targetPath.getParent();
+            Path tail = targetPath.getFileName();
+            while (existing != null && !Files.exists(existing, LinkOption.NOFOLLOW_LINKS)) {
+                tail = existing.getFileName().resolve(tail);
+                existing = existing.getParent();
+            }
+            if (existing == null) {
+                throw new IllegalArgumentException("Path cannot be resolved: " + userPath);
+            }
+            targetPath = existing.toRealPath().resolve(tail);
+        }
+
+        if (!targetPath.startsWith(resolvedBase)) {
+            throw new IllegalArgumentException("Path traversal attempt detected: " + userPath);
+        }
+
+        return targetPath;
+    }
 }
+

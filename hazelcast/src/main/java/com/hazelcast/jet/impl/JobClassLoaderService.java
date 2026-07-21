@@ -26,15 +26,14 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.deployment.ChildFirstClassLoader;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
+import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
@@ -162,17 +161,16 @@ public class JobClassLoaderService {
 
     private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig, ClassLoader parent) {
         logger.fine("Create processor classloader map for job %s", idToString(jobId));
-        String customLibDir = nodeEngine.getProperties().getString(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR);
+        String customLibDirName = nodeEngine.getProperties().getString(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR);
+        Path customLibDir = Paths.get(customLibDirName);
         Map<String, ClassLoader> classLoaderMap = new HashMap<>();
         for (Entry<String, List<String>> entry : jobConfig.getCustomClassPaths().entrySet()) {
             List<URL> list = entry.getValue().stream()
                                   .map(jar -> {
                                       try {
-                                          assert Files.exists(Paths.get(customLibDir))
-                                                  : "Directory " + customLibDir + " does not exist";
-                                          Path path = Paths.get(customLibDir, jar);
+                                          Path path = IOUtil.resolveAndValidatePath(customLibDir, jar);
                                           return path.toUri().toURL();
-                                      } catch (MalformedURLException e) {
+                                      } catch (IOException e) {
                                           throw new JetException(e);
                                       }
                                   })
