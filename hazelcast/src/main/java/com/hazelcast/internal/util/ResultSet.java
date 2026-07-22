@@ -19,9 +19,11 @@ package com.hazelcast.internal.util;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -33,6 +35,7 @@ public class ResultSet extends AbstractSet<Map.Entry> {
 
     private final List<Map.Entry> entries;
     private final IterationType iterationType;
+    private volatile Set<Object> containsLookup;
 
     public ResultSet(List<? extends Map.Entry> entries, IterationType iterationType) {
         this.entries = (List<Map.Entry>) entries;
@@ -57,6 +60,30 @@ public class ResultSet extends AbstractSet<Map.Entry> {
             return 0;
         }
         return entries.size();
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        if (entries == null) {
+            return false;
+        }
+        return lookupSet().contains(o);
+    }
+
+    private Set<Object> lookupSet() {
+        if (containsLookup == null) {
+            Set<Object> set = new HashSet<>(entries.size());
+            for (Map.Entry entry : entries) {
+                switch (iterationType) {
+                    case KEY:   set.add(entry.getKey());   break;
+                    case VALUE: set.add(entry.getValue()); break;
+                    case ENTRY: set.add(entry);            break;
+                    default: throw new IllegalStateException("Unrecognized iterationType: " + iterationType);
+                }
+            }
+            containsLookup = set;
+        }
+        return containsLookup;
     }
 
     private class ResultIterator implements Iterator {
