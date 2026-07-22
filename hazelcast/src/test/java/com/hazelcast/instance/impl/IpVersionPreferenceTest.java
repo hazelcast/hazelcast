@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.OverridePropertyRule;
@@ -39,10 +40,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
-import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.instance.impl.DefaultAddressPickerTest.findIPv6NonLoopbackInterface;
-import static com.hazelcast.spi.properties.ClusterProperty.PREFER_IPv4_STACK;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNotNull;
@@ -54,12 +52,6 @@ public class IpVersionPreferenceTest {
 
     @Rule
     public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
-    @Rule
-    public final OverridePropertyRule ruleSysPropPreferIpv4Stack = clear(PREFER_IPV4_STACK);
-    @Rule
-    public final OverridePropertyRule ruleSysPropPreferIpv6Addresses = clear(PREFER_IPV6_ADDRESSES);
-    @Rule
-    public final OverridePropertyRule ruleSysPropPreferHzIpv4 = clear(PREFER_IPv4_STACK.getName());
 
     @Parameter
     public Boolean hazelcastIpv4;
@@ -87,10 +79,6 @@ public class IpVersionPreferenceTest {
 
     @Test
     public void testBindAddress() throws Exception {
-        ruleSysPropPreferHzIpv4.setOrClearProperty(hazelcastIpv4 == null ? null : String.valueOf(hazelcastIpv4));
-        ruleSysPropPreferIpv4Stack.setOrClearProperty(javaIpv4 == null ? null : String.valueOf(javaIpv4));
-        ruleSysPropPreferIpv6Addresses.setOrClearProperty(javaIpv6 == null ? null : String.valueOf(javaIpv6));
-
         boolean expectedIPv6 = !getOrDefault(hazelcastIpv4, true)
                         && !getOrDefault(javaIpv4, false)
                         && getOrDefault(javaIpv6, false);
@@ -99,7 +87,16 @@ public class IpVersionPreferenceTest {
             assumeNotNull(findIPv6NonLoopbackInterface());
         }
 
-        DefaultAddressPicker addressPicker = new DefaultAddressPicker(new Config(), Logger.getLogger(AddressPicker.class));
+        Config config = new Config();
+        if (hazelcastIpv4 != null) {
+            config.setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "" + hazelcastIpv4);
+        }
+
+        DefaultAddressPicker addressPicker = new DefaultAddressPicker(
+                config,
+                Logger.getLogger(AddressPicker.class),
+                new JavaIPvXProperties(getOrDefault(javaIpv4, false), getOrDefault(javaIpv6, false))
+        );
         try {
             addressPicker.pickAddress();
             Address bindAddress = addressPicker.getBindAddress(MEMBER);

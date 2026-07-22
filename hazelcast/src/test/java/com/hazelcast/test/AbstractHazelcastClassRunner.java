@@ -121,7 +121,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
+
         //override default async executor of hazelcast so that it can report correct test names in test runs
         //if ForkJoinPool parallelism is less than or equal to 1, `thread-per-task` will be used.
         //In that case there is no need to override defaultAsyncExecutor
