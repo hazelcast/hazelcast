@@ -159,17 +159,17 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         // in this case no need to scan indexes.
         if (predicate == TruePredicate.INSTANCE) {
             doFullScan(predicate, resulCollector);
-            return toImmutableLazySet(resulCollector.result);
+            return toImmutableLazySet(resulCollector.getResult());
         }
 
         // 2. Try to query over indexes
         if (tryQueryOverIndexes(predicate, resulCollector)) {
-            return toImmutableLazySet(resulCollector.result);
+            return toImmutableLazySet(resulCollector.getResult());
         }
 
         // 3. If query can't be performed over indexes, scan full data set.
         doFullScan(predicate, resulCollector);
-        return toImmutableLazySet(resulCollector.result);
+        return toImmutableLazySet(resulCollector.getResult());
     }
 
     private Set toImmutableLazySet(List resultSet) {
@@ -196,6 +196,10 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         @Override
         public void accept(Object key, Object value) {
             addResult(key, value);
+        }
+
+        public List getResult() {
+            return result;
         }
 
         private void acceptQueryableEntry(QueryableEntry entry, boolean areKeyValueObjectType) {
