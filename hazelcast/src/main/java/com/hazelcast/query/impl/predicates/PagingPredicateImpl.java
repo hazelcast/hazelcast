@@ -329,6 +329,18 @@ public class PagingPredicateImpl<K, V>
         return userCodeNamespace;
     }
 
+    @Override
+    public String toString() {
+        if (predicate != null) {
+            return predicate.toString();
+        }
+        return "PagingPredicate{"
+                + "page=" + page
+                + ", pageSize=" + pageSize
+                + ", comparator=" + comparator
+                + '}';
+    }
+
     public Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
         int anchorCount = anchorList.size();
         if (page == 0 || anchorCount == 0) {
