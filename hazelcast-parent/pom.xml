@@ -101,7 +101,7 @@
         <debezium.version>3.6.0.Final</debezium.version>
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
-        <hadoop.version>3.4.3</hadoop.version>
+        <hadoop.version>3.5.0</hadoop.version>
         <jackson.version>3.2.1</jackson.version>
         <jackson2.version>2.22.1</jackson2.version>
         <jackson.annotation.version>2.22</jackson.annotation.version>
@@ -200,6 +200,8 @@
             -Djunit.jupiter.execution.parallel.enabled=true
             -Duser.timezone=UTC
             -Djava.net.preferIPv4Stack=true
+            --add-opens java.base/java.net=ALL-UNNAMED
+            --add-opens java.base/sun.net=ALL-UNNAMED
         </commonArgLine>
     </properties>
 
@@ -321,79 +323,15 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
             </dependency>
-            <!--
-                When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-                - `org.codehaus.woodstox:stax2-api`
-                - `commons-codec:commons-codec`
-                - `commons-logging:commons-logging`
-            -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
+                <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
-                <exclusions>
-                    <!-- The following dependencies are not needed for our use of Hadoop -->
-                    <exclusion>
-                        <groupId>ch.qos.reload4j</groupId>
-                        <artifactId>reload4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-reload4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-servlet</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-webapp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.servlet.jsp</groupId>
-                        <artifactId>jsp-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.jersey</groupId>
-                        <artifactId>jersey-servlet</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jline</groupId>
-                        <artifactId>jline</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-common</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.kerby</groupId>
-                        <artifactId>kerb-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-recipes</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-framework</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-jdk18on</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${hadoop.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
@@ -739,6 +677,12 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <!-- Convergence between org.apache.hadoop:hadoop-client:jar:3.5.0:compile and GCS -->
+            <dependency>
+                <groupId>com.google.re2j</groupId>
+                <artifactId>re2j</artifactId>
+                <version>1.8</version>
             </dependency>
 
             <dependency>
