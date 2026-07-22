@@ -32,9 +32,8 @@ import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -85,10 +84,11 @@ public class AwsEcsApiTest {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
         stubListTasks(cluster, null);
-        Map<String, String> tasksArnToIp = Map.of(
-                "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
-                "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219");
-        stubDescribeTasks(tasksArnToIp, cluster);
+
+        List<TaskStub> tasks = List.of(
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16"),
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"));
+        stubDescribeTasks(tasks, cluster);
 
         // when
         List<String> tasksPrivateIps = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
@@ -107,9 +107,9 @@ public class AwsEcsApiTest {
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
         stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", "family-name");
-        stubDescribeTasks(Map.of(
-                        "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
-                        "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"),
+        stubDescribeTasks(List.of(
+                        new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16"),
+                        new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219")),
                 cluster);
 
         // when
@@ -130,9 +130,9 @@ public class AwsEcsApiTest {
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
         stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", null);
-        stubDescribeTasks(Map.of(
-                        "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
-                        "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"),
+        stubDescribeTasks(List.of(
+                        new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16"),
+                        new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219")),
                 cluster);
 
         // when
@@ -147,18 +147,41 @@ public class AwsEcsApiTest {
     public void describeTasks() {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
-        Map<String, String> tasks = Map.of(
-                "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
-                "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219");
+        List<TaskStub> tasks = List.of(
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16"),
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"));
         stubDescribeTasks(tasks, cluster);
 
         // when
-        List<Task> result = awsEcsApi.describeTasks(cluster, new ArrayList<>(tasks.keySet()), CREDENTIALS);
+        List<Task> result = awsEcsApi.describeTasks(cluster, tasks.stream().map(t -> t.arn).toList(), CREDENTIALS);
 
         // then
         assertEquals(2, result.size());
         assertThat(result.stream().map(Task::getPrivateAddress)).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
         assertThat(result.stream().map(Task::getAvailabilityZone)).containsExactlyInAnyOrder("eu-central-1a", "eu-central-1a");
+    }
+
+    @Test
+    public void describeTasksExcludesNonRunningTasks() {
+        // given
+        String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
+        List<TaskStub> taskStubs = List.of(
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
+                        "RUNNING"),
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219",
+                        "PENDING"),
+                new TaskStub("arn:aws:ecs:us-east-1:012345678910:task/a1b2c3d4-e5f6-7890-abcd-ef1234567890", "10.0.1.100",
+                        "PROVISIONING"));
+        stubDescribeTasks(taskStubs, cluster);
+        List<String> taskArns = taskStubs.stream().map(t -> t.arn).collect(Collectors.toList());
+
+        // when
+        List<Task> result = awsEcsApi.describeTasks(cluster, taskArns, CREDENTIALS);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPrivateAddress()).isEqualTo("10.0.1.16");
+        assertThat(result.get(0).getAvailabilityZone()).isEqualTo("eu-central-1a");
     }
 
     @Test
@@ -178,9 +201,9 @@ public class AwsEcsApiTest {
         assertTrue(exception.getMessage().contains(errorMessage));
     }
 
-    private static void stubDescribeTasks(Map<String, String> taskArnToIp, String cluster) {
+    private static void stubDescribeTasks(List<TaskStub> taskStubs, String cluster) {
         JsonArray tasksJson = new JsonArray();
-        taskArnToIp.keySet().forEach(tasksJson::add);
+        taskStubs.forEach(t -> tasksJson.add(t.arn));
         String requestBody = new JsonObject()
                 .add("tasks", tasksJson)
                 .add("include", new JsonArray().add("TAGS"))
@@ -188,17 +211,18 @@ public class AwsEcsApiTest {
                 .toString();
 
         JsonArray responseTasks = new JsonArray();
-        for (Map.Entry<String, String> task : taskArnToIp.entrySet()) {
+        for (TaskStub task : taskStubs) {
             responseTasks.add(new JsonObject()
-                    .add("taskArn", task.getKey())
+                    .add("taskArn", task.arn)
+                    .add("lastStatus", task.lastStatus)
                     .add("availabilityZone", "eu-central-1a")
                     .add("containers", new JsonArray().add(new JsonObject()
-                            .add("taskArn", task.getKey())
+                            .add("taskArn", task.arn)
                             .add("networkInterfaces", new JsonArray().add(new JsonObject()
-                                    .add("privateIpv4Address", task.getValue())))))
+                                    .add("privateIpv4Address", task.ip)))))
                     .add("tags", new JsonArray().add(new JsonObject()
                             .add("key", "tag-key")
-                            .add("value", task.getKey().substring(task.getKey().lastIndexOf("/") + 1))))
+                            .add("value", task.arn.substring(task.arn.lastIndexOf("/") + 1))))
             );
         }
         String responseBody = new JsonObject()
@@ -238,5 +262,21 @@ public class AwsEcsApiTest {
                 .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
                 .withRequestBody(equalToJson(requestBody.toString()))
                 .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK).withBody(response)));
+    }
+
+    private static class TaskStub {
+        final String arn;
+        final String ip;
+        final String lastStatus;
+
+        TaskStub(String arn, String ip) {
+            this(arn, ip, "RUNNING");
+        }
+
+        TaskStub(String arn, String ip, String lastStatus) {
+            this.arn = arn;
+            this.ip = ip;
+            this.lastStatus = lastStatus;
+        }
     }
 }
