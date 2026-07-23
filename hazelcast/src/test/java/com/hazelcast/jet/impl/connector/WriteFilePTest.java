@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.internal.util.JavaVm;
-import tools.jackson.jr.ob.JSON;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestInbox;
@@ -45,6 +45,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import tools.jackson.jr.ob.JSON;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
@@ -84,6 +85,7 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
@@ -430,6 +432,27 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     @Test
     public void stressTest_atLeastOnce_forceful() throws Exception {
         stressTest(false, false);
+    }
+
+    @Test
+    public void when_datePatternEscapesDirectory_then_jobFails() throws Exception {
+        Path directory = Files.createTempDirectory("write-file-p-test");
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items("item1", "item2"))
+                .writeTo(Sinks.filesBuilder(directory.toString())
+                        .rollByDate("'../escaped'")
+                        .build());
+
+        Job job = instance().getJet().newJob(p);
+
+        assertThatThrownBy(job::join).hasMessageContaining("File name escapes");
+        assertThat(job).eventuallyHasStatus(JobStatus.FAILED);
+
+        // nothing must have been created outside the sink directory
+        try (Stream<Path> files = Files.list(directory.getParent())) {
+            assertTrue(files.noneMatch(f -> f.getFileName().startsWith("escaped")));
+        }
     }
 
     private void stressTest(boolean graceful, boolean exactlyOnce) throws Exception {
