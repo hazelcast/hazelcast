@@ -143,9 +143,8 @@ public class State {
         return operation;
     }
 
-    public State setVersion(long version) {
-        this.version = version;
-        return this;
+    public int getPartitionId() {
+        return partitionId;
     }
 
     public State setPartitionId(int partitionId) {
@@ -153,14 +152,187 @@ public class State {
         return this;
     }
 
+    public long getThreadId() {
+        return threadId;
+    }
+
+    public State setThreadId(long threadId) {
+        this.threadId = threadId;
+        return this;
+    }
+
+    public long getTtl() {
+        return ttl;
+    }
+
+    public State setTtl(long ttl) {
+        this.ttl = ttl;
+        return this;
+    }
+
+    public long getMaxIdle() {
+        return maxIdle;
+    }
+
+    public State setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
+        return this;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public State setVersion(long version) {
+        this.version = version;
+        return this;
+    }
+
+    public long getNow() {
+        return now;
+    }
+
+    public State setNow(long now) {
+        this.now = now;
+        return this;
+    }
+
+    public Data getKey() {
+        return key;
+    }
+
     public State setKey(Data key) {
         this.key = key;
         return this;
     }
 
-    public State setNewValue(Object newValue) {
-        this.newValue = newValue;
+    public Address getCallerAddress() {
+        return callerAddress;
+    }
+
+    public State setCallerAddress(Address callerAddress) {
+        this.callerAddress = callerAddress;
         return this;
+    }
+
+    public Object getExpect() {
+        return expect;
+    }
+
+    public State setExpect(Object expect) {
+        this.expect = expect;
+        return this;
+    }
+
+    public StaticParams getStaticParams() {
+        return staticParams;
+    }
+
+    public State setStaticPutParams(StaticParams staticStaticParams) {
+        this.staticParams = staticStaticParams;
+        return this;
+    }
+
+    public UUID getTxnId() {
+        return txnId;
+    }
+
+    public State setTxnId(UUID uuid) {
+        this.txnId = uuid;
+        return this;
+    }
+
+    public UUID getOwnerUuid() {
+        return ownerUuid;
+    }
+
+    public State setOwnerUuid(UUID ownerUuid) {
+        this.ownerUuid = ownerUuid;
+        return this;
+    }
+
+    public CallerProvenance getCallerProvenance() {
+        return callerProvenance;
+    }
+
+    public State setCallerProvenance(CallerProvenance callerProvenance) {
+        this.callerProvenance = callerProvenance;
+        return this;
+    }
+
+    public boolean isBlockReads() {
+        return blockReads;
+    }
+
+    public State setBlockReads(boolean blockReads) {
+        this.blockReads = blockReads;
+        return this;
+    }
+
+    public boolean isStopExecution() {
+        return stopExecution;
+    }
+
+    public void setStopExecution(boolean stopExecution) {
+        this.stopExecution = stopExecution;
+    }
+
+    public boolean isRecordExistsInMemory() {
+        return recordExistsInMemory;
+    }
+
+    public State setRecordExistsInMemory(boolean recordExistsInMemory) {
+        this.recordExistsInMemory = recordExistsInMemory;
+        return this;
+    }
+
+    public boolean isDisableWanReplicationEvent() {
+        return disableWanReplicationEvent;
+    }
+
+    public State setDisableWanReplicationEvent(boolean disableWanReplicationEvent) {
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
+        return this;
+    }
+
+    public boolean isTriggerMapLoader() {
+        return triggerMapLoader;
+    }
+
+    public State setTriggerMapLoader(boolean triggerMapLoader) {
+        this.triggerMapLoader = triggerMapLoader;
+        return this;
+    }
+
+    public boolean isShouldLoad() {
+        return shouldLoad;
+    }
+
+    public State setShouldLoad(boolean shouldLoad) {
+        this.shouldLoad = shouldLoad;
+        return this;
+    }
+
+    public boolean isChangeExpiryOnUpdate() {
+        return changeExpiryOnUpdate;
+    }
+
+    public State setChangeExpiryOnUpdate(boolean changeExpiryOnUpdate) {
+        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
+        return this;
+    }
+
+    public boolean isEntryProcessorOffloadable() {
+        return entryProcessorOffloadable;
+    }
+
+    public State setEntryProcessorOffloadable(boolean entryProcessorOffloadable) {
+        this.entryProcessorOffloadable = entryProcessorOffloadable;
+        return this;
+    }
+
+    public Object getOldValue() {
+        return oldValue;
     }
 
     public State setOldValue(Object oldValue) {
@@ -177,153 +349,12 @@ public class State {
         this.loadedOldValueWithTtl = loadedOldValueWithTtl;
     }
 
-    public State setRecordExistsInMemory(boolean recordExistsInMemory) {
-        this.recordExistsInMemory = recordExistsInMemory;
-        return this;
-    }
-
-    public State setExpect(Object expect) {
-        this.expect = expect;
-        return this;
-    }
-
-    public State setTxnId(UUID uuid) {
-        this.txnId = uuid;
-        return this;
-    }
-
-    public State setTtl(long ttl) {
-        this.ttl = ttl;
-        return this;
-    }
-
-    public State setMaxIdle(long maxIdle) {
-        this.maxIdle = maxIdle;
-        return this;
-    }
-
-    public State setStaticPutParams(StaticParams staticStaticParams) {
-        this.staticParams = staticStaticParams;
-        return this;
-    }
-
-    public State setCallerAddress(Address callerAddress) {
-        this.callerAddress = callerAddress;
-        return this;
-    }
-
-    public State setCallerProvenance(CallerProvenance callerProvenance) {
-        this.callerProvenance = callerProvenance;
-        return this;
-    }
-
-    public State setEntryProcessor(EntryProcessor entryProcessor) {
-        this.entryProcessor = entryProcessor;
-        return this;
-    }
-
-    public boolean isEntryProcessorOffloadable() {
-        return entryProcessorOffloadable;
-    }
-
-    public State setEntryProcessorOffloadable(boolean entryProcessorOffloadable) {
-        this.entryProcessorOffloadable = entryProcessorOffloadable;
-        return this;
-    }
-
-    public State setThreadId(long threadId) {
-        this.threadId = threadId;
-        return this;
-    }
-
-    public long getThreadId() {
-        return threadId;
-    }
-
-    public EntryProcessor getEntryProcessor() {
-        return entryProcessor;
-    }
-
-    public boolean isRecordExistsInMemory() {
-        return recordExistsInMemory;
-    }
-
-    public Object getOldValue() {
-        return oldValue;
-    }
-
     public Object getNewValue() {
         return newValue;
     }
 
-    public long getTtl() {
-        return ttl;
-    }
-
-    public long getMaxIdle() {
-        return maxIdle;
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public long getNow() {
-        return now;
-    }
-
-    public State setNow(long now) {
-        this.now = now;
-        return this;
-    }
-
-    public Data getKey() {
-        return key;
-    }
-
-    public Address getCallerAddress() {
-        return callerAddress;
-    }
-
-    public Object getExpect() {
-        return expect;
-    }
-
-    public StaticParams getStaticParams() {
-        return staticParams;
-    }
-
-    public UUID getTxnId() {
-        return txnId;
-    }
-
-    public UUID getOwnerUuid() {
-        return ownerUuid;
-    }
-
-    public State setOwnerUuid(UUID ownerUuid) {
-        this.ownerUuid = ownerUuid;
-        return this;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    public CallerProvenance getCallerProvenance() {
-        return callerProvenance;
-    }
-
-    public boolean isStopExecution() {
-        return stopExecution;
-    }
-
-    public void setStopExecution(boolean stopExecution) {
-        this.stopExecution = stopExecution;
-    }
-
-    public State setResult(Object result) {
-        this.result = result;
+    public State setNewValue(Object newValue) {
+        this.newValue = newValue;
         return this;
     }
 
@@ -331,25 +362,9 @@ public class State {
         return result;
     }
 
-    public void setRecord(Record record) {
-        this.record = record;
-    }
-
-    public Record getRecord() {
-        return record;
-    }
-
-    public State setKeys(Collection<Data> keys) {
-        this.keys = keys;
+    public State setResult(Object result) {
+        this.result = result;
         return this;
-    }
-
-    public Collection<Data> getKeys() {
-        return keys;
-    }
-
-    public void setRecords(List<Record> records) {
-        this.records = records;
     }
 
     public Collection<Data> getKeysToLoad() {
@@ -361,23 +376,40 @@ public class State {
         return this;
     }
 
+    // list of loaded key + bituple(oldValue, ttl)
+    public List loadedKeyAndOldValueWithTtlPairs() {
+        return loadedKeyAndOldValueWithTtlPairs;
+    }
+
     // list of key+bituple(oldValue, ttl)
     public State setLoadedKeyAndOldValueWithTtlPairs(List loadedKeyAndOldValueWithTtlPairs) {
         this.loadedKeyAndOldValueWithTtlPairs = loadedKeyAndOldValueWithTtlPairs;
         return this;
     }
 
-    // list of loaded key + bituple(oldValue, ttl)
-    public List loadedKeyAndOldValueWithTtlPairs() {
-        return loadedKeyAndOldValueWithTtlPairs;
+    public Collection<Data> getKeys() {
+        return keys;
+    }
+
+    public State setKeys(Collection<Data> keys) {
+        this.keys = keys;
+        return this;
     }
 
     public List<Record> getRecords() {
         return records;
     }
 
-    public State setEntryOperator(EntryOperator operator) {
-        this.operator = operator;
+    public void setRecords(List<Record> records) {
+        this.records = records;
+    }
+
+    public EntryProcessor getEntryProcessor() {
+        return entryProcessor;
+    }
+
+    public State setEntryProcessor(EntryProcessor entryProcessor) {
+        this.entryProcessor = entryProcessor;
         return this;
     }
 
@@ -385,20 +417,33 @@ public class State {
         return operator;
     }
 
-    public void setToStore(List<State> toStore) {
-        this.toStore = toStore;
-    }
-
-    public void setToRemove(List<State> toRemove) {
-        this.toRemove = toRemove;
+    public State setEntryOperator(EntryOperator operator) {
+        this.operator = operator;
+        return this;
     }
 
     public List<State> getToStore() {
         return toStore;
     }
 
+    public void setToStore(List<State> toStore) {
+        this.toStore = toStore;
+    }
+
     public List<State> getToRemove() {
         return toRemove;
+    }
+
+    public void setToRemove(List<State> toRemove) {
+        this.toRemove = toRemove;
+    }
+
+    public List getBackupPairs() {
+        return backupPairs;
+    }
+
+    public void setBackupPairs(List backupPairs) {
+        this.backupPairs = backupPairs;
     }
 
     public Predicate getPredicate() {
@@ -410,18 +455,12 @@ public class State {
         return this;
     }
 
-    public State setMergingEntries(List<SplitBrainMergeTypes.MapMergeTypes<Object, Object>> mergingEntries) {
-        this.mergingEntries = mergingEntries;
-        return this;
-    }
-
     public List<SplitBrainMergeTypes.MapMergeTypes<Object, Object>> getMergingEntries() {
         return mergingEntries;
     }
 
-    public State setMergePolicy(SplitBrainMergePolicy<Object,
-            SplitBrainMergeTypes.MapMergeTypes<Object, Object>, Object> mergePolicy) {
-        this.mergePolicy = mergePolicy;
+    public State setMergingEntries(List<SplitBrainMergeTypes.MapMergeTypes<Object, Object>> mergingEntries) {
+        this.mergingEntries = mergingEntries;
         return this;
     }
 
@@ -430,22 +469,19 @@ public class State {
         return mergePolicy;
     }
 
-    public State setDisableWanReplicationEvent(boolean disableWanReplicationEvent) {
-        this.disableWanReplicationEvent = disableWanReplicationEvent;
-        return this;
-    }
-
-    public boolean isDisableWanReplicationEvent() {
-        return disableWanReplicationEvent;
-    }
-
-    public State setMapEntries(MapEntries mapEntries) {
-        this.mapEntries = mapEntries;
+    public State setMergePolicy(SplitBrainMergePolicy<Object,
+            SplitBrainMergeTypes.MapMergeTypes<Object, Object>, Object> mergePolicy) {
+        this.mergePolicy = mergePolicy;
         return this;
     }
 
     public MapEntries getMapEntries() {
         return mapEntries;
+    }
+
+    public State setMapEntries(MapEntries mapEntries) {
+        this.mapEntries = mapEntries;
+        return this;
     }
 
     public EntryEventType getEntryEventType() {
@@ -456,82 +492,46 @@ public class State {
         this.entryEventType = entryEventType;
     }
 
-    public void setNotMarkedIndexes(Queue<InternalIndex> notMarkedIndexes) {
-        this.notMarkedIndexes = notMarkedIndexes;
+    public Record getRecord() {
+        return record;
+    }
+
+    public void setRecord(Record record) {
+        this.record = record;
     }
 
     public Queue<InternalIndex> getNotMarkedIndexes() {
         return notMarkedIndexes;
     }
 
-    public void setKeysFromIndex(Set keysFromIndex) {
-        this.keysFromIndex = keysFromIndex;
+    public void setNotMarkedIndexes(Queue<InternalIndex> notMarkedIndexes) {
+        this.notMarkedIndexes = notMarkedIndexes;
     }
 
     public Set getKeysFromIndex() {
         return keysFromIndex;
     }
 
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
+    public void setKeysFromIndex(Set keysFromIndex) {
+        this.keysFromIndex = keysFromIndex;
     }
 
     public Throwable getThrowable() {
         return throwable;
     }
 
-    public State setTriggerMapLoader(boolean triggerMapLoader) {
-        this.triggerMapLoader = triggerMapLoader;
-        return this;
-    }
-
-    public boolean isTriggerMapLoader() {
-        return triggerMapLoader;
-    }
-
-    public State setShouldLoad(boolean shouldLoad) {
-        this.shouldLoad = shouldLoad;
-        return this;
-    }
-
-    public boolean isShouldLoad() {
-        return shouldLoad;
-    }
-
-    public boolean isBlockReads() {
-        return blockReads;
-    }
-
-    public State setBlockReads(boolean blockReads) {
-        this.blockReads = blockReads;
-        return this;
-    }
-
-    public void setBackupPairs(List backupPairs) {
-        this.backupPairs = backupPairs;
-    }
-
-    public List getBackupPairs() {
-        return backupPairs;
-    }
-
-    public State setChangeExpiryOnUpdate(boolean changeExpiryOnUpdate) {
-        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
-        return this;
-    }
-
-    public boolean isChangeExpiryOnUpdate() {
-        return changeExpiryOnUpdate;
-    }
-
-    public State setBackupOpAfterRun(Consumer backupOpAfterRun) {
-        this.backupOpAfterRun = backupOpAfterRun;
-        return this;
+    public void setThrowable(Throwable throwable) {
+        this.throwable = throwable;
     }
 
     @Nullable
     public Consumer getBackupOpAfterRun() {
         return backupOpAfterRun;
+    }
+
+    public State setBackupOpAfterRun(Consumer backupOpAfterRun) {
+        this.backupOpAfterRun = backupOpAfterRun;
+        return this;
     }
 
     public int getSizeBefore() {
@@ -550,11 +550,11 @@ public class State {
         this.sizeAfter = sizeAfter;
     }
 
-    public void setNonWanReplicatedIndexes(BitSet nonWanReplicationIndexes) {
-        this.nonWanReplicatedIndexes = nonWanReplicationIndexes;
-    }
-
     public BitSet getNonWanReplicatedIndexes() {
         return nonWanReplicatedIndexes;
+    }
+
+    public void setNonWanReplicatedIndexes(BitSet nonWanReplicationIndexes) {
+        this.nonWanReplicatedIndexes = nonWanReplicationIndexes;
     }
 }

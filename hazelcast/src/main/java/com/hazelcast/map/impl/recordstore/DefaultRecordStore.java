@@ -33,7 +33,6 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.InterceptorRegistry;
@@ -48,7 +47,6 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
@@ -71,7 +69,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -90,7 +87,6 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_FOR_ENTRY_PROCESSOR_PARAMS;
@@ -146,10 +142,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private boolean loadedOnPreMigration;
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
-    // offloadedOperations is only accessed by single thread
-    private final Set<MapOperation> offloadedOperations = new LinkedHashSet<>();
-    // mapStoreOffloadedOperationsCount is for accessed by single thread
-    private final SwCounter mapStoreOffloadedOperationsCount = newSwCounter();
+    private final OffloadedOperations offloadedOperations = new OffloadedOperations();
 
     public DefaultRecordStore(MapContainer mapContainer,
                               int partitionId,
@@ -168,18 +161,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void incMapStoreOffloadedOperationsCount() {
-        mapStoreOffloadedOperationsCount.inc();
-    }
-
-    @Override
-    public void decMapStoreOffloadedOperationsCount() {
-        mapStoreOffloadedOperationsCount.inc(-1);
-    }
-
-    @Override
     public long getMapStoreOffloadedOperationsCount() {
-        return mapStoreOffloadedOperationsCount.get();
+        return offloadedOperations.size();
     }
 
     // Overridden in EE
@@ -1737,7 +1720,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Set<MapOperation> getOffloadedOperations() {
+    public OffloadedOperations getOffloadedOperations() {
         return offloadedOperations;
     }
 

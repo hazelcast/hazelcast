@@ -34,7 +34,6 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -682,11 +681,12 @@ public interface RecordStore<R extends Record> {
         // no-op
     }
 
-    Set<MapOperation> getOffloadedOperations();
-
-    void incMapStoreOffloadedOperationsCount();
-
-    void decMapStoreOffloadedOperationsCount();
+    /**
+     * @return state of the map-store offloaded-operations machinery
+     * for this record store: the queue of step-based operations and
+     * the chain-ownership used to serialize their execution.
+     */
+    OffloadedOperations getOffloadedOperations();
 
     long getMapStoreOffloadedOperationsCount();
 

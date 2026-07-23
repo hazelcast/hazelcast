@@ -58,7 +58,9 @@ public enum ClearOpSteps implements IMapOpStep {
 
                 // skip locked keys
                 if (!recordStore.isLocked(dataKey)) {
-                    keys.add(tieredStorageEnabled ? toHeapData(dataKey) : dataKey);
+                    // Always copy keys to heap, because the offloaded
+                    // step accesses them from a non-partition thread.
+                    keys.add(toHeapData(dataKey));
                     if (!tieredStorageEnabled) {
                         records.add(record);
                     }
