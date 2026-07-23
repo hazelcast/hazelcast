@@ -195,6 +195,21 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
         @Override
         public void accept(Object key, Object value) {
+            addResult(key, value);
+        }
+
+        public List getResult() {
+            return result;
+        }
+
+        private void acceptQueryableEntry(QueryableEntry entry, boolean areKeyValueObjectType) {
+            addResult(
+                    extractKeyForResult(entry, areKeyValueObjectType),
+                    extractValueForResult(entry, areKeyValueObjectType)
+            );
+        }
+
+        private void addResult(Object key, Object value) {
             switch (resultType) {
                 case KEY:
                     result.add(key);
@@ -209,22 +224,37 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
                     throw new IllegalArgumentException("Unexpected type: " + resultType);
             }
         }
-
-        public List getResult() {
-            return result;
-        }
     }
 
-    private boolean tryQueryOverIndexes(Predicate predicate, BiConsumer biConsumer) {
+    private boolean tryQueryOverIndexes(Predicate predicate, ResulCollector resulCollector) {
         Iterable<QueryableEntry> query = indexRegistry.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query == null) {
             return false;
         }
 
+        final boolean areKeyValueObjectType = storesKeysAndValuesAsObject();
+
         for (QueryableEntry entry : query) {
-            biConsumer.accept(entry.getKeyData(), entry.getValueData());
+            resulCollector.acceptQueryableEntry(entry, areKeyValueObjectType);
         }
         return true;
+    }
+
+    private Object extractKeyForResult(QueryableEntry entry, boolean areKeyValueObjectType) {
+        return areKeyValueObjectType
+                ? entry.getKey()
+                : entry.getKeyData();
+    }
+
+    private Object extractValueForResult(QueryableEntry entry, boolean areKeyValueObjectType) {
+        return areKeyValueObjectType
+                ? entry.getValue()
+                : entry.getValueData();
+    }
+
+    private boolean storesKeysAndValuesAsObject() {
+        return !queryCacheConfig.isSerializeKeys()
+                && InMemoryFormat.OBJECT == queryCacheConfig.getInMemoryFormat();
     }
 
     private void doFullScan(Predicate predicate, BiConsumer biConsumer) {
@@ -251,8 +281,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
      */
     private void scanWithPredicate(Predicate predicate, BiConsumer consumer) {
         // needed for optimization where key and value are not an instance of Data type
-        final boolean areKeyValueObjectType = !queryCacheConfig.isSerializeKeys()
-                && InMemoryFormat.OBJECT == queryCacheConfig.getInMemoryFormat();
+        final boolean areKeyValueObjectType = storesKeysAndValuesAsObject();
 
         CachedQueryEntry queryEntry = new CachedQueryEntry(ss, extractors);
         Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
