@@ -291,7 +291,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the given classes and recursively all their nested (inner & anonymous)
+     * Adds the given classes and recursively all their nested (inner &amp; anonymous)
      * classes to the Jet job's classpath. They will be accessible to all the code
      * attached to the underlying pipeline or DAG, but not to any other code. (An
      * important example is the {@code IMap} data source, which can instantiate only

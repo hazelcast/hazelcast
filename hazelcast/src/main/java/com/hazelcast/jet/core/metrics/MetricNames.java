@@ -31,7 +31,7 @@ import com.hazelcast.jet.pipeline.StreamStageWithKey;
  * Each metric provided by Jet has a specific name which conceptually
  * identifies what it's being used to measure. Besides their name metrics
  * also have a description made up by tags, but those are more like
- * attributes which describe a specific instance of the metric and are not
+ * attributes which describe a specific instance of the metric &amp; are not
  * directly part of the identity of the metric.
  * <p>
  * The constants described here represent the various names metrics can
@@ -45,7 +45,7 @@ public final class MetricNames {
      * Counts incoming data items on input {@link Edge}s of particular
      * {@link Vertex} instances running on various {@link Processor}s.
      * These in turn can be identified based on the
-     * {@link MetricTags#ORDINAL}, {@link MetricTags#VERTEX} &
+     * {@link MetricTags#ORDINAL}, {@link MetricTags#VERTEX} &amp;
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String RECEIVED_COUNT = "receivedCount";
@@ -54,7 +54,7 @@ public final class MetricNames {
      * Counts incoming data item batches on input {@link Edge}s of particular
      * {@link Vertex} instances running on various {@link Processor}s.
      * These in turn can be identified based on the
-     * {@link MetricTags#ORDINAL}, {@link MetricTags#VERTEX} &
+     * {@link MetricTags#ORDINAL}, {@link MetricTags#VERTEX} &amp;
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String RECEIVED_BATCHES = "receivedBatches";
@@ -62,7 +62,7 @@ public final class MetricNames {
     /**
      * Tracks the total size of all input queues of a particular
      * {@link Vertex} on a particular {@link Processor}. They both can be
-     * identified based on the {@link MetricTags#VERTEX} and
+     * identified based on the {@link MetricTags#VERTEX} &amp;
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String QUEUES_SIZE = "queuesSize";
@@ -70,7 +70,7 @@ public final class MetricNames {
     /**
      * Tracks the total capacity of all input queues of a particular
      * {@link Vertex} on a particular {@link Processor}. They both can be
-     * identified based on the {@link MetricTags#VERTEX} and
+     * identified based on the {@link MetricTags#VERTEX} &amp;
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String QUEUES_CAPACITY = "queuesCapacity";
@@ -92,8 +92,8 @@ public final class MetricNames {
      * Tracks the highest coalesced watermark observed on all input
      * {@link Edge}s of a particular {@link Vertex} (i.e. the highest
      * watermark observed on all input queues of that {@link Vertex}).
-     * The {@link Vertex} and the {@link Processor} can be identified
-     * based on the {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR}
+     * The {@link Vertex} &amp; the {@link Processor} can be identified
+     * based on the {@link MetricTags#VERTEX} &amp; {@link MetricTags#PROCESSOR}
      * tags of the metric.
      */
     public static final String TOP_OBSERVED_WM = "topObservedWm";
@@ -101,24 +101,24 @@ public final class MetricNames {
     /**
      * Tracks the highest watermark observed on all the input queues
      * of a particular incoming {@link Edge} of a certain {@link Vertex}.
-     * The {@link Vertex} and the {@link Processor} can be identified
-     * based on the {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR}
+     * The {@link Vertex} &amp; the {@link Processor} can be identified
+     * based on the {@link MetricTags#VERTEX} &amp; {@link MetricTags#PROCESSOR}
      * tags of the metric.
      */
     public static final String COALESCED_WM = "coalescedWm";
 
     /**
      * Tracks the last watermark emitted by a particular {@link Processor}
-     * of a particular {@link Vertex}. The {@link Vertex} and the
+     * of a particular {@link Vertex}. The {@link Vertex} &amp; the
      * {@link Processor} can be identified based on the {@link MetricTags#VERTEX}
-     * & {@link MetricTags#PROCESSOR} tags of the metric.
+     * &amp; {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String LAST_FORWARDED_WM = "lastForwardedWm";
 
     /**
-     * Tracks the difference between the last emitted watermark and the
+     * Tracks the difference between the last emitted watermark &amp; the
      * system time of a particular {@link Processor} of a particular
-     * {@link Vertex}. The {@link Vertex} and the {@link Processor} can be
+     * {@link Vertex}. The {@link Vertex} &amp; the {@link Processor} can be
      * identified based on the {@link MetricTags#VERTEX} &
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
@@ -144,8 +144,8 @@ public final class MetricNames {
 
     /**
      * Tracks the start time of a given execution of a specific job.
-     * The execution and the job can be identified based on the
-     * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
+     * The execution &amp; the job can be identified based on the
+     * {@link MetricTags#EXECUTION} &amp; {@link MetricTags#JOB} tags of
      * the metric. It uses {@link System#currentTimeMillis} to get
      * the time on the job start.
      *
@@ -155,8 +155,8 @@ public final class MetricNames {
 
     /**
      * Tracks the completion time of a given execution of a specific job.
-     * The execution and the job can be identified based on the
-     * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
+     * The execution &amp; the job can be identified based on the
+     * {@link MetricTags#EXECUTION} &amp; {@link MetricTags#JOB} tags of
      * the metric. It uses {@link System#currentTimeMillis} to get
      * the time on the job completion.
      *
@@ -178,7 +178,7 @@ public final class MetricNames {
      * DISTRIBUTED input {@link Edge}s of particular {@link Vertex}
      * instances running on various {@link Processor}s. These in turn can
      * be identified based on the {@link MetricTags#ORDINAL},
-     * {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR} tags of the metric.
+     * {@link MetricTags#VERTEX} &amp; {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String DISTRIBUTED_BYTES_IN = "distributedBytesIn";
 
@@ -196,7 +196,7 @@ public final class MetricNames {
      * DISTRIBUTED output {@link Edge}s of particular {@link Vertex}
      * instances running on various {@link Processor}s. These in turn can
      * be identified based on the {@link MetricTags#ORDINAL},
-     * {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR} tags of the metric.
+     * {@link MetricTags#VERTEX} &amp; {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String DISTRIBUTED_BYTES_OUT = "distributedBytesOut";
 
@@ -219,7 +219,7 @@ public final class MetricNames {
     /**
      * Number of jobs submitted to the Jet cluster.
      * <p>
-     * This metric is zero on non-master members. When a master fails and a new
+     * This metric is zero on non-master members. When a master fails &amp; a new
      * master takes over, the count is reset.
      *
      * @since Jet 4.0
@@ -229,7 +229,7 @@ public final class MetricNames {
     /**
      * Number of jobs successfully completed by the Jet cluster.
      * <p>
-     * This metric is zero on non-master members. When a master fails and a new
+     * This metric is zero on non-master members. When a master fails &amp; a new
      * master takes over, the count is reset.
      *
      * @since Jet 4.0
@@ -239,7 +239,7 @@ public final class MetricNames {
     /**
      * Number of jobs that have failed on the Jet cluster.
      * <p>
-     * This metric is zero on non-master members. When a master fails and a new
+     * This metric is zero on non-master members. When a master fails &amp; a new
      * master takes over, the count is reset.
      *
      * @since Jet 4.0
@@ -249,9 +249,9 @@ public final class MetricNames {
     /**
      * Number of job executions started on the Jet cluster. Each job can
      * execute multiple times, for example when it's restarted or suspended
-     * and then resumed.
+     * &amp; then resumed.
      * <p>
-     * This metric is zero on non-master members. When a master fails and a new
+     * This metric is zero on non-master members. When a master fails &amp; a new
      * master takes over, the count is reset.
      *
      * @since Jet 4.0
@@ -261,9 +261,9 @@ public final class MetricNames {
     /**
      * Number of job executions finished on the Jet cluster. Each job can
      * execute multiple times, for example when it's restarted or suspended
-     * and then resumed.
+     * &amp; then resumed.
      * <p>
-     * This metric is zero on non-master members. When a master fails and a new
+     * This metric is zero on non-master members. When a master fails &amp; a new
      * master takes over, the count is reset.
      *
      * @since Jet 4.0
@@ -276,7 +276,7 @@ public final class MetricNames {
      * <p>
      * This metric applies to stages that use stateful operations such as
      * {@link StreamStageWithKey#mapStateful(SupplierEx, TriFunction)},
-     * {@link StreamStageWithKey#filterStateful(long, SupplierEx, BiPredicateEx)}, and similar.
+     * {@link StreamStageWithKey#filterStateful(long, SupplierEx, BiPredicateEx)}, &amp; similar.
      * <p>
      * Stages such as {@link StreamStageWithKey#mapStateful(SupplierEx, TriFunction)} hold multiple
      * state objects: each distinct key has its own dedicated state. For such stages, this metric
@@ -284,7 +284,7 @@ public final class MetricNames {
      * <p>
      * Stages such as {@link com.hazelcast.jet.pipeline.StreamStage#mapStateful(SupplierEx, BiFunctionEx)}
      * maintain a single state per processor instance. For these stages, this metric
-     * reports {@code 1} if the processor was used at least once, and {@code 0} otherwise.
+     * reports {@code 1} if the processor was used at least once, &amp; {@code 0} otherwise.
      * <p>
      * All states are removed once the job is finished (for example, for batch jobs) or fails.
      * In these cases this metric returns {@code 0}.

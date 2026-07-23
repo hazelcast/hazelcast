@@ -29,7 +29,7 @@ import java.io.Serial;
  * <p>
  * It is handled when thrown from:<ul>
  *     <li>{@link Processor} methods
- *     <li>lambda functions: key & timestamp extractors, map functions...
+ *     <li>lambda functions: key &amp; timestamp extractors, map functions...
  *     <li>sources/sinks
  *     <li>{@code init()} method in {@link Processor}, {@link
  *          ProcessorSupplier} and {@link ProcessorMetaSupplier} (but not their
