@@ -16,19 +16,12 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.internal.serialization.Data;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -289,8 +282,10 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         for (Collection<DelayedEntry> value : values) {
             size += value.size();
         }
-        final String logMessage = String.format("Map store flush operation can not be done for %d entries", size);
-        logger.severe(logMessage);
+        logWithMapName(
+                logger::severe,
+                String.format("Map store flush operation can not be done for %d entries", size)
+        );
     }
 
     @Override
@@ -347,8 +342,12 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 // partition-write-behind-queues and will try to re-process
                 // them. This fail and retry cycle will be repeated indefinitely.
                 List failureList = task.failureList();
-                logger.severe("Number of entries which could not be stored is = [" + failureList.size() + "]"
-                        + ", Hazelcast will indefinitely retry to store them", exception);
+                logWithMapName(
+                        logger::severe,
+                        "Number of entries which could not be stored is = [" + failureList.size() + "]"
+                                + ", Hazelcast will indefinitely retry to store them",
+                        exception
+                );
                 return failureList;
             }
         }
