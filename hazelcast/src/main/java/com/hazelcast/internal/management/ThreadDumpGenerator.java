@@ -19,6 +19,8 @@ package com.hazelcast.internal.management;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -30,29 +32,39 @@ public final class ThreadDumpGenerator {
 
     private static final ILogger LOGGER = Logger.getLogger(ThreadDumpGenerator.class);
 
+    private static final String THREAD_PRINT_OPERATION = "threadPrint";
+    private static final String[] THREAD_PRINT_ARGS = {"-l"};
+    private static final Object[] THREAD_PRINT_PARAMS = {THREAD_PRINT_ARGS};
+    private static final String[] STRING_ARRAY_SIGNATURE = {String[].class.getName()};
+    private static final ObjectName DIAGNOSTIC_COMMAND_MBEAN = createDiagnosticCommandObjectName();
+
     private ThreadDumpGenerator() {
+    }
+
+    private static ObjectName createDiagnosticCommandObjectName() {
+        try {
+            return new ObjectName("com.sun.management:type=DiagnosticCommand");
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     public static String dumpAllThreads() {
         LOGGER.finest("Generating full thread dump...");
-        StringBuilder s = new StringBuilder();
-        s.append("Full thread dump ");
-        return dump(getAllThreads(), s);
+        String dump = dumpAllThreadsViaDiagnosticCommandOrMxBean();
+        LOGGER.finest(dump);
+        return dump;
     }
 
     public static String dumpDeadlocks() {
         LOGGER.finest("Generating dead-locked threads dump...");
-        StringBuilder s = new StringBuilder();
-        s.append("Deadlocked thread dump ");
-        return dump(findDeadlockedThreads(), s);
+        return dump(findDeadlockedThreads(), new StringBuilder("Deadlocked thread dump "));
     }
 
     private static String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("\n%s", s);
-        }
+        LOGGER.finest(s.toString());
         return s.toString();
     }
 
@@ -85,6 +97,21 @@ public final class ThreadDumpGenerator {
             return null;
         }
         return threadMXBean.getThreadInfo(threadIds, Integer.MAX_VALUE);
+    }
+
+    private static String dumpAllThreadsViaDiagnosticCommandOrMxBean() {
+        try {
+            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+            // Equivalent to: jcmd <pid> Thread.print -l
+            return (String) mBeanServer.invoke(
+                    DIAGNOSTIC_COMMAND_MBEAN, THREAD_PRINT_OPERATION, THREAD_PRINT_PARAMS, STRING_ARRAY_SIGNATURE);
+        } catch (Exception e) {
+            LOGGER.finest("Failed to generate thread dump via DiagnosticCommand MBean, falling back to ThreadMXBean", e);
+
+            StringBuilder s = new StringBuilder();
+            s.append("Full thread dump ");
+            return dump(getAllThreads(), s);
+        }
     }
 
     private static void header(StringBuilder s) {
