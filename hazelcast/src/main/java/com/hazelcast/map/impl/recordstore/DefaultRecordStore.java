@@ -25,7 +25,6 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.BiTuple;
@@ -140,7 +139,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
-    private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
     private final OffloadedOperations offloadedOperations = new OffloadedOperations();
 
@@ -153,7 +151,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
-        this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
         this.wanReplicateEvictions = mapContainer.getWanContext().isWanReplicationEnabled()
                 && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
@@ -474,26 +471,101 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     /**
-     * Loads value of key. If necessary loads it by
-     * extracting from {@link MetadataAwareValue}
+     * Loads the value for {@code key} from the map store without returning its TTL.
+     * Expiration metadata is still evaluated, so an expired value is treated as absent.
+     * <p>
+     * This variant is intended for callers that need the persisted value after an in-memory
+     * miss <strong>without mutating the IMap data</strong> by creating a record from that
+     * value, for example to compare or return an old value.
      *
-     * @return loaded value from map-store as a BiTuple which
-     * holds value and expirationTime together, when no value or expirationTime is
-     * found, associated fields in BiTuple is set to {@link Record#UNSET}
+     * @param key the key whose value is loaded
+     * @param now the current time in milliseconds, used to determine whether the value has expired
+     * @return the loaded value, or {@code null} if no value exists or the loaded value has expired
+     * @see #loadValueWithTtl(Data, long)
      */
-    public BiTuple<Object, Long> loadValueWithTtl(Data key, long now) {
+    public Object loadValue(Data key, long now) {
         Object value = mapDataStore.load(key);
-        return getOldValueWithTtlTupleOrNull(value, now);
-    }
-
-    public Object loadValueOfKey(Data key, long now) {
-        Object value = mapDataStore.load(key);
-        BiTuple<Object, Long> valueWithTtl = getOldValueWithTtlTupleOrNull(value, now);
+        BiTuple<Object, Long> valueWithTtl = extractValueWithTtlOrNull(value, now);
         return valueWithTtl == null ? null : valueWithTtl.element1;
     }
 
+    /**
+     * Loads the value for {@code key} from the map store together with its remaining TTL.
+     * If the map store provides expiration metadata, the expiration time is converted to
+     * a TTL relative to {@code now}. Otherwise, the returned TTL is {@link Record#UNSET}.
+     * <p>
+     * This variant is intended for callers that <strong>will mutate the IMap data</strong>
+     * by creating a record from the loaded value. The remaining TTL allows the created
+     * record to preserve the loaded entry's expiration.
+     *
+     * @param key the key whose value is loaded
+     * @param now the current time in milliseconds, used to calculate the remaining TTL
+     * @return a tuple containing the loaded value and its remaining TTL, or {@code null}
+     * if no value exists or the loaded value has expired
+     * @see #loadValue(Data, long)
+     */
+    public BiTuple<Object, Long> loadValueWithTtl(Data key, long now) {
+        if (mapDataStore.isNullImpl()) {
+            return null;
+        }
+        // Avoid a potentially blocking load when its
+        // result cannot be used to mutate IMap data.
+        checkLoadTriggeredMutationAllowed();
+
+        Object value = mapDataStore.load(key);
+        return extractValueWithTtlOrNull(value, now);
+    }
+
+    /**
+     * Bulk loading variant of {@link #loadValueWithTtl(Data, long)}
+     *
+     * @see #loadValueWithTtl(Data, long)
+     */
+    public List loadValueWithTtl(Collection keys, long now) {
+        if (mapDataStore.isNullImpl()) {
+            return Collections.emptyList();
+        }
+        // Avoid a potentially blocking bulk load when its
+        // results cannot be used to mutate IMap data.
+        checkLoadTriggeredMutationAllowed();
+
+        Map loadedKeyValuePairs = mapDataStore.loadAll(keys);
+        List keyBiTupleList = new ArrayList<>();
+        Set<Map.Entry> set = loadedKeyValuePairs.entrySet();
+        for (Map.Entry entry : set) {
+            Object loadedKey = entry.getKey();
+            Object loadedValue = entry.getValue();
+            Data key = toData(loadedKey);
+
+            if (key == null) {
+                String msg = String.format("Key cannot be null.[mapName: %s]", name);
+                throw new NullPointerException(msg);
+            }
+
+            if (loadedValue == null) {
+                // we haven't found any matching value to load, this
+                // is a legitimate case when loading not-existing keys
+                // from a map-loader, so we can continue with the rest.
+                continue;
+            }
+
+            BiTuple<Object, Long> biTuple = extractValueWithTtlOrNull(loadedValue, now);
+            if (biTuple != null) {
+                if (biTuple.element1 == null) {
+                    // EntryLoader#MetadataAwareValue can hold value as null,
+                    // here we check that possibility.
+                    continue;
+                }
+
+                keyBiTupleList.add(key);
+                keyBiTupleList.add(biTuple);
+            }
+        }
+        return keyBiTupleList;
+    }
+
     @Nullable
-    public BiTuple<Object, Long> getOldValueWithTtlTupleOrNull(Object loadedValue, long now) {
+    public BiTuple<Object, Long> extractValueWithTtlOrNull(Object loadedValue, long now) {
         Object value = loadedValue;
         if (value == null) {
             return null;
@@ -516,8 +588,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return BiTuple.of(value, (long) UNSET);
     }
 
+    @Nullable
     @Override
-    public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress, long now) {
+    public Record loadAndCreateRecordOrNull(Data key, boolean backup, Address callerAddress, long now) {
         BiTuple<Object, Long> biTuple = loadValueWithTtl(key, now);
         if (biTuple == null) {
             return null;
@@ -526,6 +599,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return onLoadRecord(key, biTuple, backup, callerAddress, now);
     }
 
+    /**
+     * Creates a record from a value loaded from the map store.
+     * <p>
+     * <strong>This method mutates IMap data.</strong> The caller must have successfully
+     * invoked {@link #checkLoadTriggeredMutationAllowed()} before loading the value.
+     * For step-based operations, the step machinery additionally revalidates the partition
+     * migration stamp before invoking this method.
+     *
+     * @param key           the key of the loaded value
+     * @param valueWithTtl  the loaded value and its remaining TTL
+     * @param backup        whether this record store belongs to a backup replica
+     * @param callerAddress the caller address used when publishing the load event
+     * @param now           the current time in milliseconds
+     * @return the created record
+     */
     public Record onLoadRecord(Data key, BiTuple<Object, Long> valueWithTtl,
                                boolean backup, Address callerAddress, long now) {
         assert key != null;
@@ -687,7 +775,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         if (record == null) {
-            oldValue = loadValueOfKey(key, now);
+            oldValue = loadValue(key, now);
             if (oldValue != null && persistenceEnabledFor(provenance)) {
                 mapDataStore.remove(key, now, transactionId);
                 updateStatsOnRemove(now);
@@ -708,7 +796,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object oldValue;
         boolean removed = false;
         if (record == null) {
-            oldValue = loadValueOfKey(key, now);
+            oldValue = loadValue(key, now);
             if (oldValue == null) {
                 return false;
             }
@@ -738,7 +826,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record != null && touch) {
             accessRecord(key, record, now);
         } else if (record == null && mapDataStore != EMPTY_MAP_DATA_STORE) {
-            record = loadRecordOrNull(key, backup, callerAddress, now);
+            record = loadAndCreateRecordOrNull(key, backup, callerAddress, now);
             record = evictIfExpired(key, now, backup) ? null : record;
         }
         Object value = record == null ? null : record.getValue();
@@ -781,7 +869,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // then try to load missing keys from map-store
         if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
-            List keyBiTupleList = loadMultipleKeys(keys);
+            List keyBiTupleList = loadValueWithTtl(keys, now);
             Map<Data, Object> loadedEntries = putAndGetLoadedEntries(keyBiTupleList, callerAddress);
             addToMapEntrySet(mapEntries, loadedEntries);
         }
@@ -804,43 +892,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         }
         return mapEntries;
-    }
-
-    public List loadMultipleKeys(Collection keysToLoad) {
-        long now = getNow();
-        Map loadedKeyValuePairs = mapDataStore.loadAll(keysToLoad);
-        List keyBiTupleList = new ArrayList<>();
-        Set<Map.Entry> set = loadedKeyValuePairs.entrySet();
-        for (Map.Entry entry : set) {
-            Object loadedKey = entry.getKey();
-            Object loadedValue = entry.getValue();
-            Data key = toData(loadedKey);
-
-            if (key == null) {
-                String msg = String.format("Key cannot be null.[mapName: %s]", name);
-                throw new NullPointerException(msg);
-            }
-
-            if (loadedValue == null) {
-                // we haven't found any matching value to load, this
-                // is a legitimate case when loading not-existing keys
-                // from a map-loader, so we can continue with the rest.
-                continue;
-            }
-
-            BiTuple<Object, Long> biTuple = getOldValueWithTtlTupleOrNull(loadedValue, now);
-            if (biTuple != null) {
-                if (biTuple.element1 == null) {
-                    // EntryLoader#MetadataAwareValue can hold value as null,
-                    // here we check that possibility.
-                    continue;
-                }
-
-                keyBiTupleList.add(key);
-                keyBiTupleList.add(biTuple);
-            }
-        }
-        return keyBiTupleList;
     }
 
     public Map<Data, Object> putAndGetLoadedEntries(List loadedKeyAndOldValueWithTtlPairs,
@@ -905,7 +956,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
-            record = loadRecordOrNull(key, false, callerAddress, now);
+            record = loadAndCreateRecordOrNull(key, false, callerAddress, now);
         }
         boolean contains = record != null;
         if (contains) {
@@ -996,7 +1047,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         // Variants of loading oldValue
         if (staticParams.isPutVanilla()) {
             oldValue = record == null
-                    ? (staticParams.isLoad() ? loadValueOfKey(key, now) : null) : record.getValue();
+                    ? (staticParams.isLoad() ? loadValue(key, now) : null) : record.getValue();
         } else if (staticParams.isPutIfAbsent()) {
             record = getOrLoadRecord(record, key, now, callerAddress, staticParams.isBackup());
             // if this is an existing record, return existing value.
@@ -1118,7 +1169,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return record;
         }
 
-        return loadRecordOrNull(key, backup, callerAddress, now);
+        return loadAndCreateRecordOrNull(key, backup, callerAddress, now);
     }
 
     public Object putIntoMapStore(Record record, Data key, Object newValue,
@@ -1432,6 +1483,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 loadingFutures.removeAll(doneFutures);
             }
         } else {
+            // TODO Read-only operations may run between migration chunks. Do not
+            // let checkIfLoaded() schedule loading while migration is iterating
+            // over the live record store.
             keyLoader.triggerLoadingWithDelay();
             throw new RetryableHazelcastException("Map " + getName()
                     + " is still loading data from external store");

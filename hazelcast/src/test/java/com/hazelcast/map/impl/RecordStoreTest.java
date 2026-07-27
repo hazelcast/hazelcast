@@ -92,7 +92,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         int ttl = 5000;
         long expirationTime = now + ttl;
         Object loaderEntry = new EntryLoader.MetadataAwareValue<>("value", expirationTime);
-        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(loaderEntry, now);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).extractValueWithTtlOrNull(loaderEntry, now);
 
         assertNotNull(oldValueWithTtl);
         assertEquals("value", oldValueWithTtl.element1);
@@ -108,7 +108,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         long now = System.currentTimeMillis();
         long expiry = Long.MAX_VALUE;
         Object loaderEntry = new EntryLoader.MetadataAwareValue<>("value", expiry);
-        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(loaderEntry, now);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).extractValueWithTtlOrNull(loaderEntry, now);
 
         assertNotNull(oldValueWithTtl);
         assertEquals("value", oldValueWithTtl.element1);
@@ -124,7 +124,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         long now = System.currentTimeMillis();
         long expiredAt = now - 5000;
         Object loaderEntry = new EntryLoader.MetadataAwareValue<>("value", expiredAt);
-        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(loaderEntry, now);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).extractValueWithTtlOrNull(loaderEntry, now);
 
         assertNull(oldValueWithTtl);
     }
@@ -135,7 +135,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         TestEntryStore<String, String> store = new TestEntryStore<>();
         IMap<Object, Object> map = setupMapWithConfig(mapName, store);
 
-        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull(null, 1L);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).extractValueWithTtlOrNull(null, 1L);
 
         assertNull(oldValueWithTtl);
     }
@@ -150,7 +150,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
 
-        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).getOldValueWithTtlTupleOrNull("value", 1L);
+        BiTuple<Object, Long> oldValueWithTtl = getRecordStore(map, 1).extractValueWithTtlOrNull("value", 1L);
 
         assertNotNull(oldValueWithTtl);
         assertEquals("value", oldValueWithTtl.element1);

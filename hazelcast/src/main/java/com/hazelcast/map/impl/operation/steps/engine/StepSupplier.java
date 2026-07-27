@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.steps.IMapOpStep;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -72,18 +73,28 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
      * Only here to disable the thread check for testing purposes.
      */
     private final boolean checkCurrentThread;
-    private final boolean isAllowedToExecuteDuringMigration;
+    /**
+     * Whether the operation-level policy requires all steps to run against
+     * the same stable partition.
+     */
+    private final boolean operationNeedsStablePartition;
 
     private volatile Runnable currentRunnable;
     private volatile Step currentStep;
     private volatile boolean firstPartitionStep = true;
     /**
+     * Whether a read-through MapStore load has made a stable partition
+     * necessary for the remaining steps.
+     */
+    private volatile boolean mapStoreLoadNeedsStablePartition;
+
+    /**
      * This stamp guarantees that it is safe for the system
      * to access partition-state during the "partition" step.
      * <p>
-     * To keep things running correctly, any steps running on separate
-     * (offloaded) threads must not touch this partition-state.
-     * Only the partition thread is allowed to access it.
+     * The migration stamp is backed by thread-safe counters and can be
+     * validated around an offloaded MapStore load. Other partition state must
+     * only be accessed from the partition thread.
      *
      * @see Step#isOffloadStep(Object)
      */
@@ -103,8 +114,8 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.partitionId = state.getPartitionId();
         this.checkCurrentThread = checkCurrentThread;
-        this.isAllowedToExecuteDuringMigration
-                = operationRunner.isAllowedToExecuteDuringMigration(operation);
+        this.operationNeedsStablePartition
+                = !operationRunner.isAllowedToExecuteDuringMigration(operation);
 
         collectCustomSteps(operation, this);
         MapService mapService = getMapService();
@@ -211,7 +222,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         final RecordStore recordStore = state.getRecordStore();
         final int threadIndex = beforeOperation(recordStore, errorStep);
         try {
-            if (!errorStep && !checkPreconditions(runningOnPartitionThread)) {
+            if (!errorStep && !checkPreconditions(step, runningOnPartitionThread)) {
                 return false;
             }
 
@@ -292,14 +303,42 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         state.init(operation.getRecordStore(), operation);
     }
 
-    private boolean checkPreconditions(boolean runningOnPartitionThread) {
+    private boolean checkPreconditions(Step step, boolean runningOnPartitionThread) {
         if (runningOnPartitionThread && !checkPartitionThreadPreconditions()) {
             return false;
         }
-        if (!isAllowedToExecuteDuringMigration) {
+
+        if (requiresMigrationStampValidation(step)) {
             validatePartitionMigrationStamp();
         }
         return true;
+    }
+
+    /**
+     * Returns whether the current step must validate the partition migration
+     * stamp. Read-only map operations are normally allowed during migration so
+     * they can return stale in-memory values. Reaching a real MapStore load
+     * changes the safety requirement because loaded data may later be inserted
+     * into the record store.
+     * <p>
+     * Validation remains enabled after the first load step, detecting migrations
+     * that start and finish while the load is offloaded.
+     */
+    private boolean requiresMigrationStampValidation(Step step) {
+        // Validate when:
+        // - the operation-level policy requires a stable partition;
+        // - a read-through MapStore load requires a stable partition for the remaining steps.
+        if (operationNeedsStablePartition || mapStoreLoadNeedsStablePartition) {
+            return true;
+        }
+
+        // A real MapStore load can lead to a RecordStore mutation, such as writing the loaded entry.
+        if (step instanceof IMapOpStep mapStep
+                && mapStep.isLoadStep()
+                && !state.getRecordStore().getMapDataStore().isNullImpl()) {
+            mapStoreLoadNeedsStablePartition = true;
+        }
+        return mapStoreLoadNeedsStablePartition;
     }
 
     private boolean checkPartitionThreadPreconditions() {
