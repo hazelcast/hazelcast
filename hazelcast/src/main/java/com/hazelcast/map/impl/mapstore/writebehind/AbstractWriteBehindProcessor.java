@@ -83,25 +83,19 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
     }
 
     protected void logWithMapName(BiConsumer<String, Throwable> loggingConsumer, String msg, Throwable t) {
-
         loggingConsumer.accept(addMapNameIfGiven(msg), t);
-
     }
 
     protected void logWithMapName(Consumer<String> loggingConsumer, String msg) {
-
         loggingConsumer.accept(addMapNameIfGiven(msg));
-
     }
 
     private String addMapNameIfGiven(String msg) {
-
         if (Strings.isBlank(mapName)) {
             return msg;
         }
 
         return String.format("(in context of map '%s') %s", mapName, msg);
-
     }
 
     /**
