@@ -79,6 +79,22 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Remove when Spring Boot manages Tomcat 10.1.57 or later. -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat10.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${tomcat10.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat10.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

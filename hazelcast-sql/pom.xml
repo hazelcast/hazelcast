@@ -470,6 +470,15 @@
                     <groupId>org.apache.calcite.avatica</groupId>
                     <artifactId>avatica-metrics</artifactId>
                 </exclusion>
+                <!-- Avatica HTTP transport is not used. -->
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.client5</groupId>
+                    <artifactId>httpclient5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.core5</groupId>
+                    <artifactId>httpcore5</artifactId>
+                </exclusion>
                 <!-- Exclusions for jsonpath. -->
                 <exclusion>
                     <groupId>net.minidev</groupId>
