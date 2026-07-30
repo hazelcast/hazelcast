@@ -1606,28 +1606,6 @@
                 </dependency>
             </dependencies>
         </profile>
-        <profile>
-            <id>spring-5</id>
-            <activation>
-                <property>
-                    <name>tested.spring.override</name>
-                    <value>5</value>
-                </property>
-            </activation>
-            <properties>
-                <!-- should only be Spring 5 -->
-                <spring.boot.version>2.7.18</spring.boot.version>
-                <org.springframework.version>5.3.39</org.springframework.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
-                    <version>1</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
         <!-- Profile used to compare the current version with the baseline defined in hazelcast.public.api.baseline.version
           This comparison is done by japicmp plugin which compares jars - already released one with the current snapshot -->
         <profile>
