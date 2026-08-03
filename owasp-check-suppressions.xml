@@ -194,19 +194,22 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        False positive - CPE overmatch for Jetty module.
-        jetty-util-ajax contains neither the jetty-http parser affected by CVE-2026-2332 nor the jetty-jaspi authenticator affected by CVE-2026-5795.
+        False positive - CPE overmatch for Jetty modules.
+        CVE-2026-2332 affects org.eclipse.jetty:jetty-http, not jetty-util or jetty-util-ajax.
+        CVE-2026-5795 affects org.eclipse.jetty:jetty-jaspi, not jetty-util or jetty-util-ajax.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-util-ajax@9\.4\.58\.v20250814$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-util(?:-ajax)?@9\.4\.58\.v20250814$</packageUrl>
         <cve>CVE-2026-2332</cve>
         <cve>CVE-2026-5795</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-        False positive - CVE-2026-24051 affects the Go module go.opentelemetry.io/otel/sdk/resource, not this Java Maven artefact.
+        False positive - CVE-2026-24051, CVE-2026-29181, and CVE-2026-39883 affect OpenTelemetry Go, not this Java Maven artefact.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.contrib/opentelemetry-gcp-resources@1\.37\.0-alpha$</packageUrl>
         <cve>CVE-2026-24051</cve>
+        <cve>CVE-2026-29181</cve>
+        <cve>CVE-2026-39883</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
