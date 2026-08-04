@@ -235,4 +235,12 @@
         <cve>CVE-2026-54512</cve>
         <cve>CVE-2026-54513</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2026-56816 affects io.netty:netty-codec-http3, not these Netty artefacts.
+        The exact version scope ensures that a future Netty bump requires reassessment.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/(?:netty-codec-memcache|netty-codec-mqtt|netty-transport)@4\.1\.136\.Final$</packageUrl>
+        <cve>CVE-2026-56816</cve>
+    </suppress>
 </suppressions>
