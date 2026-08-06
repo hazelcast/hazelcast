@@ -74,6 +74,7 @@ import java.net.Socket;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.EventListener;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -1667,5 +1668,43 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected.isFailFastOnStartup(), actual.isFailFastOnStartup());
         assertEquals(expected.isParallelMode(), actual.isParallelMode());
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testXmlGeneratorNodes() {
+        StringBuilder xml = new StringBuilder();
+
+        new ConfigXmlGenerator.XmlGenerator(xml)
+                .open("root",
+                        "escaped", "\n\r\"'&<",
+                        "omitted", null)
+                .node("omitted", null)
+                .node("self-closing", null, "attribute", "value")
+                .nodeIfContents("omitted-conditionally", null)
+                .nodeIfContents("included-conditionally", "<&")
+                .close();
+
+        assertEquals("<root escaped=\"&#10;&#13;&quot;&#39;&amp;&lt;\">"
+                + "<self-closing attribute=\"value\"/>"
+                + "<included-conditionally>&lt;&amp;</included-conditionally>"
+                + "</root>", xml.toString());
+    }
+
+    @Test
+    public void testXmlGeneratorMapProperties() {
+        StringBuilder xml = new StringBuilder();
+        Map<String, String> properties = new LinkedHashMap<>();
+        properties.put("escaped<&\"'\n\r", "value<&");
+        properties.put("without-value", null);
+
+        new ConfigXmlGenerator.XmlGenerator(xml)
+                .appendProperties((Map<String, String>) null)
+                .appendProperties(Map.of())
+                .appendProperties(properties);
+
+        assertEquals("<properties>"
+                + "<property name=\"escaped&lt;&amp;&quot;&#39;&#10;&#13;\">value&lt;&amp;</property>"
+                + "<property name=\"without-value\"/>"
+                + "</properties>", xml.toString());
     }
 }
