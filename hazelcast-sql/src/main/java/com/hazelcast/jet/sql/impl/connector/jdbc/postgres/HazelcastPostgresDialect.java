@@ -45,6 +45,7 @@ public class HazelcastPostgresDialect extends PostgresqlSqlDialect implements Ty
             case "BPCHAR":
             case "VARCHAR":
             case "TEXT":
+            case "UUID":
                 return QueryDataType.VARCHAR;
 
             case "INT2":
