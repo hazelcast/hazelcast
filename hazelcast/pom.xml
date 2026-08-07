@@ -180,6 +180,21 @@
                     <forceCreation>true</forceCreation>
                 </configuration>
                 <executions>
+                    <!--
+                        Attach the un-relocated classes as a `pre-shade` classifier jar. maven-jar-plugin
+                        is declared before maven-shade-plugin, so this runs first, capturing target/classes before the shade goal rewrites the main artifact.
+                        Consumed by the hazelcast-slim module.
+                    -->
+                    <execution>
+                        <id>pre-shade-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>pre-shade</classifier>
+                        </configuration>
+                    </execution>
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
@@ -700,12 +715,10 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.184</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.6</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -986,7 +999,6 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>7.1.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
