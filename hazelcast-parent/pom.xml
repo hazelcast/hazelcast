@@ -455,6 +455,7 @@
                 <artifactId>httpclient</artifactId>
                 <version>4.5.14</version>
             </dependency>
+            <!-- Keep aligned with the HttpComponents versions used by the AWS SDK v2 Apache client. -->
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
