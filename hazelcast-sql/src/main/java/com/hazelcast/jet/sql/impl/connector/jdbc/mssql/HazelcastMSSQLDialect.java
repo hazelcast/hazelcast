@@ -96,6 +96,8 @@ public class HazelcastMSSQLDialect extends MssqlSqlDialect implements TypeResolv
     public QueryDataType resolveType(String columnTypeName, int precision, int scale) {
         return switch (columnTypeName.toUpperCase(Locale.ROOT)) {
             case "FLOAT" -> QueryDataType.DOUBLE;
+            case "INT IDENTITY" -> QueryDataType.INT;
+            case "NVARCHAR" -> QueryDataType.VARCHAR;
             case "DATETIME2", "SMALLDATETIME" -> QueryDataType.TIMESTAMP;
             default -> DefaultTypeResolver.resolveType(columnTypeName, precision, scale);
         };
