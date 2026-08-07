@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -33,9 +34,10 @@ final class StoreConstructor {
     private StoreConstructor() {
     }
 
-    static Object createStore(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader) {
+    static Object createStore(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader,
+                               ManagedContext managedContext) {
         // 1. Try to create store from `store factory` class.
-        Object store = getStoreFromFactoryOrNull(name, mapStoreConfig, classLoader);
+        Object store = getStoreFromFactoryOrNull(name, mapStoreConfig, classLoader, managedContext);
 
         // 2. Try to get store from `store impl.` object.
         if (store == null) {
@@ -48,7 +50,8 @@ final class StoreConstructor {
         return store;
     }
 
-    private static Object getStoreFromFactoryOrNull(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader) {
+    private static Object getStoreFromFactoryOrNull(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader,
+                                                      ManagedContext managedContext) {
         MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
         if (factory == null) {
             final String factoryClassName = mapStoreConfig.getFactoryClassName();
@@ -65,6 +68,11 @@ final class StoreConstructor {
         if (factory == null) {
             return null;
         }
+
+        // Apply container-managed injection (e.g. HazelcastInstanceAware, or Spring/Guice wiring
+        // via an external ManagedContext) to the factory itself, the same way it is applied to
+        // other user-pluggable, config-instantiated objects such as listeners.
+        factory = (MapStoreFactory) managedContext.initialize(factory);
 
         final Properties properties = mapStoreConfig.getProperties();
         return factory.newMapStore(name, properties);
