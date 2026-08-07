@@ -51,7 +51,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings({"unchecked", "rawtypes", "LeftCurly"})
+@SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class ExpressionTestSupport extends SqlTestSupport {
 
