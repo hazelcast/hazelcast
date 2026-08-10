@@ -186,6 +186,15 @@
         <!-- When false, the public API check does not fail fast and generates a full report for manual verification -->
         <public.api.check.break.build>true</public.api.check.break.build>
 
+        <!--
+           Workaround: the git-commit-id-plugin uses JGit by
+           default, which does not support git worktrees. When
+           building from a git worktree (e.g. created with `git
+           worktree add`), pass -Dgit.useNativeGit=true to make
+           the plugin use the native `git` executable instead.
+       -->
+        <git.useNativeGit>false</git.useNativeGit>
+
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
 
