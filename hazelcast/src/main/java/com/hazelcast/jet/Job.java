@@ -259,7 +259,7 @@ public interface Job {
      * JobConfig#setAutoScaling auto scaling} is disabled. Only a running job
      * can be restarted; a suspended job must be {@linkplain #resume() resumed}.
      * <p>
-     * Conceptually this call is equivalent to {@link #suspend()} & {@link
+     * Conceptually this call is equivalent to {@link #suspend()} &amp; {@link
      * #resume()}. Not supported for light jobs.
      *
      * @throws IllegalStateException if the job is not running, for example it

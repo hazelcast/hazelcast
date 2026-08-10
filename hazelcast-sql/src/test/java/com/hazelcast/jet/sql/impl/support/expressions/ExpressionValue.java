@@ -33,7 +33,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
+@SuppressWarnings({"unused", "unchecked", "LeftCurly", "checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionValue implements DataSerializable {
 
     private static final ConcurrentHashMap<String, Class<? extends ExpressionValue>> CLASS_CACHE = new ConcurrentHashMap<>();

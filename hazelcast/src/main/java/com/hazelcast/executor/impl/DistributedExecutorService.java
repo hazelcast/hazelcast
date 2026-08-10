@@ -232,14 +232,14 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return executorStats.getLocalExecutorStats(name, false);
     }
 
-    private final class Processor extends FutureTask implements Runnable {
+    private final class Processor extends FutureTask<Object> implements Runnable {
         //is being used through the RESPONSE_FLAG. Can't be private due to reflection constraint.
         volatile Boolean responseFlag = Boolean.FALSE;
 
         private final String name;
         private final UUID uuid;
         private final Operation op;
-        private final String taskToString;
+        private final Object task;
         private final long creationTime = Clock.currentTimeMillis();
         private final boolean statisticsEnabled;
         private final @Nullable String namespace;
@@ -253,7 +253,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             super(callable);
             this.name = name;
             this.uuid = uuid;
-            this.taskToString = String.valueOf(callable);
+            this.task = callable;
             this.op = op;
             this.statisticsEnabled = statisticsEnabled;
             this.namespace = namespace;
@@ -263,11 +263,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                           @Nonnull Runnable runnable,
                           Operation op, boolean statisticsEnabled,
                           @Nullable String namespace) {
-            //noinspection unchecked
             super(runnable, null);
             this.name = name;
             this.uuid = uuid;
-            this.taskToString = String.valueOf(runnable);
+            this.task = runnable;
             this.op = op;
             this.statisticsEnabled = statisticsEnabled;
             this.namespace = namespace;
@@ -305,7 +304,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
         private void logException(Exception e) {
             if (logger.isFinestEnabled()) {
-                logger.finest("While executing callable: " + taskToString, e);
+                logger.finest("While executing callable: " + task, e);
             }
         }
 

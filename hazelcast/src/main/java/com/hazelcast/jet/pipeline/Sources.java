@@ -1658,7 +1658,7 @@ public final class Sources {
      *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      *    }</pre>
      *    <p>
-     * Example for MySQL to specify fetchSize: The database connection URL should have <b>"&useCursorFetch=true"</b> parameter
+     * Example for MySQL to specify fetchSize: The database connection URL should have <code>&useCursorFetch=true<code> parameter
      * to enable cursor-based fetching. This means that the JDBC driver will fetch a set of rows from the database at a time,
      * rather than fetching all the rows in the result set at once
      * <pre>{@code

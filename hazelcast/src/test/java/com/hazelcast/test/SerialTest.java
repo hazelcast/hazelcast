@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -38,5 +39,6 @@ import java.lang.annotation.Target;
 @Inherited
 @ExtendWith(HazelcastSerialTestExtension.class)
 @Execution(ExecutionMode.SAME_THREAD)
+@Isolated
 public @interface SerialTest {
 }

@@ -18,10 +18,6 @@
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
 
     <id>hazelcast</id>
-    <formats>
-        <format>zip</format>
-        <format>tar.gz</format>
-    </formats>
 
     <dependencySets>
         <dependencySet>

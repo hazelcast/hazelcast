@@ -460,7 +460,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         Data key = mapServiceContext.toData("key");
         DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0,
                 mock(MapKeyLoader.class), mock(ILogger.class));
-        assertNull(recordStore.loadRecordOrNull(key, false, null, Clock.currentTimeMillis()));
+        assertNull(recordStore.loadAndCreateRecordOrNull(key, false, null, Clock.currentTimeMillis()));
     }
 
     private void assumeNoTieredStorageConfigured() {

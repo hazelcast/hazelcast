@@ -25,7 +25,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.map.IMap;
@@ -56,6 +58,7 @@ import org.junit.runners.Parameterized;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -641,6 +644,21 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 return delegate.getMigrationStamp() + 1;
             }
             return delegate.getMigrationStamp();
+        }
+
+        @Override
+        public int getPartitionMigrationStamp(int partitionId) {
+            return delegate.getPartitionMigrationStamp(partitionId);
+        }
+
+        @Override
+        public boolean validatePartitionMigrationStamp(int partitionId, int stamp) {
+            return delegate.validatePartitionMigrationStamp(partitionId, stamp);
+        }
+
+        @Override
+        public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
+            return delegate.getAllServiceNamespaces(event);
         }
 
         @Override

@@ -59,7 +59,7 @@ public enum PutOpSteps implements IMapOpStep {
             StaticParams staticParams = state.getStaticParams();
             if (staticParams.isPutVanilla()) {
                 Object oldValue = ((DefaultRecordStore) state.getRecordStore())
-                        .loadValueOfKey(state.getKey(), state.getNow());
+                        .loadValue(state.getKey(), state.getNow());
                 state.setOldValue(oldValue);
             } else if (staticParams.isPutIfAbsent() || staticParams.isPutIfExists()) {
                 GetOpSteps.LOAD.runStep(state);

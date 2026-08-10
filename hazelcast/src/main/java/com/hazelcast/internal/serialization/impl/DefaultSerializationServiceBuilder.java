@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -131,8 +130,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
         allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
-        JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
-        classNameSerializationFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        classNameSerializationFilter = new SerializationClassNameFilter(config.getJavaSerializationFilterConfig());
         compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
@@ -257,6 +255,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     @Override
     public InternalSerializationService build() {
         initVersions();
+
         if (config != null) {
             addConfigDataSerializableFactories(dataSerializableFactories, config, classLoader);
             addConfigPortableFactories(portableFactories, config, classLoader);

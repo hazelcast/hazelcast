@@ -17,11 +17,15 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -30,8 +34,9 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -58,6 +63,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final ExpirySystem expirySystem;
+    protected final IPartitionService partitionService;
+    protected final ClusterService clusterService;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -67,6 +74,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         thisAddress = nodeEngine.getThisAddress();
         thisUuid = nodeEngine.getLocalMember().getUuid();
         expirySystem = createExpirySystem(mapContainer);
+        partitionService = nodeEngine.getPartitionService();
+        clusterService = nodeEngine.getClusterService();
     }
 
     @Override
@@ -123,8 +132,50 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (expiryReason == NOT_EXPIRED) {
             return false;
         }
+
+        // During chunked migration the partition thread is yielded between
+        // chunks. A read-only operation that finds an expired entry would
+        // normally evict it, mutating the RecordStore and expiry metadata map
+        // while the live migration iterator is still being used. Treat the
+        // entry as expired for the caller without physically removing it.
+        if (!isReadTriggeredMutationAllowed()) {
+            return true;
+        }
+
         evictExpiredEntryAndPublishExpiryEvent(key, expiryReason, backup);
         return true;
+    }
+
+    /**
+     * Returns whether a record-store mutation triggered by a read is allowed.
+     * When this method returns {@code false}, callers skip the mutation without
+     * failing the read.
+     */
+    protected final boolean isReadTriggeredMutationAllowed() {
+        IPartition partition = partitionService.getPartition(partitionId, false);
+        return !partition.isMigrating()
+                && clusterService.getClusterState() != ClusterState.PASSIVE;
+    }
+
+    /**
+     * Rejects a MapStore load whose result could mutate this record store.
+     * Unlike {@link #isReadTriggeredMutationAllowed()}, this method fails the read:
+     * silently suppressing a MapStore load would produce a false missing result.
+     *
+     * @throws IllegalStateException if the cluster is passive
+     * @throws PartitionMigratingException if the partition is migrating
+     */
+    protected final void checkLoadTriggeredMutationAllowed() {
+        if (clusterService.getClusterState() == ClusterState.PASSIVE) {
+            throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE
+                    + " state! MapStore load is not allowed");
+        }
+
+        IPartition partition = partitionService.getPartition(partitionId, false);
+        if (partition.isMigrating()) {
+            throw new PartitionMigratingException(thisAddress, partitionId,
+                    getClass().getName(), SERVICE_NAME);
+        }
     }
 
     @Override
