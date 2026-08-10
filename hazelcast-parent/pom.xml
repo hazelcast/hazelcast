@@ -98,7 +98,7 @@
         Not required with Calcite >=1.37,
          -->
         <janino.version>3.1.10</janino.version>
-        <debezium.version>3.6.0.Final</debezium.version>
+        <debezium.version>3.6.1.Final</debezium.version>
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.5.0</hadoop.version>
