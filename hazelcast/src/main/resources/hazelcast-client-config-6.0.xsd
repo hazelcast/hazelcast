@@ -356,6 +356,7 @@
             <xs:element name="predicate" type="predicate"/>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
+            <xs:element name="mode" type="query-cache-mode" minOccurs="0" default="CACHE"/>
             <xs:element name="populate" type="xs:boolean" minOccurs="0" default="true"/>
             <xs:element name="coalesce" type="xs:boolean" minOccurs="0" default="false"/>
             <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" default="false"/>
@@ -382,6 +383,15 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:simpleType name="query-cache-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="CACHE"/>
+            <xs:enumeration value="PASS_THROUGH"/>
+            <xs:enumeration value="cache"/>
+            <xs:enumeration value="pass_through"/>
+            <xs:enumeration value="pass-through"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="predicate">
         <xs:simpleContent>
             <xs:extension base="xs:string">

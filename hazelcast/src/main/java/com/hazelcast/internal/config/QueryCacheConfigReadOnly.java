@@ -22,6 +22,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueryCacheMode;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -102,6 +103,12 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
     @Nonnull
     @Override
     public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
+
+    @Nonnull
+    @Override
+    public QueryCacheConfig setMode(QueryCacheMode mode) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 

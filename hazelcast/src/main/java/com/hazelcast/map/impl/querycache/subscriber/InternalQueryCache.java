@@ -42,8 +42,10 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
      * Populate query cache with initial set of entries as {@link Data}.
      * Triggers an {@link EntryEventType#ADDED ADDED} event for each entry that
      * is added to the query cache. Note that not all events may be added
-     * to the query cache if the query cache is configured with an eviction
-     * policy with a maximum {@code ENTRY_COUNT}.
+     * to the query cache if the query cache stores entries locally and is
+     * configured with an eviction policy with a maximum {@code ENTRY_COUNT}.
+     * Pass-through query caches publish the initial events without storing
+     * entries locally.
      *
      * @param entries key-value pairs iterator.
      */

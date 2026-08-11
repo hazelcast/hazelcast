@@ -1521,6 +1521,18 @@
                 "in-memory-format": {
                   "$ref": "#/definitions/InMemoryFormat"
                 },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "CACHE",
+                    "PASS_THROUGH",
+                    "cache",
+                    "pass_through",
+                    "pass-through"
+                  ],
+                  "default": "CACHE",
+                  "description": "Defines whether matching entries are stored locally in the query cache or only passed through to query cache listeners."
+                },
                 "populate": {
                   "type": "boolean",
                   "default": true,

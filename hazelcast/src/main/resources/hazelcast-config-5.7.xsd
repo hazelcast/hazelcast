@@ -2132,6 +2132,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="mode" type="query-cache-mode" minOccurs="0" default="CACHE">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines whether matching entries are stored locally in the query cache
+                        or only passed through to query cache listeners.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="populate" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
@@ -2192,6 +2200,15 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:simpleType name="query-cache-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="CACHE"/>
+            <xs:enumeration value="PASS_THROUGH"/>
+            <xs:enumeration value="cache"/>
+            <xs:enumeration value="pass_through"/>
+            <xs:enumeration value="pass-through"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="predicate">
         <xs:simpleContent>
             <xs:extension base="xs:string">
