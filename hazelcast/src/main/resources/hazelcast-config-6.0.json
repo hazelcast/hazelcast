@@ -1525,9 +1525,7 @@
                   "type": "string",
                   "enum": [
                     "CACHE",
-                    "PASS_THROUGH",
-                    "cache",
-                    "pass_through"
+                    "PASS_THROUGH"
                   ],
                   "default": "CACHE",
                   "description": "Defines whether matching entries are stored locally in the query cache or only passed through to query cache listeners."
