@@ -2204,6 +2204,8 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="CACHE"/>
             <xs:enumeration value="PASS_THROUGH"/>
+            <xs:enumeration value="cache"/>
+            <xs:enumeration value="pass_through"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="predicate">
