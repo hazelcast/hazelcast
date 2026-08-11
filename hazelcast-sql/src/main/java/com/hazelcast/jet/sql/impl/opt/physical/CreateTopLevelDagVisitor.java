@@ -107,6 +107,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private final WatermarkKeysAssigner watermarkKeysAssigner;
     private long watermarkThrottlingFrameSize = -1;
     private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
+    // If any index scan requires global sorting, keep the comparator to create final sorter at root.
+    private ComparatorEx<JetSqlRow> finalComparatorForRoot;
+    private boolean finalSortRequired;
 
     private final DagBuildContextImpl dagBuildContext;
 
@@ -260,6 +263,14 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
+
+        // If this index scan requires a sort for ORDER BY, remember comparator so we can add
+        // a final 2-phase sort at the root after aggregation.
+        if (rel.requiresSort()) {
+            finalSortRequired = true;
+            finalComparatorForRoot = rel.getComparator();
+        }
+
         return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
                 .indexScanReader(
                         dagBuildContext,
@@ -646,11 +657,50 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 rootResultConsumerSink(localMemberAddress, fetch, offset)
         );
 
+        // Visit the input subtree FIRST so that onMapIndexScan can set
+        // finalSortRequired / finalComparatorForRoot as a side-effect.
+        Vertex inputVertex = ((PhysicalRel) input).accept(this);
+
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
-                .allToOne());
+        if (!finalSortRequired) {
+            Edge edge = between(inputVertex, vertex)
+                    .distributeTo(localMemberAddress).allToOne();
+            dag.edge(edge);
+        } else {
+            // The aggregation pipeline (AccumulateByKey -> CombineByKey) destroys the
+            // sorted order produced by the IndexScan because CombineByKey uses hash
+            // partitioning.  We need a full 2-phase sort (same pattern as onSort)
+            // rather than a simple ordered-merge edge.
+            ComparatorEx<JetSqlRow> comparator = finalComparatorForRoot;
+
+            // Phase 1 - local sort on each member that has CombineByKey output.
+            Vertex sortVertex = dag.newUniqueVertex(
+                    "FinalSort",
+                    ProcessorMetaSupplier.of(sortP(comparator))
+            );
+            Edge toSort = between(inputVertex, sortVertex);
+            dag.edge(toSort);
+
+            // Phase 2 - merge the locally-sorted streams into one globally-sorted
+            // stream on the coordinator member (same as SortCombine in onSort).
+            Vertex combineVertex = dag.newUniqueVertex(
+                    "FinalSortCombine",
+                    ProcessorMetaSupplier.forceTotalParallelismOne(
+                            ProcessorSupplier.of(mapP(FunctionEx.identity())),
+                            localMemberAddress
+                    )
+            );
+            Edge toCombine = between(sortVertex, combineVertex)
+                    .ordered(comparator)
+                    .distributeTo(localMemberAddress)
+                    .allToOne();
+            dag.edge(toCombine);
+
+            // Connect the merged output to the client sink.
+            dag.edge(between(combineVertex, vertex));
+        }
         return vertex;
     }
 
