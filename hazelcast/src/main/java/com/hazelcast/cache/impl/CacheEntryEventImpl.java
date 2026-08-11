@@ -75,7 +75,7 @@ public class CacheEntryEventImpl<K, V> extends CacheEntryEvent<K, V> {
     }
 
     /**
-     * @since 5.8
+     * @since 6.0
      */
     public CacheEventType getCacheEventType() {
         return cacheEventType;

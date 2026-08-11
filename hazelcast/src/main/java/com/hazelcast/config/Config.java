@@ -593,7 +593,7 @@ public class Config {
      * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
      * Hazelcast System Properties</a>
      *
-     * @since 5.8
+     * @since 6.0
      */
     @Nullable
     public String getProperty(@Nonnull HazelcastProperty property) {
@@ -631,7 +631,7 @@ public class Config {
      * @see <a href="https://docs.hazelcast.com/hazelcast/latest/system-properties">
      * Hazelcast System Properties</a>
      *
-     * @since 5.8
+     * @since 6.0
      */
     public Config setProperty(@Nonnull HazelcastProperty property, @Nonnull String value) {
         return setProperty(property.getName(), value);

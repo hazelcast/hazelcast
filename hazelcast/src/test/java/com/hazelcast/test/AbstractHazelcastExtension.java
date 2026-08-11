@@ -123,7 +123,6 @@ public abstract class AbstractHazelcastExtension
         System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
         // override default async executor so it can report correct test names in test runs
         if (ForkJoinPool.getCommonPoolParallelism() > 1) {
             ConcurrencyUtil.setDefaultAsyncExecutor(new TestLoggingUtils.CustomTestNameAwareForkJoinPool());
