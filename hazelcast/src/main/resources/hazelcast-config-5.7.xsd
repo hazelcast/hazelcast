@@ -2206,7 +2206,6 @@
             <xs:enumeration value="PASS_THROUGH"/>
             <xs:enumeration value="cache"/>
             <xs:enumeration value="pass_through"/>
-            <xs:enumeration value="pass-through"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="predicate">
