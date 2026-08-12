@@ -47,7 +47,7 @@ public final class ExceptionUtil {
      * <p>
      * Should be kept reasonably small to avoid OutOfMemoryErrors.
      *
-     * @since 5.8
+     * @since 6.0
      */
     public static final HazelcastProperty MAX_SEARCH_DEPTH
             = new HazelcastProperty("hazelcast.internal.max.search.depth.of.exception.cause", 50);
@@ -252,7 +252,7 @@ public final class ExceptionUtil {
     /**
      * Tries to invoke given callable and return the result, in case of any {@link Throwable} being thrown (that is not
      * an {@link OutOfMemoryError}), it will return defaultValue.
-     * @since 5.8
+     * @since 6.0
      */
     @Nullable
     public static <T> T tryGetOrElse(@Nonnull Callable<T> callable, @Nullable T defaultValue) {

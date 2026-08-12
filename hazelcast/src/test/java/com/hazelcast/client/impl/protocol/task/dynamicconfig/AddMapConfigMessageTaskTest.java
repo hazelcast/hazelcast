@@ -84,7 +84,7 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest<AddMapCon
         mapConfig.setDataPersistenceConfig(dataPersistenceConfig);
         TieredStoreConfig tieredStoreConfig = mapConfig.getTieredStoreConfig();
         tieredStoreConfig.setEnabled(true);
-        tieredStoreConfig.getMemoryTierConfig().setCapacity(Capacity.of(1L, MemoryUnit.GIGABYTES));
+        tieredStoreConfig.getMemoryTierConfig().setCapacity(Capacity.of(256L, MemoryUnit.MEGABYTES));
         tieredStoreConfig.getDiskTierConfig().setEnabled(true).setDeviceName("null-device");
 
         ClientMessage addMapConfigClientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(

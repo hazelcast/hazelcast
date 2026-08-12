@@ -62,7 +62,7 @@ public enum RemoveOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-            Object oldValue = recordStore.loadValueOfKey(state.getKey(), state.getNow());
+            Object oldValue = recordStore.loadValue(state.getKey(), state.getNow());
             state.setOldValue(oldValue);
         }
 

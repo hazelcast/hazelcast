@@ -68,7 +68,7 @@ public interface Observer<T> {
 
     /**
      * Utility method for building an {@link Observer} only from its data
-     * callback, with default behaviour for completion & error.
+     * callback, with default behaviour for completion &amp; error.
      */
     @Nonnull
     static <T> Observer<T> of(@Nonnull ConsumerEx<? super T> onNext) {

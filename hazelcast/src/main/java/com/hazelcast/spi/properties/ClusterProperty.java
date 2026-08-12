@@ -1471,6 +1471,10 @@ public final class ClusterProperty {
      * being migrated. This can lead to stale reads for some scenarios. You can
      * disable stale read operations by setting this system property’s value to
      * "true". Its default value is "false", meaning that stale reads are allowed.
+     * @apiNote Allowing stale reads does not allow {@link IMap} reads to mutate
+     * the partition data being migrated. For example, a read that would insert
+     * a value returned by a {@link com.hazelcast.map.MapLoader} is retried until migration
+     * completes instead of invoking the loader during migration.
      */
     public static final HazelcastProperty DISABLE_STALE_READ_ON_PARTITION_MIGRATION
             = new HazelcastProperty("hazelcast.partition.migration.stale.read.disabled", false);

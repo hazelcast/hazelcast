@@ -23,7 +23,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -155,13 +154,10 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     void reset();
 
     /**
-     * Releases internal resources managed by Hazelcast.
+     * Releases internal resources solely managed by Hazelcast.
      * This method is called when MapService is shutting down.
-     *
-     * @param terminate {@code true} to force immediate shutdown, {@code false} otherwise
-     * @see LifecycleService#terminate()
      */
-    void shutdown(boolean terminate);
+    void shutdown();
 
     RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader);
 

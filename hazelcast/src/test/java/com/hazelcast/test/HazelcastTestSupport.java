@@ -166,7 +166,7 @@ public abstract class HazelcastTestSupport {
     private TestHazelcastInstanceFactory factory;
 
     /**
-     * Blocks until all futures in the list return {@code .get()}
+     * Blocks until all futures in the list return {@code .get()} or one of them fails.
      */
     public static void waitForAll(@Nonnull List<Future<?>> futures) {
         for (Future<?> future : futures) {
@@ -176,7 +176,7 @@ public abstract class HazelcastTestSupport {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Task execution failed", e.getCause());
             }
         }
     }

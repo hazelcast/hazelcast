@@ -43,7 +43,7 @@ import static com.hazelcast.jet.impl.util.Util.reduce;
 import static org.apache.avro.generic.GenericData.STRING_PROP;
 import static org.apache.avro.generic.GenericData.StringType.String;
 
-final class FileUtil {
+public final class FileUtil {
 
     static final GenericRecord AVRO_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")
@@ -174,7 +174,7 @@ final class FileUtil {
      * Creates a temporary directory with prefix 'sql-avro-test', writes the
      * specified Avro record to 'file.avro' in this directory and returns the file.
      */
-    static File createAvroFile(GenericRecord avroRecord) {
+    public static File createAvroFile(GenericRecord avroRecord) {
         try {
             File directory = Files.createTempDirectory("sql-avro-test").toFile();
             directory.deleteOnExit();
@@ -190,7 +190,7 @@ final class FileUtil {
         }
     }
 
-    static byte[] createAvroPayload() {
+    public static byte[] createAvroPayload() {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream();
              DataFileWriter<GenericRecord> writer = new DataFileWriter<>(new GenericDatumWriter<>())) {
             writer.create(AVRO_RECORD.getSchema(), output);
@@ -202,7 +202,7 @@ final class FileUtil {
         }
     }
 
-    static void writeParquetPayloadTo(OutputFile file) throws IOException {
+    public static void writeParquetPayloadTo(OutputFile file) throws IOException {
         try (ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(file)
                 .withRowGroupSize((long) ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)

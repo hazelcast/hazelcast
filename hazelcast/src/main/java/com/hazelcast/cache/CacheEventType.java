@@ -128,7 +128,7 @@ public enum CacheEventType {
      *
      * @deprecated Use {@link #toJCacheEventType()} instead.
      */
-    @Deprecated(since = "5.8", forRemoval = true)
+    @Deprecated(since = "6.0", forRemoval = true)
     public static EventType convertToEventType(CacheEventType cacheEventType) {
         return EventType.valueOf(cacheEventType.name());
     }

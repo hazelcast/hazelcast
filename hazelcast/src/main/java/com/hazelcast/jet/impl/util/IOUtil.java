@@ -210,5 +210,21 @@ public final class IOUtil {
 
         return targetPath;
     }
+
+    /**
+     * Checks whether given name resolves in baseDir. Helps to detect malicious escapes from baseDir.
+     * @param baseDir The base directory expected to parent to the files.
+     * @param name The file name expected to land in base dir.
+     * @return Resolved path in base directory.
+     * @throws IOException if name escapes from base directory.
+     */
+    public static Path resolveInDir(Path baseDir, String name) throws IOException {
+        Path base = baseDir.toRealPath();  // which exists
+        Path resolved = base.resolve(name).normalize();
+        if (!resolved.startsWith(base)) {
+            throw new IllegalArgumentException("File name escapes base directory: " + name);
+        }
+        return resolved;
+    }
 }
 

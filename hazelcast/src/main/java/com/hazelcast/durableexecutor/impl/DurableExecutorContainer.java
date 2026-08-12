@@ -139,16 +139,16 @@ public class DurableExecutorContainer {
         return userCodeNamespace;
     }
 
-    public final class TaskProcessor extends FutureTask implements Runnable {
+    public final class TaskProcessor extends FutureTask<Object> implements Runnable {
 
         private final int sequence;
         private final long creationTime = Clock.currentTimeMillis();
-        private final String callableString;
+        private final Callable<?> callable;
 
         private TaskProcessor(int sequence, Callable callable) {
             //noinspection unchecked
             super(callable);
-            this.callableString = String.valueOf(callable);
+            this.callable = callable;
             this.sequence = sequence;
 
             if (statisticsEnabled) {
@@ -171,7 +171,7 @@ public class DurableExecutorContainer {
                     response = get();
                 }
             } catch (Exception e) {
-                logger.warning("While executing callable: " + callableString, e);
+                logger.warning("While executing callable: " + callable, e);
                 response = e;
             } finally {
                 if (!isCancelled()) {

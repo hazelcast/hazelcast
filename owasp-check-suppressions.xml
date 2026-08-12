@@ -192,4 +192,55 @@
         <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/azure-keyvault-core@.*$</packageUrl>
         <cve>CVE-2026-33117</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CPE overmatch for Jetty modules.
+        CVE-2026-2332 affects org.eclipse.jetty:jetty-http, not jetty-util or jetty-util-ajax.
+        CVE-2026-5795 affects org.eclipse.jetty:jetty-jaspi, not jetty-util or jetty-util-ajax.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-util(?:-ajax)?@9\.4\.58\.v20250814$</packageUrl>
+        <cve>CVE-2026-2332</cve>
+        <cve>CVE-2026-5795</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2026-24051, CVE-2026-29181, and CVE-2026-39883 affect OpenTelemetry Go, not this Java Maven artefact.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.contrib/opentelemetry-gcp-resources@1\.37\.0-alpha$</packageUrl>
+        <cve>CVE-2026-24051</cve>
+        <cve>CVE-2026-29181</cve>
+        <cve>CVE-2026-39883</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2026-24051 and CVE-2026-39883 affect OpenTelemetry Go modules, not this Java Maven artefact.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@1\.29\.0-alpha$</packageUrl>
+        <cve>CVE-2026-24051</cve>
+        <cve>CVE-2026-39883</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        CVE-2025-37731 affects the Elasticsearch server PKI realm only. These 7.17.29 artefacts belong to the REST client connector, which does not configure or run the PKI realm. Elastic provides no fixed 7.x release.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch(?:/(?:elasticsearch|elasticsearch-cli|elasticsearch-core|elasticsearch-geo|elasticsearch-lz4|elasticsearch-plugin-classloader|elasticsearch-secure-sm|elasticsearch-x-content)|\.client/(?:elasticsearch-rest-client|elasticsearch-rest-high-level-client)|\.plugin/(?:aggs-matrix-stats-client|lang-mustache-client|mapper-extras-client|parent-join-client|rank-eval-client))@7\.17\.29$</packageUrl>
+        <cve>CVE-2025-37731</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Parquet 1.17.1 shades Jackson Databind 2.21.3, so dependency management cannot replace these classes.
+        Hazelcast does not configure Jackson polymorphic typing or the affected subtype validators. Suppress until Parquet shades Jackson 2.21.4 or later.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson-databind@2\.21\.3$</packageUrl>
+        <cve>CVE-2026-54512</cve>
+        <cve>CVE-2026-54513</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2026-56816 affects io.netty:netty-codec-http3, not these Netty artefacts.
+        The exact version scope ensures that a future Netty bump requires reassessment.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/(?:netty-codec-memcache|netty-codec-mqtt|netty-transport)@4\.1\.136\.Final$</packageUrl>
+        <cve>CVE-2026-56816</cve>
+    </suppress>
 </suppressions>

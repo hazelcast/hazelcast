@@ -199,4 +199,30 @@ class IOUtilPathValidationTest {
         assertEquals(base.toRealPath().resolve("file.txt"), result);
         assumeTrue(Files.isSymbolicLink(linkedBase));
     }
+
+    @Test
+    public void when_plainFileName_then_resolvesInsideBase() throws IOException {
+        Path resolved = IOUtil.resolveInDir(base, "2026-07-22-0-0");
+        assertEquals(base.toRealPath().resolve("2026-07-22-0-0"), resolved);
+    }
+
+    @Test
+    public void when_nameIsDotDotPrefixed_then_allowed() throws IOException {
+        // "..foo" is a valid file name, not a traversal
+        Path resolved = IOUtil.resolveInDir(base, "..foo");
+        assertEquals(base.toRealPath(), resolved.getParent());
+    }
+
+    @Test
+    public void when_simpleTraversal_then_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> IOUtil.resolveInDir(base, "../escaped-0"));
+    }
+
+    @Test
+    public void when_nestedTraversal_then_throws() {
+        // goes into a subdir first, then climbs out twice
+        assertThrows(IllegalArgumentException.class,
+                () -> IOUtil.resolveInDir(base, "sub/../../escaped-0"));
+    }
 }

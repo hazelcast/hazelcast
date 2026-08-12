@@ -75,7 +75,7 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
         public void runStep(State state) {
             Collection<Data> keysToLoad = state.getKeysToLoad();
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
-            List keyBiTupleList = recordStore.loadMultipleKeys(keysToLoad);
+            List keyBiTupleList = recordStore.loadValueWithTtl(keysToLoad, state.getNow());
             state.setLoadedKeyAndOldValueWithTtlPairs(keyBiTupleList);
         }
 
