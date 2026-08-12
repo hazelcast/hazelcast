@@ -2,22 +2,26 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>hazelcast-slim</name>
-    <artifactId>hazelcast-slim</artifactId>
-    <description>
-        Slim, un-relocated variant of the core Hazelcast module.
-        The shaded `com.hazelcast:hazelcast` artifact remains the default recommendation. This slim
-        variant is a community-supported convenience: it is NOT tested against arbitrary versions of
-        its transitive dependencies.
-    </description>
-    <packaging>jar</packaging>
-
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
         <version>5.8.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <artifactId>hazelcast-slim</artifactId>
+    <name>hazelcast-slim</name>
+    <description>
+        Slim, un-relocated variant of the core Hazelcast module.
+        The shaded `com.hazelcast:hazelcast` artifact remains the default recommendation. This slim
+        variant is a community-supported convenience: it is NOT tested against arbitrary versions of
+        its transitive dependencies.
+    </description>
+
+    <properties>
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -30,18 +34,35 @@
         </dependency>
 
         <!--
-            Third-party libraries that the shaded `hazelcast` jar bundles+relocates under
-            `com.hazelcast.shaded.*`. Here they are declared as ordinary compile dependencies with the
-            SAME coordinates and exclusions the core module (../hazelcast/pom.xml) uses, so the slim
-            classes resolve against exactly the artifacts Hazelcast builds against. All versions are
-            managed centrally by hazelcast-parent's dependencyManagement (jackson via the imported
-            jackson-bom), so none are declared here.
+            hazelcast-tpc-engine's classes are unpacked into this jar (see the unpack execution below),
+            as the shaded jar also does, so hazelcast-slim is a single self-contained module. It is
+            therefore only needed at build time here; `provided` + `optional` keeps it off the
+            consumer's classpath. This also avoids a split-package error on the module path: tpc-engine
+            and the pre-shade classes both contribute to com.hazelcast.internal.util and
+            com.hazelcast.internal.serialization, which two separate automatic modules may not share.
         -->
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-tpc-engine</artifactId>
             <version>${project.parent.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
+
+        <!-- tpc-engine's own transitive; declared explicitly here since tpc-engine is `provided` above -->
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+        </dependency>
+
+        <!--
+            Third-party libraries that the shaded `hazelcast` jar bundles+relocates under
+            `com.hazelcast.shaded.*`. Here they are declared as ordinary compile dependencies with the
+            same coordinates and exclusions the core module (../hazelcast/pom.xml) uses, so the slim
+            classes resolve against exactly the artifacts Hazelcast builds against. All versions are
+            managed centrally by hazelcast-parent's dependencyManagement (jackson via the imported
+            jackson-bom), so none are declared here.
+        -->
         <!-- Jackson 3 (tools.jackson) -->
         <dependency>
             <groupId>tools.jackson.core</groupId>
@@ -114,6 +135,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- DependencyOverrideTest asserts jackson/snakeyaml are addressable (not shaded away) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -135,6 +163,19 @@
                                     <artifactId>hazelcast</artifactId>
                                     <version>${project.parent.version}</version>
                                     <classifier>pre-shade</classifier>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <excludes>META-INF/MANIFEST.MF,META-INF/maven/**</excludes>
+                                </artifactItem>
+                                <!--
+                                    Bundle the first-party hazelcast-tpc-engine classes, exactly as the
+                                    shaded jar does, so hazelcast-slim is a single self-contained JPMS module.
+                                    Its third-party dependency (jctools-core) is declared separately above and
+                                    remains an overridable transitive dependency.
+                                -->
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-tpc-engine</artifactId>
+                                    <version>${project.parent.version}</version>
                                     <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                                     <excludes>META-INF/MANIFEST.MF,META-INF/maven/**</excludes>
                                 </artifactItem>
