@@ -324,7 +324,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
         public void read(CompactReader reader, Schema schema, Object o) throws Exception {
             Object fieldValue = readerWriter.read(reader, schema);
             try {
-                field.set(o, readerWriter.read(reader, schema));
+                field.set(o, fieldValue);
             } catch (IllegalArgumentException e) {
                 Class<?> fieldValueClass = fieldValue.getClass();
                 Class<?> fieldType = field.getType();
