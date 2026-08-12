@@ -195,6 +195,23 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
         @Override
         public void accept(Object key, Object value) {
+            addResult(key, value);
+        }
+
+        public List getResult() {
+            return result;
+        }
+
+        /**
+         * Adds an index query result, extracting only the parts required by the result type.
+         */
+        private void addResultFromIndex(QueryableEntry entry) {
+            Object key = resultType == ResultType.VALUE ? null : entry.getKeyData();
+            Object value = resultType == ResultType.KEY ? null : extractValueForResult(entry);
+            addResult(key, value);
+        }
+
+        private void addResult(Object key, Object value) {
             switch (resultType) {
                 case KEY:
                     result.add(key);
@@ -209,23 +226,26 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
                     throw new IllegalArgumentException("Unexpected type: " + resultType);
             }
         }
-
-        public List getResult() {
-            return result;
-        }
     }
 
-    private boolean tryQueryOverIndexes(Predicate predicate, BiConsumer biConsumer) {
+    private boolean tryQueryOverIndexes(Predicate predicate, ResulCollector resulCollector) {
         Iterable<QueryableEntry> query = indexRegistry.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query == null) {
             return false;
         }
 
         for (QueryableEntry entry : query) {
-            biConsumer.accept(entry.getKeyData(), entry.getValueData());
+            resulCollector.addResultFromIndex(entry);
         }
         return true;
     }
+
+    private Object extractValueForResult(QueryableEntry entry) {
+        return InMemoryFormat.OBJECT == queryCacheConfig.getInMemoryFormat()
+                ? entry.getValue()
+                : entry.getValueData();
+    }
+
 
     private void doFullScan(Predicate predicate, BiConsumer biConsumer) {
         if (predicate == TruePredicate.INSTANCE) {

@@ -282,6 +282,12 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     /**
      * Sets memory format of values of entries in {@code QueryCache}.
      * <p>
+     * <b>Performance trade off:</b> When set to {@link InMemoryFormat#OBJECT},
+     * value returning operations may expose references to cached objects. This
+     * avoids serialisation and copying, but mutations can affect cached values
+     * and leave configured indexes inconsistent. Use {@link InMemoryFormat#BINARY}
+     * when detached values are required.
+     * <p>
      * Default value is binary.
      *
      * @param inMemoryFormat the memory format
