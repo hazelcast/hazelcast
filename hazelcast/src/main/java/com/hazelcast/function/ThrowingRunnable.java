@@ -47,4 +47,13 @@ public interface ThrowingRunnable extends Runnable {
         return step::run;
     }
 
+    /**
+     * Wraps given {@link Runnable} into {@link ThrowingRunnable}. Helpful in stream-based lambda expressions
+     * to tip that the function is throwing.
+     * @since 6.0
+     */
+    static ThrowingRunnable wrap(ThrowingRunnable step) {
+        return step;
+    }
+
 }

@@ -1228,6 +1228,7 @@
                                 <includedLicense>EPL-2.0</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                                 <includedLicense>Go License</includedLicense>
+                                <includedLicense>Bouncy Castle Licence</includedLicense>
                             </includedLicenses>
                         </configuration>
                     </execution>

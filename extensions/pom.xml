@@ -47,6 +47,7 @@
         <module>kinesis</module>
         <module>mapstore</module>
         <module>mongodb</module>
+        <module>pulsar</module>
         <module>s3</module>
     </modules>
 

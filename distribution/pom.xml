@@ -368,5 +368,10 @@
             <artifactId>hazelcast-jet-kafka-connect</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-pulsar</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
