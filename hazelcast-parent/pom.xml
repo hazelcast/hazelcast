@@ -90,7 +90,7 @@
         <avro.version>1.11.5</avro.version>
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.50.2</aws.sdk2.version>
+        <aws.sdk2.version>2.51.3</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -1228,6 +1228,7 @@
                                 <includedLicense>EPL-2.0</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                                 <includedLicense>Go License</includedLicense>
+                                <includedLicense>Bouncy Castle Licence</includedLicense>
                             </includedLicenses>
                         </configuration>
                     </execution>
