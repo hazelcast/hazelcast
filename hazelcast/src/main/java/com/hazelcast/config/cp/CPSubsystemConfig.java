@@ -465,7 +465,7 @@ public class CPSubsystemConfig {
      * @return this config instance
      */
     public CPSubsystemConfig setSessionHeartbeatIntervalSeconds(int sessionHeartbeatIntervalSeconds) {
-        checkPositive(sessionTimeToLiveSeconds, "Session heartbeat interval must be a positive value!");
+        checkPositive(sessionHeartbeatIntervalSeconds, "Session heartbeat interval must be a positive value!");
         this.sessionHeartbeatIntervalSeconds = sessionHeartbeatIntervalSeconds;
         return this;
     }
