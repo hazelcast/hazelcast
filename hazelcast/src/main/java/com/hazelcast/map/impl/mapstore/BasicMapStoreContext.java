@@ -124,8 +124,10 @@ final class BasicMapStoreContext implements MapStoreContext {
         // Despite passing the Namespace aware class loader, we still need to wrap the entire call in
         //  Namespace awareness separately as the class loader is only for instantiation, and execution
         //  of the implementation takes place in this call as well.
+        var managedContext = nodeEngine.getSerializationService().getManagedContext();
         final Object store = NamespaceUtil.callWithNamespace(nodeEngine, mapConfig.getUserCodeNamespace(),
-                () -> createStore(mapName, mapStoreConfig, classLoader));
+                                                             () -> createStore(mapName, mapStoreConfig, classLoader,
+                                                                               managedContext));
         final MapStoreWrapper storeWrapper = new MapStoreWrapper(nodeEngine, mapName, store, mapConfig.getUserCodeNamespace());
         storeWrapper.instrument(nodeEngine);
 
