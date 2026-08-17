@@ -169,7 +169,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         discoveryStrategyConfigs = in.readObject();
         discoveryServiceProvider = in.readObject();
-        nodeFilter = in.readObject();
+        nodeFilter = ConfigDeserializationUtil.readObject(in, getClass(), "nodeFilter");
         nodeFilterClass = in.readString();
     }
 

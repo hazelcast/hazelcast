@@ -24,7 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 public final class BlockingIteratorObserver<T> implements Iterator<T>, Observer<T> {
     private static final Object COMPLETED = new Object();

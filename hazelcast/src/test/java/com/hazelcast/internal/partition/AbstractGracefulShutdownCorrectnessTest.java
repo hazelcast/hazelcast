@@ -29,6 +29,7 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -161,6 +162,8 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
         List<HazelcastInstance> instanceList = instances instanceof List
                 ? (List<HazelcastInstance>) instances
                 : new LinkedList<>(instances);
+        // Keep the instance order stable, so picking instances to shutdown is deterministic
+        instanceList.sort(Comparator.comparing(left -> getNode(left).getThisAddress().toString()));
 
         return shutdownNodes(instanceList, count);
     }

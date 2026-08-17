@@ -2,7 +2,7 @@
 
 |||
 |---|---|
-|Related Jira|[HZ-986](https://hazelcast.atlassian.net/browse/HZ-986)|
+|Related Jira|[HZOLD-986](https://hazelcast.atlassian.net/browse/HZOLD-986)|
 |Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|

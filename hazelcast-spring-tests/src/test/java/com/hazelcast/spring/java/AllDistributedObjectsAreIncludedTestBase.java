@@ -19,8 +19,10 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spring.HazelcastObjectExtractionConfiguration;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.vector.VectorCollection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +50,10 @@ public abstract class AllDistributedObjectsAreIncludedTestBase {
             com.hazelcast.collection.BaseQueue.class,
             com.hazelcast.transaction.HazelcastXAResource.class,
             com.hazelcast.map.BaseMap.class,
-            com.hazelcast.cache.impl.ICacheInternal.class);
+            com.hazelcast.cache.impl.ICacheInternal.class,
+            // vector collection is an optional module
+            com.hazelcast.vector.VectorCollection.class
+    );
 
     @Autowired
     private HazelcastObjectExtractionConfiguration conf;
@@ -75,5 +80,14 @@ public abstract class AllDistributedObjectsAreIncludedTestBase {
         assertThat(typesOfBeans)
                 .as("Some classes are not added as bean by Hazelcast configuration")
                 .containsAll(typesOfDistributedObjects);
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "vector.module", matches = "true")
+    void checkVectorDistributedObjectIsIncluded() {
+        Set<Class<?>> typesOfBeans = conf.registeredTypesOfBeans();
+        assertThat(typesOfBeans)
+            .as("Vector collection classes is not added as bean by Hazelcast configuration")
+            .contains(VectorCollection.class);
     }
 }

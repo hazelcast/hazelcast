@@ -26,7 +26,7 @@
 
 |                                |                                                           |
 |--------------------------------|-----------------------------------------------------------|
-| Related Jira                   | [HZ-1510](https://hazelcast.atlassian.net/browse/HZ-1510) |
+| Related Jira                   | [HZOLD-1510](https://hazelcast.atlassian.net/browse/HZOLD-1510) |
 | Related Github issues          | None                                                      |
 | Document Status / Completeness | DRAFT                                                     |
 | Requirement owner              | Nandan Kidambi                                            |

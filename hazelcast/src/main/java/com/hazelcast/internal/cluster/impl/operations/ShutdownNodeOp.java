@@ -22,7 +22,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 
@@ -36,7 +36,7 @@ public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedD
         final ClusterState clusterState = clusterService.getClusterState();
 
         if (clusterState == ClusterState.PASSIVE) {
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            NodeEngine nodeEngine = getNodeEngine();
             if (nodeEngine.isRunning()) {
                 logger.info("Shutting down node in cluster passive state. Requested by: " + getCallerAddress());
                 new Thread(() -> {

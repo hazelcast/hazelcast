@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 
 public abstract class ArchUnitTestSupport {
 
-    private static final int HIGHEST_JDK = 25;
+    private static final int HIGHEST_JDK = 26;
 
     // ArchUnit releases lag behind the JDK releases.
     // Skip the test if JDK version is higher than the specified assumption
@@ -32,7 +32,7 @@ public abstract class ArchUnitTestSupport {
     public static void beforeClass() {
         assumeThat(getMajorJavaVersion())
                 .as("ArchUnit %2$s supports Java %1$s or below - https://github.com/TNG/ArchUnit/releases/tag/v%2$s",
-                        HIGHEST_JDK, "1.4.1")
+                        HIGHEST_JDK, "1.4.2")
                 .isLessThanOrEqualTo(HIGHEST_JDK);
     }
 

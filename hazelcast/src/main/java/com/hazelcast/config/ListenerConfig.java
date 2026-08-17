@@ -159,7 +159,7 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readString();
-        implementation = in.readObject();
+        implementation = ConfigDeserializationUtil.readObject(in, getClass(), "implementation");
     }
 
     @Override

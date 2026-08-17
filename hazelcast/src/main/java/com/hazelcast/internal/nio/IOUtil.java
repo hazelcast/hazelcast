@@ -55,6 +55,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -221,16 +222,10 @@ public final class IOUtil {
     }
 
     public static LocalDateTime readLocalDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
+        LocalDate date = readLocalDate(in);
+        LocalTime time = readLocalTime(in);
 
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
-
-        return LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano);
+        return LocalDateTime.of(date, time);
     }
 
     public static void writeOffsetDateTime(ObjectDataOutput out, OffsetDateTime value) throws IOException {
@@ -243,18 +238,11 @@ public final class IOUtil {
     }
 
     public static OffsetDateTime readOffsetDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-
-        int hour = in.readByte();
-        int minute = in.readByte();
-        int second = in.readByte();
-        int nano = in.readInt();
+        LocalDateTime dateTime = readLocalDateTime(in);
 
         int zoneTotalSeconds = in.readInt();
         ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
-        return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
+        return OffsetDateTime.of(dateTime, zoneOffset);
     }
 
     public static void writeData(ObjectDataOutput out, Data data) throws IOException {
@@ -634,6 +622,18 @@ public final class IOUtil {
 
     public static String toFileName(String name) {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
+    }
+
+    public static Path getResourceDir(String resourceName) {
+        try {
+            URL resource = IOUtil.class.getClassLoader().getResource(resourceName);
+            if (resource == null) {
+                throw new IllegalArgumentException("Resource not found: " + resourceName);
+            }
+            return Paths.get(resource.toURI());
+        } catch (Exception e) {
+            throw new RuntimeException("Could not load resource dir: " + resourceName, e);
+        }
     }
 
     public static File getFileFromResources(String resourceFileName) {

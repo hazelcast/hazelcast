@@ -16,22 +16,26 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.MapStore;
+
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import com.google.common.base.Objects;
-import com.hazelcast.map.MapStore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TrackingMapStore<K, V> implements MapStore<K, V> {
 
-    private final Map<K, V> store = new ConcurrentHashMap<>();
+    private static final long WRITE_DELAY_MILLIS = 1;
 
+    private final Map<K, V> store = new ConcurrentHashMap<>();
     private final Map<K, V> expectedWrites = new ConcurrentHashMap<>();
 
-    private long lastWrite = System.currentTimeMillis();
+    private final AtomicInteger storeCount = new AtomicInteger();
+    private final AtomicInteger duplicateStoreCount = new AtomicInteger();
+    private final AtomicInteger deleteCount = new AtomicInteger();
+
+    private volatile long lastWrite = System.currentTimeMillis();
 
     @Override
     public V load(K key) {
@@ -40,7 +44,14 @@ public class TrackingMapStore<K, V> implements MapStore<K, V> {
 
     @Override
     public Map<K, V> loadAll(Collection<K> keys) {
-        return keys.stream().collect(Collectors.toMap(Function.identity(), this::load));
+        Map<K, V> loadedEntries = new HashMap<>();
+        for (K key : keys) {
+            V value = load(key);
+            if (value != null) {
+                loadedEntries.put(key, value);
+            }
+        }
+        return loadedEntries;
     }
 
     @Override
@@ -50,24 +61,24 @@ public class TrackingMapStore<K, V> implements MapStore<K, V> {
 
     @Override
     public void store(K key, V value) {
-        store.put(key, value);
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        expectedWrites.computeIfPresent(key, (k, v) -> Objects.equal(v, value) ? null : v);
-        lastWrite = System.currentTimeMillis();
+        recordWrite(key, value);
+        pauseAfterWrite();
+        completeExpectedWrite(key, value);
+        markWriteComplete();
     }
 
     @Override
     public void storeAll(Map<K, V> map) {
-        map.forEach(this::store);
+        map.forEach(this::recordWrite);
+        pauseAfterWrite();
+        map.forEach(this::completeExpectedWrite);
+        markWriteComplete();
     }
 
     @Override
     public void delete(K key) {
         store.remove(key);
+        deleteCount.incrementAndGet();
     }
 
     @Override
@@ -84,6 +95,50 @@ public class TrackingMapStore<K, V> implements MapStore<K, V> {
     }
 
     public boolean lastWriteAtLeastMsAgo(long ms) {
-        return lastWrite + ms < System.currentTimeMillis();
+        return System.currentTimeMillis() - lastWrite >= ms;
+    }
+
+    public void reset() {
+        store.clear();
+        expectedWrites.clear();
+        storeCount.set(0);
+        duplicateStoreCount.set(0);
+        deleteCount.set(0);
+        lastWrite = System.currentTimeMillis();
+    }
+
+    @Override
+    public String toString() {
+        return "TrackingMapStore{"
+                + "storeSize=" + store.size()
+                + ", expectedWriteCount=" + expectedWrites.size()
+                + ", lastWrite=" + lastWrite
+                + ", storeCount=" + storeCount
+                + ", duplicateStoreCount=" + duplicateStoreCount
+                + ", deleteCount=" + deleteCount
+                + '}';
+    }
+
+    private void recordWrite(K key, V value) {
+        if (store.put(key, value) != null) {
+            duplicateStoreCount.incrementAndGet();
+        }
+        storeCount.incrementAndGet();
+    }
+
+    private void completeExpectedWrite(K key, V value) {
+        expectedWrites.remove(key, value);
+    }
+
+    private void markWriteComplete() {
+        lastWrite = System.currentTimeMillis();
+    }
+
+    private void pauseAfterWrite() {
+        try {
+            Thread.sleep(WRITE_DELAY_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

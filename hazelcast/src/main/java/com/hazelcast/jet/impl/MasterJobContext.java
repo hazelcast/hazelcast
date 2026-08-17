@@ -113,14 +113,14 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.isRestartableException;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.isTopologyException;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
-import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.internal.util.MemoizingSupplier.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
@@ -218,6 +218,10 @@ public class MasterJobContext {
 
     public CompletableFuture<Void> jobCompletionFuture() {
         return jobCompletionFuture;
+    }
+
+    public boolean isExecutionCompleted() {
+        return executionCompletionFuture.isDone();
     }
 
     Optional<TerminationRequest> getTerminationRequest() {

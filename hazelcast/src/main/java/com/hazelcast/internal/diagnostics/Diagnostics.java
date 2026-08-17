@@ -22,7 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.events.DiagnosticsConfigUpdatedEvent;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngine;

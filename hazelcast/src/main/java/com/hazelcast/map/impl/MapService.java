@@ -291,6 +291,14 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
         return migrationAwareService.validateMigrationStamp(stamp);
     }
 
+    public int getPartitionMigrationStamp(int partitionId) {
+        return migrationAwareService.getPartitionMigrationStamp(partitionId);
+    }
+
+    public boolean validatePartitionMigrationStamp(int partitionId, int stamp) {
+        return migrationAwareService.validatePartitionMigrationStamp(partitionId, stamp);
+    }
+
     @Override
     public void onClusterStateChange(ClusterState newState) {
         mapServiceContext.onClusterStateChange(newState);
@@ -445,8 +453,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
      * Checks if the given namespace is referenced by a hot restart enabled
      * map configuration.
      *
-     * @param engine the node engine.
-     * @param namespace  the namespace.
+     * @param engine    the node engine.
+     * @param namespace the namespace.
      * @return {@code true} if the namespace is referenced by a hot restart
      * enabled data structure, {@code false} otherwise.
      */

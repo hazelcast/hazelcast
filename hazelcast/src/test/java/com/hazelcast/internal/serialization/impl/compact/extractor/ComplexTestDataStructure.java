@@ -16,9 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl.compact.extractor;
 
+import com.hazelcast.config.Config;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static com.hazelcast.test.HazelcastTestSupport.addToCompactSerializationAllowList;
 
 /**
  * Data structure used in the tests of extraction in multi-value attributes (in collections and arrays)
@@ -28,6 +32,10 @@ import java.util.Objects;
 public class ComplexTestDataStructure {
 
     private ComplexTestDataStructure() {
+    }
+
+    public static void addToAllowList(Config config) {
+        addToCompactSerializationAllowList(config.getSerializationConfig(), Person.class, Limb.class, Finger.class);
     }
 
     public static class Person {

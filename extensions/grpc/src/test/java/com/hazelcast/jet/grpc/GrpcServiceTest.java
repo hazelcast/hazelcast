@@ -22,7 +22,7 @@ import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloReply;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloReplyList;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloRequest;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloRequestList;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -170,7 +170,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
             instance().getJet().newJob(p).join();
             fail("Job should have failed");
         } catch (Exception e) {
-            Throwable ex = ExceptionUtil.peel(e);
+            Throwable ex = JetExceptionUtil.peel(e);
             assertThat(ex.getMessage()).contains("com.hazelcast.jet.grpc.impl.StatusRuntimeExceptionJet");
         }
     }
@@ -272,7 +272,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
             instance().getJet().newJob(p).join();
             fail("Job should have failed");
         } catch (Exception e) {
-            Throwable ex = ExceptionUtil.peel(e);
+            Throwable ex = JetExceptionUtil.peel(e);
             assertThat(ex.getMessage()).contains("com.hazelcast.jet.grpc.impl.StatusRuntimeExceptionJet");
         }
     }
@@ -353,7 +353,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
             instance().getJet().newJob(p).join();
             fail("Job should have failed");
         } catch (Exception e) {
-            Throwable ex = ExceptionUtil.peel(e);
+            Throwable ex = JetExceptionUtil.peel(e);
             assertThat(ex.getMessage()).contains("com.hazelcast.jet.grpc.impl.StatusRuntimeExceptionJet");
         }
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.it;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class HzStartIT extends HazelcastTestSupport {
 
     private static final ILogger log = Logger.getLogger(HzStartIT.class);
+    private static final int START_BIND_PORT = 5842;
 
     private Process process;
     private HazelcastInstance client;
@@ -54,7 +57,7 @@ public class HzStartIT extends HazelcastTestSupport {
         // Use custom cluster name to isolate concurrently running tests
         clusterName = this.getClass().getSimpleName() + "_" + UUID.randomUUID();
 
-        ProcessBuilder builder = new ProcessBuilder("bin/hz", "start")
+        ProcessBuilder builder = new ProcessBuilder("bin/hz", "start", "--port=" + START_BIND_PORT)
                 .directory(new File("./target/hazelcast"))
                 .inheritIO();
         builder.environment().put("HZ_CLUSTERNAME", clusterName);
@@ -63,7 +66,16 @@ public class HzStartIT extends HazelcastTestSupport {
         builder.environment().remove("CLASSPATH");
 
         process = builder.start();
-        client = HazelcastClient.newHazelcastClient(new ClientConfig().setClusterName(clusterName));
+        client = HazelcastClient.newHazelcastClient(createClientConfig());
+    }
+
+    private ClientConfig createClientConfig() {
+        ClientConfig clientConfig = new ClientConfig().setClusterName(clusterName);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        // Allow some leeway for port incrementing on the member
+        clientConfig.getNetworkConfig().setAddresses(
+                IntStream.range(0, 10).mapToObj(inc -> "127.0.0.1:" + (START_BIND_PORT + inc)).toList());
+        return clientConfig;
     }
 
     @After
@@ -85,8 +97,15 @@ public class HzStartIT extends HazelcastTestSupport {
 
     @Test
     public void shouldStartHazelcastWithHzStart() {
-        IMap<String, Integer> map = client.getMap("map");
-        map.put("key", 42);
-        assertThat(map.get("key")).isEqualTo(42);
+        assertTrueEventually(() -> {
+            try {
+                assertThat(client.getCluster().getMembers()).hasSize(1);
+                IMap<String, Integer> map = client.getMap("map");
+                map.put("key", 42);
+                assertThat(map.get("key")).isEqualTo(42);
+            } catch (HazelcastClientOfflineException e) {
+                throw new AssertionError(e);
+            }
+        });
     }
 }

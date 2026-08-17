@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -24,8 +23,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Supplier;
-
-import static java.util.Objects.requireNonNull;
 
 public class ChangeRecordImpl implements ChangeRecord {
 
@@ -38,16 +35,19 @@ public class ChangeRecordImpl implements ChangeRecord {
     private final String database;
     private final String schema;
     private final String table;
+    private final RecordPartImpl source;
     private RecordPart key;
     private final RecordPart oldValue;
     private final RecordPart newValue;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public ChangeRecordImpl(
             long timestamp,
             long sequenceSource,
             long sequenceValue,
             Operation operation,
             @Nullable String keyJson,
+            Supplier<String> sourceSupplier,
             Supplier<String> oldValueJsonSupplier,
             Supplier<String> newValueJsonSupplier,
             String table,
@@ -59,6 +59,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         this.sequenceValue = sequenceValue;
         this.operation = operation;
         this.keyJson = keyJson;
+        this.source = new RecordPartImpl(sourceSupplier);
         this.oldValue = oldValueJsonSupplier == null ? null : new RecordPartImpl(oldValueJsonSupplier);
         this.newValue = newValueJsonSupplier == null ? null : new RecordPartImpl(newValueJsonSupplier);
         this.table = table;
@@ -66,12 +67,14 @@ public class ChangeRecordImpl implements ChangeRecord {
         this.database = database;
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     ChangeRecordImpl(
             long timestamp,
             long sequenceSource,
             long sequenceValue,
             Operation operation,
             String keyJson,
+            String sourceJson,
             String oldValueJson,
             String newValueJson,
             String table,
@@ -83,6 +86,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         this.sequenceValue = sequenceValue;
         this.operation = operation;
         this.keyJson = keyJson;
+        this.source = oldValueJson == null ? null : new RecordPartImpl(sourceJson);
         this.oldValue = oldValueJson == null ? null : new RecordPartImpl(oldValueJson);
         this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
         this.table = table;
@@ -119,6 +123,12 @@ public class ChangeRecordImpl implements ChangeRecord {
         return table;
     }
 
+    @Nonnull
+    @Override
+    public RecordPart source() {
+        return source;
+    }
+
     @Override
     @Nullable
     public RecordPart key() {
@@ -132,17 +142,20 @@ public class ChangeRecordImpl implements ChangeRecord {
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public RecordPart value() {
-        switch (operation) {
-            case UNSPECIFIED:
-            case SYNC:
-            case INSERT:
-            case UPDATE: return requireNonNull(newValue(), "newValue missing for operation " + operation);
-            case DELETE: return requireNonNull(oldValue(), "oldValue missing for operation DELETE");
-            default: throw new IllegalArgumentException("cannot call .value() for operation " + operation);
-        }
+        return switch (operation) {
+            case UNSPECIFIED, SYNC, INSERT, UPDATE -> newValue();
+            case DELETE -> oldValue();
+        };
     }
+
+    @Override
+    @Nonnull
+    public RecordPart nonNullValue() {
+        return Objects.requireNonNull(value(), "value should not be null");
+    }
+
     @Override
     @Nullable
     public RecordPart newValue() {
@@ -157,7 +170,7 @@ public class ChangeRecordImpl implements ChangeRecord {
     @Override
     @Nonnull
     public String toJson() {
-        return String.format("key:{%s}, value:{%s}", keyJson, value().toJson());
+        return String.format("key:{%s}, value:{%s}", keyJson, nonNullValue().toJson());
     }
 
     @Override
@@ -186,6 +199,7 @@ public class ChangeRecordImpl implements ChangeRecord {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

@@ -21,7 +21,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.util.ThreadAffinity;

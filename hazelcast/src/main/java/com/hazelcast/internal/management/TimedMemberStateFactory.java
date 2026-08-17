@@ -64,11 +64,14 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
+import com.hazelcast.vector.impl.VectorCollectionServiceUtil;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -249,6 +252,12 @@ public class TimedMemberStateFactory {
         Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
         if (wanStats != null) {
             handleWan(memberState, wanStats);
+        }
+        if (VectorCollectionLocator.isAvailable()) {
+            HashSet<String> allNames = new HashSet<>(
+                instance.node.nodeEngine.getProxyService().getDistributedObjectNames(VectorCollectionServiceUtil.SERVICE_NAME)
+            );
+            memberState.setVectorCollections(allNames);
         }
     }
 

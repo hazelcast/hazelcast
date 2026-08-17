@@ -31,9 +31,9 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
     private final int wmField;

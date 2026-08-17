@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.ReflectiveAttributeTestObject;
 import com.hazelcast.query.impl.getters.policy.DefaultReflectiveAttributeLookupPolicy;
 import com.hazelcast.query.impl.getters.policy.FullAccessReflectiveAttributeLookupPolicy;
@@ -28,6 +29,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import tools.jackson.databind.introspect.MemberKey;
 
 import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +73,7 @@ public class ReflectionHelperTest {
     public void extractValue_whenStaticMethodWithRestrictedPolicy_thenThrowException() {
         assertThatThrownBy(() -> extractValue(new ReflectiveAttributeTestObject("c"), "getStaticValue", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 
@@ -79,7 +81,7 @@ public class ReflectionHelperTest {
     public void extractValue_whenStaticFieldWithRestrictedPolicy_thenThrowException() {
         assertThatThrownBy(() -> extractValue(new ReflectiveAttributeTestObject("d"), "staticInt", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 
@@ -87,7 +89,7 @@ public class ReflectionHelperTest {
     public void extractValue_whenVoidMethodWithRestrictedPolicy_thenThrowException() {
         assertThatThrownBy(() -> extractValue(new ReflectiveAttributeTestObject("e"), "doVoid", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 
@@ -95,7 +97,7 @@ public class ReflectionHelperTest {
     public void extractValue_whenBlockedClassWithRestrictedPolicy_thenThrowException() {
         assertThatThrownBy(() -> extractValue(new ReflectiveAttributeTestObject("f"), "hazelcastInstance.name", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 
@@ -103,7 +105,7 @@ public class ReflectionHelperTest {
     public void extractValue_whenBlockedClassProxyWithRestrictedPolicy_thenThrowException() {
         assertThatThrownBy(() -> extractValue(new ReflectiveAttributeTestObject("g"), "hazelcastInstanceProxy.name", true,
                 DefaultReflectiveAttributeLookupPolicy.INSTANCE))
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 
@@ -189,9 +191,39 @@ public class ReflectionHelperTest {
     }
 
     @Test
-    public void extractValue_whenArrElementIsBlockedClass_thenThrowException() {
+    public void extractValue_whenArrFetchedAndComponentTypeIsBlockedClass_thenThrowException() {
         ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("q");
+        assertRestrictedLookupFailure(object, "hazelcastInstanceArray");
+    }
+
+    @Test
+    public void extractValue_whenMultiDimArrFetchedAndComponentTypeIsBlockedClass_thenThrowException() {
+        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("r");
+        assertRestrictedLookupFailure(object, "hazelcastInstanceMultiDimArray");
+    }
+
+    @Test
+    public void extractValue_whenArrElementIsBlockedClass_thenThrowException() {
+        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("s");
         assertRestrictedLookupFailure(object, "hazelcastInstanceArray[0].name");
+    }
+
+    @Test
+    public void extractValue_whenArrElementIsBlockedClass_thenThrowException_WithPolicyHint() {
+        ReflectiveAttributeTestObject object = new ReflectiveAttributeTestObject("t");
+        assertThatThrownBy(() -> extractValue(object, "hazelcastInstanceArray[0].name", true,
+                DefaultReflectiveAttributeLookupPolicy.INSTANCE))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining(ReflectiveAttributeLookupException.POLICY_HINT);
+    }
+
+    @Test
+    public void extractValue_whenJacksonBlockedClass_thenThrowException_WithPolicyHint() {
+        var object = new MemberKey("someKey", null);
+        assertThatThrownBy(() -> extractValue(object, "argCount", true,
+                DefaultReflectiveAttributeLookupPolicy.INSTANCE))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining(ReflectiveAttributeLookupException.POLICY_HINT);
     }
 
     @SuppressWarnings("unused")
@@ -209,7 +241,7 @@ public class ReflectionHelperTest {
 
     private static void assertRestrictedLookupFailure(Object object, String attributeName) {
         assertThatThrownBy(() -> extractValue(object, attributeName, true, DefaultReflectiveAttributeLookupPolicy.INSTANCE))
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 

@@ -122,7 +122,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void testKeySetIsNotBackedByQueryCache() {
+    public void testEntrySetMutability_withObjectKeys() {
         int count = 111;
         IMap<Employee, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
@@ -139,7 +139,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         }
 
         for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
-            assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
+            assertMutationVisibility(entry.getValue());
         }
     }
 
@@ -186,7 +186,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
 
     @Test
-    public void testEntrySetIsNotBackedByQueryCache() {
+    public void testEntrySetMutability() {
         int count = 111;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
@@ -201,7 +201,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         }
 
         for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
-            assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
+            assertMutationVisibility(entry.getValue());
         }
     }
 
@@ -283,7 +283,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void testValuesAreNotBackedByQueryCache() {
+    public void testValuesMutability() {
         int count = 111;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
@@ -298,7 +298,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         }
 
         for (Employee employee : cache.values(predicate)) {
-            assertNotEquals(Employee.MAX_AGE + 1, employee.getAge());
+            assertMutationVisibility(employee);
         }
     }
 
@@ -356,6 +356,14 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         int smallerThan = 17;
         int expectedSize = 0;
         assertValuesSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
+    }
+
+    private void assertMutationVisibility(Employee employee) {
+        if (inMemoryFormat == OBJECT) {
+            assertEquals(Employee.MAX_AGE + 1, employee.getAge());
+        } else {
+            assertNotEquals(Employee.MAX_AGE + 1, employee.getAge());
+        }
     }
 
     private void assertKeySetSizeEventually(final int expectedSize, final Predicate predicate,

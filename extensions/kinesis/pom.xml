@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.8.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -63,8 +63,8 @@
                 <configuration combine.self="append">
                     <relocations>
                         <relocation>
-                            <pattern>com.amazonaws</pattern>
-                            <shadedPattern>${relocation.root}.com.amazonaws</shadedPattern>
+                            <pattern>software.amazon.awssdk</pattern>
+                            <shadedPattern>${relocation.root}.software.amazon.awssdk</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
@@ -74,14 +74,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-kinesis</artifactId>
-            <version>1.12.797</version>
-        </dependency>
-
-        <dependency>
-            <groupId>tools.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>kinesis</artifactId>
         </dependency>
 
         <!-- TEST -->

@@ -206,6 +206,7 @@
     <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]security[\\/]"/>
     <!-- Split OS/EE package -->
     <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/][^\\/]*$"/>
+    <suppress checks="JavadocPackage" files="io[\\/]github[\\/]jbellis[\\/]jvector[\\/].*"/>
 
     <!-- Hot restart module -->
     <suppress checks="FileLength"

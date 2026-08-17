@@ -383,7 +383,7 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
         assertEquals(0, planExecutor.tryUsePrunability(selectPlan, eec).size());
     }
 
-    @Ignore("https://hazelcast.atlassian.net/browse/HZ-2796")
+    @Ignore("https://hazelcast.atlassian.net/browse/HZOLD-2796")
     @Test
     public void when_unionWithSimplePruningKey_then_non_prunable() {
         // Note: it is a test for the future implementation of prunable Aggregation.

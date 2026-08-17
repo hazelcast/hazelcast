@@ -36,7 +36,10 @@ import static org.apache.http.auth.AuthScope.ANY;
  * <pre>{@code
  * builder.clientFn(() -> client());
  * }</pre>
+ *
+ * @deprecated <a href="https://www.elastic.co/support/eol"> Elasticsearch 7 is no longer supported</a>
  */
+@Deprecated(forRemoval = true, since = "5.7")
 public final class ElasticClients {
 
     private static final int DEFAULT_PORT = 9200;

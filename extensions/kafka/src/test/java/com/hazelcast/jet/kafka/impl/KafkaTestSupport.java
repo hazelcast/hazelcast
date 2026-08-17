@@ -24,7 +24,7 @@ import io.confluent.kafka.schemaregistry.client.rest.entities.requests.ConfigUpd
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
-import io.confluent.kafka.schemaregistry.storage.KafkaSchemaRegistry;
+import io.confluent.kafka.schemaregistry.storage.SchemaRegistry;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.admin.Admin;
@@ -67,9 +67,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.test.TestUtils.DEFAULT_MAX_WAIT_MS;
 import static org.apache.kafka.test.TestUtils.waitForCondition;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class KafkaTestSupport {
     static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(2);
@@ -79,7 +79,7 @@ public abstract class KafkaTestSupport {
     private String brokerConnectionString;
     private Admin admin;
     private Server schemaRegistryServer;
-    private KafkaSchemaRegistry schemaRegistry;
+    private SchemaRegistry schemaRegistry;
 
     public static KafkaTestSupport create() {
         if (!dockerEnabled()) {
@@ -103,14 +103,19 @@ public abstract class KafkaTestSupport {
     }
 
     public void createKafkaCluster() throws IOException {
-        brokerConnectionString = createKafkaCluster0();
+        createKafkaCluster(emptyMap());
+    }
+
+    public void createKafkaCluster(Map<String, String> properties) throws IOException {
+        brokerConnectionString = createKafkaCluster0(properties);
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", brokerConnectionString);
         admin = Admin.create(props);
     }
 
     /** Returns the broker connection string. */
-    protected abstract String createKafkaCluster0() throws IOException;
+    protected abstract String createKafkaCluster0(Map<String, String> properties) throws IOException;
+
 
     public void waitForKafkaReady() {
         try {
@@ -328,7 +333,7 @@ public abstract class KafkaTestSupport {
             for (int totalRecords = 0; totalRecords < expected.size() && System.nanoTime() < timeLimit; ) {
                 ConsumerRecords<Integer, String> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<Integer, String> record : records) {
-                    assertEquals("key=" + record.key(), expected.get(record.key()), record.value());
+                    assertEquals(expected.get(record.key()), record.value(), "key=" + record.key());
                     if (assertPartitionEqualsKey) {
                         assertEquals(record.key().intValue(), record.partition());
                     }
@@ -365,10 +370,10 @@ public abstract class KafkaTestSupport {
             for (int totalRecords = 0; totalRecords < expected.size() && System.nanoTime() < timeLimit; ) {
                 ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<K, V> record : records) {
-                    assertTrue("key=" + record.key() + " already seen", seenKeys.add(record.key()));
+                    assertTrue(seenKeys.add(record.key()), "key=" + record.key() + " already seen");
                     V expectedValue = expected.get(record.key());
-                    assertNotNull("key=" + record.key() + " received, but not expected", expectedValue);
-                    assertEquals("key=" + record.key(), expectedValue, record.value());
+                    assertNotNull(expectedValue, "key=" + record.key() + " received, but not expected");
+                    assertEquals(expectedValue, record.value(), "key=" + record.key());
                     totalRecords++;
                 }
             }

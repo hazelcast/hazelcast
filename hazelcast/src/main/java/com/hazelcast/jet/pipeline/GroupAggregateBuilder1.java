@@ -89,7 +89,7 @@ public class GroupAggregateBuilder1<T0, K> {
      * @param <OUT> output type of the returned stage
      * @return a new stage representing the co-group-and-aggregate operation
      */
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     @Nonnull
     public <R, OUT> BatchStage<OUT> build(
             @Nonnull AggregateOperation<?, R> aggrOp,

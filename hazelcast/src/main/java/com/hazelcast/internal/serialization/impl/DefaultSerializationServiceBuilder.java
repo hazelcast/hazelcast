@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -35,6 +34,7 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.impl.connector.DataSourceFromJdbcUrl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -130,8 +130,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
         allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
-        JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
-        classNameSerializationFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        classNameSerializationFilter = new SerializationClassNameFilter(config.getJavaSerializationFilterConfig());
         compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
@@ -256,6 +255,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     @Override
     public InternalSerializationService build() {
         initVersions();
+
         if (config != null) {
             addConfigDataSerializableFactories(dataSerializableFactories, config, classLoader);
             addConfigPortableFactories(portableFactories, config, classLoader);
@@ -349,13 +349,28 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected ClassFilter createReflectiveCompactSerializerDefaultBlockList() {
         ClassFilter blockList = new ClassFilter();
-        blockList.addPrefixes("com.hazelcast.shaded");
-        blockList.addPackages("org.jctools.queues");
+        blockList.addPrefixes(
+                // https://hazelcast.atlassian.net/browse/CTT-1202
+                "com.hazelcast.instance.impl",
+                "com.hazelcast.shaded",
+                // https://hazelcast.atlassian.net/browse/CTT-1204
+                "org.springframework.beans",
+                "org.apache.logging.log4j"
+        );
+        blockList.addPackages(
+                // https://hazelcast.atlassian.net/browse/CTT-1202
+                "com.hazelcast.client.impl.clientside",
+                "com.hazelcast.osgi.impl",
+                "org.jctools.queues"
+        );
         blockList.addClasses(
                 HeapData.class.getName(),
                 Packet.class.getName(),
                 UnsafeObjectDataInput.class.getName(),
-                "org.agrona.concurrent.status.AtomicCounter"
+                "com.hazelcast.kubernetes.KubernetesConfig$DefaultFileContentsReader",
+                "org.agrona.concurrent.status.AtomicCounter",
+                // https://hazelcast.atlassian.net/browse/CTT-1204
+                DataSourceFromJdbcUrl.class.getName()
         );
         return blockList;
     }

@@ -16,22 +16,28 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
+import com.hazelcast.shaded.org.somepackage.SomeShadedClass;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -40,22 +46,37 @@ public class UdtRestrictionTest extends SqlTestSupport {
     static SqlService sqlService;
 
     private static final Class<AllowedClass> ALLOWED_CLASS = AllowedClass.class;
+    private static final Class<AllowedInDefaultClass> ALLOWED_IN_DEFAULT_CLASS = AllowedInDefaultClass.class;
 
     private static final Class<NotAllowedClass> DENIED_CLASS = NotAllowedClass.class;
-
+    private static final Class<SomeShadedClass> DENIED_CLASS_SHADED = SomeShadedClass.class;
 
     private final String expectedMessage = String.format("Creation of class %s is not allowed.", DENIED_CLASS.getName());
+    private final String expectedMessageShaded = String.format("Creation of class %s is not allowed.", DENIED_CLASS_SHADED.getName());
+    private final String expectedMessageInDefault = String.format("Creation of class %s is not allowed.", ALLOWED_IN_DEFAULT_CLASS.getName());
 
     @BeforeClass
     public static void setup() {
-        var config = smallInstanceConfig();
-        JavaSerializationFilterConfig reflectionConfig = new JavaSerializationFilterConfig();
-        reflectionConfig.setDefaultsDisabled(true);
-        reflectionConfig.getBlacklist().addClasses(DENIED_CLASS.getName());
-        reflectionConfig.getWhitelist().addClasses(ALLOWED_CLASS.getName());
-        config.getSqlConfig().setJavaReflectionFilterConfig(reflectionConfig);
+        var config = createConfig();
         initialize(2, config);
         sqlService = instance().getSql();
+    }
+
+    static Config createConfig() {
+        var config = smallInstanceConfig();
+        JavaSerializationFilterConfig reflectionConfig = new JavaSerializationFilterConfig();
+        reflectionConfig.getBlacklist().addClasses(DENIED_CLASS.getName());
+        reflectionConfig.getWhitelist().addClasses(ALLOWED_CLASS.getName(), Holder.class.getName());
+        config.getSqlConfig().setJavaReflectionFilterConfig(reflectionConfig);
+        return config;
+    }
+
+    boolean defaultsEnabled() {
+        return true;
+    }
+
+    boolean customizedFilters() {
+        return true;
     }
 
     @Test
@@ -63,14 +84,10 @@ public class UdtRestrictionTest extends SqlTestSupport {
         String name = "map";
         javaMapping(name, ALLOWED_CLASS, DENIED_CLASS).create();
 
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, 1)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, null)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (1, null)"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (1, 1)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (4, null)"));
     }
 
     @Test
@@ -78,15 +95,10 @@ public class UdtRestrictionTest extends SqlTestSupport {
         String name = "map";
         javaMapping(name, DENIED_CLASS, ALLOWED_CLASS).create();
 
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, 1)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (1, 2)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (null, 1)"))
-            .hasMessageContaining(expectedMessage);
-        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (null, 2)"))
-            .hasMessageContaining(expectedMessage);
-
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (1, 1)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("INSERT INTO " + name + " VALUES (null, 2)"));
+        assertThatRejectedWithCustomizedFilters(() -> execute("SINK INTO " + name + " VALUES (null, 1)"));
     }
 
     @Test
@@ -107,7 +119,80 @@ public class UdtRestrictionTest extends SqlTestSupport {
         assertThatNoException().isThrownBy(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
         assertThatNoException().isThrownBy(() -> execute("INSERT INTO " + name + " VALUES (null, 3)"));
         assertThatNoException().isThrownBy(() -> execute("SINK INTO " + name + " VALUES (null, 2)"));
+    }
 
+    @Test
+    public void when_keyClassShaded_then_fails() {
+        String name = "map";
+        javaMapping(name, DENIED_CLASS_SHADED, ALLOWED_CLASS).create();
+
+        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, 1)"))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (1, 2)"))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (null, 1)"))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (null, 2)"))
+                .hasMessageContaining(expectedMessageShaded);
+    }
+
+    @Test
+    public void when_valueClassShaded_then_fails() {
+        String name = "map";
+        javaMapping(name, ALLOWED_CLASS, DENIED_CLASS_SHADED).create();
+
+        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (1, 1)"))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (1, 2)"))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> execute("SINK INTO " + name + " VALUES (null, 1)"))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> execute("INSERT INTO " + name + " VALUES (null, 2)"))
+                .hasMessageContaining(expectedMessageShaded);
+    }
+
+    @Test
+    public void when_keyClassAllowedInDefault_then_success() {
+        String name = "map";
+        javaMapping(name, ALLOWED_IN_DEFAULT_CLASS, Integer.class).create();
+        assertThatRejectedWithDefaultsDisabled(() -> execute("SINK INTO " + name + " VALUES (1, 1)"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("INSERT INTO " + name + " VALUES (null, 3)"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("SINK INTO " + name + " VALUES (null, 2)"));
+    }
+
+    @Test
+    public void when_valueClassAllowedInDefault_then_success() {
+        String name = "map";
+        javaMapping(name, Integer.class, ALLOWED_IN_DEFAULT_CLASS).create();
+        assertThatRejectedWithDefaultsDisabled(() -> execute("SINK INTO " + name + " VALUES (1, 1)"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("INSERT INTO " + name + " VALUES (2, 2)"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("INSERT INTO " + name + " VALUES (4, null)"));
+    }
+
+    @Test
+    public void when_selectValueWithRestrictedClass_then_success() {
+        String name = "map";
+        javaMapping(name, Integer.class, NotAllowedClass.class).create();
+        var value = new NotAllowedClass();
+        value.setRestricted(2);
+        instance().getMap(name).put(1, value);
+        // filter affects only object creation by SQL, not queries
+        assertThat(executeScalar("SELECT this FROM map WHERE __key = 1")).isInstanceOf(NotAllowedClass.class);
+        assertThat(executeScalar("SELECT restricted FROM map WHERE __key = 1")).isEqualTo(2);
+    }
+
+    @Test
+    public void when_selectValueWithShadedClass_then_success() {
+        String name = "map";
+        javaMapping(name, Integer.class, SomeShadedClass.class).create();
+        var value = new SomeShadedClass();
+        value.setShaded(2);
+        instance().getMap(name).put(1, value);
+        // filter affects only object creation by SQL, not queries
+        assertThat(executeScalar("SELECT this FROM map WHERE __key = 1")).isInstanceOf(SomeShadedClass.class);
+        assertThat(executeScalar("SELECT shaded FROM map WHERE __key = 1")).isEqualTo(2);
     }
 
     @Test
@@ -116,11 +201,9 @@ public class UdtRestrictionTest extends SqlTestSupport {
         javaMapping(name, Integer.class, NotAllowedClass.class).create();
         instance().getMap(name).put(1, "initial");
 
-        assertThatThrownBy(() -> execute("UPDATE map SET restricted = 100 WHERE __key = 1"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("UPDATE map SET restricted = 100 WHERE __key = 1"));
 
-        assertThatThrownBy(() -> execute("UPDATE map SET restricted = null WHERE __key = 1"))
-            .hasMessageContaining(expectedMessage);
+        assertThatRejectedWithCustomizedFilters(() -> execute("UPDATE map SET restricted = null WHERE __key = 1"));
     }
 
     @Test
@@ -130,6 +213,103 @@ public class UdtRestrictionTest extends SqlTestSupport {
         instance().getMap(name).put(1, "initial");
         assertThatNoException().isThrownBy(() -> execute("UPDATE map SET allowed = 100 WHERE __key = 1"));
         assertThatNoException().isThrownBy(() -> execute("UPDATE map SET allowed = null WHERE __key = 1"));
+    }
+
+    @Test
+    public void when_updateValueWithShadedClass_then_failed() {
+        String name = "map";
+        javaMapping(name, Integer.class, DENIED_CLASS_SHADED).create();
+        instance().getMap(name).put(1, "initial");
+
+        assertThatThrownBy(() -> execute("UPDATE map SET shaded = 100 WHERE __key = 1"))
+                .hasMessageContaining(expectedMessageShaded);
+
+        assertThatThrownBy(() -> execute("UPDATE map SET shaded = null WHERE __key = 1"))
+                .hasMessageContaining(expectedMessageShaded);
+    }
+
+    @Test
+    public void when_updateValueWithAllowedInDefaultClass_then_success() {
+        String name = "map";
+        javaMapping(name, Integer.class, ALLOWED_IN_DEFAULT_CLASS).create();
+        instance().getMap(name).put(1, "initial");
+        assertThatRejectedWithDefaultsDisabled(() -> execute("UPDATE map SET allowedInDefault = 100 WHERE __key = 1"));
+        assertThatRejectedWithDefaultsDisabled(() -> execute("UPDATE map SET allowedInDefault = null WHERE __key = 1"));
+    }
+
+    @Test
+    public void when_udtFieldRestricted_then_fails() {
+        String name = "map";
+        String sqlTypeName = "myType";
+
+        createType(sqlTypeName, DENIED_CLASS).create();
+        javaMapping(name, Integer.class, Holder.class)
+                .fields("__key integer", "notAllowedClass \"" + sqlTypeName + "\"")
+                .create();
+
+        RowValue udtValue = new RowValue(List.of(1));
+        assertThatRejectedWithCustomizedFilters(() -> sqlService.execute("SINK INTO " + name + " VALUES (1, ?)", udtValue));
+        assertThatRejectedWithCustomizedFilters(() -> sqlService.execute("INSERT INTO " + name + " VALUES (2, ?)", udtValue));
+        // these variants do not create object
+        assertThatNoException().isThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (4, null)"));
+    }
+
+    @Test
+    public void when_udtFieldShaded_then_fails() {
+        String name = "map";
+        String sqlTypeName = "myType";
+
+        createType(sqlTypeName, DENIED_CLASS_SHADED).create();
+        javaMapping(name, Integer.class, Holder.class)
+                .fields("__key integer", "shadedClass \"" + sqlTypeName + "\"")
+                .create();
+
+        RowValue udtValue = new RowValue(List.of(1));
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (1, ?)", udtValue))
+                .hasMessageContaining(expectedMessageShaded);
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (2, ?)", udtValue))
+                .hasMessageContaining(expectedMessageShaded);
+        // these variants do not create object
+        assertThatNoException().isThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (4, null)"));
+    }
+
+    @Test
+    public void when_udtFieldAllowed_then_success() {
+        String name = "map";
+        String sqlTypeName = "com.hazelcast.myType";
+
+        createType(sqlTypeName, ALLOWED_CLASS).create();
+        javaMapping(name, Integer.class, Holder.class)
+                .fields("__key integer", "allowedClass \"" + sqlTypeName + "\"")
+                .create();
+
+        RowValue udtValue = new RowValue(List.of(1));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (1, ?)", udtValue));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (2, ?)", udtValue));
+        // these variants do not create object
+        assertThatNoException().isThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (4, null)"));
+    }
+
+    @Test
+    public void when_udtSqlTypeNameNotAllowedButClassAllowed_then_success() {
+        String name = "map";
+        // sql type should not be used in any checks, only the class matters
+        String sqlTypeName = DENIED_CLASS.getName();
+
+        createType(sqlTypeName, ALLOWED_CLASS).create();
+        javaMapping(name, Integer.class, Holder.class)
+                .fields("__key integer", "allowedClass \"" + sqlTypeName + "\"")
+                .create();
+
+        RowValue udtValue = new RowValue(List.of(1));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (1, ?)", udtValue));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (2, ?)", udtValue));
+        // these variants do not create object
+        assertThatNoException().isThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (3, null)"));
+        assertThatNoException().isThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (4, null)"));
     }
 
     private static SqlMapping javaMapping(String name, Class<?> keyClass, Class<?> valueClass) {
@@ -142,8 +322,37 @@ public class UdtRestrictionTest extends SqlTestSupport {
             );
     }
 
+    private SqlType createType(String sqlTypeName, Class<?> type) {
+        return new SqlType("\"" + sqlTypeName + "\"")
+                .options("javaClass", type.getName());
+    }
+
     private void execute(String sql) {
         try (var ignore = sqlService.execute(sql)) { }
+    }
+
+    private Object executeScalar(String sql) {
+        try (var result = sqlService.execute(sql)) {
+            return result.iterator().next().getObject(0);
+        }
+    }
+
+    private void assertThatRejectedWithDefaultsDisabled(ThrowableAssert.ThrowingCallable callable) {
+        if (defaultsEnabled()) {
+            assertThatNoException().isThrownBy(callable);
+        } else {
+            assertThatThrownBy(callable)
+                    .hasMessageContaining(expectedMessageInDefault);
+        }
+    }
+
+    private void assertThatRejectedWithCustomizedFilters(ThrowableAssert.ThrowingCallable callable) {
+        if (customizedFilters()) {
+            assertThatThrownBy(callable)
+                    .hasMessageContaining(expectedMessage);
+        } else {
+            assertThatNoException().isThrownBy(callable);
+        }
     }
 
     public static class AllowedClass implements Serializable {
@@ -156,7 +365,18 @@ public class UdtRestrictionTest extends SqlTestSupport {
         public void setAllowed(Integer value) {
             this.allowed = value;
         }
+    }
 
+    public static class AllowedInDefaultClass implements Serializable {
+        private Integer allowedInDefault;
+
+        public Integer getAllowedInDefault() {
+            return allowedInDefault;
+        }
+
+        public void setAllowedInDefault(Integer value) {
+            this.allowedInDefault = value;
+        }
     }
 
     public static class NotAllowedClass implements Serializable {
@@ -169,6 +389,11 @@ public class UdtRestrictionTest extends SqlTestSupport {
         public void setRestricted(Integer value) {
             this.restricted = value;
         }
+    }
 
+    public static class Holder implements Serializable {
+        public AllowedClass allowedClass;
+        public NotAllowedClass notAllowedClass;
+        public SomeShadedClass shadedClass;
     }
 }

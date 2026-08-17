@@ -19,12 +19,13 @@ package com.hazelcast.map.metrics;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Used for IMap value type when testing indexing metrics
  */
-record User(String userId, String name) {
+record User(String userId, String name) implements Serializable {
     /**
      * @return Config for an index on the "userId" field of a {@link User} record
      */

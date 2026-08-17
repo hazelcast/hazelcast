@@ -22,6 +22,8 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,11 +37,17 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindOnBackupsTest.writeBehindQueueSize;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -228,6 +236,56 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         assertWriteBehindQueuesEmpty(mapName, asList(node1, node2, node3));
     }
 
+    @Test
+    public void backupFlush_occursWithDelayAfterPrimaryFlush_ForceOffloadFalse() {
+        backupFlush_occursWithDelayAfterPrimaryFlush("false");
+    }
+
+    @Test
+    public void backupFlush_occursWithDelayAfterPrimaryFlush_ForceOffloadTrue() {
+        backupFlush_occursWithDelayAfterPrimaryFlush("true");
+    }
+
+    public void backupFlush_occursWithDelayAfterPrimaryFlush(String forceOffload) {
+        String mapName = "testMap";
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        BlockingStoreMapStore<String, String> mapStore = new BlockingStoreMapStore<>();
+        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(Integer.MAX_VALUE);
+
+        Config config = getConfig();
+        config.setProperty(PARTITION_COUNT.getName(), "2");
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), forceOffload);
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(mapName).setBackupCount(1);
+
+        HazelcastInstance[] nodes = factory.newInstances(config, 2);
+        HazelcastInstance node1 = nodes[0];
+        HazelcastInstance node2 = nodes[1];
+        assertClusterSizeEventually(2, nodes);
+
+        IMap<String, String> map = node1.getMap(mapName);
+        int size = 100;
+        for (int i = 0; i < size; i++) {
+            map.put(generateKeyOwnedBy(node2), "value");
+        }
+        assertThat(mapStore.getStore().size()).isEqualTo(0);
+
+        var flush = spawn(map::flush);
+        assertThatCode(() -> flush.get(5, SECONDS)).isInstanceOf(java.util.concurrent.TimeoutException.class);
+
+        node2.getLifecycleService().terminate();
+        waitAllForSafeState(node1);
+        assertClusterSizeEventually(1, node1);
+        mapStore.releaseAll();
+
+        assertThatCode(() -> flush.get(5, SECONDS)).doesNotThrowAnyException();
+        map.flush();
+        assertThat(mapStore.getStore().size()).isEqualTo(size);
+
+    }
+
     private Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -252,5 +310,43 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         return smallInstanceConfig();
+    }
+
+    /**
+     * MapStore implementation that blocks store operations on the external source
+     * until {@code releaseAll()} is invoked.
+     */
+    private static class BlockingStoreMapStore<K, V> extends MapStoreAdapter<K, V> {
+
+        final Map<Object, Object> store = new ConcurrentHashMap<>();
+        final Semaphore storePermit = new Semaphore(0);
+
+        @Override
+        public void store(K key, V value) {
+            try {
+                storePermit.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            store.put(key, value);
+        }
+
+        @Override
+        public void storeAll(Map<K, V> map) {
+            try {
+                storePermit.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            store.putAll(map);
+        }
+
+        public Map<Object, Object> getStore() {
+            return store;
+        }
+
+        public void releaseAll() {
+            storePermit.release(Integer.MAX_VALUE);
+        }
     }
 }

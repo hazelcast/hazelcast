@@ -63,7 +63,7 @@ public interface PortableWriter {
      * @throws IOException in case of any exceptional case
      * @deprecated for the sake of better naming. Use {@link #writeString(String, String)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     void writeUTF(@Nonnull String fieldName, @Nullable String value) throws IOException;
 
     /**
@@ -276,7 +276,7 @@ public interface PortableWriter {
      * @throws IOException in case of any exceptional case
      * @deprecated for the sake of better naming. Use {@link #writeStringArray(String, String[])} instead.
      */
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     void writeUTFArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException;
 
     /**

@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
+import com.hazelcast.test.HazelcastSerialTestExtension;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -41,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -62,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @QuickTest
+@ExtendWith(HazelcastSerialTestExtension.class)
 public abstract class GenericMapStoreIT extends JdbcSqlTestSupport {
 
     private static Config memberConfig;

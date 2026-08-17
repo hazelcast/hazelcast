@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
-import static groovy.util.GroovyTestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

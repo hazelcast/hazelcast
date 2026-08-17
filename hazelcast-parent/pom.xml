@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-parent</artifactId>
     <packaging>pom</packaging>
-    <version>5.8.0-SNAPSHOT</version>
+    <version>6.0.0-SNAPSHOT</version>
 
     <name>Hazelcast Parent POM</name>
     <description>Provides a base configuration for Hazelcast Platform builds</description>
@@ -76,7 +76,7 @@
         We typically expect compatibility between sequential minor versions
         Patch version is unimportant due to semver - so for best coverage, deliberately use the oldest
         -->
-        <hazelcast.previous.version>5.6.0</hazelcast.previous.version>
+        <hazelcast.previous.version>5.7.0</hazelcast.previous.version>
         <hazelcast.lts.version>5.5</hazelcast.lts.version>
 
         <!--used also as a dependency version in hazelcast-build-utils module-->
@@ -88,41 +88,47 @@
 
         <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
         <avro.version>1.11.5</avro.version>
-        <aws.sdk2.version>2.42.23</aws.sdk2.version>
+        <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
+          and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
+        <aws.sdk2.version>2.51.3</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
         Explicitly upgrade to a version not vulnerable to CVE - https://github.com/advisories/GHSA-gcg6-xv4f-f749
-        Not required with Calcite >=1.37, 
+        Not required with Calcite >=1.37,
          -->
         <janino.version>3.1.10</janino.version>
-        <debezium.version>1.9.8.Final</debezium.version>
-        <new.debezium.version>3.1.3.Final</new.debezium.version>
-        <grpc.version>1.73.0</grpc.version>
-        <hadoop.version>3.4.3</hadoop.version>
-        <jackson.version>3.1.1</jackson.version>
-        <jackson2.version>2.21.2</jackson2.version>
-        <jackson.annotation.version>2.21</jackson.annotation.version>
-        <jline.version>3.30.9</jline.version>
+        <debezium.version>3.6.1.Final</debezium.version>
+        <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
+        <grpc.version>1.80.0</grpc.version>
+        <hadoop.version>3.5.0</hadoop.version>
+        <jackson.version>3.2.1</jackson.version>
+        <jackson2.version>2.22.1</jackson2.version>
+        <jackson.annotation.version>2.22</jackson.annotation.version>
+        <jline.version>3.30.16</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
-        Confluent depends on Kafka, and consideration should be given when upgrading
-        https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
-        `at.yawk.lz4:lz4-java` also needs upgrading at the same time
+            Confluent depends on Kafka, and consideration should be given when upgrading
+            https://docs.confluent.io/platform/current/installation/versions-interoperability.html#cp-and-apache-ak-compatibility
+            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
+            - `com.github.luben:zstd-jni`
         -->
-        <kafka.version>3.9.2</kafka.version>
-        <!-- Match with com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport#TEST_KAFKA_VERSION -->        
-        <confluent.version>7.9.5</confluent.version>
-        <kotlin.version>2.3.20</kotlin.version>
-        <!-- Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro -->
-        <parquet.version>1.17.0</parquet.version>
+        <kafka.version>4.3.1</kafka.version>
+        <confluent.version>8.1.3</confluent.version>
+        <kotlin.version>2.4.10</kotlin.version>
+        <!--
+            Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro
+            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
+        -->
+        <parquet.version>1.17.1</parquet.version>
 
-        <spring.boot3.version>3.5.13</spring.boot3.version>
-        <org.springframework6.version>6.2.14</org.springframework6.version>
+        <spring.boot3.version>3.5.16</spring.boot3.version>
+        <org.springframework6.version>6.2.19</org.springframework6.version>
+        <tomcat10.version>10.1.57</tomcat10.version>
 
-        <spring.boot4.version>4.0.5</spring.boot4.version>
-        <org.springframework7.version>7.0.0</org.springframework7.version>
+        <spring.boot4.version>4.1.0</spring.boot4.version>
+        <org.springframework7.version>7.0.7</org.springframework7.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -131,13 +137,14 @@
         <protobuf.version>25.8</protobuf.version>
         <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
+        <python.protobuf.version.3.14>7.35.1</python.protobuf.version.3.14>
 
         <scala.version>2.13</scala.version>
-        <mongodb.version>5.6.4</mongodb.version>
+        <mongodb.version>5.6.5</mongodb.version>
 
         <!-- test dependencies -->
-        <artemis.version>2.53.0</artemis.version>
-        <bytebuddy.version>1.18.7</bytebuddy.version>
+        <artemis.version>2.55.0</artemis.version>
+        <bytebuddy.version>1.18.11</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -151,7 +158,7 @@
         -->
         <license.skipAddThirdParty>true</license.skipAddThirdParty>
 
-        <!-- 
+        <!--
         Sources JAR properties
         Typically `sources` are only required for release
         -->
@@ -178,6 +185,34 @@
         <skip.public.api.check>false</skip.public.api.check>
         <!-- When false, the public API check does not fail fast and generates a full report for manual verification -->
         <public.api.check.break.build>true</public.api.check.break.build>
+
+        <!--
+           Workaround: the git-commit-id-plugin uses JGit by
+           default, which does not support git worktrees. When
+           building from a git worktree (e.g. created with `git
+           worktree add`), pass -Dgit.useNativeGit=true to make
+           the plugin use the native `git` executable instead.
+       -->
+        <git.useNativeGit>false</git.useNativeGit>
+
+        <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
+        <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
+
+        <dependency.analyze.phase>validate</dependency.analyze.phase>
+
+        <commonArgLine>
+            -ea
+            -Dhazelcast.phone.home.enabled=false
+            -Dlog4j2.isThreadContextMapInheritable=true
+            -Dlog4j2.configurationFile="classpath:log4j2.xml"
+            -Dlog4j.skipJansi=true
+            -Djunit.jupiter.execution.timeout.thread.mode.default=SEPARATE_THREAD
+            -Djunit.jupiter.execution.parallel.enabled=true
+            -Duser.timezone=UTC
+            -Djava.net.preferIPv4Stack=true
+            --add-opens java.base/java.net=ALL-UNNAMED
+            --add-opens java.base/sun.net=ALL-UNNAMED
+        </commonArgLine>
     </properties>
 
     <distributionManagement>
@@ -232,7 +267,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>4.1.128.Final</version>
+                <version>4.1.136.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -300,75 +335,13 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
+                <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
-                <exclusions>
-                    <!-- The following dependencies are not needed for our use of Hadoop -->
-                    <exclusion>
-                        <groupId>ch.qos.reload4j</groupId>
-                        <artifactId>reload4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-reload4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-servlet</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-webapp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.servlet.jsp</groupId>
-                        <artifactId>jsp-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.jersey</groupId>
-                        <artifactId>jersey-servlet</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jline</groupId>
-                        <artifactId>jline</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-common</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.kerby</groupId>
-                        <artifactId>kerb-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.kerby</groupId>
-                        <artifactId>kerb-simplekdc</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-recipes</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-framework</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-jdk18on</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${hadoop.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
@@ -390,16 +363,6 @@
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet.version}</version>
-                <exclusions>
-                    <!--
-                    The following library is not required, it only contains annotations and doclets
-                    It also requires JDK11 since version 0.14
-                    -->
-                    <exclusion>
-                        <groupId>org.apache.yetus</groupId>
-                        <artifactId>audience-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -412,16 +375,20 @@
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>3.0.1</version>
             </dependency>
-            <!-- Addresses dependency convergence -->
+            <!--
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client`
+                - `org.apache.commons:commons-compress` (transitively from `org.apache.avro:avro`)
+            -->
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.21.0</version>
+                <version>1.19.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.21.0</version>
+                <version>2.22.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -438,11 +405,17 @@
                 <artifactId>commons-collections</artifactId>
                 <version>3.2.2</version>
             </dependency>
+            <!--
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client`
+                - `org.apache.httpcomponents:httpclient`
+            -->
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>1.3.6</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `commons-codec:commons-codec` should be upgraded -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
@@ -452,11 +425,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
                 <version>3.6.1</version>
-            </dependency>
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>2.14.1</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
@@ -471,22 +439,17 @@
             <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
-                <version>9.6.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.zendesk</groupId>
-                <artifactId>mysql-binlog-connector-java</artifactId>
-                <version>0.30.3</version>
+                <version>9.7.0</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.10</version>
+                <version>42.7.13</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc11</artifactId>
-                <version>23.26.1.0.0</version>
+                <version>23.26.2.0.0</version>
                 <scope>test</scope>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
@@ -495,16 +458,39 @@
                 <artifactId>httpcore</artifactId>
                 <version>4.4.16</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `commons-logging:commons-logging` should be upgraded -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.5.14</version>
             </dependency>
+            <!-- Keep aligned with the HttpComponents versions used by the AWS SDK v2 Apache client. -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.6.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5-h2</artifactId>
+                <version>5.4.3</version>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.1.1</version>
+                <version>7.2.1</version>
             </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.fasterxml.woodstox:woodstox-core` (transitively via `org.apache.hadoop:hadoop-client`)
+                - com.google.cloud:google-cloud-storage (transitively via `com.google.cloud.bigdataoss:gcs-connector`)
+            -->
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>stax2-api</artifactId>
@@ -519,21 +505,28 @@
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
                 <version>3.5</version>
-            </dependency>
+            </dependency>            
+            <!--
+                Addresses convergence between:
+                - `org.apache.parquet:parquet-hadoop` (transitively via `org.apache.parquet:parquet-avro`)
+                - `org.apache.kafka:kafka-clients`
+            -->
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.7-7</version>
+                <version>1.5.7-3</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>2.0.17</version>
+                <artifactId>slf4j-bom</artifactId>
+                <version>2.0.18</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
-                <version>2.25.4</version>
+                <version>2.26.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -544,11 +537,6 @@
                 <classifier>jdk8</classifier>
             </dependency>
             <dependency>
-                <groupId>org.checkerframework</groupId>
-                <artifactId>checker-qual</artifactId>
-                <version>3.54.0</version>
-            </dependency>
-            <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>4.13.2</version>
@@ -557,17 +545,6 @@
                 <groupId>ch.qos.reload4j</groupId>
                 <artifactId>reload4j</artifactId>
                 <version>1.2.26</version>
-            </dependency>
-            <!--
-              Resolves dependency convergence between:
-              - `org.apache.kafka:kafka-clients`
-              - `org.elasticsearch:elasticsearch-lz4`
-              Should be set to the dependency version specified in the former
-            -->
-            <dependency>
-                <groupId>at.yawk.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.janino</groupId>
@@ -601,7 +578,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>6.0.3</version>
+                <version>6.1.3</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -621,7 +598,7 @@
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.4.1</version>
+                <version>4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -637,12 +614,17 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
-                <version>1.4.1</version>
+                <version>1.4.2</version>
             </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.google.guava:guava`
+                - `io.grpc:grpc-stub` / `io.grpc:grpc-api`
+            -->
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.48.0</version>
+                <version>2.45.0</version>
             </dependency>
             <dependency>
                 <groupId>info.picocli</groupId>
@@ -657,7 +639,7 @@
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client-bom</artifactId>
-                <version>7.6.1</version>
+                <version>7.8.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -673,20 +655,26 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
-            <!-- Update ApacheDS Mina dep version 2.0.16->2.0.23. https://issues.apache.org/jira/browse/DIRMINA-1107 -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-junit-jupiter</artifactId>
+                <version>2.0.5</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>2.0.27</version>
+                <version>2.0.29</version>
                 <scope>test</scope>
             </dependency>
 
             <!-- All of this is needed to upgrade GCS -->
-            <!-- see https://hazelcast.atlassian.net/browse/HZ-4706 -->
+            <!-- see https://hazelcast.atlassian.net/browse/HZOLD-4706 -->
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.79.0</version>
+                <version>26.86.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -701,6 +689,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- Convergence between org.apache.hadoop:hadoop-client:jar:3.5.0:compile and GCS -->
+            <dependency>
+                <groupId>com.google.re2j</groupId>
+                <artifactId>re2j</artifactId>
+                <version>1.8</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -712,12 +706,12 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
-                <version>3.9.14</version>
+                <version>3.9.16</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
-                <version>3.9.14</version>
+                <version>3.9.16</version>
             </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
@@ -727,7 +721,8 @@
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
-                <version>6.0.4</version>
+                <!-- Before bumping check the slow tests which use the driver still work -->
+                <version>5.28.13</version>
             </dependency>
             <dependency>
                 <groupId>org.jctools</groupId>
@@ -749,11 +744,6 @@
                 <artifactId>wiremock-standalone</artifactId>
                 <version>3.13.2</version>
             </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp-jvm</artifactId>
-                <version>5.3.2</version>
-            </dependency>
             <!-- Resolves convergence between hazelcast-sql (via calcite) & hazelcast-jet-files-azure (via parquet) -->
             <dependency>
                 <groupId>org.locationtech.jts</groupId>
@@ -764,6 +754,16 @@
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>1.3.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>7.4.5.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>20260719</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -889,12 +889,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.5</version>
+                    <version>3.5.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.14</version>
+                    <version>0.8.15</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -996,7 +996,7 @@
                                 The Hazelcast Community License
                             </licenseMerge>
                             <licenseMerge>
-                                Go License
+                                Go License |
                                 The Go License
                             </licenseMerge>
                         </licenseMerges>
@@ -1037,7 +1037,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.10.0</version>
+                    <version>3.11.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1047,12 +1047,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>3.7.1</version>
+                    <version>3.8.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.5.5</version>
+                    <version>3.5.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -1061,7 +1061,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.6.2</version>
+                    <version>3.6.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1075,9 +1075,9 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <groupId>io.github.download-maven-plugin</groupId>
                     <artifactId>download-maven-plugin</artifactId>
-                    <version>1.13.0</version>
+                    <version>2.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
@@ -1095,14 +1095,9 @@
                     <version>2.1.13</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>cobertura-maven-plugin</artifactId>
-                    <version>2.7</version>
-                </plugin>
-                <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>12.2.0</version>
+                    <version>12.2.2</version>
                     <configuration>
                         <format>ALL</format>
                         <skipProvidedScope>true</skipProvidedScope>
@@ -1133,7 +1128,7 @@
                 <plugin>
                     <groupId>com.github.siom79.japicmp</groupId>
                     <artifactId>japicmp-maven-plugin</artifactId>
-                    <version>0.24.2</version>
+                    <version>0.26.1</version>
                     <configuration>
                         <!-- Skip property -->
                         <skip>${skip.public.api.check}</skip>
@@ -1163,9 +1158,8 @@
                             <accessModifier>public</accessModifier>
                             <excludes>
                                 <!-- Excluded breaking changes reported: -->
-                                <!--  * StreamStage.filterStateful: METHOD_ABSTRACT_NOW_DEFAULT
-                                This is a public API for user consumption, but not intended to be implemented by users. -->
-                                <exclude>com.hazelcast.jet.pipeline.StreamStageWithKey#filterStateful(long,com.hazelcast.function.SupplierEx,com.hazelcast.function.BiPredicateEx)</exclude>
+                                <!--  * JsonUtil.toBean removal is intended breaking change for 6.0 (hazelcast.atlassian.net/browse/CTT-1212)-->
+                                <exclude>com.hazelcast.jet.json.JsonUtil#toBean(java.lang.Class)</exclude>
 
                                 <!-- End of custom exclusions. Remove after release to detect future breaking changes between x.y.0 and patches -->
 
@@ -1184,6 +1178,10 @@
                                 <!-- Exclude included dependencies which are out of this project control -->
                                 <exclude>com.hazelcast.license.*</exclude>
                                 <exclude>${relocation.root}.*</exclude>
+
+                                <!-- Fixed convention, equals and hashCode were missing final keyword -->
+                                <exclude>com.hazelcast.config.PermissionConfig#equals(java.lang.Object)</exclude>
+                                <exclude>com.hazelcast.config.PermissionConfig#hashCode()</exclude>
                             </excludes>
 
                             <!-- Skip .diff file report -->
@@ -1230,6 +1228,7 @@
                                 <includedLicense>EPL-2.0</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                                 <includedLicense>Go License</includedLicense>
+                                <includedLicense>Bouncy Castle Licence</includedLicense>
                             </includedLicenses>
                         </configuration>
                     </execution>
@@ -1351,6 +1350,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze-exclusions</id>
+                        <phase>${dependency.analyze.phase}</phase>
+                        <goals>
+                            <goal>analyze-exclusions</goal>
+                        </goals>
+                        <configuration>
+                            <exclusionFail>true</exclusionFail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -1392,6 +1407,8 @@
                 <enforcer.skip>true</enforcer.skip>
                 <!-- https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#useIncrementalCompilation -->
                 <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
+                <!-- Skip running maven-dependency-plugin analysis -->
+                <dependency.analyze.phase>none</dependency.analyze.phase>
             </properties>
         </profile>
 
@@ -1512,7 +1529,7 @@
                         <plugin>
                             <groupId>org.sonatype.central</groupId>
                             <artifactId>central-publishing-maven-plugin</artifactId>
-                            <version>0.10.0</version>
+                            <version>0.11.0</version>
                             <extensions>true</extensions>
                             <configuration>
                                 <!-- server id comes from settings.xml -->
@@ -1601,28 +1618,6 @@
                 </dependency>
             </dependencies>
         </profile>
-        <profile>
-            <id>spring-5</id>
-            <activation>
-                <property>
-                    <name>tested.spring.override</name>
-                    <value>5</value>
-                </property>
-            </activation>
-            <properties>
-                <!-- should only be Spring 5 -->
-                <spring.boot.version>2.7.18</spring.boot.version>
-                <org.springframework.version>5.3.39</org.springframework.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
-                    <version>1</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
         <!-- Profile used to compare the current version with the baseline defined in hazelcast.public.api.baseline.version
           This comparison is done by japicmp plugin which compares jars - already released one with the current snapshot -->
         <profile>
@@ -1644,6 +1639,23 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
+            <id>pr-builder</id>
+            <properties>
+                <!--
+                    To improve PR builder runtime, skip *some* assembly-plugins that are not required for build validation
+                    https://github.com/hazelcast/hazelcast/pull/18521
+                -->
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+            </properties>
         </profile>
     </profiles>
 
@@ -1691,8 +1703,8 @@
             </snapshots>
         </repository>
         <repository>
-            <id>hazelcast-private-repository</id>
-            <name>Hazelcast Private Repository</name>
+            <id>hazelcast-public-repository</id>
+            <name>Hazelcast Public Release Repository</name>
             <url>https://repository.hazelcast.com/release/</url>
             <releases>
                 <enabled>true</enabled>
@@ -1702,8 +1714,8 @@
             </snapshots>
         </repository>
         <repository>
-            <id>hazelcast-private-snapshot-repository</id>
-            <name>Hazelcast Private Repository</name>
+            <id>hazelcast-public-snapshot-repository</id>
+            <name>Hazelcast Public Snapshot Repository</name>
             <url>https://repository.hazelcast.com/snapshot/</url>
             <releases>
                 <enabled>false</enabled>
@@ -1715,18 +1727,6 @@
         <repository>
             <id>confluent</id>
             <url>https://packages.confluent.io/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
-        <repository>
-            <id>redhat-ga</id>
-            <url>https://maven.repository.redhat.com/ga/</url>
             <releases>
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>

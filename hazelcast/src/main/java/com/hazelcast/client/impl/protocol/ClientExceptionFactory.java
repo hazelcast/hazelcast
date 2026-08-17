@@ -51,6 +51,8 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -222,10 +224,12 @@ public class ClientExceptionFactory {
     private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<>();
     private final Map<Class, Integer> classToInt = new HashMap<>();
     private final ClassLoader classLoader;
+    private final ILogger logger;
 
     @SuppressWarnings({"ExecutableStatementCount", "MethodLength"})
-    public ClientExceptionFactory(boolean jcacheAvailable, ClassLoader classLoader) {
+    public ClientExceptionFactory(boolean jcacheAvailable, ClassLoader classLoader, LoggingService loggingService) {
         this.classLoader = classLoader;
+        this.logger = loggingService.getLogger(ClientExceptionFactory.class);
         if (jcacheAvailable) {
             register(CACHE, CacheException.class, CacheException::new);
             register(CACHE_LOADER, CacheLoaderException.class, CacheLoaderException::new);
@@ -384,11 +388,16 @@ public class ClientExceptionFactory {
         if (exceptionFactory == null) {
             String className = errorHolder.getClassName();
             try {
-                Class<? extends Throwable> exceptionClass = ClassLoaderUtil.loadClass(classLoader, className);
+                Class<? extends Throwable> exceptionClass = ClassLoaderUtil.loadClass(classLoader, className)
+                        .asSubclass(Throwable.class);
                 throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, errorHolder.getMessage(),
                         createException(iterator));
             } catch (ClassNotFoundException e) {
                 EmptyStatement.ignore(e);
+            } catch (ClassCastException e) {
+                logger.warning("Received exception class that is not Throwable: " + className);
+                throwable = new UndefinedErrorCodeException("Received exception class that is not Throwable: "
+                        + errorHolder.getMessage(), className, createException(iterator));
             }
             if (throwable == null) {
                 throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), className, createException(iterator));

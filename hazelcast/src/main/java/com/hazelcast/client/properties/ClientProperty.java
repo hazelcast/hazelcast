@@ -18,6 +18,7 @@ package com.hazelcast.client.properties;
 
 import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.RoutingMode;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -126,8 +127,10 @@ public final class ClientProperty {
     /**
      * Controls the number of IO input threads. Defaults to -1, so the system will decide.
      * <p>
-     * If client uses {@link RoutingMode#ALL_MEMBERS} routing and processor count larger than 8,
-     * it will default to 3 otherwise it defaults to 1.
+     * If client uses non-{@link RoutingMode#SINGLE_MEMBER} routing and processor count larger than
+     * {@value TcpClientConnectionManager#SMALL_MACHINE_PROCESSOR_COUNT}, it will default to
+     * {@value TcpClientConnectionManager#DEFAULT_IO_THREAD_COUNT} otherwise it defaults to
+     * {@value TcpClientConnectionManager#DEFAULT_IO_THREAD_COUNT_SMALL_MACHINE}.
      */
     public static final HazelcastProperty IO_INPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.io.input.thread.count", -1);
@@ -135,8 +138,10 @@ public final class ClientProperty {
     /**
      * Controls the number of IO output threads. Defaults to -1, so the system will decide.
      * <p>
-     * If client use {@link RoutingMode#ALL_MEMBERS} routing and processor count larger than 8 ,
-     * it will default to 3 otherwise it defaults to 1.
+     * If client uses non-{@link RoutingMode#SINGLE_MEMBER} routing and processor count larger than
+     * {@value TcpClientConnectionManager#SMALL_MACHINE_PROCESSOR_COUNT}, it will default to
+     * {@value TcpClientConnectionManager#DEFAULT_IO_THREAD_COUNT} otherwise it defaults to
+     * {@value TcpClientConnectionManager#DEFAULT_IO_THREAD_COUNT_SMALL_MACHINE}.
      */
     public static final HazelcastProperty IO_OUTPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.io.output.thread.count", -1);
@@ -245,7 +250,7 @@ public final class ClientProperty {
      * @deprecated Use {@link #METRICS_ENABLED}
      * ({@code "hazelcast.client.metrics.enabled"}) instead.
      */
-    @Deprecated(since = "4.0")
+    @Deprecated(since = "4.0", forRemoval = true)
     public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
             false);
 
@@ -258,7 +263,7 @@ public final class ClientProperty {
      * @deprecated Use {@link #METRICS_COLLECTION_FREQUENCY}
      * ({@code "hazelcast.client.metrics.collection.frequency"}) instead.
      */
-    @Deprecated(since = "4.0")
+    @Deprecated(since = "4.0", forRemoval = true)
     public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 

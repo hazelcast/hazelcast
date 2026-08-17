@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.addToCompactSerializationAllowList;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics;
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,6 +64,7 @@ public class ReflectiveSerializationMixedRestrictionsTest {
     private Config getUnrestrictedConfig() {
         Config baseConfig = smallInstanceConfigWithoutJetAndMetrics();
         baseConfig.addMapConfig(new MapConfig(OBJECT_MAP_NAME).setInMemoryFormat(InMemoryFormat.OBJECT));
+        addToCompactSerializationAllowList(baseConfig.getSerializationConfig(), IntWrapper.class);
         return baseConfig;
     }
 
@@ -84,7 +86,9 @@ public class ReflectiveSerializationMixedRestrictionsTest {
         restrictedConfig.getSerializationConfig().getCompactSerializationConfig()
                         .setZeroConfigFilter(getRestrictionFilter());
         HazelcastInstance restrictedClient = factory.newHazelcastClient(restrictedConfig);
-        HazelcastInstance unrestrictedClient = factory.newHazelcastClient(new ClientConfig());
+        ClientConfig unrestrictedConfig = new ClientConfig();
+        addToCompactSerializationAllowList(unrestrictedConfig.getSerializationConfig(), IntWrapper.class);
+        HazelcastInstance unrestrictedClient = factory.newHazelcastClient(unrestrictedConfig);
 
         // Restricted client cannot directly write the restricted class
         assertThatThrownBy(() -> restrictedClient.getMap("map").set(0, new IntWrapper(0))).rootCause().isInstanceOf(

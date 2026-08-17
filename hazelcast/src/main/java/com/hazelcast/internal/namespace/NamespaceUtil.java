@@ -19,7 +19,7 @@ package com.hazelcast.internal.namespace;
 import com.hazelcast.function.ThrowingBiFunction;
 import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.internal.namespace.impl.NamespaceThreadLocalContext;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.jet.impl.deployment.MapResourceClassLoader;
 import com.hazelcast.spi.impl.NodeEngine;
 

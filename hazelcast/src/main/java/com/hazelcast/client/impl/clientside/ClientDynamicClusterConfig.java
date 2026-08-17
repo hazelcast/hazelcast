@@ -104,6 +104,8 @@ import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -417,7 +419,17 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public String getProperty(@Nonnull HazelcastProperty property) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public Config setProperty(@Nonnull String name, @Nonnull String value) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setProperty(@Nonnull HazelcastProperty property, @Nonnull String value) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -1211,6 +1223,7 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     @Nonnull
     public Config addVectorCollectionConfig(@Nonnull VectorCollectionConfig vectorCollectionConfig) {
+        VectorCollectionLocator.assertAvailable();
         ClientMessage request = DynamicConfigAddVectorCollectionConfigCodec.encodeRequest(
                 vectorCollectionConfig.getName(),
                 vectorCollectionConfig.getVectorIndexConfigs(),

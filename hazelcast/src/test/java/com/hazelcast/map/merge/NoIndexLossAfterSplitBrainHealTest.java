@@ -105,7 +105,7 @@ public class NoIndexLossAfterSplitBrainHealTest extends SplitBrainTestSupport {
         for (HazelcastInstance instance : instances) {
             IMap<Object, TestObject> testMap = instance.getMap(MAP_NAME);
 
-            // com.hazelcast.map.merge.NoIndexLossAfterSplitBrainHealTest.testSplitBrain [HZ-3851] #25725
+            // com.hazelcast.map.merge.NoIndexLossAfterSplitBrainHealTest.testSplitBrain [HZOLD-3851] #25725
             // The predicates are returning unexpected values, so iteratively step up through the logic chain to see where
             // exactly it goes wrong
 

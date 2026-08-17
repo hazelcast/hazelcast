@@ -97,7 +97,7 @@ public class IOUtilTest extends JetTestSupport {
                             String line = lines.iterator().next();
                             return line.equals(p.getFileName().toString() + " content");
                         } catch (IOException e) {
-                            throw ExceptionUtil.rethrow(e);
+                            throw JetExceptionUtil.rethrow(e);
                         }
                     });
             JetAssert.assertTrue("File contents are not matching", allMatch);

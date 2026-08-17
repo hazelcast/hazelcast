@@ -32,8 +32,8 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -81,7 +81,7 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
         @Override
         public void start() {
             NodeEngine nodeEngine = getNodeEngine();
-            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            OperationService operationService = nodeEngine.getOperationService();
             OperationExecutor executor = operationService.getOperationExecutor();
 
             int partitionThreadCount = executor.getPartitionThreadCount();

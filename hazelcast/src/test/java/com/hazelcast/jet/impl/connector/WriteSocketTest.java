@@ -66,6 +66,7 @@ public class WriteSocketTest extends JetTestSupport {
         verifyProcessor(writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8))
                 .input(range(0, ITEM_COUNT).boxed().collect(toList()))
                 .executeBeforeEachRun(acceptConnection)
+                .hazelcastInstance(createHazelcastInstance())
                 .disableSnapshots()
                 .expectOutput(emptyList());
 

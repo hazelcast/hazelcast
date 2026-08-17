@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.isTopologyException;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**

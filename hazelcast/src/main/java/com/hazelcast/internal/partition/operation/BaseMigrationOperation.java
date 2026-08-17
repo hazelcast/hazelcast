@@ -41,7 +41,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -101,7 +100,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     /** Verifies that the node startup is completed. */
     private void verifyNodeStarted() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         nodeStartCompleted = nodeEngine.getNode().getNodeExtension().isStartCompleted();
         if (!nodeStartCompleted) {
             throw new IllegalStateException("Migration operation is received before startup is completed. "

@@ -25,8 +25,7 @@ import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.internal.util.Clock;
 
@@ -96,8 +95,8 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     }
 
     public boolean isCallTimedOut() {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        final NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
         if (operationService.isCallTimedOut(op)) {
             cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
             return true;

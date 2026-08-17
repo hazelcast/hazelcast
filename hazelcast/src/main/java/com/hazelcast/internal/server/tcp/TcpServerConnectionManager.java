@@ -160,13 +160,9 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 return connector.asyncConnect(address, silent, plane.index);
             });
             if (isNotYetInProgress.get()) {
-                if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: %s streamId:%s is not yet in progress", address, streamId);
-                }
+                logger.fine("Connection to: %s streamId:%s is not yet in progress", address, streamId);
             } else {
-                if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: %s streamId:%s is already in progress", address, streamId);
-                }
+                logger.finest("Connection to: %s streamId:%s is already in progress", address, streamId);
             }
         }
         return connection;

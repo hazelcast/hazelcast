@@ -64,7 +64,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
     public boolean offload;
 
     /**
-     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZOLD-2837">HZOLD-2837 - Field level mutation being taken by listener as
      *      old value but not being considered by interceptor - Strange Behaviour</a>
      */
     @Test
@@ -104,7 +104,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
 
         map.executeOnKey(key, entry -> {
             // Mutate the value in the map directly - expectation is that this will not be visible to anyone -
-            // https://hazelcast.atlassian.net/browse/HZ-2837?focusedCommentId=82402
+            // https://hazelcast.atlassian.net/browse/HZOLD-2837?focusedCommentId=82402
             entry.getValue().set(Integer.MAX_VALUE);
 
             // Also, update the map entry with a new value

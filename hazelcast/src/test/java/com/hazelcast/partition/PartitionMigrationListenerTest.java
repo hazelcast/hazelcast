@@ -336,7 +336,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     }
 
     /**
-     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2651">HZ-2651 - MigrationListener: Difference between
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZOLD-2651">HZOLD-2651 - MigrationListener: Difference between
      * "wall clock elapsed time" and the totalElasedTime API</a>
      */
     @Test

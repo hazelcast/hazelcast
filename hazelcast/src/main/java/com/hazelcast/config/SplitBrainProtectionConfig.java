@@ -224,7 +224,7 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
         listenerConfigs = readNullableList(in);
         protectOn = SplitBrainProtectionOn.valueOf(in.readString());
         functionClassName = in.readString();
-        functionImplementation = in.readObject();
+        functionImplementation = ConfigDeserializationUtil.readObject(in, getClass(), "functionImplementation");
     }
 
     /**

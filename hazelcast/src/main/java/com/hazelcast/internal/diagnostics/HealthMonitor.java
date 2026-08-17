@@ -26,10 +26,12 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.vector.impl.spi.VectorCollectionLocator;
 
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.valueOf;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.VECTOR_QUERY_EXECUTOR;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
@@ -290,6 +292,9 @@ public class HealthMonitor {
         final LongGauge tcpConnectionClientCount
                 = metricRegistry.newLongGauge("tcp.connection.clientCount");
 
+        final LongGauge executorVectorQueryQueueSize
+            = metricRegistry.newLongGauge("executor." + VECTOR_QUERY_EXECUTOR + ".queueSize");
+
         final StringBuilder sb = new StringBuilder();
         private double memoryUsedOfTotalPercentage;
         private double memoryUsedOfMaxPercentage;
@@ -347,6 +352,7 @@ public class HealthMonitor {
             renderProxy();
             renderClient();
             renderConnection();
+            renderVectorCollection();
             return sb.toString();
         }
 
@@ -519,6 +525,13 @@ public class HealthMonitor {
                     .append(format("%.2f", operationServicePendingInvocationsPercentage0)).append("%, ");
             sb.append("operations.pending.invocations.count=")
                     .append(operationServicePendingInvocationsCount0).append(", ");
+        }
+
+        private void renderVectorCollection() {
+            if (VectorCollectionLocator.isAvailable()) {
+                sb.append("executor.q.vector.query.size=")
+                    .append(executorVectorQueryQueueSize.read()).append(", ");
+            }
         }
     }
 

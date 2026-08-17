@@ -33,7 +33,9 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.hazelcast.config.vector.VectorTestHelper.buildVectorCollectionConfig;
+import static com.hazelcast.vector.impl.spi.VectorCollectionLocator.MISSED_VECTOR_MODULE_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -266,8 +268,8 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
         );
     }
 
-    // client test fails because codecs are registered in EE module
-    @Test(expected = UnsupportedOperationException.class)
+    // client test fails because codecs are registered in hazelcast-vector module
+    @Test
     public void clientTest_addAndGetVectorCollectionConfig_then_fail_in_os() {
         var vectorCollectionConfig1 = buildVectorCollectionConfig(
                 "vector_collection-1",
@@ -278,7 +280,10 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
                 12,
                 true
         );
-        client.getConfig().addVectorCollectionConfig(vectorCollectionConfig1);
+        assertThatCode(() -> client.getConfig().addVectorCollectionConfig(vectorCollectionConfig1))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage(MISSED_VECTOR_MODULE_MESSAGE);
+
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -19,7 +19,7 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;

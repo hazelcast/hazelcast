@@ -27,11 +27,13 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -44,6 +46,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * per map, not per record store). Fires cleanup operations at most
  * partition operation thread count or some factor of it in one round.
  * <ul>
+ * <li>
+ * {@value PROP_CLEANUP_ENABLED}: Enables or disables periodic cleanup of expired map entries.
+ * The cleanup task is enabled by default.
+ * </li>
  * <li>
  * {@value PROP_TASK_PERIOD_SECONDS}: The time between termination of
  * one execution of this task and the commencement of the next one.
@@ -142,14 +148,15 @@ public class MapClearExpiredRecordsTask
     }
 
     @Override
-    protected Operation newPrimaryExpiryOp(int expirationPercentage, PartitionContainer container) {
+    protected Operation newPrimaryExpiryOp(PartitionContainer container, int expirationPercentage) {
         int partitionId = container.getPartitionId();
-        return new MapClearExpiredOperation(expirationPercentage)
-                .setNodeEngine(nodeEngine)
-                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
-                .setPartitionId(partitionId)
-                .setValidateTarget(false)
-                .setServiceName(SERVICE_NAME);
+        Collection<String> keySet = container.getMaps().keySet();
+        if (keySet.isEmpty()) {
+            return null;
+        }
+        Queue<String> mapNames = new ArrayDeque<>(keySet);
+        return MapClearExpiredOperation.newOperation(
+                nodeEngine, partitionId, mapNames, expirationPercentage);
     }
 
     @Override

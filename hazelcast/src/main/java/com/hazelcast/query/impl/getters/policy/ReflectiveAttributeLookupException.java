@@ -18,14 +18,18 @@ package com.hazelcast.query.impl.getters.policy;
 
 /**
  * Indicates that a reflective accessor is not allowed by the configured attribute lookup policy.
+ * For internal use only, this should not be passed to the end user.
  */
 public class ReflectiveAttributeLookupException extends Exception {
 
+    // public for testing purposes
+    public static final String POLICY_HINT = String.format(
+            "%nThe reflective attribute lookup policy can be changed by using the property '%s' to "
+                    + "define a policy from one of the following: %s",
+            ReflectiveAttributeLookupPolicy.REFLECTIVE_ATTRIBUTE_LOOKUP_POLICY.getName(),
+            ReflectiveAttributeLookupPolicy.Policy.getPolicyNames());
+
     public ReflectiveAttributeLookupException(String message) {
-        // Append useful information for users to select their policy if they see exceptions
-        super(message + String.format("%nThe reflective attribute lookup policy can be changed by using the property '%s' to "
-                + "define a policy from one of the following: %s",
-                ReflectiveAttributeLookupPolicy.REFLECTIVE_ATTRIBUTE_LOOKUP_POLICY.getName(),
-                ReflectiveAttributeLookupPolicy.Policy.getPolicyNames()));
+        super(message + POLICY_HINT);
     }
 }

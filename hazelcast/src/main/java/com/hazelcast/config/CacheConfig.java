@@ -22,7 +22,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.Duration
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
@@ -736,9 +736,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
     }
 
     protected void readFactories(ObjectDataInput in) throws IOException {
-        setCacheLoaderFactory(in.readObject());
-        setCacheWriterFactory(in.readObject());
-        setExpiryPolicyFactory(in.readObject());
+        setCacheLoaderFactory(ConfigDeserializationUtil.readObject(in, getClass(), "cacheLoaderFactory"));
+        setCacheWriterFactory(ConfigDeserializationUtil.readObject(in, getClass(), "cacheWriterFactory"));
+        setExpiryPolicyFactory(ConfigDeserializationUtil.readObject(in, getClass(), "expiryPolicyFactory"));
     }
 
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {

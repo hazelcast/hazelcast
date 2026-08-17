@@ -96,8 +96,8 @@ public final class EntryOperator {
      * A clone of {@link #oldValue} that can be passed to the {@link #mapEventPublisher} to ensure isolation from any subsequent
      * mutations (e.g. in an {@link EntryProcessor})
      *
-     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
-     *      old value but not being considered by interceptor - Strange Behaviour</a>
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZOLD-2837">HZOLD-2837 - Field level mutation being taken by listener
+     *      as old value but not being considered by interceptor - Strange Behaviour</a>
      */
     private Object oldValueClone;
     private EntryEventType eventType;

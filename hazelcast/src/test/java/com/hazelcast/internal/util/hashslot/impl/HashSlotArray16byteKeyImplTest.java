@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.Random;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
-import static org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;

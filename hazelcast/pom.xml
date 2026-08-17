@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.8.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -35,7 +35,6 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <pax.exam.version>2.6.0</pax.exam.version>
-        <pax.runner.version>1.8.6</pax.runner.version>
     </properties>
 
     <build>
@@ -51,7 +50,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <useNativeGit>false</useNativeGit>
+                    <useNativeGit>${git.useNativeGit}</useNativeGit>
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <abbrevLength>7</abbrevLength>
@@ -319,6 +318,7 @@
                             <instructions>
                                 <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
                                 <Export-Package>
+                                    !com.hazelcast.shaded.*,
                                     com.hazelcast.*
                                 </Export-Package>
                                 <Import-Package>
@@ -598,6 +598,54 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <!--
+            Configures execution to optimize runtime of the PR builder, by excluding tasks not required for build validation (e.g., shading)
+            -->
+            <id>pr-builder</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>usercodedeployment-child-parent</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-entry-processor-with-anonymous-and-inner</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-incrementing-entry-processor</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-incrementing-entry-processor-conflicting</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-shaded-classes</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <!-- Needed for TPC -->
         <dependency>
@@ -616,12 +664,10 @@
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>compile</scope>
         </dependency>
 
         <!-- many libs and extensions still depend on old Jackson, include it as well -->
@@ -629,13 +675,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson2.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson2.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>tools.jackson.jr</groupId>
@@ -648,18 +692,15 @@
         <dependency>
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.objenesis</groupId>
             <artifactId>objenesis</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
             <version>4.8.184</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
@@ -679,7 +720,10 @@
                     <artifactId>commons-validator</artifactId>
                 </exclusion>
             </exclusions>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
         </dependency>
 
         <!-- HazelcastCommandLine dependencies - optional, packaged in server distribution -->
@@ -771,6 +815,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>net.spy</groupId>
             <artifactId>spymemcached</artifactId>
             <version>2.12.3</version>
@@ -798,45 +847,17 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- Needed by HazelcastOSGiScriptEngineFactoryTest, which uses Groovy ScriptingEngine -->
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
+            <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.4.21</version>
-            <scope>provided</scope>
+            <version>5.0.7</version>
+            <type>pom</type>
+            <scope>test</scope>
             <optional>true</optional>
         </dependency>
 
-        <!-- OSGI testing -->
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-junit4</artifactId>
-            <version>${pax.exam.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>junit</artifactId>
-                    <groupId>junit</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-container-paxrunner</artifactId>
-            <version>${pax.exam.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-link-mvn</artifactId>
-            <version>${pax.exam.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.runner</groupId>
-            <artifactId>pax-runner-no-jcl</artifactId>
-            <version>${pax.runner.version}</version>
-            <scope>test</scope>
-        </dependency>
         <!-- HyperLogLog testing -->
         <dependency>
             <groupId>org.hdrhistogram</groupId>
@@ -864,10 +885,6 @@
                     <groupId>*</groupId>
                     <artifactId>artemis-jms-client</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
             </exclusions>
 
         </dependency>
@@ -886,7 +903,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.6.0</version>
+            <version>3.7.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -969,7 +986,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>7.0.2</version>
+            <version>7.1.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -982,23 +999,11 @@
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-server-mock</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>junit</artifactId>
-                    <groupId>junit</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>junit</artifactId>
-                    <groupId>junit</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -1010,6 +1015,50 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- OSGI testing -->
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-junit4</artifactId>
+            <version>${pax.exam.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-container-paxrunner</artifactId>
+            <version>${pax.exam.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-link-mvn</artifactId>
+            <version>${pax.exam.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!--
+			Includes it's own shaded, unrelocated, outdated copy of:
+	        - `commons-io`
+	        - `maven-resolver-impl`
+	        etc
+	        Hence must be declared last, after the real dependencies to ensure the correct classes are used
+        -->
+        <dependency>
+            <groupId>org.ops4j.pax.runner</groupId>
+            <artifactId>pax-runner-no-jcl</artifactId>
+            <version>1.9.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-testkit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

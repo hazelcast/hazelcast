@@ -22,7 +22,7 @@ import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.dataconnection.impl.jdbcproperties.HikariTranslator;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.dataconnection.impl.DatabaseDialect.resolveDialect;
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator.translate;
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 import static java.util.Locale.ROOT;
 
 /**
@@ -71,7 +72,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     public JdbcDataConnection(DataConnectionConfig config) {
         super(config);
         if (config.isShared()) {
-            this.pooledDataSourceSup = new ConcurrentMemoizingSupplier<>(this::createHikariDataSource);
+            this.pooledDataSourceSup = memoizeConcurrent(this::createHikariDataSource);
         } else {
             this.singleUseConnectionSup = createSingleConnectionSup();
         }

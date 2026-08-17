@@ -34,7 +34,6 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -139,9 +138,12 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Callback which is called when the record is being accessed from the record or index store.
+     * Implementations may suppress read-side bookkeeping while the store cannot
+     * safely be mutated, for example during partition migration.
      * <p>
      * An implementation is not supposed to be thread safe.
      *
+     * @param dataKey key of the accessed record
      * @param record the accessed record
      * @param now    the current time
      */
@@ -479,13 +481,24 @@ public interface RecordStore<R extends Record> {
     R getRecordOrNull(Data key, boolean backup);
 
     /**
-     * Check if record is reachable according to TTL or idle times.
+     * Checks if the record for the given key has expired according to its
+     * TTL or max-idle time and, if so, evicts it and publishes an expiry
+     * event.
+     * <p>
+     * If mutations from read paths are currently not allowed (e.g. the partition
+     * is migrating or the cluster is in {@code PASSIVE} state), the expired entry is
+     * <em>not</em> physically removed, but this method still returns
+     * {@code true} so callers treat it as expired. The entry is left in
+     * place to avoid mutating the record store and its expiry metadata
+     * (e.g. while a live migration iterator is in use); it will be cleaned
+     * up later by the background expiry task or a subsequent operation.
      *
+     * @param key    key of the record to check
      * @param now    current time in millis
-     * @param backup <code>true</code> if a backup
-     *               partition, otherwise <code>false</code>.
-     * @return {@code true} if record has been evicted
-     * due to the expiry, otherwise return {@code false}.
+     * @param backup {@code true} if this is a backup partition,
+     *               otherwise {@code false}
+     * @return {@code true} if the record has expired (whether or not it
+     * was physically evicted), otherwise {@code false}
      */
     boolean evictIfExpired(Data key, long now, boolean backup);
 
@@ -509,7 +522,7 @@ public interface RecordStore<R extends Record> {
 
     R createRecord(Data key, Object value, long now);
 
-    R loadRecordOrNull(Data key, boolean backup, Address callerAddress, long now);
+    R loadAndCreateRecordOrNull(Data key, boolean backup, Address callerAddress, long now);
 
     /**
      * This can be used to release unused resources.
@@ -682,11 +695,12 @@ public interface RecordStore<R extends Record> {
         // no-op
     }
 
-    Set<MapOperation> getOffloadedOperations();
-
-    void incMapStoreOffloadedOperationsCount();
-
-    void decMapStoreOffloadedOperationsCount();
+    /**
+     * @return state of the map-store offloaded-operations machinery
+     * for this record store: the queue of step-based operations and
+     * the chain-ownership used to serialize their execution.
+     */
+    OffloadedOperations getOffloadedOperations();
 
     long getMapStoreOffloadedOperationsCount();
 

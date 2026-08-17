@@ -81,7 +81,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             Comparator.comparing(IndexIterationPointer::getTo, OrderedIndexStore.SPECIAL_AWARE_COMPARATOR);
     // Note that this ordering is not fully compatible with equals as it ignores inclusiveness.
     // This is sufficient for the purpose of normalization.
-    // TODO: revisit in https://hazelcast.atlassian.net/browse/HZ-3093
+    // TODO: revisit in https://hazelcast.atlassian.net/browse/HZOLD-3093
     //  maybe this is ok because IndexIterationPointer should not (?) contain NativeMemoryData
     private static final Comparator<IndexIterationPointer> POINTER_COMPARATOR = FROM_COMPARATOR.thenComparing(TO_COMPARATOR);
     private static final Comparator<IndexIterationPointer> POINTER_COMPARATOR_REVERSED = POINTER_COMPARATOR.reversed();

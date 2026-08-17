@@ -74,7 +74,7 @@ public enum PhoneHomeMetrics implements Metric {
      * Maintained for backward-compatibility (in PhoneHome reports), but otherwise deprecated, please use
      * {@link #EXACT_CLUSTER_SIZE} instead.
      */
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     CLUSTER_SIZE("crsz"),
     EXACT_CLUSTER_SIZE("ecrsz"),
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),

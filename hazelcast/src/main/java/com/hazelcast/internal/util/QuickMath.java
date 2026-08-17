@@ -17,6 +17,8 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.tpcengine.util.BitUtil;
+
 /**
  * The class {@code QuickMath} contains methods to perform optimized mathematical operations.
  * Methods are allowed to put additional constraints on the range of input values if required for efficiency.
@@ -68,18 +70,9 @@ public final class QuickMath {
         return a & (b - 1);
     }
 
-    /**
-     * Fast method of finding the next power of 2 greater than or equal to the supplied value.
-     * <p>
-     * If the value is &lt;= 0 then 1 will be returned.
-     * <p>
-     * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
-     *
-     * @param value from which to search for next power of 2
-     * @return The next power of 2 or the value itself if it is a power of 2
-     */
+    /** @see BitUtil#nextPowerOfTwo(int) */
     public static int nextPowerOfTwo(final int value) {
-        return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
+        return BitUtil.nextPowerOfTwo(value);
     }
 
     /**
@@ -194,27 +187,5 @@ public final class QuickMath {
             hexChars[j * 2 + 1] = hexArray[v & 0xf];
         }
         return new String(hexChars);
-    }
-
-    /**
-     * Compares two integers
-     *
-     * @param i1 First number to compare with second one
-     * @param i2 Second number to compare with first one
-     * @return +1 if i1 &gt; i2, -1 if i2 &gt; i1, 0 if i1 and i2 are equals
-     */
-    public static int compareIntegers(int i1, int i2) {
-        return Integer.compare(i1, i2);
-    }
-
-    /**
-     * Compares two longs
-     *
-     * @param l1 First number to compare with second one
-     * @param l2 Second number to compare with first one
-     * @return +1 if l1 &gt; l2, -1 if l2 &gt; l1, 0 if l1 and l2 are equals
-     */
-    public static int compareLongs(long l1, long l2) {
-        return Long.compare(l1, l2);
     }
 }

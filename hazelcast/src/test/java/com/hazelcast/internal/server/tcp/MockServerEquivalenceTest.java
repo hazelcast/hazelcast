@@ -22,9 +22,9 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.util.RestoreSystemProperties;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junitpioneer.jupiter.RestoreSystemProperties;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;

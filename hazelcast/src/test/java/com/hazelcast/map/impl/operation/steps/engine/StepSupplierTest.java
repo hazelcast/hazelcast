@@ -19,6 +19,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil;
@@ -26,10 +28,13 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.map.impl.operation.steps.GetOpSteps;
 import com.hazelcast.map.impl.operation.steps.IMapOpStep;
 import com.hazelcast.map.impl.operation.steps.PutOpSteps;
+import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -44,14 +49,18 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -96,6 +105,136 @@ public class StepSupplierTest extends HazelcastTestSupport {
         Runnable get1 = stepSupplier.get();
         Runnable get2 = stepSupplier.get();
         assertEquals(get1, get2);
+    }
+
+    @Test
+    public void migrationOfAnotherPartition_doesNotFailStepSupplier() throws Exception {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        int partitionId = 1;
+        StepSupplier stepSupplier = newStepSupplier(node, partitionId);
+
+        stepSupplier.get().run();
+        getMapService(node).beforeMigration(new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId + 1, 0, 1, UUID.randomUUID()));
+        stepSupplier.get().run();
+
+        assertNotSame(UtilSteps.HANDLE_ERROR, stepSupplier.getCurrentStep());
+    }
+
+    @Test
+    public void migrationOfOperationPartition_failsStepSupplier() throws Exception {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        int partitionId = 1;
+        StepSupplier stepSupplier = newStepSupplier(node, partitionId);
+
+        stepSupplier.get().run();
+        getMapService(node).beforeMigration(new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
+        stepSupplier.get().run();
+
+        assertSame(UtilSteps.HANDLE_ERROR, stepSupplier.getCurrentStep());
+    }
+
+    @Test
+    public void readonlyInMemoryRead_doesNotValidateMigrationStamp() throws Exception {
+        String mapName = "map";
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        IMap<String, String> map = node.getMap(mapName);
+        map.put("key", "value");
+
+        Data key = Accessors.getSerializationService(node).toData("key");
+        int partitionId = Accessors.getPartitionService(node).getPartitionId(key);
+        GetOperation operation = newGetOperation(node, mapName, key, partitionId);
+        StepSupplier stepSupplier = new StepSupplier(operation, false);
+
+        PartitionMigrationEvent event = new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID());
+        MapService mapService = getMapService(node);
+        mapService.beforeMigration(event);
+        try {
+            stepSupplier.get().run();
+            assertSame(GetOpSteps.RESPONSE, stepSupplier.getCurrentStep());
+
+            stepSupplier.get().run();
+            assertSame(UtilSteps.FINAL_STEP, stepSupplier.getCurrentStep());
+        } finally {
+            mapService.rollbackMigration(event);
+        }
+    }
+
+    @Test
+    public void migrationBeforeReadonlyMapStoreLoad_failsBeforeInvokingLoader() throws Exception {
+        String mapName = "map";
+        AtomicInteger loadCount = new AtomicInteger();
+        Config config = getConfig();
+        config.getMapConfig(mapName).setMapStoreConfig(new MapStoreConfig()
+                .setImplementation(new MapStoreAdapter<Object, Object>() {
+                    @Override
+                    public Object load(Object key) {
+                        loadCount.incrementAndGet();
+                        return null;
+                    }
+                })
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY));
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        Data key = Accessors.getSerializationService(node).toData("key");
+        int partitionId = Accessors.getPartitionService(node).getPartitionId(key);
+        GetOperation operation = newGetOperation(node, mapName, key, partitionId);
+        StepSupplier stepSupplier = new StepSupplier(operation, false);
+        stepSupplier.get().run();
+        assertSame(GetOpSteps.LOAD, stepSupplier.getCurrentStep());
+
+        PartitionMigrationEvent event = new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID());
+        MapService mapService = getMapService(node);
+        mapService.beforeMigration(event);
+        try {
+            stepSupplier.get().run();
+            assertSame(UtilSteps.HANDLE_ERROR, stepSupplier.getCurrentStep());
+            assertEquals(0, loadCount.get());
+        } finally {
+            mapService.rollbackMigration(event);
+        }
+    }
+
+    @Test
+    public void migrationDuringReadonlyMapStoreLoad_failsBeforeResponse() throws Exception {
+        String mapName = "map";
+        AtomicReference<Runnable> duringLoad = new AtomicReference<>();
+        Config config = getConfig();
+        config.getMapConfig(mapName).setMapStoreConfig(new MapStoreConfig()
+                .setImplementation(new MapStoreAdapter<Object, Object>() {
+                    @Override
+                    public Object load(Object key) {
+                        duringLoad.get().run();
+                        return null;
+                    }
+                })
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY));
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        Data key = Accessors.getSerializationService(node).toData("key");
+        int partitionId = Accessors.getPartitionService(node).getPartitionId(key);
+        GetOperation operation = newGetOperation(node, mapName, key, partitionId);
+
+        StepSupplier stepSupplier = new StepSupplier(operation, false);
+        stepSupplier.get().run();
+        assertSame(GetOpSteps.LOAD, stepSupplier.getCurrentStep());
+
+        PartitionMigrationEvent event = new PartitionMigrationEvent(
+                MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID());
+        MapService mapService = getMapService(node);
+        duringLoad.set(() -> mapService.beforeMigration(event));
+        try {
+            stepSupplier.get().run();
+            assertSame(GetOpSteps.RESPONSE, stepSupplier.getCurrentStep());
+
+            stepSupplier.get().run();
+            assertSame(UtilSteps.HANDLE_ERROR, stepSupplier.getCurrentStep());
+        } finally {
+            mapService.rollbackMigration(event);
+        }
     }
 
     @Test
@@ -179,6 +318,29 @@ public class StepSupplierTest extends HazelcastTestSupport {
         assertFalse(DummyPutOpSteps.executed);
     }
 
+    private StepSupplier newStepSupplier(HazelcastInstance node, int partitionId) throws Exception {
+        Data data = Accessors.getSerializationService(node).toData("data");
+        MapOperation operation = new SetOperation("map", data, data);
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(partitionId);
+        operation.beforeRun();
+        return new StepSupplier(operation, false);
+    }
+
+    private GetOperation newGetOperation(HazelcastInstance node, String mapName,
+                                         Data key, int partitionId) throws Exception {
+        GetOperation operation = new GetOperation(mapName, key);
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(partitionId);
+        operation.setServiceName(MapService.SERVICE_NAME);
+        operation.beforeRun();
+        return operation;
+    }
+
+    private MapService getMapService(HazelcastInstance node) {
+        return Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+    }
+
     private enum DummyPutOpSteps implements IMapOpStep {
         DUMMY_READ {
             @Override
@@ -245,7 +407,7 @@ public class StepSupplierTest extends HazelcastTestSupport {
 
         StepSupplier stepSupplier = new StepSupplier(operation, false);
         for (int i = expectedSteps.size() - 1; i >= 0; i--) {
-              stepSupplier.accept(expectedSteps.get(i));
+            stepSupplier.accept(expectedSteps.get(i));
         }
 
         List<Step> actualSteps = new ArrayList<>();

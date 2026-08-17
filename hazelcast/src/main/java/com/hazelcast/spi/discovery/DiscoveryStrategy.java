@@ -77,7 +77,7 @@ public interface DiscoveryStrategy {
      * @param allMembers Current state of Cluster data members, excluding lite members
      * @return a custom implementation of a <code>PartitionGroupStrategy</code> otherwise <code>null</code>
      * in case of the default implementation is to be used
-     * @since 4.2.1
+     * @since 4.2
      */
     default PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
         return null;

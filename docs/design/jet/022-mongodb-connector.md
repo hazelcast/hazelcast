@@ -15,7 +15,7 @@
 
 |                                |                                                  |
 |--------------------------------|--------------------------------------------------|
-| Related Jira                   | _https://hazelcast.atlassian.net/browse/HZ-1508_ |
+| Related Jira                   | _https://hazelcast.atlassian.net/browse/HZOLD-1508_ |
 | Related Github issues          | _None_                                           |
 | Document Status / Completeness | DRAFT                                            |
 | Requirement owner              | _TBD_                                            |

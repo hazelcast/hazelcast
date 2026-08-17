@@ -19,20 +19,25 @@ package com.hazelcast.jet.kafka.connect.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
+import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
+import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.Message;
+import org.apache.kafka.common.metrics.Metrics;
+import org.apache.kafka.common.metrics.PluginMetrics;
+import org.apache.kafka.common.metrics.internals.PluginMetricsImpl;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -43,8 +48,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 
@@ -76,6 +82,8 @@ public class SourceConnectorWrapper {
     private Consumer<Boolean> activeStatusSetter = ignored -> {
     };
     private transient Exception lastConnectionException;
+    private Metrics metrics;
+    private PluginMetrics pluginMetrics;
 
     public SourceConnectorWrapper(Properties currentConfig, int processorOrder, Context context) {
         this(currentConfig, processorOrder, context, DEFAULT_RECONNECT_BEHAVIOR);
@@ -123,10 +131,12 @@ public class SourceConnectorWrapper {
         logger.info("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
 
         try {
+            metrics = new Metrics();
+            pluginMetrics = new PluginMetricsImpl(metrics, Map.of());
             sourceConnector = newConnectorInstance(connectorClazz);
 
             if (isMasterProcessor) {
-                sourceConnector.initialize(new JetConnectorContext());
+                sourceConnector.initialize(new JetConnectorContext(pluginMetrics));
                 logger.fine("Starting connector '%s'. Below are the propertiesFromUser", name);
                 sourceConnector.start(currentConfig);
                 logger.fine("Connector '%s' started", name);
@@ -140,6 +150,7 @@ public class SourceConnectorWrapper {
             if (sourceConnector != null) {
                 sourceConnector.stop();
                 sourceConnector = null;
+                closeResource(metrics);
             }
             lastConnectionException = e;
             return;
@@ -187,16 +198,17 @@ public class SourceConnectorWrapper {
     // Package private for testing
     TaskRunner createTaskRunner() {
         String taskName = name + "-task-" + processorOrder;
-        taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
+        taskRunner = new TaskRunner(taskName, state, this::createSourceTask, pluginMetrics);
         requestTaskReconfiguration();
         return taskRunner;
     }
+
     private SourceTask createSourceTask() {
         Class<? extends SourceTask> taskClass = sourceConnector.taskClass().asSubclass(SourceTask.class);
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-     void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
+    void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
         this.activeStatusSetter = activeStatusSetter;
     }
 
@@ -335,6 +347,7 @@ public class SourceConnectorWrapper {
         taskRunner.stop();
         sourceConnector.stop();
         destroyTopic();
+        closeResource(metrics);
         logger.info("Connector '" + name + "' stopped");
     }
 
@@ -362,12 +375,22 @@ public class SourceConnectorWrapper {
             }
             // Publish taskConfigs
             TaskConfigMessage taskConfigMessage = new TaskConfigMessage();
-            taskConfigMessage.setTaskConfigs(taskConfigs);
+            // This message is serialized and submitted to a topic, it has to be deserializable
+            // independently of the jet classloader associated with a job (if any).
+            taskConfigMessage.setTaskConfigs(ensureIndependentFromJetClassLoader(taskConfigs));
             publishMessage(taskConfigMessage);
             logger.fine(taskConfigs.size() + " task configs were sent");
         } finally {
             reconfigurationLock.unlock();
         }
+    }
+
+    private List<Map<String, String>> ensureIndependentFromJetClassLoader(List<Map<String, String>> input) {
+        if (input.getClass().getClassLoader() instanceof JetClassLoader || input.stream().anyMatch(
+                m -> m.getClass().getClassLoader() instanceof JetClassLoader)) {
+            return input.stream().<Map<String, String>>map(HashMap::new).toList();
+        }
+        return input;
     }
 
     @Override
@@ -386,6 +409,12 @@ public class SourceConnectorWrapper {
     }
 
     private class JetConnectorContext implements ConnectorContext {
+        private final PluginMetrics pluginMetrics;
+
+        JetConnectorContext(PluginMetrics pluginMetrics) {
+            this.pluginMetrics = pluginMetrics;
+        }
+
         @Override
         public void requestTaskReconfiguration() {
             SourceConnectorWrapper.this.requestTaskReconfiguration();
@@ -394,6 +423,11 @@ public class SourceConnectorWrapper {
         @Override
         public void raiseError(Exception e) {
             throw rethrow(e);
+        }
+
+        @Override
+        public PluginMetrics pluginMetrics() {
+            return pluginMetrics;
         }
     }
 }

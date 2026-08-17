@@ -184,7 +184,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
             properties.put(in.readString(), in.readObject());
         }
         className = in.readString();
-        implementation = in.readObject();
+        implementation = ConfigDeserializationUtil.readObject(in, getClass(), "implementation");
         persistWanReplicatedData = in.readBoolean();
     }
 

@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc;
 
 import com.hazelcast.client.config.ClientConfig;
@@ -31,7 +30,6 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.io.Serial;
 import java.security.Permission;
 import java.util.List;
@@ -95,7 +93,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Restarting the CDC Jet source will not change sequence number sources,
  * only significant changes on the database side will.
  *
- * @since Jet 4.2
+ * @since 5.5
  */
 public final class CdcSinks {
 
@@ -107,7 +105,7 @@ public final class CdcSinks {
      * <p>
      * The default value is 10 seconds.
      *
-     * @since Jet 4.2
+     * @since 5.5
      */
     public static final HazelcastProperty SEQUENCE_CACHE_EXPIRATION_SECONDS
             = new HazelcastProperty("jet.cdc.sink.sequence.cache.expiration.seconds", 10, SECONDS);
@@ -145,7 +143,7 @@ public final class CdcSinks {
      * then the key will be deleted no matter the operation (i.e. even for
      * update and insert records).
      *
-     * @since Jet 4.2
+     * @since 5.5
      */
     @Nonnull
     public static <K, V> Sink<ChangeRecord> map(
@@ -187,7 +185,7 @@ public final class CdcSinks {
      * then the key will be deleted no matter the operation (i.e. even for
      * update and insert records).
      *
-     * @since Jet 4.2
+     * @since 5.5
      */
     @Nonnull
     public static <K, V> Sink<ChangeRecord> map(
@@ -210,10 +208,8 @@ public final class CdcSinks {
      * <strong>NOTE 2:</strong> if {@code valueFn} returns {@code null},
      * then the key will be deleted no matter the operation (i.e. even for
      * update and insert records).
-     * <p>
-     * Due to the used API, the remote cluster must be at least version 4.0.
      *
-     * @since Jet 4.2
+     * @since 5.5
      */
     @Nonnull
     public static <K, V> Sink<ChangeRecord> remoteMap(
@@ -235,7 +231,7 @@ public final class CdcSinks {
             @Nonnull FunctionEx<? super ChangeRecord, ? extends V> valueFn
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
-                changeRecord -> DELETE == changeRecord.operation() ? null : valueFn.apply(changeRecord);
+                changeRecord -> DELETE.equals(changeRecord.operation()) ? null : valueFn.apply(changeRecord);
         String clientXml = asXmlString(clientConfig);
         ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(clientXml,
                 procFn(name, map, clientXml, keyFn, toValueFn));

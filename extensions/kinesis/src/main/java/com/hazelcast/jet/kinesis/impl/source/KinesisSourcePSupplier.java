@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.Record;
-import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
@@ -26,6 +23,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.Record;
+import software.amazon.awssdk.services.kinesis.model.Shard;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -58,7 +58,7 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
 
     private transient int memberCount;
     private transient ILogger logger;
-    private transient AmazonKinesisAsync client;
+    private transient KinesisAsyncClient client;
 
     public KinesisSourcePSupplier(
             @Nonnull AwsConfig awsConfig,
@@ -131,9 +131,8 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
     }
 
     @Override
-    public void close(@Nullable Throwable error) {
-        if (client != null) {
-            client.shutdown();
-        }
+    public void close(@Nullable Throwable error) throws Exception {
+        // no-op
+        // See CTT-661 and KinesisStressIntegrationTest for more context
     }
 }

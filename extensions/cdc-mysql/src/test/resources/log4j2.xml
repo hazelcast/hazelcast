@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <Configuration status="ERROR">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
@@ -10,7 +9,8 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="org.testcontainers" level="DEBUG"/>
-        <Logger name="org.testcontainers.shaded" level="INFO"/>
+        <Logger name="com.hazelcast.jet" level="INFO"/>
+        <Logger name="com.hazelcast.jet.impl.MasterSnapshotContext" level="WARN"/>
+        <Logger name="io.debezium.pipeline.JmxUtils" level="ERROR"/>
     </Loggers>
 </Configuration>

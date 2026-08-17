@@ -34,7 +34,6 @@ import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -190,11 +190,8 @@ public class WatermarkKeysAssigner {
                     throw QueryException.error("Right input of stream-to-stream JOIN doesn't contain watermarks");
                 }
 
-                Map<Integer, MutableByte> joinedRefByteMap = new HashMap<>();
                 int leftFieldCount = join.getLeft().getRowType().getFieldCount();
-                for (Entry<Integer, MutableByte> en : leftWmKeyMapping.entrySet()) {
-                    joinedRefByteMap.put(en.getKey(), en.getValue());
-                }
+                Map<Integer, MutableByte> joinedRefByteMap = new HashMap<>(leftWmKeyMapping);
                 for (Entry<Integer, MutableByte> en : rightWmKeyMapping.entrySet()) {
                     joinedRefByteMap.put(en.getKey() + leftFieldCount, en.getValue());
                 }

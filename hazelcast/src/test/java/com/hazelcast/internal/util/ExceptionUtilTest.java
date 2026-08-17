@@ -17,27 +17,26 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.internal.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowFromCollection;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@QuickTest
+@ParallelJVMTest
 public class ExceptionUtilTest extends HazelcastTestSupport {
 
     private final Throwable throwable = new RuntimeException("expected exception");
@@ -74,7 +73,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         ExecutionException exception = new ExecutionException(null);
         RuntimeException result = ExceptionUtil.peel(exception);
 
-        assertTrue(result instanceof HazelcastException);
+        assertInstanceOf(HazelcastException.class, result);
         assertEquals(exception, result.getCause());
     }
 
@@ -146,6 +145,22 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         ExceptionUtil.tryCreateExceptionWithMessageAndCause(
                 ExceptionThatHasCauseImplicitlyByMessageConstructor.class, "", new RuntimeException()
         );
+    }
+
+    @Test
+    public void testIsOrHasCauseDoesNotCycle() {
+        IllegalArgumentException a = new IllegalArgumentException();
+        IllegalStateException b = new IllegalStateException();
+        ExceptionUtils.setCause(a, b);
+        ExceptionUtils.setCause(b, a);
+
+        assertThat(isOrHasCause(a, IllegalStateException.class)).isTrue();
+        assertThat(isOrHasCause(b, IllegalStateException.class)).isTrue();
+        assertThat(isOrHasCause(a, IllegalArgumentException.class)).isTrue();
+        assertThat(isOrHasCause(b, IllegalArgumentException.class)).isTrue();
+
+        assertThat(isOrHasCause(a, TestException.class)).isFalse();
+        assertThat(isOrHasCause(b, TestException.class)).isFalse();
     }
 
     private void assertNoAsyncTrace(Throwable result) {

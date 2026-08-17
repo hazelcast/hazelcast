@@ -18,6 +18,8 @@ package com.hazelcast.jet.mongodb;
 
 import com.google.common.collect.Sets;
 import com.hazelcast.collection.IList;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
@@ -30,6 +32,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.Test;
@@ -39,6 +42,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +50,7 @@ import java.util.Set;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.mongodb.MongoSources.batch;
 import static com.hazelcast.jet.mongodb.MongoSources.stream;
-import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.map;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
@@ -187,7 +191,7 @@ public class MongoSourceTest extends AbstractMongoTest {
             sourceBuilder.sort(ascending("val"));
         }
         if (map) {
-            sourceBuilder.mapFn(Mappers.toClass(KV.class));
+            sourceBuilder.mapFn(toClass(KV.class));
         }
         return sourceBuilder;
     }
@@ -388,7 +392,7 @@ public class MongoSourceTest extends AbstractMongoTest {
     }
 
     @SuppressWarnings("unused") // getters/setters are for Mongo converter
-    public static class KV {
+    public static class KV implements Serializable {
         private Integer key;
         private Integer val;
         private String testName;
@@ -421,4 +425,22 @@ public class MongoSourceTest extends AbstractMongoTest {
         }
     }
 
+    /**
+     * Serializable variant of {@link Mappers#toClass(Class)} - only for tests
+     */
+    @Nonnull
+    public static <T> FunctionEx<Document, T> toClass(Class<T> type) {
+        return doc -> map(doc, type);
+    }
+
+    /**
+     * Serializable variant of {@link Mappers#streamToClass(Class)} - only for tests
+     */
+    @Nonnull
+    public static <T> BiFunctionEx<ChangeStreamDocument<Document>, Long, T> streamToClass(Class<T> type) {
+        return (doc, ts) -> {
+            assert doc.getFullDocument() != null;
+            return map(doc.getFullDocument(), type);
+        };
+    }
 }

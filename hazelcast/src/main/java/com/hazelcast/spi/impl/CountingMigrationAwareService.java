@@ -27,6 +27,8 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,15 +42,10 @@ public class CountingMigrationAwareService
     static final int IN_FLIGHT_MIGRATION_STAMP = -1;
 
     private final FragmentedMigrationAwareService migrationAwareService;
-    // number of started migrations on the partition owner
-    private final AtomicInteger ownerMigrationsStarted;
-    // number of completed migrations on the partition owner
-    private final AtomicInteger ownerMigrationsCompleted;
+    private final MigrationStamps migrationStamps = new MigrationStamps();
 
     public CountingMigrationAwareService(FragmentedMigrationAwareService migrationAwareService) {
         this.migrationAwareService = migrationAwareService;
-        this.ownerMigrationsStarted = new AtomicInteger();
-        this.ownerMigrationsCompleted = new AtomicInteger();
     }
 
     @Override
@@ -74,9 +71,7 @@ public class CountingMigrationAwareService
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
-        if (isPrimaryReplicaMigrationEvent(event)) {
-            ownerMigrationsStarted.incrementAndGet();
-        }
+        migrationStamps.start(event);
         migrationAwareService.beforeMigration(event);
     }
 
@@ -85,10 +80,7 @@ public class CountingMigrationAwareService
         try {
             migrationAwareService.commitMigration(event);
         } finally {
-            if (isPrimaryReplicaMigrationEvent(event)) {
-                int completed = ownerMigrationsCompleted.incrementAndGet();
-                assert completed <= ownerMigrationsStarted.get();
-            }
+            migrationStamps.complete(event);
         }
     }
 
@@ -97,10 +89,7 @@ public class CountingMigrationAwareService
         try {
             migrationAwareService.rollbackMigration(event);
         } finally {
-            if (isPrimaryReplicaMigrationEvent(event)) {
-                int completed = ownerMigrationsCompleted.incrementAndGet();
-                assert completed <= ownerMigrationsStarted.get();
-            }
+            migrationStamps.complete(event);
         }
     }
 
@@ -121,9 +110,7 @@ public class CountingMigrationAwareService
      * @return migration stamp
      */
     public int getMigrationStamp() {
-        int completed = ownerMigrationsCompleted.get();
-        int started = ownerMigrationsStarted.get();
-        return completed == started ? completed : IN_FLIGHT_MIGRATION_STAMP;
+        return migrationStamps.getMigrationStamp();
     }
 
     /**
@@ -135,9 +122,30 @@ public class CountingMigrationAwareService
      * @return true stamp is valid since issuance of the given stamp, false otherwise
      */
     public boolean validateMigrationStamp(int stamp) {
-        int completed = ownerMigrationsCompleted.get();
-        int started = ownerMigrationsStarted.get();
-        return stamp == completed && stamp == started;
+        return migrationStamps.validateMigrationStamp(stamp);
+    }
+
+    /**
+     * Returns a stamp for the migration state of the given partition which can later be validated
+     * using {@link #validatePartitionMigrationStamp(int, int)}.
+     *
+     * @param partitionId partition ID
+     * @return partition migration stamp
+     */
+    public int getPartitionMigrationStamp(int partitionId) {
+        return migrationStamps.getPartitionMigrationStamp(partitionId);
+    }
+
+    /**
+     * Returns {@code true} if no primary replica migration for the given partition has started
+     * since the given stamp was issued.
+     *
+     * @param partitionId partition ID
+     * @param stamp partition migration stamp
+     * @return {@code true} if the stamp is still valid, {@code false} otherwise
+     */
+    public boolean validatePartitionMigrationStamp(int partitionId, int stamp) {
+        return migrationStamps.validatePartitionMigrationStamp(partitionId, stamp);
     }
 
     @Override
@@ -152,5 +160,68 @@ public class CountingMigrationAwareService
             return null;
         }
         return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespace);
+    }
+
+    private static final class MigrationStamps {
+        private final MigrationCounters nodeWide = new MigrationCounters();
+        private final ConcurrentMap<Integer, MigrationCounters> byPartition = new ConcurrentHashMap<>();
+
+        private void start(PartitionMigrationEvent event) {
+            if (isPrimaryReplicaMigrationEvent(event)) {
+                nodeWide.start();
+                getPartition(event.getPartitionId()).start();
+            }
+        }
+
+        private void complete(PartitionMigrationEvent event) {
+            if (isPrimaryReplicaMigrationEvent(event)) {
+                nodeWide.complete();
+                getPartition(event.getPartitionId()).complete();
+            }
+        }
+
+        private int getMigrationStamp() {
+            return nodeWide.getStamp();
+        }
+
+        private boolean validateMigrationStamp(int stamp) {
+            return nodeWide.validateStamp(stamp);
+        }
+
+        private int getPartitionMigrationStamp(int partitionId) {
+            return getPartition(partitionId).getStamp();
+        }
+
+        private boolean validatePartitionMigrationStamp(int partitionId, int stamp) {
+            return getPartition(partitionId).validateStamp(stamp);
+        }
+
+        private MigrationCounters getPartition(int partitionId) {
+            return byPartition.computeIfAbsent(partitionId, ignored -> new MigrationCounters());
+        }
+    }
+
+    private static final class MigrationCounters {
+        private final AtomicInteger started = new AtomicInteger();
+        private final AtomicInteger completed = new AtomicInteger();
+
+        private void start() {
+            started.incrementAndGet();
+        }
+
+        private void complete() {
+            int completedCount = completed.incrementAndGet();
+            assert completedCount <= started.get();
+        }
+
+        private int getStamp() {
+            int completedCount = completed.get();
+            int startedCount = started.get();
+            return completedCount == startedCount ? completedCount : IN_FLIGHT_MIGRATION_STAMP;
+        }
+
+        private boolean validateStamp(int stamp) {
+            return stamp == completed.get() && stamp == started.get();
+        }
     }
 }

@@ -48,7 +48,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
 import static java.nio.file.Files.readAllBytes;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;

@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 /**
  * Wrapper of {@code InputSplit} that adds serializability and sortability

@@ -29,9 +29,9 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.hint.RelHint;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.util.ImmutableBitSet;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Streaming aggregation physical rel, which should fail.

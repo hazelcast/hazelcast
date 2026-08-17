@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 
 import javax.annotation.Nonnull;
@@ -35,16 +34,27 @@ public final class SerializationClassNameFilter implements ClassNameFilter {
 
     private static final String DESERIALIZATION_ERROR = "Resolving class %s is not allowed.";
     private static final ClassFilter DEFAULT_WHITELIST;
+    private static final ClassFilter DEFAULT_BLACKLIST;
 
     private final ClassFilter blacklist;
     private final ClassFilter whitelist;
     private final boolean useDefaultWhitelist;
+    private boolean useDefaultBlacklist;
 
     public SerializationClassNameFilter(JavaSerializationFilterConfig config) {
-        Preconditions.checkNotNull(config, "JavaSerializationFilterConfig has to be provided");
-        blacklist = config.getBlacklist();
-        whitelist = config.getWhitelist();
-        useDefaultWhitelist = !config.isDefaultsDisabled();
+        if (config == null) {
+            blacklist = new ClassFilter();
+            whitelist = new ClassFilter();
+            // Whitelist requires explicit config set.
+            useDefaultWhitelist = false;
+            // Blacklist is enabled by default if no config provided.
+            useDefaultBlacklist = true;
+        } else {
+            blacklist = config.getBlacklist();
+            whitelist = config.getWhitelist();
+            useDefaultWhitelist = !config.isDefaultsDisabled();
+            useDefaultBlacklist = useDefaultWhitelist;
+        }
     }
 
     /**
@@ -55,7 +65,8 @@ public final class SerializationClassNameFilter implements ClassNameFilter {
      */
     @Override
     public void filter(@Nonnull String className) throws SecurityException {
-        if (blacklist.isListed(className)) {
+        if (blacklist.isListed(className)
+                || (useDefaultBlacklist && isListedExtensive(className))) {
             throw new SecurityException(format(DESERIALIZATION_ERROR, className));
         }
         // if whitelisting is enabled (either explicit or as a default whitelist), force the whitelist check
@@ -68,8 +79,14 @@ public final class SerializationClassNameFilter implements ClassNameFilter {
         }
     }
 
+    private boolean isListedExtensive(String className) {
+        return DEFAULT_BLACKLIST.isListed(className) || className.contains(".jackson.databind.introspect.");
+    }
+
     static {
         DEFAULT_WHITELIST = new ClassFilter();
         DEFAULT_WHITELIST.addPrefixes("com.hazelcast.", "java", "[");
+        DEFAULT_BLACKLIST = new ClassFilter();
+        DEFAULT_BLACKLIST.addPrefixes("org.h2.", "org.springframework.beans.");
     }
 }

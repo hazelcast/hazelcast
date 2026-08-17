@@ -24,12 +24,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class SimpleMapLoader implements MapLoader<Integer, Integer> {
+public class SimpleMapLoader implements MapLoader<Integer, Integer> {
 
     final int size;
     final boolean slow;
 
-    SimpleMapLoader(int size, boolean slow) {
+    public SimpleMapLoader(int size, boolean slow) {
         this.size = size;
         this.slow = slow;
     }

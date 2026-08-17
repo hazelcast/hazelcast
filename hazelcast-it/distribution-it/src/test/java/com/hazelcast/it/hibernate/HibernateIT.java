@@ -79,12 +79,12 @@ public class HibernateIT extends HazelcastTestSupport {
 
     @Test
     public void testInsertLoad() {
-        Session session = sessionFactory.openSession();
-        Transaction tx = session.beginTransaction();
-        AnnotatedEntity e = new AnnotatedEntity("some-title");
-        session.save(e);
-        tx.commit();
-        session.close();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            AnnotatedEntity e = new AnnotatedEntity("some-title");
+            session.persist(e);
+            tx.commit();
+        }
 
 
         Statistics stats = sessionFactory.getStatistics();
@@ -96,16 +96,16 @@ public class HibernateIT extends HazelcastTestSupport {
         assertTrueEventually(() -> {
             stats.clear();
             for (int i = 0; i < 10; i++) {
-                Session session2 = sessionFactory.openSession();
-                AnnotatedEntity retrieved = session2.get(AnnotatedEntity.class, (long) 1);
-                assertThat(retrieved.getTitle()).isEqualTo("some-title");
-                session2.close();
+                try (Session session2 = sessionFactory.openSession()) {
+                    AnnotatedEntity retrieved = session2.find(AnnotatedEntity.class, (long) 1);
+                    assertThat(retrieved.getTitle()).isEqualTo("some-title");
+                }
             }
             assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(10);
         });
     }
 
-    private SessionFactory createSessionFactory(Properties props) {
+    private static SessionFactory createSessionFactory(Properties props) {
         Configuration conf = new Configuration();
         conf.configure(HibernateIT.class.getClassLoader().getResource("test-hibernate-client.cfg.xml"));
         conf.addAnnotatedClass(AnnotatedEntity.class);

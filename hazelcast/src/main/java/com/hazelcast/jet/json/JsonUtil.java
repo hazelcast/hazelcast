@@ -16,13 +16,14 @@
 
 package com.hazelcast.jet.json;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.jet.json.impl.JacksonJrFilteringExtension;
+import com.hazelcast.jet.pipeline.Sources;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.json.JsonFactory;
 import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import tools.jackson.jr.ob.JSON;
-import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,10 +61,12 @@ public final class JsonUtil {
 
     static {
         JsonFactory jf = JsonFactory.builder()
-                                    .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
-                                    .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
-                                    .build();
-        JSON.Builder builder = JSON.builder(jf).enable(JSON.Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+                .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
+                .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
+                .build();
+        JSON.Builder builder = JSON.builder(jf)
+                .register(new JacksonJrFilteringExtension())
+                .enable(JSON.Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
         try {
             Class.forName("com.fasterxml.jackson.annotation.JacksonAnnotation", false, JsonUtil.class.getClassLoader());
             builder.register(JacksonAnnotationExtension.std);

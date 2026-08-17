@@ -9,7 +9,7 @@ different pipeline steps.
 
 This is a prerequisite for using Hazelcast 3 client to access Hazelcast
 3 members (see the Hazelcast 5.0 evaluation experience for Hazelcast
-users and HZ-344).
+users and HZOLD-344).
 
 ## User facing API
 

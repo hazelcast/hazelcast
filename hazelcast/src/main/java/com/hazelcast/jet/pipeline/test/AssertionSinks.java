@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

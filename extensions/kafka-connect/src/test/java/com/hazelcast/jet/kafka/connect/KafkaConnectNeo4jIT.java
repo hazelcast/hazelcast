@@ -32,15 +32,12 @@ import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -49,6 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -59,28 +58,28 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.jet.TestedVersions.TEST_NEO4J_IMAGE;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
-import static com.hazelcast.jet.TestedVersions.TEST_NEO4J_IMAGE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Testcontainers
+@SerialTest
+@SlowTest
+@ParallelJVMTest
+@SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
 public class KafkaConnectNeo4jIT extends JetTestSupport {
-    @ClassRule
-    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectNeo4jIT.class);
+    private static final String CONNECTOR_JAR_FILE = "neo4j-kafka-connect-5.1.19.jar";
 
     @SuppressWarnings("resource")
-    @ClassRule
+    @Container
     public static final Neo4jContainer<?> container = new Neo4jContainer<>(TEST_NEO4J_IMAGE)
             .withoutAuthentication()
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
@@ -88,7 +87,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
     private static final int ITEM_COUNT = 1_000;
 
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpDocker() {
         assumeDockerEnabled();
     }
@@ -109,8 +108,8 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
                         list -> assertThat(list).hasSize(2 * ITEM_COUNT)));
 
         JobConfig jobConfig = new JobConfig();
-        URL connectorURL = getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip");
-        jobConfig.addJarsInZip(connectorURL);
+        URL connectorURL = getConnectorURL(CONNECTOR_JAR_FILE);
+        jobConfig.addJar(connectorURL);
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -124,10 +123,10 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
-
             String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertThat(errorMsg)
+                .withFailMessage("Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause())
+                .contains(AssertionCompletedException.class.getName());
         }
     }
 
@@ -136,9 +135,8 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         String sourceName = generateRandomString(5);
         Properties connectorProperties = getConnectorProperties(sourceName);
         // Change the uri so that connector fails to connect
-        connectorProperties.setProperty("neo4j.server.uri", "bolt://localhost:52403");
-        connectorProperties.setProperty("neo4j.retry.backoff.msecs", "5");
-        connectorProperties.setProperty("neo4j.retry.max.attemps", "1");
+        connectorProperties.setProperty("neo4j.uri", "bolt://localhost:52403");
+        connectorProperties.setProperty("neo4j.max-retry-time", "2s");
 
         Pipeline pipeline = Pipeline.create();
         RetryStrategy strategy = RetryStrategies.custom()
@@ -153,7 +151,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         streamStage.writeTo(Sinks.logger());
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
+        jobConfig.addJar(getConnectorURL(CONNECTOR_JAR_FILE));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -185,7 +183,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
                 .peek(s -> ">aggreg " + s)
                 .writeTo(Sinks.list(testName));
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
+        jobConfig.addJar(getConnectorURL(CONNECTOR_JAR_FILE));
 
         LOGGER.info("Creating a job");
         Job testJob = instance.getJet().newJob(pipeline, jobConfig);
@@ -229,16 +227,15 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         Properties connectorProperties = new Properties();
         connectorProperties.setProperty("name", "neo4j");
         connectorProperties.setProperty("tasks.max", "1");
-        connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
-        connectorProperties.setProperty("topic", "some-topic");
-        connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
+        connectorProperties.setProperty("connector.class", "org.neo4j.connectors.kafka.source.Neo4jConnector");
+        connectorProperties.setProperty("neo4j.query.topic", "some-topic");
+        connectorProperties.setProperty("neo4j.uri", container.getBoltUrl());
         connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");
         connectorProperties.setProperty("neo4j.authentication.basic.password", "password");
-        connectorProperties.setProperty("neo4j.streaming.poll.interval.msecs", "1000");
+        connectorProperties.setProperty("neo4j.query.poll-interval", "1s");
         connectorProperties.setProperty("neo4j.streaming.property", "timestamp");
-        connectorProperties.setProperty("neo4j.streaming.from", "ALL");
-        connectorProperties.setProperty("neo4j.enforce.schema", "true");
-        connectorProperties.setProperty("neo4j.source.query",
+        connectorProperties.setProperty("neo4j.start-from", "EARLIEST");
+        connectorProperties.setProperty("neo4j.query",
                 "MATCH (ts:" + sourceName + ") WHERE ts.timestamp > $lastCheck " +
                 "RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
         return connectorProperties;

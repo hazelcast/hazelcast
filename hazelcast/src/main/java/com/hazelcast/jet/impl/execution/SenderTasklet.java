@@ -46,7 +46,7 @@ import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFootprint;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**

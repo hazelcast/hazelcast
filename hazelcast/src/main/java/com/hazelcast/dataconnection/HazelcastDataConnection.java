@@ -24,13 +24,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionClientConfigBuilder;
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigLoader;
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigValidator;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
+
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 
 /**
  * Creates a HazelcastInstance that is shared to connect to a remote cluster.
@@ -80,7 +82,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
 
         if (dataConnectionConfig.isShared()) {
 
-            this.proxy = new ConcurrentMemoizingSupplier<>(() -> {
+            this.proxy = memoizeConcurrent(() -> {
                 HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
                         .newHazelcastClient(clientConfig);
                 return new HazelcastClientProxy(hazelcastClientProxy.client) {

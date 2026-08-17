@@ -97,7 +97,7 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.writeSubject;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
-import static com.hazelcast.jet.impl.util.Util.memoize;
+import static com.hazelcast.internal.util.MemoizingSupplier.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;

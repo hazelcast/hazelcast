@@ -32,16 +32,15 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Collection;
-
 import javax.annotation.Nonnull;
+import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static java.util.Arrays.asList;
@@ -52,6 +51,9 @@ import static org.junit.Assert.assertTrue;
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MapStoreWriteBehindSplitBrainTest extends SplitBrainTestSupport {
+
+    private static final int TEST_TIMEOUT_IN_MILLIS = 5 * 60 * 1000;
+    private static final int ASSERT_TIMEOUT_SECONDS = 90;
 
     private static final int[] BRAINS = new int[]{3, 3};
 
@@ -78,7 +80,7 @@ public class MapStoreWriteBehindSplitBrainTest extends SplitBrainTestSupport {
     @SuppressWarnings("null")
     protected @Nonnull String mapName = randomMapName("map-");
 
-    private @Nonnull TrackingMapStore<Integer, Integer> mapStore = new TrackingMapStore<Integer, Integer>();
+    private final @Nonnull TrackingMapStore<Integer, Integer> mapStore = new TrackingMapStore<Integer, Integer>();
 
     private MergeLifecycleListener mergeLifecycleListener;
 
@@ -109,7 +111,15 @@ public class MapStoreWriteBehindSplitBrainTest extends SplitBrainTestSupport {
                 .setStatisticsEnabled(true)
                 .setPerEntryStatsEnabled(true);
 
+        config.getMetricsConfig().setEnabled(false);
+
         return config;
+    }
+
+    @Test(timeout = TEST_TIMEOUT_IN_MILLIS)
+    @Override
+    public void testSplitBrain() throws Exception {
+        super.testSplitBrain();
     }
 
     @Override
@@ -133,8 +143,9 @@ public class MapStoreWriteBehindSplitBrainTest extends SplitBrainTestSupport {
 
         // wait until any flushing of maps following merge is complete
         assertTrueEventually("write behinds complete", () ->
-            assertTrue(mapStore.lastWriteAtLeastMsAgo(2000)), 30);
+                assertTrue(mapStore.lastWriteAtLeastMsAgo(2000)), 30);
 
+        mapStore.reset();
         writeToMapAndAssertWriteBehind(instances);
     }
 
@@ -143,11 +154,13 @@ public class MapStoreWriteBehindSplitBrainTest extends SplitBrainTestSupport {
         for (int i = 0; i < NUMBER_OF_ITEMS_TO_WRITE; i++) {
             mapStore.expectWrite(i, i);
             map.put(i, i);
-            Thread.sleep(3); // ensure writes happen across multiple write-behind invocations
+            // ensure writes happen across multiple write-behind invocations
+            Thread.sleep(3);
         }
         map.flush();
 
-        assertTrueEventually("expected all entries to be written", () ->
-            assertTrue(mapStore.allExpectedWritesComplete()), 30);
+        assertTrueEventually("expected all entries to be written ", () -> {
+            assertTrue(mapStore.toString(), mapStore.allExpectedWritesComplete());
+        }, ASSERT_TIMEOUT_SECONDS);
     }
 }

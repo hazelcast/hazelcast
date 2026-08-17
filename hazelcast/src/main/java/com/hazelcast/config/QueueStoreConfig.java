@@ -297,8 +297,8 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         className = in.readString();
         factoryClassName = in.readString();
         properties = in.readObject();
-        storeImplementation = in.readObject();
-        factoryImplementation = in.readObject();
+        storeImplementation = ConfigDeserializationUtil.readObject(in, getClass(), "storeImplementation");
+        factoryImplementation = ConfigDeserializationUtil.readObject(in, getClass(), "factoryImplementation");
     }
 
     @Override

@@ -27,9 +27,9 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Intermediate rel node during the logical phase that has inputs converted to

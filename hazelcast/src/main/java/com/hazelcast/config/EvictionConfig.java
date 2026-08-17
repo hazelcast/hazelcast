@@ -262,7 +262,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         maxSizePolicy = MaxSizePolicy.valueOf(in.readString());
         evictionPolicy = EvictionPolicy.valueOf(in.readString());
         comparatorClassName = in.readString();
-        comparator = in.readObject();
+        comparator = ConfigDeserializationUtil.readObject(in, getClass(), "comparator");
     }
 
     @Override

@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.io.EOFException;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -435,6 +436,32 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertArrayEquals(new byte[]{1}, bytes);
     }
 
+    @Test(expected = EOFException.class)
+    public void testReadMalformedByteArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readByteArray();
+    }
+
+    @Test
+    public void testReadFullyByteArray() throws Exception {
+        in.position(1);
+        byte[] theZeroLengthArray = new byte[0];
+        in.readFully(theZeroLengthArray);
+        byte[] bytes = new byte[1];
+        in.readFully(bytes);
+        byte[] moreBytes = new byte[3];
+        in.readFully(moreBytes);
+
+        assertArrayEquals(new byte[0], theZeroLengthArray);
+        assertArrayEquals(new byte[]{1}, bytes);
+        assertArrayEquals(new byte[]{2, 3, 4}, moreBytes);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadFullyInsufficientData() throws Exception {
+        in.readFully(new byte[1024]);
+    }
+
     @Test
     public void testReadBooleanArray() throws Exception {
         byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 1, 9, -1, -1, -1, -1};
@@ -451,6 +478,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertNull(theNullArray);
         assertArrayEquals(new boolean[0], theZeroLengthArray);
         assertArrayEquals(new boolean[]{true}, booleanArray);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadMalformedBooleanArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readBooleanArray();
     }
 
     @Test
@@ -471,6 +504,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertArrayEquals(new char[]{1}, booleanArray);
     }
 
+    @Test(expected = EOFException.class)
+    public void testReadMalformedCharArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readCharArray();
+    }
+
     @Test
     public void testReadIntArray() throws Exception {
         byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, -1, -1, -1, -1};
@@ -487,6 +526,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertNull(theNullArray);
         assertArrayEquals(new int[0], theZeroLengthArray);
         assertArrayEquals(new int[]{1}, bytes);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadMalformedIntArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readIntArray();
     }
 
     @Test
@@ -507,6 +552,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertArrayEquals(new long[]{1}, bytes);
     }
 
+    @Test(expected = EOFException.class)
+    public void testReadMalformedLongArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readLongArray();
+    }
+
     @Test
     public void testReadDoubleArray() throws Exception {
         byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
@@ -523,7 +574,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertNull(theNullArray);
         assertArrayEquals(new double[0], theZeroLengthArray, 0);
         assertArrayEquals(new double[]{Double.longBitsToDouble(1)}, doubles, 0);
+    }
 
+    @Test(expected = EOFException.class)
+    public void testReadMalformedDoubleArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readDoubleArray();
     }
 
     @Test
@@ -544,6 +600,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertArrayEquals(new float[]{Float.intBitsToFloat(1)}, floats, 0);
     }
 
+    @Test(expected = EOFException.class)
+    public void testReadMalformedFloatArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readFloatArray();
+    }
+
     @Test
     public void testReadShortArray() throws Exception {
         byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 1, -1, -1, -1, -1};
@@ -562,8 +624,14 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertArrayEquals(new short[]{1}, booleanArray);
     }
 
+    @Test(expected = EOFException.class)
+    public void testReadMalformedShortArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readShortArray();
+    }
+
     @Test
-    public void testReadUTFArray() throws Exception {
+    public void testReadStringArray() throws Exception {
         byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 32, 9, -1, -1, -1, -1};
         byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 32, 9, -1, -1, -1, -1};
         in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
@@ -578,6 +646,12 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertNull(theNullArray);
         assertArrayEquals(new String[0], theZeroLengthArray);
         assertArrayEquals(new String[]{" "}, bytes);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadMalformedStringArray() throws Exception {
+        // sample data is malformed array with large length and insufficient data
+        in.readStringArray();
     }
 
     @Test
@@ -599,7 +673,7 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         assertEquals(0xFFFF, unsigned);
     }
 
-    public void testReadUTF() {
+    public void testReadString() {
         //EXTENDED TEST ELSEWHERE: StringSerializationTest
     }
 
@@ -694,6 +768,16 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
     @Test(expected = EOFException.class)
     public void testCheckAvailable_EOF() throws Exception {
         in.checkAvailable(0, INIT_DATA.length + 1);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testCheckAvailableItems_EOF() throws Exception {
+        in.checkAvailableItems(0, 5, INT_SIZE_IN_BYTES);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testCheckAvailableItems_overflow() throws Exception {
+        in.checkAvailableItems(0, 1 << 31, INT_SIZE_IN_BYTES);
     }
 
     @Test

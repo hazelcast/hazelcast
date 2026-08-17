@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -95,7 +94,6 @@ public class CompactSerializationConfig {
      * all classes are eligible.
      * @since 5.7
      */
-    @Beta
     @Nullable
     public JavaSerializationFilterConfig getZeroConfigFilter() {
         return zeroConfigFilter;
@@ -110,7 +108,6 @@ public class CompactSerializationConfig {
      * @return configured {@link CompactSerializationConfig} for chaining
      * @since 5.7
      */
-    @Beta
     public CompactSerializationConfig setZeroConfigFilter(@Nullable JavaSerializationFilterConfig zeroConfigClassFilter) {
         this.zeroConfigFilter = zeroConfigClassFilter;
         return this;

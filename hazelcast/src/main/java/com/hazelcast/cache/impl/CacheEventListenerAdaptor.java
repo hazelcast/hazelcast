@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * This implementation of {@link CacheEventListener} uses the adapter pattern for wrapping all cache event listener
  * types into a single listener.
@@ -68,10 +70,11 @@ public class CacheEventListenerAdaptor<K, V>
 
     // all fields are effectively final
     private transient CacheEntryListener<K, V> cacheEntryListener;
-    private transient CacheEntryCreatedListener cacheEntryCreatedListener;
-    private transient CacheEntryRemovedListener cacheEntryRemovedListener;
-    private transient CacheEntryUpdatedListener cacheEntryUpdatedListener;
-    private transient CacheEntryExpiredListener cacheEntryExpiredListener;
+    private transient CacheEntryCreatedListener<K, V> cacheEntryCreatedListener;
+    private transient CacheEntryRemovedListener<K, V> cacheEntryRemovedListener;
+    private transient CacheEntryUpdatedListener<K, V> cacheEntryUpdatedListener;
+    private transient CacheEntryExpiredListener<K, V> cacheEntryExpiredListener;
+
     private transient CacheEntryEventFilter<? super K, ? super V> filter;
     private boolean isOldValueRequired;
 
@@ -81,6 +84,7 @@ public class CacheEventListenerAdaptor<K, V>
     public CacheEventListenerAdaptor() {
     }
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public CacheEventListenerAdaptor(ICache<K, V> source,
                                      CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                      SerializationService serializationService) {
@@ -88,22 +92,22 @@ public class CacheEventListenerAdaptor<K, V>
         this.serializationService = serializationService;
 
         this.cacheEntryListener = createCacheEntryListener(cacheEntryListenerConfiguration);
-        if (cacheEntryListener instanceof CacheEntryCreatedListener listener) {
+        if (cacheEntryListener instanceof CacheEntryCreatedListener<K, V> listener) {
             this.cacheEntryCreatedListener = listener;
         } else {
             this.cacheEntryCreatedListener = null;
         }
-        if (cacheEntryListener instanceof CacheEntryRemovedListener listener) {
+        if (cacheEntryListener instanceof CacheEntryRemovedListener<K, V> listener) {
             this.cacheEntryRemovedListener = listener;
         } else {
             this.cacheEntryRemovedListener = null;
         }
-        if (cacheEntryListener instanceof CacheEntryUpdatedListener listener) {
+        if (cacheEntryListener instanceof CacheEntryUpdatedListener<K, V> listener) {
             this.cacheEntryUpdatedListener = listener;
         } else {
             this.cacheEntryUpdatedListener = null;
         }
-        if (cacheEntryListener instanceof CacheEntryExpiredListener listener) {
+        if (cacheEntryListener instanceof CacheEntryExpiredListener<K, V> listener) {
             this.cacheEntryExpiredListener = listener;
         } else {
             this.cacheEntryExpiredListener = null;
@@ -122,6 +126,7 @@ public class CacheEventListenerAdaptor<K, V>
         this.isOldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
     }
 
+    @SuppressWarnings("unchecked")
     private CacheEntryListener<K, V> createCacheEntryListener(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         Factory<CacheEntryListener<? super K, ? super V>> cacheEntryListenerFactory =
@@ -146,8 +151,10 @@ public class CacheEventListenerAdaptor<K, V>
     public void handleEvent(Object eventObject) {
         if (eventObject instanceof CacheEventSet cacheEventSet) {
             try {
-                if (cacheEventSet.getEventType() != CacheEventType.COMPLETED) {
-                    handleEvent(cacheEventSet.getEventType().getType(), cacheEventSet.getEvents());
+                CacheEventType eventType = cacheEventSet.getEventType();
+                EventType jCacheEventType = eventType.toJCacheEventType();
+                if (jCacheEventType != null) {
+                    handleEvent(jCacheEventType, cacheEventSet.getEvents());
                 }
             } finally {
                 ((CacheSyncListenerCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
@@ -155,9 +162,9 @@ public class CacheEventListenerAdaptor<K, V>
         }
     }
 
-    private void handleEvent(int type, Collection<CacheEventData> keys) {
-        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(keys);
-        CacheEventType eventType = CacheEventType.getByType(type);
+    private void handleEvent(EventType eventType, Collection<CacheEventData> keys) {
+        checkNotNull(eventType, "eventType");
+        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(keys, eventType);
         switch (eventType) {
             case CREATED:
                 if (this.cacheEntryCreatedListener != null) {
@@ -184,10 +191,12 @@ public class CacheEventListenerAdaptor<K, V>
         }
     }
 
-    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
+    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(
+        Collection<CacheEventData> keys, EventType eventType) {
+
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<>();
         for (CacheEventData cacheEventData : keys) {
-            EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
+            CacheEventType cacheEventType = cacheEventData.getCacheEventType();
             K key = toObject(cacheEventData.getDataKey());
             boolean hasNewValue = !(eventType == EventType.REMOVED || eventType == EventType.EXPIRED);
             final V newValue;
@@ -211,7 +220,7 @@ public class CacheEventListenerAdaptor<K, V>
                 }
             }
             final CacheEntryEventImpl<K, V> event =
-                    new CacheEntryEventImpl<>(source, eventType, key, newValue, oldValue);
+                    new CacheEntryEventImpl<>(source, eventType, cacheEventType,  key, newValue, oldValue);
             if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }
@@ -225,8 +234,11 @@ public class CacheEventListenerAdaptor<K, V>
 
     public void handle(int type, Collection<CacheEventData> keys, int completionId) {
         try {
-            if (CacheEventType.getByType(type) != CacheEventType.COMPLETED) {
-                handleEvent(type, keys);
+            CacheEventType cacheEventType = CacheEventType.getByType(type);
+            checkNotNull(cacheEventType, "cacheEventType");
+            EventType jCacheEventType = cacheEventType.toJCacheEventType();
+            if (jCacheEventType != null) {
+                handleEvent(jCacheEventType, keys);
             }
         } finally {
             ((CacheSyncListenerCompleter) source).countDownCompletionLatch(completionId);

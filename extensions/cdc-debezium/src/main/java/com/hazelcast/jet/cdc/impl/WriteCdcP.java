@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -38,7 +37,7 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
 
     /**
      * This processor uses {@link IMap#submitToKeys(Set, EntryProcessor)}, which
-     * if used from multiple parallel async operations can end up reordering
+     * is used from multiple parallel async operations can end up reordering
      * the changes done to the map and this in turn can result in unforeseen
      * consequences. For this reason we need to limit ourselves to a single
      * in-flight operation at a time.
@@ -100,7 +99,8 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
      */
     boolean updateSequence(K key, long source, long sequence) {
         Sequence prevSequence = sequences.get(key);
-        if (prevSequence == null) { // first observed sequence for key
+        if (prevSequence == null) {
+            // first observed sequence for key
             sequences.put(key, new Sequence(source, sequence));
             return true;
         }
@@ -122,7 +122,8 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
         Data value = serializationContext.toData(valueFn.apply(item));
         if (buffer.put(keyData, value) == null) {
             pendingInPartition[partitionId]++;
-        } else { // item already exists, it will be coalesced
+        } else {
+            // item already exists, it will be coalesced
             pendingItemCount--;
         }
     }
@@ -172,13 +173,15 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
         boolean update(long source, long sequence) {
             timestamp = System.currentTimeMillis();
 
-            if (this.source != source) { //sequence source changed for key
+            if (this.source != source) {
+                //sequence source changed for key
                 this.source = source;
                 this.sequence = sequence;
                 return true;
             }
 
-            if (this.sequence < sequence) { //sequence is newer than previous for key
+            if (this.sequence < sequence) {
+                //sequence is newer than previous for key
                 this.sequence = sequence;
                 return true;
             }

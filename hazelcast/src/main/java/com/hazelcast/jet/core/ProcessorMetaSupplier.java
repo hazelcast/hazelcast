@@ -822,7 +822,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          * @deprecated Use {@code hazelcastInstance().getJet()} instead.
          */
         @Nonnull
-        @Deprecated
+        @Deprecated(since = "5.0", forRemoval = true)
         JetInstance jetInstance();
 
         /**

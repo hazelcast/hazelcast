@@ -17,13 +17,15 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.steps.IMapOpStep;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
@@ -37,25 +39,66 @@ import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedE
 import static com.hazelcast.map.impl.operation.steps.engine.LinkerStep.linkSteps;
 
 /**
- * <lu>
- * <li>This is a single operation's step supplier</li>
- * <li>Supplies steps and decides next step after executed one.</li>
- * <li>Must be thread safe</li>
- * </lu>
+ * Supplies the steps of a single operation, one at a time, and
+ * determines the next step after the executed one.
+ * <p>
+ * Every step goes through the same lifecycle in
+ * {@link #runStepWithState}:
+ * <ol>
+ *     <li><b>Refresh:</b> re-resolve the record store, since a
+ *     previously queued operation may have destroyed the map while
+ *     this operation was waiting (partition thread only).</li>
+ *     <li><b>Preconditions:</b> node/cluster health, call timeout on
+ *     the first partition-thread step, and the partition migration
+ *     stamp. A failed stamp check fails the operation with a
+ *     retryable exception; a call timeout silently ends this
+ *     supplier, the timeout response has already been sent.</li>
+ *     <li><b>Run</b> the step. A {@link NativeOutOfMemoryError} on
+ *     the partition thread is retried under forced eviction.</li>
+ *     <li><b>Advance:</b> determine the next step &mdash; or
+ *     {@link UtilSteps#HANDLE_ERROR} if the step failed &mdash; and
+ *     cache its runnable for {@link #get()}. When there is no next
+ *     step, {@link #get()} returns {@code null}, which tells the
+ *     {@link StepRunner} that this operation is complete.</li>
+ * </ol>
+ * Must be thread-safe: steps of one operation run on partition
+ * threads and offloaded executor threads, though never concurrently.
  */
 public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
     private final State state;
     private final OperationRunnerImpl operationRunner;
+    private final int partitionId;
+    /**
+     * Only here to disable the thread check for testing purposes.
+     */
+    private final boolean checkCurrentThread;
+    /**
+     * Whether the operation-level policy requires all steps to run against
+     * the same stable partition.
+     */
+    private final boolean operationNeedsStablePartition;
 
     private volatile Runnable currentRunnable;
     private volatile Step currentStep;
-    private volatile boolean firstStep = true;
+    private volatile boolean firstPartitionStep = true;
+    /**
+     * Whether a read-through MapStore load has made a stable partition
+     * necessary for the remaining steps.
+     */
+    private volatile boolean mapStoreLoadNeedsStablePartition;
 
     /**
-     * Only here to disable check for testing purposes.
+     * This stamp guarantees that it is safe for the system
+     * to access partition-state during the "partition" step.
+     * <p>
+     * The migration stamp is backed by thread-safe counters and can be
+     * validated around an offloaded MapStore load. Other partition state must
+     * only be accessed from the partition thread.
+     *
+     * @see Step#isOffloadStep(Object)
      */
-    private final boolean checkCurrentThread;
+    private final int partitionMigrationStamp;
 
     public StepSupplier(MapOperation operation) {
         this(operation, true);
@@ -68,47 +111,52 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
-        collectCustomSteps(operation, this);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
+        this.partitionId = state.getPartitionId();
         this.checkCurrentThread = checkCurrentThread;
+        this.operationNeedsStablePartition
+                = !operationRunner.isAllowedToExecuteDuringMigration(operation);
+
+        collectCustomSteps(operation, this);
+        MapService mapService = getMapService();
+        this.partitionMigrationStamp = mapService.getPartitionMigrationStamp(partitionId);
 
         assert this.currentStep != null;
     }
 
     @Override
     public void accept(Step headStep) {
-        if (headStep == null) {
+        if (headStep != null) {
+            this.currentStep = linkSteps(headStep, currentStep);
+        }
+    }
+
+    public static void collectCustomSteps(MapOperation operation, Consumer<Step> consumer) {
+        RecordStore recordStore = operation.getRecordStore();
+        if (recordStore == null) {
             return;
         }
 
-        this.currentStep = linkSteps(headStep, currentStep);
-    }
-
-    public static void collectCustomSteps(MapOperation operation,
-                                          Consumer<Step> consumer) {
-        Storage storage = operation.getRecordStore().getStorage();
+        Storage storage = recordStore.getStorage();
         if (storage instanceof CustomStepAwareStorage awareStorage) {
             awareStorage.collectCustomSteps(consumer);
         }
     }
 
     public static Step injectCustomStepsToOperation(MapOperation operation,
-                                                    Step injectCustomStepsBeforeThisStep) {
-        List<Step> steps = new ArrayList<>();
-
-        collectCustomSteps(operation, customStep -> {
-            if (customStep == null) {
-                return;
+                                                    Step targetStep) {
+        List<Step> customSteps = new ArrayList<>();
+        collectCustomSteps(operation, step -> {
+            if (step != null) {
+                customSteps.add(step);
             }
-
-            steps.add(customStep);
         });
 
-        Step injectionStep = injectCustomStepsBeforeThisStep;
-        for (int i = 0; i < steps.size(); i++) {
-            injectionStep = linkSteps(steps.get(i), injectionStep);
+        Step result = targetStep;
+        for (int i = 0; i < customSteps.size(); i++) {
+            result = linkSteps(customSteps.get(i), result);
         }
-        return injectionStep;
+        return result;
     }
 
     // used only for testing
@@ -116,6 +164,12 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         return currentStep;
     }
 
+    /**
+     * @return the runnable of the current step, or {@code null} when
+     * the operation has run its last step. Idempotent: repeated calls
+     * return the same runnable instance until the step is executed
+     * and {@link #advanceStep} installs the next one.
+     */
     @Override
     public Runnable get() {
         if (currentRunnable == null && currentStep != null) {
@@ -125,154 +179,213 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     }
 
     private Runnable createRunnable(Step step, State state) {
-        // 0. If null step return null
         if (step == null) {
             return null;
         }
 
-        // 1. If step needs to be offloaded,
-        // return step wrapped as a runnable.
-        if (step.isOffloadStep(state)) {
-            return new ExecutorNameAwareRunnable() {
-                @Override
-                public String getExecutorName() {
-                    return step.getExecutorName(state);
-                }
-
-                @Override
-                public void run() {
-                    assert !checkCurrentThread || !isRunningOnPartitionThread();
-
-                    runStepWithState(step, state);
-                }
-
-                @Override
-                public String toString() {
-                    return step.toString();
-                }
-            };
-        }
-
-        // 2. If step needs to be run on partition thread,
-        // return step wrapped as a partition specific runnable.
-        return new PartitionSpecificRunnable() {
-            @Override
-            public void run() {
-                assert !checkCurrentThread || isRunningOnPartitionThread();
-                runStepWithState(step, state);
-            }
-
-            @Override
-            public int getPartitionId() {
-                return state.getPartitionId();
-            }
-
-            @Override
-            public String toString() {
-                return step.toString();
-            }
-        };
+        return step.isOffloadStep(state)
+                ? new OffloadedStepRunnable(step, state)
+                : new PartitionSpecificStepRunnable(step, state);
     }
 
     /**
-     * Responsibilities of this method:
-     * <lu>
-     * <li>Runs passed step with passed state</li>
-     * <li>Sets next step to run</li>
-     * </lu>
+     * Runs the supplied step with the supplied state and schedules the next step.
+     * <p>
+     * This is the per-step lifecycle described in the class javadoc:
+     * refresh, preconditions, run, advance. Failures are routed to
+     * {@link UtilSteps#HANDLE_ERROR} via {@link #handleStepFailure}.
      */
     private void runStepWithState(Step step, State state) {
-        boolean runningOnPartitionThread = isRunningOnPartitionThread();
-        boolean metWithPreconditions = true;
+        final boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        boolean shouldAdvance = true;
+
         try {
-            refreshSate(state);
-
-            int threadIndex = -1;
-            // we check for error step here to handle potential
-            // errors in `beforeOperation`/`afterOperation` calls.
-            boolean errorStep = step == UtilSteps.HANDLE_ERROR;
-            if (!errorStep) {
-                threadIndex = state.getRecordStore().beforeOperation();
-            }
-            try {
-                if (runningOnPartitionThread && state.getThrowable() == null) {
-                    metWithPreconditions = metWithPreconditions();
-                }
-
-                if (metWithPreconditions) {
-                    step.runStep(state);
-                }
-            } catch (NativeOutOfMemoryError e) {
-                if (runningOnPartitionThread) {
-                    rerunWithForcedEviction(() -> step.runStep(state));
-                } else {
-                    throw e;
-                }
-            } finally {
-                if (!errorStep) {
-                    state.getRecordStore().afterOperation(threadIndex);
-                }
-            }
-        } catch (Throwable throwable) {
             if (runningOnPartitionThread) {
-                state.getOperation().disposeDeferredBlocks();
+                refreshState(state);
             }
-            state.setThrowable(throwable);
+            shouldAdvance = executeStep(step, state, runningOnPartitionThread);
+        } catch (Throwable throwable) {
+            handleStepFailure(state, runningOnPartitionThread, throwable);
         } finally {
-            if (metWithPreconditions) {
-                currentStep = nextStep(step);
-                currentRunnable = createRunnable(currentStep, state);
-            } else {
-                currentStep = null;
-                currentRunnable = null;
-            }
+            advanceStep(step, state, shouldAdvance);
         }
     }
 
     /**
-     * Refreshes this {@code StepSupplier} {@link State} by
-     * resetting its record-store and operation objects.
-     * <p>
-     * Reasoning:
-     * <p>
-     * This is needed because while an offloaded operation is waiting
-     * in queue, a previously queued operation can be a map#destroy
-     * operation and it can remove all current IMap state. In this
-     * case later operations' state in the queue become stale.
-     * By refreshing the {@link State} we are fixing this issue.
+     * @return {@code true} if the step ran and the supplier should
+     * advance to the next step, {@code false} if a precondition
+     * failed in a way that already produced a response (call
+     * timeout), in which case the supplier must end silently
      */
-    private void refreshSate(State state) {
+    private boolean executeStep(Step step, State state, boolean runningOnPartitionThread) {
+        final boolean errorStep = step == UtilSteps.HANDLE_ERROR;
+        final RecordStore recordStore = state.getRecordStore();
+        final int threadIndex = beforeOperation(recordStore, errorStep);
+        try {
+            if (!errorStep && !checkPreconditions(step, runningOnPartitionThread)) {
+                return false;
+            }
+
+            runStep(step, state, runningOnPartitionThread);
+            return true;
+        } finally {
+            afterOperation(recordStore, errorStep, threadIndex);
+        }
+    }
+
+    private int beforeOperation(RecordStore recordStore, boolean errorStep) {
+        if (errorStep || recordStore == null) {
+            return -1;
+        }
+        return recordStore.beforeOperation();
+    }
+
+    private void afterOperation(RecordStore recordStore, boolean errorStep, int threadIndex) {
+        if (!errorStep && recordStore != null) {
+            recordStore.afterOperation(threadIndex);
+        }
+    }
+
+    private void runStep(Step step, State state, boolean runningOnPartitionThread) {
+        try {
+            step.runStep(state);
+        } catch (NativeOutOfMemoryError e) {
+            if (runningOnPartitionThread) {
+                rerunWithForcedEviction(() -> step.runStep(state));
+                return;
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Records the failure in the {@link State} so that
+     * {@link #nextStep} routes to {@link UtilSteps#HANDLE_ERROR},
+     * which sends the error response.
+     */
+    private void handleStepFailure(State state, boolean runningOnPartitionThread, Throwable throwable) {
+        if (runningOnPartitionThread) {
+            state.getOperation().disposeDeferredBlocks();
+        }
+        state.setThrowable(throwable);
+    }
+
+    /**
+     * Installs the next step and its runnable for {@link #get()}.
+     * When {@code shouldAdvance} is {@code false}, both are cleared,
+     * which ends this supplier: {@link #get()} returns {@code null}
+     * from now on.
+     */
+    private void advanceStep(Step step, State state, boolean shouldAdvance) {
+        if (shouldAdvance) {
+            currentStep = nextStep(step);
+            currentRunnable = createRunnable(currentStep, state);
+        } else {
+            currentStep = null;
+            currentRunnable = null;
+        }
+    }
+
+    /**
+     * Refreshes this {@code StepSupplier} {@link State} by resetting its
+     * record-store and operation objects.
+     * <p>
+     * This is needed because while an offloaded operation is waiting in a queue,
+     * a previously queued {@code map#destroy} operation can remove the current
+     * IMap state. In that case, later queued operations may hold stale state.
+     */
+    private void refreshState(State state) {
         MapOperation operation = state.getOperation();
-        boolean mapExists = operation.checkMapExists();
-        RecordStore recordStore = operation.getRecordStore();
-        if (!mapExists || recordStore == null) {
-            state.setThrowable(new DistributedObjectDestroyedException("No such map exists with name="
-                    + operation.getName() + ", op=" + operation.getClass().getSimpleName()));
+        if (!operation.checkMapExists()) {
             return;
         }
 
-        state.init(recordStore, operation);
+        state.init(operation.getRecordStore(), operation);
     }
 
-    private boolean metWithPreconditions() {
+    private boolean checkPreconditions(Step step, boolean runningOnPartitionThread) {
+        if (runningOnPartitionThread && !checkPartitionThreadPreconditions()) {
+            return false;
+        }
+
+        if (requiresMigrationStampValidation(step)) {
+            validatePartitionMigrationStamp();
+        }
+        return true;
+    }
+
+    /**
+     * Returns whether the current step must validate the partition migration
+     * stamp. Read-only map operations are normally allowed during migration so
+     * they can return stale in-memory values. Reaching a real MapStore load
+     * changes the safety requirement because loaded data may later be inserted
+     * into the record store.
+     * <p>
+     * Validation remains enabled after the first load step, detecting migrations
+     * that start and finish while the load is offloaded.
+     */
+    private boolean requiresMigrationStampValidation(Step step) {
+        // Validate when:
+        // - the operation-level policy requires a stable partition;
+        // - a read-through MapStore load requires a stable partition for the remaining steps.
+        if (operationNeedsStablePartition || mapStoreLoadNeedsStablePartition) {
+            return true;
+        }
+
+        // A real MapStore load can lead to a RecordStore mutation, such as writing the loaded entry.
+        if (step instanceof IMapOpStep mapStep
+                && mapStep.isLoadStep()
+                && !state.getRecordStore().getMapDataStore().isNullImpl()) {
+            mapStoreLoadNeedsStablePartition = true;
+        }
+        return mapStoreLoadNeedsStablePartition;
+    }
+
+    private boolean checkPartitionThreadPreconditions() {
         assert isRunningOnPartitionThread();
 
-        // check node and cluster health before running each step
+        // Check node and cluster health before every partition-thread step.
         operationRunner.ensureNodeAndClusterHealth(state.getOperation());
 
-        // check timeout for only first step,
-        // as in regular operation-runner
-        if (firstStep) {
-            assert firstStep;
-            firstStep = false;
+        // Check timeout only for the first partition-thread step, as in the regular operation runner.
+        if (firstPartitionStep) {
+            firstPartitionStep = false;
             return !operationRunner.timeout(state.getOperation());
         }
         return true;
     }
 
     /**
-     * In case of exception, sets next step as {@link UtilSteps#HANDLE_ERROR},
-     * otherwise finds next step by calling {@link Step#nextStep}
+     * Verifies that the partition owned by this operation has not started a primary
+     * replica migration since this {@code StepSupplier} captured its migration
+     * stamp at construction time.
+     * <p>
+     * Step-based map operations can move between partition-thread and offloaded
+     * execution. The stamp is captured eagerly in the constructor, before the
+     * first step runs, and then checked before every step that is not allowed
+     * to execute during migration. If the stamp is no longer valid, the operation
+     * is failed with {@link PartitionMigratingException} so it can be retried
+     * against the current partition owner instead of continuing with stale
+     * partition state.
+     *
+     * @see Step#isOffloadStep(Object)
+     */
+    private void validatePartitionMigrationStamp() {
+        MapService mapService = getMapService();
+        if (!mapService.validatePartitionMigrationStamp(partitionId, partitionMigrationStamp)) {
+            MapOperation operation = state.getOperation();
+            throw new PartitionMigratingException(operation.getNodeEngine().getThisAddress(),
+                    partitionId, operation.getClass().getName(), operation.getServiceName());
+        }
+    }
+
+    private MapService getMapService() {
+        return state.getOperation().getService();
+    }
+
+    /**
+     * In case of exception, sets the next step as {@link UtilSteps#HANDLE_ERROR};
+     * otherwise finds the next step by calling {@link Step#nextStep}.
      */
     private Step nextStep(Step step) {
         if (state.getThrowable() != null
@@ -297,6 +410,68 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     }
 
     private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {
+    }
 
+    /**
+     * A step that must run on the offload executor named by
+     * {@link Step#getExecutorName}.
+     */
+    private final class OffloadedStepRunnable implements ExecutorNameAwareRunnable {
+
+        private final Step step;
+        private final State state;
+
+        OffloadedStepRunnable(Step step, State state) {
+            this.step = step;
+            this.state = state;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return step.getExecutorName(state);
+        }
+
+        @Override
+        public void run() {
+            assert !checkCurrentThread || !isRunningOnPartitionThread();
+
+            runStepWithState(step, state);
+        }
+
+        @Override
+        public String toString() {
+            return step.toString();
+        }
+    }
+
+    /**
+     * A step that must run on the partition thread.
+     */
+    private final class PartitionSpecificStepRunnable implements PartitionSpecificRunnable {
+
+        private final Step step;
+        private final State state;
+
+        PartitionSpecificStepRunnable(Step step, State state) {
+            this.step = step;
+            this.state = state;
+        }
+
+        @Override
+        public void run() {
+            assert !checkCurrentThread || isRunningOnPartitionThread();
+
+            runStepWithState(step, state);
+        }
+
+        @Override
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        @Override
+        public String toString() {
+            return step.toString();
+        }
     }
 }

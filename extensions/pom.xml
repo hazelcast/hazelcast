@@ -30,15 +30,15 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.8.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <modules>
         <module>avro</module>
-        <module>cdc-debezium</module>
-        <module>cdc-mysql</module>
-        <module>cdc-postgres</module>
         <module>csv</module>
+        <module>cdc-debezium</module>
+        <module>cdc-postgres</module>
+        <module>cdc-mysql</module>
         <module>elasticsearch/elasticsearch-7</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>
@@ -47,6 +47,7 @@
         <module>kinesis</module>
         <module>mapstore</module>
         <module>mongodb</module>
+        <module>pulsar</module>
         <module>s3</module>
     </modules>
 
@@ -68,16 +69,17 @@
 
     <properties>
         <argLine> <!-- surefire parameters -->
+            ${commonArgLine}
+            ${vmHeapSettings}
+            ${javaModuleArgs}
             -Xmx1G
             -Xms1G
             -XX:+AlwaysPreTouch
-            -Dhazelcast.phone.home.enabled=false
-            -Dhazelcast.logging.type=log4j2
             -Dhazelcast.logging.details.enabled=true
             -Dhazelcast.test.use.network=false
-            -Djava.net.preferIPv4Stack=true
             -XX:+HeapDumpOnOutOfMemoryError
             -XX:HeapDumpPath=${project.build.directory}
+            ${extraVmArgs}
         </argLine>
 
         <!-- needed for CheckStyle -->
@@ -191,5 +193,16 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <!-- needed to take argLine into consideration and avoid picking log4j2.yml from Kafka -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>${argLine}</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

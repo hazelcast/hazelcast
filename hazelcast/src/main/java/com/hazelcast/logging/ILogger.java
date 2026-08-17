@@ -31,7 +31,7 @@ public interface ILogger extends TpcLogger {
      * @param logEvent the logEvent to log
      * @deprecated the method is unused
      */
-    @Deprecated(since = "5.1")
+    @Deprecated(since = "5.1", forRemoval = true)
     void log(LogEvent logEvent);
 
     /**

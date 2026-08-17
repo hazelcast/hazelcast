@@ -52,10 +52,9 @@ import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SI
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuickTest
-@SuppressWarnings({"JUnitMixedFramework", "DataFlowIssue"})
+@SuppressWarnings("DataFlowIssue")
 class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     private ReadKafkaConnectP<Integer> readKafkaConnectP;
@@ -87,7 +86,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
     void should_run_task() throws Exception {
         readKafkaConnectP.init(outbox, context);
 
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
         boolean complete = readKafkaConnectP.complete();
         assertFalse(complete);
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
@@ -108,7 +107,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
         readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
 
         readKafkaConnectP.init(outbox, context);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
         boolean complete = readKafkaConnectP.complete();
 
         assertFalse(complete);
@@ -128,7 +127,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
         readKafkaConnectP.eventTimeMapper().restoreWatermark(0, 1337);
 
         readKafkaConnectP.init(outbox, context);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
         boolean complete = readKafkaConnectP.complete();
 
         assertFalse(complete);
@@ -167,7 +166,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
     @Test
     void should_register_metrics() throws Exception {
         readKafkaConnectP.init(outbox, context);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
         MetricsRegistry metricsRegistry = Util.getNodeEngine(hazelcastInstance).getMetricsRegistry();
         CapturingCollector collector = new CapturingCollector();
         metricsRegistry.collect(collector);
@@ -182,7 +181,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
     void should_not_emit_when_snapshotting_but_after() throws Exception {
         enableSnapshotting(context);
         readKafkaConnectP.init(outbox, context);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
         readKafkaConnectP.saveToSnapshot();
         readKafkaConnectP.complete();
 
@@ -201,7 +200,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
         readKafkaConnectP.setSourceConnectorWrapper(null);
         readKafkaConnectP.setPropertiesFromUser(minimalProperties());
         readKafkaConnectP.init(outbox, context);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
 
         readKafkaConnectP.complete();
 
@@ -219,12 +218,12 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
         testProcessorContext.setTotalParallelism(2);
         testProcessorContext.setGlobalProcessorIndex(1);
         readKafkaConnectP.init(outbox, testProcessorContext);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
 
         readKafkaConnectP.complete();
 
         boolean snapshot = readKafkaConnectP.saveToSnapshot();
-        assertTrue(snapshot);
+        assertThat(snapshot).isTrue();
         Map.Entry<Object, Object> lastSnapshot = outbox.snapshotQueue().peek();
         assertThat(lastSnapshot).isNotNull();
         assertThat(lastSnapshot.getKey()).isEqualTo(BroadcastKey.broadcastKey("snapshot-0"));
@@ -235,7 +234,7 @@ class ReadKafkaConnectPTest extends HazelcastTestSupport {
         TestProcessorContext testProcessorContext = context;
         enableSnapshotting(testProcessorContext);
         readKafkaConnectP.init(outbox, testProcessorContext);
-        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        assertTrueEventually(() -> assertThat(readKafkaConnectP.configurationReceived()).isTrue());
         Map.Entry<Object, Object> lastSnapshot = outbox.snapshotQueue().peek();
         assertThat(lastSnapshot).isNull();
 

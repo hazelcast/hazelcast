@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -27,13 +28,18 @@ import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToJa
 
 @NotThreadSafe
 class HazelcastObjectUpsertTarget implements UpsertTarget {
+    private final ClassNameFilter filter;
     private Object object;
+
+    HazelcastObjectUpsertTarget(@Nullable ClassNameFilter filter) {
+        this.filter = filter;
+    }
 
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
         TypeKind typeKind = type.getObjectTypeKind();
         if (typeKind == TypeKind.JAVA) {
-            return value -> object = convertRowToJavaType(value, type);
+            return value -> object = convertRowToJavaType(value, type, filter);
         } else {
             throw QueryException.error("TypeKind " + typeKind + " does not support top-level custom types");
         }

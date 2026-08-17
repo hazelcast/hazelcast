@@ -141,7 +141,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
     }
 
     @Test
-    @Ignore("HZ-4455")
+    @Ignore("HZOLD-4455")
     public void shouldUseIndexFromClient_whenMemberProxyDestroyed() {
         testIndexWithoutMapProxy((mapName) -> member1.getMap(mapName).destroy());
     }

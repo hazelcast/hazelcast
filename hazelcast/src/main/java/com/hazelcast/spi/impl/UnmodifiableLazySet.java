@@ -16,14 +16,25 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
+/**
+ * This is an unmodifiable lazy set which is not parameterized.
+ *
+ * <p>
+ * If the underlying list contain {@link Data} elements, they will be deserialized and replaced with deserialized
+ * form on access (thus the "Lazy" in the name).
+ */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class UnmodifiableLazySet extends AbstractSet<Object> {
     private final UnmodifiableLazyList list;
 
@@ -31,7 +42,12 @@ public class UnmodifiableLazySet extends AbstractSet<Object> {
         list = new UnmodifiableLazyList(dataList, serializationService);
     }
 
+    public static <T> Set<T> toImmutableLazySet(List<T> resultSet, SerializationService serializationService) {
+        return (Set<T>) new UnmodifiableLazySet(resultSet, serializationService);
+    }
+
     @Override
+    @Nonnull
     public Iterator<Object> iterator() {
         return list.iterator();
     }
@@ -57,12 +73,12 @@ public class UnmodifiableLazySet extends AbstractSet<Object> {
     }
 
     @Override
-    public boolean removeIf(Predicate filter) {
+    public boolean removeIf(@Nonnull Predicate filter) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean retainAll(Collection<?> coll) {
+    public boolean retainAll(@Nonnull Collection<?> coll) {
         throw new UnsupportedOperationException();
     }
 

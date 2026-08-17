@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Provides utility operations for managing CP data structures.
  *
- * @since 5.7.0
+ * @since 5.7
  */
 public interface CPDataStructureManagementService {
 

@@ -1,27 +1,25 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ParsingException;
 import com.hazelcast.jet.cdc.RecordPart;
-import com.hazelcast.jet.json.JsonUtil;
+import tools.jackson.core.JacksonException;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -35,6 +33,7 @@ class RecordPartImpl implements RecordPart {
     private final transient Supplier<String> jsonSupplier;
 
     private Map<String, Object> content;
+    private Object cachedObject;
 
     RecordPartImpl(@Nonnull Supplier<String> json) {
         this.jsonSupplier = requireNonNull(json);
@@ -48,13 +47,16 @@ class RecordPartImpl implements RecordPart {
     @Nonnull
     public <T> T toObject(@Nonnull Class<T> clazz) throws ParsingException {
         requireNonNull(clazz, "class");
+        if (cachedObject != null && clazz.equals(cachedObject.getClass())) {
+            return clazz.cast(cachedObject);
+        }
         try {
-            T t = JsonUtil.beanFrom(toJson(), clazz);
-            if (t == null) {
+            cachedObject = Utils.MAPPER.readValue(toJson(), clazz);
+            if (cachedObject == null) {
                 throw new ParsingException(String.format("Mapping %s as %s didn't yield a result", json, clazz.getName()));
             }
-            return t;
-        } catch (IOException e) {
+            return clazz.cast(cachedObject);
+        } catch (JacksonException e) {
             throw new ParsingException(e.getMessage(), e);
         }
     }
@@ -64,11 +66,12 @@ class RecordPartImpl implements RecordPart {
     public Map<String, Object> toMap() throws ParsingException {
         if (content == null) {
             try {
-                content = JsonUtil.mapFrom(toJson());
+                //noinspection unchecked
+                content = Utils.MAPPER.readValue(toJson(), Map.class);
                 if (content == null) {
                     throw new ParsingException(String.format("Parsing %s didn't yield a result", json));
                 }
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 throw new ParsingException(e.getMessage(), e);
             }
         }

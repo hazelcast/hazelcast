@@ -76,7 +76,7 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
      * @deprecated see {@linkplain AggregateOperations#toCollector(AggregateOperation1)}
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(forRemoval = true)
     default Collector<T, A, R> toCollector() {
         return AggregateOperations.toCollector(this);
     }

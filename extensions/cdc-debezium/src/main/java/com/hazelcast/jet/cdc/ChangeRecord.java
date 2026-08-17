@@ -1,22 +1,19 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc;
-
-import com.hazelcast.jet.annotation.EvolvingApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +50,6 @@ import javax.annotation.Nullable;
  *
  * @since Jet 4.2
  */
-@EvolvingApi
 public interface ChangeRecord {
 
     /**
@@ -126,6 +122,16 @@ public interface ChangeRecord {
     String table();
 
     /**
+     * Returns full {@code source} field of input {@link org.apache.kafka.connect.source.SourceRecord}.
+     * Can be used to extract some additional, connector-specific context information that were not included directly
+     * as a method in this {@link ChangeRecord}.
+     *
+     * @since 6.0
+     */
+    @Nonnull
+    RecordPart source();
+
+    /**
      * Returns the key part of the CDC event. It identifies the affected record.
      */
     @Nullable
@@ -141,8 +147,26 @@ public interface ChangeRecord {
      * For <em>delete</em> operations the value describes the database record as
      * it looked BEFORE the event, so the previous image.
      */
-    @Nonnull
+    @Nullable
     RecordPart value();
+
+    /**
+     * Returns the value part of the CDC event. It includes fields like the
+     * timestamp, operation, and database record data.
+     * <p>
+     * For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value describes
+     * the database record as it looks AFTER the event, so the latest image.
+     * <p>
+     * For <em>delete</em> operations the value describes the database record as
+     * it looked BEFORE the event, so the previous image.
+     * <p>
+     * The only difference between this method and {@link #value()} is that this function
+     * returns non-null object or throws an exception.
+     *
+     * @since 6.0
+     */
+    @Nonnull
+    RecordPart nonNullValue();
 
     /**
      * Returns the new value of the record. For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value

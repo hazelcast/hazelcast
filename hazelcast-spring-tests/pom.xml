@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.8.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -105,7 +105,6 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>7.3.0.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -135,10 +134,6 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.junit.vintage</groupId>
-                    <artifactId>junit-vintage-engine</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -153,23 +148,6 @@
         even though `mvn help:active-profiles` shows that the profile is active
     -->
     <profiles>
-        <profile>
-            <id>spring-5</id>
-            <!-- see hazelcast-parent -->
-            <activation>
-                <property>
-                    <name>tested.spring.override</name>
-                    <value>5</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
         <profile>
             <id>spring-7</id>
             <activation>
@@ -186,6 +164,29 @@
                     <scope>test</scope>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>vector-tests</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast-vector</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <vector.module>true</vector.module>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

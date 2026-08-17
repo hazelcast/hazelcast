@@ -66,7 +66,7 @@ public class TxnLockAndGetOperation
         }
         Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null && shouldLoad) {
-            record = recordStore.loadRecordOrNull(dataKey, false,
+            record = recordStore.loadAndCreateRecordOrNull(dataKey, false,
                     getCallerAddress(), Clock.currentTimeMillis());
         }
         Data value = record == null ? null : mapServiceContext.toData(record.getValue());

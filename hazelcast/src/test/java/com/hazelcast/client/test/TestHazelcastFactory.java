@@ -74,6 +74,8 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     public HazelcastInstance newHazelcastClient(ClientConfig config, String sourceIp) {
         if (!mockNetwork) {
+            config = config == null ? ClientConfig.load() : config;
+            setDefaultCompactSerializationRestrictions(config.getSerializationConfig());
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
             registerJvmNameAndPidMetric(((HazelcastClientProxy) client).client);
             return client;
@@ -82,6 +84,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         if (config == null) {
             config = new XmlClientConfigBuilder().build();
         }
+        setDefaultCompactSerializationRestrictions(config.getSerializationConfig());
 
         ClientConnectionManagerFactory connectionManagerFactory = clientRegistry.createClientServiceFactory(sourceIp);
         AddressProvider addressProvider = createAddressProvider(config);
@@ -174,5 +177,10 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             HazelcastClient.shutdownAll();
         }
         super.terminateAll();
+    }
+
+    @Override
+    public TestHazelcastFactory withSerializationRestrictionsDisabled() {
+        return (TestHazelcastFactory) super.withSerializationRestrictionsDisabled();
     }
 }

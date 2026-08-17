@@ -35,6 +35,7 @@ public interface InternalSqlService extends SqlService {
 
     String SERVICE_NAME = "hz:impl:sqlService";
 
+    void ensureSqlIsEnabled();
     void start();
     void reset();
     void shutdown();

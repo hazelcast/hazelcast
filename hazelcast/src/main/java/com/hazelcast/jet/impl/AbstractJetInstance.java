@@ -35,7 +35,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -59,6 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD_RESOURCES;
@@ -94,7 +94,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     protected AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
-        this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(hazelcastInstance));
+        this.jobRepository = memoizeConcurrent(() -> new JobRepository(hazelcastInstance));
         this.observables = new ConcurrentHashMap<>();
     }
 

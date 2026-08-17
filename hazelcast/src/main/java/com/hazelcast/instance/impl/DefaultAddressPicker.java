@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InterfacesConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
@@ -59,16 +60,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 class DefaultAddressPicker
         implements AddressPicker {
 
-    /**
-     * See https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html
-     */
-    static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
-
-    /**
-     * See https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html
-     */
-    static final String PREFER_IPV6_ADDRESSES = "java.net.preferIPv6Addresses";
-
     private final ILogger logger;
 
     private final HazelcastProperties hazelcastProperties;
@@ -82,6 +73,7 @@ class DefaultAddressPicker
     private final boolean isPortAutoIncrement;
     private final int port;
     private final int portCount;
+    private final JavaIPvXProperties javaNetProps;
 
     private HostnameResolver hostnameResolver = new InetAddressHostnameResolver();
     private Address publicAddress;
@@ -89,27 +81,41 @@ class DefaultAddressPicker
     private ServerSocketChannel serverSocketChannel;
     private NetworkInterfacesEnumerator networkInterfacesEnumerator = NetworkInterfacesEnumerator.defaultEnumerator();
 
-    DefaultAddressPicker(Config config, ILogger logger) {
-        this(config, null, config.getNetworkConfig().getInterfaces(), config.getNetworkConfig().getJoin().getTcpIpConfig(),
-                config.getNetworkConfig().isReuseAddress(), config.getNetworkConfig().isPortAutoIncrement(),
-                config.getNetworkConfig().getPort(), config.getNetworkConfig().getPortCount(),
-                config.getNetworkConfig().getPublicAddress(), logger);
+    private record PortConfig(int port, int count) {
     }
 
-    DefaultAddressPicker(Config config, EndpointQualifier endpointQualifier, InterfacesConfig interfacesConfig,
-                         TcpIpConfig tcpIpConfig, boolean isReuseAddress, boolean isPortAutoIncrement, int port, int portCount,
-                         String publicAddressConfig, ILogger logger) {
+    DefaultAddressPicker(Config config, ILogger logger) {
+        this(config, logger, JavaIPvXProperties.INSTANCE);
+    }
+
+    DefaultAddressPicker(Config config, ILogger logger, JavaIPvXProperties javaNetProps) {
+        this(config, null, config.getNetworkConfig().getInterfaces(), config.getNetworkConfig().getJoin().getTcpIpConfig(),
+                config.getNetworkConfig().isReuseAddress(), config.getNetworkConfig().isPortAutoIncrement(),
+                new PortConfig(config.getNetworkConfig().getPort(), config.getNetworkConfig().getPortCount()),
+                config.getNetworkConfig().getPublicAddress(), logger, javaNetProps);
+    }
+
+    DefaultAddressPicker(Config config, ServerSocketEndpointConfig endpointConfig, TcpIpConfig tcpIpConfig, ILogger logger) {
+        this(config, endpointConfig.getQualifier(), endpointConfig.getInterfaces(), tcpIpConfig, endpointConfig.isReuseAddress(),
+                endpointConfig.isPortAutoIncrement(), new PortConfig(endpointConfig.getPort(), endpointConfig.getPortCount()),
+                endpointConfig.getPublicAddress(), logger, JavaIPvXProperties.INSTANCE);
+    }
+
+    private DefaultAddressPicker(Config config, EndpointQualifier endpointQualifier, InterfacesConfig interfacesConfig,
+                         TcpIpConfig tcpIpConfig, boolean isReuseAddress, boolean isPortAutoIncrement, PortConfig portConfig,
+                         String publicAddressConfig, ILogger logger, JavaIPvXProperties javaNetProps) {
         this.logger = logger;
         this.isReuseAddress = isReuseAddress;
         this.isPortAutoIncrement = isPortAutoIncrement;
-        this.port = port;
-        this.portCount = portCount;
+        this.port = portConfig.port();
+        this.portCount = portConfig.count();
         this.endpointQualifier = endpointQualifier;
         this.interfacesConfig = interfacesConfig;
         this.tcpIpConfig = tcpIpConfig;
         this.publicAddressConfig = publicAddressConfig;
         this.hazelcastProperties = new HazelcastProperties(config);
         this.config = config;
+        this.javaNetProps = javaNetProps;
     }
 
     @Override
@@ -451,12 +457,12 @@ class DefaultAddressPicker
     }
 
     private boolean preferIPv4Stack() {
-        return Boolean.getBoolean(PREFER_IPV4_STACK)
+        return javaNetProps.preferIPv4Stack()
                 || hazelcastProperties.getBoolean(ClusterProperty.PREFER_IPv4_STACK);
     }
 
     private boolean preferIPv6Addresses() {
-        return !preferIPv4Stack() && Boolean.getBoolean(PREFER_IPV6_ADDRESSES);
+        return !preferIPv4Stack() && javaNetProps.preferIPv6Addresses();
     }
 
     @Override

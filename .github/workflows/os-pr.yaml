@@ -3,10 +3,6 @@ on:
   pull_request_target:
     branches:
       - "master"
-      - "[0-9]+.[0-9]+.z"
-      - "[0-9]+.[0-9]+.[0-9]"
-      - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
-      - "data-migration-5.3"
     types:
       - reopened
       - opened
@@ -20,7 +16,9 @@ jobs:
   copybara-os-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+        with:
+          allow-unsafe-pr-checkout: true
       - name: Reopen referenced PRs
         if: github.event.action == 'reopened'
         run: |
@@ -42,10 +40,11 @@ jobs:
           GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
       - name: Generate copybara config file
         run: |
+          curl --fail --retry 5 --retry-all-errors --show-error --silent https://raw.githubusercontent.com/hazelcast/mono-actions/main/copybara/copy-commit-to-os/common-copybara.bara.sky.template | \
           sed -e "s#<branch_to_sync>#${branch_to_sync}#" \
               -e "s#<sot_repo>#${sot_repo}#" \
               -e "s#<destination_repo>#${destination_repo}#" \
-              .github/workflows/common-copybara.bara.sky.template > .github/workflows/common-copybara.bara.sky
+              > .github/workflows/common-copybara.bara.sky
       - uses: hazelcast/copybara-action@main
         name: "Copybara PR #${{ github.event.pull_request.number }} -> ${{ env.branch_to_sync }}"
         with:
@@ -74,11 +73,8 @@ jobs:
           done <<< "$CONTENT"
         env:
           GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
-      - uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
+      - uses: hazelcast/docker-actions/slack-notification@master
         if: failure()
         with:
-            fields: repo,message,author,action,eventName,workflow,job,pullRequest
-            status: failure
-            channel: "#monorepo-notifications"
-        env:
-            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
+          slack-channel: ${{ vars.MONOREPO_SLACK_CHANNEL }}

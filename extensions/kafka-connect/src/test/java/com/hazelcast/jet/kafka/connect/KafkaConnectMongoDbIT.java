@@ -28,16 +28,14 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.bson.Document;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.Map;
@@ -55,13 +53,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, NightlyTest.class})
+@SerialTest
+@SlowTest
+@NightlyTest
 public class KafkaConnectMongoDbIT extends JetTestSupport {
     private static MongoDBContainer mongoContainer;
     private static MongoClient mongoClient;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
         assumeDockerEnabled();
         mongoContainer = new MongoDBContainer(MONGO_IMAGE);

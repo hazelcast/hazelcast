@@ -30,6 +30,7 @@ import static java.lang.Integer.MAX_VALUE;
  * Field Type for {@link Portable} format to be used with {@link ClassDefinition#getFieldType(String)} API
  */
 @SuppressWarnings("JavadocVariable")
+@Deprecated(since = "5.4", forRemoval = true)
 public enum FieldType {
 
     /**

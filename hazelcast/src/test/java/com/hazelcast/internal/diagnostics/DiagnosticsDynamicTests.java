@@ -37,6 +37,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -398,9 +399,10 @@ public class DiagnosticsDynamicTests extends AbstractDiagnosticsPluginTest {
 
         assertTrueEventually(() -> {
             assertEquals(tmpFolder.getRoot().getAbsolutePath(), diagnostics.getLoggingDirectory().getAbsolutePath());
-            assertTrue(tmpFolder.getRoot().listFiles().length > 0);
-            assertStartsWith(diagnostics.getBaseFileNameWithTime(), tmpFolder.getRoot().listFiles()[0].getName());
-            assertGreaterOrEquals("log file size", tmpFolder.getRoot().listFiles()[0].length(), 1);
+            File[] logFiles = tmpFolder.getRoot().listFiles();
+            assertTrue(logFiles != null && logFiles.length > 0);
+            assertStartsWith(diagnostics.getBaseFileNameWithTime(), logFiles[0].getName());
+            assertGreaterOrEquals("log file size", logFiles[0].length(), 1);
         });
     }
 

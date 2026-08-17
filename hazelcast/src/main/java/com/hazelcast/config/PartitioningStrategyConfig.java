@@ -94,7 +94,7 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         partitioningStrategyClass = in.readString();
-        partitioningStrategy = in.readObject();
+        partitioningStrategy = ConfigDeserializationUtil.readObject(in, getClass(), "partitioningStrategy");
     }
 
     @Override

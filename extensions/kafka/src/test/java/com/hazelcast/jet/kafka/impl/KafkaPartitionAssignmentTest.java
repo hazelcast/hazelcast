@@ -17,17 +17,16 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.hazelcast.test.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@ParallelTest
 public class KafkaPartitionAssignmentTest {
 
     @Test

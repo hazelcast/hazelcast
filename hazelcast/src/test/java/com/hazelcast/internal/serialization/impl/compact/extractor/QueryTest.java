@@ -57,6 +57,7 @@ public class QueryTest extends HazelcastTestSupport {
         mapConfig.setName("map");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.addMapConfig(mapConfig);
+        ComplexTestDataStructure.addToAllowList(config);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("map");
@@ -70,6 +71,7 @@ public class QueryTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
+        ComplexTestDataStructure.addToAllowList(config);
 
         IndexConfig indexConfig = new IndexConfig();
         indexConfig.addAttribute("firstLimb");
@@ -101,6 +103,7 @@ public class QueryTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
+        ComplexTestDataStructure.addToAllowList(config);
 
         IndexConfig indexConfig = new IndexConfig();
         indexConfig.addAttribute("firstLimb.name");

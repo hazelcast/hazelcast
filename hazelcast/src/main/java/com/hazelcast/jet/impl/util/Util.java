@@ -101,7 +101,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
@@ -152,14 +152,6 @@ public final class Util {
     public static boolean isJobSuspendable(JobConfig jobConfig) {
         Boolean argument = jobConfig.getArgument(KEY_JOB_IS_SUSPENDABLE);
         return argument == null || argument;
-    }
-
-    public static <T> Supplier<T> memoize(Supplier<T> onceSupplier) {
-        return new MemoizingSupplier<>(onceSupplier);
-    }
-
-    public static <T> Supplier<T> memoizeConcurrent(Supplier<T> onceSupplier) {
-        return new ConcurrentMemoizingSupplier<>(onceSupplier);
     }
 
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {

@@ -179,6 +179,7 @@ public final class QueryUtils {
             }
         }
 
+        discovered.remove(type.getTypeName());
         return false;
     }
 

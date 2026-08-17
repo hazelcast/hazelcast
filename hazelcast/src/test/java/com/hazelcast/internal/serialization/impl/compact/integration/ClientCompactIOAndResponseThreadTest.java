@@ -75,10 +75,16 @@ public class ClientCompactIOAndResponseThreadTest extends HazelcastTestSupport {
         factory.shutdownAll();
     }
 
+    private ClientConfig getBaseConfig() {
+        ClientConfig baseConfig = new ClientConfig();
+        addToCompactSerializationAllowList(baseConfig.getSerializationConfig(), SimpleRecord.class);
+        return baseConfig;
+    }
+
     // ISSUE 1 - sync handler - response always processed on the IO thread
     @Test(timeout = TEST_TIMEOUT)
     public void getCompactValueUsingSyncResponseHandler() {
-        HazelcastInstance client1 = factory.newHazelcastClient(new ClientConfig());
+        HazelcastInstance client1 = factory.newHazelcastClient(getBaseConfig());
         IMap<Integer, SimpleRecord> myMap1 = client1.getMap("my-map");
         // Set value using client 1 - using zero compact serialization
         SimpleRecord record1 = new SimpleRecord("test");
@@ -87,7 +93,7 @@ public class ClientCompactIOAndResponseThreadTest extends HazelcastTestSupport {
 
         logger.info("value set to " + record1);
 
-        ClientConfig config2 = new ClientConfig();
+        ClientConfig config2 = getBaseConfig();
         // Due to this property the SyncResponseHandler in ClientResponseHandlerSupplier is used
         config2.setProperty("hazelcast.client.response.thread.count", "0");
         config2.setProperty("hazelcast.client.heartbeat.timeout", valueOf(HEARTBEAT_TIMEOUT));
@@ -101,7 +107,7 @@ public class ClientCompactIOAndResponseThreadTest extends HazelcastTestSupport {
     // Removing test timeout shows that this blocks indefinitely
     @Test(timeout = TEST_TIMEOUT)
     public void getCompactValueUsingAsyncResponseHandler() throws Exception {
-        HazelcastInstance client1 = factory.newHazelcastClient(new ClientConfig());
+        HazelcastInstance client1 = factory.newHazelcastClient(getBaseConfig());
         IMap<Integer, SimpleRecord> myMap1 = client1.getMap("my-map");
         // Set value using client 1 - using zero compact serialization
         SimpleRecord record1 = new SimpleRecord("test");
@@ -110,7 +116,7 @@ public class ClientCompactIOAndResponseThreadTest extends HazelcastTestSupport {
 
         logger.info("Wrote entry " + record1);
 
-        ClientConfig config2 = new ClientConfig();
+        ClientConfig config2 = getBaseConfig();
         // use only single response thread - it ensures that we hit the issue with same response
         // thread processing the two responses
         config2.setProperty("hazelcast.client.response.thread.count", "1");

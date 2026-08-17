@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.map.EntryProcessor;

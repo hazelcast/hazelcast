@@ -139,10 +139,10 @@ public class StoreWorker implements Runnable {
 
             if (!localPartition) {
                 backupsList = initListIfNull(backupsList, partitionCount);
-                selectEntriesToStore(recordStore, backupsList, backupHighestStoreTime);
+                selectEntriesToStore(recordStore, backupsList, backupHighestStoreTime, true);
             } else {
                 ownersList = initListIfNull(ownersList, partitionCount);
-                selectEntriesToStore(recordStore, ownersList, ownerHighestStoreTime);
+                selectEntriesToStore(recordStore, ownersList, ownerHighestStoreTime, false);
             }
         }
 
@@ -206,17 +206,40 @@ public class StoreWorker implements Runnable {
         return partition.isLocal();
     }
 
-    private void selectEntriesToStore(RecordStore recordStore, List<DelayedEntry> entries, long highestStoreTime) {
+    private void selectEntriesToStore(
+        RecordStore recordStore,
+        List<DelayedEntry> entries,
+        long highestStoreTime,
+        boolean backup
+    ) {
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
         long nextSequenceToFlush = getSequenceToFlush(recordStore);
 
-        filterWriteBehindQueue(highestStoreTime, nextSequenceToFlush, entries, queue);
+        filterWriteBehindQueue(highestStoreTime, nextSequenceToFlush, entries, queue, backup);
     }
 
-    private void filterWriteBehindQueue(final long highestStoreTime, final long sequence, Collection<DelayedEntry> collection,
-                                        WriteBehindQueue<DelayedEntry> queue) {
-        if (sequence > 0) {
+    private void filterWriteBehindQueue(
+        final long highestStoreTime,
+        final long sequence,
+        Collection<DelayedEntry> collection,
+        WriteBehindQueue<DelayedEntry> queue,
+        boolean backup
+    ) {
+        if (sequence > 0 && backup) {
+            // Owner and backup flush operations run in parallel.
+            // To prevent data loss if the owner fails during a flush, the backup must retain entries
+            // for a short delay before they are removed from the queue.
+            // This ensures the backup always lags behind the owner flush process.
+            // Multiple flushes can occur if a flush happens on the primary partition,
+            // followed by a primary loss and promotion of the backup partition.
+            var backupCleanupCutoffTime = Clock.currentTimeMillis() - backupDelayMillis;
+            queue.filter(
+                delayedEntry -> delayedEntry.getSequence() <= sequence && delayedEntry.getStoreTime() < backupCleanupCutoffTime,
+                collection
+            );
+        } else if (sequence > 0) {
             queue.filter(delayedEntry -> delayedEntry.getSequence() <= sequence, collection);
+
         } else {
             queue.filter(delayedEntry -> delayedEntry.getStoreTime() <= highestStoreTime, collection);
         }

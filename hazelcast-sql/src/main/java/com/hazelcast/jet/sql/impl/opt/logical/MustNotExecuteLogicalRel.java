@@ -25,7 +25,8 @@ import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
-import org.checkerframework.checker.nullness.qual.Nullable;
+
+import javax.annotation.Nullable;
 
 /**
  * See {@link MustNotExecutePhysicalRel}.

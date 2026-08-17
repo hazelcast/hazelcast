@@ -19,6 +19,7 @@ package com.hazelcast.spring.java;
 import com.hazelcast.spring.CustomSpringExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = SpringHazelcastConfiguration.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class FullContextTest extends AppContextTestBase {
 
     @Test

@@ -52,4 +52,7 @@ public final class TestedVersions {
     public static final DockerImageName TEST_NEO4J_IMAGE = DockerImageName.parse("neo4j:" + TEST_NEO4J_VERSION);
 
     public static final DockerImageName LOCALSTACK_IMAGE = DockerImageName.parse("localstack/localstack:4");
+
+    public static final DockerImageName PULSAR_4_IMAGE = DockerImageName.parse("apachepulsar/pulsar:4.2.3");
+    public static final DockerImageName PULSAR_5_IMAGE = DockerImageName.parse("apachepulsar/pulsar:5.0.0-M1");
 }

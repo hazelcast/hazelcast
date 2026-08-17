@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;

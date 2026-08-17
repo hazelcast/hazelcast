@@ -23,7 +23,6 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.ReflectiveAttributeTestObject;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.query.impl.getters.policy.ReflectiveAttributeLookupException;
 import com.hazelcast.query.impl.getters.policy.ReflectiveAttributeLookupPolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -115,7 +114,7 @@ public class ExtractorsTest {
     public void when_extractStaticMethod_withRestrictedLookup_then_throwQueryException() {
         assertThatThrownBy(() -> createExtractors(null).extract(new ReflectiveAttributeTestObject("c"), "getStaticValue", null))
                 .isInstanceOf(QueryException.class)
-                .hasRootCauseInstanceOf(ReflectiveAttributeLookupException.class)
+                .isInstanceOf(QueryException.class)
                 .hasMessageContaining("cannot be used for attribute extraction");
     }
 

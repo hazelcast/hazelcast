@@ -20,9 +20,9 @@ import static java.util.Arrays.copyOf;
 
 /**
  * Contains configuration for symmetric encryption
- * @deprecated
+ * @deprecated Symmetric encryption is deprecated in favor of TLS.
  */
-@Deprecated(since = "4.2")
+@Deprecated(since = "4.2", forRemoval = true)
 public class SymmetricEncryptionConfig
         extends AbstractSymmetricEncryptionConfig<SymmetricEncryptionConfig> {
 

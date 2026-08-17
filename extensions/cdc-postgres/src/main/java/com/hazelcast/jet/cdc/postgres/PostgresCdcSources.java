@@ -1,42 +1,40 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc.postgres;
 
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.impl.CdcSourceP;
-import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSourceP;
-import com.hazelcast.jet.cdc.impl.DebeziumConfig;
+import com.hazelcast.jet.cdc.DebeziumCdcSources;
+import com.hazelcast.jet.cdc.RecordMappingFunction;
+import com.hazelcast.jet.cdc.SequenceExtractor;
+import com.hazelcast.jet.cdc.impl.ReadCdcP;
+import com.hazelcast.jet.cdc.impl.ChangeRecordMappingFn;
 import com.hazelcast.jet.cdc.impl.PropertyRules;
-import com.hazelcast.jet.cdc.postgres.impl.PostgresSequenceExtractor;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.jet.cdc.DebeziumSnapshotMode;
 import io.debezium.connector.postgresql.PostgresConnectorConfig;
-import io.debezium.connector.postgresql.spi.Snapshotter;
+import io.debezium.spi.snapshot.Snapshotter;
+import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
@@ -45,7 +43,6 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
  *
  * @since Jet 4.2
  */
-@EvolvingApi
 public final class PostgresCdcSources {
 
     private PostgresCdcSources() {
@@ -54,56 +51,24 @@ public final class PostgresCdcSources {
     /**
      * Creates a CDC source that streams change data from a PostgreSQL database
      * to Hazelcast Jet.
-     * <p>
-     * You can configure how the source will behave if the database connection
-     * breaks, by passing one of the {@linkplain RetryStrategy retry strategies}
-     * to {@code setReconnectBehavior()}.
-     * <p>
-     * The default reconnect behavior is <em>never</em>, which treats any
-     * connection failure as an unrecoverable problem and triggers the failure
-     * of the source and the entire job.
-     * <p>
-     * Other behavior options, which specify that retry attempts should be
-     * made, will result in the source initiating reconnects to the database.
-     * <p>
-     * There is a further setting influencing reconnect behavior, specified via
-     * {@code setShouldStateBeResetOnReconnect()}. The boolean flag passed in
-     * specifies what should happen to the connector's state on reconnect,
-     * whether it should be kept or reset. If the state is kept, then
-     * database snapshotting should not be repeated and streaming the WAL should
-     * resume at the position where it left off. If the state is reset, then the
-     * source will behave as on its initial start, so will do a database
-     * snapshot and will start tailing the WAL where it syncs with the database
-     * snapshot's end.
-     * <p>
-     * You can also configure how often the source will send feedback about
-     * processed change record offsets to the backing database via
-     * {@code setCommitPeriod()}. The replication slots of the database will
-     * clean up their internal data structures based on this feedback. A commit
-     * period of {@code 0} means that the source will commit offsets after every
-     * batch of change records. Also, important to note that periodic commits
-     * happen only in the case of jobs without processing guarantees. For jobs
-     * offering processing guarantees, the source will ignore this setting and
-     * commit offsets as part of the state snapshotting process. So the setting
-     * governing them will be
-     * {@linkplain JobConfig#setSnapshotIntervalMillis(long)
-     * JobConfig.setSnapshotIntervalMillis}.
      *
-     * @param name name of this source, needs to be unique, will be passed to
-     *             the underlying Kafka Connect source
+     * @param name name of this source, needs to be unique
      * @return builder that can be used to set source properties and also to
      * construct the source once configuration is done
      */
     @Nonnull
-    public static Builder postgres(@Nonnull String name) {
-        return new Builder(name);
+    public static Builder<ChangeRecord> postgres(@Nonnull String name) {
+        return new Builder<>(name);
     }
 
     /**
      * Builder for configuring a CDC source that streams change data
      * from a PostgreSQL database to Hazelcast Jet.
+     *
+     * @param <T> type of items produced by the source
      */
-    public static final class Builder {
+    @SuppressWarnings("unused")
+    public static final class Builder<T> extends DebeziumCdcSources.Builder<T> {
 
         private static final PropertyRules RULES = new PropertyRules()
                 .required("database.hostname")
@@ -111,50 +76,35 @@ public final class PostgresCdcSources {
                 .required("database.password")
                 .required("database.dbname")
                 .inclusive("database.sslkey", "database.sslpassword")
-                .exclusive("schema.whitelist", "schema.blacklist")
-                .exclusive("table.whitelist", "table.blacklist");
-
-        private final DebeziumConfig config;
+                .exclusive("schema.include.list", "schema.exclude.list")
+                .exclusive("table.include.list", "table.exclude.list");
 
         /**
-         * @param name name of the source, needs to be unique, will be passed to
-         *             the underlying Kafka Connect source
+         * @param name name of the source, needs to be unique
          */
+        @SuppressWarnings("unchecked")
         private Builder(@Nonnull String name) {
-            Objects.requireNonNull(name, "name");
-
-            config = new DebeziumConfig(name, "io.debezium.connector.postgresql.PostgresConnector");
-            config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, PostgresSequenceExtractor.class.getName());
-            config.setProperty(ChangeRecordCdcSourceP.DB_SPECIFIC_EXTRA_FIELDS_PROPERTY, "schema");
-            config.setProperty("database.server.name", UuidUtil.newUnsecureUuidString());
-            config.setProperty("snapshot.mode", "initial");
+            super(name, "io.debezium.connector.postgresql.PostgresConnector",
+                    (RecordMappingFunction<T>) new ChangeRecordMappingFn());
+            Objects.requireNonNull(name, "name cannot be null");
         }
 
         /**
          * Snapshot mode that will be used by the connector.
          * <p>
-         * If you want to use {@link io.debezium.connector.postgresql.PostgresConnectorConfig.SnapshotMode#CUSTOM},
+         * If you want to use {@link PostgresConnectorConfig.SnapshotMode#CUSTOM},
          * please use {@link #setCustomSnapshotter(Class)} method instead.
          */
         @Nonnull
-        public Builder setSnapshotMode(@Nonnull PostgresSnapshotMode snapshotMode) {
-            PostgresConnectorConfig.SnapshotMode debeziumMode;
-            switch (snapshotMode) {
-                case ALWAYS:
-                    debeziumMode = PostgresConnectorConfig.SnapshotMode.ALWAYS;
-                    break;
-                case INITIAL:
-                    debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL;
-                    break;
-                case INITIAL_ONLY:
-                    debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY;
-                    break;
-                case NEVER:
-                    debeziumMode = PostgresConnectorConfig.SnapshotMode.NEVER;
-                    break;
-                default:
-                    throw new IllegalArgumentException("unsupported snapshot mode " + snapshotMode);
-            }
+        public Builder<T> setSnapshotMode(@Nonnull DebeziumSnapshotMode snapshotMode) {
+            PostgresConnectorConfig.SnapshotMode debeziumMode = switch (snapshotMode) {
+                case ALWAYS -> PostgresConnectorConfig.SnapshotMode.ALWAYS;
+                case INITIAL -> PostgresConnectorConfig.SnapshotMode.INITIAL;
+                case INITIAL_ONLY -> PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY;
+                case NO_DATA -> PostgresConnectorConfig.SnapshotMode.NO_DATA;
+                case CONFIGURATION_BASED -> PostgresConnectorConfig.SnapshotMode.CONFIGURATION_BASED;
+                case WHEN_NEEDED -> PostgresConnectorConfig.SnapshotMode.WHEN_NEEDED;
+            };
             config.setProperty("snapshot.mode", debeziumMode.getValue());
             return this;
         }
@@ -163,19 +113,46 @@ public final class PostgresCdcSources {
          * Custom snapshotter that will be used by the connector.
          */
         @Nonnull
-        public Builder setCustomSnapshotter(@Nonnull Class<?> snapshotterClass) {
-            checkState(Snapshotter.class.isAssignableFrom(snapshotterClass), "snapshotterClass must be " +
-                    "a subclass of Snapshotter");
+        public Builder<T> setCustomSnapshotter(@Nonnull Class<?> snapshotterClass) {
+            checkState(Snapshotter.class.isAssignableFrom(snapshotterClass), "snapshotterClass must be "
+                    + "a subclass of Snapshotter");
             config.setProperty("snapshot.mode", PostgresConnectorConfig.SnapshotMode.CUSTOM.getValue());
-            config.setProperty("snapshot.custom.class", snapshotterClass.getName());
+            Snapshotter instance;
+            try {
+                instance = newInstance(getClass().getClassLoader(), snapshotterClass);
+                config.setProperty("snapshot.custom.class", instance.name());
+            } catch (Exception e) {
+                throw new JetException("Cannot construct an instance of Snapshotter " + snapshotterClass, e);
+            }
             return this;
         }
 
         /**
+         * IP address or hostname and the port of the database server, has to be specified.
+         */
+        @Nonnull
+        public Builder<T> setDatabaseAddress(@Nonnull String address, int port) {
+            config.setProperty("database.hostname", address);
+            config.setProperty("database.port", Integer.toString(port));
+            return this;
+        }
+
+        /**
+         * Database user and password for connecting to the database server. Has to be
+         * specified.
+         */
+        public Builder<T> setDatabaseCredentials(@Nonnull String user, @Nonnull String password) {
+            config.setProperty("database.user", user);
+            config.setProperty("database.password", password);
+            return this;
+        }
+
+        // region Old functions for better compatibility
+        /**
          * IP address or hostname of the database server, has to be specified.
          */
         @Nonnull
-        public Builder setDatabaseAddress(@Nonnull String address) {
+        public Builder<T> setDatabaseAddress(@Nonnull String address) {
             config.setProperty("database.hostname", address);
             return this;
         }
@@ -185,7 +162,7 @@ public final class PostgresCdcSources {
          * to the database specific default port (5432).
          */
         @Nonnull
-        public Builder setDatabasePort(int port) {
+        public Builder<T> setDatabasePort(int port) {
             config.setProperty("database.port", Integer.toString(port));
             return this;
         }
@@ -195,7 +172,7 @@ public final class PostgresCdcSources {
          * specified.
          */
         @Nonnull
-        public Builder setDatabaseUser(@Nonnull String user) {
+        public Builder<T> setDatabaseUser(@Nonnull String user) {
             config.setProperty("database.user", user);
             return this;
         }
@@ -205,7 +182,7 @@ public final class PostgresCdcSources {
          * be specified.
          */
         @Nonnull
-        public Builder setDatabasePassword(@Nonnull String password) {
+        public Builder<T> setDatabasePassword(@Nonnull String password) {
             config.setProperty("database.password", password);
             return this;
         }
@@ -219,22 +196,24 @@ public final class PostgresCdcSources {
          * black-listing configuration options for those.
          */
         @Nonnull
-        public Builder setDatabaseName(@Nonnull String dbName) {
+        public Builder<T> setDatabaseName(@Nonnull String dbName) {
             config.setProperty("database.dbname", dbName);
             return this;
         }
+        //endregion
 
+        //region Includes/Excludes
         /**
          * Optional regular expressions that match schema names to be monitored
          * ("schema" is used here to denote logical groups of tables). Any
          * schema name not included in the whitelist will be excluded from
          * monitoring. By default, all non-system schemas will be monitored. May
          * not be used with
-         * {@link #setSchemaBlacklist(String...) schema blacklist}.
+         * {@link #setSchemaExcludeList(String...) schema blacklist}.
          */
         @Nonnull
-        public Builder setSchemaWhitelist(@Nonnull String... schemaNameRegExps) {
-            config.setProperty("schema.whitelist", schemaNameRegExps);
+        public Builder<T> setSchemaIncludeList(@Nonnull String... schemaNameRegExps) {
+            config.setProperty("schema.include.list", schemaNameRegExps);
             return this;
         }
 
@@ -243,12 +222,35 @@ public final class PostgresCdcSources {
          * from monitoring ("schema" is used here to denote logical groups of
          * tables). Any schema name not included in the blacklist will be
          * monitored, except system schemas. May not be used with
-         * {@link #setSchemaWhitelist(String...) schema whitelist}.
+         * {@link #setSchemaIncludeList(String...) schema whitelist}.
          */
         @Nonnull
-        public Builder setSchemaBlacklist(@Nonnull String... schemaNameRegExps) {
-            config.setProperty("schema.blacklist", schemaNameRegExps);
+        public Builder<T> setSchemaExcludeList(@Nonnull String... schemaNameRegExps) {
+            config.setProperty("schema.exclude.list", schemaNameRegExps);
             return this;
+        }
+
+        /**
+         * Optional regular expressions that match databases to be monitored; any database not included in the
+         * include list will be excluded from monitoring. By default, the connector will
+         * monitor all databases. May not be
+         * used with {@link #setDatabaseExcludeList(String...) database exclude list}.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setDatabaseIncludeList(@Nonnull String... databaseNameRegExps) {
+            return (Builder<T>) super.setDatabaseIncludeList(databaseNameRegExps);
+        }
+
+        /**
+         * Optional regular expressions that match databases to be excluded from monitoring; any table not
+         * included in the exclude list will be monitored. May not be used with
+         * {@link #setDatabaseIncludeList(String...) database include list}.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setDatabaseExcludeList(@Nonnull String... databaseNameRegExps) {
+            return (Builder<T>) super.setDatabaseExcludeList(databaseNameRegExps);
         }
 
         /**
@@ -257,11 +259,12 @@ public final class PostgresCdcSources {
          * whitelist will be excluded from monitoring. Each identifier is of the
          * form <em>schemaName.tableName</em>. By default, the connector will
          * monitor every non-system table in each monitored database. May not be
-         * used with {@link #setTableBlacklist(String...) table blacklist}.
+         * used with {@link #setTableExcludeList(String...) table exclude list}.
          */
         @Nonnull
-        public Builder setTableWhitelist(@Nonnull String... tableNameRegExps) {
-            config.setProperty("table.whitelist", tableNameRegExps);
+        @Override
+        public Builder<T> setTableIncludeList(@Nonnull String... tableNameRegExps) {
+            config.setProperty("table.include.list", String.join(",", tableNameRegExps));
             return this;
         }
 
@@ -270,11 +273,12 @@ public final class PostgresCdcSources {
          * identifiers for tables to be excluded from monitoring; any table not
          * included in the blacklist will be monitored. Each identifier is of
          * the form <em>schemaName.tableName</em>. May not be used with
-         * {@link #setTableWhitelist(String...) table whitelist}.
+         * {@link #setTableIncludeList(String...) table whitelist}.
          */
         @Nonnull
-        public Builder setTableBlacklist(@Nonnull String... tableNameRegExps) {
-            config.setProperty("table.blacklist", tableNameRegExps);
+        @Override
+        public Builder<T> setTableExcludeList(@Nonnull String... tableNameRegExps) {
+            config.setProperty("table.exclude.list", String.join(",", tableNameRegExps));
             return this;
         }
 
@@ -285,10 +289,12 @@ public final class PostgresCdcSources {
          * <em>schemaName.tableName.columnName</em>.
          */
         @Nonnull
-        public Builder setColumnBlacklist(@Nonnull String... columnNameRegExps) {
-            config.setProperty("column.blacklist", columnNameRegExps);
+        public Builder<T> setColumnIncludeList(@Nonnull String... columnNameRegExps) {
+            config.setProperty("column.include.list", columnNameRegExps);
             return this;
         }
+
+        //endregion
 
         /**
          * The name of the @see <a href="https://www.postgresql.org/docs/10/logicaldecoding.html">
@@ -306,7 +312,7 @@ public final class PostgresCdcSources {
          * transactions is sent as a separate message from PostgreSQL.
          */
         @Nonnull
-        public Builder setLogicalDecodingPlugIn(@Nonnull String pluginName) {
+        public Builder<T> setLogicalDecodingPlugIn(@Nonnull String pluginName) {
             config.setProperty("plugin.name", pluginName);
             return this;
         }
@@ -326,7 +332,7 @@ public final class PostgresCdcSources {
          * If not explicitly set, the property defaults to <em>debezium</em>.
          */
         @Nonnull
-        public Builder setReplicationSlotName(@Nonnull String slotName) {
+        public Builder<T> setReplicationSlotName(@Nonnull String slotName) {
             config.setProperty("slot.name", slotName);
             return this;
         }
@@ -343,7 +349,7 @@ public final class PostgresCdcSources {
          * cannot resume from the WAL position where it left off before.
          */
         @Nonnull
-        public Builder setReplicationSlotDropOnStop(boolean dropOnStop) {
+        public Builder<T> setReplicationSlotDropOnStop(boolean dropOnStop) {
             config.setProperty("slot.drop.on.stop", dropOnStop);
             return this;
         }
@@ -366,7 +372,7 @@ public final class PostgresCdcSources {
          * If not explicitly set, the property defaults to <em>dbz_publication</em>.
          */
         @Nonnull
-        public Builder setPublicationName(@Nonnull String publicationName) {
+        public Builder<T> setPublicationName(@Nonnull String publicationName) {
             config.setProperty("publication.name", publicationName);
             return this;
         }
@@ -389,7 +395,7 @@ public final class PostgresCdcSources {
          * of the remote connection.
          */
         @Nonnull
-        public Builder setSslMode(@Nonnull String mode) {
+        public Builder<T> setSslMode(@Nonnull String mode) {
             config.setProperty("database.sslmode", mode);
             return this;
         }
@@ -399,7 +405,7 @@ public final class PostgresCdcSources {
          * the database client.
          */
         @Nonnull
-        public Builder setSslCertificateFile(@Nonnull String file) {
+        public Builder<T> setSslCertificateFile(@Nonnull String file) {
             config.setProperty("database.sslcert", file);
             return this;
         }
@@ -409,7 +415,7 @@ public final class PostgresCdcSources {
          * the database client.
          */
         @Nonnull
-        public Builder setSslKeyFile(@Nonnull String file) {
+        public Builder<T> setSslKeyFile(@Nonnull String file) {
             config.setProperty("database.sslkey", file);
             return this;
         }
@@ -421,7 +427,7 @@ public final class PostgresCdcSources {
          * Mandatory if key file specified.
          */
         @Nonnull
-        public Builder setSslKeyFilePassword(@Nonnull String password) {
+        public Builder<T> setSslKeyFilePassword(@Nonnull String password) {
             config.setProperty("database.sslpassword", password);
             return this;
         }
@@ -431,114 +437,116 @@ public final class PostgresCdcSources {
          * (CA) certificate(s).
          */
         @Nonnull
-        public Builder setSslRootCertificateFile(@Nonnull String file) {
+        public Builder<T> setSslRootCertificateFile(@Nonnull String file) {
             config.setProperty("database.sslrootcert", file);
             return this;
         }
 
+        // region Overrides
         /**
-         * Specifies how the connector should behave when it detects that the
-         * backing database has been shut dow.
-         * <p>
-         * Defaults to {@link CdcSourceP#DEFAULT_RECONNECT_BEHAVIOR}.
+         * Sets the return type of the source to {@link ChangeRecord}.
          */
         @Nonnull
-        public Builder setReconnectBehavior(@Nonnull RetryStrategy retryStrategy) {
-            config.setProperty(CdcSourceP.RECONNECT_BEHAVIOR_PROPERTY, retryStrategy);
-            return this;
+        @Override
+        public Builder<ChangeRecord> changeRecord() {
+            return (Builder<ChangeRecord>) super.changeRecord();
         }
 
         /**
-         * Specifies if the source's state should be kept or discarded during
-         * reconnect attempts to the database. If the state is kept, then
-         * database snapshotting should not be repeated and streaming the binlog
-         * should resume at the position where it left off. If the state is
-         * reset, then the source will behave as if it were its initial start,
-         * so will do a database snapshot and will start tailing the binlog
-         * where it syncs with the database snapshot's end.
+         * Sets the return type of the source to {@link Entry} with key and value being {@link SourceRecord}'s
+         * key and value, parsed to json string.
          */
         @Nonnull
-        public Builder setShouldStateBeResetOnReconnect(boolean reset) {
-            config.setProperty(CdcSourceP.RECONNECT_RESET_STATE_PROPERTY, reset);
-            return this;
+        @Override
+        public Builder<Entry<String, String>> json() {
+            return (Builder<Entry<String, String>>) super.json();
         }
 
         /**
-         * Specifies how often the connector should confirm processed offsets to
-         * the Postgres database's replication slot. For jobs with a processing
-         * guarantee this option is ignored, the source confirms the offsets after
-         * each state snapshot.
-         * <p>
-         * If set to <em>zero</em>, the connector will commit the offsets after
-         * each batch of change records.
-         * <p>
-         * If set to a <em>positive</em> value, the commits will be done in the
-         * given period.
-         * <p>
-         * <em>Negative</em> values are not allowed.
-         * <p>
-         * Defaults to {@link CdcSourceP#DEFAULT_COMMIT_PERIOD_MS}.
-         *
-         * @since Jet 4.4.1
+         * Sets the return type of the source to user defined {@code #T_NEW} type. Mapping will be performed
+         * by user-defined mapping function.
          */
         @Nonnull
-        public Builder setCommitPeriod(long milliseconds) {
-            if (milliseconds < 0) {
-                throw new IllegalArgumentException("Negative commit period not allowed");
-            }
-            config.setProperty(CdcSourceP.COMMIT_PERIOD_MILLIS_PROPERTY, milliseconds);
-            return this;
+        @Override
+        public <T_NEW> Builder<T_NEW> customMapping(
+                @Nonnull RecordMappingFunction<T_NEW> recordMappingFunction) {
+            return (Builder<T_NEW>) super.customMapping(recordMappingFunction);
         }
 
         /**
-         * Can be used to set any property not explicitly covered by other
-         * methods or to override internal properties.
+         * Sets the {@link SequenceExtractor} class property.
+         * <p>
+         * Sequence extractor is used to determine monotonically increasing order of CDC order, that
+         * can be used later in {@link com.hazelcast.jet.cdc.impl.WriteCdcP}.
+         * @param sequenceExtractorClass Class of the SequenceExtractor implementation. Must be on the
+         *                               classpath during execution.
          */
         @Nonnull
-        public Builder setCustomProperty(@Nonnull String key, @Nonnull String value) {
-            config.setProperty(key, value);
-            return this;
+        @Override
+        public Builder<T> withSequenceExtractor(Class<? extends SequenceExtractor> sequenceExtractorClass) {
+            return (Builder<T>) super.withSequenceExtractor(sequenceExtractorClass);
         }
+
+        /**
+         * Sets the maximum retry count in case of errors.
+         * <p>Default value is -1, which means infinite retries.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> withErrorMaxRetries(int errorRetryCount) {
+            return (Builder<T>) super.withErrorMaxRetries(errorRetryCount);
+        }
+
+        /**
+         * Sets a source property. These properties are passed to Debezium.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, @Nonnull String value) {
+            return (Builder<T>) super.setProperty(key, value);
+        }
+
+        /**
+         * Sets a source property. These properties are passed to Debezium.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, long value) {
+            return (Builder<T>) super.setProperty(key, value);
+        }
+
+        /**
+         * Sets a source property. These properties are passed to Debezium.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, boolean value) {
+            return (Builder<T>) super.setProperty(key, value);
+        }
+
+        /**
+         * Sets a source property. These properties are passed to Debezium.
+         */
+        @Nonnull
+        @Override
+        public PostgresCdcSources.Builder<T> setProperty(@Nonnull String key, int value) {
+            return (Builder<T>) super.setProperty(key, value);
+        }
+
+        // endregion
 
         /**
          * Returns the source based on the properties set so far.
          */
         @Nonnull
-        public StreamSource<ChangeRecord> build() {
+        @Override
+        public StreamSource<T> build() {
+            config.setProperty(ReadCdcP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, PostgresSequenceExtractor.class.getName());
             Properties properties = config.toProperties();
             RULES.check(properties);
-            return Sources.streamFromProcessorWithWatermarks(
-                    properties.getProperty(CdcSourceP.NAME_PROPERTY),
-                    true,
-                    eventTimePolicy -> ProcessorMetaSupplier.forceTotalParallelismOne(
-                            ProcessorSupplier.of(() -> new ChangeRecordCdcSourceP(properties, eventTimePolicy))));
+            return super.build();
         }
 
     }
 
-    /**
-     * Possible postgres snapshot modes, that does not require additional mandatory parameters to be set.
-     */
-    public enum PostgresSnapshotMode {
-
-        /**
-         * Always perform a snapshot when starting.
-         */
-        ALWAYS,
-
-        /**
-         * Perform a snapshot only upon initial startup of a connector.
-         */
-        INITIAL,
-
-        /**
-         * Never perform a snapshot and only receive logical changes.
-         */
-        NEVER,
-
-        /**
-         * Perform a snapshot and then stop before attempting to receive any logical changes.
-         */
-        INITIAL_ONLY;
-    }
 }

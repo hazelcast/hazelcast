@@ -121,7 +121,7 @@ public class CacheClearExpiredRecordsTask
     }
 
     @Override
-    protected Operation newPrimaryExpiryOp(int expirationPercentage, CachePartitionSegment container) {
+    protected Operation newPrimaryExpiryOp(CachePartitionSegment container, int expirationPercentage) {
         return new CacheClearExpiredOperation(expirationPercentage)
                 .setNodeEngine(nodeEngine)
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())

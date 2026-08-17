@@ -22,52 +22,66 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Queue;
 import java.util.logging.Level;
+
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Clears expired records.
  */
-public class MapClearExpiredOperation extends AbstractLocalOperation
+public class MapClearExpiredOperation extends AbstractMapLocalOperation
         implements PartitionAwareOperation, MutatingOperation {
 
-    private int expirationPercentage;
+    private CleanupState cleanupState;
 
-    public MapClearExpiredOperation(int expirationPercentage) {
-        this.expirationPercentage = expirationPercentage;
+    public MapClearExpiredOperation() {
+    }
+
+    private MapClearExpiredOperation(String mapName, CleanupState cleanupState) {
+        super(mapName);
+        this.cleanupState = cleanupState;
+        createRecordStoreOnDemand = false;
+    }
+
+    public static Operation newOperation(NodeEngine nodeEngine, int partitionId,
+                                         Queue<String> mapNames, int expirationPercentage) {
+        assert !mapNames.isEmpty();
+        return newOperation(nodeEngine, partitionId, new CleanupState(mapNames, expirationPercentage));
+    }
+
+    private static Operation newOperation(NodeEngine nodeEngine, int partitionId, CleanupState cleanupState) {
+        assert cleanupState.hasNextMap();
+
+        return new MapClearExpiredOperation(cleanupState.nextMapName(), cleanupState)
+                .setNodeEngine(nodeEngine)
+                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                .setPartitionId(partitionId)
+                .setValidateTarget(false)
+                .setServiceName(SERVICE_NAME)
+                .setOperationResponseHandler(createEmptyResponseHandler());
     }
 
     @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (getNodeEngine().getLocalMember().isLiteMember()) {
             // this operation shouldn't run on lite members. This situation can potentially be seen
             // when converting a data-member to lite-member during merge operations.
             return;
         }
 
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
-        ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
-        boolean backup = !isOwner();
-        long now = Clock.currentTimeMillis();
-        for (RecordStore recordStore : recordStores.values()) {
-            if (recordStore.isExpirable()) {
-                recordStore.evictExpiredEntries(expirationPercentage, now, backup);
-                recordStore.disposeDeferredBlocks();
-            }
+        if (recordStore != null && recordStore.isExpirable()) {
+            recordStore.evictExpiredEntries(cleanupState.expirationPercentage,
+                    Clock.currentTimeMillis(), !isOwner());
         }
     }
 
@@ -99,8 +113,15 @@ public class MapClearExpiredOperation extends AbstractLocalOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
-        prepareForNextCleanup();
+    public void afterRunInternal() {
+        NodeEngine nodeEngine = getNodeEngine();
+        if (nodeEngine.getLocalMember().isLiteMember() || !cleanupState.hasNextMap()) {
+            prepareForNextCleanup();
+            return;
+        }
+
+        nodeEngine.getOperationService().execute(newOperation(
+                nodeEngine, getPartitionId(), cleanupState));
     }
 
     protected void prepareForNextCleanup() {
@@ -120,6 +141,29 @@ public class MapClearExpiredOperation extends AbstractLocalOperation
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", expirationPercentage=").append(expirationPercentage);
+        sb.append(", expirationPercentage=").append(cleanupState.expirationPercentage)
+                .append(", remainingMapCount=").append(cleanupState.remainingMapCount());
+    }
+
+    private static final class CleanupState {
+        private final Deque<String> pendingMapNames;
+        private final int expirationPercentage;
+
+        private CleanupState(Queue<String> mapNames, int expirationPercentage) {
+            this.pendingMapNames = new ArrayDeque<>(mapNames);
+            this.expirationPercentage = expirationPercentage;
+        }
+
+        private boolean hasNextMap() {
+            return !pendingMapNames.isEmpty();
+        }
+
+        private String nextMapName() {
+            return pendingMapNames.removeFirst();
+        }
+
+        private int remainingMapCount() {
+            return pendingMapNames.size();
+        }
     }
 }

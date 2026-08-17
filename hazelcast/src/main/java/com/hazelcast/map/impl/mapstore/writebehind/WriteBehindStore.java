@@ -135,7 +135,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.mapName = mapStoreContext.getMapName();
         this.operationService = nodeEngine.getOperationService();
         this.writeBehindQueue = coalesce ? createDefaultWriteBehindQueue()
-                : createBoundedWriteBehindQueue(mapStoreContext);
+                : createBoundedWriteBehindQueue(mapStoreContext.getMapServiceContext().getNodeWideUsedCapacityCounter());
         this.writeBehindProcessor = writeBehindProcessor;
         this.txnReservedCapacityCounter = initTxnReservedCapacityCounter();
     }

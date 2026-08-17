@@ -56,7 +56,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 /**
  * {@link Job} proxy on member.

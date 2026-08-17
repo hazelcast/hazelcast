@@ -460,6 +460,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         }, (state, key, wm) -> null);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     default <V, R> StreamStage<R> mapUsingIMap(
             @Nonnull String mapName,
@@ -468,6 +473,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (StreamStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(mapName, mapFn);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     default <V, R> StreamStage<R> mapUsingIMap(
@@ -477,12 +487,22 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (StreamStage<R>) GeneralStageWithKey.super.mapUsingIMap(iMap, mapFn);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     default <S, R> StreamStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -491,6 +511,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (StreamStage<R>) GeneralStageWithKey.super.mapUsingServiceAsync(serviceFactory, mapAsyncFn);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -499,6 +524,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -506,6 +536,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -514,12 +549,22 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
                     ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S> StreamStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> StreamStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,

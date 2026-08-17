@@ -27,27 +27,39 @@ import org.bson.Document;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
+import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class ReadMongoParams<I> implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     final boolean stream;
     SupplierEx<? extends MongoClient> clientSupplier;
     DataConnectionRef dataConnectionRef;
     String databaseName;
     String collectionName;
-    FunctionEx<Document, I> mapItemFn;
+    // itemClass is used only if explicit mapItemFn/mapStreamFn are not specified
+    // mapItemFn/mapStreamFn should usually be only supplied by the user
+    private Class<I> itemClass;
+    private FunctionEx<Document, I> mapItemFn;
 
-    Long startAtTimestamp;
-    EventTimePolicy<? super I> eventTimePolicy;
-    BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
-    boolean nonDistributed;
+    private Long startAtTimestamp;
+    private EventTimePolicy<? super I> eventTimePolicy;
+    private BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
+    private boolean nonDistributed;
     private boolean checkExistenceOnEachConnect;
     private Aggregates aggregates = new Aggregates();
 
@@ -141,8 +153,15 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public FunctionEx<Document, I> getMapItemFn() {
-        return mapItemFn;
+    public Function<Document, I> getMapItemFn() {
+        return mapItemFn != null
+                ? mapItemFn
+                : (itemClass != null ? toClass(itemClass) : null);
+    }
+
+    public ReadMongoParams<I> setItemClass(@Nonnull Class itemClass) {
+        this.itemClass = checkNotNull(itemClass);
+        return this;
     }
 
     public ReadMongoParams<I> setMapItemFn(@Nonnull FunctionEx<Document, I> mapItemFn) {
@@ -169,8 +188,10 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public BiFunctionEx<ChangeStreamDocument<Document>, Long, I> getMapStreamFn() {
-        return mapStreamFn;
+    public BiFunction<ChangeStreamDocument<Document>, Long, I> getMapStreamFn() {
+        return mapStreamFn != null
+                ? mapStreamFn
+                : (itemClass != null ? streamToClass(itemClass) : null);
     }
 
     public ReadMongoParams<I> setMapStreamFn(BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn) {

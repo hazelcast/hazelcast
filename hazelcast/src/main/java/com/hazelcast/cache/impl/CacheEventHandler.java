@@ -66,48 +66,53 @@ public class CacheEventHandler {
         return invalidator.getMetaDataGenerator();
     }
 
-    void publishEvent(CacheEventContext cacheEventContext) {
+    void publishEntryEvent(CacheEventContext cacheEventContext) {
         final EventService eventService = nodeEngine.getEventService();
         final String cacheName = cacheEventContext.getCacheName();
-        final Collection<EventRegistration> candidates =
-                eventService.getRegistrations(SERVICE_NAME, cacheName);
+        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;
         }
-        final Object eventData;
+
         final CacheEventType eventType = cacheEventContext.getEventType();
-        switch (eventType) {
-            case CREATED, UPDATED, REMOVED, EXPIRED:
+        if (eventType == CacheEventType.PARTITION_LOST) {
+            // this type of event is handled separately
+            // see InternalCachePartitionLostListenerAdapter and ClientCachePartitionLostEventHandler
+            return;
+        }
+        final Object eventData = switch (eventType) {
+            case CREATED, UPDATED, REMOVED, EXPIRED -> {
                 final CacheEventData cacheEventData =
                         new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
                                 cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
                                 cacheEventContext.isOldValueAvailable());
                 CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(cacheEventData);
-                eventData = eventSet;
-                break;
-            case EVICTED, INVALIDATED:
-                eventData = new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                        null, null, false);
-                break;
-            case COMPLETED:
-                CacheEventData completedEventData =
+                yield eventSet;
+            }
+            case EVICTED, INVALIDATED ->
+                new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
+                                       null, null, false);
+            case COMPLETED -> {
+                 CacheEventData completedEventData =
                         new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
                                 cacheEventContext.getDataValue(), null, false);
-                eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
+                CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(completedEventData);
-                eventData = eventSet;
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Event Type not defined to create an eventData during publish: " + eventType.name());
+                yield eventSet;
+            }
+            // handled only in WAN Sync
+            case EXPIRATION_TIME_UPDATED -> null;
+            case PARTITION_LOST -> throw new IllegalArgumentException("Partition lost handling should be done earlier");
+        };
+
+        if (eventData != null) {
+            eventService.publishEvent(SERVICE_NAME, candidates, eventData, cacheEventContext.getOrderKey());
         }
-        eventService.publishEvent(SERVICE_NAME, candidates,
-                eventData, cacheEventContext.getOrderKey());
     }
 
-    void publishEvent(String cacheNameWithPrefix, CacheEventSet eventSet, int orderKey) {
+    void publishEntryEvent(String cacheNameWithPrefix, CacheEventSet eventSet, int orderKey) {
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> candidates =
                 eventService.getRegistrations(SERVICE_NAME, cacheNameWithPrefix);

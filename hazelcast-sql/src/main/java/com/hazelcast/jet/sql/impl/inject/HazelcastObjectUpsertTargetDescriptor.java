@@ -29,7 +29,8 @@ public class HazelcastObjectUpsertTargetDescriptor implements UpsertTargetDescri
 
     @Override
     public UpsertTarget create(final ExpressionEvalContext evalContext) {
-        return new HazelcastObjectUpsertTarget();
+        var classFilter = evalContext.getNodeEngine().getSqlService().getReflectionClassNameFilter();
+        return new HazelcastObjectUpsertTarget(classFilter);
     }
 
     @Override

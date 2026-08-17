@@ -36,6 +36,7 @@ public abstract class AbstractHazelcastInstanceNullTest extends HazelcastTestSup
         assertThrowsNPE(c -> c.getSet(null));
         assertThrowsNPE(c -> c.getList(null));
         assertThrowsNPE(c -> c.getMap(null));
+        assertThrowsNPE(c -> c.getVectorCollection(null));
         assertThrowsNPE(c -> c.getReplicatedMap(null));
         assertThrowsNPE(c -> c.getMultiMap(null));
         assertThrowsNPE(c -> c.getRingbuffer(null));

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;

@@ -41,9 +41,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.test.OverridePropertyRule.clear;
-import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -54,15 +52,13 @@ import static org.junit.Assert.fail;
 public class DefaultAddressPickerHostnameTest {
 
     @Rule
-    public final OverridePropertyRule ruleSysPropPreferIpv4 = set(PREFER_IPV4_STACK, "true");
-    @Rule
     public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
 
     private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
     private final String theHostname = "hazelcast.istanbul";
     private final String theAddress = "10.34.34.0";
-    private final DefaultAddressPicker addressPicker = new DefaultAddressPicker(config, logger);
+    private final DefaultAddressPicker addressPicker = new DefaultAddressPicker(config, logger, new JavaIPvXProperties(true, false));
     private final HostnameResolver hostnameResolver = new MockHostnameResolver();
 
     @Before

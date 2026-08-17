@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.zip.ZipException;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
@@ -113,6 +114,12 @@ public final class SerializationUtil {
         if (e instanceof HazelcastClientNotActiveException exception) {
             return exception;
         }
+        if (e instanceof ZipException exception && exception.getMessage().contains("Not in GZIP format")) {
+            return new HazelcastSerializationException("Expected compressed objects, but received payload not in GZIP format. "
+                                                           + "Possible mismatch in serialization compression "
+                                                           + "configuration between members",
+                                                       exception);
+        }
         return new HazelcastSerializationException(e);
     }
 
@@ -136,9 +143,9 @@ public final class SerializationUtil {
 
     public static SerializerAdapter createSerializerAdapter(Serializer serializer) {
         final SerializerAdapter s;
-        if (serializer instanceof StreamSerializer streamSerializer) {
+        if (serializer instanceof StreamSerializer<?> streamSerializer) {
             s = new StreamSerializerAdapter(streamSerializer);
-        } else if (serializer instanceof ByteArraySerializer arraySerializer) {
+        } else if (serializer instanceof ByteArraySerializer<?> arraySerializer) {
             s = new ByteArraySerializerAdapter(arraySerializer);
         } else {
             throw new IllegalArgumentException("Serializer " + serializer.getClass().getName()

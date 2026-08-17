@@ -46,7 +46,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// https://hazelcast.atlassian.net/browse/HZ-4026
+// https://hazelcast.atlassian.net/browse/HZOLD-4026
 @RunWith(HazelcastSerialClassRunner.class)
 public class SqlPortableCompoundKeysTest extends SqlTestSupport {
 

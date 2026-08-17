@@ -34,7 +34,7 @@ import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 final class WritableSerializerHooks {
 

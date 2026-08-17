@@ -39,8 +39,10 @@ import java.util.List;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createBoundedWriteBehindQueue;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createCoalescedWriteBehindQueue;
+import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createCyclicWriteBehindQueue;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -67,7 +69,18 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         List<DelayedEntry> delayedEntries = createDelayedEntryList(1000);
         queue.addFirst(delayedEntries);
 
-        assertEquals(1000, queue.size());
+        assertEquals(delayedEntries, queue.asList());
+    }
+
+    @Test
+    public void testRemoveFirstOccurrence_doesNotRemoveDifferentHead() {
+        WriteBehindQueue<DelayedEntry> queue = createBoundedCyclicWBQ();
+        DelayedEntry queuedEntry = createDelayedEntryList(1).get(0);
+        DelayedEntry previouslySelectedEntry = createDelayedEntryList(1).get(0);
+        queue.addLast(queuedEntry, false);
+
+        assertFalse(queue.removeFirstOccurrence(previouslySelectedEntry));
+        assertEquals(List.of(queuedEntry), queue.asList());
     }
 
     @Test(expected = ReachedMaxSizeException.class)
@@ -228,6 +241,13 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     private static BoundedWriteBehindQueue<DelayedEntry> createBoundedWBQ(NodeWideUsedCapacityCounter counter) {
         WriteBehindQueue<DelayedEntry> boundedWriteBehindQueue
                 = createBoundedWriteBehindQueue(createCoalescedWriteBehindQueue(), counter);
+        return (BoundedWriteBehindQueue<DelayedEntry>) boundedWriteBehindQueue;
+    }
+
+    private static BoundedWriteBehindQueue<DelayedEntry> createBoundedCyclicWBQ() {
+        NodeWideUsedCapacityCounter capacityController = createQueueCapacityController();
+        WriteBehindQueue<DelayedEntry> boundedWriteBehindQueue
+                = createBoundedWriteBehindQueue(createCyclicWriteBehindQueue(), capacityController);
         return (BoundedWriteBehindQueue<DelayedEntry>) boundedWriteBehindQueue;
     }
 

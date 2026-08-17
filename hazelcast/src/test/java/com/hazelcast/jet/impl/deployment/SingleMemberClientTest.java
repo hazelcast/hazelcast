@@ -48,7 +48,7 @@ import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
+import static com.hazelcast.internal.util.ExceptionUtil.isOrHasCause;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

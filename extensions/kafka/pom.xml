@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.8.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -86,12 +86,6 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_${scala.version}</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.yetus</groupId>
-                    <artifactId>audience-annotations</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -103,6 +97,24 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <classifier>test</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-test-common-runtime</artifactId>
+            <version>${kafka.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-server</artifactId>
+            <version>${kafka.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-server-common</artifactId>
+            <version>${kafka.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -124,6 +136,18 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry</artifactId>
             <version>${confluent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-resolver-provider</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

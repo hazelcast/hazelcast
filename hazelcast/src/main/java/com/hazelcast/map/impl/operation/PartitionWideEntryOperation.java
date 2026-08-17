@@ -20,7 +20,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;

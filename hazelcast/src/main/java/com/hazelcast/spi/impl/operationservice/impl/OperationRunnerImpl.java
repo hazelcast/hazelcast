@@ -423,7 +423,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         }
     }
 
-    private boolean isAllowedToExecuteDuringMigration(Operation op) {
+    public boolean isAllowedToExecuteDuringMigration(Operation op) {
         return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 

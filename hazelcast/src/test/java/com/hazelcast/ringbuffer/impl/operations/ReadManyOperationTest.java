@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
+import static com.hazelcast.spi.impl.NodeEngineThreadLocalContext.declareNodeEngineReference;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

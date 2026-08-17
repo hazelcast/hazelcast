@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -170,9 +169,7 @@ public class WriteBehindCoalescingBatchingTest extends HazelcastTestSupport {
             System.out.println("storeAll called. map size=" + map.size());
             countStoreAll.incrementAndGet();
             countStoredEntries.addAndGet(map.size());
-            for (Entry<String, String> entry : map.entrySet()) {
-                inMemoryStore.put(entry.getKey(), entry.getValue());
-            }
+            inMemoryStore.putAll(map);
         }
 
         @Override

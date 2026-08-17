@@ -32,7 +32,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"unused", "unchecked", "checkstyle:MultipleVariableDeclarations"})
+@SuppressWarnings({"unused", "unchecked", "LeftCurly", "checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionBiValue extends ExpressionValue {
     public static Class<? extends ExpressionBiValue> createBiClass(ExpressionType<?> type1, ExpressionType<?> type2) {
         return createBiClass(type1.typeName(), type2.typeName());

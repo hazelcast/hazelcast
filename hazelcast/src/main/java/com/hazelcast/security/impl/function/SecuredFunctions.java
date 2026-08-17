@@ -22,7 +22,9 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
@@ -44,6 +46,7 @@ import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.Serial;
@@ -57,6 +60,8 @@ import java.util.Map;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+import static com.hazelcast.jet.impl.util.Util.getHazelcastInstanceImpl;
 import static com.hazelcast.jet.impl.util.Util.getJetServiceBackend;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
@@ -349,6 +354,7 @@ public final class SecuredFunctions {
             @SuppressWarnings("resource")
             @Override
             public BufferedWriter applyEx(Processor.Context context) throws Exception {
+                validateContext(context);
                 return new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName));
             }
 
@@ -430,5 +436,17 @@ public final class SecuredFunctions {
                 return singletonList(permission);
             }
         };
+    }
+
+    /**
+     * Ensures that {@link SecuredFunction} is invoked with a valid context
+     * and that Jet is enabled.
+     * @param context context to validate
+     */
+    public static void validateContext(@Nonnull ProcessorMetaSupplier.Context context) {
+        // see https://hazelcast.atlassian.net/browse/CTT-1160
+        Preconditions.checkNotNull(context.hazelcastInstance(), "HazelcastInstance is null");
+        // see https://hazelcast.atlassian.net/browse/CTT-1202
+        checkJetIsEnabled(getHazelcastInstanceImpl(context.hazelcastInstance()).node.nodeEngine);
     }
 }

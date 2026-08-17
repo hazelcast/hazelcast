@@ -28,11 +28,10 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -46,23 +45,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
 
-@Category(NightlyTest.class)
+@NightlyTest
 public class KafkaDataConnectionTest {
 
     private static final KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
     private KafkaDataConnection kafkaDataConnection;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         kafkaTestSupport.createKafkaCluster();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (kafkaDataConnection != null) {
             kafkaDataConnection.destroy();

@@ -18,14 +18,13 @@ package com.hazelcast.it.hibernate;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @NaturalIdCache
 @Entity
@@ -54,12 +53,11 @@ public class AnnotatedEntity {
 
     @Id
     @GeneratedValue(generator = "increment")
-    @GenericGenerator(name = "increment", strategy = "increment")
     public Long getId() {
         return id;
     }
 
-    private void setId(Long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 }

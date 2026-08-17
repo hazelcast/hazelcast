@@ -22,6 +22,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * For JUnit 5+ tests, please use {@link org.junit.jupiter.api.RepeatedTest}.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

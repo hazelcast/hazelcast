@@ -51,6 +51,7 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.JobRepository.safeImap;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
+import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -66,6 +67,7 @@ class MasterSnapshotContext {
     /**
      * It's true while a snapshot is in progress. It's used to prevent
      * concurrent snapshots.
+     * All modifications and access to this field must be performed while holding the {@code mc} lock.
      */
     private boolean snapshotInProgress;
 
@@ -229,6 +231,10 @@ class MasterSnapshotContext {
     void tryBeginSnapshot(boolean allowStartingState) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             final SnapshotRequest requestedSnapshot;
+            long newSnapshotId;
+            int snapshotFlags;
+            String mapName;
+
             mc.lock();
             long localExecutionId;
             try {
@@ -252,70 +258,75 @@ class MasterSnapshotContext {
                 }
                 snapshotInProgress = true;
                 mc.jobExecutionRecord().startNewSnapshot(requestedSnapshot.snapshotName);
+
                 localExecutionId = mc.executionId();
+                newSnapshotId = mc.jobExecutionRecord().ongoingSnapshotId();
+                snapshotFlags = requestedSnapshot.snapshotFlags();
+                mapName = requestedSnapshot.mapName();
+                boolean executionRecordUpdated = false;
+
+                // The job may restart and begin a new execution at any point during snapshot processing.
+                // Therefore, all snapshot-critical operations must be performed under the lock to ensure
+                // consistency with the execution context in which the snapshot started.
+                try {
+                    mc.writeJobExecutionRecordSafe(false);
+                    executionRecordUpdated = true;
+                    mc.nodeEngine().getHazelcastInstance().getMap(mapName).clear();
+                } catch (Exception e) {
+                    var warning = String.format(
+                        "Failed to start snapshot %d for %s. ",
+                        newSnapshotId,
+                        jobNameAndExecutionId(mc.jobName(), localExecutionId)
+                    );
+
+                    if (requestedSnapshot.isExportOnly() && executionRecordUpdated) {
+                        // If the map clear operation fails, then cancel the snapshot.
+                        logger.warning(warning + "Failure during a clearing map. Cancel snapshot.", e);
+                        mc.jobExecutionRecord().resetOngoingSnapshotId();
+                        snapshotInProgress = false;
+                        requestedSnapshot.completeFuture(e);
+                        return;
+                    } else if (requestedSnapshot.isExportOnly()) {
+                        // Manual snapshot failed — ignore and move on.
+                        logger.warning(warning + "Ignore failure during a manual snapshot request.", e);
+                    } else if (requestedSnapshot.isTerminal) {
+                        // If a final (terminal) automatic snapshot or a terminal snapshot during manual cancellation fails,
+                        // the job is forcefully restarted.
+                        // After restart, a new execution record will be created, so there is no need to reset the snapshot ID.
+                        // The snapshotInProgress flag will be cleared during the restart.
+                        logger().warning(warning + "Terminating job without performing snapshot with RESTART_FORCEFUL", e);
+                        mc.jobContext().handleTermination(TerminationMode.RESTART_FORCEFUL);
+                        requestedSnapshot.completeFuture(e);
+                        return;
+                    } else {
+                        // Regular non-terminal snapshot failed — clean up, and schedule the next snapshot attempt.
+                        logger.warning(warning + "Reschedule a new snapshot without restarting the job.", e);
+                        mc.jobExecutionRecord().resetOngoingSnapshotId();
+                        snapshotInProgress = false;
+                        requestedSnapshot.completeFuture(e);
+                        mc.coordinationService().scheduleSnapshot(mc, localExecutionId);
+                        return;
+                    }
+                }
             } finally {
                 mc.unlock();
             }
 
-            long newSnapshotId = mc.jobExecutionRecord().ongoingSnapshotId();
-            int snapshotFlags = requestedSnapshot.snapshotFlags();
-            String mapName = requestedSnapshot.mapName();
-            boolean executionRecordUpdated = false;
-            try {
-                mc.writeJobExecutionRecordSafe(false);
-                executionRecordUpdated = true;
-                mc.nodeEngine().getHazelcastInstance().getMap(mapName).clear();
-            } catch (Exception e) {
-                var warning = String.format(
-                        "Failed to start snapshot %d for %s. ",
-                        newSnapshotId,
-                        jobNameAndExecutionId(mc.jobName(), localExecutionId)
-                );
-
-                if (requestedSnapshot.isExportOnly() && executionRecordUpdated) {
-                    // If the map clear operation fails, then cancel the snapshot.
-                    logger.warning(warning + "Failure during a clearing map. Cancel snapshot.", e);
-                    requestedSnapshot.completeFuture(e);
-                    return;
-                } else if (requestedSnapshot.isExportOnly()) {
-                    // Manual snapshot failed — ignore and move on.
-                    logger.warning(warning + "Ignore failure during a manual snapshot request.", e);
-                } else if (requestedSnapshot.isTerminal) {
-                    // If a final (terminal) automatic snapshot or a terminal snapshot during manual cancellation fails,
-                    // the job is forcefully restarted.
-                    // After restart, a new execution record will be created, so there is no need to reset the snapshot ID.
-                    // The snapshotInProgress flag will be cleared during the restart.
-                    logger().warning(warning + "Terminating job without performing snapshot with RESTART_FORCEFUL", e);
-                    mc.jobContext().handleTermination(TerminationMode.RESTART_FORCEFUL);
-                    requestedSnapshot.completeFuture(e);
-                    return;
-                } else {
-                    // Regular non-terminal snapshot failed — clean up, and schedule the next snapshot attempt.
-                    logger.warning(warning + "Reschedule a new snapshot without restarting the job.", e);
-                    performWithLock(() -> {
-                                mc.jobExecutionRecord().resetOngoingSnapshotId();
-                                snapshotInProgress = false;
-                            }
-                    );
-                    requestedSnapshot.completeFuture(e);
-                    mc.coordinationService().scheduleSnapshot(mc, mc.executionId());
-                    return;
-                }
-            }
-
             logger.fine("Starting snapshot %d for %s, flags: %s, writing to: %s",
-                    newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
-                    SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotName);
+                newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
+                SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotName);
 
             Function<ExecutionPlan, Operation> factory = plan ->
-                    new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, mapName, snapshotFlags);
+                new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, mapName, snapshotFlags);
 
             // Need to take a copy of executionId: we don't cancel the scheduled task when the execution
             // finalizes. If a new execution is started in the meantime, we'll use the execution ID to detect it.
             mc.invokeOnParticipants(
-                    factory,
-                    responses -> onSnapshotPhase1Complete(responses, localExecutionId, newSnapshotId, requestedSnapshot),
-                    null, true);
+                factory,
+                responses -> onSnapshotPhase1Complete(responses, localExecutionId, newSnapshotId, requestedSnapshot),
+                null,
+                true
+            );
         });
     }
 
@@ -386,11 +397,8 @@ class MasterSnapshotContext {
                 }
                 // Note: this method can be called after finalizeJob() is called or even after new execution started.
                 // Check the execution ID to check if a new execution didn't start yet.
-                if (executionId != mc.executionId()) {
-                    logger.fine("%s: ignoring responses for snapshot %s phase 1: " +
-                                    "the responses are from a different execution: %s. Responses: %s",
-                            mc.jobIdString(), snapshotId, idToString(executionId), responses);
-                    // a new execution started, ignore this response.
+                if (checkAndLogIfJobExecutionChanged(executionId, snapshotId, "phase1")) {
+                    requestedSnapshot.completeFuture(new JetException("Snapshot in unknown state"));
                     return;
                 }
 
@@ -560,10 +568,8 @@ class MasterSnapshotContext {
             long startTime
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            if (executionId != mc.executionId()) {
-                logger.fine("%s: ignoring responses for snapshot %s phase 2: " +
-                                "the responses are from a different execution: %s. Responses: %s",
-                        mc.jobIdString(), snapshotId, idToString(executionId), responses);
+            if (checkAndLogIfJobExecutionChanged(executionId, snapshotId, "phase2")) {
+                requestedSnapshot.completeFuture(new JetException("Snapshot in unknown state on phase 2"));
                 return;
             }
 
@@ -581,9 +587,7 @@ class MasterSnapshotContext {
             mc.lock();
             try {
                 // double-check the execution ID after locking
-                if (executionId != mc.executionId()) {
-                    logger.fine("Not completing terminalSnapshotFuture on " + mc.jobIdString() + ", new execution " +
-                            "already started, snapshot was for executionId=" + idToString(executionId));
+                if (checkAndLogIfJobExecutionChanged(executionId, snapshotId, "phase2")) {
                     return;
                 }
                 assert snapshotInProgress : "snapshot not in progress";
@@ -615,13 +619,26 @@ class MasterSnapshotContext {
         });
     }
 
-    private void performWithLock(Runnable runnable) {
-        try {
-            mc.lock();
-            runnable.run();
-        } finally {
-            mc.unlock();
+    private boolean checkAndLogIfJobExecutionChanged(long executionId, long snapshotId, String phase) {
+        long currentExecutionId = mc.executionId();
+        if (executionId != currentExecutionId) {
+            logger.fine("%s: ignoring snapshot %s (%s): execution changed (expected=%s, actual=%s)",
+                jobIdAndExecutionId(mc.jobId(), executionId),
+                snapshotId,
+                phase,
+                idToString(executionId),
+                idToString(currentExecutionId)
+            );
+            return true;
         }
+        if (mc.jobContext().isExecutionCompleted()) {
+            logger.fine("%s: ignoring snapshot %s (%s): execution is already completed",
+                jobIdAndExecutionId(mc.jobId(), executionId),
+                snapshotId,
+                phase
+            );
+        }
+        return false;
     }
 
     CompletableFuture<Void> terminalSnapshotFuture() {

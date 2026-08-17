@@ -17,6 +17,8 @@
 package com.hazelcast.internal.crdt.pncounter;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.crdt.MutationDisallowedException;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.crdt.AbstractCRDTBounceTest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -28,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -43,8 +46,21 @@ public class PNCounterBounceTest extends AbstractCRDTBounceTest {
     @Override
     protected void mutate(HazelcastInstance hazelcastInstance) {
         final int delta = rnd.nextInt(100) - 50;
-        hazelcastInstance.getPNCounter(TEST_PN_COUNTER_NAME).addAndGet(delta);
-        assertionCounter.addAndGet(delta);
+        try {
+            // Mutate the local replica directly so proxy retries while bouncing cannot apply the delta twice
+            getCounter(hazelcastInstance).addAndGet(delta, null);
+            assertionCounter.addAndGet(delta);
+        } catch (MutationDisallowedException ex) {
+            ignore(ex);
+        }
+    }
+
+    private PNCounterImpl getCounter(HazelcastInstance hazelcastInstance) {
+        if (hazelcastInstance instanceof HazelcastInstanceProxy proxy) {
+            PNCounterService service = getNodeEngineImpl(proxy.getOriginal()).getService(PNCounterService.SERVICE_NAME);
+            return service.getCounter(TEST_PN_COUNTER_NAME);
+        }
+        throw new IllegalArgumentException("Provided HazelcastInstance is not a proxy!");
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;

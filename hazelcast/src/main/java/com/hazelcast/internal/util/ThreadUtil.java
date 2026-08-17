@@ -85,6 +85,18 @@ public final class ThreadUtil {
         return createThreadName(hzName, poolName) + ".thread-";
     }
 
+    /**
+     * Creates the workerpool name with prefix and notation.
+     *
+     * @param hzName   the name of the hazelcast instance
+     * @param poolName the name of the pool.
+     * @return the workerpool name.
+     * @throws java.lang.NullPointerException if poolname is null.
+     */
+    public static String createWorkerPoolName(String hzName, String poolName) {
+        return createThreadName(hzName, poolName) + ".worker-";
+    }
+
     public static void assertRunningOnPartitionThread() {
         assert Thread.currentThread() instanceof PartitionOperationThread;
     }

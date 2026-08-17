@@ -1,22 +1,19 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc;
-
-import com.hazelcast.jet.annotation.EvolvingApi;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -30,16 +27,13 @@ import java.util.Map;
  *
  * @since Jet 4.2
  */
-@EvolvingApi
 public interface RecordPart {
 
     /**
      * Maps the entire element to an instance of the specified class.
      * <p>
-     * Parsing is based on <a href="https://github.com/FasterXML/jackson-jr">
-     * Jackson jr</a> with <a
-     * href="https://github.com/FasterXML/jackson-jr/tree/master/jr-annotation-support">
-     * annotation support</a>, so the supplied class can be annotated accordingly.
+     * Parsing is based on <a href="https://github.com/FasterXML/jackson-databind">
+     * Jackson</a> with annotation support, so the supplied class can be annotated accordingly.
      * <p>
      * Note: there is a neat trick for converting types during object mapping.
      * Let's say we have a {@code birth_date} column in a table of type
@@ -72,8 +66,8 @@ public interface RecordPart {
      * The keys are the top-level fields from the JSON and the values can range
      * from simple strings, numbers, collections and sub-maps.
      * <p>
-     * Parsing is based on <a href="https://github.com/FasterXML/jackson-jr">
-     * Jackson jr</a>, you can refer to its documentation for more details.
+     * Parsing is based on <a href="https://github.com/FasterXML/jackson-databind">
+     * Jackson</a>, you can refer to its documentation for more details.
      *
      * @return {@code Map} representation of the JSON data
      * @throws ParsingException if the underlying JSON message fails to

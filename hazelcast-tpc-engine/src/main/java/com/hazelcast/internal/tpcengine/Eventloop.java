@@ -25,6 +25,8 @@ import com.hazelcast.internal.tpcengine.util.NanoClock;
 import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpmcArrayQueue;
 
+import javax.annotation.Nonnull;
+
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -190,19 +192,12 @@ public abstract class Eventloop {
      * @throws NullPointerException     if task or unit is null
      * @throws IllegalArgumentException when delay smaller than 0.
      */
-    public final boolean schedule(Runnable task, long delay, TimeUnit unit) {
+    public final boolean schedule(@Nonnull Runnable task, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(task);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
 
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.task = task;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        scheduledTask.deadlineNanos = deadlineNanos;
+        ScheduledTask scheduledTask = new ScheduledTask(task, delay, unit);
         return scheduledTaskQueue.offer(scheduledTask);
     }
 
@@ -216,20 +211,13 @@ public abstract class Eventloop {
      * @param unit         the unit of the initial delay and delay
      * @return true if the task was successfully executed.
      */
-    public final boolean scheduleWithFixedDelay(Runnable task, long initialDelay, long delay, TimeUnit unit) {
+    public final boolean scheduleWithFixedDelay(@Nonnull Runnable task, long initialDelay, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(task);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
 
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.task = task;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        scheduledTask.deadlineNanos = deadlineNanos;
+        ScheduledTask scheduledTask = new ScheduledTask(task, initialDelay, unit);
         scheduledTask.delayNanos = unit.toNanos(delay);
         return scheduledTaskQueue.offer(scheduledTask);
     }
@@ -243,38 +231,68 @@ public abstract class Eventloop {
      * @param unit         the unit of the initial delay and delay
      * @return true if the task was successfully executed.
      */
-    public final boolean scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit) {
+    public final boolean scheduleAtFixedRate(@Nonnull Runnable task, long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(task);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
 
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.task = task;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        scheduledTask.deadlineNanos = deadlineNanos;
+        ScheduledTask scheduledTask = new ScheduledTask(task, initialDelay, unit);
         scheduledTask.periodNanos = unit.toNanos(period);
         return scheduledTaskQueue.offer(scheduledTask);
     }
 
-    public final Promise sleep(long delay, TimeUnit unit) {
-        checkNotNegative(delay, "delay");
-        checkNotNull(unit, "unit");
+    private final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
+        @Nonnull
+        private Runnable task;
+        long deadlineNanos;
+        long periodNanos = -1;
+        long delayNanos = -1;
 
-        Promise promise = promiseAllocator.allocate();
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.promise = promise;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
+        private ScheduledTask(@Nonnull Runnable task, long delay, TimeUnit unit) {
+            this.task = task;
+
+            this.deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
+            if (deadlineNanos < 0) {
+                // protection against overflow
+                deadlineNanos = Long.MAX_VALUE;
+            }
         }
-        scheduledTask.deadlineNanos = deadlineNanos;
-        scheduledTaskQueue.add(scheduledTask);
-        return promise;
+
+        @Override
+        public void run() {
+            task.run();
+
+            if (periodNanos != -1 || delayNanos != -1) {
+                if (periodNanos != -1) {
+                    deadlineNanos += periodNanos;
+                } else {
+                    deadlineNanos = nanoClock.nanoTime() + delayNanos;
+                }
+
+                if (deadlineNanos < 0) {
+                    deadlineNanos = Long.MAX_VALUE;
+                }
+
+                if (!scheduledTaskQueue.offer(this)) {
+                    logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
+                }
+            }
+        }
+
+        @Override
+        public int compareTo(ScheduledTask that) {
+            return Long.compare(deadlineNanos, that.deadlineNanos);
+        }
+
+        @Override
+        public String toString() {
+            return "ScheduledTask{"
+                    + ", deadlineNanos=" + deadlineNanos
+                    + ", task=" + task
+                    + ", periodNanos=" + periodNanos
+                    + ", delayNanos=" + delayNanos
+                    + '}';
+        }
     }
 }

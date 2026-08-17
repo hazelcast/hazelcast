@@ -22,7 +22,8 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
-import org.checkerframework.checker.nullness.qual.Nullable;
+
+import javax.annotation.Nullable;
 
 /**
  * A RelNode that is used to replace another RelNode, if a rule determines that

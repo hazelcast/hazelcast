@@ -39,7 +39,7 @@ import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
 import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
 import com.hazelcast.jet.impl.submitjob.clientside.validator.SubmitJobParametersValidator;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 
@@ -58,7 +58,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 /**
  * Client-side {@code JetInstance} implementation
@@ -73,7 +73,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         this.client = hazelcastInstance;
         this.serializationService = client.getSerializationService();
 
-        ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
+        JetExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
     }
 
     @Override

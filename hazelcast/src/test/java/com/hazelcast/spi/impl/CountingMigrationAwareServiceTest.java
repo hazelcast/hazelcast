@@ -159,6 +159,53 @@ public class CountingMigrationAwareServiceTest {
     }
 
     @Test
+    public void partitionMigrationStamp_isChangedOnlyForMigratingPartition() {
+        int partitionId = 1;
+        int otherPartitionId = 2;
+        PartitionMigrationEvent partitionEvent = mock(PartitionMigrationEvent.class);
+        when(partitionEvent.getPartitionId()).thenReturn(partitionId);
+        when(partitionEvent.getCurrentReplicaIndex()).thenReturn(PRIMARY_REPLICA_INDEX);
+        when(partitionEvent.getNewReplicaIndex()).thenReturn(1);
+
+        CountingMigrationAwareService service = new CountingMigrationAwareService(new NoOpMigrationAwareService());
+        int partitionStamp = service.getPartitionMigrationStamp(partitionId);
+        int otherPartitionStamp = service.getPartitionMigrationStamp(otherPartitionId);
+
+        service.beforeMigration(partitionEvent);
+
+        assertEquals(IN_FLIGHT_MIGRATION_STAMP, service.getPartitionMigrationStamp(partitionId));
+        assertFalse(service.validatePartitionMigrationStamp(partitionId, partitionStamp));
+        assertEquals(otherPartitionStamp, service.getPartitionMigrationStamp(otherPartitionId));
+        assertTrue(service.validatePartitionMigrationStamp(otherPartitionId, otherPartitionStamp));
+
+        service.commitMigration(partitionEvent);
+
+        assertNotEquals(partitionStamp, service.getPartitionMigrationStamp(partitionId));
+        assertFalse(service.validatePartitionMigrationStamp(partitionId, partitionStamp));
+        assertTrue(service.validatePartitionMigrationStamp(
+                partitionId, service.getPartitionMigrationStamp(partitionId)));
+        assertTrue(service.validatePartitionMigrationStamp(otherPartitionId, otherPartitionStamp));
+    }
+
+    @Test
+    public void partitionMigrationStamp_isNotChangedForBackupMigration() {
+        int partitionId = 1;
+        PartitionMigrationEvent partitionEvent = mock(PartitionMigrationEvent.class);
+        when(partitionEvent.getPartitionId()).thenReturn(partitionId);
+        when(partitionEvent.getCurrentReplicaIndex()).thenReturn(2);
+        when(partitionEvent.getNewReplicaIndex()).thenReturn(1);
+
+        CountingMigrationAwareService service = new CountingMigrationAwareService(new NoOpMigrationAwareService());
+        int partitionStamp = service.getPartitionMigrationStamp(partitionId);
+
+        service.beforeMigration(partitionEvent);
+        service.commitMigration(partitionEvent);
+
+        assertEquals(partitionStamp, service.getPartitionMigrationStamp(partitionId));
+        assertTrue(service.validatePartitionMigrationStamp(partitionId, partitionStamp));
+    }
+
+    @Test
     public void commitMigration_invalidCount_throwsAssertionError() {
         // when: invalid sequence of beforeMigration, commitMigration, commitMigration is executed
         // and

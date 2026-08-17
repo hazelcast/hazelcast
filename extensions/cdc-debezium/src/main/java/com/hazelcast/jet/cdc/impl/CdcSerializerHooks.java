@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.Operation;
@@ -24,8 +23,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import io.debezium.document.Document;
+import io.debezium.document.DocumentReader;
+import io.debezium.document.DocumentWriter;
+import io.debezium.relational.history.HistoryRecord;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,23 +57,24 @@ public class CdcSerializerHooks {
             return new StreamSerializer<ChangeRecordImpl>() {
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.CDC_RECORD;
+                    return SerializerHookConstants.EE_CDC_RECORD;
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, ChangeRecordImpl changeRecord) throws IOException {
-                    out.writeLong(changeRecord.timestamp());
-                    out.writeLong(changeRecord.sequenceSource());
-                    out.writeLong(changeRecord.sequenceValue());
-                    out.writeString(changeRecord.operation().code());
-                    out.writeString(changeRecord.getKeyJson());
-                    RecordPart oldValue = changeRecord.oldValue();
+                public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
+                    out.writeLong(record.timestamp());
+                    out.writeLong(record.sequenceSource());
+                    out.writeLong(record.sequenceValue());
+                    out.writeString(record.operation().code());
+                    out.writeString(record.getKeyJson());
+                    out.writeString(record.source().toJson());
+                    RecordPart oldValue = record.oldValue();
                     out.writeString(oldValue == null ? null : oldValue.toJson());
-                    RecordPart newValue = changeRecord.newValue();
+                    RecordPart newValue = record.newValue();
                     out.writeString(newValue == null ? null : newValue.toJson());
-                    out.writeString(changeRecord.table());
-                    out.writeString(changeRecord.schema());
-                    out.writeString(changeRecord.database());
+                    out.writeString(record.table());
+                    out.writeString(record.schema());
+                    out.writeString(record.database());
                 }
 
                 @Override
@@ -79,6 +84,7 @@ public class CdcSerializerHooks {
                     long sequenceValue = in.readLong();
                     Operation operation = Operation.get(in.readString());
                     String keyJson = requireNonNull(in.readString(), "keyJson cannot be null");
+                    String sourceJson = requireNonNull(in.readString(), "sourceJson cannot be null");
                     String oldValueJson = in.readString();
                     String newValueJson = in.readString();
                     String table = in.readString();
@@ -86,7 +92,7 @@ public class CdcSerializerHooks {
                     String database = in.readString();
                     return new ChangeRecordImpl(
                             timestamp, sequenceSource, sequenceValue,
-                            operation, keyJson, oldValueJson, newValueJson,
+                            operation, keyJson, sourceJson, oldValueJson, newValueJson,
                             table, schema, database);
                 }
             };
@@ -109,7 +115,7 @@ public class CdcSerializerHooks {
             return new StreamSerializer<RecordPartImpl>() {
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.CDC_RECORD_PART;
+                    return SerializerHookConstants.EE_CDC_RECORD_PART;
                 }
 
                 @Override
@@ -131,49 +137,56 @@ public class CdcSerializerHooks {
         }
     }
 
-    public static final class CdcSourceStateHook implements SerializerHook<CdcSourceP.State> {
+    public static final class CdcSourceStateHook implements SerializerHook<State> {
         @Override
-        public Class<CdcSourceP.State> getSerializationType() {
-            return CdcSourceP.State.class;
+        public Class<State> getSerializationType() {
+            return State.class;
         }
 
         @Override
-        @SuppressWarnings("AnonInnerLength")
+        @SuppressWarnings({ "AnonInnerLength", "checkstyle:InnerAssignment" })
         public Serializer createSerializer() {
-            return new StreamSerializer<CdcSourceP.State>() {
+            return new StreamSerializer<State>() {
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.CDC_SOURCE_STATE;
+                    return SerializerHookConstants.EE_CDC_SOURCE_STATE;
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, CdcSourceP.State state) throws IOException {
+                public void write(ObjectDataOutput out, State state) throws IOException {
                     out.writeObject(state.getPartitionsToOffset());
 
                     // workaround for https://github.com/hazelcast/hazelcast/issues/18129
                     // write the size hint, the list is concurrently modified, the actual number of items can be different
-                    out.writeInt(state.getHistoryRecords().size());
-                    for (byte[] r : state.getHistoryRecords()) {
+                    List<HistoryRecord> historyRecords = new ArrayList<>(state.getHistoryRecords());
+                    out.writeInt(historyRecords.size());
+                    for (HistoryRecord r : historyRecords) {
                         assert r != null;
-                        out.writeObject(r);
+                        out.writeString(DocumentWriter.defaultWriter().write(r.document()));
                     }
                     // terminator element
                     out.writeObject(null);
                 }
 
                 @Override
-                public CdcSourceP.State read(ObjectDataInput in) throws IOException {
-                    Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = in.readObject();
+                public State read(ObjectDataInput in) throws IOException {
+                    Map<ByteBuffer, ByteBuffer> partitionsToOffset = in.readObject();
 
                     // workaround for https://github.com/hazelcast/hazelcast/issues/18129
                     int sizeHint = in.readInt();
-                    List<byte[]> historyRecords = new ArrayList<>(sizeHint);
+                    List<HistoryRecord> historyRecords = new ArrayList<>(sizeHint);
                     // read the elements until a terminator is found
-                    for (byte[] r; (r = in.readObject()) != null; ) {
-                        historyRecords.add(r);
+                    String r;
+                    while (isNotEmpty((r = in.readString()))) {
+                        Document doc = DocumentReader.defaultReader().read(r);
+                        historyRecords.add(new HistoryRecord(doc));
                     }
 
-                    return new CdcSourceP.State(partitionsToOffset, new CopyOnWriteArrayList<>(historyRecords));
+                    return new State(partitionsToOffset, new CopyOnWriteArrayList<>(historyRecords));
+                }
+
+                private boolean isNotEmpty(String s) {
+                    return s != null && !s.isEmpty();
                 }
             };
         }

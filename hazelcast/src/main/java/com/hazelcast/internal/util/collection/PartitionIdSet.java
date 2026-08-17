@@ -55,7 +55,8 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
     private int size = SIZE_UNKNOWN;
 
     // for deserialization
-    PartitionIdSet() { }
+    PartitionIdSet() {
+    }
 
     public PartitionIdSet(int partitionCount) {
         this(partitionCount, new BitSet(partitionCount));
@@ -253,11 +254,9 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
             return true;
         }
 
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof PartitionIdSet other)) {
             return false;
         }
-
-        PartitionIdSet other = (PartitionIdSet) o;
 
         return partitionCount == other.partitionCount && bitSet.equals(other.bitSet);
     }

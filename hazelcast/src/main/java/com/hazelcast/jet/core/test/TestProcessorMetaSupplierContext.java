@@ -80,7 +80,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     @Nonnull
     @Override
-    @Deprecated
+    @Deprecated(since = "5.0", forRemoval = true)
     public JetInstance jetInstance() {
         return (JetInstance) instance.getJet();
     }

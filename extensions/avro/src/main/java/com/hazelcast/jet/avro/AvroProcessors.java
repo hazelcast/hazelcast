@@ -43,6 +43,7 @@ import static com.hazelcast.jet.avro.AvroSinks.AVRO_SINK_CONNECTOR_NAME;
 import static com.hazelcast.jet.avro.AvroSources.AVRO_SOURCE_CONNECTOR_NAME;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.security.impl.function.SecuredFunctions.validateContext;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
@@ -120,6 +121,8 @@ public final class AvroProcessors {
 
             @Override
             public DataFileWriter<D> applyEx(Processor.Context context) throws Exception {
+                validateContext(context);
+
                 Schema.Parser parser = new Schema.Parser();
                 Schema schema = parser.parse(jsonSchema);
 

@@ -52,7 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 public final class AvroSerializerHooks {
     private AvroSerializerHooks() { }

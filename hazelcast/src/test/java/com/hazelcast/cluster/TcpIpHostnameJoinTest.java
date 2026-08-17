@@ -46,7 +46,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.TcpIpJoinTest.overrideAddressRetentionDuration;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)

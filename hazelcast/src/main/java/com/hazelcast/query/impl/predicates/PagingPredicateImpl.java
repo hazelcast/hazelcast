@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.Preconditions;

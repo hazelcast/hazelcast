@@ -29,7 +29,6 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
-import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -41,8 +40,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static java.net.StandardSocketOptions.IP_MULTICAST_LOOP;
 
 public final class MulticastService implements Runnable {
 
@@ -112,7 +112,8 @@ public final class MulticastService implements Runnable {
         MulticastService mcService = null;
         try {
             MulticastSocket multicastSocket = new MulticastSocket(null);
-            configureMulticastSocket(multicastSocket, bindAddress, node.getProperties(), multicastConfig, logger);
+            NetworkInterface bindInterface = NetworkInterface.getByInetAddress(bindAddress.getInetAddress());
+            configureMulticastSocket(multicastSocket, bindInterface, node.getProperties(), multicastConfig, logger);
             mcService = new MulticastService(node, multicastSocket);
             mcService.addMulticastListener(new NodeMulticastListener(node));
         } catch (Exception e) {
@@ -125,43 +126,51 @@ public final class MulticastService implements Runnable {
         return mcService;
     }
 
-    protected static void configureMulticastSocket(MulticastSocket multicastSocket, Address bindAddress,
-            HazelcastProperties hzProperties, MulticastConfig multicastConfig, ILogger logger)
-            throws SocketException, IOException, UnknownHostException {
+    // Read the following for some context on multicast socket configuration
+    // - https://github.com/hazelcast/hazelcast/wiki/Multicast-behavior-on-different-platforms
+    // - https://github.com/hazelcast/hazelcast/pull/19251
+    static void configureMulticastSocket(MulticastSocket multicastSocket, NetworkInterface memberBindInterface,
+                                         HazelcastProperties hzProperties, MulticastConfig multicastConfig, ILogger logger)
+            throws IOException {
         multicastSocket.setReuseAddress(true);
-        // bind to receive interface
+        // Bind to the right port on the wildcard interface, we bind to the wildcard so we
+        // can still support multicast ipv6 groups when bound to an ipv4 address.
         multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
         multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
         try {
-            boolean loopbackBind = bindAddress.getInetAddress().isLoopbackAddress();
             Boolean loopbackModeEnabled = multicastConfig.getLoopbackModeEnabled();
             if (loopbackModeEnabled != null) {
                 // setting loopbackmode is just a hint - and the argument means "disable"!
                 // to check the real value we call getLoopbackMode() (and again - return value means "disabled")
-                multicastSocket.setLoopbackMode(!loopbackModeEnabled);
+                multicastSocket.setOption(IP_MULTICAST_LOOP, loopbackModeEnabled);
             }
-            // If LoopBack mode is not enabled (i.e. getLoopbackMode return true) and bind address is a loopback one,
-            // then print a warning
-            if (loopbackBind && multicastSocket.getLoopbackMode()) {
-                logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
+            // Multicast loopback mode is not strictly related to the loopback interface, it determines whether
+            // a sent datagram is echoed back immediately on the outbound network interface. If multiple processes
+            // on the same host are joined to the same group, then loopback mode must be enabled in order for them
+            // to talk regardless of whether they are using the loopback interface or not. If we are using the
+            // loopback interface then that implies that we have multiple processes on the same host and therefore
+            // we should not disable the loopback mode because of the above.
+            if (memberBindInterface.isLoopback() && !multicastSocket.getOption(IP_MULTICAST_LOOP)) {
+                logger.warning("Hazelcast is bound to " + memberBindInterface.getDisplayName() + " and loop-back mode is "
                         + "disabled. This could cause multicast auto-discovery issues "
                         + "and render it unable to work. Check your network connectivity, try to enable the "
                         + "loopback mode and/or force -Djava.net.preferIPv4Stack=true on your JVM.");
             }
 
-            // warning: before modifying lines below, take a look at these links:
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
-            // https://github.com/hazelcast/hazelcast/pull/19251#issuecomment-891375270
-            boolean callSetInterface = OS.isMac() || !loopbackBind;
             String propSetInterface = hzProperties.getString(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE);
+            boolean callSetInterface = true;
             if (propSetInterface != null) {
                 callSetInterface = Boolean.parseBoolean(propSetInterface);
             }
             if (callSetInterface) {
-                multicastSocket.setInterface(bindAddress.getInetAddress());
+                // Set the network interface used for outbound packets to our bind interface. This call
+                // ultimately sets the socket option StandardSocketOptions.IP_MULTICAST_IF (see
+                // DatagramSocketAdaptor#setNetworkInterface). If we don't set the outbound interface then
+                // we delegate the responsibility for choosing it to the host OS, depending on the multicast
+                // group used and the routing table the host may not be able to choose and discovery will fail.
+                multicastSocket.setNetworkInterface(memberBindInterface);
             }
-        } catch (Exception e) {
+        } catch (SocketException e) {
             logger.warning(e);
         }
         multicastSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
@@ -171,7 +180,12 @@ public final class MulticastService implements Runnable {
             multicastGroup = multicastConfig.getMulticastGroup();
         }
         multicastConfig.setMulticastGroup(multicastGroup);
-        multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
+
+        // Since we don't specify an interface here then one is determined for us, see e.g. DatagramSocketAdapter#joinGroup.
+        // If an outbound interface was set above (default case) that is chosen, otherwise it is the platform specific
+        // default interface.
+        multicastSocket.joinGroup(new InetSocketAddress(InetAddress.getByName(multicastGroup), 0), null);
+
         multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
     }
 
@@ -263,9 +277,8 @@ public final class MulticastService implements Runnable {
                 final byte packetVersion = input.readByte();
                 if (packetVersion != Packet.VERSION) {
                     logger.warning("Received a JoinRequest with a different packet version, or encrypted. "
-                            + "Verify that the sender Node, doesn't have symmetric-encryption on. This -> "
-                            + Packet.VERSION + ", Incoming -> " + packetVersion
-                            + ", Sender -> " + datagramPacketReceive.getAddress());
+                            + "Verify that the sender Node, doesn't have symmetric-encryption on. This -> " + Packet.VERSION
+                            + ", Incoming -> " + packetVersion + ", Sender -> " + datagramPacketReceive.getAddress());
                     return null;
                 }
                 return input.readObject();
@@ -282,8 +295,7 @@ public final class MulticastService implements Runnable {
                 } else if (e instanceof GeneralSecurityException) {
                     logger.warning("Received a JoinRequest with an incompatible encoding. "
                             + "Symmetric-encryption is enabled on this node, the remote node either doesn't have it on, "
-                            + "or it uses different cipher."
-                            + "(This message will be suppressed for 60 seconds). ");
+                            + "or it uses different cipher." + "(This message will be suppressed for 60 seconds). ");
                 } else {
                     throw e;
                 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -163,6 +164,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (BatchStage<Entry<K, R>>) GeneralStageWithKey.super.<A, R>rollingAggregate(aggrOp);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull String mapName,
@@ -171,6 +177,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(mapName, mapFn);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.7")
     @Nonnull @Override
     default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
@@ -179,12 +190,22 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(iMap, mapFn);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     default <S, R> BatchStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -193,6 +214,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (BatchStage<R>) GeneralStageWithKey.super.mapUsingServiceAsync(serviceFactory, mapAsyncFn);
     }
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -201,6 +227,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -208,6 +239,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -216,12 +252,22 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
                     ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S> BatchStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     );
 
+    /**
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
+     */
+    @Deprecated(since = "5.4")
     @Nonnull @Override
     <S, R> BatchStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,

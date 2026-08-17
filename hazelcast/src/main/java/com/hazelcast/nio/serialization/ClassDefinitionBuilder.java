@@ -100,7 +100,7 @@ public final class ClassDefinitionBuilder {
      * @deprecated for the sake of better naming. Use {@link #addStringField(String)} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     public ClassDefinitionBuilder addUTFField(@Nonnull String fieldName) {
         return addStringField(fieldName);
     }
@@ -346,7 +346,7 @@ public final class ClassDefinitionBuilder {
      * @deprecated for the sake of better naming. Use {@link #addStringArrayField(String)} instead.
      */
     @Nonnull
-    @Deprecated
+    @Deprecated(since = "4.2", forRemoval = true)
     public ClassDefinitionBuilder addUTFArrayField(@Nonnull String fieldName) {
         return addStringArrayField(fieldName);
     }

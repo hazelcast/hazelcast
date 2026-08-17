@@ -434,7 +434,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_mappingWithoutDeduct() {
         validateOpWithoutDeduct(
-                mapping(entryValue(), maxBy(naturalOrder())),
+                mapping(com.hazelcast.function.Functions.<Integer>entryValue(), maxBy(naturalOrder())),
                 identity(),
                 entry("a", 1),
                 entry("b", 2),

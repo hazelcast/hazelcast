@@ -15,10 +15,6 @@
  */
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.model.MergeShardsRequest;
-import com.amazonaws.services.kinesis.model.Shard;
-import com.amazonaws.services.kinesis.model.SplitShardRequest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -37,6 +33,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.MergeShardsRequest;
+import software.amazon.awssdk.services.kinesis.model.Shard;
+import software.amazon.awssdk.services.kinesis.model.SplitShardRequest;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -67,12 +67,12 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
     protected IMap<String, List<String>> results;
 
     private final AwsConfig awsConfig;
-    private final AmazonKinesisAsync kinesis;
+    private final KinesisAsyncClient kinesis;
     private final KinesisTestHelper helper;
 
     protected HazelcastInstance[] cluster;
 
-    public AbstractKinesisTest(AwsConfig awsConfig, AmazonKinesisAsync kinesis, KinesisTestHelper helper) {
+    public AbstractKinesisTest(AwsConfig awsConfig, KinesisAsyncClient kinesis, KinesisTestHelper helper) {
         this.awsConfig = awsConfig;
         this.kinesis = kinesis;
         this.helper = helper;
@@ -198,32 +198,28 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
     }
 
     protected void mergeShards(Shard shard1, Shard shard2) {
-        MergeShardsRequest request = new MergeShardsRequest();
-        request.setStreamName(STREAM);
-        request.setShardToMerge(shard1.getShardId());
-        request.setAdjacentShardToMerge(shard2.getShardId());
+        MergeShardsRequest request = MergeShardsRequest.builder().streamName(STREAM).shardToMerge(shard1.shardId())
+                .adjacentShardToMerge(shard2.shardId()).build();
 
-        System.out.println("Merging " + shard1.getShardId() + " with " + shard2.getShardId());
-        kinesis.mergeShards(request);
+        logger.info("Merging " + shard1.shardId() + " with " + shard2.shardId());
+        kinesis.mergeShards(request).join();
     }
 
     protected void splitShard(Shard shard) {
-        HashRange range = HashRange.range(shard.getHashKeyRange());
+        HashRange range = HashRange.range(shard.hashKeyRange());
         BigInteger middle = range.getMinInclusive().add(range.getMaxExclusive()).divide(BigInteger.valueOf(2));
 
-        SplitShardRequest request = new SplitShardRequest();
-        request.setStreamName(STREAM);
-        request.setShardToSplit(shard.getShardId());
-        request.setNewStartingHashKey(middle.toString());
+        SplitShardRequest request = SplitShardRequest.builder().streamName(STREAM).shardToSplit(shard.shardId())
+                .newStartingHashKey(middle.toString()).build();
 
-        System.out.println("Splitting " + shard.getShardId());
-        kinesis.splitShard(request);
+        logger.info("Splitting " + shard.shardId());
+        kinesis.splitShard(request).join();
     }
 
     protected static Tuple2<Shard, Shard> findAdjacentPair(Shard shard, List<Shard> allShards) {
-        HashRange shardRange = HashRange.range(shard.getHashKeyRange());
+        HashRange shardRange = HashRange.range(shard.hashKeyRange());
         for (Shard examinedShard : allShards) {
-            HashRange examinedRange = HashRange.range(examinedShard.getHashKeyRange());
+            HashRange examinedRange = HashRange.range(examinedShard.hashKeyRange());
             if (shardRange.isAdjacent(examinedRange)) {
                 if (shardRange.getMinInclusive().compareTo(examinedRange.getMinInclusive()) <= 0) {
                     return Tuple2.tuple2(shard, examinedShard);
@@ -264,7 +260,7 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
     }
 
     public static boolean shardActive(@Nonnull Shard shard) {
-        return shard.getSequenceNumberRange().getEndingSequenceNumber() == null;
+        return shard.sequenceNumberRange().endingSequenceNumber() == null;
         //need to rely on this hack, because shard filters don't seem to work, on the mock at least ...
     }
 }

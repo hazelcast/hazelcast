@@ -123,15 +123,16 @@ public class QueryRunner {
      * @return the query result. {@code null} if the {@code doPartitionScan} is set and the execution on the
      * global index failed.
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
+
         PartitionIdSet ownedPartitions = mapServiceContext.getCachedOwnedPartitions();
         PartitionIdSet actualPartitions = query.getPartitionIdSet() != null
                 ? ownedPartitions.intersectCopy(query.getPartitionIdSet())
                 : ownedPartitions;
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-
         // to optimize the query we need to get any index instance
         IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
         if (indexRegistry == null) {
@@ -169,6 +170,13 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, actualPartitions);
         }
 
+        if (!validateMigrationStamp(migrationStamp)) {
+            // We detected a migration running in parallel with the query.
+            // Return an empty result to trigger fallback per-partition querying;
+            // otherwise, the query might miss some data.
+            result = populateEmptyResult(query, actualPartitions);
+        }
+
         return result;
     }
 
@@ -201,7 +209,6 @@ public class QueryRunner {
         }
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexRegistry);
-
         // then we try to run using an index
         Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, ownedPartitions.size());
@@ -213,6 +220,13 @@ public class QueryRunner {
         } else {
             // success
             result = populateNonEmptyResult(query, entries, ownedPartitions);
+        }
+
+        if (!validateMigrationStamp(migrationStamp)) {
+            // We detected a migration running in parallel with the query.
+            // Return an empty result to trigger fallback per-partition querying;
+            // otherwise, the query might miss some data.
+            result = populateEmptyResult(query, ownedPartitions);
         }
 
         return result;

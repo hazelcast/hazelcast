@@ -17,13 +17,15 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.dataconnection.impl.DataConnectionTestUtil;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 import java.sql.SQLException;
+
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 
 public class DatabaseRule implements TestRule {
 
@@ -36,7 +38,7 @@ public class DatabaseRule implements TestRule {
 
     public DatabaseRule(TestDatabaseProvider databaseProvider) {
         this.databaseProvider = databaseProvider;
-        dbConnectionUrl = new ConcurrentMemoizingSupplier<>(() -> this.databaseProvider.createDatabase(DatabaseRule.class.getName()));
+        dbConnectionUrl = memoizeConcurrent(() -> this.databaseProvider.createDatabase(DatabaseRule.class.getName()));
     }
 
     @Override

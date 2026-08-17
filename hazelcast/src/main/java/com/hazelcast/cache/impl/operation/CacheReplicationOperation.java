@@ -24,7 +24,7 @@ import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.namespace.NamespaceUtil;
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

@@ -88,4 +88,9 @@ public abstract class JdbcDatabaseProvider<C extends JdbcDatabaseContainer<?>> i
     public TestDatabaseRecordProvider recordProvider() {
         return new JdbcObjectProvider(this);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
 }

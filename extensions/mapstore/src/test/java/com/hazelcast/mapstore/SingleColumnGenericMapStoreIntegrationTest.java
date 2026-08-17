@@ -24,6 +24,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialTestExtension;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -46,6 +48,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @QuickTest
+@ExtendWith(HazelcastSerialTestExtension.class)
 public class SingleColumnGenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     private String tableName;

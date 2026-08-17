@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util.executor;
 
-import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Queue;

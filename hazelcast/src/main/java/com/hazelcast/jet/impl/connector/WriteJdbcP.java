@@ -30,7 +30,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -226,7 +226,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 logger.severe("Exception during rollback", sqlException);
             }
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
-                throw ExceptionUtil.rethrow(e);
+                throw JetExceptionUtil.rethrow(e);
             } else {
                 logger.warning("Exception during update", e);
                 idleCount++;
@@ -281,7 +281,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
-                throw ExceptionUtil.rethrow(e);
+                throw JetExceptionUtil.rethrow(e);
             } else {
                 logger.warning("Exception when connecting and preparing the statement", e);
                 idleCount++;

@@ -30,9 +30,9 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class LimitPhysicalRel extends SingleRel implements PhysicalRel {
 

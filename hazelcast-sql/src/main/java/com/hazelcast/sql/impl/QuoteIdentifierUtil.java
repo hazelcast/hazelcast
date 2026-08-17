@@ -18,11 +18,11 @@ package com.hazelcast.sql.impl;
 
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 import static java.util.stream.Collectors.toList;
 

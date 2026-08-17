@@ -66,7 +66,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
     private static final boolean THREAD_DUMP_ON_FAILURE;
 
-    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<>();
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
@@ -122,7 +121,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
+
         //override default async executor of hazelcast so that it can report correct test names in test runs
         //if ForkJoinPool parallelism is less than or equal to 1, `thread-per-task` will be used.
         //In that case there is no need to override defaultAsyncExecutor
@@ -145,17 +144,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     public static String getTestMethodName() {
-        return TEST_NAME_THREAD_LOCAL.get();
-    }
-
-    static void setThreadLocalTestMethodName(String name) {
-        TestLoggingUtils.setThreadLocalTestMethodName(name);
-        TEST_NAME_THREAD_LOCAL.set(name);
-    }
-
-    static void removeThreadLocalTestMethodName() {
-        TestLoggingUtils.removeThreadLocalTestMethodName();
-        TEST_NAME_THREAD_LOCAL.remove();
+        return TestNameHolder.getTestMethodName();
     }
 
     @Override
@@ -299,6 +288,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     protected Statement withAfterClasses(Statement statement) {
         final Statement originalStatement = super.withAfterClasses(statement);
         return new AfterClassesStatement(originalStatement);
+    }
+
+    @Override
+    protected List<TestRule> classRules() {
+        List<TestRule> rules = new ArrayList<>(super.classRules());
+        rules.add(new MobyNamingRule());
+        return rules;
     }
 
     private String generateThreadDump() {

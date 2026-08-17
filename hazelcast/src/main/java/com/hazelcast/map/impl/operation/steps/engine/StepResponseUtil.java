@@ -67,8 +67,7 @@ public final class StepResponseUtil {
     }
 
     private static NodeEngineImpl getNodeEngine(State state) {
-        return (NodeEngineImpl) state.getRecordStore()
-                .getMapContainer().getMapServiceContext().getNodeEngine();
+        return (NodeEngineImpl) state.getOperation().getNodeEngine();
     }
 
     private static void logOperationError(Operation op, Throwable e) {

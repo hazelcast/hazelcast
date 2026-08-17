@@ -1,0 +1,2 @@
+com.hazelcast.vector.jet.impl.FvecsReadFnProvider
+com.hazelcast.vector.jet.impl.IvecsReadFnProvider

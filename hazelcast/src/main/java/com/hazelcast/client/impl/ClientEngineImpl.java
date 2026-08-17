@@ -173,7 +173,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private ClientExceptionFactory initClientExceptionFactory() {
         ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
         boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(configClassLoader);
-        return new ClientExceptionFactory(jcacheAvailable, configClassLoader);
+        return new ClientExceptionFactory(jcacheAvailable, configClassLoader, node.getLoggingService());
     }
 
     private Executor newClientExecutor() {
@@ -480,7 +480,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             if (!connection.isClient() || !nodeEngine.isRunning()) {
                 return;
             }
-            final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+            final ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
             if (endpoint == null) {
                 logger.finest("connectionRemoved: No endpoint for connection:%s", connection);
                 return;

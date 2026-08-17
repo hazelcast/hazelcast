@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.ChunkSerDeHelper;
 import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -159,7 +159,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
             PartitionReplica replica = partition.getReplica(replicaIndex);
             Member targetMember = null;
             if (replica != null) {
-                ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+                ClusterService clusterService = nodeEngine.getClusterService();
                 targetMember = clusterService.getMember(replica.address(), replica.uuid());
             }
             Throwable throwable = new WrongTargetException(nodeEngine.getLocalMember(), targetMember, partitionId,

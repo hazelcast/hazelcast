@@ -73,7 +73,7 @@ public final class MemberVersion
     // populate this Version's major, minor, patch from given String
     private void parse(String version) {
         String[] tokens = StringUtil.tokenizeVersionString(version);
-        assert tokens != null;
+        assert tokens != null : "Unable to parse version string " + version;
         this.major = Byte.parseByte(tokens[0]);
         this.minor = Byte.parseByte(tokens[1]);
         if (tokens.length > 3 && tokens[3] != null) {

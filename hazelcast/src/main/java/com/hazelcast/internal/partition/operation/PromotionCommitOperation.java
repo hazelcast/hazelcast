@@ -39,12 +39,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -141,8 +139,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
      * operations are finished.
      */
     private CallStatus beforePromotion() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
         InternalPartitionServiceImpl partitionService = getService();
 
         if (!partitionService.getMigrationManager().acquirePromotionPermit()) {

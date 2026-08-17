@@ -50,6 +50,7 @@ import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.security.impl.function.SecuredFunctions.validateContext;
 
 /**
  * Use {@link SourceProcessors#readJdbcP}.
@@ -96,7 +97,10 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return supplier(ctx -> newDataSourceFn.get().getConnection(), resultSetFn, mapOutputFn);
+        return supplier(ctx -> {
+            validateContext(ctx);
+            return newDataSourceFn.get().getConnection();
+        }, resultSetFn, mapOutputFn);
     }
 
     /**
@@ -129,7 +133,10 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 readJdbcProcessorFn(
                         // Return a new connection. Connection will be closed by ReadJdbcP processor
-                        context -> DriverManager.getConnection(connectionURL),
+                        context -> {
+                            validateContext(context);
+                            return DriverManager.getConnection(connectionURL);
+                        },
                         // Create a ResultSet. ResultSet will be closed by ReadJdbcP processor
                         (connection, parallelism, index) -> {
                             setAutoCommitIfNecessary(connection, properties);
@@ -201,6 +208,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
+                validateContext(context);
                 return IntStream.range(0, count)
                         .mapToObj(i -> new ReadJdbcP<T>(() -> newConnectionFn.apply(context), resultSetFn, mapOutputFn))
                         .collect(Collectors.toList());

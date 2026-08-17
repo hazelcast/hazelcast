@@ -20,10 +20,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertEqualsEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -62,20 +60,5 @@ public abstract class EventloopTest {
         public void run() {
             count.incrementAndGet();
         }
-    }
-
-    @Test
-    public void test_sleep() {
-        AtomicInteger executedCount = new AtomicInteger();
-        long startMs = System.currentTimeMillis();
-        reactor.offer(() -> {
-            Eventloop eventloop = reactor.eventloop();
-            Promise<?> sleep = eventloop.sleep(1, SECONDS);
-            sleep.then((o, ex) -> executedCount.incrementAndGet());
-        });
-
-        assertEqualsEventually(1, executedCount);
-        long duration = System.currentTimeMillis() - startMs;
-        System.out.println("duration:" + duration + " ms");
     }
 }

@@ -1,39 +1,42 @@
 /*
- * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2026 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.jet.cdc.mysql;
 
-import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.impl.CdcSourceP;
-import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSourceP;
-import com.hazelcast.jet.cdc.impl.DebeziumConfig;
+import com.hazelcast.jet.cdc.DebeziumCdcSources;
+import com.hazelcast.jet.cdc.RecordMappingFunction;
+import com.hazelcast.jet.cdc.DebeziumSnapshotMode;
+import com.hazelcast.jet.cdc.SequenceExtractor;
+import com.hazelcast.jet.cdc.impl.ReadCdcP;
+import com.hazelcast.jet.cdc.impl.ChangeRecordMappingFn;
 import com.hazelcast.jet.cdc.impl.PropertyRules;
-import com.hazelcast.jet.cdc.mysql.impl.MySqlSequenceExtractor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.retry.RetryStrategy;
+import io.debezium.connector.mysql.MySqlConnectorConfig;
+import io.debezium.spi.snapshot.Snapshotter;
+import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.jet.cdc.impl.CdcSourceP.RECONNECT_BEHAVIOR_PROPERTY;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
  * Contains factory methods for creating change data capture sources
@@ -41,124 +44,90 @@ import static com.hazelcast.jet.cdc.impl.CdcSourceP.RECONNECT_BEHAVIOR_PROPERTY;
  *
  * @since Jet 4.2
  */
-@EvolvingApi
 public final class MySqlCdcSources {
 
     private MySqlCdcSources() {
     }
 
     /**
-     * Creates a CDC source that streams change data from a MySQL database to
-     * Hazelcast Jet.
-     * <p>
-     * You can configure how the source will behave if the database connection
-     * breaks, by passing one of the {@linkplain RetryStrategy retry strategies}
-     * to {@code setReconnectBehavior()}.
-     * <p>
-     * The default reconnect behavior is <em>never</em>, which treats any
-     * connection failure as an unrecoverable problem and triggers the failure
-     * of the source and the entire job.
-     * <p>
-     * Other behavior options, which specify that retry attempts should be
-     * made, will result in the source initiating reconnects to the database.
-     * <p>
-     * There is a further setting influencing reconnect behavior, specified via
-     * {@code setShouldStateBeResetOnReconnect()}. The boolean flag passed in
-     * specifies what should happen to the connector's state on reconnect,
-     * whether it should be kept or reset. If the state is kept, then
-     * database snapshotting should not be repeated and streaming the binlog
-     * should resume at the position where it left off. If the state is reset,
-     * then the source will behave as on its initial start, so will do a
-     * database snapshot and will start tailing the binlog where it syncs with
-     * the database snapshot's end.
+     * Creates a CDC source that streams change data from a MySQL database
+     * to Hazelcast Jet.
      *
-     * @param name name of this source, needs to be unique, will be passed to
-     *             the underlying Kafka Connect source
+     * @param name name of this source, needs to be unique
      * @return builder that can be used to set source properties and also to
      * construct the source once configuration is done
      */
     @Nonnull
-    public static Builder mysql(@Nonnull String name) {
-        return new Builder(name);
+    public static Builder<ChangeRecord> mysql(@Nonnull String name) {
+        return new Builder<>(name);
     }
 
     /**
      * Builder for configuring a CDC source that streams change data
      * from a MySQL database to Hazelcast Jet.
+     *
+     * @param <T> type of items produced by the source
      */
-    public static final class Builder {
+    @SuppressWarnings("unused")
+    public static final class Builder<T> extends DebeziumCdcSources.Builder<T> {
 
         private static final PropertyRules RULES = new PropertyRules()
                 .required("database.hostname")
                 .required("database.user")
                 .required("database.password")
-                .required("database.server.name")
-                .exclusive("database.whitelist", "database.blacklist")
-                .exclusive("table.whitelist", "table.blacklist");
-
-        private final DebeziumConfig config;
+                .required("database.server.id")
+                .exclusive("database.dbname", "database.include.list")
+                .exclusive("database.include.list", "database.exclusive.list")
+                .inclusive("database.sslkey", "database.sslpassword")
+                .exclusive("schema.include.list", "schema.exclude.list")
+                .exclusive("table.include.list", "table.exclude.list");
 
         /**
-         * @param name name of the source, needs to be unique,
-         *             will be passed to the underlying Kafka
-         *             Connect source
+         * @param name name of the source, needs to be unique
          */
+        @SuppressWarnings("unchecked")
         private Builder(@Nonnull String name) {
-            Objects.requireNonNull(name, "name");
-
-            config = new DebeziumConfig(name, "io.debezium.connector.mysql.MySqlConnector");
-            config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, MySqlSequenceExtractor.class.getName());
-            config.setProperty("include.schema.changes", "false");
+            super(name, "io.debezium.connector.mysql.MySqlConnector",
+                    (RecordMappingFunction<T>) new ChangeRecordMappingFn());
+            Objects.requireNonNull(name, "name cannot be null");
+            config.setProperty("database.server.id", String.valueOf(System.currentTimeMillis() % Integer.MAX_VALUE));
         }
 
         /**
-         * IP address or hostname of the database server, has to be specified.
+         * Snapshot mode that will be used by the connector.
+         * <p>
+         * If you want to use {@link io.debezium.connector.mysql.MySqlConnectorConfig.SnapshotMode#CUSTOM},
+         * please use {@link #setCustomSnapshotter(Class)} method instead.
          */
         @Nonnull
-        public Builder setDatabaseAddress(@Nonnull String address) {
-            config.setProperty("database.hostname", address);
+        public Builder<T> setSnapshotMode(@Nonnull DebeziumSnapshotMode snapshotMode) {
+            MySqlConnectorConfig.SnapshotMode debeziumMode = switch (snapshotMode) {
+                case ALWAYS -> MySqlConnectorConfig.SnapshotMode.ALWAYS;
+                case INITIAL -> MySqlConnectorConfig.SnapshotMode.INITIAL;
+                case INITIAL_ONLY -> MySqlConnectorConfig.SnapshotMode.INITIAL_ONLY;
+                case NO_DATA -> MySqlConnectorConfig.SnapshotMode.NO_DATA;
+                case CONFIGURATION_BASED -> MySqlConnectorConfig.SnapshotMode.CONFIGURATION_BASED;
+                case WHEN_NEEDED -> MySqlConnectorConfig.SnapshotMode.WHEN_NEEDED;
+            };
+            config.setProperty("snapshot.mode", debeziumMode.getValue());
             return this;
         }
 
         /**
-         * Optional port number of the database server, if unspecified defaults
-         * to the database specific default port (3306).
+         * Custom snapshotter that will be used by the connector.
          */
         @Nonnull
-        public Builder setDatabasePort(int port) {
-            config.setProperty("database.port", Integer.toString(port));
-            return this;
-        }
-
-        /**
-         * Database user for connecting to the database server. Has to be
-         * specified.
-         */
-        @Nonnull
-        public Builder setDatabaseUser(@Nonnull String user) {
-            config.setProperty("database.user", user);
-            return this;
-        }
-
-        /**
-         * Database user password for connecting to the database server. Has to
-         * be specified.
-         */
-        @Nonnull
-        public Builder setDatabasePassword(@Nonnull String password) {
-            config.setProperty("database.password", password);
-            return this;
-        }
-
-        /**
-         * Logical name that identifies and provides a namespace for the
-         * particular database server/cluster being monitored. The logical name
-         * should be unique across all other connectors. Only alphanumeric
-         * characters and underscores should be used. Has to be specified.
-         */
-        @Nonnull
-        public Builder setClusterName(@Nonnull String cluster) {
-            config.setProperty("database.server.name", cluster);
+        public Builder<T> setCustomSnapshotter(@Nonnull Class<?> snapshotterClass) {
+            checkState(Snapshotter.class.isAssignableFrom(snapshotterClass), "snapshotterClass must be "
+                    + "a subclass of Snapshotter");
+            config.setProperty("snapshot.mode", MySqlConnectorConfig.SnapshotMode.CUSTOM.getValue());
+            Snapshotter instance;
+            try {
+                instance = newInstance(getClass().getClassLoader(), snapshotterClass);
+                config.setProperty("snapshot.custom.class", instance.name());
+            } catch (Exception e) {
+                throw new JetException("Cannot construct an instance of Snapshotter " + snapshotterClass, e);
+            }
             return this;
         }
 
@@ -171,220 +140,344 @@ public final class MySqlCdcSources {
          * setting an explicit value.
          */
         @Nonnull
-        public Builder setDatabaseClientId(int clientId) {
-            config.setProperty("database.server.id", clientId);
+        public Builder<T> setDatabaseClientId(int clientId) {
+            config.setProperty("database.server.id", Integer.toString(clientId));
             return this;
         }
 
         /**
-         * Optional regular expressions that match database names to be
-         * monitored; any database name not included in the whitelist will be
-         * excluded from monitoring. By default, all databases will be monitored.
-         * May not be used with {@link #setDatabaseBlacklist(String...) database
-         * blacklist}.
+         * IP address or hostname and the port of the database server, has to be specified.
          */
         @Nonnull
-        public Builder setDatabaseWhitelist(@Nonnull String... dbNameRegExps) {
-            config.setProperty("database.whitelist", dbNameRegExps);
+        public Builder<T> setDatabaseAddress(@Nonnull String address, int port) {
+            config.setProperty("database.hostname", address);
+            config.setProperty("database.port", Integer.toString(port));
             return this;
         }
 
         /**
-         * Optional regular expressions that match database names to be excluded
-         * from monitoring; any database name not included in the blacklist will
-         * be monitored. May not be used with
-         * {@link #setDatabaseWhitelist(String...) database whitelist}.
+         * Database user and password for connecting to the database server. Has to be
+         * specified.
+         */
+        public Builder<T> setDatabaseCredentials(@Nonnull String user, @Nonnull String password) {
+            config.setProperty("database.user", user);
+            config.setProperty("database.password", password);
+            return this;
+        }
+
+        // region Old functions for better compatibility
+        /**
+         * IP address or hostname of the database server, has to be specified.
          */
         @Nonnull
-        public Builder setDatabaseBlacklist(@Nonnull String... dbNameRegExps) {
-            config.setProperty("database.blacklist", dbNameRegExps);
+        public Builder<T> setDatabaseAddress(@Nonnull String address) {
+            config.setProperty("database.hostname", address);
             return this;
+        }
+
+        /**
+         * Optional port number of the database server, if unspecified defaults
+         * to the database specific default port (5432).
+         */
+        @Nonnull
+        public Builder<T> setDatabasePort(int port) {
+            config.setProperty("database.port", Integer.toString(port));
+            return this;
+        }
+
+        /**
+         * Database user for connecting to the database server. Has to be
+         * specified.
+         */
+        @Nonnull
+        public Builder<T> setDatabaseUser(@Nonnull String user) {
+            config.setProperty("database.user", user);
+            return this;
+        }
+
+        /**
+         * Database user password for connecting to the database server. Has to
+         * be specified.
+         */
+        @Nonnull
+        public Builder<T> setDatabasePassword(@Nonnull String password) {
+            config.setProperty("database.password", password);
+            return this;
+        }
+        //endregion
+
+        //region Includes/Excludes
+        /**
+         * The name of the MySQL database from which to stream the changes.
+         * Has to be set.
+         * <p>
+         * Currently, this source is not capable of monitoring multiple
+         * databases, only multiple schemas and/or tables. See white- and
+         * black-listing configuration options for those.
+         */
+        @Nonnull
+        public Builder<T> setDatabaseName(@Nonnull String dbName) {
+            config.setProperty("database.dbname", dbName);
+            return this;
+        }
+
+        /**
+         * Optional regular expressions that match schema names to be monitored
+         * ("schema" is used here to denote logical groups of tables). Any
+         * schema name not included in the whitelist will be excluded from
+         * monitoring. By default, all non-system schemas will be monitored. May
+         * not be used with
+         * {@link #setSchemaExcludeList(String...) schema blacklist}.
+         */
+        @Nonnull
+        public Builder<T> setSchemaIncludeList(@Nonnull String... schemaNameRegExps) {
+            config.setProperty("schema.include.list", schemaNameRegExps);
+            return this;
+        }
+
+        /**
+         * Optional regular expressions that match schema names to be excluded
+         * from monitoring ("schema" is used here to denote logical groups of
+         * tables). Any schema name not included in the blacklist will be
+         * monitored, except system schemas. May not be used with
+         * {@link #setSchemaIncludeList(String...) schema whitelist}.
+         */
+        @Nonnull
+        public Builder<T> setSchemaExcludeList(@Nonnull String... schemaNameRegExps) {
+            config.setProperty("schema.exclude.list", schemaNameRegExps);
+            return this;
+        }
+
+        /**
+         * Optional regular expressions that match databases to be monitored; any database not included in the
+         * include list will be excluded from monitoring. By default, the connector will
+         * monitor all databases. May not be
+         * used with {@link #setDatabaseExcludeList(String...) database exclude list}.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setDatabaseIncludeList(@Nonnull String... databaseNameRegExps) {
+            return (Builder<T>) super.setDatabaseIncludeList(databaseNameRegExps);
+        }
+
+        /**
+         * Optional regular expressions that match databases to be excluded from monitoring; any table not
+         * included in the exclude list will be monitored. May not be used with
+         * {@link #setDatabaseIncludeList(String...) database include list}.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setDatabaseExcludeList(@Nonnull String... databaseNameRegExps) {
+            return (Builder<T>) super.setDatabaseExcludeList(databaseNameRegExps);
         }
 
         /**
          * Optional regular expressions that match fully-qualified table
          * identifiers for tables to be monitored; any table not included in the
          * whitelist will be excluded from monitoring. Each identifier is of the
-         * form <em>databaseName.tableName</em>. By default, the connector will
+         * form <em>schemaName.tableName</em>. By default, the connector will
          * monitor every non-system table in each monitored database. May not be
-         * used with {@link #setTableBlacklist(String...) table blacklist}.
+         * used with {@link #setTableExcludeList(String...) table exclude list}.
          */
         @Nonnull
-        public Builder setTableWhitelist(@Nonnull String... tableNameRegExps) {
-            config.setProperty("table.whitelist", tableNameRegExps);
-            return this;
+        @Override
+        public Builder<T> setTableIncludeList(@Nonnull String... tableNameRegExps) {
+            return (Builder<T>) super.setTableIncludeList(tableNameRegExps);
         }
 
         /**
          * Optional regular expressions that match fully-qualified table
          * identifiers for tables to be excluded from monitoring; any table not
          * included in the blacklist will be monitored. Each identifier is of
-         * the form <em>databaseName.tableName</em>. May not be used with
-         * {@link #setTableWhitelist(String...) table whitelist}.
+         * the form <em>schemaName.tableName</em>. May not be used with
+         * {@link #setTableIncludeList(String...) table whitelist}.
          */
         @Nonnull
-        public Builder setTableBlacklist(@Nonnull String... tableNameRegExps) {
-            config.setProperty("table.blacklist", tableNameRegExps);
-            return this;
+        @Override
+        public Builder<T> setTableExcludeList(@Nonnull String... tableNameRegExps) {
+            return (Builder<T>) super.setTableExcludeList(tableNameRegExps);
         }
 
         /**
          * Optional regular expressions that match the fully-qualified names of
          * columns that should be excluded from change event message values.
          * Fully-qualified names for columns are of the form
-         * <em>databaseName.tableName.columnName</em>, or
-         * <em>databaseName.schemaName.tableName.columnName</em>.
+         * <em>schemaName.tableName.columnName</em>.
          */
         @Nonnull
-        public Builder setColumnBlacklist(@Nonnull String... columnNameRegExps) {
-            config.setProperty("column.blacklist", columnNameRegExps);
+        public Builder<T> setColumnIncludeList(@Nonnull String... columnNameRegExps) {
+            config.setProperty("column.include.list", columnNameRegExps);
             return this;
         }
+        //endregion
 
         /**
          * Specifies whether to use an encrypted connection to the database. The
-         * default is <em>disabled</em>, and specifies to use an unencrypted
+         * default is <em>disable</em>, and specifies to use an unencrypted
          * connection.
          * <p>
-         * The <em>preferred</em> option establishes an encrypted connection if
-         * the server supports secure connections but falls back to an
-         * unencrypted connection otherwise.
-         * <p>
-         * The <em>required</em> option establishes an encrypted connection but
+         * The <em>require</em> option establishes an encrypted connection but
          * will fail if one cannot be made for any reason.
          * <p>
-         * The <em>verify_ca</em> option behaves like <em>required</em> but
+         * The <em>verify_ca</em> option behaves like <em>require</em> but
          * additionally it verifies the server TLS certificate against the
          * configured Certificate Authority (CA) certificates and will fail if
-         * it doesn't match any valid CA certificates.
+         * it doesn’t match any valid CA certificates.
          * <p>
-         * The <em>verify_identity</em> option behaves like <em>verify_ca</em> but
-         * additionally verifies that the server certificate matches the host of
-         * the remote connection.
+         * The <em>verify-full</em> option behaves like <em>verify_ca</em> but
+         * additionally verifies that the server certificate matches the host
+         * of the remote connection.
          */
         @Nonnull
-        public Builder setSslMode(@Nonnull String mode) {
-            config.setProperty("database.ssl.mode", mode);
+        public Builder<T> setSslMode(@Nonnull String mode) {
+            config.setProperty("database.sslmode", mode);
             return this;
         }
 
         /**
-         * Specifies the (path to the) Java keystore file containing the
-         * database client certificate and private key.
-         * <p>
-         * Can be alternatively specified via the 'javax.net.ssl.keyStore'
-         * system or JVM property.
+         * Specifies the (path to the) file containing the SSL Certificate for
+         * the database client.
          */
         @Nonnull
-        public Builder setSslKeystoreFile(@Nonnull String file) {
-            config.setProperty("database.ssl.keystore", file);
+        public Builder<T> setSslCertificateFile(@Nonnull String file) {
+            config.setProperty("database.sslcert", file);
             return this;
         }
 
         /**
-         * Password to access the private key from any specified keystore files.
-         * <p>
-         * This password is used to unlock the keystore file (store password),
-         * and to decrypt the private key stored in the keystore (key password)."
-         * <p>
-         * Can be alternatively specified via the 'javax.net.ssl.keyStorePassword'
-         * system or JVM property.
+         * Specifies the (path to the) file containing the SSL private key of
+         * the database client.
          */
         @Nonnull
-        public Builder setSslKeystorePassword(@Nonnull String password) {
-            config.setProperty("database.ssl.keystore.password", password);
+        public Builder<T> setSslKeyFile(@Nonnull String file) {
+            config.setProperty("database.sslkey", file);
             return this;
         }
 
         /**
-         * Specifies the (path to the) Java truststore file containing the
-         * collection of trusted CA certificates.
+         * Specifies the password to be used to access the SSL key file, if
+         * specified.
          * <p>
-         * Can be alternatively specified via the 'javax.net.ssl.trustStore'
-         * system or JVM property.
+         * Mandatory if key file specified.
          */
         @Nonnull
-        public Builder setSslTruststoreFile(@Nonnull String file) {
-            config.setProperty("database.ssl.truststore", file);
+        public Builder<T> setSslKeyFilePassword(@Nonnull String password) {
+            config.setProperty("database.sslpassword", password);
             return this;
         }
 
         /**
-         * Password to unlock any specified truststore.
+         * Specifies the file containing SSL certificate authority
+         * (CA) certificate(s).
+         */
+        @Nonnull
+        public Builder<T> setSslRootCertificateFile(@Nonnull String file) {
+            config.setProperty("database.sslrootcert", file);
+            return this;
+        }
+
+        // region Overrides
+        /**
+         * Sets the return type of the source to {@link ChangeRecord}.
+         */
+        @Nonnull
+        @Override
+        public Builder<ChangeRecord> changeRecord() {
+            return (Builder<ChangeRecord>) super.changeRecord();
+        }
+
+        /**
+         * Sets the return type of the source to {@link Map.Entry} with key and value being {@link SourceRecord}'s
+         * key and value, parsed to json string.
+         */
+        @Nonnull
+        @Override
+        public Builder<Entry<String, String>> json() {
+            return (Builder<Entry<String, String>>) super.json();
+        }
+
+        /**
+         * Sets the return type of the source to user defined {@code #T_NEW} type. Mapping will be performed
+         * by user-defined mapping function.
+         */
+        @Nonnull
+        @Override
+        public <T_NEW> Builder<T_NEW> customMapping(@Nonnull RecordMappingFunction<T_NEW> recordMappingFunction) {
+            return (Builder<T_NEW>) super.customMapping(recordMappingFunction);
+        }
+
+        /**
+         * Sets the {@link SequenceExtractor} class property.
          * <p>
-         * Can be alternatively specified via the 'javax.net.ssl.trustStorePassword'
-         * system or JVM property.
+         * Sequence extractor is used to determine monotonically increasing order of CDC order, that
+         * can be used later in {@link com.hazelcast.jet.cdc.impl.WriteCdcP}.
+         * @param sequenceExtractorClass Class of the SequenceExtractor implementation. Must be on the
+         *                               classpath during execution.
          */
         @Nonnull
-        public Builder setSslTruststorePassword(@Nonnull String password) {
-            config.setProperty("database.ssl.truststore.password", password);
-            return this;
+        @Override
+        public Builder<T> withSequenceExtractor(Class<? extends SequenceExtractor> sequenceExtractorClass) {
+            return (Builder<T>) super.withSequenceExtractor(sequenceExtractorClass);
         }
 
         /**
-         * Specifies how the source should behave when it detects that the
-         * backing database has been shut down (read class javadoc for details
-         * and special cases).
-         * <p>
-         * Defaults to {@link CdcSourceP#DEFAULT_RECONNECT_BEHAVIOR}.
+         * Sets the maximum retry count in case of errors.
+         * <p>Default value is -1, which means infinite retries.
          */
         @Nonnull
-        public Builder setReconnectBehavior(@Nonnull RetryStrategy retryStrategy) {
-            config.setProperty(RECONNECT_BEHAVIOR_PROPERTY, retryStrategy);
-            return this;
+        @Override
+        public Builder<T> withErrorMaxRetries(int errorRetryCount) {
+            return (Builder<T>) super.withErrorMaxRetries(errorRetryCount);
         }
 
         /**
-         * Specifies if the source's state should be kept or discarded during
-         * reconnect attempts to the database. If the state is kept, then
-         * database snapshotting should not be repeated and streaming the binlog
-         * should resume at the position where it left off. If the state is
-         * reset, then the source will behave as if it were its initial start,
-         * so will do a database snapshot and will start tailing the binlog
-         * where it syncs with the database snapshot's end.
+         * Sets a source property. These properties are passed to Debezium.
          */
         @Nonnull
-        public Builder setShouldStateBeResetOnReconnect(boolean reset) {
-            config.setProperty(CdcSourceP.RECONNECT_RESET_STATE_PROPERTY, reset);
-            return this;
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, @Nonnull String value) {
+            return (Builder<T>) super.setProperty(key, value);
         }
 
         /**
-         * Can be used to set any property not explicitly covered by other
-         * methods or to override internal properties.
+         * Sets a source property. These properties are passed to Debezium.
          */
         @Nonnull
-        public Builder setCustomProperty(@Nonnull String key, @Nonnull String value) {
-            config.setProperty(key, value);
-            return this;
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, long value) {
+            return (Builder<T>) super.setProperty(key, value);
         }
+
+        /**
+         * Sets a source property. These properties are passed to Debezium.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, boolean value) {
+            return (Builder<T>) super.setProperty(key, value);
+        }
+
+        /**
+         * Sets a source property. These properties are passed to Debezium.
+         */
+        @Nonnull
+        @Override
+        public Builder<T> setProperty(@Nonnull String key, int value) {
+            return (Builder<T>) super.setProperty(key, value);
+        }
+
+        // endregion
 
         /**
          * Returns the source based on the properties set so far.
          */
         @Nonnull
-        public StreamSource<ChangeRecord> build() {
+        @Override
+        public StreamSource<T> build() {
+            config.setProperty(ReadCdcP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, MySqlSequenceExtractor.class.getName());
             Properties properties = config.toProperties();
             RULES.check(properties);
-
-            properties.setProperty("connect.keep.alive", "true");
-            String intervalMs = getKeepAliveIntervalMs(properties);
-            properties.setProperty("connect.keep.alive.interval.ms", intervalMs);
-            properties.setProperty("connect.timeout.ms", intervalMs);
-
-            String name = properties.getProperty(CdcSourceP.NAME_PROPERTY);
-            return Sources.streamFromProcessorWithWatermarks(
-                    name,
-                    true,
-                    eventTimePolicy -> ProcessorMetaSupplier.forceTotalParallelismOne(
-                            ProcessorSupplier.of(() -> new ChangeRecordCdcSourceP(properties, eventTimePolicy))));
-        }
-
-        private static String getKeepAliveIntervalMs(Properties properties) {
-            RetryStrategy reconnectBehavior = (RetryStrategy) properties.get(RECONNECT_BEHAVIOR_PROPERTY);
-            reconnectBehavior = reconnectBehavior == null ? CdcSourceP.DEFAULT_RECONNECT_BEHAVIOR : reconnectBehavior;
-            long waitMs = reconnectBehavior.getIntervalFunction().waitAfterAttempt(1);
-            return Long.toString(waitMs / 2);
+            return super.build();
         }
 
     }
