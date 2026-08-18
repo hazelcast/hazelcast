@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.BiConsumerEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -61,6 +62,7 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
     }
 
     private final Function<? super Context, ? extends C> createFn;
+    private final ConsumerEx<? super C> initFn;
     private final BiConsumer<? super C, ? super SourceBufferConsumerSide<?>> fillBufferFn;
     private final FunctionEx<? super C, ? extends S> createSnapshotFn;
     private final BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn;
@@ -69,7 +71,7 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
     private final EventTimeMapper<T> eventTimeMapper;
     private BroadcastKey<Integer> snapshotKey;
 
-    private boolean initialized;
+    private boolean contextCreated;
     private C ctx;
     private Traverser<?> traverser;
     private S pendingState;
@@ -77,6 +79,7 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
 
     public ConvenientSourceP(
             @Nonnull Function<? super Context, ? extends C> createFn,
+            @Nonnull ConsumerEx<? super C> initFn,
             @Nonnull BiConsumer<? super C, ? super SourceBufferConsumerSide<?>> fillBufferFn,
             @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn,
             @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
@@ -85,6 +88,7 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
             @Nullable EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.createFn = createFn;
+        this.initFn = initFn;
         this.fillBufferFn = fillBufferFn;
         this.createSnapshotFn = createSnapshotFn;
         this.restoreSnapshotFn = restoreSnapshotFn;
@@ -108,9 +112,12 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
         PermissionsUtil.checkPermission(createSnapshotFn, context);
         // createFn is allowed to return null, we'll call `destroyFn` even for null `ctx`
         ManagedContext managedContext = context.managedContext();
-        ctx = (C) managedContext.initialize(createFn.apply(context));
+        ctx = createFn.apply(context);
+        contextCreated = true;
+        //noinspection unchecked
+        ctx = (C) managedContext.initialize(ctx);
+        initFn.accept(ctx);
         snapshotKey = broadcastKey(context.globalProcessorIndex());
-        initialized = true;
     }
 
     @Override
@@ -175,7 +182,7 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (initialized) {
+        if (contextCreated) {
             destroyFn.accept(ctx);
         }
     }

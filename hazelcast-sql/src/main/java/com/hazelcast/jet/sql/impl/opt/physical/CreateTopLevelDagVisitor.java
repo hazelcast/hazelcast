@@ -65,10 +65,13 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,6 +96,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 
 public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     // TODO https://github.com/hazelcast/hazelcast/issues/20383
@@ -133,6 +137,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         return dag.newUniqueVertex("Values", convenientSourceP(
                 ExpressionEvalContext::from,
+                ConsumerEx.noop(),
                 (context, buffer) -> {
                     values.forEach(vs -> vs.toValues(context).forEach(buffer::add));
                     buffer.close();
@@ -152,7 +157,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
                 (PhysicalRel) rel.getInput(), MOCK_EEC);
 
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = hazelcastTable(rel.getTable()).getTarget();
         collectObjectKeys(table);
 
         dagBuildContext.setTable(table);
@@ -168,7 +173,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
                 (PhysicalRel) rel.getInput(), MOCK_EEC);
 
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = hazelcastTable(rel.getTable()).getTarget();
         collectObjectKeys(table);
 
         dagBuildContext.setTable(table);
@@ -183,7 +188,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // currently it's not possible to have an unbounded UPDATE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = hazelcastTable(rel.getTable()).getTarget();
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
@@ -201,7 +206,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // currently it's not possible to have an unbounded DELETE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = hazelcastTable(rel.getTable()).getTarget();
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
@@ -215,7 +220,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onFullScan(FullScanPhysicalRel rel) {
-        HazelcastTable hazelcastTable = rel.getTable().unwrap(HazelcastTable.class);
+        HazelcastTable hazelcastTable = hazelcastTable(rel.getTable());
         Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
@@ -255,7 +260,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = hazelcastTable(rel.getTable()).getTarget();
         collectObjectKeys(table);
 
         dagBuildContext.setTable(table);
@@ -510,7 +515,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof HazelcastPhysicalScan : rel.getRight().getClass();
 
-        Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
+        Table rightTable = hazelcastTable(rel.getRight().getTable()).getTarget();
         collectObjectKeys(rightTable);
 
         dagBuildContext.setTable(rightTable);
@@ -776,7 +781,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
      * @param vertex The vertex for {@code rel}
      */
     private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {
-        boolean preserveCollation = !rel.getTraitSet().getCollation().getFieldCollations().isEmpty();
+        RelCollation collation = requireNonNull(rel.getTraitSet().getCollation(), "collation must not be null");
+        boolean preserveCollation = !collation.getFieldCollations().isEmpty();
         Vertex inputVertex = connectInput(rel.getInput(), vertex,
                 preserveCollation ? Edge::isolated : null);
 
@@ -795,5 +801,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    @Nonnull
+    private static HazelcastTable hazelcastTable(RelOptTable rel) {
+        requireNonNull(rel, "relation must not be null");
+        return requireNonNull(rel.unwrap(HazelcastTable.class), "given relation is not a HazelcastTable, but should be");
     }
 }

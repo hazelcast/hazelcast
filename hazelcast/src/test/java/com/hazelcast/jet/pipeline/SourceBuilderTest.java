@@ -53,6 +53,8 @@ import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -322,6 +324,97 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             assertEquals(expected, new ArrayList<>(sinkList));
         }
+    }
+
+    static class FailingContext implements Serializable {
+        static volatile boolean created;
+        static volatile boolean cleanedUp;
+        FailingContext() {
+            created = true;
+        }
+
+        void init() {
+            cleanedUp = false;
+            throw new RuntimeException("simulated fail");
+        }
+
+        void destroy() {
+            cleanedUp = true;
+        }
+    }
+
+    @Test
+    public void cleansUpFromInit_in_batch() {
+        // When
+        BatchSource<String> source = SourceBuilder
+                                               .batch("source",
+                                                      ctx -> new FailingContext())
+                                               .initFn(FailingContext::init)
+                                               .destroyFn(FailingContext::destroy)
+                                               .<String>fillBufferFn((in, buf) -> {
+                                                  // not called
+                                               })
+                                               .build();
+
+        // Then
+        Pipeline p = Pipeline.create();
+        p.readFrom(source)
+         .writeTo(sinkList());
+
+        assertThatCode(() -> hz().getJet().newJob(p).join())
+            .hasMessageContaining("simulated fail");
+        assertThat(FailingContext.created).isTrue();
+        assertThat(FailingContext.cleanedUp).isTrue();
+    }
+
+    @Test
+    public void cleansUpFromInit_in_stream() {
+        // When
+        StreamSource<String> source = SourceBuilder
+                                               .stream("source",
+                                                      ctx -> new FailingContext())
+                                               .initFn(FailingContext::init)
+                                               .destroyFn(FailingContext::destroy)
+                                               .<String>fillBufferFn((in, buf) -> {
+                                                  // not called
+                                               })
+                                               .build();
+
+        // Then
+        Pipeline p = Pipeline.create();
+        p.readFrom(source)
+         .withIngestionTimestamps()
+         .writeTo(sinkList());
+
+        assertThatCode(() -> hz().getJet().newJob(p).join())
+            .hasMessageContaining("simulated fail");
+        assertThat(FailingContext.created).isTrue();
+        assertThat(FailingContext.cleanedUp).isTrue();
+    }
+
+    @Test
+    public void cleansUpFromInit_in_timestampedStream() {
+        // When
+        StreamSource<String> source = SourceBuilder
+                                               .timestampedStream("source",
+                                                      ctx -> new FailingContext())
+                                               .initFn(FailingContext::init)
+                                               .destroyFn(FailingContext::destroy)
+                                               .<String>fillBufferFn((in, buf) -> {
+                                                  // not called
+                                               })
+                                               .build();
+
+        // Then
+        Pipeline p = Pipeline.create();
+        p.readFrom(source)
+         .withIngestionTimestamps()
+         .writeTo(sinkList());
+
+        assertThatCode(() -> hz().getJet().newJob(p).join())
+            .hasMessageContaining("simulated fail");
+        assertThat(FailingContext.created).isTrue();
+        assertThat(FailingContext.cleanedUp).isTrue();
     }
 
     @Test
