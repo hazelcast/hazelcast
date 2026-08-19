@@ -18,8 +18,11 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import com.hazelcast.test.starter.MavenInterface;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -35,7 +38,7 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
         = memoizeConcurrent(() -> MavenInterface.evaluateExpression("confluent.version"));
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
 
-    private ConfluentKafkaContainer kafkaContainer;
+    private GenericContainer<?> kafkaContainer;
 
     @Override
     protected String createKafkaCluster0(Map<String, String> properties) {
@@ -43,12 +46,23 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
         if (kafkaVersion == null) {
             kafkaVersion = MAVEN_CONFLUENT_VERSION.get();
         }
-        kafkaContainer = new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka").withTag(kafkaVersion))
+        DockerImageName imageName = DockerImageName.parse("confluentinc/cp-kafka").withTag(kafkaVersion);
+        if (new ComparableVersion(kafkaVersion).compareTo(new ComparableVersion("7.4.0")) < 0) {
+            KafkaContainer legacyKafkaContainer = new KafkaContainer(imageName)
+                .withEmbeddedZookeeper()
+                .withEnv(toKafkaEnvironments(properties))
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+            kafkaContainer = legacyKafkaContainer;
+            kafkaContainer.start();
+            return legacyKafkaContainer.getBootstrapServers();
+        }
+
+        ConfluentKafkaContainer confluentKafkaContainer = new ConfluentKafkaContainer(imageName)
             .withEnv(toKafkaEnvironments(properties))
             .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+        kafkaContainer = confluentKafkaContainer;
         kafkaContainer.start();
-
-        return kafkaContainer.getBootstrapServers();
+        return confluentKafkaContainer.getBootstrapServers();
     }
 
     private String toKafkaEnvironment(String property) {

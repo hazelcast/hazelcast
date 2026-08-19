@@ -478,9 +478,10 @@ public final class SourceProcessors {
      * @param <S> type of object saved to state snapshot
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "checkstyle:ParameterNumber" })
     public static <C, T, S> ProcessorMetaSupplier convenientSourceP(
             @Nonnull FunctionEx<? super Context, ? extends C> createFn,
+            @Nonnull ConsumerEx<? super C> initFn,
             @Nonnull BiConsumerEx<? super C, ? super SourceBuffer<T>> fillBufferFn,
             @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn,
             @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
@@ -490,6 +491,7 @@ public final class SourceProcessors {
             @Nullable Permission permission
     ) {
         checkSerializable(createFn, "createFn");
+        checkSerializable(initFn, "initFn");
         checkSerializable(fillBufferFn, "fillBufferFn");
         checkSerializable(destroyFn, "destroyFn");
         checkSerializable(createSnapshotFn, "createSnapshotFn");
@@ -498,6 +500,7 @@ public final class SourceProcessors {
         ProcessorSupplier procSup = ProcessorSupplier.of(
                 () -> new ConvenientSourceP<>(
                         createFn,
+                        initFn,
                         (BiConsumer<? super C, ? super SourceBufferConsumerSide<?>>) fillBufferFn,
                         createSnapshotFn,
                         restoreSnapshotFn,
@@ -533,6 +536,7 @@ public final class SourceProcessors {
     @SuppressWarnings("unchecked")
     public static <C, T, S> ProcessorMetaSupplier convenientTimestampedSourceP(
             @Nonnull FunctionEx<? super Context, ? extends C> createFn,
+            @Nonnull ConsumerEx<? super C> initFn,
             @Nonnull BiConsumerEx<? super C, ? super TimestampedSourceBuffer<T>> fillBufferFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn,
@@ -541,6 +545,7 @@ public final class SourceProcessors {
             int preferredLocalParallelism
     ) {
         checkSerializable(createFn, "createFn");
+        checkSerializable(initFn, "initFn");
         checkSerializable(fillBufferFn, "fillBufferFn");
         checkSerializable(destroyFn, "destroyFn");
         checkSerializable(createSnapshotFn, "createSnapshotFn");
@@ -549,6 +554,7 @@ public final class SourceProcessors {
         ProcessorSupplier procSup = ProcessorSupplier.of(
                 () -> new ConvenientSourceP<>(
                         createFn,
+                        initFn,
                         (BiConsumer<? super C, ? super SourceBufferConsumerSide<?>>) fillBufferFn,
                         createSnapshotFn,
                         restoreSnapshotFn,
