@@ -44,6 +44,7 @@
         <module>hazelcast-parent</module>
         <module>hazelcast-tpc-engine</module>
         <module>hazelcast</module>
+        <module>hazelcast-slim</module>
         <module>hazelcast-archunit-rules</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-spring-boot-autoconfiguration</module>
