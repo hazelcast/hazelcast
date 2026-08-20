@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
@@ -35,11 +33,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
-import java.util.Properties;
-
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -57,11 +54,6 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         createKafkaCluster();
     }
 
-    protected static void setupWithClient(int memberCount, Config config, ClientConfig clientConfig) throws Exception {
-        initializeWithClient(memberCount, config, clientConfig);
-        createKafkaCluster();
-    }
-
     private static void createKafkaCluster() throws Exception {
         sqlService = instance().getSql();
         kafkaTestSupport = KafkaTestSupport.create();
@@ -70,16 +62,9 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         kafkaTestSupport.waitForKafkaReady();
     }
 
-    protected static void createSchemaRegistry() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty("listeners", "http://0.0.0.0:0");
-        properties.setProperty(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG,
-                kafkaTestSupport.getBrokerConnectionString());
-        // We increase the timeout (default is 500 ms) because when Kafka is under load,
-        // the schema registry may give "RestClientException: Register operation timed out".
-        properties.setProperty(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
-        SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
-        kafkaTestSupport.createSchemaRegistry(config);
+    protected static void createSchemaRegistry() {
+        assumeDockerEnabled();
+        kafkaTestSupport.createSchemaRegistry();
     }
 
     @AfterClass
@@ -121,7 +106,7 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
                 "CREATE DATA CONNECTION " + dlName + " TYPE Kafka "
                         + (isShared ? " SHARED " : " NOT SHARED ") + options
         )) {
-            assertThat(result.updateCount()).isZero();
+            assertThat(result.isRowSet()).isFalse();
         }
 
     }
@@ -134,7 +119,7 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name
                 + " DATA CONNECTION " + quoteName(dataConnection) + "\n" + sqlOptions
         )) {
-            assertThat(result.updateCount()).isZero();
+            assertThat(result.isRowSet()).isFalse();
         }
     }
 

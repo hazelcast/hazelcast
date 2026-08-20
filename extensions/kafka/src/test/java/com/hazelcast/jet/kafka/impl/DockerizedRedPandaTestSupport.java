@@ -45,7 +45,10 @@ class DockerizedRedPandaTestSupport extends KafkaTestSupport {
         }
         DockerImageName imageName = parse("docker.redpanda.com/redpandadata/redpanda:" + TEST_REDPANDA_VERSION);
         redpandaContainer = new RedpandaContainer(imageName)
-                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+                                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+                                .withNetwork(network)
+                                .withNetworkAliases("kafka")
+                                .withListener("kafka:19092");
         addArguments(redpandaContainer, "--memory=2G");
         redpandaContainer.start();
 

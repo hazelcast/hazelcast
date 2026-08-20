@@ -18,13 +18,11 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
-import io.confluent.kafka.schemaregistry.CompatibilityLevel;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
-import io.confluent.kafka.schemaregistry.client.rest.entities.requests.ConfigUpdateRequest;
-import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
-import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
-import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
-import io.confluent.kafka.schemaregistry.storage.SchemaRegistry;
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.admin.Admin;
@@ -41,7 +39,13 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.utils.Bytes;
-import org.eclipse.jetty.server.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.net.URI;
@@ -59,9 +63,11 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.jet.kafka.impl.DockerizedKafkaTestSupport.getKafkaVersion;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.DockerTestUtil.dockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -71,15 +77,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("resource")
 public abstract class KafkaTestSupport {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaTestSupport.class);
     static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(2);
     private final Map<String, KafkaProducer<Object, Object>> producers = new HashMap<>();
     private final Map<String, Map<String, String>> producerProperties = new HashMap<>();
 
+    /**
+     * Network used by Kafka / Redpanda and Schema Registry containers, if one of those is selected.
+     */
+    protected Network network;
+
     private String brokerConnectionString;
     private Admin admin;
-    private Server schemaRegistryServer;
-    private SchemaRegistry schemaRegistry;
+    private GenericContainer<?> schemaRegisterContainer;
+    protected SchemaRegistryClient schemaRegistryClient;
 
     public static KafkaTestSupport create() {
         if (!dockerEnabled()) {
@@ -107,6 +120,9 @@ public abstract class KafkaTestSupport {
     }
 
     public void createKafkaCluster(Map<String, String> properties) throws IOException {
+        if (network == null && dockerEnabled()) {
+            network = Network.newNetwork();
+        }
         brokerConnectionString = createKafkaCluster0(properties);
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", brokerConnectionString);
@@ -144,6 +160,11 @@ public abstract class KafkaTestSupport {
         }
         producers.values().forEach(KafkaProducer::close);
         producers.clear();
+
+        if (network != null) {
+            network.close();
+            network = null;
+        }
     }
 
     protected abstract void shutdownKafkaCluster0();
@@ -275,52 +296,47 @@ public abstract class KafkaTestSupport {
         return consumer;
     }
 
-    public void createSchemaRegistry(SchemaRegistryConfig config) throws Exception {
-        SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
-        schemaRegistryServer = schemaRegistryApplication.createServer();
-        schemaRegistryServer.start();
-        schemaRegistry = schemaRegistryApplication.schemaRegistry();
+    public void createSchemaRegistry() {
+        assumeDockerEnabled();
+        schemaRegisterContainer = new GenericContainer<>(DockerImageName.parse("confluentinc/cp-schema-registry")
+                                                                        .withTag(getKafkaVersion()))
+                                      .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("schema-registry"))
+                                      .withExposedPorts(8081)
+                                      .withNetwork(network)
+                                      .withNetworkAliases("schema-registry")
+                                      .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+                                      .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
+                                      // Point Schema Registry to the internal Kafka network alias
+                                      .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "PLAINTEXT://kafka:19092")
+                                      .withEnv("SCHEMA_REGISTRY_DEBUG", "true")
+                                      // Ensure the container is ready before tests start
+                                      .waitingFor(Wait.forHttp("/").forStatusCode(200));
+        schemaRegisterContainer.start();
+        URI schemaRegistryUrl = getSchemaRegistryURI();
+
+        schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl.toString(), 100);
     }
 
-    public void shutdownSchemaRegistry() throws Exception {
-        if (schemaRegistryServer != null) {
-            schemaRegistryServer.stop();
-        }
+    public void shutdownSchemaRegistry() {
+        closeResource(schemaRegisterContainer);
     }
 
     public URI getSchemaRegistryURI() {
-        return schemaRegistryServer.getURI();
+        return URI.create("http://" + schemaRegisterContainer.getHost() + ":" + schemaRegisterContainer.getMappedPort(8081));
     }
 
     /** Registers the specified {@code schema} and returns its ID. */
-    public int registerSchema(String subject, Schema schema) throws SchemaRegistryException {
-        return schemaRegistry.register(subject, new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(
-                subject, 0, -1, AvroSchema.TYPE, emptyList(), schema.toString())).getId();
+    public int registerSchema(String subject, Schema schema) throws RestClientException, IOException {
+        return schemaRegistryClient.register(subject, new AvroSchema(schema));
     }
 
-    public int getLatestSchemaVersion(String subject) throws SchemaRegistryException {
-        return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(
-                               io.confluent.kafka.schemaregistry.client.rest.entities.Schema::getVersion)
-                .orElseThrow(() -> new SchemaRegistryException("No schema found in subject '" + subject + "'"));
-    }
-
-    /**
-     * Sets the subject-level {@link CompatibilityLevel} on the schema registry.
-     * <p>
-     * If the serializer is configured to use the latest schema version ({@code use.latest.version=true})
-     * or a specific schema version ({@code use.schema.id=<n>}), it checks the record schemas for
-     * backward compatibility by default. You might need to disable this check by setting {@code
-     * latest.compatibility.strict=false} and {@code id.compatibility.strict=false} respectively
-     * on the serializer.
-     *
-     * @see io.confluent.kafka.schemaregistry.ParsedSchema#isCompatible
-     * @see io.confluent.kafka.schemaregistry.ParsedSchema#isBackwardCompatible
-     */
-    public void setCompatibilityLevel(String subject, CompatibilityLevel level)
-            throws SchemaRegistryException {
-        ConfigUpdateRequest cur = new ConfigUpdateRequest();
-        cur.setCompatibilityLevel(level.name);
-        schemaRegistry.updateConfig(subject, cur);
+    public int getLatestSchemaVersion(String subject) throws RestClientException, IOException {
+        schemaRegistryClient.reset();
+        SchemaMetadata metadata = schemaRegistryClient.getLatestSchemaMetadata(subject);
+        if (metadata == null) {
+            throw new RuntimeException("No schema found in subject '" + subject + "'");
+        }
+        return metadata.getVersion();
     }
 
     public void assertTopicContentsEventually(

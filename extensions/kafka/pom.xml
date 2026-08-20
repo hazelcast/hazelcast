@@ -134,7 +134,7 @@
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-registry</artifactId>
+            <artifactId>kafka-schema-registry-client</artifactId>
             <version>${confluent.version}</version>
             <scope>test</scope>
         </dependency>
