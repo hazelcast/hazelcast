@@ -125,6 +125,7 @@ class AwsEcsApi {
 
     private List<Task> parseDescribeTasks(String response) {
         return toStream(toJson(response).get("tasks"))
+                .filter(this::isLastStatusRunning)
                 .filter(this::filterByTags)
                 .flatMap(e -> toTask(e).map(Stream::of).orElseGet(Stream::empty))
                 .collect(Collectors.toList());
@@ -179,6 +180,11 @@ class AwsEcsApi {
 
     private static Stream<JsonValue> toStream(JsonValue json) {
         return StreamSupport.stream(json.asArray().spliterator(), false);
+    }
+
+    private boolean isLastStatusRunning(JsonValue taskJson) {
+        String lastStatus = taskJson.asObject().getString("lastStatus", "");
+        return "RUNNING".equals(lastStatus);
     }
 
     private boolean filterByTags(JsonValue taskJson) {
