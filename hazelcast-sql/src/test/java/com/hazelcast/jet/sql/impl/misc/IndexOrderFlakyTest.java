@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Test to observe ordering behavior for GROUP BY ... ORDER BY on an indexed column.
  *
@@ -47,70 +49,78 @@ public class IndexOrderFlakyTest extends OptimizerTestSupport {
 
     @Test
     public void testFlakyOrder() {
-        final String mapName = randomName();
+      final String mapName = randomName();
 
-        // Create map and add SORTED index on the value ("this")
-        IMap<Integer, String> map = instance().getMap(mapName);
-        map.addIndex(IndexType.SORTED, "this");
-        System.out.println("Map and SORTED index created: " + mapName);
+      // Create map and add SORTED index on the value ("this")
+      IMap<Integer, String> map = instance().getMap(mapName);
+      map.addIndex(IndexType.SORTED, "this");
+      System.out.println("Map and SORTED index created: " + mapName);
 
-        // Insert data: a few names repeated many times (so grouping makes sense)
-        Set<String> names = Set.of("First.Value", "Second.Value", "Third.value", "Fourth.value", "Fifth.value");
-        int key = 0;
-        for (String name : names) {
-            for (int i = 1; i <= 200; i++) {
-                map.put(key++, name);
-            }
+      // Insert data: a few names repeated many times (so grouping makes sense)
+      Set<String> names = Set.of("First.Value", "Second.Value", "Third.value", "Fourth.value", "Fifth.value");
+      int key = 0;
+      for (String name : names) {
+        for (int i = 1; i <= 200; i++) {
+          map.put(key++, name);
         }
-        System.out.println("Inserted " + key + " entries, names=" + names);
+      }
+      System.out.println("Inserted " + key + " entries, names=" + names);
 
-        // Create SQL mapping for this IMap: __key INT, this VARCHAR
-        String mapping = String.format(
-                "CREATE OR REPLACE MAPPING \"%s\" (" +
-                        "\"__key\" INT, " +
-                        "\"this\" VARCHAR" +
-                        ") TYPE IMap OPTIONS (" +
-                        "'keyFormat'='java', " +
-                        "'keyJavaClass'='java.lang.Integer', " +
-                        "'valueFormat'='java', " +
-                        "'valueJavaClass'='java.lang.String'" +
-                        ")",
-                mapName
-        );
-        instance().getSql().execute(mapping);
-        System.out.println("Created SQL mapping for map: " + mapName);
+      // Create SQL mapping for this IMap: __key INT, this VARCHAR
+      String mapping = String.format(
+              "CREATE OR REPLACE MAPPING \"%s\" (" +
+                      "\"__key\" INT, " +
+                      "\"this\" VARCHAR" +
+                      ") TYPE IMap OPTIONS (" +
+                      "'keyFormat'='java', " +
+                      "'keyJavaClass'='java.lang.Integer', " +
+                      "'valueFormat'='java', " +
+                      "'valueJavaClass'='java.lang.String'" +
+                      ")",
+              mapName
+      );
+      instance().getSql().execute(mapping);
+      System.out.println("Created SQL mapping for map: " + mapName);
 
-        // The aggregation query: group by the 'this' value and order by it
-        String sql = "SELECT this AS indexed, SUM(__key) AS totalValue " +
-                "FROM \"" + mapName + "\" " +
-                "GROUP BY this " +
-                "ORDER BY this";
+      // The aggregation query: group by the 'this' value and order by it
+      String sql = "SELECT this AS indexed, SUM(__key) AS totalValue " +
+              "FROM \"" + mapName + "\" " +
+              "GROUP BY this " +
+              "ORDER BY this";
 
-        // Print plan (EXPLAIN) so you can inspect "requiresSort" or SortPhysicalRel presence
-        System.out.println("==== PHYSICAL PLAN (EXPLAIN) ====");
-        try (SqlResult planRes = instance().getSql().execute("EXPLAIN " + sql)) {
-            for (SqlRow r : planRes) {
-                // EXPLAIN returns rows of plan text lines; print them
-                System.out.println(r.getObject(0).toString());
-            }
+      // Print plan (EXPLAIN) so you can inspect "requiresSort" or SortPhysicalRel presence
+      System.out.println("==== PHYSICAL PLAN (EXPLAIN) ====");
+      try (SqlResult planRes = instance().getSql().execute("EXPLAIN " + sql)) {
+        for (SqlRow r : planRes) {
+          // EXPLAIN returns rows of plan text lines; print them
+          System.out.println(r.getObject(0).toString());
         }
+      }
 
-        // Run the query several times and print the groups in output order
-        System.out.println("==== RUNNING QUERY MULTIPLE TIMES TO OBSERVE ORDER ====");
-        for (int run = 1; run <= 7; run++) {
-            List<String> order = new ArrayList<>();
-            System.out.printf("Run %d:%n", run);
-            try (SqlResult res = instance().getSql().execute(sql)) {
-                for (SqlRow row : res) {
-                    // row 0 = indexed, row 1 = totalValue
-                    String indexed = row.getObject(0);
-                    Object total = row.getObject(1);
-                    order.add(indexed + ":" + total);
-                }
-            }
-            System.out.println("Result order: " + order);
+      // Run the query several times and print the groups in output order
+      List<String> expectedOrder = null;
+      for (int run = 1; run <= 7; run++) {
+        List<String> order = new ArrayList<>();
+        try (SqlResult res = instance().getSql().execute(sql)) {
+          for (SqlRow row : res) {
+            String indexed = row.getObject(0);
+            Object total = row.getObject(1);
+            order.add(indexed + ":" + total);
+          }
         }
+        System.out.printf("Run %d result order: %s%n", run, order);
 
-        System.out.println("==== DONE ====");
+        // Assert results are sorted by the indexed column
+        List<String> sortedNames = new ArrayList<>(order);
+        sortedNames.sort(String::compareTo);
+        assertEquals("Run " + run + ": result not sorted by indexed column", sortedNames, order);
+
+        // Assert order is stable/consistent across runs
+        if (expectedOrder == null) {
+          expectedOrder = order;
+        } else {
+          assertEquals("Run " + run + ": order differs from run 1", expectedOrder, order);
+        }
+      }
     }
 }
