@@ -18,6 +18,7 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import com.hazelcast.test.starter.MavenInterface;
+import org.jspecify.annotations.NonNull;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,6 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
     private static final ConcurrentMemoizingSupplier<String> MAVEN_CONFLUENT_VERSION
         = memoizeConcurrent(() -> MavenInterface.evaluateExpression("confluent.version"));
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
-
     private GenericContainer<?> kafkaContainer;
 
     @Override
@@ -48,10 +48,15 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
         }
         DockerImageName imageName = DockerImageName.parse("confluentinc/cp-kafka").withTag(kafkaVersion);
         if (new ComparableVersion(kafkaVersion).compareTo(new ComparableVersion("7.4.0")) < 0) {
+            // intentionally we want to test with old Kafka and Zookeeper
+            //noinspection deprecation
             KafkaContainer legacyKafkaContainer = new KafkaContainer(imageName)
                 .withEmbeddedZookeeper()
                 .withEnv(toKafkaEnvironments(properties))
-                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+                .withNetwork(network)
+                .withNetworkAliases("kafka")
+                .withListener(() -> "kafka:19092");
             kafkaContainer = legacyKafkaContainer;
             kafkaContainer.start();
             return legacyKafkaContainer.getBootstrapServers();
@@ -59,10 +64,21 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
 
         ConfluentKafkaContainer confluentKafkaContainer = new ConfluentKafkaContainer(imageName)
             .withEnv(toKafkaEnvironments(properties))
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+            .withNetwork(network)
+            .withNetworkAliases("kafka")
+            .withListener("kafka:19092");
         kafkaContainer = confluentKafkaContainer;
         kafkaContainer.start();
         return confluentKafkaContainer.getBootstrapServers();
+    }
+
+    static @NonNull String getKafkaVersion() {
+        String kafkaVersion = System.getProperty("test.kafka.version");
+        if (kafkaVersion == null) {
+            kafkaVersion = MAVEN_CONFLUENT_VERSION.get();
+        }
+        return kafkaVersion;
     }
 
     private String toKafkaEnvironment(String property) {

@@ -159,7 +159,7 @@ public final class TestUtil {
             return;
         }
         final int maxRetryCount = 15;
-        IntervalFunction intervalFunction = IntervalFunctions.exponentialBackoffWithCap(10L, 2, 1000L);
+        IntervalFunction intervalFunction = IntervalFunctions.exponentialBackoffWithCap(10L, 2, 1500L);
         PartitionService ps = instance.getPartitionService();
 
         for (Partition partition : ps.getPartitions()) {
