@@ -102,8 +102,8 @@
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.5.0</hadoop.version>
-        <jackson.version>3.2.1</jackson.version>
-        <jackson2.version>2.22.1</jackson2.version>
+        <jackson.version>3.2.2</jackson.version>
+        <jackson2.version>2.22.2</jackson2.version>
         <jackson.annotation.version>2.22</jackson.annotation.version>
         <jline.version>3.30.16</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
