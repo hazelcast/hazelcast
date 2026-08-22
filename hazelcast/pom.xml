@@ -700,7 +700,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.184</version>
+            <version>4.8.192</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
