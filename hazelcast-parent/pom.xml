@@ -373,7 +373,7 @@
             <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.1</version>
             </dependency>
             <!--
                 Addresses convergence between:
