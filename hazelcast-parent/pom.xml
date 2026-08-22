@@ -504,7 +504,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.5</version>
+                <version>3.6</version>
             </dependency>            
             <!--
                 Addresses convergence between:
