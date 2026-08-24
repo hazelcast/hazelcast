@@ -31,7 +31,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
  * References to classes which are not part of the classpath at test execution time.
  */
 public class UserCodeUtil {
-    public static final UserCodeUtil INSTANCE = new UserCodeUtil(GeneratedBuildProperties.ARTIFACT_ID, GeneratedBuildProperties.VERSION);
+    public static final UserCodeUtil INSTANCE = new UserCodeUtil("hazelcast", GeneratedBuildProperties.VERSION);
 
     private String artifactId;
     private String version;
