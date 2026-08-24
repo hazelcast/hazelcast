@@ -2,20 +2,6 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
         <notes><![CDATA[
-      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-gcp.
-      ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-gcp@.*$</packageUrl>
-        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-azure.
-      ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-azure@.*$</packageUrl>
-        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
       False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-wm.
       ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-wm@.*$</packageUrl>
@@ -60,13 +46,6 @@
         <notes><![CDATA[
         False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.github\.shyiko/mysql\-binlog\-connector\-java@.*$</packageUrl>
-        <cpe>cpe:/a:mysql:mysql</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
-        ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.zendesk/mysql\-binlog\-connector\-java@.*$</packageUrl>
         <cpe>cpe:/a:mysql:mysql</cpe>
     </suppress>
@@ -90,33 +69,10 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        The memory leak was fixed already in the wildfly-openssl-1.0.11.Final.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@1\.0\.12.*$</packageUrl>
-        <cve>CVE-2020-25644</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
-        <cve>CVE-2020-9488</cve>
-        <cve>CVE-2020-9493</cve>
-        <cve>CVE-2022-23307</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         False positive - google-http-client-gson-.*.jar incorrectly identified as gson.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
         <cpe>cpe:/a:google:gson</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive - json version 20230227 have already fix for listed CVE.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.json/json@20230227.*$</packageUrl>
-        <cve>CVE-2022-45688</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -148,26 +104,10 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        False positive - Maven libs from opentelemetry are identified as GO and Python libs
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.cloud\.opentelemetry/.*$</packageUrl>
-        <cve>CVE-2023-43810</cve>
-        <cve>CVE-2023-45142</cve>
-        <cve>CVE-2023-47108</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         False positive - misidentifying Hazelcast as MongoDB
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-jet-mongodb@.*$</packageUrl>
         <cve>CVE-2014-8180</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive - misidentifying Hazelcast as MySQL
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/hazelcast-jet-cdc-mysql@.*$</packageUrl>
-        <cve>CVE-2017-15945</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -182,14 +122,6 @@
         https://github.com/dependency-check/DependencyCheck/issues/8553
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/azure-data-lake-store-sdk@.*$</packageUrl>
-        <cve>CVE-2026-33117</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive - only affects `azure-security-keyvault-keys`, not _all_ Azure libraries
-        https://github.com/dependency-check/DependencyCheck/issues/8553
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/azure-keyvault-core@.*$</packageUrl>
         <cve>CVE-2026-33117</cve>
     </suppress>
     <suppress>
@@ -225,13 +157,5 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.elasticsearch(?:/(?:elasticsearch|elasticsearch-cli|elasticsearch-core|elasticsearch-geo|elasticsearch-lz4|elasticsearch-plugin-classloader|elasticsearch-secure-sm|elasticsearch-x-content)|\.client/(?:elasticsearch-rest-client|elasticsearch-rest-high-level-client)|\.plugin/(?:aggs-matrix-stats-client|lang-mustache-client|mapper-extras-client|parent-join-client|rank-eval-client))@7\.17\.29$</packageUrl>
         <cve>CVE-2025-37731</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        False positive - CVE-2026-56816 affects io.netty:netty-codec-http3, not these Netty artefacts.
-        The exact version scope ensures that a future Netty bump requires reassessment.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.netty/(?:netty-codec-memcache|netty-codec-mqtt|netty-transport)@4\.1\.136\.Final$</packageUrl>
-        <cve>CVE-2026-56816</cve>
     </suppress>
 </suppressions>
