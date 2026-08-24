@@ -228,15 +228,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        Parquet 1.17.1 shades Jackson Databind 2.21.3, so dependency management cannot replace these classes.
-        Hazelcast does not configure Jackson polymorphic typing or the affected subtype validators. Suppress until Parquet shades Jackson 2.21.4 or later.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson-databind@2\.21\.3$</packageUrl>
-        <cve>CVE-2026-54512</cve>
-        <cve>CVE-2026-54513</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         False positive - CVE-2026-56816 affects io.netty:netty-codec-http3, not these Netty artefacts.
         The exact version scope ensures that a future Netty bump requires reassessment.
         ]]></notes>
