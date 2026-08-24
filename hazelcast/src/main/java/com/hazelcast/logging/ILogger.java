@@ -26,15 +26,6 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
  */
 public interface ILogger extends TpcLogger {
     /**
-     * Logs a LogEvent.
-     *
-     * @param logEvent the logEvent to log
-     * @deprecated the method is unused
-     */
-    @Deprecated(since = "5.1", forRemoval = true)
-    void log(LogEvent logEvent);
-
-    /**
      * Logs to {@link #fine(String)} using a lazily evaluated {@code template} {@link String} with arguments, formatted using
      * {@link String#format(String, Object...)}
      *
