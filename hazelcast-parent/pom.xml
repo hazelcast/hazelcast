@@ -102,8 +102,8 @@
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.5.0</hadoop.version>
-        <jackson.version>3.2.1</jackson.version>
-        <jackson2.version>2.22.1</jackson2.version>
+        <jackson.version>3.2.2</jackson.version>
+        <jackson2.version>2.22.2</jackson2.version>
         <jackson.annotation.version>2.22</jackson.annotation.version>
         <jline.version>3.30.16</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
@@ -125,9 +125,9 @@
 
         <spring.boot3.version>3.5.16</spring.boot3.version>
         <org.springframework6.version>6.2.19</org.springframework6.version>
-        <tomcat10.version>10.1.57</tomcat10.version>
+        <tomcat10.version>10.1.59</tomcat10.version>
 
-        <spring.boot4.version>4.1.0</spring.boot4.version>
+        <spring.boot4.version>4.1.1</spring.boot4.version>
         <org.springframework7.version>7.0.7</org.springframework7.version>
 
         <!--
@@ -144,7 +144,7 @@
 
         <!-- test dependencies -->
         <artemis.version>2.55.0</artemis.version>
-        <bytebuddy.version>1.18.11</bytebuddy.version>
+        <bytebuddy.version>1.18.12</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -373,7 +373,7 @@
             <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.1</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -449,7 +449,7 @@
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc11</artifactId>
-                <version>23.26.2.0.0</version>
+                <version>23.26.3.0.0</version>
                 <scope>test</scope>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
@@ -468,7 +468,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
-                <version>5.6.2</version>
+                <version>5.6.4</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -484,7 +484,7 @@
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.2.1</version>
+                <version>7.2.2</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -504,7 +504,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.5</version>
+                <version>3.6</version>
             </dependency>            
             <!--
                 Addresses convergence between:
@@ -614,7 +614,7 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
-                <version>1.4.2</version>
+                <version>1.5.0</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -727,7 +727,7 @@
             <dependency>
                 <groupId>org.jctools</groupId>
                 <artifactId>jctools-core</artifactId>
-                <version>4.0.6</version>
+                <version>4.0.7</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -763,7 +763,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20260719</version>
+                <version>20260814</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -899,7 +899,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.5.0</version>
+                    <version>3.5.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1057,7 +1057,7 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
-                    <version>5.1.9</version>
+                    <version>6.1.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-enforcer-plugin</artifactId>
@@ -1097,7 +1097,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>12.2.2</version>
+                    <version>13.0.0</version>
                     <configuration>
                         <format>ALL</format>
                         <skipProvidedScope>true</skipProvidedScope>
@@ -1123,7 +1123,7 @@
                 <plugin>
                     <groupId>io.fabric8</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.48.1</version>
+                    <version>0.49.0</version>
                 </plugin>
                 <plugin>
                     <groupId>com.github.siom79.japicmp</groupId>
@@ -1330,7 +1330,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.7.3</version>
+                <version>1.8.0</version>
                 <configuration>
                     <flattenMode>ossrh</flattenMode>
                 </configuration>

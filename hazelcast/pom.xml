@@ -700,7 +700,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.184</version>
+            <version>4.8.193</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
@@ -852,7 +852,7 @@
         <dependency>
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>5.0.7</version>
+            <version>5.1.0</version>
             <type>pom</type>
             <scope>test</scope>
             <optional>true</optional>
@@ -903,7 +903,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.7.0</version>
+            <version>3.8.0</version>
             <scope>test</scope>
         </dependency>
 
