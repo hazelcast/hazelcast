@@ -30,6 +30,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CLUSTER_ID_CHANGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
@@ -95,7 +96,10 @@ public class ClientStateListener implements LifecycleListener {
     public void stateChanged(LifecycleEvent event) {
         lock.lock();
         try {
-            if (event.getState() == CLIENT_CHANGED_CLUSTER) {
+            // These two states describe which cluster an already connected client is on, not whether it is
+            // connected. Storing them as the current state would make isConnected() and isStarted() answer
+            // false until the next CLIENT_CONNECTED.
+            if (event.getState() == CLIENT_CHANGED_CLUSTER || event.getState() == CLIENT_CLUSTER_ID_CHANGED) {
                 return;
             }
             currentState = event.getState();
