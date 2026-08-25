@@ -1049,6 +1049,11 @@
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.8.0</version>
                 </plugin>
+                <!--
+                    If upgraded >=3.6.0
+                    Update references incorporating https://github.com/apache/maven-surefire/pull/3438
+                    Specifically, removing `SamplingTestExecutionListener` registration duplication between surefire configuration & ServiceLoader
+                -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>

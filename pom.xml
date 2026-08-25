@@ -850,6 +850,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration combine.self="override">
                             <properties>
+                                <!--
+                                    Registers for JUnit4 executions only
+                                    https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit.html#using-custom-listeners-and-reporters
+                                -->
                                 <property>
                                     <name>listener</name>
                                     <value>com.hazelcast.test.compatibility.SamplingTestExecutionListener</value>
