@@ -36,6 +36,11 @@
 
     <properties>
         <main.basedir>${project.basedir}/../../..</main.basedir>
+        <!--
+			Configure Surefire executions to execute shared archunit tests 
+			https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#dependenciesToScan
+		-->
+        <dependenciesToScan>${project.groupId}:hazelcast-archunit-rules</dependenciesToScan>
     </properties>
 
     <build>

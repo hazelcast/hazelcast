@@ -19,6 +19,11 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
+        <!--
+			Configure Surefire executions to execute shared archunit tests 
+			https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#dependenciesToScan
+		-->
+        <dependenciesToScan>${project.groupId}:hazelcast-archunit-rules</dependenciesToScan>
     </properties>
 
     <organization>

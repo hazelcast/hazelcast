@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.test.archunit;
 
-import com.hazelcast.test.archunit.ArchUnitRules;
-import com.hazelcast.test.archunit.ArchUnitTestSupport;
-import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.Test;
 
-public class NoMixedJUnitAnnotationsInOurTestSourcesTest extends ArchUnitTestSupport {
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
+
+public class ParallelJvmTestsDoNotUseNetworkTest extends ArchUnitTestSupport {
 
     @Test
-    public void noJUnitMixing() {
+    public void testDoNotUseNetwork() {
         String basePackage = "com.hazelcast";
-        JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
+        JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage)
+                // PipelineTestSupport creates remote cluster with random name - it should be safe
+                .that(not(assignableTo("com.hazelcast.jet.pipeline.PipelineTestSupport")));
 
-        ArchUnitRules.NO_JUNIT_MIXING.check(classes);
+        ArchUnitRules.PARALLEL_JVM_TESTS_MUST_NOT_CREATE_HAZELCAST_INSTANCES_WITH_NETWORK.check(classes);
     }
 }

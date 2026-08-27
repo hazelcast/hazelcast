@@ -1051,8 +1051,9 @@
                 </plugin>
                 <!--
                     If upgraded >=3.6.0
-                    Update references incorporating https://github.com/apache/maven-surefire/pull/3438
-                    Specifically, removing `SamplingTestExecutionListener` registration duplication between surefire configuration & ServiceLoader
+                    Update references incorporating https://github.com/apache/maven-surefire/pull/3438 - specifically:
+                    - removing `SamplingTestExecutionListener` registration duplication between surefire configuration & ServiceLoader
+					- _trying_ to apply archunit rules to all modules rather than selectively as in https://github.com/hazelcast/hazelcast-mono/pull/7266
                 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

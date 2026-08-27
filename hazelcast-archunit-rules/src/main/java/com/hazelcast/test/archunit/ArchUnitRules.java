@@ -103,46 +103,55 @@ public final class ArchUnitRules {
                 .allowEmptyShould(true);
 
         COMPLETABLE_FUTURE_USED_ONLY_WITH_EXPLICIT_EXECUTOR = classes()
-                .should(useExplicitExecutorServiceInCFAsyncMethods());
+                .should(useExplicitExecutorServiceInCFAsyncMethods())
+                .allowEmptyShould(true);
 
         MATCHERS_USAGE = classes()
                 .that(isTestClass)
-                .should(notUseHamcrestMatchers());
+                .should(notUseHamcrestMatchers())
+                .allowEmptyShould(true);
 
         NO_JUNIT_MIXING = classes()
                 .that(isTestClass)
-                .should(notMixDifferentJUnitVersionsAnnotations());
+                .should(notMixDifferentJUnitVersionsAnnotations())
+                .allowEmptyShould(true);
 
         TESTS_HAVE_RUNNNERS = classes().that(isTestClass)
                 .and()
                 .doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should(new TestsHaveRunnersCondition());
+                .should(new TestsHaveRunnersCondition())
+                .allowEmptyShould(true);
 
         OPERATIONS_SHOULD_NOTIMPL_BOTH_READONLY_AND_MUTATINGOPERATION = classes()
                 .that()
                 .areAssignableTo("com.hazelcast.spi.impl.operationservice.Operation")
-                .should(notImplementReadonlyAndMutatingOperation());
+                .should(notImplementReadonlyAndMutatingOperation())
+                .allowEmptyShould(true);
 
         BACKUP_OPERATIONS_SHOULD_NOTIMPL_MUTATINGOPERATION = classes()
                 .that()
                 .areAssignableTo("com.hazelcast.spi.impl.operationservice.Operation")
                 .and().haveSimpleNameContaining("Backup")
-                .should(notImplementMutatingOperation());
+                .should(notImplementMutatingOperation())
+                .allowEmptyShould(true);
 
         PUBLIC_API_CLASSES_EXPOSING_INTERNAL_IMPLEMENTATION = classes().that()
                 .resideOutsideOfPackages("..internal..", "..impl..", "..util..", "..test..")
                 .and().haveSimpleNameNotContaining("Impl")
                 .and(not(isTestClass))
                 .and().haveSimpleNameNotEndingWith("Util")
-                .should(new PublicApiClassesExposingInternalImplementationCondition());
+                .should(new PublicApiClassesExposingInternalImplementationCondition())
+                .allowEmptyShould(true);
 
         PARALLEL_JVM_TESTS_MUST_NOT_CREATE_HAZELCAST_INSTANCES_WITH_NETWORK = classes()
                 .that(hasParallelJvmTestTag())
-                .should(notCreateInstanceWithNetwork());
+                .should(notCreateInstanceWithNetwork())
+                .allowEmptyShould(true);
 
         COMPATIBILITY_CATEGORY_NOT_NIGHTLY_OR_SLOW =
                 classes()
-                .should(CategoryCompatibilityRule.compatibilityCategoryCompatibilityNotRunningNightlyOrSlow());
+                .should(CategoryCompatibilityRule.compatibilityCategoryCompatibilityNotRunningNightlyOrSlow())
+                .allowEmptyShould(true);
     }
 
     private ArchUnitRules() {

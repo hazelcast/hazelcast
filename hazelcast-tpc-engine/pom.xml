@@ -41,6 +41,11 @@
         https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html#skip
         -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <!--
+			Configure Surefire executions to execute shared archunit tests 
+			https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#dependenciesToScan
+		-->
+        <dependenciesToScan>${project.groupId}:hazelcast-archunit-rules</dependenciesToScan>
     </properties>
 
     <build>
