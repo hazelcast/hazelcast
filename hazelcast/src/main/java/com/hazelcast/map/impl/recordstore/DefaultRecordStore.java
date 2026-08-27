@@ -861,14 +861,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public MapEntries getAll(Set<Data> keys, Address callerAddress) {
+    public MapEntries getAll(Collection<Data> keys, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
+        boolean hasMapStore = mapDataStore != EMPTY_MAP_DATA_STORE;
 
-        MapEntries mapEntries = getInMemoryEntries(keys, now);
+        MapEntries mapEntries = getInMemoryEntries(keys, now, hasMapStore);
 
         // then try to load missing keys from map-store
-        if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
+        if (hasMapStore && !keys.isEmpty()) {
             List keyBiTupleList = loadValueWithTtl(keys, now);
             Map<Data, Object> loadedEntries = putAndGetLoadedEntries(keyBiTupleList, callerAddress);
             addToMapEntrySet(mapEntries, loadedEntries);
@@ -877,7 +878,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return mapEntries;
     }
 
-    public MapEntries getInMemoryEntries(Set<Data> keys, long now) {
+    public MapEntries getInMemoryEntries(Collection<Data> keys, long now, boolean removeFound) {
         MapEntries mapEntries = new MapEntries(keys.size());
 
         // first search in memory
@@ -888,7 +889,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (record != null) {
                 addToMapEntrySet(key, record.getValue(), mapEntries);
                 accessRecord(key, record, now);
-                iterator.remove();
+                if (removeFound) {
+                    iterator.remove();
+                }
             }
         }
         return mapEntries;

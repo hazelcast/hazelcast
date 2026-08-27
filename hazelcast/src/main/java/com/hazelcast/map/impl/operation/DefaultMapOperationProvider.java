@@ -35,6 +35,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -166,8 +167,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createGetAllOperationFactory(String name, List<Data> keys) {
-        return new MapGetAllOperationFactory(name, keys);
+    public OperationFactory createGetAllOperationFactory(String name, Map<Integer, List<Data>> keysForPartitions) {
+        return new MapGetAllOperationFactory(name, keysForPartitions);
     }
 
     @Override

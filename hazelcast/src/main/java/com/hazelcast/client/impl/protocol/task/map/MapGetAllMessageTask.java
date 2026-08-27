@@ -44,7 +44,7 @@ public class MapGetAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new GetAllOperation(parameters.name, parameters.keys);
+        return new GetAllOperation(parameters.name, parameters.keys, true);
     }
 
     @Override

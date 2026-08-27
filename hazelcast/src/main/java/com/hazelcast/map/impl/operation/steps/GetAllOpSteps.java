@@ -18,14 +18,13 @@ package com.hazelcast.map.impl.operation.steps;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public enum GetAllOpSteps implements IMapOpStep {
 
@@ -33,10 +32,9 @@ public enum GetAllOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
-            GetAllOperation operation = (GetAllOperation) state.getOperation();
-            Set<Data> partitionKeySet = operation.getPartitionKeySet((List<Data>) state.getKeys());
+            Collection<Data> partitionKeySet = state.getKeys();
 
-            MapEntries entries = recordStore.getInMemoryEntries(partitionKeySet, state.getNow());
+            MapEntries entries = recordStore.getInMemoryEntries(partitionKeySet, state.getNow(), true);
 
             state.setKeysToLoad(partitionKeySet);
             state.setMapEntries(entries);
