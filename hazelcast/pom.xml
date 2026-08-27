@@ -438,14 +438,9 @@
                         </goals>
                         <configuration>
                             <target>
-                                <unzip src="${project.build.directory}/${project.build.finalName}.jar"
-                                       dest="${project.build.directory}/tmp-repack"/>
-                                <copy file="${project.build.directory}/classes/META-INF/MANIFEST.MF"
-                                      tofile="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"/>
-                                <jar basedir="${project.build.directory}/tmp-repack"
-                                     destfile="${project.build.directory}/${project.build.finalName}.jar"
-                                     manifest="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"
-                                />
+                                <jar destfile="${project.build.directory}/${project.build.finalName}.jar"
+                                     manifest="${project.build.directory}/classes/META-INF/MANIFEST.MF"
+                                     update="true"/>
                             </target>
                         </configuration>
                     </execution>
