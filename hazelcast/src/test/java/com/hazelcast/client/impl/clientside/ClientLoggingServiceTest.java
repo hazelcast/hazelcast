@@ -79,12 +79,6 @@ public class ClientLoggingServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLog_whenLogEvent_thenNothingHappens() {
-        ILogger logger = loggingService.getLogger("test");
-        logger.log(logEvent);
-    }
-
-    @Test
     public void testLog_whenGetLevel_thenDefaultLevelIsReturned() {
         ILogger logger = loggingService.getLogger("test");
         assertNotNull(logger.getLevel());

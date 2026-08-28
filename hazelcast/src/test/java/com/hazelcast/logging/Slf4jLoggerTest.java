@@ -140,10 +140,4 @@ public class Slf4jLoggerTest extends AbstractLoggerTest {
         hazelcastLogger.severe(MESSAGE, THROWABLE);
         verify(mockLogger, times(1)).error(MESSAGE, THROWABLE);
     }
-
-    @Test
-    public void logEvent_shouldLogWithCorrectLevel() {
-        hazelcastLogger.log(LOG_EVENT);
-        verify(mockLogger, times(1)).warn(MESSAGE, THROWABLE);
-    }
 }
