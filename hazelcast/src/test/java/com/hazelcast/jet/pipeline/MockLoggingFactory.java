@@ -47,11 +47,6 @@ public class MockLoggingFactory implements LoggerFactory {
             }
 
             @Override
-            public void log(com.hazelcast.logging.LogEvent logEvent) {
-                log(logEvent.getLogRecord().getLevel(), logEvent.getLogRecord().getMessage());
-            }
-
-            @Override
             public Level getLevel() {
                 return Level.INFO;
             }

@@ -46,11 +46,11 @@ import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
@@ -195,7 +195,13 @@ public interface RecordStore<R extends Record> {
     @SuppressWarnings("JavadocReference")
     Data readBackupData(Data key);
 
-    MapEntries getAll(Set<Data> keySet, Address callerAddress);
+    /**
+     * Gets all entries with specified keys, if needed loads them from MapStore.
+     *
+     * @param keySet Collection of keys to be read. If MapStore is defined, found keys will be removed from the set.
+     * @return found entries
+     */
+    MapEntries getAll(Collection<Data> keySet, Address callerAddress);
 
     /**
      * Checks if the key exist in memory without

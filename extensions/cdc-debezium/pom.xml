@@ -8,7 +8,10 @@
         <version>6.0.0-SNAPSHOT</version>
     </parent>
 
+    <name>hazelcast-jet-cdc-debezium</name>
     <artifactId>hazelcast-jet-cdc-debezium</artifactId>
+    <description>Change Data Capture support for Hazelcast Jet</description>
+    <url>http://www.hazelcast.com/</url>
 
     <properties>
         <!-- needed for CheckStyle -->

@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.test.archunit;
 
-import com.hazelcast.test.archunit.ArchUnitRules;
-import com.hazelcast.test.archunit.ArchUnitTestSupport;
-import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.Test;
 
-public class OperationClassesArchRulesTest extends ArchUnitTestSupport {
-
+public class PublicApiClassesExposingInternalImplementationConditionTest extends ArchUnitTestSupport {
     @Test
-    public void noReadOnlyAndMutatingOperations() {
+    public void publicApiClassesExposingInternalImplementationCondition() {
         String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
-        ArchUnitRules.OPERATIONS_SHOULD_NOTIMPL_BOTH_READONLY_AND_MUTATINGOPERATION.check(classes);
-    }
-
-    @Test
-    public void noBackupOpsImplementingMutatingOperation() {
-        String basePackage = "com.hazelcast";
-        JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
-
-        ArchUnitRules.BACKUP_OPERATIONS_SHOULD_NOTIMPL_MUTATINGOPERATION.check(classes);
+        ArchUnitRules.PUBLIC_API_CLASSES_EXPOSING_INTERNAL_IMPLEMENTATION.check(classes);
     }
 }

@@ -19,6 +19,8 @@ package com.hazelcast.internal.management;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -35,6 +37,18 @@ public final class ThreadDumpGenerator {
 
     public static String dumpAllThreads() {
         LOGGER.finest("Generating full thread dump...");
+        try {
+            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+            ObjectName diagnosticCommandMBean = new ObjectName("com.sun.management:type=DiagnosticCommand");
+            Object[] parameters = {new String[]{"-l"}};
+            String[] signature = {String[].class.getName()};
+            String dump = (String) mBeanServer.invoke(diagnosticCommandMBean, "threadPrint", parameters, signature);
+            LOGGER.finest(dump);
+            return dump;
+        } catch (Exception e) {
+            LOGGER.finest("Failed to generate thread dump via DiagnosticCommand MBean, falling back to ThreadMXBean", e);
+        }
+
         StringBuilder s = new StringBuilder();
         s.append("Full thread dump ");
         return dump(getAllThreads(), s);
@@ -50,9 +64,7 @@ public final class ThreadDumpGenerator {
     private static String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("\n%s", s);
-        }
+        LOGGER.finest(s.toString());
         return s.toString();
     }
 

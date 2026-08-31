@@ -256,7 +256,7 @@ public class HazelcastPropertiesTest {
         HazelcastProperties properties = new HazelcastProperties(config);
         HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
 
-        long millis = properties.getPositiveMillisOrDefault(property, 50);
+        long millis = properties.getPositiveMillisOrDefault(property, () -> 50);
 
         assertEquals(50, millis);
     }

@@ -16,28 +16,32 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.operation.steps.GetAllOpSteps;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class GetAllOperation extends MapOperation
-        implements ReadonlyOperation, PartitionAwareOperation {
+        implements ReadonlyOperation, PartitionAwareOperation, Versioned {
 
     /**
      * Speculative factor to be used when initialising collections
@@ -46,14 +50,19 @@ public class GetAllOperation extends MapOperation
     private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     private List<Data> keys = new ArrayList<>();
+    /**
+     * If {@link #keys} contain keys only for current partition (new logic) or possibly many partitions (old logic)
+     */
+    private boolean singlePartition;
     private MapEntries entries;
 
     public GetAllOperation() {
     }
 
-    public GetAllOperation(String name, List<Data> keys) {
+    public GetAllOperation(String name, List<Data> keys, boolean singlePartition) {
         super(name);
         this.keys = keys;
+        this.singlePartition = singlePartition;
     }
 
     @Override
@@ -66,11 +75,17 @@ public class GetAllOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        Set<Data> partitionKeySet = getPartitionKeySet(keys);
-        entries = recordStore.getAll(partitionKeySet, getCallerAddress());
+        entries = recordStore.getAll(getPartitionKeySet(), getCallerAddress());
     }
 
-    public Set<Data> getPartitionKeySet(List<Data> keys) {
+    private Collection<Data> getPartitionKeySet() {
+        if (singlePartition) {
+            // Execution with MapStore will mutate provided key set to detect which entries should be loaded from MapStore.
+            // In optimized member-side execution the list may be used also for sending to other members,
+            // need to copy it to avoid concurrent modifications. Original set may be needed also for retries.
+            return recordStore != null && hasMapStoreImplementation() ? new HashSet<>(keys) : keys;
+        }
+        // RUCOMPAT_5_7
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
         final int roughSize = (int) (keys.size() * SIZING_FUDGE_FACTOR / partitionService.getPartitionCount());
@@ -86,7 +101,7 @@ public class GetAllOperation extends MapOperation
     @Override
     public State createState() {
         return super.createState()
-                .setKeys(keys);
+                .setKeys(getPartitionKeySet());
     }
 
     @Override
@@ -116,6 +131,10 @@ public class GetAllOperation extends MapOperation
                 IOUtil.writeData(out, key);
             }
         }
+        // RUCOMPAT_5_7
+        if (out.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            out.writeBoolean(singlePartition);
+        }
     }
 
     @Override
@@ -127,6 +146,10 @@ public class GetAllOperation extends MapOperation
                 Data data = IOUtil.readData(in);
                 keys.add(data);
             }
+        }
+        // RUCOMPAT_5_7
+        if (in.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            singlePartition = in.readBoolean();
         }
     }
 

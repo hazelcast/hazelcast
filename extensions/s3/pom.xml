@@ -35,6 +35,11 @@
 
     <properties>
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
+        <!--
+			Configure Surefire executions to execute shared archunit tests 
+			https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#dependenciesToScan
+		-->
+        <dependenciesToScan>${project.groupId}:hazelcast-archunit-rules</dependenciesToScan>
     </properties>
 
     <build>
@@ -81,7 +86,7 @@
         <dependency>
             <groupId>com.adobe.testing</groupId>
             <artifactId>s3mock-testcontainers</artifactId>
-            <version>5.1.0</version>
+            <version>5.2.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

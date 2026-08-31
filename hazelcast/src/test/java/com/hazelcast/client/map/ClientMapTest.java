@@ -346,6 +346,22 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAll() {
+        int size = 100;
+        IMap<Integer, Integer> map = createMap();
+        Set<Integer> set = new HashSet<>();
+        Map<Integer, Integer> expected = new HashMap<>();
+        for (int i = 0; i < size; ++i) {
+            map.put(i, i + 1);
+            if (i % 2 == 0) {
+                set.add(i);
+                expected.put(i, i + 1);
+            }
+        }
+        assertThat(map.getAll(set)).containsExactlyEntriesOf(expected);
+    }
+
+    @Test
     public void testPutAllWithTooManyEntries() {
         Map<Integer, Integer> expectedMap = new HashMap<>();
         for (int i = 0; i < 1000; i++) {

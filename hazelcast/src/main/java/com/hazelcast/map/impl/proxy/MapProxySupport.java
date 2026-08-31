@@ -901,13 +901,22 @@ abstract class MapProxySupport<K, V>
         if (dataKeys.isEmpty()) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
-        Collection<Integer> partitions = getPartitionsForKeys(dataKeys);
         Map<Integer, Object> responses;
         try {
-            OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, dataKeys);
+            // The operation must work during RU in all combinations, including partition retries
+            // in any combination of old and new members, which execute:
+            // - operation factory
+            // - PartitionIteratingOperation
+            // - create partition retry operation
+            // - execute partition retry operation
+            // Data must be sufficient to execute them correctly in all combinations.
+            // Also Cluster version can be upgraded or downgraded in the middle of getAll execution.
+            Map<Integer, List<Data>> keysForPartitions = getPartitionIdToKeysMap(dataKeys);
+            OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, keysForPartitions);
+
             long startTimeNanos = Timer.nanos();
 
-            responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
+            responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, keysForPartitions.keySet());
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
                 for (int i = 0; i < entries.size(); i++) {

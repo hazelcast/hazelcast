@@ -89,6 +89,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -1114,6 +1115,25 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(2, m2.size());
         assertEquals(1, m2.get(1));
         assertEquals(3, m2.get(3));
+    }
+
+    @Test
+    public void testGetAll() {
+        int size = 100;
+        warmUpPartitions(instances);
+        IMap<Integer, Integer> map = getInstance().getMap("testGetAll");
+        Set<Integer> set = new HashSet<>();
+        Map<Integer, Integer> expected = new HashMap<>();
+        for (int i = 0; i < size; ++i) {
+            map.put(i, i + 1);
+            if (i % 2 == 0) {
+                set.add(i);
+                expected.put(i, i + 1);
+            }
+        }
+        for (HazelcastInstance instance : instances) {
+            assertThat(instance.<Integer, Integer>getMap("testGetAll").getAll(set)).containsExactlyEntriesOf(expected);
+        }
     }
 
     @Test

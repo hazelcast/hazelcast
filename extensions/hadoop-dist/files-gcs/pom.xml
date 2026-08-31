@@ -41,6 +41,7 @@
         https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html#skip
         -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <bigdataoss.version>4.0.5</bigdataoss.version>
     </properties>
 
     <build>
@@ -82,7 +83,7 @@
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>gcs-connector</artifactId>
-            <version>4.0.4</version>
+            <version>${bigdataoss.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.codehaus.mojo</groupId>
@@ -97,7 +98,7 @@
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>gcsio</artifactId>
-            <version>4.0.4</version>
+            <version>${bigdataoss.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.codehaus.mojo</groupId>
@@ -108,7 +109,7 @@
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>util-hadoop</artifactId>
-            <version>4.0.4</version>
+            <version>${bigdataoss.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.codehaus.mojo</groupId>

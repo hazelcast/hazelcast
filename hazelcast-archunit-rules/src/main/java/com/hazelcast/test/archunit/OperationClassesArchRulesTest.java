@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.vector.internal;
+package com.hazelcast.test.archunit;
 
-
-import com.hazelcast.test.archunit.ArchUnitRules;
-import com.hazelcast.test.archunit.ArchUnitTestSupport;
-import com.hazelcast.test.archunit.ModuleImportOptions;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.Test;
 
-public class NoMixedJUnitAnnotationsInOurTestSourcesTest extends ArchUnitTestSupport {
+public class OperationClassesArchRulesTest extends ArchUnitTestSupport {
 
     @Test
-    public void noJUnitMixing() {
+    public void noReadOnlyAndMutatingOperations() {
         String basePackage = "com.hazelcast";
-        JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
+        JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
-        ArchUnitRules.NO_JUNIT_MIXING.check(classes);
+        ArchUnitRules.OPERATIONS_SHOULD_NOTIMPL_BOTH_READONLY_AND_MUTATINGOPERATION.check(classes);
+    }
+
+    @Test
+    public void noBackupOpsImplementingMutatingOperation() {
+        String basePackage = "com.hazelcast";
+        JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
+
+        ArchUnitRules.BACKUP_OPERATIONS_SHOULD_NOTIMPL_MUTATINGOPERATION.check(classes);
     }
 }

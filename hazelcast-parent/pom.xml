@@ -90,7 +90,7 @@
         <avro.version>1.12.0</avro.version>
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.53.1</aws.sdk2.version>
+        <aws.sdk2.version>2.54.2</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -143,7 +143,7 @@
         <mongodb.version>5.6.5</mongodb.version>
 
         <!-- test dependencies -->
-        <artemis.version>2.55.0</artemis.version>
+        <artemis.version>2.56.0</artemis.version>
         <bytebuddy.version>1.18.12</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
@@ -598,7 +598,7 @@
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.5</version>
+                <version>4.5.2</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -674,7 +674,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.86.0</version>
+                <version>26.87.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -758,7 +758,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.5.Final</version>
+                <version>7.4.6.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
@@ -1049,6 +1049,12 @@
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.8.0</version>
                 </plugin>
+                <!--
+                    If upgraded >=3.6.0
+                    Update references incorporating https://github.com/apache/maven-surefire/pull/3438 - specifically:
+                    - removing `SamplingTestExecutionListener` registration duplication between surefire configuration & ServiceLoader
+					- _trying_ to apply archunit rules to all modules rather than selectively as in https://github.com/hazelcast/hazelcast-mono/pull/7266
+                -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>

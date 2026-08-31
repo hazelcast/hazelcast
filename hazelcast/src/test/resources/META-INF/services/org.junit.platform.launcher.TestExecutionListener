@@ -1,1 +1,2 @@
+# To register with JUnit 5+ executions - https://stackoverflow.com/a/49938919
 com.hazelcast.test.compatibility.SamplingTestExecutionListener

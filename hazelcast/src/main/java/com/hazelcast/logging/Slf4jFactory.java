@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 public class Slf4jFactory extends LoggerFactorySupport {
 
@@ -92,15 +91,6 @@ public class Slf4jFactory extends LoggerFactorySupport {
                  : level == Level.WARNING ? logger.isWarnEnabled()
                  : level == Level.SEVERE  ? logger.isErrorEnabled()
                  : level != Level.OFF && logger.isInfoEnabled();
-        }
-
-        @Override
-        public void log(LogEvent logEvent) {
-            LogRecord logRecord = logEvent.getLogRecord();
-            Level level = logEvent.getLogRecord().getLevel();
-            String message = logRecord.getMessage();
-            Throwable thrown = logRecord.getThrown();
-            log(level, message, thrown);
         }
     }
 }

@@ -33,7 +33,11 @@
     <properties>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-
+        <!--
+			Configure Surefire executions to execute shared archunit tests 
+			https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#dependenciesToScan
+		-->
+        <dependenciesToScan>${project.groupId}:hazelcast-archunit-rules</dependenciesToScan>
         <pax.exam.version>2.6.0</pax.exam.version>
     </properties>
 
@@ -438,14 +442,9 @@
                         </goals>
                         <configuration>
                             <target>
-                                <unzip src="${project.build.directory}/${project.build.finalName}.jar"
-                                       dest="${project.build.directory}/tmp-repack"/>
-                                <copy file="${project.build.directory}/classes/META-INF/MANIFEST.MF"
-                                      tofile="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"/>
-                                <jar basedir="${project.build.directory}/tmp-repack"
-                                     destfile="${project.build.directory}/${project.build.finalName}.jar"
-                                     manifest="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"
-                                />
+                                <jar destfile="${project.build.directory}/${project.build.finalName}.jar"
+                                     manifest="${project.build.directory}/classes/META-INF/MANIFEST.MF"
+                                     update="true"/>
                             </target>
                         </configuration>
                     </execution>
@@ -700,7 +699,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.193</version>
+            <version>4.8.194</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
@@ -852,7 +851,7 @@
         <dependency>
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>5.1.0</version>
+            <version>5.1.1</version>
             <type>pom</type>
             <scope>test</scope>
             <optional>true</optional>
@@ -903,7 +902,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.8.0</version>
+            <version>3.9.0</version>
             <scope>test</scope>
         </dependency>
 
