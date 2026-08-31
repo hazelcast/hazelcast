@@ -699,7 +699,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.193</version>
+            <version>4.8.194</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
