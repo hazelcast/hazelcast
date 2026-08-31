@@ -181,7 +181,7 @@ public class MigrationManagerImpl implements MigrationManager {
         this.partitionServiceLock = partitionServiceLock;
         migrationPlanner = new MigrationPlanner(node.getLogger(MigrationPlanner.class));
         HazelcastProperties properties = node.getProperties();
-        partitionMigrationInterval = properties.getPositiveMillisOrDefault(PARTITION_MIGRATION_INTERVAL, 0);
+        partitionMigrationInterval = properties.getPositiveMillisOrDefault(PARTITION_MIGRATION_INTERVAL);
         partitionMigrationTimeout = properties.getMillis(PARTITION_MIGRATION_TIMEOUT);
         fragmentedMigrationEnabled = properties.getBoolean(PARTITION_FRAGMENTED_MIGRATION_ENABLED);
         chunkedMigrationEnabled = properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
