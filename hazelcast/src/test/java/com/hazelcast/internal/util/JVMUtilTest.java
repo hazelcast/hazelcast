@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.tpcengine.util.JVM;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -44,31 +45,91 @@ public class JVMUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIsCompressedOops() {
-        JVMUtil.isCompressedOops();
-    }
-
-    @Test
     public void testUsedMemory() {
         Assert.assertTrue(JVMUtil.usedMemory(Runtime.getRuntime()) > 0);
     }
 
     @Test
-    public void testIsHotSpotCompressedOopsOrNull() {
-        JVMUtil.isHotSpotCompressedOopsOrNull();
-    }
-
-    @Test
-    public void testIsObjectLayoutCompressedOopsOrNull() {
-        JVMUtil.isObjectLayoutCompressedOopsOrNull();
-    }
-
-    @Test
     public void testGetPid() {
-       long legacyPidResult = getPidLegacy();
+        long legacyPidResult = getPidLegacy();
 
-       assumeThat(legacyPidResult).isNotEqualTo(-1);
-       assertEquals(legacyPidResult, JVMUtil.getPid());
+        assumeThat(legacyPidResult).isNotEqualTo(-1);
+        assertEquals(legacyPidResult, JVMUtil.getPid());
+    }
+
+    @Test
+    public void testObjectLayoutCompressedOopsMatchesHotSpotOption() {
+        Boolean expected = JVMUtil.isHotSpotCompressedOopsOrNull();
+        Boolean actual = JVMUtil.isObjectLayoutCompressedOopsOrNull();
+
+        assumeThat(expected).isNotNull();
+        assumeThat(actual).isNotNull();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testIsCompressedOopsMatchesHotSpotOption() {
+        Boolean compressedOops = JVMUtil.isHotSpotCompressedOopsOrNull();
+        assumeThat(compressedOops).isNotNull();
+
+        assertEquals(compressedOops.booleanValue(), JVMUtil.isCompressedOops());
+    }
+
+    @Test
+    public void testIsCompressedClassPointersMatchesHotSpotOption() {
+        Boolean compressedClassPointers = JVMUtil.isHotSpotCompressedClassPointersOrNull();
+        assumeThat(compressedClassPointers).isNotNull();
+
+        assertEquals(compressedClassPointers, JVMUtil.isCompressedClassPointers());
+    }
+
+    @Test
+    public void testIsCompactObjectHeadersMatchesHotSpotOption() {
+        Boolean compactObjectHeaders = JVMUtil.isHotSpotCompactObjectHeadersOrNull();
+        assumeThat(compactObjectHeaders).isNotNull();
+
+        assertEquals(compactObjectHeaders, JVMUtil.isCompactObjectHeaders());
+    }
+
+    @Test
+    public void testObjectHeaderSizeMatchesObjectLayout() {
+        Integer objectHeaderSize = JVMUtil.getObjectHeaderSizeOrNull();
+        assumeThat(objectHeaderSize).isNotNull();
+
+        assertEquals(JVMUtil.OBJECT_HEADER_SIZE, objectHeaderSize.intValue());
+    }
+
+    @Test
+    public void testObjectHeaderSizeOn32BitJvm() {
+        assumeThat(JVM.is32bit()).isTrue();
+
+        assertEquals(8, JVMUtil.OBJECT_HEADER_SIZE);
+    }
+
+    @Test
+    public void testObjectHeaderSizeWithCompactObjectHeaders() {
+        assumeThat(JVMUtil.isCompactObjectHeaders()).isTrue();
+
+        assertEquals(8, JVMUtil.OBJECT_HEADER_SIZE);
+    }
+
+    @Test
+    public void testObjectHeaderSizeWithCompressedClassPointers() {
+        assumeThat(JVM.is32bit()).isFalse();
+        assumeThat(JVMUtil.isCompactObjectHeaders()).isFalse();
+        assumeThat(JVMUtil.isCompressedClassPointers()).isTrue();
+
+        assertEquals(12, JVMUtil.OBJECT_HEADER_SIZE);
+    }
+
+    @Test
+    public void testObjectHeaderSizeWithUncompressedClassPointers() {
+        assumeThat(JVM.is32bit()).isFalse();
+        assumeThat(JVMUtil.isCompactObjectHeaders()).isFalse();
+        assumeThat(JVMUtil.isCompressedClassPointers()).isFalse();
+
+        assertEquals(16, JVMUtil.OBJECT_HEADER_SIZE);
     }
 
     /**
@@ -93,12 +154,4 @@ public class JVMUtilTest extends HazelcastTestSupport {
         }
     }
 
-    // Prints the size of object reference as calculated by JVMUtil.
-    // When running under Hotspot 64-bit:
-    // - JDK 6u23+ should report 4 (CompressedOops enabled by default)
-    // - JDK 7 with -Xmx <= 32G or without any -Xmx specified should report 4 (CompressedOops enabled), otherwise 8
-    // - explicitly starting with -XX:+UseCompressedOops should report 4, otherwise 8
-    public static void main(String[] args) {
-        System.out.println("Size of reference: " + JVMUtil.REFERENCE_COST_IN_BYTES);
-    }
 }

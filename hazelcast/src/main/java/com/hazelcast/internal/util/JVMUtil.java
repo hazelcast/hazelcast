@@ -41,11 +41,23 @@ public final class JVMUtil {
     public static final int OBJECT_HEADER_SIZE;
 
     static {
-        if (JVM.is32bit()) {
+        Integer objectHeaderSize = getObjectHeaderSizeOrNull();
+
+        // Unsafe provides the actual header size from the first field offset.
+        if (objectHeaderSize != null) {
+            OBJECT_HEADER_SIZE = objectHeaderSize;
+        } else if (JVM.is32bit()) {
+            // 4-byte mark word + 4-byte class pointer.
             OBJECT_HEADER_SIZE = 8;
-        } else if (isCompressedOops()) {
+        } else if (isCompactObjectHeaders()) {
+            // Current compact object headers are 8 bytes. A future implementation
+            // may use 4 bytes, which cannot be distinguished without Unsafe.
+            OBJECT_HEADER_SIZE = 8;
+        } else if (isCompressedClassPointers()) {
+            // 8-byte mark word + 4-byte compressed class pointer.
             OBJECT_HEADER_SIZE = 12;
         } else {
+            // 8-byte mark word + 8-byte class pointer.
             OBJECT_HEADER_SIZE = 16;
         }
     }
@@ -103,16 +115,52 @@ public final class JVMUtil {
 
     // not private for testing
     static Boolean isHotSpotCompressedOopsOrNull() {
+        return isHotSpotBooleanOptionOrNull("UseCompressedOops");
+    }
+
+    // not private for testing
+    static boolean isCompressedClassPointers() {
+        Boolean enabled = isHotSpotCompressedClassPointersOrNull();
+        if (enabled != null) {
+            return enabled;
+        }
+
+        getLogger(JVMUtil.class).info("Could not determine class pointer size; assuming it matches reference size.");
+        return isCompressedOops();
+    }
+
+    // not private for testing
+    static Boolean isHotSpotCompressedClassPointersOrNull() {
+        return isHotSpotBooleanOptionOrNull("UseCompressedClassPointers");
+    }
+
+    // not private for testing
+    static boolean isCompactObjectHeaders() {
+        Boolean enabled = isHotSpotCompactObjectHeadersOrNull();
+        if (enabled != null) {
+            return enabled;
+        }
+
+        getLogger(JVMUtil.class).info("Could not determine whether compact object headers are enabled; assuming disabled.");
+        return false;
+    }
+
+    // not private for testing
+    static Boolean isHotSpotCompactObjectHeadersOrNull() {
+        return isHotSpotBooleanOptionOrNull("UseCompactObjectHeaders");
+    }
+
+    private static Boolean isHotSpotBooleanOptionOrNull(String optionName) {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             ObjectName mbean = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
-            Object[] objects = {"UseCompressedOops"};
+            Object[] objects = {optionName};
             String[] strings = {"java.lang.String"};
             String operation = "getVMOption";
-            CompositeDataSupport compressedOopsValue = (CompositeDataSupport) server.invoke(mbean, operation, objects, strings);
-            return Boolean.valueOf(compressedOopsValue.get("value").toString());
+            CompositeDataSupport optionValue = (CompositeDataSupport) server.invoke(mbean, operation, objects, strings);
+            return Boolean.valueOf(optionValue.get("value").toString());
         } catch (Exception e) {
-            getLogger(JVMUtil.class).fine("Failed to read HotSpot specific configuration: " + e.getMessage());
+            getLogger(JVMUtil.class).fine("Failed to read HotSpot option " + optionName + ": " + e.getMessage());
         }
         return null;
     }
@@ -132,6 +180,33 @@ public final class JVMUtil {
 
         // when reference size does not equal address size then it's safe to assume references are compressed
         return referenceSize != UNSAFE.addressSize();
+    }
+
+    /**
+     * Estimates the object header size from the offset of the first instance field.
+     *
+     * @return the object header size, or {@code null} when it cannot be determined
+     */
+    static Integer getObjectHeaderSizeOrNull() {
+        if (!UNSAFE_AVAILABLE) {
+            return null;
+        }
+
+        try {
+            return (int) UNSAFE.objectFieldOffset(ObjectHeaderSizeEstimator.class.getField("firstField"));
+        } catch (Exception e) {
+            getLogger(JVMUtil.class).fine("Could not determine object header size using field offset: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * The JVM can place a byte-aligned boolean field immediately after the object
+     * header ( without any padding ), so the field offset is the object header size.
+     */
+    @SuppressWarnings({"unused", "checkstyle:visibilitymodifier"})
+    private static final class ObjectHeaderSizeEstimator {
+        public boolean firstField;
     }
 
     /**
