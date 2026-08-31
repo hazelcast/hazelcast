@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util.collection;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -36,18 +35,15 @@ import java.util.List;
  */
 public class WeightedEvictableList<T> {
 
-    private List<WeightedItem<T>> list = new ArrayList<>();
+    private final List<WeightedItem<T>> list = new ArrayList<>();
 
     private final int maxSize;
+    private final int retainedItemCount;
     private final int maxVotesBeforeReorganization;
-    private int reorganizationCounter;
+    private int votesSinceLastReorganization;
 
-    private final Comparator<WeightedItem<T>> itemComparator = new Comparator<>() {
-        @Override
-        public int compare(WeightedItem<T> o1, WeightedItem<T> o2) {
-            return o2.weight - o1.weight;
-        }
-    };
+    private final Comparator<WeightedItem<T>> itemComparator = (left, right) ->
+            right.weight - left.weight;
 
     /**
      *
@@ -61,6 +57,7 @@ public class WeightedEvictableList<T> {
     public WeightedEvictableList(int maxSize, int maxVotesBeforeReorganization) {
         this.maxSize = maxSize;
         this.maxVotesBeforeReorganization = maxVotesBeforeReorganization;
+        this.retainedItemCount = maxSize / 2;
     }
 
     public List<WeightedItem<T>> getList() {
@@ -72,10 +69,10 @@ public class WeightedEvictableList<T> {
      * weight.
      */
     public void voteFor(WeightedItem<T> weightedItem) {
-        reorganizationCounter++;
+        votesSinceLastReorganization++;
         weightedItem.vote();
-        if (reorganizationCounter == maxVotesBeforeReorganization) {
-            reorganizationCounter = 0;
+        if (votesSinceLastReorganization == maxVotesBeforeReorganization) {
+            votesSinceLastReorganization = 0;
             organizeAndAdd(null);
         }
     }
@@ -91,6 +88,7 @@ public class WeightedEvictableList<T> {
      * @return The node that can be used to vote for
      */
     public WeightedItem<T> addOrVote(T item) {
+        // iterate over indexes so that no iterator is allocated
         for (int i = 0; i < list.size(); i++) {
             WeightedItem<T> weightedItem = list.get(i);
             if (weightedItem.item.equals(item)) {
@@ -110,11 +108,11 @@ public class WeightedEvictableList<T> {
     }
 
     WeightedItem<T> organizeAndAdd(T item) {
-        Collections.sort(list, itemComparator);
+        list.sort(itemComparator);
         if (list.size() == maxSize) {
             if (item != null) {
-                for (int i = list.size() - 1; i >= maxSize / 2; i--) {
-                    list.remove(i);
+                if (list.size() > retainedItemCount) {
+                    list.subList(retainedItemCount, list.size()).clear();
                 }
                 for (WeightedItem<T> it : list) {
                     it.weight = 0;
@@ -142,11 +140,6 @@ public class WeightedEvictableList<T> {
         WeightedItem(T item) {
             this.item = item;
             this.weight = 0;
-        }
-
-        WeightedItem(WeightedItem<T> other) {
-            this.item = other.item;
-            this.weight = other.weight;
         }
 
         private void vote() {
