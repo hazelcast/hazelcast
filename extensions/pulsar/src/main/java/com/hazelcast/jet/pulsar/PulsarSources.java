@@ -27,6 +27,8 @@ import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Contains builders for creating Pulsar stream sources.
@@ -160,7 +162,7 @@ public final class PulsarSources {
      * Example usage:
      * <pre>{@code
      *
-     * StreamSource<String> pulsarSource = PulsarSources.pulsarConsumerBuilder(() -> BYTES, x -> new String(x.getData()))
+     * StreamSource<Message<byte[]>> pulsarSource = PulsarSources.pulsarConsumerBuilder(() -> BYTES)
      *          .topic(topicName, topicName2)
      *          .connectionSupplier(() -> PulsarClient.builder()
      *                            .serviceUrl("pulsar://exampleserviceurl")
@@ -181,6 +183,99 @@ public final class PulsarSources {
     @Nonnull
     public static <M> PulsarConsumerBuilder<M, Message<M>> pulsarConsumerBuilder(@Nonnull SupplierEx<Schema<M>> schemaSupplier) {
         return new PulsarConsumerBuilder<>(schemaSupplier, FunctionEx.identity());
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Pulsar consumer {@link StreamSource} for the Pipeline API.
+     * <p>
+     * Pulsar consumer source is a distributed, timestamped {@link StreamSource}
+     * which reads messages from Pulsar topics for data ingestion to Jet
+     * pipelines. This source does not have fault-tolerance support. It uses
+     * the Consumer API of the Pulsar client. It can be used to subscribe
+     * partitioned topics. It uses higher level abstraction of Pulsar that
+     * is called "shared subscription" that allows multiple consumers to consume
+     * from the topics at the same time. The messages are sent round-robin to
+     * each connected consumer. Broker determines which consumer will receive a
+     * message from which topic partition. It does not require one-to-one
+     * mapping between partitions and consumers. Multiple consumers can get
+     * messages from same partition. With this source, the message ordering is
+     * not preserved.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     *
+     * StreamSource<String> pulsarSource = PulsarSources.pulsarConsumerBuilder(bytes(), x -> new String(x.getData()))
+     *          .topic(topicName, topicName2)
+     *          .connectionSupplier(() -> PulsarClient.builder()
+     *                            .serviceUrl("pulsar://exampleserviceurl")
+     *                            .build())
+     *          .build();
+     *
+     *  Pipeline pipeline = Pipeline.create();
+     *  StreamStage<Status> srcStage = p.readFrom(pulsarSource);
+     *
+     *  }</pre>
+     *
+     * @param <M>                the type of the message read by {@code PulsarConsumer}
+     * @param <T>                the type of data emitted from {@code StreamSource}
+     * @param schema             schema of pulsar message value.
+     * @return {@link PulsarConsumerBuilder} that used to create a {@link StreamSource}
+     *
+     * @since 6.0
+     */
+    @Nonnull
+    public static <M, T> PulsarConsumerBuilder<M, T> pulsarConsumerBuilder(@Nonnull PulsarSchema<M> schema,
+                                                                           @Nonnull FunctionEx<Message<M>, T> projectionFn) {
+        checkNotNull(schema, "schema");
+        //noinspection unchecked
+        SupplierEx<Schema<M>> schemaSupplier = schema.supplierV4();
+        checkSerializable(schemaSupplier, "schemaSupplier");
+        return pulsarConsumerBuilder(schemaSupplier, projectionFn);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Pulsar consumer {@link StreamSource} for the Pipeline API.
+     * <p>
+     * Pulsar consumer source is a distributed, timestamped {@link StreamSource}
+     * which reads messages from Pulsar topics for data ingestion to Jet
+     * pipelines. This source does not have fault-tolerance support. It uses
+     * the Consumer API of the Pulsar client. It can be used to subscribe
+     * partitioned topics. It uses higher level abstraction of Pulsar that
+     * is called "shared subscription" that allows multiple consumers to consume
+     * from the topics at the same time. The messages are sent round-robin to
+     * each connected consumer. Broker determines which consumer will receive a
+     * message from which topic partition. It does not require one-to-one
+     * mapping between partitions and consumers. Multiple consumers can get
+     * messages from same partition. With this source, the message ordering is
+     * not preserved.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     *
+     * StreamSource<Message<byte[]>> pulsarSource = PulsarSources.pulsarConsumerBuilder(() -> Schema.BYTES)
+     *          .topic(topicName, topicName2)
+     *          .connectionSupplier(() -> PulsarClient.builder()
+     *                            .serviceUrl("pulsar://exampleserviceurl")
+     *                            .build())
+     *          .build();
+     *
+     *  Pipeline pipeline = Pipeline.create();
+     *  StreamStage<Status> srcStage = p.readFrom(pulsarSource);
+     *
+     *  }</pre>
+     *
+     * @param <M>                the type of the message read by {@code PulsarConsumer}
+     * @param schema             schema of pulsar message value.
+     * @return {@link PulsarConsumerBuilder} that used to create a {@link StreamSource}
+     *
+     * @since 6.0
+     */
+    @Nonnull
+    public static <M> PulsarConsumerBuilder<M, Message<M>> pulsarConsumerBuilder(@Nonnull PulsarSchema<M> schema) {
+        checkNotNull(schema, "schema");
+        return pulsarConsumerBuilder(schema, FunctionEx.identity());
     }
 
     /**
@@ -297,7 +392,7 @@ public final class PulsarSources {
      * Example usage:
      * <pre>{@code
      *
-     * StreamSource<String> pulsarSource = PulsarSources.pulsarReaderBuilder()
+     * StreamSource<String> pulsarSource = PulsarSources.pulsarReaderBuilder(() -> Schema.BYTES)
      *          .topic(topicName),
      *          .connectionSupplier(() -> PulsarClient.builder()
      *                            .serviceUrl("pulsar://exampleserviceurl")
@@ -319,6 +414,47 @@ public final class PulsarSources {
      */
     @Nonnull
     public static <M, T> PulsarReaderBuilder<M, T> pulsarReaderBuilder(@Nonnull SupplierEx<Schema<M>> schemaSupplier) {
+        return new PulsarReaderBuilder<>(schemaSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Pulsar reader {@link StreamSource} for the Pipeline API.
+     * <p>
+     * Pulsar reader is a fault-tolerant timestamped {@link StreamSource}
+     * which reads messages from Pulsar topics for data ingestion to Jet
+     * pipelines. It uses the Reader API of the Pulsar client. It cannot
+     * be used in the partitioned topics.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     *
+     * StreamSource<String> pulsarSource = PulsarSources.pulsarReaderBuilder(PulsarSchema.bytes())
+     *          .topic(topicName),
+     *          .connectionSupplier(() -> PulsarClient.builder()
+     *                            .serviceUrl("pulsar://exampleserviceurl")
+     *                            .build())
+     *          .projectionFn(x -> new String(x.getData(), StandardCharsets.UTF_8))
+     *          .build();
+     *
+     *  Pipeline pipeline = Pipeline.create();
+     *  StreamStage<Status> srcStage = p.readFrom(pulsarSource);
+     *
+     *  }</pre>
+     *
+     * @param <M>                the type of the message read by {@code pulsarReader}
+     * @param <T>                the type of data emitted from {@code StreamSource}
+     * @param schema             schema of Pulsar message value
+     * @return {@link PulsarReaderBuilder} that used to create a {@link StreamSource}
+     *
+     * @since 6.0
+     */
+    @Nonnull
+    public static <M, T> PulsarReaderBuilder<M, T> pulsarReaderBuilder(@Nonnull PulsarSchema<M> schema) {
+        checkNotNull(schema, "schema");
+        //noinspection unchecked
+        SupplierEx<Schema<M>> schemaSupplier = schema.supplierV4();
+        checkSerializable(schemaSupplier, "schemaSupplier");
         return new PulsarReaderBuilder<>(schemaSupplier);
     }
 

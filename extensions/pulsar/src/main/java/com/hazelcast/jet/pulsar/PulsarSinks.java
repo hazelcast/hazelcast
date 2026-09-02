@@ -26,6 +26,8 @@ import org.apache.pulsar.client.api.Schema;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * Contains factory methods for Pulsar sinks.
  *
@@ -90,6 +92,22 @@ public final class PulsarSinks {
     @Nonnull
     public static <M> PulsarSinkBuilder<M, M> builder(@Nonnull SupplierEx<Schema<M>> schemaSupplier) {
         return builder(schemaSupplier, FunctionEx.identity());
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Pulsar {@link Sink} for the Pipeline API.
+     *
+     * @param schema             schema of pulsar message value.
+     *
+     * @since 6.0
+     */
+    @Nonnull
+    public static <M> PulsarSinkBuilder<M, M> builder(@Nonnull PulsarSchema<M> schema) {
+        checkNotNull(schema, "schema");
+        //noinspection unchecked
+        SupplierEx<Schema<M>> schemaSupplier = schema.supplierV4();
+        return builder(schemaSupplier);
     }
 
     /**

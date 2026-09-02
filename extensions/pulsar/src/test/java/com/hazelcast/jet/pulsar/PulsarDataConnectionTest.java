@@ -37,7 +37,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.pulsar.PulsarDataConnection.pulsarDataConnectionConf;
+import static com.hazelcast.jet.pulsar.PulsarSchema.bytes;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @SerialTest
 @QuickTest
@@ -235,6 +237,14 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
 
         assertClosed(client1);
         assertClosed(client2);
+    }
+
+    @Test
+    void schema_serializability_checked_after_assignment() {
+        // we expect no fail
+        assertThatCode(() -> PulsarSources.pulsarConsumerBuilder(bytes())).doesNotThrowAnyException();
+        assertThatCode(() -> PulsarSources.pulsarReaderBuilder(bytes())).doesNotThrowAnyException();
+        assertThatCode(() -> PulsarSinks.builder(bytes())).doesNotThrowAnyException();
     }
 
     private @NonNull DataConnectionConfig newConnection() {
