@@ -23,7 +23,9 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.immutables.value.Value;
 
@@ -124,7 +126,7 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
         if (logicalAggregate.containsDistinctCall() || logicalAggregate.hasCollation()) {
             return new AggregateByKeyPhysicalRel(
                     physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
+                    withoutCollation(physicalInput),
                     physicalInput,
                     logicalAggregate.getGroupSet(),
                     logicalAggregate.getGroupSets(),
@@ -134,7 +136,7 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
         } else {
             RelNode rel = new AggregateAccumulateByKeyPhysicalRel(
                     physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
+                    withoutCollation(physicalInput),
                     physicalInput,
                     logicalAggregate.getGroupSet(),
                     aggrOp
@@ -150,5 +152,12 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
                     aggrOp
             );
         }
+    }
+
+    /**
+     * Aggregations redistribute and combine input rows, so they cannot preserve an input ordering.
+     */
+    private static RelTraitSet withoutCollation(RelNode rel) {
+        return rel.getTraitSet().replace(RelCollations.EMPTY);
     }
 }
