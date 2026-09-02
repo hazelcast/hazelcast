@@ -36,6 +36,7 @@ import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.toxic.Bandwidth;
 import org.apache.pulsar.client.api.PulsarClient;
+
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.AfterAll;
@@ -70,9 +71,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.testcontainers.containers.PulsarContainer.BROKER_PORT;
 
+
 public class PulsarSinkTest extends PulsarTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(PulsarSinkTest.class);
-    private static final int ITEM_COUNT = 100;
+    private static final int ITEM_COUNT = 1_000;
     static TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
     static HazelcastInstance[] instances;
 

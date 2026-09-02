@@ -23,7 +23,6 @@ import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
-import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Producer;
@@ -49,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @ParameterizedClass
@@ -119,14 +119,14 @@ public abstract class PulsarTestSupport extends JetTestSupport {
             try {
                 produceMessage(message + "-" + i, topicName);
             } catch (PulsarClientException e) {
-                e.printStackTrace();
+                sneakyThrow(e);
             }
         }
     }
 
-    protected static MessageId produceMessage(String message, String topicName)
+    protected static void produceMessage(String message, String topicName)
             throws PulsarClientException {
-        return getProducer(topicName).send(message.getBytes(StandardCharsets.UTF_8));
+        getProducer(topicName).send(message.getBytes(StandardCharsets.UTF_8));
     }
 
 
