@@ -44,6 +44,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Represents Apache Pulsar {@link com.hazelcast.dataconnection.DataConnection}.
+ *
+ * @since 6.0
  */
 public class PulsarDataConnection extends DataConnectionBase {
     private static final ILogger LOG = Logger.getLogger(PulsarDataConnection.class);
@@ -103,6 +105,7 @@ public class PulsarDataConnection extends DataConnectionBase {
      * If there is an error during client creation, the data connection is not released and {@link #release()}
      * must be called explicitly.
      */
+    @Nonnull
     public PulsarClient getClient() {
         if (getConfig().isShared()) {
             retain();
@@ -202,6 +205,10 @@ public class PulsarDataConnection extends DataConnectionBase {
         }
     }
 
+    /**
+     * Returns basic {@link DataConnectionConfig} with given name, brokerUrl and service url.
+     */
+    @Nonnull
     public static DataConnectionConfig pulsarDataConnectionConf(String name, String brokerUrl, String serviceHttpUrl) {
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig();
         dataConnectionConfig.setName(name);
