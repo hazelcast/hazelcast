@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.collection.WeightedEvictableList.WeightedItem
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.openjdk.jol.info.ClassLayout;
 
 import static org.junit.Assert.assertEquals;
 
@@ -144,6 +145,14 @@ public class WeightedEvictableListTest {
         list.addOrVote("x");
         assertItemsInOrder(list, "x", "d", "c");
         assertWeightsInOrder(list, 4, 2, 0);
+    }
+
+    @Test
+    public void printWeightedEvictableListLayout() {
+        System.out.println(
+                ClassLayout.parseClass(WeightedEvictableList.class)
+                        .toPrintable()
+        );
     }
 
     private <T> void assertItemsInOrder(WeightedEvictableList<String> weightedList, T... values) {

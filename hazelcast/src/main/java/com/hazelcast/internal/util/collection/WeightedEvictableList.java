@@ -29,11 +29,61 @@ import java.util.List;
  * to bring the items with the most votes in front. Also, every time
  * {@code maxSize} is reached, the list is reorganized.
  * <p>
+ * Items are compared using {@link Object#equals(Object)}. Their equality
+ * semantics should remain stable while they are stored in this list.
+ * <p>
  * The list is not thread-safe.
  *
  * @param <T>
  */
 public class WeightedEvictableList<T> {
+
+    /*
+     * This is a periodically reorganized priority list, not a list that is
+     * always sorted by current weights. Reorganizing after every vote is
+     * avoided; maxVotesBeforeReorganization controls how long items may
+     * accumulate votes before the priority order is refreshed.
+     *
+     * When capacity is reached, existing items are sorted using their
+     * historical votes and the lower-ranked half is removed. The survivors
+     * retain their historical priority order ( they remain at the top of the list ),
+     * but their weights are reset ( they become zero ) so
+     * that previous winners cannot remain dominant forever and must prove
+     * themselves again during the next voting period. A new item starts behind
+     * those survivors and can move forward after accumulating votes.
+     *
+     * addOrVote scans the entire list, so items outside the leading positions
+     * can continue receiving votes and eventually become preferred candidates.
+     * This allows callers to use only the first few entries as a fast path
+     * while retaining a larger pool of candidates for changing workloads.
+     */
+
+    /*
+     * The list is maintained through two entry points.
+     *
+     * The first entry point is voteFor. A vote increments both the
+     * item's weight and the number of votes cast since the last reorganization.
+     * Once maxVotesBeforeReorganization votes have accumulated, the list is sorted
+     * by weight and the vote counter is reset. This reorganization only refreshes
+     * the order; it does not remove entries or reset their weights.
+     *
+     * The second entry point is addOrVote. It scans the complete list and,
+     * if an equal item is found, delegates to the same voting path described above.
+     * This allows entries outside the first few positions to continue receiving
+     * votes and eventually move towards the front.
+     *
+     * If addOrVote does not find the item, the list is sorted before the new item
+     * is added. If the list has reached maxSize, the lower-ranked half is removed.
+     * The retained entries keep their order, but their weights are reset
+     * to zero so that historically popular entries cannot remain dominant
+     * forever. The new entry is then appended with a weight of one.
+     *
+     * Consequently, maxVotesBeforeReorganization controls how often the ranking
+     * is refreshed, while maxSize controls when entries are removed and survivor
+     * weights are reset. The list is not guaranteed to remain ordered by current
+     * weight between reorganizations or immediately after a capacity-based
+     * removal and insertion.
+     */
 
     private final List<WeightedItem<T>> list = new ArrayList<>();
 
@@ -109,23 +159,27 @@ public class WeightedEvictableList<T> {
 
     WeightedItem<T> organizeAndAdd(T item) {
         list.sort(itemComparator);
+
+        // null is a control signal meaning “organize without adding.”
+        if (item == null) {
+            return null;
+        }
+
         if (list.size() == maxSize) {
-            if (item != null) {
-                if (list.size() > retainedItemCount) {
-                    list.subList(retainedItemCount, list.size()).clear();
-                }
-                for (WeightedItem<T> it : list) {
-                    it.weight = 0;
-                }
+            // drop the ones with the lower weights
+            list.subList(retainedItemCount, list.size()).clear();
+
+            // iterate over indexes so that no iterator is allocated
+            for (int i = 0; i < list.size(); i++) {
+                list.get(i).weight = 0;
             }
         }
-        WeightedItem<T> returnValue = null;
-        if (item != null) {
-            returnValue = new WeightedItem<>(item);
-            returnValue.weight = 1;
-            list.add(returnValue);
-        }
-        return returnValue;
+
+        WeightedItem<T> weightedItem = new WeightedItem<>(item);
+        weightedItem.weight = 1;
+        list.add(weightedItem);
+
+        return weightedItem;
     }
 
     /**
