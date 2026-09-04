@@ -135,6 +135,13 @@
         <url>http://www.hazelcast.com/</url>
     </organization>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>private-repository</id>
+            <url>https://repository.hazelcast.com/snapshot-internal</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
         <outputDirectory>${target.dir}/classes</outputDirectory>
