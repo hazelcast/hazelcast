@@ -449,6 +449,13 @@ abstract class MapProxySupport<K, V>
 
     protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
+        if (mapConfig.isReadBackupData()) {
+            Data fromBackup = readBackupDataOrNull(keyData);
+
+            if (fromBackup != null) {
+                return newCompletedFuture(fromBackup);
+            }
+        }
         return invokeOperationAsync(key, operationProvider.createGetOperation(name, keyData), false);
     }
 
