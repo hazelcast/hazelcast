@@ -456,12 +456,14 @@ public final class SourceProcessors {
     ) {
         return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
     }
+
     /**
      * Returns a supplier of processors for a source that the user can create
      * using the {@link SourceBuilder}. This variant creates a source that
      * emits items without timestamps.
      *
      * @param createFn function that creates the source's context object
+     * @param initFn function invoked after the source is created on the node and job is about to start running
      * @param fillBufferFn function that fills Jet's buffer with items to emit
      * @param createSnapshotFn function that returns a snapshot of the context object's state
      * @param restoreSnapshotFn function that restores the context object's state from a snapshot
@@ -515,9 +517,52 @@ public final class SourceProcessors {
     /**
      * Returns a supplier of processors for a source that the user can create
      * using the {@link SourceBuilder}. This variant creates a source that
+     * emits items without timestamps.
+     *
+     * @param createFn function that creates the source's context object
+     * @param fillBufferFn function that fills Jet's buffer with items to emit
+     * @param createSnapshotFn function that returns a snapshot of the context object's state
+     * @param restoreSnapshotFn function that restores the context object's state from a snapshot
+     * @param destroyFn function that cleans up the resources held by the context object
+     * @param preferredLocalParallelism preferred local parallelism of the source vertex. Special values:
+     *                                  {@value Vertex#LOCAL_PARALLELISM_USE_DEFAULT} -> use the cluster's
+     *                                  default local parallelism;
+     *                                  0 -> create a single processor for the entire cluster (total parallelism = 1)
+     * @param isBatch true, if the fillBufferFn will call {@code buffer.close()}, that is whether
+     *                the source reads a bounded or unbounded set of data
+     *
+     * @param <C> type of the source's context object
+     * @param <T> type of items the source emits
+     * @param <S> type of object saved to state snapshot
+     *
+     * @deprecated use
+     * {@link #convenientSourceP(FunctionEx, ConsumerEx, BiConsumerEx, FunctionEx, BiConsumerEx, ConsumerEx, int, boolean, Permission)}
+     * instead.
+     */
+    @Deprecated(since = "6.0", forRemoval = true)
+    @Nonnull
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public static <C, T, S> ProcessorMetaSupplier convenientSourceP(
+            @Nonnull FunctionEx<? super Context, ? extends C> createFn,
+            @Nonnull BiConsumerEx<? super C, ? super SourceBuffer<T>> fillBufferFn,
+            @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn,
+            @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
+            @Nonnull ConsumerEx<? super C> destroyFn,
+            int preferredLocalParallelism,
+            boolean isBatch,
+            @Nullable Permission permission
+    ) {
+        return convenientSourceP(createFn, ConsumerEx.noop(), fillBufferFn, createSnapshotFn, restoreSnapshotFn,
+                                 destroyFn, preferredLocalParallelism, isBatch, permission);
+    }
+
+    /**
+     * Returns a supplier of processors for a source that the user can create
+     * using the {@link SourceBuilder}. This variant creates a source that
      * emits timestamped events.
      *
      * @param createFn function that creates the source's context object
+     * @param initFn function invoked after the source is created on the node and job is about to start running
      * @param fillBufferFn function that fills Jet's buffer with items to emit
      * @param eventTimePolicy parameters for watermark generation
      * @param createSnapshotFn function that returns a snapshot of the context object's state
@@ -565,5 +610,44 @@ public final class SourceProcessors {
         return preferredLocalParallelism > 0
                 ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
                 : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
+    }
+
+    /**
+     * Returns a supplier of processors for a source that the user can create
+     * using the {@link SourceBuilder}. This variant creates a source that
+     * emits timestamped events.
+     *
+     * @param createFn function that creates the source's context object
+     * @param fillBufferFn function that fills Jet's buffer with items to emit
+     * @param eventTimePolicy parameters for watermark generation
+     * @param createSnapshotFn function that returns a snapshot of the context object's state
+     * @param restoreSnapshotFn function that restores the context object's state from a snapshot
+     * @param destroyFn function that cleans up the resources held by the context object
+     * @param preferredLocalParallelism preferred local parallelism of the source vertex. Special values:
+     *                                  {@value Vertex#LOCAL_PARALLELISM_USE_DEFAULT} ->
+     *                                  use the cluster's default local parallelism;
+     *                                  0 -> create a single processor for the entire cluster (total parallelism = 1)
+     *
+     * @param <C> type of the context object
+     * @param <T> type of items the source emits
+     * @param <S> type of the object saved to state snapshot
+     *
+     * @deprecated Use
+     * {@link #convenientTimestampedSourceP(FunctionEx, ConsumerEx, BiConsumerEx, EventTimePolicy, FunctionEx, BiConsumerEx, ConsumerEx, int)}
+     * instead.
+     */
+    @Deprecated(since = "6.0", forRemoval = true)
+    @Nonnull
+    public static <C, T, S> ProcessorMetaSupplier convenientTimestampedSourceP(
+            @Nonnull FunctionEx<? super Context, ? extends C> createFn,
+            @Nonnull BiConsumerEx<? super C, ? super TimestampedSourceBuffer<T>> fillBufferFn,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+            @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn,
+            @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
+            @Nonnull ConsumerEx<? super C> destroyFn,
+            int preferredLocalParallelism
+    ) {
+        return convenientTimestampedSourceP(createFn, ConsumerEx.noop(), fillBufferFn, eventTimePolicy, createSnapshotFn,
+                                            restoreSnapshotFn, destroyFn, preferredLocalParallelism);
     }
 }

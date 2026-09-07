@@ -188,6 +188,8 @@
     <suppress checks="OuterTypeNumber"
               files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]internal[\\/]hotrestart[\\/]impl[\\/]di[\\/]DiContainerTest"/>
 
+    <suppress checks="LineLength" files="com[\\/]hazelcast[\\/]jet[\\/]core[\\/]processor[\\/]SourceProcessors.java"/>
+
     <!-- module-info.java -->
     <suppress checks="" files="[\\/]module-info"/>
 
