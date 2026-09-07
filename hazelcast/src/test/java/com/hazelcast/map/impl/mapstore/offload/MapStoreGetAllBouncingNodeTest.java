@@ -18,15 +18,18 @@ package com.hazelcast.map.impl.mapstore.offload;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,17 +53,26 @@ public class MapStoreGetAllBouncingNodeTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "map-name";
     private static final Logger log = LoggerFactory.getLogger(MapStoreGetAllBouncingNodeTest.class);
+    private static final int MAX_KEY = 1_000_000;
+    private static final int MAX_KEYS_PER_OPERATION = 1_000;
+    private static final int TEST_RUN_SECONDS = 20;
 
     @Parameterized.Parameters(name = "offload: {0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {true},
-                {false}
+                {false},
+                // null means force-offload mode
+                {null}
         });
     }
 
     @Parameterized.Parameter
-    public boolean offloadEnabled;
+    public Boolean offloadEnabled;
+
+    private boolean isMapStore() {
+        return offloadEnabled != null;
+    }
 
     @Rule
     public BounceMemberRule bounceMemberRule =
@@ -68,20 +80,32 @@ public class MapStoreGetAllBouncingNodeTest extends HazelcastTestSupport {
                     .driverType(BounceTestConfiguration.DriverType.MEMBER)
                     .clusterSize(3)
                     .driverCount(1)
+                    .avoidOverlappingTerminations(true)
+                    .useTerminate(useTerminate())
                     .build();
 
-    private static final int TEST_RUN_SECONDS = 20;
+    protected boolean useTerminate() {
+        return false;
+    }
+
+    @Before
+    public void setupMap() {
+        if (!isMapStore()) {
+            IMap<Integer, String> map = bounceMemberRule.getSteadyMember().getMap(MAP_NAME);
+            for (int i = 0; i < MAX_KEY; i += 2) {
+                map.put(i, String.valueOf(i));
+            }
+        }
+    }
 
     @Test(timeout = 5 * 60 * 1000)
     public void stressReads() {
-        final int keySpace = 1_000;
-
         IMap<Integer, String> map = bounceMemberRule.getSteadyMember().getMap(MAP_NAME);
 
         Runnable runnable = () -> {
             OpType[] values = OpType.values();
             OpType op = values[RandomPicker.getInt(values.length)];
-            op.doOp(map, RandomPicker.getInt(2, keySpace));
+            op.doOp(map, RandomPicker.getInt(2, MAX_KEYS_PER_OPERATION));
         };
 
         bounceMemberRule.testRepeatedly(10, runnable, TEST_RUN_SECONDS);
@@ -91,11 +115,9 @@ public class MapStoreGetAllBouncingNodeTest extends HazelcastTestSupport {
 
     @Test(timeout = 5 * 60 * 1000)
     public void stressGetAll() {
-        final int keySpace = 1_000;
-
         IMap<Integer, String> map = bounceMemberRule.getSteadyMember().getMap(MAP_NAME);
 
-        Runnable runnable = () -> OpType.GET_ALL.doOp(map, RandomPicker.getInt(2, keySpace));
+        Runnable runnable = () -> OpType.GET_ALL.doOp(map, RandomPicker.getInt(2, MAX_KEYS_PER_OPERATION));
 
         bounceMemberRule.testRepeatedly(10, runnable, TEST_RUN_SECONDS);
 
@@ -105,22 +127,27 @@ public class MapStoreGetAllBouncingNodeTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = smallInstanceConfigWithoutJetAndMetrics();
-        config.getMapConfig(MAP_NAME)
+
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setInMemoryFormat(getInMemoryFormat())
-                .getMapStoreConfig()
-                .setEnabled(true)
-                .setOffload(offloadEnabled)
-                .setImplementation(new MapStoreAdapter<Integer, String>() {
+                .setInMemoryFormat(getInMemoryFormat());
 
-                    @Override
-                    public String load(Integer key) {
-                        sleepRandomMillis();
-                        // simulate case when only even keys exist in the underlying store
-                        return (key % 2 == 0) ? String.valueOf(key) : null;
-                    }
-                });
+        if (isMapStore()) {
+            mapConfig.getMapStoreConfig()
+                    .setEnabled(true)
+                    .setOffload(offloadEnabled)
+                    .setImplementation(new MapStoreAdapter<Integer, String>() {
+                        @Override
+                        public String load(Integer key) {
+                            sleepRandomMillis();
+                            // simulate case when only even keys exist in the underlying store
+                            return (key % 2 == 0) ? String.valueOf(key) : null;
+                        }
+                    });
+        } else {
+            config.setProperty(MapServiceContext.PROP_FORCE_OFFLOAD_ALL_OPERATIONS, "true");
+        }
         return config;
     }
 
@@ -136,9 +163,9 @@ public class MapStoreGetAllBouncingNodeTest extends HazelcastTestSupport {
 
         GET {
             @Override
-            void doOp(IMap<Integer, String> map, int keySpace) {
-                for (int i = 0; i < keySpace; i++) {
-                    var key = ThreadLocalRandom.current().nextInt();
+            void doOp(IMap<Integer, String> map, int keysPerOperation) {
+                for (int i = 0; i < keysPerOperation; i++) {
+                    var key = ThreadLocalRandom.current().nextInt(MAX_KEY);
                     var value = map.get(key);
                     if (key % 2 == 0) {
                         assertThat(value).isNotNull();
@@ -151,18 +178,22 @@ public class MapStoreGetAllBouncingNodeTest extends HazelcastTestSupport {
 
         GET_ALL {
             @Override
-            void doOp(IMap<Integer, String> map, int keySpace) {
+            void doOp(IMap<Integer, String> map, int keysPerOperation) {
                 Set<Integer> keys = new HashSet<>();
                 int oddKeys = 0;
-                for (int i = 0; i < keySpace; i++) {
-                    var key = ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
-                    oddKeys += key % 2;
-                    keys.add(key);
+                for (int i = 0; i < keysPerOperation; i++) {
+                    var key = ThreadLocalRandom.current().nextInt(MAX_KEY);
+                    if (keys.add(key)) {
+                        oddKeys += key % 2;
+                    } else {
+                        // avoid duplicates
+                        i--;
+                    }
                 }
-                assertThat(map.getAll(keys)).hasSize(keySpace - oddKeys);
+                assertThat(map.getAll(keys)).hasSize(keysPerOperation - oddKeys);
             }
         };
 
-        abstract void doOp(IMap<Integer, String> map, int keySpace);
+        abstract void doOp(IMap<Integer, String> map, int keysPerOperation);
     }
 }

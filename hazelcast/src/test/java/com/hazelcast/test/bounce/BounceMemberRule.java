@@ -202,9 +202,8 @@ public class BounceMemberRule implements TestRule {
      */
     public void testRepeatedly(int concurrency, Runnable task, long durationSeconds) {
         assert concurrency > 0 : "Concurrency level should be greater than 0";
-
-        TestTaskRunnable[] tasks = new TestTaskRunnable[concurrency];
-        Arrays.fill(tasks, new TestTaskRunnable(task));
+        Runnable[] tasks = new Runnable[concurrency];
+        Arrays.fill(tasks, task);
         testRepeatedly(tasks, durationSeconds);
     }
 
@@ -623,7 +622,7 @@ public class BounceMemberRule implements TestRule {
                             // might lead to data loss.
                             // This check is done after termination to give time to accumulate some in-progress operations
                             // before next termination.
-                            assertClusterSizeEventually(bounceTestConfig.getClusterSize() - 1, getSteadyMember());
+                            assertClusterSizeEventually(bounceTestConfig.getEffectiveClusterSize() - 1, getSteadyMember());
                             waitClusterForSafeState(getSteadyMember());
                         }
                     } else {
