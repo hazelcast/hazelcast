@@ -85,6 +85,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.sql.impl.CoreQueryUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -1087,6 +1088,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (connectionsEmpty) {
                 // The first connection that opens a connection to the new cluster should set `currentClusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
+                UUID prevClusterId = clientClusterService.getClusterId();
                 clientClusterService.onClusterConnect(newClusterId);
 
                 if (establishedInitialClusterConnection) {
@@ -1115,6 +1117,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                           invocations to be allowed.
                          */
                         client.collectAndSendStatsNow();
+                        fireClusterIdChangedIfRebuilt(prevClusterId, newClusterId, switchingToNextCluster);
                     });
                 } else {
                     establishedInitialClusterConnection = true;
@@ -1327,6 +1330,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     protected void checkClientActive() {
         if (!client.getLifecycleService().isRunning()) {
             throw new HazelcastClientNotActiveException();
+        }
+    }
+
+    /**
+     * Fires {@link LifecycleState#CLIENT_CLUSTER_ID_CHANGED} when the client reconnected to a cluster with a
+     * different id without going through the failover path. {@code prevClusterId} is null only on the first
+     * connection, which is never a change. {@code switchingToNextCluster} is true only on the failover path, which
+     * fires {@link LifecycleState#CLIENT_CHANGED_CLUSTER} itself, and a client with a failover configuration is
+     * always forced through that path on a cluster id change (see {@link #checkClientStateOnClusterIdChange}).
+     * The two events are therefore complementary and never fire together.
+     */
+    private void fireClusterIdChangedIfRebuilt(@Nullable UUID prevClusterId, @Nonnull UUID newClusterId,
+                                                boolean switchingToNextCluster) {
+        if (prevClusterId != null && !prevClusterId.equals(newClusterId) && !switchingToNextCluster) {
+            fireLifecycleEvent(LifecycleState.CLIENT_CLUSTER_ID_CHANGED);
         }
     }
 

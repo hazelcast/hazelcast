@@ -74,6 +74,12 @@ public class ClientClusterProxy implements Cluster {
         return Clock.currentTimeMillis();
     }
 
+    @Override
+    @Nullable
+    public UUID getClusterId() {
+        return clusterService.getClusterId();
+    }
+
     @Nonnull
     @Override
     public ClusterState getClusterState() {
