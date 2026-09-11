@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -156,7 +158,7 @@ public class TransactionLogTest {
         when(partitionRecord.newCommitOperation()).thenReturn(partitionOperation);
 
         log.add(partitionRecord);
-        log.commit(nodeEngine);
+        log.commitOrdered(nodeEngine, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
 
         verify(operationService, times(1))
                 .invokeOnPartition(partitionOperation.getServiceName(), partitionOperation,
@@ -223,7 +225,7 @@ public class TransactionLogTest {
         when(targetRecord.newCommitOperation()).thenReturn(targetOperation);
 
         log.add(targetRecord);
-        log.commit(nodeEngine);
+        log.commitOrdered(nodeEngine, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
 
         verify(operationService, times(1))
                 .invokeOnTarget(targetOperation.getServiceName(), targetOperation, target);

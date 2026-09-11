@@ -292,8 +292,7 @@ public class TransactionImpl implements Transaction {
             checkTimeout();
             try {
                 state = COMMITTING;
-                List<Future<Object>> futures = transactionLog.commit(nodeEngine);
-                waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+                transactionLog.commitOrdered(nodeEngine, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
                 state = COMMITTED;
                 transactionManagerService.commitCount.inc();
                 transactionLog.onCommitSuccess();
