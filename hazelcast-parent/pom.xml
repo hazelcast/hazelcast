@@ -116,7 +116,7 @@
         -->
         <kafka.version>4.3.1</kafka.version>
         <confluent.version>8.1.3</confluent.version>
-        <kotlin.version>2.4.10</kotlin.version>
+        <kotlin.version>2.4.20</kotlin.version>
         <!--
             Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro
             When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
