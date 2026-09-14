@@ -1372,6 +1372,19 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>2.9.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>makeBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -1415,6 +1428,8 @@
                 <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
                 <!-- Skip running maven-dependency-plugin analysis -->
                 <dependency.analyze.phase>none</dependency.analyze.phase>
+                <!-- https://cyclonedx.github.io/cyclonedx-maven-plugin/makeBom-mojo.html#skip -->
+                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
         </profile>
 
@@ -1483,6 +1498,8 @@
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
+                <!-- For _accurate_ SBOM generation, OS+EE must be built in a single reactor - this is not yet the case for release, so until then, don't execute -->
+                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
             <build>
                 <plugins>
