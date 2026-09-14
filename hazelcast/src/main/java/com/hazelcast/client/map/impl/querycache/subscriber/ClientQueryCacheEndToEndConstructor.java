@@ -59,11 +59,11 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
             prepopulate(queryCache, result);
         }
 
-
-        if (info.isPopulate()) {
-            madePublishable(info.getMapName(), info.getCacheId(), urgent);
-            info.setPublishable(true);
-        }
+        // Initial snapshot has been created already (it could be empty if populate flag was false).
+        // We are ready for live events, so switch the member publishable to true                                                                                                                                                                        ┃
+        // and also update the client flag to true.
+        madePublishable(info.getMapName(), info.getCacheId(), urgent);
+        info.setPublishable(true);
     }
 
     private ClientMessage newPublisherCreateMessage(AccumulatorInfo info) {
