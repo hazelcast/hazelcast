@@ -240,6 +240,7 @@
                                     <include>org.locationtech.jts:jts-core</include>
                                     <include>org.slf4j:slf4j-api</include>
                                     <include>tools.jackson.core:jackson-core</include>
+                                    <include>com.fasterxml.jackson.core:jackson-annotations</include>
                                     <include>tools.jackson.core:jackson-databind</include>
                                     <!-- added while JSurfer don't upgrade -->
                                     <include>tools.jackson.jr:jackson-jr-objects</include>
