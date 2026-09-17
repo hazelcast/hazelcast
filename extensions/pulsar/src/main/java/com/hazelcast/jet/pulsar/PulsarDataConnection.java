@@ -28,8 +28,8 @@ import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Topics;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
-import org.apache.pulsar.common.naming.NamespaceName;
-import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.NamespaceName;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

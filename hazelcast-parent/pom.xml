@@ -765,6 +765,42 @@
                 <artifactId>json</artifactId>
                 <version>20260814</version>
             </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.google.cloud.bigdataoss`
+                - `org.apache.pulsar:pulsar-client`
+            -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>1.65.0</version>
+            </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.google.cloud.bigdataoss`
+                - `org.apache.pulsar:pulsar-client`
+            -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-context</artifactId>
+                <version>1.65.0</version>
+            </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.google.cloud.bigdataoss`
+                - `org.apache.pulsar`
+            -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <!-- `org.apache.pulsar:pulsar-bom` has internal dependency convergence -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.85.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -65,10 +65,17 @@
 
     <dependencyManagement>
         <dependencies>
+        	<!--
+				When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
+				- `io.opentelemetry:opentelemetry-api`
+				- `io.opentelemetry:opentelemetry-context`
+				- `org.jspecify:jspecify`
+				- `org.bouncycastle:bcprov-jdk18on`
+			-->
             <dependency>
                 <groupId>org.apache.pulsar</groupId>
                 <artifactId>pulsar-bom</artifactId>
-                <version>5.0.0-M1</version>
+                <version>5.0.0-M2</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
