@@ -122,6 +122,25 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_explainStatementSortAfterAggregationWithSortedIndex() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.addIndex(IndexType.SORTED, "this");
+
+        createMapping("map", Integer.class, Integer.class);
+
+        assertRowsOrdered("EXPLAIN PLAN FOR SELECT this, SUM(__key) total FROM map GROUP BY this ORDER BY this", asList(
+                new Row("SortPhysicalRel(sort0=[$0], dir0=[ASC])"),
+                new Row("  AggregateCombineByKeyPhysicalRel(group=[{0}], total=[SUM($1)])"),
+                new Row("    AggregateAccumulateByKeyPhysicalRel(group=[{0}])"),
+                new Row("      IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$1, $0]]]], "
+                        + "index=[map_sorted_this], indexExp=[null], remainderExp=[null], requiresSort=[true])")
+        ));
+    }
+
+    @Test
     public void test_explainStatementLimitOffsetWithIndexScan() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 1);
