@@ -3008,10 +3008,28 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns the advanced network configuration for this Hazelcast instance.
+     * It allows separate endpoints with their own protocol, security, and socket settings.
+     * Advanced networking is disabled by default. When enabled, it takes precedence
+     * over {@link #getNetworkConfig()}.
+     *
+     * @return the advanced network configuration
+     * @since 3.12
+     */
     public AdvancedNetworkConfig getAdvancedNetworkConfig() {
         return advancedNetworkConfig;
     }
 
+    /**
+     * Sets the advanced network configuration for this Hazelcast instance.
+     * The supplied configuration must be {@link AdvancedNetworkConfig#setEnabled(boolean) enabled}
+     * to take precedence over {@link #getNetworkConfig()}.
+     *
+     * @param advancedNetworkConfig the advanced network configuration
+     * @return this config instance
+     * @since 3.12
+     */
     public Config setAdvancedNetworkConfig(AdvancedNetworkConfig advancedNetworkConfig) {
         this.advancedNetworkConfig = advancedNetworkConfig;
         return this;
