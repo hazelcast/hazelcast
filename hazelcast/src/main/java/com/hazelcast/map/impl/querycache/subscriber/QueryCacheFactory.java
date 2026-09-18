@@ -17,11 +17,12 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueryCacheMode;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -50,7 +51,9 @@ public class QueryCacheFactory {
             QueryCacheContext context = request.getContext();
             QueryCacheConfig queryCacheConfig = request.getQueryCacheConfig();
 
-            DefaultQueryCache queryCache = new DefaultQueryCache(cacheId, cacheName, queryCacheConfig, delegate, context);
+            DefaultQueryCache queryCache = queryCacheConfig.getMode() == QueryCacheMode.PASS_THROUGH
+                    ? new PassThroughQueryCache(cacheId, cacheName, queryCacheConfig, delegate, context)
+                    : new DefaultQueryCache(cacheId, cacheName, queryCacheConfig, delegate, context);
 
             MapListener listener = request.getListener();
             if (listener != null) {

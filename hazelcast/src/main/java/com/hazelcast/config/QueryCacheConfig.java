@@ -85,6 +85,11 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
+    /**
+     * By default, store matching entries locally in {@code QueryCache}.
+     */
+    public static final QueryCacheMode DEFAULT_MODE = QueryCacheMode.CACHE;
+
 
     /**
      * After reaching this minimum size, node immediately sends buffered events to {@code QueryCache}.
@@ -125,6 +130,10 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      */
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
 
+    /**
+     * Mode used by this {@code QueryCache}.
+     */
+    private QueryCacheMode mode = DEFAULT_MODE;
 
     /**
      * The name of {@code QueryCache}.
@@ -156,7 +165,9 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         this.includeValue = other.includeValue;
         this.populate = other.populate;
         this.coalesce = other.coalesce;
+        this.serializeKeys = other.serializeKeys;
         this.inMemoryFormat = other.inMemoryFormat;
+        this.mode = other.mode;
         this.name = other.name;
         this.predicateConfig = other.predicateConfig;
         this.evictionConfig = other.evictionConfig;
@@ -299,6 +310,32 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         checkFalse(inMemoryFormat == InMemoryFormat.NATIVE, "InMemoryFormat." + inMemoryFormat + " is not supported.");
 
         this.inMemoryFormat = inMemoryFormat;
+        return this;
+    }
+
+    /**
+     * Returns how this {@code QueryCache} handles matching entries.
+     * <p>
+     * Default value is {@link #DEFAULT_MODE}.
+     *
+     * @return the query cache mode
+     */
+    public QueryCacheMode getMode() {
+        return mode;
+    }
+
+    /**
+     * Sets how this {@code QueryCache} handles matching entries.
+     * <p>
+     * {@link QueryCacheMode#CACHE} stores entries locally. {@link QueryCacheMode#PASS_THROUGH}
+     * publishes matching entry events without storing entries locally.
+     *
+     * @param mode the query cache mode
+     * @return this {@code QueryCacheConfig} instance
+     */
+    @Nonnull
+    public QueryCacheConfig setMode(QueryCacheMode mode) {
+        this.mode = checkNotNull(mode, "mode cannot be null");
         return this;
     }
 
@@ -494,6 +531,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(indexConfigs, out);
         out.writeBoolean(serializeKeys);
+        out.writeString(mode.name());
     }
 
     @Override
@@ -511,6 +549,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         entryListenerConfigs = readNullableList(in);
         indexConfigs = readNullableList(in);
         serializeKeys = in.readBoolean();
+        mode = QueryCacheMode.valueOf(in.readString());
     }
 
     @Override
@@ -547,6 +586,9 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
+        if (mode != that.mode) {
+            return false;
+        }
         if (!Objects.equals(name, that.name)) {
             return false;
         }
@@ -573,6 +615,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         result = 31 * result + (coalesce ? 1 : 0);
         result = 31 * result + (serializeKeys ? 1 : 0);
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
+        result = 31 * result + (mode != null ? mode.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (predicateConfig != null ? predicateConfig.hashCode() : 0);
         result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
@@ -592,6 +635,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
                 + ", coalesce=" + coalesce
                 + ", serializeKeys=" + serializeKeys
                 + ", inMemoryFormat=" + inMemoryFormat
+                + ", mode=" + mode
                 + ", name='" + name + '\''
                 + ", predicateConfig=" + predicateConfig
                 + ", evictionConfig=" + evictionConfig
