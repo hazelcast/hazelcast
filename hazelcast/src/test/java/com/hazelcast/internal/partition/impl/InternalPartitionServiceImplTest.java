@@ -22,7 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.util.RandomPicker;
@@ -39,9 +41,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getPartitionService;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -135,6 +140,39 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
             assertTrue(partitionService.isPartitionOwner(i));
         }
         assertNotEquals(0, partitionService.getPartitionStateStamp());
+    }
+
+    @Test
+    public void test_createPromotionCommitPartitionState_reusesStampBufferWithoutChangingSnapshots() {
+        instance.getCluster().changeClusterState(ClusterState.FROZEN);
+        PartitionReplica destination = PartitionReplica.from(localMember);
+        InternalPartition[] initialPartitions = new InternalPartition[partitionCount];
+        for (int i = 0; i < partitionCount; i++) {
+            PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
+            replicas[1] = destination;
+            initialPartitions[i] = new ReadonlyInternalPartition(replicas, i, i + 1);
+        }
+        PartitionTableView initialTable = new PartitionTableView(initialPartitions);
+        partitionService.setInitialState(initialTable);
+
+        PartitionRuntimeState[] snapshots = new PartitionRuntimeState[2];
+        for (int i = 0; i < snapshots.length; i++) {
+            MigrationInfo promotion = new MigrationInfo(i, null, destination, -1, -1, 1, 0)
+                    .setInitialPartitionVersion(initialPartitions[i].version());
+            snapshots[i] = partitionService.createPromotionCommitPartitionState(singletonList(promotion));
+        }
+
+        // Check both snapshots after the buffer has been reused for a different partition.
+        for (int i = 0; i < snapshots.length; i++) {
+            InternalPartition[] expected = initialPartitions.clone();
+            PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
+            replicas[0] = destination;
+            expected[i] = new ReadonlyInternalPartition(replicas, i, initialPartitions[i].version() + 2);
+            assertArrayEquals(expected, snapshots[i].getPartitions());
+            assertEquals(calculateStamp(expected), snapshots[i].getStamp());
+        }
+        assertEquals(initialTable, partitionService.createPartitionTableView());
+        assertEquals(calculateStamp(initialPartitions), partitionService.getPartitionStateStamp());
     }
 
     @Test(expected = IllegalStateException.class)

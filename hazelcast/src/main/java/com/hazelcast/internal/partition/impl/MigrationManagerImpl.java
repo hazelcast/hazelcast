@@ -104,6 +104,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.Versions.V6_0;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
@@ -160,6 +161,7 @@ public class MigrationManagerImpl implements MigrationManager {
     private final long memberHeartbeatTimeoutMillis;
     private boolean triggerRepartitioningWhenClusterStateAllowsMigration;
     private final int maxParallelMigrations;
+    private final int maxParallelPromotionBatches;
     private final AtomicInteger migrationCount = new AtomicInteger();
     private final Set<MigrationInfo> finalizingMigrationsRegistry = ConcurrentHashMap.newKeySet();
     private final Executor asyncExecutor;
@@ -187,6 +189,7 @@ public class MigrationManagerImpl implements MigrationManager {
         chunkedMigrationEnabled = properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
         maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
         maxParallelMigrations = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS);
+        maxParallelPromotionBatches = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_PROMOTION_BATCHES);
         partitionStateManager = partitionService.getPartitionStateManager();
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);
         String hzName = nodeEngine.getHazelcastInstance().getName();
@@ -1733,20 +1736,115 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         /**
-         * Sends promotions to the destinations and commits if the destinations successfully process these promotions.
-         * Called on the master node.
+         * Sends promotions serially before cluster version 6.0, or concurrently as one migration process owned by the master
+         * starting with cluster version 6.0. Called on the master node.
          *
          * @param promotions the promotions that need to be sent, grouped by target replica
          * @return if all promotions were successful
          */
         private boolean promoteBackupsForMissingOwners(Map<PartitionReplica, Collection<MigrationInfo>> promotions) {
+            if (promotions.isEmpty()) {
+                return true;
+            }
+            if (node.getClusterService().getClusterVersion().isLessThan(V6_0)) {
+                return promoteBackupsSerially(promotions);
+            }
+            return promoteBackupsConcurrently(promotions);
+        }
+
+        private boolean promoteBackupsSerially(Map<PartitionReplica, Collection<MigrationInfo>> promotions) {
             boolean allSucceeded = true;
             for (Map.Entry<PartitionReplica, Collection<MigrationInfo>> entry : promotions.entrySet()) {
-                PartitionReplica destination = entry.getKey();
                 Collection<MigrationInfo> migrations = entry.getValue();
-                allSucceeded &= commitPromotionMigrations(destination, migrations);
+                migrationInterceptor.onPromotionStart(MigrationParticipant.MASTER, migrations);
+                allSucceeded &= commitPromotionMigrations(entry.getKey(), migrations);
             }
             return allSucceeded;
+        }
+
+        private boolean promoteBackupsConcurrently(Map<PartitionReplica, Collection<MigrationInfo>> promotions) {
+            if (!isPromotionProcessOwner()) {
+                return false;
+            }
+            for (Collection<MigrationInfo> migrations : promotions.values()) {
+                migrationInterceptor.onPromotionStart(MigrationParticipant.MASTER, migrations);
+            }
+            if (!isPromotionProcessOwner()) {
+                return false;
+            }
+
+            int promotionCount = promotions.values().stream().mapToInt(Collection::size).sum();
+            MigrationStateImpl migrationState =
+                    new MigrationStateImpl(Clock.currentTimeMillis(), promotionCount, 0, 0L);
+            PartitionEventManager eventManager = partitionService.getPartitionEventManager();
+            eventManager.sendMigrationProcessStartedEvent(migrationState);
+
+            try {
+                // Each partition belongs to one destination batch. Both receivers and a new master merge these snapshots
+                // by per-partition version, so independently applied batches can be reconciled after master failure.
+                List<Map.Entry<PartitionReplica, Collection<MigrationInfo>>> promotionBatches =
+                        new ArrayList<>(promotions.entrySet());
+                promotionBatches.sort(Comparator.comparing(entry -> !entry.getKey().isIdentical(node.getLocalMember())));
+
+                int nextBatch = Math.min(maxParallelPromotionBatches, promotionBatches.size());
+                Map<PartitionReplica, Future<Boolean>> remoteCommits =
+                        startRemotePromotionBatches(promotionBatches.subList(0, nextBatch));
+
+                boolean allSucceeded = true;
+                // Reserve a slot for the local batch and finish it before publishing any remote result.
+                for (Map.Entry<PartitionReplica, Collection<MigrationInfo>> entry : promotionBatches) {
+                    PartitionReplica destination = entry.getKey();
+                    Collection<MigrationInfo> migrations = entry.getValue();
+                    Future<Boolean> commit = destination.isIdentical(node.getLocalMember())
+                            ? invokePromotionsToDestination(destination, migrations)
+                            : remoteCommits.remove(destination);
+                    boolean success = awaitPromotionCommit(destination, migrations, commit);
+                    success = completePromotionMigrations(destination, migrations, success);
+                    allSucceeded &= success;
+
+                    if (!isPromotionProcessOwner()) {
+                        return false;
+                    }
+                    for (MigrationInfo migration : migrations) {
+                        migrationState = migrationState.onComplete(1, 0L);
+                        eventManager.sendMigrationEvent(migrationState, migration, 0L, success);
+                    }
+                    if (nextBatch < promotionBatches.size()) {
+                        Map.Entry<PartitionReplica, Collection<MigrationInfo>> next = promotionBatches.get(nextBatch++);
+                        remoteCommits.put(next.getKey(), invokePromotionsToDestination(next.getKey(), next.getValue()));
+                    }
+                }
+                return allSucceeded;
+            } finally {
+                finishPromotionProcess(eventManager, migrationState);
+            }
+        }
+
+        private Map<PartitionReplica, Future<Boolean>> startRemotePromotionBatches(
+                List<Map.Entry<PartitionReplica, Collection<MigrationInfo>>> batches) {
+            Map<PartitionReplica, Future<Boolean>> commits = new HashMap<>();
+            for (Map.Entry<PartitionReplica, Collection<MigrationInfo>> entry : batches) {
+                if (!entry.getKey().isIdentical(node.getLocalMember())) {
+                    commits.put(entry.getKey(), invokePromotionsToDestination(entry.getKey(), entry.getValue()));
+                }
+            }
+            return commits;
+        }
+
+        private void finishPromotionProcess(PartitionEventManager eventManager, MigrationStateImpl migrationState) {
+            if (isPromotionProcessOwner()) {
+                try {
+                    // End with reported progress only; outstanding promotions still have unknown outcomes.
+                    eventManager.sendMigrationProcessCompletedEvent(migrationState);
+                } catch (Throwable t) {
+                    // Event delivery is best effort and must not mask the original processing failure.
+                    logger.warning("Failed to publish promotion process completion", t);
+                }
+            }
+        }
+
+        private boolean isPromotionProcessOwner() {
+            return partitionStateManager.isInitialized() && partitionService.isLocalMemberMaster();
         }
 
         /**
@@ -1757,11 +1855,38 @@ public class MigrationManagerImpl implements MigrationManager {
          * @return if the promotions were successful
          */
         private boolean commitPromotionMigrations(PartitionReplica destination, Collection<MigrationInfo> migrations) {
-            migrationInterceptor.onPromotionStart(MigrationParticipant.MASTER, migrations);
-            boolean success = commitPromotionsToDestination(destination, migrations);
+            Future<Boolean> commit = invokePromotionsToDestination(destination, migrations);
+            boolean success = awaitPromotionCommit(destination, migrations, commit);
+            return completePromotionMigrations(destination, migrations, success);
+        }
+
+        private boolean awaitPromotionCommit(PartitionReplica destination, Collection<MigrationInfo> migrations,
+                                             Future<Boolean> commit) {
+            while (true) {
+                try {
+                    boolean result = FutureUtil.getValue(commit);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Promotion commit result " + result + " from " + destination
+                                + " for migrations " + migrations);
+                    }
+                    return result;
+                } catch (Throwable t) {
+                    logPromotionCommitFailure(destination, migrations, t);
+                    if (t instanceof OperationTimeoutException || t.getCause() instanceof OperationTimeoutException) {
+                        logger.fine("Retrying promotion commit to %s", destination);
+                        commit = invokePromotionsToDestination(destination, migrations);
+                        continue;
+                    }
+                    return false;
+                }
+            }
+        }
+
+        private boolean completePromotionMigrations(PartitionReplica destination, Collection<MigrationInfo> migrations,
+                                                    boolean success) {
             boolean local = destination.isIdentical(node.getLocalMember());
             if (!local) {
-                processPromotionCommitResult(destination, migrations, success);
+                success = processPromotionCommitResult(destination, migrations, success);
             }
             migrationInterceptor.onPromotionComplete(MigrationParticipant.MASTER, migrations, success);
             partitionService.publishPartitionRuntimeState();
@@ -1769,30 +1894,36 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         /**
-         * Applies the {@code migrations} to the local partition table if {@code success} is {@code true}.
-         * In any case it will increase the partition state version.
+         * Applies the {@code migrations} to the local partition table when the result is successful and still applicable.
+         * An applicable result increases the affected partition versions whether it succeeds or fails.
          * Called on the master node. This method will acquire the partition service lock.
          *
          * @param destination the promotion destination
          * @param migrations  the promotions for the destination
          * @param success     if the {@link PromotionCommitOperation} were successfully processed by the {@code destination}
+         * @return the effective result after validating current master and partition state
          */
-        private void processPromotionCommitResult(PartitionReplica destination, Collection<MigrationInfo> migrations,
-                                                  boolean success) {
+        private boolean processPromotionCommitResult(PartitionReplica destination, Collection<MigrationInfo> migrations,
+                                                     boolean success) {
             partitionServiceLock.lock();
             try {
-                if (!partitionStateManager.isInitialized()) {
-                    // node reset/terminated while running task
-                    return;
+                if (!isPromotionProcessOwner()) {
+                    // The node may have reset or stopped being the partition-service master while awaiting the result.
+                    return false;
                 }
+                if (!isPromotionResultApplicable(destination, migrations)) {
+                    logger.warning("Ignoring stale promotion result from " + destination
+                            + " for " + migrations.size() + " migrations");
+                    return false;
+                }
+                if (success && node.getClusterService().getMember(destination.address(), destination.uuid()) == null) {
+                    logger.warning("Cannot apply promotion result. Destination " + destination + " is not a member anymore");
+                    success = false;
+                }
+
                 if (success) {
                     for (MigrationInfo migration : migrations) {
                         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migration.getPartitionId());
-
-                        assert partition.getOwnerReplicaOrNull() == null : "Owner should be null: " + partition;
-                        assert destination.equals(partition.getReplica(migration.getDestinationCurrentReplicaIndex()))
-                                : "Invalid replica! Destination: " + destination + ", index: "
-                                + migration.getDestinationCurrentReplicaIndex() + ", " + partition;
                         // single partition replica swap, increments partition state version by 2
                         partition.swapReplicas(0, migration.getDestinationCurrentReplicaIndex());
                     }
@@ -1802,15 +1933,28 @@ public class MigrationManagerImpl implements MigrationManager {
                     // but invocation fails and migration is not applied to the partition table.
                     // Normally this is not expected since a commit invocation retries when operation
                     // timeouts. Still this is safer...
-                    PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
                     for (MigrationInfo migration : migrations) {
                         int delta = migration.getPartitionVersionIncrement() + 1;
                         partitionStateManager.incrementPartitionVersion(migration.getPartitionId(), delta);
                     }
                 }
+                return success;
             } finally {
                 partitionServiceLock.unlock();
             }
+        }
+
+        private boolean isPromotionResultApplicable(PartitionReplica destination,
+                                                    Collection<MigrationInfo> migrations) {
+            for (MigrationInfo migration : migrations) {
+                InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migration.getPartitionId());
+                if (partition.version() != migration.getInitialPartitionVersion()
+                        || partition.getOwnerReplicaOrNull() != null
+                        || !destination.equals(partition.getReplica(migration.getDestinationCurrentReplicaIndex()))) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /**
@@ -1861,15 +2005,16 @@ public class MigrationManagerImpl implements MigrationManager {
          * Creates a new partition table by applying the {@code migrations} and send them via {@link PromotionCommitOperation}
          * to the destination.
          *
-         * @return true if the promotions were applied on the destination
+         * @return a future completed with whether the promotions were applied on the destination
          */
-        private boolean commitPromotionsToDestination(PartitionReplica destination, Collection<MigrationInfo> migrations) {
+        private Future<Boolean> invokePromotionsToDestination(PartitionReplica destination,
+                                                              Collection<MigrationInfo> migrations) {
             assert !migrations.isEmpty() : "No promotions to commit! destination=" + destination;
 
             Member member = node.getClusterService().getMember(destination.address(), destination.uuid());
             if (member == null) {
                 logger.warning("Cannot commit promotions. Destination " + destination + " is not a member anymore");
-                return false;
+                return CompletableFuture.completedFuture(Boolean.FALSE);
             }
             try {
                 if (logger.isFinestEnabled()) {
@@ -1877,26 +2022,15 @@ public class MigrationManagerImpl implements MigrationManager {
                 }
                 PartitionRuntimeState partitionState = partitionService.createPromotionCommitPartitionState(migrations);
                 UUID destinationUuid = member.getUuid();
-                PromotionCommitOperation op = new PromotionCommitOperation(partitionState, migrations, destinationUuid);
-                Future<Boolean> future = nodeEngine.getOperationService()
+                PromotionCommitOperation op =
+                        new PromotionCommitOperation(partitionState, new ArrayList<>(migrations), destinationUuid);
+                return nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, op, destination.address())
                         .setTryCount(Integer.MAX_VALUE)
                         .setCallTimeout(memberHeartbeatTimeoutMillis).invoke();
-
-                boolean result = future.get();
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Promotion commit result " + result + " from " + destination
-                            + " for migrations " + migrations);
-                }
-                return result;
             } catch (Throwable t) {
-                logPromotionCommitFailure(destination, migrations, t);
-
-                if (t.getCause() instanceof OperationTimeoutException) {
-                    return commitPromotionsToDestination(destination, migrations);
-                }
+                return InternalCompletableFuture.completedExceptionally(t);
             }
-            return false;
         }
 
         private void logPromotionCommitFailure(PartitionReplica destination, Collection<MigrationInfo> migrations, Throwable t) {

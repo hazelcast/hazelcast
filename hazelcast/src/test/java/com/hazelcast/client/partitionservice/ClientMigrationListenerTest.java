@@ -17,6 +17,7 @@
 package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.RoutingMode;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.ListenerConfig;
@@ -49,10 +50,13 @@ import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATIO
 import static com.hazelcast.partition.PartitionMigrationListenerTest.assertMigrationEventsConsistentWithResult;
 import static com.hazelcast.partition.PartitionMigrationListenerTest.assertMigrationProcessCompleted;
 import static com.hazelcast.partition.PartitionMigrationListenerTest.assertMigrationProcessEventsConsistent;
+import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueAllTheTime;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -170,6 +174,42 @@ public class ClientMigrationListenerTest {
     }
 
     @Test
+    public void testPromotionProcess_whenAllMembersRouting() {
+        testPromotionProcess(RoutingMode.ALL_MEMBERS);
+    }
+
+    @Test
+    public void testPromotionProcess_whenSingleMemberRouting() {
+        testPromotionProcess(RoutingMode.SINGLE_MEMBER);
+    }
+
+    private void testPromotionProcess(RoutingMode routingMode) {
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance3 = hazelcastFactory.newHazelcastInstance();
+        warmUpPartitions(instance1, instance2, instance3);
+        waitAllForSafeState(instance1, instance2, instance3);
+
+        ClientConfig config = new ClientConfig();
+        String address = getAddress(instance1).getHost() + ":" + getAddress(instance1).getPort();
+        config.getNetworkConfig().setAddresses(singletonList(address));
+        config.getNetworkConfig().getClusterRoutingConfig().setRoutingMode(routingMode);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+        PartitionMigrationListenerTest.EventCollectingMigrationListener listener = eventCollectingMigrationListener();
+        client.getPartitionService().addMigrationListener(listener);
+
+        assertRegistrationsSizeEventually(instance1, 1);
+        assertRegistrationsSizeEventually(instance2, 1);
+        assertRegistrationsSizeEventually(instance3, 1);
+
+        instance3.getLifecycleService().terminate();
+
+        assertMigrationProcess(listener);
+        waitAllForSafeState(instance1, instance2, client);
+        assertTrueAllTheTime(() -> assertEquals(2, listener.getEventPackCount()), 3);
+    }
+
+    @Test
     public void testAllMigrationListenerMethodsInvokedOnTheSameThread() {
         SingleThreadMigrationListener clientListener = new SingleThreadMigrationListener();
         Function<MigrationListener, HazelcastInstance> clientSupplier = listener -> {
@@ -222,7 +262,7 @@ public class ClientMigrationListenerTest {
         return new PartitionMigrationListenerTest.EventCollectingMigrationListener(false);
     }
 
-    private void assertRegistrationsSizeEventually(HazelcastInstance instance, int size) {
+    public static void assertRegistrationsSizeEventually(HazelcastInstance instance, int size) {
         assertTrueEventually(() -> {
             EventService eventService = getNode(instance).getNodeEngine().getEventService();
             Collection<EventRegistration> registrations = eventService

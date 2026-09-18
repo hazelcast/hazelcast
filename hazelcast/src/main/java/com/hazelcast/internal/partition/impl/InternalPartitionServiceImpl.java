@@ -136,6 +136,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     private final PartitionServiceProxy proxy;
     private final Lock partitionServiceLock = new ReentrantLock();
+    // Guarded by partitionServiceLock.
+    private final byte[] promotionStampCalculationBuffer;
 
     private final PartitionStateManager partitionStateManager;
     private final MigrationManager migrationManager;
@@ -160,6 +162,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     public InternalPartitionServiceImpl(Node node) {
         HazelcastProperties properties = node.getProperties();
         this.partitionCount = properties.getInteger(ClusterProperty.PARTITION_COUNT);
+        this.promotionStampCalculationBuffer = new byte[partitionCount * Integer.BYTES];
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
@@ -517,7 +520,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 migrationInfo.setStatus(MigrationStatus.SUCCESS);
             }
 
-            long stamp = calculateStamp(partitions);
+            long stamp = calculateStamp(partitions, () -> promotionStampCalculationBuffer);
             return new PartitionRuntimeState(partitions, completedMigrations, stamp);
         } finally {
             partitionServiceLock.unlock();

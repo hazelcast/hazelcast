@@ -746,6 +746,13 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.partition.max.parallel.migrations", 10);
 
     /**
+     * Maximum number of backup promotion destination batches to execute concurrently, including the master's local batch.
+     * Must be positive.
+     */
+    public static final HazelcastProperty PARTITION_MAX_PARALLEL_PROMOTION_BATCHES
+            = new HazelcastProperty("hazelcast.partition.max.parallel.promotion.batches", 4);
+
+    /**
      * Maximum number of anti-entropy partition replications to be executed on a member.
      * By default, equals to {@link #PARTITION_MAX_PARALLEL_MIGRATIONS}.
      */

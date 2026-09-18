@@ -66,6 +66,11 @@ public class PartitionEventManager {
 
     /** Sends a {@link ReplicaMigrationEvent} to the registered event listeners. */
     public void sendMigrationEvent(MigrationState state, MigrationInfo migrationInfo, long elapsed) {
+        sendMigrationEvent(state, migrationInfo, elapsed, migrationInfo.getStatus() == MigrationStatus.SUCCESS);
+    }
+
+    /** Sends a {@link ReplicaMigrationEvent} with the given effective result to the registered event listeners. */
+    public void sendMigrationEvent(MigrationState state, MigrationInfo migrationInfo, long elapsed, boolean success) {
         ClusterServiceImpl clusterService = node.getClusterService();
         PartitionReplica sourceReplica = migrationInfo.getSource();
         PartitionReplica destReplica = migrationInfo.getDestination();
@@ -74,7 +79,6 @@ public class PartitionEventManager {
 
         int partitionId = migrationInfo.getPartitionId();
         int replicaIndex = migrationInfo.getDestinationNewReplicaIndex();
-        boolean success = migrationInfo.getStatus() == MigrationStatus.SUCCESS;
         ReplicaMigrationEvent
                 event = new ReplicaMigrationEventImpl(state, partitionId, replicaIndex, source, destination, success, elapsed);
 
