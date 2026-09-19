@@ -16,10 +16,19 @@
 
 package com.hazelcast.client.map.impl.querycache;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
+import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
+import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
@@ -38,9 +47,11 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -51,12 +62,13 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
+    private HazelcastInstance member;
     private IMap<Integer, Integer> map;
     private QueryCache<Integer, Integer> queryCache;
 
     @Before
     public void setUp() {
-        factory.newHazelcastInstance();
+        member = factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
 
         String mapName = randomMapName();
@@ -103,5 +115,36 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
         assertTrue(queryCache.removeEntryListener(addEntryListener));
         assertFalse(queryCache.removeEntryListener(addEntryListener));
+    }
+
+    @Test
+    public void testPublisherIsMadePublishable_whenInitialPopulationDisabled() {
+        String mapName = randomMapName();
+        String cacheName = randomName();
+
+        ClientConfig clientConfig = new ClientConfig();
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
+        queryCacheConfig
+                .setPopulate(false)
+                .getPredicateConfig().setImplementation(TRUE_PREDICATE);
+        clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        IMap<Integer, Integer> map = getMap(client, mapName);
+        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName);
+
+        AccumulatorInfo info = getAccumulatorInfo(mapName, queryCache);
+        assertNotNull(info);
+        assertTrue(info.isPublishable());
+    }
+
+    private AccumulatorInfo getAccumulatorInfo(String mapName, QueryCache<Integer, Integer> queryCache) {
+        MapService mapService = getNodeEngineImpl(member).getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+        AccumulatorInfoSupplier infoSupplier = publisherContext.getAccumulatorInfoSupplier();
+        String cacheId = ((InternalQueryCache<Integer, Integer>) queryCache).getCacheId();
+        return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheId);
     }
 }
