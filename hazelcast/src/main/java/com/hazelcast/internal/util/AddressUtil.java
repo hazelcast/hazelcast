@@ -306,6 +306,7 @@ public final class AddressUtil {
      */
     public static AddressMatcher getAddressMatcher(String address) {
         final AddressMatcher matcher;
+        address = unwrapIpv6Brackets(address);
         final int indexColon = address.indexOf(':');
         final int lastIndexColon = address.lastIndexOf(':');
         final int indexDot = address.indexOf('.');
@@ -434,6 +435,14 @@ public final class AddressUtil {
             isValid = false;
         }
         return isValid;
+    }
+
+    private static String unwrapIpv6Brackets(String address) {
+        int length = address.length();
+        if (length > 1 && address.charAt(0) == '[' && address.charAt(length - 1) == ']') {
+            return address.substring(1, length - 1);
+        }
+        return address;
     }
 
     private static void parseIpv6(AddressMatcher matcher, String addrs) {
