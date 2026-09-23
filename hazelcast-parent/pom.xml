@@ -216,10 +216,6 @@
     </properties>
 
     <distributionManagement>
-        <repository>
-            <id>private-repository</id>
-            <url>https://repository.hazelcast.com/release</url>
-        </repository>
         <snapshotRepository>
             <id>private-repository</id>
             <url>https://repository.hazelcast.com/snapshot</url>
@@ -1573,53 +1569,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <!-- USE WITH CAUTION! Switches deployment from JFrog Artifactory to Maven Central for releases -->
-            <id>enable-maven-central</id>
-            <properties>
-                <maven.central.autoReleaseAfterClose>false</maven.central.autoReleaseAfterClose>
-                <deploy.name>Hazelcast ${project.version}</deploy.name>
-            </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.sonatype.central</groupId>
-                            <artifactId>central-publishing-maven-plugin</artifactId>
-                            <version>0.11.0</version>
-                            <extensions>true</extensions>
-                            <configuration>
-                                <!-- server id comes from settings.xml -->
-                                <publishingServerId>release-repository</publishingServerId>
-                                <!--
-                                wait until the artifacts are actually published automatically using 'autoPublish'.
-                                the default is `validated` which would then require manual publishing
-                                -->
-                                <waitUntil>published</waitUntil>
-                                <autoPublish>${maven.central.autoReleaseAfterClose}</autoPublish>
-                                <checksums>required</checksums>
-                                <deploymentName>Deployment ${deploy.name}</deploymentName>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-                <plugins>
-                    <plugin>
-                        <groupId>org.sonatype.central</groupId>
-                        <artifactId>central-publishing-maven-plugin</artifactId>
-                        <inherited>false</inherited>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <!-- USE WITH CAUTION! Activates automatic release to Maven Central upon closing the staging repository -->
-            <id>auto-release-maven-central</id>
-            <properties>
-                <maven.central.autoReleaseAfterClose>true</maven.central.autoReleaseAfterClose>
-            </properties>
         </profile>
 
         <!--
