@@ -26,7 +26,9 @@ import com.hazelcast.logging.Logger;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
+import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.internal.config.LicenseKey.maskLicense;
 import static com.hazelcast.internal.config.override.PropertiesToNodeConverter.propsToNode;
 import static java.lang.String.format;
@@ -40,8 +42,11 @@ public class ExternalConfigurationOverride {
 
 
     private static final ILogger LOGGER = Logger.getLogger(ExternalConfigurationOverride.class);
+    private static final Pattern SENSITIVE_KEY_PATTERN =
+            Pattern.compile("password|secret|accesskey|privatekey|token|salt|clientid|tenantid", Pattern.CASE_INSENSITIVE);
     private final Map<String, String> envVariables;
     private final SystemPropertiesProvider systemPropertiesProvider;
+
 
     public ExternalConfigurationOverride() {
         this(System.getenv(), System::getProperties);
@@ -98,13 +103,7 @@ public class ExternalConfigurationOverride {
                   configProvider.name(),
                   properties.entrySet().stream()
                     .filter(e -> !unprocessed.containsKey(e.getKey()))
-                    .map(e -> {
-                        if (e.getKey().equals("hazelcast.licensekey")) {
-                            return e.getKey() + "=" + maskLicense(e.getValue());
-                        } else {
-                            return e.getKey() + "=" + e.getValue();
-                        }
-                    })
+                    .map(e -> e.getKey() + "=" + formatValueForLog(e.getKey(), e.getValue()))
                     .collect(joining(","))));
 
                 if (!unprocessed.isEmpty()) {
@@ -121,5 +120,23 @@ public class ExternalConfigurationOverride {
     @FunctionalInterface
     interface ConfigConsumer<T> {
         void apply(String providerName, ConfigNode config, T target);
+    }
+
+    static String formatValueForLog(String key, String value) {
+        if (key.equals("hazelcast.licensekey")) {
+            return maskLicense(value);
+        } else if (isSensitiveKey(key)) {
+            return MASK_FOR_SENSITIVE_DATA;
+        } else {
+            return value;
+        }
+    }
+
+    private static String normalize(String key) {
+        return key.replace("-", "");
+    }
+
+    static boolean isSensitiveKey(String key) {
+        return SENSITIVE_KEY_PATTERN.matcher(normalize(key)).find();
     }
 }
