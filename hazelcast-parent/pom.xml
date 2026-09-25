@@ -103,7 +103,7 @@
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.5.0</hadoop.version>
         <jackson.version>3.2.2</jackson.version>
-        <jackson2.version>2.22.2</jackson2.version>
+        <jackson2.version>2.22.3</jackson2.version>
         <jackson.annotation.version>2.22</jackson.annotation.version>
         <jline.version>3.30.17</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
