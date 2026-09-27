@@ -122,6 +122,7 @@
             When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
         -->
         <parquet.version>1.18.1</parquet.version>
+        <httpcore5.version>5.4.4</httpcore5.version>
 
         <spring.boot3.version>3.5.16</spring.boot3.version>
         <org.springframework6.version>6.2.19</org.springframework6.version>
@@ -474,8 +475,13 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>${httpcore5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
-                <version>5.4.3</version>
+                <version>${httpcore5.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
