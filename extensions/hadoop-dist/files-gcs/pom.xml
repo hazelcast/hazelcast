@@ -47,7 +47,7 @@
 			- `io.opentelemetry:opentelemetry-context`
 			- `org.jspecify:jspecify`
 		-->
-        <bigdataoss.version>4.0.5</bigdataoss.version>
+        <bigdataoss.version>4.0.6</bigdataoss.version>
     </properties>
 
     <build>

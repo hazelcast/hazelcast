@@ -67,9 +67,7 @@
         <dependencies>
         	<!--
 				When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-				- `io.opentelemetry:opentelemetry-api`
 				- `io.opentelemetry:opentelemetry-context`
-				- `org.jspecify:jspecify`
 				- `org.bouncycastle:bcprov-jdk18on`
 			-->
             <!-- DO NOT upgrade to M2 due to https://github.com/apache/pulsar/issues/26694 -->
