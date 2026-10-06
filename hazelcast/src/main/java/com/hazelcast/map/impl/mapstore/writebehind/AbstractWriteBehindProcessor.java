@@ -17,12 +17,11 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.map.MapStore;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.internal.serialization.SerializationService;
-import org.apache.logging.log4j.util.Strings;
 
 import java.util.List;
 import java.util.Map;
@@ -91,7 +90,7 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
     }
 
     private String addMapNameIfGiven(String msg) {
-        if (Strings.isBlank(mapName)) {
+        if (mapName == null || mapName.isBlank()) {
             return msg;
         }
 
