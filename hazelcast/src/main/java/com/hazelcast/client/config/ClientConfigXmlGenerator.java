@@ -417,6 +417,7 @@ public final class ClientConfigXmlGenerator {
                 gen.open("query-cache", "mapName", mapName, "name", queryCache.getName())
                         .node("include-value", queryCache.isIncludeValue())
                         .node("in-memory-format", queryCache.getInMemoryFormat())
+                        .node("mode", queryCache.getMode())
                         .node("populate", queryCache.isPopulate())
                         .node("coalesce", queryCache.isCoalesce())
                         .node("delay-seconds", queryCache.getDelaySeconds())

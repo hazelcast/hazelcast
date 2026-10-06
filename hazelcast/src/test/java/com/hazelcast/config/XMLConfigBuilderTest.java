@@ -2856,6 +2856,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<buffer-size>16</buffer-size>"
                 + "<delay-seconds>0</delay-seconds>"
                 + "<in-memory-format>BINARY</in-memory-format>"
+                + "<mode>PASS_THROUGH</mode>"
                 + "<coalesce>false</coalesce>"
                 + "<populate>true</populate>"
                 + "<serialize-keys>true</serialize-keys>"
@@ -2884,6 +2885,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(16, queryCacheConfig.getBufferSize());
         assertEquals(0, queryCacheConfig.getDelaySeconds());
         assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
+        assertEquals(QueryCacheMode.PASS_THROUGH, queryCacheConfig.getMode());
         assertFalse(queryCacheConfig.isCoalesce());
         assertTrue(queryCacheConfig.isPopulate());
         assertTrue(queryCacheConfig.isSerializeKeys());
@@ -2892,6 +2894,24 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    @Test
+    public void testQueryCacheMode_lowerCase() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"test\">"
+                + "<query-caches>"
+                + "<query-cache name=\"cache-name\">"
+                + "<mode>pass_through</mode>"
+                + "</query-cache>"
+                + "</query-caches>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        QueryCacheConfig queryCacheConfig = config.getMapConfig("test").getQueryCacheConfigs().get(0);
+
+        assertEquals(QueryCacheMode.PASS_THROUGH, queryCacheConfig.getMode());
     }
 
     @Override

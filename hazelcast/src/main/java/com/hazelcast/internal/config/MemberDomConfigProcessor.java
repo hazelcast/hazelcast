@@ -90,6 +90,7 @@ import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueryCacheMode;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.RecentlyActiveSplitBrainProtectionConfigBuilder;
@@ -2473,6 +2474,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     queryCacheConfig.setDelaySeconds(delaySeconds);
                 } else if (matches("in-memory-format", nodeName)) {
                     queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(childNode))));
+                } else if (matches("mode", nodeName)) {
+                    queryCacheConfig.setMode(QueryCacheMode.valueOf(upperCaseInternal(getTextContent(childNode))));
                 } else if (matches("coalesce", nodeName)) {
                     boolean coalesce = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setCoalesce(coalesce);

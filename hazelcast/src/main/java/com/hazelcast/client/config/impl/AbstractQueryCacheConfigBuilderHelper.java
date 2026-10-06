@@ -23,6 +23,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueryCacheMode;
 import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DomConfigHelper;
 import org.w3c.dom.NamedNodeMap;
@@ -78,6 +79,8 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
             queryCacheConfig.setDelaySeconds(delaySeconds);
         } else if (matches("in-memory-format", nodeName)) {
             queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(childNode))));
+        } else if (matches("mode", nodeName)) {
+            queryCacheConfig.setMode(QueryCacheMode.valueOf(upperCaseInternal(getTextContent(childNode))));
         } else if (matches("coalesce", nodeName)) {
             boolean coalesce = getBooleanValue(getTextContent(childNode));
             queryCacheConfig.setCoalesce(coalesce);
